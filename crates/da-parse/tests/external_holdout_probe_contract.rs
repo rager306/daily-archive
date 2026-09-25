@@ -380,13 +380,20 @@ fn recompute_identity_digest(lane: &Yaml) -> Result<String, String> {
     let Ok(source) = serde_yaml::from_str::<Yaml>(&text) else {
         return Err("probe_identity_source_missing".into());
     };
+    identity_digest_from_source(lane, &source)
+}
+
+/// The digest is a pure function of the source data, so an in-memory (synthetic)
+/// source exercises the same code path as the on-disk manifest without touching
+/// the repository.
+fn identity_digest_from_source(lane: &Yaml, source: &Yaml) -> Result<String, String> {
     let fields = strings_in_order(lane, "digest_input_fields");
     if fields.is_empty() {
         return Err("probe_identity_source_missing".into());
     }
     let field_sep = str_at(lane, "digest_field_separator").unwrap_or_default();
     let record_sep = str_at(lane, "digest_record_separator").unwrap_or_default();
-    let Some(articles) = seq(&source, "articles") else {
+    let Some(articles) = seq(source, "articles") else {
         return Err("probe_identity_source_missing".into());
     };
     let mut records: Vec<String> = Vec::new();
@@ -402,6 +409,19 @@ fn recompute_identity_digest(lane: &Yaml) -> Result<String, String> {
     }
     let payload = records.join(record_sep);
     Ok(format!("sha256:{}", sha256_hex(payload.as_bytes())))
+}
+
+/// The declared reference population is DATA: the frozen pins must cover exactly
+/// the article identities the source manifest declares. Returns the derived
+/// population, or the named refusal when the two disagree — never a silent
+/// truncation to the shorter of the two.
+fn reference_population_binding(lane: &Yaml, source: &Yaml) -> Result<usize, &'static str> {
+    let rows = seq(lane, "reference_tei").ok_or("probe_reference_population_missing")?;
+    let articles = seq(source, "articles").ok_or("probe_identity_source_missing")?;
+    if rows.len() != articles.len() {
+        return Err("probe_reference_population_drift");
+    }
+    Ok(rows.len())
 }
 
 /// How the caller claims the recorded human release decision is satisfied.
@@ -771,8 +791,8 @@ fn frozen_reference_names_its_release_and_the_data_plane_label_divergence() {
     let source_articles = seq(&source, "articles")
         .unwrap_or_else(|| panic!("{PREFIX} `{SOURCE_MANIFEST}#articles` must be a sequence"));
     assert_eq!(
-        rows.len(),
-        source_articles.len(),
+        reference_population_binding(lane, &source),
+        Ok(source_articles.len()),
         "{PREFIX} the frozen reference population must equal the declared article count \
          ({SOURCE_MANIFEST}#articles), not a hardcoded count"
     );
@@ -1207,5 +1227,144 @@ fn negative_matrix_catches_every_named_lane_mutation() {
     assert_eq!(
         cite_probe_result(&doc, ProbeClaim::RecordedGate),
         Err("citation_without_release_decision".to_string())
+    );
+}
+
+/// Grow a source manifest to `population` articles by cloning its first row with
+/// a distinct identity.  A synthetic proof fixture: built in code, never written
+/// to the repository, so it cannot dilute the declared pilot.
+fn grown_source_manifest(source: &Yaml, population: usize) -> Yaml {
+    let template = seq(source, "articles")
+        .and_then(|articles| articles.first())
+        .cloned()
+        .expect("the source manifest must declare at least one article");
+    let mut articles: Vec<Yaml> = seq(source, "articles")
+        .expect("articles")
+        .iter()
+        .take(population)
+        .cloned()
+        .collect();
+    while articles.len() < population {
+        let index = articles.len();
+        let mut article = template.clone();
+        if let Some(row) = article.as_mapping_mut() {
+            row.insert(
+                Yaml::String("article_id".into()),
+                Yaml::String(format!("synthetic-{index:04}")),
+            );
+            row.insert(
+                Yaml::String("sha256".into()),
+                Yaml::String(format!("sha256:{:064x}", index + 1)),
+            );
+        }
+        articles.push(article);
+    }
+    let mut grown = source.clone();
+    if let Some(root) = grown.as_mapping_mut() {
+        root.insert(Yaml::String("articles".into()), Yaml::Sequence(articles));
+    }
+    grown
+}
+
+/// A lane whose frozen pins grew with the synthetic source: one pin per article,
+/// with the identity digest recomputed from the grown source.  Synthetic proof
+/// fixture only.
+fn grown_lane(lane: &Yaml, source: &Yaml, population: usize) -> Yaml {
+    let articles = seq(source, "articles").expect("articles");
+    let rows: Vec<Yaml> = (0..population)
+        .map(|index| {
+            let article = &articles[index];
+            let mut row = serde_yaml::Mapping::new();
+            row.insert(
+                Yaml::String("article_id".into()),
+                Yaml::String(
+                    str_at(article, "article_id")
+                        .unwrap_or_default()
+                        .to_string(),
+                ),
+            );
+            row.insert(
+                Yaml::String("path".into()),
+                Yaml::String(format!(
+                    "crates/da-parse/tests/fixtures/holdout/synthetic-{index:04}.tei.xml"
+                )),
+            );
+            row.insert(
+                Yaml::String("sha256".into()),
+                Yaml::String(str_at(article, "sha256").unwrap_or_default().to_string()),
+            );
+            row.insert(
+                Yaml::String("size_bytes".into()),
+                Yaml::Number((index as u64 + 1).into()),
+            );
+            Yaml::Mapping(row)
+        })
+        .collect();
+    let digest = identity_digest_from_source(lane, source).expect("grown identity digest");
+    let mut grown = lane.clone();
+    if let Some(root) = grown.as_mapping_mut() {
+        root.insert(Yaml::String("reference_tei".into()), Yaml::Sequence(rows));
+        root.insert(Yaml::String("identity_digest".into()), Yaml::String(digest));
+    }
+    grown
+}
+
+/// The declared population is DATA, not a compiled-in five: the same contract
+/// derives the frozen population from the frozen source manifest and a different
+/// population from a synthetic source manifest that exists only inside this
+/// test.  A lane whose pins do not cover the declared articles is refused by
+/// name, and the identity digest is recomputed from the source data too.
+#[test]
+fn declared_population_follows_the_source_manifest_at_any_size() {
+    let doc = manifest();
+    let lane = at_path(&doc, "external_holdout_contract.release_probe")
+        .unwrap_or_else(|| panic!("{PREFIX} the release_probe lane must be declared"));
+    let frozen_source: Yaml = serde_yaml::from_str(&read(SOURCE_MANIFEST))
+        .unwrap_or_else(|error| panic!("{PREFIX} `{SOURCE_MANIFEST}` is not valid YAML: {error}"));
+    let declared = seq(&frozen_source, "articles")
+        .unwrap_or_else(|| panic!("{PREFIX} `{SOURCE_MANIFEST}#articles` must be a sequence"))
+        .len();
+
+    // The frozen declaration is a solution of the DATA-derived binding: the
+    // population comes from the manifest, not from a literal.
+    assert_eq!(
+        reference_population_binding(lane, &frozen_source),
+        Ok(declared),
+        "{PREFIX} the frozen lane must cover the declared article population"
+    );
+
+    // Synthetic proof fixture: the same lane shape and the same source shape at
+    // a different population.  Built in code, never written to the tree.
+    let grown = declared + 2;
+    let grown_source = grown_source_manifest(&frozen_source, grown);
+    let grown_lane = grown_lane(lane, &grown_source, grown);
+    assert_eq!(
+        reference_population_binding(&grown_lane, &grown_source),
+        Ok(grown),
+        "{PREFIX} the binding must follow the source manifest at any size"
+    );
+
+    // A lane that kept the frozen population cannot satisfy the grown source:
+    // the refusal names the drift instead of truncating to the shorter list.
+    assert_eq!(
+        reference_population_binding(lane, &grown_source),
+        Err("probe_reference_population_drift"),
+        "{PREFIX} a stale lane must be refused by name, never silently truncated"
+    );
+
+    // The identity digest is a pure function of the source data, so the grown
+    // source cannot replay the frozen digest, and the frozen lane still
+    // reproduces the frozen one.
+    let frozen_digest = str_at(lane, "identity_digest").expect("identity_digest");
+    assert_eq!(
+        identity_digest_from_source(lane, &frozen_source).expect("frozen identity digest"),
+        frozen_digest,
+        "{PREFIX} the frozen digest must be a pure function of the frozen source"
+    );
+    let grown_digest =
+        identity_digest_from_source(&grown_lane, &grown_source).expect("grown identity digest");
+    assert_ne!(
+        grown_digest, frozen_digest,
+        "{PREFIX} a grown source must not reproduce the frozen identity digest"
     );
 }

@@ -45,7 +45,16 @@ const PROVENANCE_REL: &str = "crates/da-parse/tests/fixtures/holdout/provenance.
 const LATENCY_SOURCE_REF: &str =
     "crates/da-parse/tests/fixtures/holdout/provenance.yaml#documents[].latency_ms";
 const EXECUTION_EVIDENCE: &str = "tracked_offline_fixture:external_holdout_release_probe_reference";
-const DOCUMENTS: usize = 5;
+
+/// The declared probe population.  DATA is the only carrier of the population
+/// size: the source manifest's article list.  No literal governs it, and the
+/// frozen per-document table below must keep covering exactly this population.
+fn declared_population() -> usize {
+    load_yaml(SOURCE_MANIFEST_REL)["articles"]
+        .as_sequence()
+        .expect("the source manifest must declare the article list")
+        .len()
+}
 
 /// One frozen per-document row: `(document_id, identity_sha256,
 /// source_population, admitted, agreement_micros, uncertainty_low_micros,
@@ -64,7 +73,7 @@ type FrozenDocument = (
 
 /// The frozen per-document measurement of 2026-09-24, identical to the S08/T03
 /// oracle's table.
-const FROZEN_DOCUMENTS: [FrozenDocument; DOCUMENTS] = [
+const FROZEN_DOCUMENTS: &[FrozenDocument] = &[
     (
         "1203.2295",
         "a230094fff20d5434e1871ee9511ce61d71777b6ff0454faeaedc79cdfef6629",
@@ -124,8 +133,25 @@ const FROZEN_DOCUMENTS: [FrozenDocument; DOCUMENTS] = [
 
 /// The frozen counts-only aggregate: `(source_population, admitted, tp, fn, fp,
 /// agreeing_documents, margin_pass, margin_fail, no_denominator_documents)`.
-const FROZEN_AGGREGATE: (u64, u64, u64, u64, u64, u64, u64, u64, u64) =
-    (731, 705, 705, 0, 0, 5, 10, 0, 0);
+/// The population-derived counter (`agreeing_documents`) is recomputed from the
+/// frozen per-document rows, so a re-measured table cannot silently keep the old
+/// population number; every other value is the recorded aggregate measurement.
+fn frozen_aggregate() -> (u64, u64, u64, u64, u64, u64, u64, u64, u64) {
+    (
+        731,
+        705,
+        705,
+        0,
+        0,
+        FROZEN_DOCUMENTS
+            .iter()
+            .filter(|(_, _, _, _, agreement, _, _, _, _)| *agreement == 1_000_000)
+            .count() as u64,
+        10,
+        0,
+        0,
+    )
+}
 
 /// The frozen named admission narrowings, identical to the S08/T03 table:
 /// `(document_id, class, source_population, admitted)`.  Every class whose
@@ -238,30 +264,41 @@ fn load_committed_artifact() -> Value {
 }
 
 fn example_binary() -> PathBuf {
-    let binary = repo_root().join("target/debug/examples/external_holdout_release_probe");
-    if binary.is_file() {
-        return binary;
-    }
-    let build = Command::new("cargo")
-        .args([
-            "build",
-            "-q",
-            "-p",
-            "da-cli",
-            "--features",
-            "pdf-layout",
-            "--example",
-            "external_holdout_release_probe",
-        ])
-        .current_dir(repo_root())
-        .output()
-        .expect("build feature-gated release probe example");
-    assert!(
-        build.status.success(),
-        "example build failed: {}",
-        String::from_utf8_lossy(&build.stderr)
-    );
-    binary
+    // Provision the runner once per test process. `cargo test --test NAME` does
+    // not build examples, so a stale binary from an earlier run would silently
+    // shadow the source under test; an unconditional (incremental) build makes
+    // the population proof reproducible. `OnceLock` keeps the parallel tests
+    // from racing on cargo's target lock.
+    static BINARY: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    BINARY
+        .get_or_init(|| {
+            let binary = repo_root().join("target/debug/examples/external_holdout_release_probe");
+            let build = Command::new("cargo")
+                .args([
+                    "build",
+                    "-q",
+                    "-p",
+                    "da-cli",
+                    "--features",
+                    "pdf-layout",
+                    "--example",
+                    "external_holdout_release_probe",
+                ])
+                .current_dir(repo_root())
+                .output()
+                .expect("build feature-gated release probe example");
+            assert!(
+                build.status.success(),
+                "example build failed: {}",
+                String::from_utf8_lossy(&build.stderr)
+            );
+            assert!(
+                binary.is_file(),
+                "the example binary must exist after a successful build"
+            );
+            binary
+        })
+        .clone()
 }
 
 // ─────────────────────── the independent expectations ───────────────────────
@@ -394,12 +431,21 @@ fn artifact_errors(
     report: &Value,
     expected_digest: &str,
     margins: &BTreeMap<String, (String, f64)>,
+    declared: usize,
 ) -> Vec<String> {
     let mut errors = Vec::new();
     // The DATA surfaces this audit compares against, parsed once.
     let manifest = manifest_yaml();
     let contract = yaml_at(&manifest, "external_holdout_contract");
     let lane = &contract["release_probe"];
+
+    // The frozen table is the recorded measurement of the declared population.
+    // If DATA moved the population off the table, the artifact cannot be audited
+    // against it: refuse by name rather than compare against a stale table.
+    if declared != FROZEN_DOCUMENTS.len() {
+        errors.push("probe:reference_population.frozen_table_drift".into());
+        return errors;
+    }
 
     if report["schema_version"].as_str() != Some(SCHEMA_VERSION) {
         errors.push("probe:schema_version".into());
@@ -426,21 +472,21 @@ fn artifact_errors(
     if expected_digest != declared_digest {
         errors.push("probe:identity_digest_not_declared".into());
     }
-    if reference["documents"].as_u64() != Some(DOCUMENTS as u64) {
+    if reference["documents"].as_u64() != Some(declared as u64) {
         errors.push("probe:reference_population.documents".into());
     }
     let pins = reference["byte_pins"]
         .as_array()
         .cloned()
         .unwrap_or_default();
-    if pins.len() != DOCUMENTS {
+    if pins.len() != declared {
         errors.push("probe:reference_population.byte_pins.cardinality".into());
     }
     let pin_shas: BTreeSet<String> = pins
         .iter()
         .filter_map(|pin| pin["identity_sha256"].as_str().map(str::to_string))
         .collect();
-    if pin_shas.len() != DOCUMENTS || pin_shas.iter().any(|sha| !is_sha256(sha)) {
+    if pin_shas.len() != declared || pin_shas.iter().any(|sha| !is_sha256(sha)) {
         errors.push("probe:reference_population.byte_pins.shape".into());
     }
     for (index, pin) in pins.iter().enumerate() {
@@ -478,8 +524,8 @@ fn artifact_errors(
     if executed["execution_evidence"].as_str() != Some(EXECUTION_EVIDENCE) {
         errors.push("probe:executed_population.execution_evidence".into());
     }
-    if executed["documents"].as_u64() != Some(DOCUMENTS as u64)
-        || executed["accepted"].as_u64() != Some(DOCUMENTS as u64)
+    if executed["documents"].as_u64() != Some(declared as u64)
+        || executed["accepted"].as_u64() != Some(declared as u64)
     {
         errors.push("probe:executed_population.documents".into());
     }
@@ -510,7 +556,7 @@ fn artifact_errors(
     if evaluated["status"].as_str() != Some("evaluated") {
         errors.push("probe:evaluated_population.status".into());
     }
-    if evaluated["documents"].as_u64() != Some(DOCUMENTS as u64) {
+    if evaluated["documents"].as_u64() != Some(declared as u64) {
         errors.push("probe:evaluated_population.documents".into());
     }
     let aggregate = &evaluated["aggregate"];
@@ -525,7 +571,8 @@ fn artifact_errors(
         aggregate["margin_fail"].as_u64().unwrap_or(0),
         aggregate["no_denominator_documents"].as_u64().unwrap_or(0),
     );
-    if observed_aggregate != FROZEN_AGGREGATE {
+    let frozen = frozen_aggregate();
+    if observed_aggregate != frozen {
         errors.push("probe:aggregate.frozen".into());
     }
     if aggregate["counts_only"].as_bool() != Some(true) {
@@ -548,25 +595,17 @@ fn artifact_errors(
                 acc.4 + outcome["fabricated"].as_u64().unwrap_or(0),
             )
         });
-    if aggregated_from_rows
-        != (
-            FROZEN_AGGREGATE.0,
-            FROZEN_AGGREGATE.1,
-            FROZEN_AGGREGATE.2,
-            FROZEN_AGGREGATE.3,
-            FROZEN_AGGREGATE.4,
-        )
-    {
+    if aggregated_from_rows != (frozen.0, frozen.1, frozen.2, frozen.3, frozen.4) {
         errors.push("probe:aggregate.row_sum".into());
     }
 
     // ── outcomes: the frozen per-document measurement ──────────────────────
     let outcomes = report["outcomes"].as_array().cloned().unwrap_or_default();
-    if outcomes.len() != DOCUMENTS {
+    if outcomes.len() != declared {
         errors.push("probe:outcomes.cardinality".into());
     }
     let mut measured_ids: BTreeSet<&str> = BTreeSet::new();
-    for (document_id, sha, source_population, admitted, agreement, low, high, width, latency) in
+    for &(document_id, sha, source_population, admitted, agreement, low, high, width, latency) in
         FROZEN_DOCUMENTS
     {
         let row = outcomes
@@ -757,8 +796,8 @@ fn artifact_errors(
     let census = &report["production_catalog_overlap"];
     let locators = census["locators"].as_array().cloned().unwrap_or_default();
     if census["census_kind"].as_str() != Some("filesystem_presence_of_the_five_holdout_identities")
-        || census["documents"].as_u64() != Some(DOCUMENTS as u64)
-        || locators.len() != DOCUMENTS
+        || census["documents"].as_u64() != Some(declared as u64)
+        || locators.len() != declared
     {
         errors.push("probe:production_catalog_overlap.shape".into());
     }
@@ -914,6 +953,7 @@ fn committed_artifact_is_a_frozen_probe_measurement() {
         &report,
         &expected_digest,
         &declared_margins(&manifest_yaml()),
+        declared_population(),
     );
     assert!(
         errors.is_empty(),
@@ -965,7 +1005,7 @@ fn artifact_audit_rejects_every_declared_violation() {
     );
     let margins = declared_margins(&manifest);
     assert!(
-        artifact_errors(&valid, &expected_digest, &margins).is_empty(),
+        artifact_errors(&valid, &expected_digest, &margins, declared_population()).is_empty(),
         "the unmutated artifact must pass the audit"
     );
 
@@ -1008,11 +1048,11 @@ fn artifact_audit_rejects_every_declared_violation() {
     mutations.push(("execution_evidence_unbound", unbound_evidence));
 
     let mut legacy = valid.clone();
-    legacy["denominators"] = json!({"documents": DOCUMENTS});
+    legacy["denominators"] = json!({"documents": declared_population()});
     mutations.push(("legacy_denominators_block_reintroduced", legacy));
 
     let mut legacy_corpus = valid.clone();
-    legacy_corpus["corpus"] = json!({"documents": DOCUMENTS});
+    legacy_corpus["corpus"] = json!({"documents": declared_population()});
     mutations.push(("legacy_corpus_block_reintroduced", legacy_corpus));
 
     let mut split_collapsed = valid.clone();
@@ -1159,7 +1199,7 @@ fn artifact_audit_rejects_every_declared_violation() {
     mutations.push(("named_limitations_removed", limitations_removed));
 
     for (name, mutant) in mutations {
-        let errors = artifact_errors(&mutant, &expected_digest, &margins);
+        let errors = artifact_errors(&mutant, &expected_digest, &margins, declared_population());
         assert!(
             !errors.is_empty(),
             "the audit accepted the mutation `{name}`"
@@ -1192,6 +1232,124 @@ fn guard_self_check_rejects_every_declared_violation() {
             GUARD_LABELS.len()
         )),
         "the self-check must report every declared guard:\n{stdout}"
+    );
+}
+
+/// The lane's guard surface must follow the DATA, not a compiled-in population:
+/// one binary, two populations, no code change between the runs.  The synthetic
+/// fixture is code-built and lives only for the run, never written into the
+/// repository, so it cannot dilute the declared pilot.
+#[test]
+fn guard_self_check_scales_to_any_population_without_a_code_change() {
+    let binary = example_binary();
+    let base = declared_population();
+    let populations = [base, base + 2]; // N=5 and N=7 on the frozen manifest.
+    let mut recorded: BTreeMap<usize, String> = BTreeMap::new();
+    for population in populations {
+        let output = Command::new(&binary)
+            .args(["--self-check", "--documents", &population.to_string()])
+            .current_dir(repo_root())
+            .output()
+            .expect("run the release probe guard self-check");
+        assert!(
+            output.status.success(),
+            "self-check failed at population {population}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        assert!(
+            stdout.contains(&format!(
+                "guard self-check population: {population} documents"
+            )),
+            "the self-check must record the population it exercised:\n{stdout}"
+        );
+        for guard in GUARD_LABELS {
+            assert!(
+                stdout.contains(&format!("guard {guard}: rejected")),
+                "population {population} did not prove `{guard}` rejects its violating input:\n{stdout}"
+            );
+        }
+        assert!(
+            stdout.contains(&format!(
+                "guard self-check: {} guards rejected their violating input",
+                GUARD_LABELS.len()
+            )),
+            "population {population} must report every declared guard:\n{stdout}"
+        );
+        recorded.insert(population, stdout);
+    }
+
+    assert_ne!(populations[0], populations[1]);
+    // Strip the population line: the two recorded runs must otherwise be equal,
+    // which is what "the same binary, only the data changed" means.
+    let fingerprint = |text: &str| {
+        text.lines()
+            .filter(|line| !line.starts_with("guard self-check population:"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    assert_eq!(
+        fingerprint(&recorded[&populations[0]]),
+        fingerprint(&recorded[&populations[1]]),
+        "the two populations must expose the same guard surface"
+    );
+}
+
+#[test]
+fn documents_flag_is_refused_outside_the_self_check() {
+    let output = Command::new(example_binary())
+        .args(["--documents", "7"])
+        .current_dir(repo_root())
+        .output()
+        .expect("run the release probe example with --documents but no --self-check");
+    assert!(
+        !output.status.success(),
+        "--documents outside --self-check must fail closed"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("--documents is only meaningful together with --self-check"),
+        "the refusal must name the argument:\n{stderr}"
+    );
+}
+
+#[test]
+fn zero_document_self_check_is_refused() {
+    let output = Command::new(example_binary())
+        .args(["--self-check", "--documents", "0"])
+        .current_dir(repo_root())
+        .output()
+        .expect("run the release probe guard self-check at population 0");
+    assert!(
+        !output.status.success(),
+        "a zero-document population must be refused, not reported as a vacuous pass"
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("a zero-document population is not a probe"),
+        "the refusal must name the reason:\n{stdout}"
+    );
+}
+
+#[test]
+fn artifact_audit_refuses_a_data_population_that_left_the_frozen_table() {
+    let report = load_committed_artifact();
+    let manifest = manifest_yaml();
+    let expected_digest = recompute_identity_digest(
+        &yaml_at(&manifest, "external_holdout_contract")["release_probe"],
+    );
+    let margins = declared_margins(&manifest);
+    let declared = declared_population();
+    assert!(
+        artifact_errors(&report, &expected_digest, &margins, declared).is_empty(),
+        "the committed artifact must pass at the declared population"
+    );
+    // DATA moved off the frozen table: the audit refuses by name instead of
+    // comparing the artifact against a stale table.
+    assert_eq!(
+        artifact_errors(&report, &expected_digest, &margins, declared + 2),
+        vec!["probe:reference_population.frozen_table_drift".to_string()],
+        "a population that left the frozen table must be refused by name"
     );
 }
 

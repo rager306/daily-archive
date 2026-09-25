@@ -3558,18 +3558,26 @@ fn mutants(report: &Json, document_count: usize) -> Vec<(&'static str, Json)> {
     out
 }
 
+/// The default synthetic self-check population.  Deliberately independent of the
+/// repo: the self-check proves the guard predicate over code-built fixtures, so
+/// it reads no manifest.  The count flows through the `synthetic_pair` parameter
+/// and the `--documents` flag, so the guard matrix can be exercised at any
+/// population size (the N=5/N=7 scalability proof) with no code change.
+const SYNTHETIC_DOCUMENT_COUNT: usize = 5;
+
 /// The hermetic guard matrix: the unmutated synthetic report must be clean, and
 /// each declared guard must fire on its own mutant.  No repo read, no network,
 /// no write, no log surface.
-/// The synthetic self-check population.  Deliberately independent of the repo:
-/// the self-check proves the guard predicate over code-built fixtures, so it
-/// reads no manifest.  The count flows through the `synthetic_pair` parameter, so
-/// the guard matrix can be exercised at any population size (the N=5/N=7
-/// scalability proof).
-const SYNTHETIC_DOCUMENT_COUNT: usize = 5;
-
-fn self_check() -> bool {
-    let document_count = SYNTHETIC_DOCUMENT_COUNT;
+fn self_check(document_count: usize) -> bool {
+    if document_count == 0 {
+        // A zero-document population cannot exercise a population guard: refuse
+        // rather than report a vacuous matrix.
+        println!("guard self-check: a zero-document population is not a probe");
+        return false;
+    }
+    // Record the exercised population first: a failing run must still say which
+    // population failed.
+    println!("guard self-check population: {document_count} documents");
     let (valid, expected) = synthetic_pair(document_count);
     let baseline = report_errors(&valid, &expected);
     if !baseline.is_empty() {
@@ -3627,6 +3635,12 @@ struct Args {
     /// Run the hermetic guard self-check (no repo read, no network, no write).
     #[arg(long)]
     self_check: bool,
+    /// The synthetic population the hermetic guard self-check exercises.  DATA,
+    /// not a compiled-in constant: the same binary proves the guard matrix at any
+    /// N (defaults to `SYNTHETIC_DOCUMENT_COUNT`).  Only meaningful together with
+    /// `--self-check`.
+    #[arg(long, value_name = "N")]
+    documents: Option<usize>,
     /// Print the per-document profile and the aggregate to stdout.
     #[arg(long)]
     print: bool,
@@ -3763,11 +3777,16 @@ fn main() -> anyhow::Result<()> {
     // whole process.  `--self-check` is a pure predicate matrix with no repo,
     // network or log surface, so it deliberately runs before the root is opened.
     if args.self_check {
-        return if self_check() {
+        let document_count = args.documents.unwrap_or(SYNTHETIC_DOCUMENT_COUNT);
+        return if self_check(document_count) {
             Ok(())
         } else {
             std::process::exit(1)
         };
+    }
+    if args.documents.is_some() {
+        eprintln!("--documents is only meaningful together with --self-check");
+        std::process::exit(2);
     }
     if args.report.is_none() {
         eprintln!(
