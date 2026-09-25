@@ -7,11 +7,19 @@ This directory contains a compact, source-bound review of the daily-archive Rust
 **M511-j7wz2f** запланирована владельцем по новому [аудиту абсорбции](grobid-absorption-audit-2026-09-21.md).
 Воспроизведены Accepted с повреждённым XML и висячей bibliography-ссылкой;
 исторические закрытые GAR-записи не означают отсутствия этих новых дефектов.
-[Roadmap governor](grobid-absorption-roadmap-2026-09-21.yaml) и
-[H14–H21](grobid-absorption-followup.json) — план, не доказательство реализации.
-GSD S01–S09 задают исполнение; ADR-076 §14–§15 фиксируют границы.
-Production promotion и снятие D127 не разрешены. Human release — только
-настоящим ответом владельца; GAR-015 автоматически не закрывается.
+Измерено на 2026-09-25: S01–S08 измерены (аудит, разделы §S01–§S08), H14–H21
+**не** закрыты — ни одна стадия не переведена в `complete` и ни один
+`implementation_pass`/`verification_pass` не выставлен в `true`; ни один PASS не
+выдуман. Исторический RED S05/T06 (`population_contract_enumerates_every_shadow_report`)
+снят S05/T07 приведением corpus-артефакта к GAR-006-разбиению
+reference/executed/evaluated и текущим остатком не является. Ревизия
+квалификации — `6a384227…`; тот же литерал стоит в `reviewed_source`
+[roadmap governor](grobid-absorption-roadmap-2026-09-21.yaml) (correction C12).
+[H14–H21](grobid-absorption-followup.json) остаются планом, а не доказательством
+реализации. Замки сохранены: `import_eligible=false`, `deployed=false`,
+`production_route=forbidden`, `graph_write=forbidden`, `auto_promote=forbidden`,
+D127 закрыт. Production promotion и снятие D127 не разрешены. Human release —
+только настоящим ответом владельца; GAR-015 автоматически не закрывается.
 
 ### M511-j7wz2f/S01/T01 — RED зафиксирован как исполняемая регрессия
 
@@ -190,15 +198,19 @@ apart from production corpora with the declared per-document margins and
 record a named human reviewer's release decision; citation stays blocked until
 then. Its claim, title, risk and acceptance criteria are unchanged.
 
-A planning-only long-horizon register now lives in
-`grobid-rust-horizon-review.json` (stages H01..H13, all unresolved by default).
-It records the GROBID-to-Rust migration waves with per-stage ADR refs, separate
-implementation and verification evidence, tested source, GitNexus/CBM freshness
-(recorded here as a documented staleness limitation), negative tests and
-ADR-051 matrix rows. `claim_scope: planning` forbids every stage from claiming an
-implementation PASS; a closure claim needs `claim_scope: evidence` plus
-machine-verifiable `completion_evidence`. Its DATA contract is
-`scripts/governor/checks/grobid_rust_horizon_review.yaml`.
+A long-horizon register lives in `grobid-rust-horizon-review.json`: measured
+2026-09-25 it holds 13 stages — 12 complete / 1 in_progress (H05) — and is no
+longer the all-unresolved default it was created with. It records the
+GROBID-to-Rust migration waves with per-stage ADR refs, separate implementation
+and verification evidence, tested source, GitNexus/CBM freshness (recorded here
+as a documented staleness limitation), negative tests and ADR-051 matrix rows.
+The document is registered with `claim_scope: evidence`: a completed stage needs
+machine-verifiable `completion_evidence` and an explicit verification PASS, while
+the one unresolved stage (H05) still claims no PASS and is not implementation
+evidence. Its DATA contract is
+`scripts/governor/checks/grobid_rust_horizon_review.yaml`; `governor review` over
+that contract is exit=0 with `stages=13 unresolved=1 complete=12 claims=12`,
+`unassigned_unresolved=1 open_items=1`.
 
 M397 closed canonical composition, StageId, cache source/profile/schema identity, revision-owned corpus materialization and cross-command equivalence. Subsequent waves closed the remaining register rows: M398 temporal AST (PIR-006..PIR-012), M399 live ACAP/promotion/scheduler (PIR-014..PIR-016), M400 multimodal graph candidates (PIR-018..PIR-020), M401 honest multi-process read plane plus read-only verified agent loop (PIR-017, PIR-021). A 200-paper corpus rebuild/seal is still an operational follow-up, not a finding in this register.
 
@@ -233,9 +245,11 @@ A revision-aware corpus rebuild and honest ontology acceptance remain operationa
 | `grobid-absorption-review-2026-09-10.jsonl` | Active corrective register GAR-001..GAR-016: 1 unresolved / 15 enclosed; the four P0 findings (GAR-001, GAR-003, GAR-004, GAR-011) were closed by M508-g9b5gi/S05, the eight P1 findings (GAR-005..GAR-009, GAR-012..GAR-014) by M509-yzblqx S01..S05, and GAR-010 and GAR-016 by M510-jsg1pj S02/S01. The single open record GAR-015 is an accepted open item owned by M502-2w7y8k/S09 (external holdout not executed, human release decision pending) |
 | `grobid-absorption-review-2026-09-10.schema.json` | JSON Schema Draft 2020-12 for each GAR record, including `completion_evidence` for enclosed findings |
 | `grobid-absorption-review-2026-09-10-summary.md` | Human-readable audit summary, exclusions and ADR correction matrix |
-| `grobid-rust-horizon-review.json` | Planning-only long-horizon register: H01..H13, unresolved by default; no stage may claim a PASS |
+| `grobid-rust-horizon-review.json` | Long-horizon register (measured 2026-09-25): 12 complete / 1 in_progress (H05), `claim_scope: evidence`; only a stage with `completion_evidence` and a verification PASS claims closure |
 | `grobid-rust-horizon-review.schema.json` | JSON Schema Draft 2020-12 for the horizon registry document |
-| `manifest.yaml` | Dataset identity, standards, policy and Governor integration |
+| `manifest.yaml` | Dataset identity, standards, policy and Governor integration; `last_assessed_at: 2026-09-25`, `current_state` carries the measured S09 reconciliation (H14..H21 unresolved, GAR-015 open, label resolved typologically, no lock changed) |
+| `grobid-absorption-roadmap-2026-09-21.yaml` | Governor-consumable `horizon-json-v1` wrapper over the H14..H21 follow-up registry: `reviewed_source` equals the audit qualification revision, corrections C01..C12, `measured_state` (locks, parity ledger, tests, horizon) and the typed `revision_label_resolution`; validated by `governor review --registry <this file>` (exit=0, claims=0) |
+| `grobid-absorption-followup.json` | Planning-only H14..H21 follow-up registry (`claim_scope: planning`): all eight stages unresolved, `implementation_pass=false` / `verification_pass=false`, owners `unassigned`; H18 and H21 name their honest remaining residues without citing a cleared RED or a resolved label discrepancy |
 | `HUMAN-REVIEW-TEMPLATE.md` | Evidence-first disposition template for a human reviewer |
 | `README.md` | Usage, lifecycle and reusable LLM review prompt |
 

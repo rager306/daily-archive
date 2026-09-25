@@ -45,7 +45,12 @@ dimension: scholarly_parse_plane
 severity: medium
 anchor: "ADR-075 назначение, ADR-076 honesty freeze, H14..H21 follow-up, H05 accepted open item"
 created_at: "2026-09-21"
-reviewed_source: "feat/da-parse @ bcdd0cfc5e34f64821798463fe23b2f3845efe56"
+# S09 (2026-09-25) пере-пинил reviewed_source на ревизию квалификации, записанную
+# в audit-строке `Ревизия квалификации:` (doc/review/grobid-absorption-audit-2026-09-21.md).
+# Литерал скопирован оттуда, а не перечитан из git: кросс-поверхностная проба
+# сверяет audit-строку и это поле строгим равенством (T04), поэтому источник
+# истины — audit, а не текущий HEAD.
+reviewed_source: "feat/da-parse @ 6a384227a9579a21933e4a0757c1abfb10831b7b"
 
 # ---------------------------------------------------------------------------
 # registry — контракт для диспетчера и адаптера grobid_horizon_review.
@@ -133,7 +138,35 @@ measured_state:
     mutations: {declared: 20, detected: 20, survived: 0}
     observed_checkout_revision: 523bb8e97f357e93682dc4eaa6d22faa8b5b93de
     capture_declared_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
-    revision_label_discrepancy_resolved: false
+    revision_label_discrepancy_resolved: true
+    # Разрешение H21-остатка revision label (S09). Не контрадикция: rollback-метка
+    # именует Java-образ, capture-declared revision — байты, которые объявляют
+    # capture-артефакты, observed checkout revision — дерево, против которого
+    # пере-хэшированы запиннутые java_sources. Привязка идёт по content sha256,
+    # поэтому расхождение ярлыка — не отказ паритета.
+    revision_label_resolution:
+      binding_authority: content_sha256
+      resolved_by: M511-j7wz2f/S09
+      resolved_at: "2026-09-25"
+      identities:
+        - identity: authority_label
+          value: "java-grobid-http@0.9.0-crf"
+          kind: rollback_target_label
+        - identity: capture_declared_revision
+          value: "0b0ab53b159b32792a01fca1d9d04fd02cf8b24b"
+          kind: capture_declared_revision
+        - identity: observed_checkout_revision
+          value: "523bb8e97f357e93682dc4eaa6d22faa8b5b93de"
+          kind: content_bound_checkout_revision
+      kinds_are_distinct: true
+      evidence:
+        - "S07/T06: 16/16 java_sources sha256 пере-вычислены против vendor-дерева, 0 расхождений, 0 отсутствующих"
+        - "S08: live /api/version отдал 0.9.1 при rollback-метке java-grobid-http@0.9.0-crf; fallback_target — rollback"
+      carrier_untouched: true
+      carrier_note: >
+        Носитель data/parse/grobid_compatibility.yaml этой записью не
+        редактировался и его digest не пере-пинился: разрешение типизировано в
+        review-поверхности, а не правкой DATA-носителя.
     denominators_recomputed_by_governor: true
     # Замер S07/T01–T05 (2026-09-24). Счётчики сверяются governor-проверкой
     # с носителем, а не с этой записью; absent_scope_breakdown берётся из
@@ -152,8 +185,8 @@ measured_state:
       unknown_rights: blocked
   tests:
     command: "cargo test -p da-parse --tests"
-    measured_at: "2026-09-24"
-    suites: 112
+    measured_at: "2026-09-25"
+    suites: 114
     # S01/T01 (2026-09-21) дал базовые 1352 passed / 1 ignored, где ignored —
     # целевой гейт preserved_tei_composition_is_independently_well_formed (RED).
     # S01/T02 снял #[ignore] и заменил RED-пин независимой консервацией, S01/T03
@@ -163,10 +196,10 @@ measured_state:
     # markup-aware DOCTYPE и pinned лимиты 4 MiB/128; ниже — свежий замер после
     # этих правок (исторические счётчики относятся к S01/T01 и S01/T03 и
     # сохранены в C07/C08).
-    passed: 1489
+    passed: 1508
     ignored: 0
     failed: 0
-    test_files_in_crates_da_parse_tests: 111
+    test_files_in_crates_da_parse_tests: 113
     # S06/T06 (2026-09-24) переизмерил полный набор после S05: 110 suites /
     # 1470 passed / 0 failed / 0 ignored, и целевой гейт
     # population_contract_enumerates_every_shadow_report снова зелёный (RED
@@ -185,7 +218,10 @@ measured_state:
     # Замер 2026-09-21 (см. C04). S07/T05 файловый tag-census НЕ переизмерял:
     # определение подсчёта не машинно-закреплено, поэтому число не выдаётся за
     # свежее. Свежие прямые счётчики S07/T05 — 111 top-level тестовых файлов
-    # (112 suites = lib + 111 таргетов).
+    # (112 suites = lib + 111 таргетов). На S09/T02 (2026-09-25) прямой счёт
+    # `ls crates/da-parse/tests/*.rs` даёт 113 файлов, а набор — 114 suites
+    # (lib + 113 таргетов); file_tag_counts по-прежнему не переизмерен в S09 и
+    # остаётся замером 2026-09-21.
     file_tag_counts_measured_at: "2026-09-21"
     file_tag_counts_not_remeasured_in_s07: true
   horizon:
@@ -204,14 +240,25 @@ measured_state:
 
 # ---------------------------------------------------------------------------
 # index_freshness — индексы кода на момент правки (не выдавать stale за fresh).
+# Замер S09/T03 (2026-09-25): GitNexus переиндексирован на текущем HEAD.
 # ---------------------------------------------------------------------------
 index_freshness:
   state: fresh
+  measured_at: "2026-09-25"
   gitnexus:
     state: rebuilt
-    reason: "Повтор с buffer pool 4 GiB завершён успешно; CLI context выполнен"
-    indexed_commit: bcdd0cf
-    current_commit: bcdd0cf
+    reason: >
+      Первая попытка `node .gitnexus/run.cjs analyze --index-only` упала на
+      дефолтном buffer pool 863 MiB (LadybugDB COPY исчерпал пул); повтор с
+      документированным GITNEXUS_LBUG_BUFFER_POOL_SIZE=4294967296 (4 GiB)
+      завершился успешно (RC=0, ~293s).
+    indexed_commit: d2e663617b8f21871d22a39c0fbfdfe2e80c0bb4
+    current_commit: d2e663617b8f21871d22a39c0fbfdfe2e80c0bb4
+    files: 21052
+    nodes: 84083
+    edges: 136601
+    processes: 652
+    indexed_at: "2026-09-25T04:36:45Z"
   codebase_memory:
     project: root-daily-archive
     commit: bcdd0cfc5e34f64821798463fe23b2f3845efe56
@@ -219,18 +266,22 @@ index_freshness:
     nodes: 499260
     edges: 644211
     artifact: .codebase-memory/artifact.json
+    state: stale
+    note: >
+      CBM в S09 не переиндексировался: блок сохранён как замер 2026-09-21 на
+      bcdd0cf и не выдаётся за свежий. Общая свежесть держится на GitNexus.
   mcp:
     state: partial
-    note: "CBM MCP trace_path/check_index_coverage выполнены; GitNexus MCP Connection closed, использован CLI."
+    note: "GitNexus MCP по-прежнему недоступен (Connection closed), использован CLI; CBM MCP trace_path/check_index_coverage выполнены ранее."
   limitation: >
-    GitNexus переиндексирован: 81431 узел, 130142 ребра, 639 flows.
-    CLI context не показывает callers композитора, CBM показывает 13.
-    CBM реиндексирован: 499260 узлов / 644211 рёбер. Свежесть не означает
-    полноту связей; результаты сверены с исходниками и Rust probe.
-    S01/T02, S01/T03, S01/T04, S01/T05 и S01/T06 правили тела композитора после
-    этого снимка: символов не добавлялось и не переименовывалось, но
-    соответствие тел индексу не пересобиралось — это названное ограничение, а
-    не свежесть.
+    GitNexus переиндексирован на d2e66361: 84083 узла, 136601 ребро, 652
+    процесса, 21052 файла. Свежесть не означает полноту связей: GitNexus
+    incoming остаётся пустым для отдельных символов, тогда как CBM и исходники
+    показывают вызывающих; часть callable-value-flow кандидатов отброшена по
+    cap=32, а процессы сообщили 652 flow при 5339 из 5539 кандидатных entry
+    points, никогда не прошедших ранжирование — это названные ограничения
+    покрытия, а не утверждение полноты. CBM остался на замере 2026-09-21
+    (bcdd0cf) и в S09 не переиндексировался.
 
 # ---------------------------------------------------------------------------
 # corrections — что именно исправлено относительно предыдущей редакции.
@@ -436,6 +487,41 @@ corrections:
       complete=0 claims=0.
     evidence: artifacts/parse_compat/external_holdout_release_probe.json
 
+  - id: C12
+    previous: >
+      Review-поверхности несли состояние S08: `reviewed_source` держался на
+      `bcdd0cfc5…`, `measured_state.tests` — на 112 suites / 1489 passed
+      (замер S07/T05), `parity_ledger.revision_label_discrepancy_resolved` был
+      `false`, а `index_freshness.state: fresh` ссылался на `current_commit:
+      bcdd0cf` при движущемся HEAD; manifest был датирован 2026-09-19, а README
+      описывал горизонт как «H01..H13, all unresolved by default».
+    corrected: >
+      S09 (2026-09-25) согласовал review-поверхности с измеренным состоянием
+      S01–S08, не закрывая ни одной стадии H14–H21 и не меняя ни одного замка.
+      Свежий audit-раздел `M511-j7wz2f/S09` фиксирует: полный набор
+      `cargo test -p da-parse --tests` — 114 suites / 1508 passed / 0 failed /
+      0 ignored на ревизии квалификации `6a384227…`; исторический RED S05/T06
+      (`population_contract_enumerates_every_shadow_report`) снят S05/T07
+      приведением corpus-артефакта к GAR-006-разбиению
+      reference/executed/evaluated и текущим не является. Ledger паритета:
+      38 строк == 38 capabilities, 16 пиннутых `java_sources`, мутационная
+      матрица 20 declared / 20 detected / 0 survived. Замороженная внешняя
+      проба: 5 документов, sha256
+      30479a606720bcd03cd87348ec9f16b13a75dfbd4e32376dda64a7c1fed6eefa.
+      Бюджет батча: пик удержанных байт 61146 B внутри потолка 262144 B.
+      Governance pytest на S09/T02 — 469 passed. `governor review` — exit=0 с
+      claims=0. Расхождение revision label разрешено типизированно (см.
+      `measured_state.parity_ledger.revision_label_resolution`): авторитет —
+      `content_sha256`, а не ярлык, и носитель не редактировался. GAR-015
+      остаётся единственной открытой записью; человеческое релизное решение
+      pending (`reviewer=null`, `decision=pending`). Ревизия квалификации
+      закреплена в `reviewed_source` и сверяется с audit-строкой `Ревизия
+      квалификации:` кросс-поверхностной пробой (T04). Полный `governor
+      architecture` измеряется финальным прогоном S09/T04 и фиксируется там,
+      а не выводится из прозы этой записи; `index_freshness` приведён к
+      измеренному GitNexus-состоянию, а не к заявленному `fresh`.
+    evidence: doc/review/grobid-absorption-audit-2026-09-21.md
+
 # ---------------------------------------------------------------------------
 # validation_commands — как воспроизвести проверку (read-only).
 # ---------------------------------------------------------------------------
@@ -447,7 +533,7 @@ validation_commands:
   # полный набор 1374 passed, и два остаточных класса закрыты (см. C08);
   # S07/T05 (2026-09-24) переизмерил тот же набор после S07/T01–T04 (см. C10).
   - command: "cargo test -p da-parse --tests"
-    expected: "1489 passed; 0 failed; 0 ignored; 112 suites (замер S07/T05, 2026-09-24)"
+    expected: "1508 passed; 0 failed; 0 ignored; 114 suites (свежий замер S09/T02, 2026-09-25; исторический S07/T05 — 1489 passed / 112 suites, см. C10)"
   - command: "cargo test -p da-parse --test grobid_parity_ledger_contract"
     expected: "14 passed; 0 failed; 0 ignored (три звена на full-строку, scope == product_scope, absent-строки названы, подмена scope ловится)"
   - command: "cargo test -p da-parse --test grobid_parity_ledger_mutations -- --nocapture"
@@ -464,3 +550,16 @@ validation_commands:
     expected: "8 passed; 0 failed; 0 ignored (well-formed инвариант, правописание xml:id)"
   - command: "python3 -c \"import json,sys,jsonschema;d=json.load(open('doc/review/grobid-absorption-followup.json'));s=json.load(open('doc/review/grobid-rust-horizon-review.schema.json'));jsonschema.Draft202012Validator(s).validate(d);print('schema-ok')\""
     expected: "schema-ok"
+  # S09/T02 (2026-09-25): governance pytest держит кросс-поверхностный census.
+  # 469 passed — измеренное значение на ревизии квалификации; S09/T04 добавляет
+  # >=8 новых проб и переизмеряет число (>=477), обновляя эту строку.
+  - command: "PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q"
+    expected: "exit=0; 469 passed (замер S09/T02, 2026-09-25; S09/T04 переизмеряет при >=477)"
+  - command: "PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q"
+    expected: "exit=0; fail-closed поведение governor"
+  - command: "PYTHONPATH=scripts python3 -m governor --validate-yaml"
+    expected: "PASS"
+  - command: "PYTHONPATH=scripts python3 -m governor --phase preflight"
+    expected: "exit=0"
+  - command: "PYTHONPATH=scripts python3 -m governor architecture"
+    expected: "ARCHITECTURE GATE: PASS с измеренным GATE_RC=0 (полный прогон — финальная квалификация S09/T04, вне in-band cap)"

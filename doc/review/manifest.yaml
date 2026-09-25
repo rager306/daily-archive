@@ -5,9 +5,9 @@ created_at: '2026-08-14'
 language: ru
 status: active
 source_revision: git:6f328bdfb9b136deecd0ded7917c086e8ad5899b
-last_assessed_at: '2026-09-19'
+last_assessed_at: '2026-09-25'
 assessment_baseline: 'PIR recomputed from JSONL after M401-itcqhx/S05 T03 (22 resolved / 0 open). GAR-001..GAR-016 were added 2026-09-10 as an independent controlled absorption review at source revision git:6f328bdfb9b136deecd0ded7917c086e8ad5899b: 15 unresolved / 1 enclosed (GAR-002 superseded administrative correction). PIR records stay historical; the GAR registry is the active corrective register.'
-current_state: 'GAR registry: 1 unresolved / 15 enclosed. After M509-yzblqx closed the eight P1 findings GAR-005..GAR-009 and GAR-012..GAR-014 through slices S01..S05 on 2026-09-18, wave M510-jsg1pj re-executed each remaining priority-two finding''s recorded verification at the current tree on 2026-09-19 and closed GAR-016 (UAT verdict lineage, delivered by M510-jsg1pj/S01) and GAR-010 (prompt normatives, delivered by M510-jsg1pj/S02) with six-key completion_evidence. The fifteen enclosed records are the 4 P0 closures of M508-g9b5gi/S05, those 8 P1 closures, the pre-existing GAR-002 supersession and those 2 P2 closures. The single open record is GAR-015 (external holdout remains unexecuted with no acceptance statistics or release evidence): its probe is external_holdout_contract.execution_status=not_executed and its human release decision is pending with reviewer=null, so it is recorded as an accepted open item with owner M502-2w7y8k/S09, a reason and a closure condition under long_horizon.next_wave.deferred_findings, not reworded into closure.'
+current_state: 'GAR registry: 1 unresolved / 15 enclosed. After M509-yzblqx closed the eight P1 findings GAR-005..GAR-009 and GAR-012..GAR-014 through slices S01..S05 on 2026-09-18, wave M510-jsg1pj re-executed each remaining priority-two finding''s recorded verification at the current tree on 2026-09-19 and closed GAR-016 (UAT verdict lineage, delivered by M510-jsg1pj/S01) and GAR-010 (prompt normatives, delivered by M510-jsg1pj/S02) with six-key completion_evidence. The fifteen enclosed records are the 4 P0 closures of M508-g9b5gi/S05, those 8 P1 closures, the pre-existing GAR-002 supersession and those 2 P2 closures. The single open record is GAR-015 (external holdout remains unexecuted with no acceptance statistics or release evidence): its probe is external_holdout_contract.execution_status=not_executed and its human release decision is pending with reviewer=null, so it is recorded as an accepted open item with owner M502-2w7y8k/S09, a reason and a closure condition under long_horizon.next_wave.deferred_findings, not reworded into closure. Assessed again 2026-09-25 under wave M511-j7wz2f/S09: the H14..H21 follow-up register is still planning-only — all eight stages remain unresolved with implementation_pass=false and verification_pass=false, none was closed, and every canonical artifact remains digest-pinned; the revision-label discrepancy behind H21 is resolved typologically by content sha256 (rollback target label java-grobid-http@0.9.0-crf, capture-declared revision 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b, observed checkout revision 523bb8e97f357e93682dc4eaa6d22faa8b5b93de) without editing the DATA carrier data/parse/grobid_compatibility.yaml or re-pinning its digest; GAR-015 stays the single open record with the human release decision still pending (reviewer=null, decision=pending); the qualification revision and the measured corpus digest are recorded in doc/review/grobid-absorption-audit-2026-09-21.md (sections S05/S09) and doc/review/grobid-absorption-roadmap-2026-09-21.yaml (C12). No lock changed.'
 format:
   primary: jsonl
   rationale: One atomic finding per line supports streaming LLM review, stable diffs, independent schema validation, and status tracking.
@@ -100,11 +100,15 @@ long_horizon:
     registry: doc/review/grobid-rust-horizon-review.json
     contract: scripts/governor/checks/grobid_rust_horizon_review.yaml
     stage_range: H01..H13
-    claim_scope: planning
+    claim_scope: evidence
     statement: >-
-      Planning-only long-horizon register. Stages are unresolved by default and
-      no stage may claim an implementation PASS without claim_scope=evidence and
-      current completion evidence. Unresolved stages are not implementation evidence.
+      Long-horizon register, reconciled 2026-09-25 (measured: 12 complete / 1
+      in_progress, H05). The document is registered with claim_scope=evidence:
+      a completed stage carries machine-verifiable completion_evidence and an
+      explicit verification PASS, while an unresolved stage still claims no PASS
+      and is not implementation evidence. At creation the register was
+      claim_scope=planning with all stages unresolved; that earlier default no
+      longer describes it and is not re-asserted here.
   waves:
     - id: M398-cz4pzx
       title: Temporal AST correctness
