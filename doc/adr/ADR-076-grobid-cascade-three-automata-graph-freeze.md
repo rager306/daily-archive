@@ -744,19 +744,28 @@ production-достижимость не заявляется.
 найдено; все сужения допуска (полосная дефиниция title ×3 и один реальный
 `<persName>`, отвергнутый `NativePersonalNameParser` как `ambiguous:single_token`)
 названы типизированно. Мутационная матрица S05/T03: 12 declared, 12 detected,
-0 survived. Runtime-артефакт S05/T04 byte-детерминирован (`efc1984c…`),
-`--self-check` доказывает 8 guard-ов; governor S05/T05 держит digest и identity
+0 survived. Runtime-артефакт S05/T04 byte-детерминирован; измеренный с диска
+`artifacts/parse_compat/native_fulltext_corpus_shadow.json` несёт digest
+`1f2a24953e79481fc704d991be47ecc266f35c931d84b21b21148416138b8d27` (S05/T07
+привёл форму к GAR-006-разбиению и пере-пинил значение; прежний digest относился
+к форме до S05/T07 и в этой секции не воспроизводится), `--self-check`
+доказывает 8 guard-ов; governor S05/T05 держит digest и identity
 `native-fulltext-corpus-shadow.v1` в обеих поверхностях и итерирует оба
 composition-артефакта.
 
-**Названный RED (S05/T06).** Собственный набор среза `cargo test -p da-parse --tests`
-— **exit 101**: `data_contracts::population_contract_enumerates_every_shadow_report`
-падает, потому что corpus-артефакт попадает под GAR-006 glob
-`artifacts/parse_compat/*_shadow.json`, но его форма (`denominators` + `corpus`,
-без reference/executed/evaluated-разбиения), предписанная S05/T04, не может быть
-объявлена в `population_contract`: измерено пять контрактных ошибок (3
-отсутствующих блока + 2 запрещённых legacy-блока). Это конфликт внутри плана S05,
-а не дефект композитора. PASS не выдуман: H18 остаётся `pending`.
+**Исторический RED (S05/T06), снятый S05/T07.** На момент T06 собственный набор
+среза `cargo test -p da-parse --tests` давал **exit 101**:
+`data_contracts::population_contract_enumerates_every_shadow_report` падал, потому
+что corpus-артефакт попадал под GAR-006 glob `artifacts/parse_compat/*_shadow.json`,
+но его форма (`denominators` + `corpus`, без reference/executed/evaluated-разбиения),
+предписанная S05/T04, не могла быть объявлена в `population_contract`: измерено
+пять контрактных ошибок (3 отсутствующих блока + 2 запрещённых legacy-блока). Это
+был конфликт внутри плана S05, а не дефект композитора. RED **снят в S05/T07**:
+corpus-артефакт приведён к GAR-006-разбиению reference/executed/evaluated, целевой
+гейт `population_contract_enumerates_every_shadow_report` снова зелёный, а полный
+набор `cargo test -p da-parse --tests` (замер S07/T05) — **112 suites / 1489
+passed / 0 failed / 0 ignored**. Измеренные числа RED сохранены как история
+ревизии, а не как текущее состояние. PASS не выдуман: H18 остаётся `pending`.
 
 **Наблюдаемость.** `cargo test -p da-parse --test native_fulltext_corpus_semantics -- --nocapture`
 печатает per-fixture/per-class отчёт (только счётчики) и именованные admission-gap
@@ -952,4 +961,53 @@ GAR-015 остаётся `open`. Проверка:
 `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml`
 (`stages=8 unresolved=8 complete=0 claims=0`), `governor --phase preflight`
 (exit 0), `pytest scripts/tests/test_scholarly_parse_governance.py`.
+
+## 23. Корректировка 2026-09-25: согласование документов и независимая квалификация (M511-j7wz2f/S09)
+
+Секция не закрывает ни одну стадию H14–H21 и не меняет ни один замок: она
+приводит документы в соответствие с уже измеренным состоянием S05–S08 и
+добавляет независимую машинную квалификацию на текущей ревизии источника.
+История S01–S08 не переписывается: §14–§22 остаются как были.
+
+**Что согласовано (без пере-вывода чисел).**
+
+- Digest corpus-артефакта S05: прежнее значение относилось к форме до
+  GAR-006-перевода; измеренный с диска
+  `artifacts/parse_compat/native_fulltext_corpus_shadow.json` несёт
+  `1f2a24953e79481fc704d991be47ecc266f35c931d84b21b21148416138b8d27`, и это же
+  значение запиннено в governor-поверхностях (`bindings.canonical_artifacts` +
+  зеркальная фикстура). §19 пере-пинен на измеренное значение.
+- RED S05/T06 (`data_contracts::population_contract_enumerates_every_shadow_report`,
+  exit 101) помечен в §19 как историческая запись, снятая S05/T07 приведением
+  corpus-артефакта к GAR-006-разбиению reference/executed/evaluated. Целевой
+  гейт снова зелёный; полный набор `cargo test -p da-parse --tests` (замер
+  S07/T05) — 112 suites / 1489 passed / 0 failed / 0 ignored.
+- Типизированное разрешение ревизионного ярлыка: rollback-метка
+  (`java-grobid-http@0.9.0-crf`), capture-declared revision (`0b0ab53b…`) и
+  наблюдаемая checkout-ревизия (`523bb8e9…`) — три идентичности с РАЗНЫМИ
+  `kind`; авторитет привязки — `content_sha256`, а не ярлык (S07/T06: 16/16
+  sha256-match против vendor-дерева; S08: live `/api/version` 0.9.1).
+  DATA-носитель `data/parse/grobid_compatibility.yaml` при этом НЕ редактируется
+  и его digest не пере-пинится.
+- H14–H21 остаются незакрытыми: ни одна стадия не переведена в complete, ни одна
+  planning-запись не несёт `implementation_pass=true` или
+  `verification_pass=true`.
+
+**Независимая квалификация.** На текущей ревизии источника выполняется
+кросс-поверхностная машинная проба над самими review-поверхностями (пины ==
+sha256 диска, census замков, честность незакрытых стадий, pending человеческого
+гейта, равенство ревизий) и финальный прогон cargo/governor/pytest. Машиночитаемая
+запись — `doc/review/grobid-absorption-audit-2026-09-21.md`
+(`### Свидетельства среза M511-j7wz2f/S09`, строка `Ревизия квалификации: <40-hex>`)
+и correction `C12` в `doc/review/grobid-absorption-roadmap-2026-09-21.yaml`;
+`reviewed_source` roadmap равен ревизии из audit-строки (кросс-поверхностное
+равенство, без вызова `git`).
+
+**Что это НЕ значит.** Никакого promotion, import или graph write не заявлено;
+D127 не снят. `deployed=false`, `import_eligible=false`,
+`production_route=forbidden`, `graph_write=forbidden`, `auto_promote=forbidden`
+сохраняются без изменений. Java GROBID остаётся TEI oracle и rollback target;
+разрешение M511 не является разрешением снять D127. Названные остатки вне среза:
+человеческое релизное решение H20/GAR-015 (`reviewer=null`, `decision=pending`) и
+Java-CPU H05 (`java_cpu_wall_clock_ns` против `grobid_sidecar_cgroup_cpuacct`).
 

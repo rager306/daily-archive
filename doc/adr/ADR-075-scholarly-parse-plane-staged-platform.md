@@ -2,7 +2,7 @@
 
 - Status: Accepted (amended 2026-09-04 by ADR-076 / D321)
 - Date: 2026-08-27
-- Updated: 2026-09-04 (M464 closed the platform, not the Java cascade; sequencing lives in ADR-076)
+- Updated: 2026-09-25 (§9 dated amendment: native cascade independently qualified on preserved corpus and frozen external probe; Java stays oracle/rollback. Prior: 2026-09-04 — M464 closed the platform, not the Java cascade; sequencing lives in ADR-076)
 - Deciders: repository owner + agent
 - Decisions: D294 (active learning; corrects D293), D295 (persistence boundary), D321 (three automata + graph freeze; ADR-076)
 - Milestone: M463-snmgcd (research), M464-z84in2 (platform), M465-sqt7w0 (cascade honesty waves)
@@ -357,3 +357,49 @@ and quarantine locks remain unchanged.
 - Docling: https://arxiv.org/abs/2408.09869
 - Local sources: `/root/vendor-source/grobid`,
   `/root/vendor-source/ruvector/crates/{ruvector-core,sona,ruvllm}`
+
+## 9. Dated amendment (2026-09-25) — native cascade independently qualified, Java remains the oracle/rollback target
+
+Added by M511-j7wz2f/S09. This amendment records measurement only. It
+authorizes no promotion, no import and no graph write; it does not lift D127 and
+does not move `production_route` off Java. Sections 1–8 are not rewritten.
+
+**What was measured (S05–S08, preserved substrates).**
+
+- S05 — independent semantic regression on the preserved corpus: 3
+  sha256-pinned preserved TEI documents, header/citation classes measured as
+  occurrence-net; aggregate TP=573, FN=0, FP=0, P=R=F1=1.000000,
+  admission_coverage=0.993068; 12/12 declared mutations detected, 0 survived.
+  The runtime artifact is byte-deterministic (`1f2a2495…`) and `--self-check`
+  proves 8 guards. The measured scope is exactly 3 documents, not a statistical
+  corpus; only 4 of 13 `CitationFieldRole` variants have a real biblStruct form
+  in it.
+- S06 — global batch budgets and bounded reorder: peak retained bytes 61146 B
+  within the declared ceiling 262144 B (`verdict: within_ceiling`); latency
+  p50 5 ms / p95 93 ms / p99 93 ms; peak RSS 21114880 B. The substrate is a
+  named local deterministic stub (`live_grobid_participated=false`), so
+  Java-CPU (`java_cpu_wall_clock_ns`) remains `not_observed` and H05 stays open.
+- S07 — parity ledger Java→Rust→test: 38 rows == 38 capabilities, 16 pinned
+  `java_sources` (logical path + sha256), contract 14 tests, mutation matrix
+  20 declared / 20 detected / 0 survived. The revision-label discrepancy is left
+  open here and resolved later (see below); 16 rows remain absent by
+  `product_scope` and are named, not claimed as parity.
+- S08 — frozen external holdout probe (bounded local proxy): 5 sha256-pinned
+  non-gold TEI, 731 source occurrences → 705 admitted → 705 conserved, 0 lost,
+  0 fabricated; 5/5 documents in agreement; 10/10 margin verdicts PASS. The lane
+  remains `not_executed` with `bytes_absent`; the probe is not citable as
+  external evidence and `external_rows_are_evidence=false`.
+
+**Revision label resolved typologically.** The rollback label
+(`java-grobid-http@0.9.0-crf`), the capture-declared revision (`0b0ab53b…`) and
+the observed checkout revision (`523bb8e9…`) are three identities of different
+`kind`, bound by `content_sha256` rather than by label. The DATA carrier is not
+edited and its digest is not re-pinned.
+
+**What this does not mean.** No stage is promoted and the candidate/quarantine
+locks are unchanged: `candidate`, `deployed=false`, `auto_promote=forbidden`,
+`promotion_receipt=forbidden`, `import_eligible=false`,
+`production_route=forbidden`, `graph_write=forbidden`. D127 remains closed.
+Java GROBID remains the TEI oracle and the rollback target. Human release
+decision (H20/GAR-015) and Java-CPU (H05) remain named open items outside this
+amendment.
