@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Pommerman: A Multi-Agent Playground</title>
+				<funder>
+					<orgName type="full">Facebook AI Research</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Cinjon</forename><surname>Resnick</surname></persName>
+							<email>cinjon@nyu.edu</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Rebellious Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wes</forename><surname>Nyu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Rebellious Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Eldridge</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Rebellious Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">David</forename><surname>Ha</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Denny</forename><surname>Britz</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jakob</forename><surname>Foerster</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Oxford</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Julian</forename><surname>Togelius</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Rebellious Labs</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Stanford University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joan</forename><surname>Bruna</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Oxford</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Pommerman: A Multi-Agent Playground</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D318A7D69DF1E63BABA82D04F2E47B1E</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T14:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We present Pommerman, a multi-agent environment based on the classic console game Bomberman. Pommerman consists of a set of scenarios, each having at least four players and containing both cooperative and competitive aspects. We believe that success in Pommerman will require a diverse set of tools and methods, including planning, opponent/teammate modeling, game theory, and communication, and consequently can serve well as a multi-agent benchmark. To date, we have already hosted one competition, and our next one will be featured in the NIPS 2018 competition track.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Why Pommerman</head><p>In this section, we provide our motivation and goals for both the Pommerman benchmark and the NIPS 2018 competition. Currently, there is no consensus benchmark involving either general sum game settings or settings with at least three players. Instead, recent progress has focused on two player zero-sum games such as Go and Chess. We believe that the Pommerman environment can assume this role for multi-agent learning. Additionally, we are organizing competitions for Pommerman because we believe that they are a strong way to push forward the state of the art and can contribute to lasting results for years to come.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Multi-Agent Learning</head><p>Historically, a majority of multi-agent research has focused on zero-sum two player games. For example, computer competitions for Poker and Go over the past fifteen years have been vital for developing methods culminating in recent superhuman performance <ref type="bibr" target="#b7">(Moravcík et al. 2017;</ref><ref type="bibr">Noam Brown 2017;</ref><ref type="bibr" target="#b1">Bowling et al. 2017;</ref><ref type="bibr" target="#b10">Silver et al. 2016</ref>). These benchmarks have also lead to the discovery of new algorithms and approaches like Monte Carlo Tree Search <ref type="bibr" target="#b12">(Vodopivec, Samothrakis, and Šter 2017;</ref><ref type="bibr" target="#b2">Browne et al. 2012;</ref><ref type="bibr" target="#b6">Kocsis and Szepesvári 2006;</ref><ref type="bibr" target="#b2">Coulom 2006)</ref> and Counterfactual Regret Minimization <ref type="bibr" target="#b14">(Zinkevich et al. 2008)</ref>.</p><p>We believe that an aspect restraining the field from progressing towards general-sum research and scenarios with more than two players is the lack of suitable environments. We propose Pommerman as a solution.</p><p>Pommerman is stylistically similar to Bomberman (Bomberman 1983), the famous game from Nintendo. At a high level, there are at least four agents all traversing a grid world. Each agent's goal is to have their team be the last remaining. They can plant bombs that, upon expiration, destroy anything (but rigid walls) in their vicinity. It contains both adversarial and cooperative elements. The Free-For-All (FFA) variant has at most one winner and, because there are four players, encourages research directions that can handle situations where the Nash payoffs are not all equivalent. The team variants encourage research with and without explicit communication channels, including scenarios where the agent has to cooperate with previously unseen teammates. The latter is a recently burgeoning subfield of multiagent learning <ref type="bibr" target="#b5">(Foerster et al. 2016;</ref><ref type="bibr">Resnick et al. 2018d;</ref><ref type="bibr" target="#b4">Evtimova et al. 2017;</ref><ref type="bibr" target="#b5">Foerster et al. 2017;</ref><ref type="bibr" target="#b7">Lewis et al. 2017;</ref><ref type="bibr" target="#b7">Mordatch and Abbeel 2017;</ref><ref type="bibr" target="#b6">Lazaridou et al. 2018</ref>) with established prior work as well <ref type="bibr">(Steels 1999;</ref><ref type="bibr" target="#b11">Steels 2003;</ref><ref type="bibr" target="#b7">Levy and Kirby 2006;</ref><ref type="bibr" target="#b4">Fehervari and Elmenreich 2010)</ref>, while the latter has been underexplored.</p><p>We aim for the Pommerman benchmark to provide for multi-agent learning what the Atari Learning Environment <ref type="bibr" target="#b0">(Bellemare et al. 2013</ref>) provided for single-agent reinforcement learning and ImageNet <ref type="bibr" target="#b4">(Deng et al. 2009</ref>) for image recognition. Beyond game theory and communication, Pommerman can also serve as a testbed for research into reinforcement learning, planning, and opponent/teammate modeling.</p><p>RoboCup Soccer (Nardi et al. 2014) is a similar competition that has been running since 1997. There, eleven agents per side play soccer. Key differences between Pommerman and RoboCup Soccer are:</p><p>1. Pommerman includes an explicit communication channel.</p><p>This changes the dynamics of the game and adds new research avenues.</p><p>2. Pommerman strips away the sensor input, which means that the game is less apt for robotics but more apt for studying other aspects of AI, games, and strategy.</p><p>3. Pommerman uses low dimensional, discrete control and input representations instead of continuous ones. We believe this makes it easier to focus on the high level strate-arXiv:1809.07124v2 [cs.MA] 21 Apr 2022 gic aspects rather than low level mechanics.</p><p>4. In team variants, the default Pommerman setup has only two agents per side, which makes it more amenable to burgeoning fields like emergent communication which encounter training difficulties with larger numbers of agents.</p><p>5. Pommerman's FFA variant promotes research that does not reduce to a 1v1 game, which means that a lot of the theory underlying such games (like RoboCup Soccer) is not applicable.</p><p>The second, third, and fourth differences above are a positive or negative trade-off depending on one's research goals.</p><p>Another, more recent, benchmark is Half-Field Offense (Hausknecht et al. 2016), a modification of RoboCup that reduces the complexity and focuses on decision-making in a simplified subtask. However, unlike the FFA scenario in Pommerman, Half-Field Offense is limited to being a zerosum game between two teams.</p><p>In general, the communities that we want to attract to benchmark their algorithms have not gravitated towards RoboCup but instead have relied on a large number of oneoff toy tasks. This is especially true for multi-agent Deep RL. We think that the reasons for that could be among the five above. Consequently, Pommerman has the potential to unite these communities, especially when considering that future versions can be expanded to more than four agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>High Quality Benchmark</head><p>There are attributes that are common to the best benchmarks beyond satisfying the community's research direction. These include having mechanics and gameplay that are intuitive for humans, being fun to play and watch, being easy to integrate into common research setups, and having a learning problem that is not too difficult for the current state of method development. Most games violate at least one of these. For example, the popular game Defense of the Ancients (OpenAI 2018) is intuitive and fun, but extremely difficult to integrate. On the other hand, the card game Bridge is easy to integrate, but it is not intuitive; the gameplay and mechanics are slow to learn and there is a steep learning curve to understanding strategy.</p><p>Pommerman satisfies these requirements. People have no trouble understanding basic strategy and mechanics. It is fun to play and to watch, having been developed by Nintendo for two decades. Additionally, we have purposefully made the state input based not on pixel observations but rather on a symbolic interpretation so that it does not require large amounts of compute to build learning agents.</p><p>Research game competitions disappear for two reasons -either the administrators stop running it or participants stop submitting entrants. This can be due to the game being 'solved', but it could also be because the game just was not enjoyable or accessible enough. We view Pommerman as having a long life ahead of it. Beyond the surface hyperparameters like board size and number of walls, early forays suggest that there are many aspects of the game that can be modified to create a rich and long lasting research challenge and competition venue. These include partial observability of the board, playing with random teammates, communication among the agents, adding power-ups, and learning to play with human players.</p><p>These potential extensions, and the fact that N-player learning by itself has few mathematical guarantees, suggest that Pommerman will be a challenging and fruitful testbed for years to come.</p><p>There are, however, limitations to this environment. One difficulty is that a local optimum arises where the agent avoids exploding itself by learning to never use the bomb action. In the long term, this is ineffective because the agent needs to use the bomb to destroy other agents. Players have successfully solved this challenge <ref type="bibr">(Resnick et al. 2018a</ref>), but it is an aspect of basic gameplay that has to be handled in order for the multi-agent research benefits to become apparent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Description</head><p>In this section, we give details of the Pommerman environment. Note that all of the code to run the game and train agents can be found in our git repository <ref type="bibr">(Resnick et al. 2018b)</ref>, while our website (pommerman.com) contains further information on how to submit agents. As previously mentioned, Pommerman is stylistically similar to Bomberman. Every battle starts on a randomly drawn symmetric 11x11 grid ('board') with four agents, one in each corner. Teammates start on opposite corners.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Game Information</head><p>In team variants, the game ends when both players on one team have been destroyed. In FFA, it ends when at most one agent remains alive. The winning team is the one who has remaining members. Ties can happen when the game does not end before the max steps or if the last agents are destroyed on the same turn. If this happens in competitions, we will rerun the game. If it reoccurs, then we will rerun the game with collapsing walls until there is a winner. This is a variant where, after a fixed number of steps, the game board becomes smaller according to a specified cadence. We have a working example in the repository.</p><p>Besides the agents, the board consists of wooden and rigid walls. We guarantee that the agents will have an accessible path to each other. Initially, this path is occluded by wooden walls. See Figure <ref type="figure" target="#fig_0">1</ref> for a visual reference. Rigid walls are indestructible and impassable. Wooden walls can be destroyed by bombs. Until they are destroyed, they are impassable. After they are destroyed, they become either a passage or a power-up.</p><p>On every turn, agents choose from one of six actions:</p><p>1. Stop: This action is a pass.</p><p>2. Up: Move up on the board.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Left: Move left on the board.</head><p>4. Down: Move down on the board.</p><p>5. Right: Move right on the board.</p><p>6. Bomb: Lay a bomb.</p><p>Additionally, if this is a communicative scenario, then the agent emits a message every turn consisting of two words from a dictionary of size eight. These words are passed to its teammate in the next step as part of the observation. In total, the agent receives the following observation each turn:</p><p>• Board: 121 Ints. The flattened board. In partially observed variants, all squares outside of the 5x5 purview around the agent's position will be covered with the value for fog (5).</p><p>• Position: 2 Ints, each in [0, 10]. The agent's (x, y) position in the grid.</p><p>• Ammo: 1 Int. The agent's current ammo.</p><p>• Blast Strength: 1 Int. The agent's current blast strength.</p><p>• Can Kick: 1 Int, 0 or 1. Whether the agent can kick or not.</p><p>• Teammate: 1 Int in <ref type="bibr">[-1, 3]</ref>. Which agent is this agent's teammate. In non-team variants, this is -1.</p><p>• Enemies: 3 Ints in <ref type="bibr">[-1, 3]</ref>. Which agents are this agent's enemies. In team variants, the third int is -1.</p><p>• Bomb Blast Strength: List of Ints. The bomb blast strengths for each of the bombs in the agent's purview.</p><p>• Bomb Life: List of Ints. The remaining life for each of the bombs in the agent's purview.</p><p>• Message: 2 Ints in [0, 8]. The message being relayed from the teammate. Both Ints are zero only when a teammate is dead or if it is the first step. This field is not included for non-cheap talk variants.</p><p>The agent starts with one bomb ('ammo'). Every time it lays a bomb, its ammo decreases by one. After that bomb explodes, its ammo will increase by one. The agent also has a blast strength that starts at two. Every bomb it lays is imbued with the current blast strength, which is how far in the vertical and horizontal directions that bomb will effect. A bomb has a life of ten time steps. Upon expiration, the bomb explodes and any wooden walls, agents, power-ups or other bombs within reach of its blast strength are destroyed. Bombs destroyed in this manner chain their explosions.</p><p>Power-Ups: Half of the wooden walls have hidden powerups that are revealed when the wall is destroyed. These are:</p><p>• Extra Bomb: Picking this up increases the agent's ammo by one.</p><p>• Increase Range: Picking this up increases the agent's blast strength by one.</p><p>• Can Kick: Picking this up permanently allows an agent to kick bombs by moving into them. The bombs travel in the direction that the agent was moving at one unit per time step until they are impeded either by a player, a bomb, or a wall.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Early results</head><p>The environment has been public since late February and the competitions were first announced in late March. In that time, we have seen a strong community gather around the game, with more than 500 people in the Discord server (<ref type="url" target="https://discord.gg/mtW7kp">https://discord.gg/mtW7kp</ref>) and more than half of the repository commits from open source contributors. There have also been multiple published papers using Pommerman <ref type="bibr">(Resnick et al. 2018a;</ref><ref type="bibr" target="#b13">Zhou et al. 2018)</ref>. These demonstrate that the environment is challenging and we do not yet know what are the optimal solutions in any of the variants. In particular, the agents in <ref type="bibr">(Resnick et al. 2018a</ref>) discover a novel way of playing where they treat the bombs as projectiles by laying, then kicking them at opponents. This is a strategy that not even novice humans attempt, yet the agents use it to achieve a high success rate.</p><p>Preliminary analysis suggests that the game can be very challenging for reinforcement learning algorithms out of the box. Without a very large batch size and a shaped reward <ref type="bibr" target="#b8">(Ng, Harada, and Russell 1999)</ref>, neither of Deep Q-Learning <ref type="bibr" target="#b7">(Mnih et al. 2013</ref><ref type="bibr">) nor Proximal Policy Optimization (Schulman et al. 2017)</ref> learned to successfully play the game against the default learning agent ('SimpleAgent'). One reason for this is because the game has a (previously mentioned) unique feature in that the bomb action is highly correlated with losing but must be wielded effectively to win.</p><p>We also tested the effectiveness of DAgger <ref type="bibr" target="#b3">(Daumé, Langford, and Marcu 2009)</ref> in bootstrapping agents to match the SimpleAgent. We found that, while somewhat sensitive to hyperparameter choices, it was nonetheless effective at yielding agents that could play at or above the FFA win rate of a single SimpleAgent (∼ 20%). This is less than chance because four simple agents will draw a large percentage of the time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Competitions</head><p>In this section, we describe the Pommerman competitions. This includes both the upcoming NIPS 2018 event and the FFA competition that we already ran.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>FFA competition</head><p>We ran a preliminary competition on June 3rd, 2018. We did not advertise this widely other than within our Discord social group (<ref type="url" target="https://discord.gg/mtW7kp">https://discord.gg/mtW7kp</ref>), nor did we have any prizes for it. Even so, we had a turnout of eight competitors who submitted working agents by the May 31st deadline.</p><p>The competition environment was the FFA variant <ref type="bibr">(Resnick et al. 2018c)</ref> where four agents enter, all of whom are opponents. The top two agents were submitted by Görög Márton and a team led by Yichen Gong, with the latter being the strongest.</p><p>Görög's agent improved upon the repository's baseline agent through a number of edits. On the other hand, Yichen's agent was a redesign implementing a Finite State Machine Tree-Search approach <ref type="bibr" target="#b13">(Zhou et al. 2018)</ref>. They respectively won 8 and 22 of their 35 matches (with a number of the remaining being ties).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>NIPS Competition</head><p>The NIPS competition will be held live at NIPS 2018 and competitors are required to submit a team of two agents by November 21st, 2018. The featured environment will be the partially observable team variant without communication.</p><p>Otherwise, we will be reusing the machinery that we developed to run the FFA competition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Submitting Agents</head><p>We run the competitions using Docker and expect submissions to be accompanied by a Docker file that we can build on the game servers. For FFA competitions, this entails submitting a (possibly private) repository having one Docker file representing the agent. For team competitions, this means the submission should have two Docker files to represent the two agents. Instructions and an example for building Docker containers from trained agents can be found in our repository <ref type="bibr">(Resnick et al. 2018b)</ref>.</p><p>The agents should follow the prescribed convention specified in our example code and expose an 'act' endpoint that accepts the dictionary of observations. Because we are using Docker containers and http requests, we do not have any requirements for programming language or framework.</p><p>The expected response from the agent will be a single integer in [0, 5] representing which of the six actions that agent would like to take. In variants with messages, we also expect two more integers in [1, 8] representing the message. If an agent does not respond in an appropriate time limit for our competition constraints (100ms), then we will automatically issue them the Stop action and, if appropriate, have them send out the message (0, 0). This timeout is an aspect of the competition and not native to the game itself.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion</head><p>In this paper, we have introduced the Pommerman environment, detailed why it is a strong setup for multi-agent research, and described early results and competitions.</p><p>All of the code is readily available at our git repository (github.com/MultiAgentLearning/playground) and further information about competitions, including NIPS 2018, on our website (pommerman.com).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Pommerman start state. Each agent begins in one of four positions. Yellow squares are wood, brown are rigid, and the gray are passages.</figDesc><graphic coords="2,382.06,345.47,113.39,113.39" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Comparing multi-agent games along three important axes for uptake beyond whether the game satisfies the community's intended research direction. Attributes are considered on a 1-5 scale where 5 represents the highest value. Fun takes into account both watching and playing the game. The Intuitive and Fun qualities, while subjective, are noted because they have historically been factors in whether a game is used in research.</figDesc><table><row><cell>Game</cell><cell cols="3">Intuitive? Fun? Integration?</cell></row><row><cell>Bridge</cell><cell>1</cell><cell>3</cell><cell>5</cell></row><row><cell>Civilization</cell><cell>2</cell><cell>3</cell><cell>1</cell></row><row><cell>Counterstrike</cell><cell>5</cell><cell>5</cell><cell>2</cell></row><row><cell>Coup</cell><cell>4</cell><cell>5</cell><cell>5</cell></row><row><cell>Diplomacy</cell><cell>1</cell><cell>4</cell><cell>3</cell></row><row><cell>DoTA</cell><cell>3</cell><cell>5</cell><cell>2</cell></row><row><cell>Hanabi</cell><cell>2</cell><cell>3</cell><cell>5</cell></row><row><cell>Hearthstone</cell><cell>1</cell><cell>4</cell><cell>1</cell></row><row><cell>Mario Maker</cell><cell>4</cell><cell>5</cell><cell>3</cell></row><row><cell>Pommerman</cell><cell>5</cell><cell>4</cell><cell>5</cell></row><row><cell>PUBG</cell><cell>5</cell><cell>5</cell><cell>1</cell></row><row><cell>Rocket League</cell><cell>5</cell><cell>4</cell><cell>1</cell></row><row><cell>Secret Hitler</cell><cell>4</cell><cell>4</cell><cell>3</cell></row><row><cell>Settlers of Catan</cell><cell>4</cell><cell>3</cell><cell>3</cell></row><row><cell>Starcraft 2</cell><cell>3</cell><cell>5</cell><cell>5</cell></row><row><cell>Super Smash</cell><cell>5</cell><cell>5</cell><cell>1</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>We are especially grateful to <rs type="person">Roberta Raileanu</rs>, <rs type="person">Sanyam Kapoor</rs>, <rs type="person">Lucas Beyer</rs>, <rs type="person">Stephan Uphoff</rs>, and the whole <rs type="institution">Pommerman Discord community</rs> for their contributions, as well as <rs type="person">Jane Street</rs>, <rs type="funder">Facebook AI Research</rs>, <rs type="person">Google Cloud</rs>, and <rs type="person">NVidia Research</rs> for their sponsorship.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">The arcade learning environment: An evaluation platform for general agents</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Naddaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bowling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Bomberman</surname></persName>
+		</author>
+		<ptr target="https://en.wikipedia.org/wiki/Bomberman" />
+	</analytic>
+	<monogr>
+		<title level="m">Wikipedia bomberman</title>
+		<meeting><address><addrLine>Bomberman</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="1983">2013. 1983. 1983</date>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="page" from="253" to="279" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Heads-up limit hold&apos;em poker is solved</title>
+		<author>
+			<persName><surname>Bowling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="81" to="88" />
+			<date type="published" when="2017">2017. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Efficient selectivity and backup operators in monte-carlo tree search</title>
+		<author>
+			<persName><surname>Browne</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computers and Games</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<editor>
+			<persName><forename type="first">H</forename><forename type="middle">J</forename><surname>Van Den Herik</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Ciancarini</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><forename type="middle">H L M</forename><surname>Donkers</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2012. 2012. Coulom 2006. 2006</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="72" to="83" />
+		</imprint>
+	</monogr>
+	<note>A survey of monte carlo tree search methods</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Search-based structured prediction</title>
+		<author>
+			<persName><forename type="first">Langford</forename><surname>Daumé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Marcu ; Daumé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Langford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Marcu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">75</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="297" to="325" />
+			<date type="published" when="2009">2009. 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Evolving neural network controllers for a team of self-organizing robots</title>
+		<author>
+			<persName><surname>Deng</surname></persName>
+		</author>
+		<idno>CoRR abs/1705.10369. [Fehervari and Elmenreich 2010</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>de Freitas</publisher>
+			<date type="published" when="2009">2009. 2009. 2017. 2010. 2016</date>
+			<biblScope unit="page" from="2137" to="2145" />
+		</imprint>
+	</monogr>
+	<note>Evtimova et al. 2017 ImageNet: A Large-Scale Hierarchical Image Database Emergent language in a multi-modal, multi-step referential game Foerster et al. 2016 Journal of Robotics Learning to communicate with deep multi-agent reinforcement learning CVPR09</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Half field offense: An environment for multiagent learning and ad hoc teamwork</title>
+		<author>
+			<persName><surname>Foerster</surname></persName>
+		</author>
+		<idno>CoRR abs/1702.08887</idno>
+	</analytic>
+	<monogr>
+		<title level="m">AAMAS Adaptive Learning Agents (ALA) Workshop</title>
+		<imprint>
+			<date type="published" when="2016">2017. 2017. 2016</date>
+		</imprint>
+	</monogr>
+	<note>Hausknecht et al. 2016 Stabilising experience replay for deep multi-agent reinforcement learning</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Emergence of linguistic communication from referential games with symbolic and pixel input</title>
+		<author>
+			<persName><forename type="first">Szepesvári ;</forename><surname>Kocsis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kocsis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Szepesvári</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tuyls</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th European Conference on Machine Learning, ECML&apos;06</title>
+		<meeting>the 17th European Conference on Machine Learning, ECML&apos;06<address><addrLine>Berlin, Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer-Verlag</publisher>
+			<date type="published" when="2006">2006. 2006. 2018</date>
+			<biblScope unit="page" from="282" to="293" />
+		</imprint>
+	</monogr>
+	<note>Lazaridou et al. 2018 Bandit based monte-carlo planning International Conference on Learning Representations</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Evolving distributed representations for language with selforganizing maps</title>
+		<author>
+			<persName><forename type="first">Kirby ;</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kirby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Vogt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sugita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tuci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Nehaniv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yarats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">N</forename><surname>Dauphin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Moravcík</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Burch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Lisý</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Morrill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Waugh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johanson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Bowling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.05125.[Mnihetal.2013</idno>
+		<idno>arXiv:1703.04908</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Emergence of grounded compositional language in multi-agent populations</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006. 2006. Lewis et al. 2017. 2017. 2013. 2013. 2017. 2017. 2017. 2014</date>
+			<biblScope unit="volume">4211</biblScope>
+			<biblScope unit="page" from="77" to="85" />
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>EELC Deal or no deal? endto-end learning for negotiation dialogues Playing atari with deep reinforcement learning Deepstack: Expert-level artificial intelligence in no-limit poker Comment: NIPS Deep Learning Workshop Nardi et al. 2014] Nardi, D.; Noda, I.; Ribeiro, F.; Stone, P.; von Stryk RoboCup soccer leagues</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Policy invariance under reward transformations: Theory and application to reward shaping</title>
+		<author>
+			<persName><forename type="first">Harada</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><forename type="middle">;</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Harada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename></persName>
+		</author>
+		<ptr target="https://blog.openai.com/dota-2/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Sixth International Joint Conference on Artificial Intelligence, IJCAI-17</title>
+		<meeting>the Twenty-Sixth International Joint Conference on Artificial Intelligence, IJCAI-17<address><addrLine>Dota 2.</addrLine></address></meeting>
+		<imprint>
+			<publisher>OpenAI</publisher>
+			<date type="published" when="1999">1999. 1999. 2017. 2018. 2018</date>
+			<biblScope unit="volume">99</biblScope>
+			<biblScope unit="page" from="5226" to="5228" />
+		</imprint>
+	</monogr>
+	<note>Noam Brown 2017 Libratus: The superhuman ai for no-limit poker ICML</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><surname>Resnick</surname></persName>
+		</author>
+		<title level="m">Man muss immer umkehren</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+	<note>ArXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Mastering the game of Go with deep neural networks and tree search</title>
+		<author>
+			<persName><surname>Resnick</surname></persName>
+		</author>
+		<idno>CoRR abs/1707.06347</idno>
+		<ptr target="https://github.com/MultiAgentLearning/playground/blob/master/pommerman/configs.py#L20" />
+	</analytic>
+	<monogr>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<meeting><address><addrLine>Antwerpen</addrLine></address></meeting>
+		<imprint>
+			<publisher>Laboratorium</publisher>
+			<date type="published" when="2016">2018. 2018. 2018. 2018. 2018. 2018. 2017. 2016</date>
+			<biblScope unit="volume">529</biblScope>
+			<biblScope unit="page" from="484" to="489" />
+		</imprint>
+	</monogr>
+	<note>Vehicle community strategies Ai research into multi-agent learning Silver et al. 2016 Pommerman ffa competition environment Steels 1999] Steels, L. 1999. The Talking Heads Experiment Nature</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Evolving grounded communication for robots</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Steels ; Steels</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trends in Cognitive Sciences</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="308" to="312" />
+			<date type="published" when="2003">2003. 2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">On monte carlo tree search and reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Samothrakis</forename><surname>Vodopivec</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Šter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Vodopivec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Samothrakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Šter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Int. Res</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="881" to="936" />
+			<date type="published" when="2017">2017. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A hybrid search agent in pommerman</title>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The International Conference on the Foundations of Digital Games (FDG)</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Regret minimization in games with incomplete information</title>
+		<author>
+			<persName><surname>Zinkevich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 20</title>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Platt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Koller</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Singer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">T</forename><surname>Roweis</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2008">2008. 2008</date>
+			<biblScope unit="page" from="1729" to="1736" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

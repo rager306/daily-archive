@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">MAgent: A Many-Agent Reinforcement Learning Platform for Artificial Collective Intelligence</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2017-12-02">2 Dec 2017</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiacheng</forename><surname>Yang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Han</forename><surname>Cai</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Weinan</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+							<email>j.wang@cs.ucl.ac.uk</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University College London</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yong</forename><surname>Yu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">MAgent: A Many-Agent Reinforcement Learning Platform for Artificial Collective Intelligence</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2017-12-02">2 Dec 2017</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B832A8BF4024FC8E17D91E3BACB303E1</idno>
+					<idno type="arXiv">arXiv:1712.00600v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T14:13+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We introduce MAgent, a platform to support research and development of many-agent reinforcement learning. Unlike previous research platforms on single or multi-agent reinforcement learning, MAgent focuses on supporting the tasks and the applications that require hundreds to millions of agents. Within the interactions among a population of agents, it enables not only the study of learning algorithms for agents' optimal polices, but more importantly, the observation and understanding of individual agent's behaviors and social phenomena emerging from the AI society, including communication languages, leaderships, altruism. MAgent is highly scalable and can host up to one million agents on a single GPU server. MAgent also provides flexible configurations for AI researchers to design their customized environments and agents. In this demo, we present three environments designed on MAgent and show emerged collective intelligence by learning from scratch.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>True human intelligence embraces social and collective wisdom, laying a foundation for general Artificial Intelligence (AI) <ref type="bibr">(Goertzel and Pennachin 2007)</ref>. In essence, human intelligence would collectively solve the problem that otherwise is unthinkable by a single person. For instance, theoretically, Condorcet's jury theorem <ref type="bibr" target="#b1">(Landemore 2013)</ref> shows that, under certain assumption, adding more voters in a group would increase the probability that the majority chooses the right answer.</p><p>In parallel, in the coming era of algorithmic economy, many AI agents work together, artificially creating their own collective intelligence. With certain rudimentary abilities, Artificial Collective Intelligence (ACI) starts to emerge from multiple domains, including stock trading (Wang and others 2013), strategic games <ref type="bibr" target="#b2">(Peng et al. 2017)</ref> and city transportation optimization <ref type="bibr" target="#b3">(Zhang et al. 2017)</ref> etc.</p><p>A key technology of ACI is multi-agent reinforcement learning (RL) but typically requires a scale of hundreds to millions of agents <ref type="bibr" target="#b3">(Yang et al. 2017)</ref>. However, existing experimentation platforms, including ALE <ref type="bibr" target="#b0">(Bellemare et al. 2013)</ref>, OpenAI Gym/Universe ( <ref type="formula">Brockman et al. 2016), Malmo (Johnson et al. 2016), ELF  (Tian et al. 2017) and SC2LE (Vinyals et al. 2017</ref>) fail to meet the demand. Although they gradually show the desire to cover multi-agent scenarios, they are basically designed to take no more than dozens of agents. Thus there is a significant need for a platform dedicated to large population multiagent reinforcement learning, which is critical for ACI. On the other hand, the majority of state-of-the-art multiagent reinforcement learning algorithms <ref type="bibr" target="#b2">(Lowe et al. 2017)</ref> are also limited in the scale of dozens of agents. Therefore, it is also a great challenge to the research community.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The MAgent Platform</head><p>The MAgent project<ref type="foot" target="#foot_0">foot_0</ref> aims to build a many-agent reinforcement learning platform for the research of ACI. With the idea of network sharing and ID embedding, MAgent is highly scalable and can host up to one million agents on a single GPU server. Moreover, MAgent provides environment/agent configurations and a reward description language to enable flexible environment design. Finally, MAgent provides a simple yet visually effective render to interactively present the state of environment and agents. Users can also slide or zoom the scope window and even manipulate agents in the game.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gridworld Fundamentals</head><p>A large-scale gridworld is used as the fundamental environment for the large population of agents. Each agent has a rectangular body with a local detailed perspective and (optional) global information. The actions could be moving, turning or attacking. A C++ engine is provided to support fast simulation. Heterogeneous agents can be registered in our engine. The state space, action space and agents' attributes can be configured easily so that various environments can be swiftly developed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Description Language</head><p>In our python interface, users can describe the reward, agent symbols, and events by a description language we developed. When the boolean expression of an event expression is true, reward will be assigned to the agents involved in the events. Logical operation like 'and', 'or', and 'not' is also </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Baseline Algorithms</head><p>We implement parameter-sharing DQN, DRQN and A2C in our platform. We found DQN performs best in our settings and mainly use it to do following experiment. To bring in the diversity of agents, we also train an embedding for each agent's unique ID. Users can benchmark their own multiagent algorithms against these algorithms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Live and Interactive Part</head><p>In the demo, we will show some example games conducted on MAgent. Demo visitors can see what will happen when applying deep reinforcement learning for such a large number of agents. They can use our render to explore in the gridworld, find intelligent patterns and the diversity of RL agents. Three examples are available at present, namely pursuit, gathering and battle. Some illustrations are shown in Fig. <ref type="figure" target="#fig_0">1</ref>.</p><p>Pursuit shows the emergence of local cooperation. Predators can get rewards if they attack preys while preys will get penalties if they are attacked. After training, predators learn to cooperate with nearby teammates to form several types of closure to lock the preys (see Fig. <ref type="figure" target="#fig_0">1(b)</ref>), by which they can get reward every step afterward.</p><p>Gathering shows the emergence of competition in a limited resource environment. Agents are in a dilemma whether to get reward directly by eating food or killing other agents to monopolize the food. After training, they learn to rush to eat food at first. But when two agents come close, they will try to kill each other.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Battle shows the hybrid of cooperation and competition.</head><p>There are two armies in the map, each of which consists of hundreds of agents. The goal is to collaborate with teammates and eliminate all opponent agents. Simple self-play training enables them to learn both global and local strategies, including encirclement attack, guerrilla warfare.</p><p>In addition, we maintain a human player interface. Thus our demo visitors will be able to place themselves in the large world by controlling several agents to gain reward by cooperating or competing with RL agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion</head><p>MAgent is a research platform designed to support manyagent RL. With MAgent, researchers can study a population of AI agents in both individual agent and society levels. For future work, we would support continuous environments and provide more algorithms in MAgent.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Illustrations of the three running examples. supported. The following is an example used to describe the rule of game pursuit as described in Live and Interactive Part Section. a = AgentSymbol ( g p r e d a t o r , i ndex = ' any ' ) b = AgentSymbol ( g prey , i ndex = ' any ' ) a d d r e w a r d r u l e ( on=Event ( a , ' a t t a c k ' , b ) , r e c e i v e r = [ a , b ] , v al ue = [ 1 , -1])</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/geek-ai/MAgent</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Openai gym. arXiv. [Goertzel and Pennachin 2007] Goertzel, B., and Pennachin, C. 2007. Artificial general intelligence</title>
+		<author>
+			<persName><surname>Bellemare</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2013">2013. 2013. 2016. 2016. 2016</date>
+		</imprint>
+	</monogr>
+	<note>The arcade learning environment: an evaluation platform for general agents The malmo platform for artificial intelligence experimentation</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Democratic reason: Politics, collective intelligence, and the rule of the many</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Landemore</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<publisher>Princeton University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Elf: An extensive, lightweight and flexible research platform for real-time strategy games</title>
+		<author>
+			<persName><surname>Lowe</surname></persName>
+		</author>
+		<idno>arXiv. [Wang and others 2013</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Starcraft ii: A new challenge for reinforcement learning</title>
+		<meeting><address><addrLine>Wang, C</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017">2017. 2017. 2017. 2017. 2017</date>
+		</imprint>
+	</monogr>
+	<note>Peng et al. 2017 Multi-agent actor-critic for mixed cooperative-competitive environments Multiagent bidirectionallycoordinated nets for learning to play starcraft combat games et al. 2013. Investigating the impact of trading frequencies of market makers: a multi-agent simulation approach. SICE JCMSI</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">An empirical study of AI population dynamics with million-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Yang</forename></persName>
+		</author>
+		<idno>Zhang et al. 2017</idno>
+	</analytic>
+	<monogr>
+		<title level="m">KDD</title>
+		<imprint>
+			<date type="published" when="2017">2017. 2017. 2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

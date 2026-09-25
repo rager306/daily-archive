@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">POGEMA: Partially Observable Grid Environment for Multiple Agents</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2022-06-22">22 Jun 2022</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Alexey</forename><surname>Skrynnik</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">AIRI</orgName>
+								<address>
+									<settlement>Moscow</settlement>
+									<country key="RU">Russia</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anton</forename><surname>Andreychuk</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">AIRI</orgName>
+								<address>
+									<settlement>Moscow</settlement>
+									<country key="RU">Russia</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Konstantin</forename><surname>Yakovlev</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">AIRI</orgName>
+								<address>
+									<settlement>Moscow</settlement>
+									<country key="RU">Russia</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Aleksandr</forename><surname>Panov</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">AIRI</orgName>
+								<address>
+									<settlement>Moscow</settlement>
+									<country key="RU">Russia</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">POGEMA: Partially Observable Grid Environment for Multiple Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2022-06-22">22 Jun 2022</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E3BB75C4FA79C9C2EDB75D11EA25D3C4</idno>
+					<idno type="arXiv">arXiv:2206.10944v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T14:14+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We introduce POGEMA 1 a sandbox for challenging partially observable multi-agent pathfinding (PO-MAPF) problems . This is a grid-based environment that was specifically designed to be a flexible, tunable and scalable benchmark. It can be tailored to a variety of PO-MAPF, which can serve as an excellent testing ground for planning and learning methods, and their combination, which will allow us to move towards filling the gap between AI planning and learning.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>Multi-agent pathfinding (MAPF) is a challenging problem with typical applications in video games, logistics, etc. The intrinsic assumption of what is called Classical MAPF <ref type="bibr" target="#b10">(Stern et al. 2019)</ref> is that there exists a central controller which possesses all the information about the agents and the environment. It is this controller that plans a set of collision free paths for all of the agents. Thus, such variant of MAPF can be deemed to be fully observable and centralized. Indeed, plenty of methods exist to solve this variant of MAPF, see <ref type="bibr" target="#b9">(Sharon et al. 2015;</ref><ref type="bibr" target="#b1">Čáp et al. 2015;</ref><ref type="bibr" target="#b12">Surynek 2009;</ref><ref type="bibr" target="#b15">Wagner and Choset 2011)</ref> for example.</p><p>In many practical applications, though, it is impossible to deploy a reliable infrastructure for a centralized MAPF. Consider, for example, a coverage/surveillance of areas such as nuclear plants, mines, disaster areas, etc. These areas can have poor communications (or none at all). Thus, they require a fundamentally different variant of MAPF, i.e. on the one when the central controller is absent and each agent has limited communication/observation capabilities -partially observable MAPF (PO-MAPF), which is intrinsically decentralized.</p><p>Indeed, PO-MAPF requires different methods compared to fully observable MAPF. In the former case, we seek not for a fixed solution, i.e. the set of conflict-free plans, but rather for a policy that maps agents' observations to actions in such a way that it maximizes the chance of reaching the goal while avoiding the collisions and minimizing the number of actions performed. To foster the development of such methods, which are likely to span across different areas of AI (Search, Planning, Learning etc.) a fast and flexible software environment is needed, which will allow researchers to quickly prototype and evaluate the methods for solving PO-MAPF problems. In this work we present such an environment -POGEMA (Partially Observable Grid Environment for Multiple Agents) (see an example on figure <ref type="figure" target="#fig_0">1</ref>).</p><p>POGEMA relies on the widespread grid representation of the surrounding space and objects. As dictated by PO-MAPF, each agent in this environment has an access only to a local observation, i.e. ego-centric patch of the grid of the user-defined size. Relying on the (history of) observations an agent chooses an action to be performed at the next time step. POGEMA is equipped with several baseline policies for choosing such an action, including the search-based one and the learning-based one. Indeed, POGEMA allows pluggingin user-designed policies both for evaluation and for training (in case of the learnable policies).</p><p>POGEMA is specifically tailored to train policies based on Reinforcement Learning (RL) methods. It provides interfaces for well-known RL frameworks and its sample efficiency is up to 10k FPS (frame per second) even for singleagent cases (for multi-agent cases it is much faster). The latter allows fast training of the complex value and state approximators based on neural network models.</p><p>Some preliminary results show that some heuristic search-based planners are sufficient to solve some PO-MAPF tasks, and learnable approaches are better able to cope with other types of tasks. This shows that PO-MAPF setting can serve as an excellent testing ground for the development of hybrid methods of simultaneous planning and learning, which will allow us to move towards filling the gap between AI Planning and Reinforcement Learning. POGEMA is an excellent tool for testing the efficiency of new methods in this area and presents a fast and effective tool and a set of baselines with comprehensible metrics and a simple interface for creating your own new algorithms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Related Works</head><p>There are a number of environments in the RL community that are used to train agents in a multi-agent setting (MARL). Such environments include Flatland <ref type="bibr" target="#b5">(Mohanty et al. 2020)</ref> and Petting Zoo MAgent <ref type="bibr" target="#b16">(Zheng et al. 2017)</ref>. Flatland is designed to solve the specific problem of fast conflict-free train scheduling on a fixed railway map. This environment is quite slow and focused on full observability. MAgent is a fast environment for modelling the group and swarm behaviour of agents with a set of actions that, in addition to moving, includes actions for interacting with other agents. This environment has a limited set of scenarios and does not have an interface for testing planning solutions. A number of other visual-based environments known in MARL (Dota 2, Starcraft) seem to be more heavy and complex in terms of encoding observations and actions, which makes it impossible to give a quick and convenient interface for comparing trajectory planning methods. Table <ref type="table">1</ref> provides a brief comparison of the main features of POGEMA and similar environments.</p><p>Table 1: Comparison of POGEMA with other multi-agent grid-based environments. FPS was benchmarked with 80 agents for each environment. For MAgent we used the Battlefield task. Procedural Requires Partial Environment FPS generation generalization observability POGEMA 83.000 MAgent 184.000 Flatland 156</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>POGEMA Environment Basics</head><p>Consider n agents which populate to the 4-connected grid composed of the free and blocked cells. This grid can be either procedurally generated by POGEMA or provided by the user. Each agent is assigned to the goal cell which it has to reach. At every time step an agent receives a local ego-centric observation, whose size R is defined by the user, and picks an action, which can be either move to one of the adjacent cells or waits in the current cell. The action picking algorithm, i.e. the policy, is defined by the user (several baselines are also provided). After each agent picks an action POGEMA applies all the actions that are feasible, i.e. do not lead to the collisions (either between the agent and the obstacle or between several agents). Agents that picked the infeasible action remain where they were. If an agent enters its goal cell it is removed from the environment (the so-called "disappear-at-target" behavior). The episode ends either if all the agents reach their goals or if the user-specified time step limit, K, is reached.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Observation space</head><p>In POGEMA, the agent occupying the cell with the coordinates (i, j) is able to observe the status of the cells i±R, j ± R, where R is the user-defined observation radius. Thus, the observation is a patch of a grid of size [2 • R + 1] × [2 • R + 1] centred at the currently occupied cell. Any information regarding the other agents, except their current locations (e.g., their goals, paths (or path segments) to the goals, etc.), is not included in the observation. This is purposefully done to simulate the most challenging PO-MAPF setup, when the agents can not communicate with each other and share any information. We are planning to add other, less restrictive, observation designs in future.</p><p>Figure <ref type="figure">2</ref>: POGEMAobservation space for RL algorithms. Observation space consists of three matrices corresponding to obstacles, other agents and target or its projection.</p><p>Technically, the observation is encoded as three matrices. The first one bears the information about the static obstacles within the field of view. The second one contains the information about the other agents. The third one includes the goal projection (see Figure <ref type="figure">2</ref>). The agent's target can be encoded using direction or relative coordinates, but we present it as a matrix to simplify input encoding of the neural network (it is easier to encode data of one modality).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>State Space</head><p>Majority of MARL algorithms utilise environment state during training (centralized training, decentralized execution scheme). Pogema has a method to provide state of the environment. For PO-MAPF the full state consists of the global map and the positions/goals of all agents. In contrast to observation space, the state space can change depending on the number of agents and size of the grid. Thus, algorithms with centralized training are restricted to be trained in the exact PO-MAPF domain.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reward Function and Metrics</head><p>The agent receives a reward of 1.0 when it reaches the goal and 0.0 in all other cases. We have chosen this function, since it is universal for the wide range of PO-MAPF configurations. Moreover, this reward is easy to interpret, as it corresponds to the individual success rate (ISR) metric for each agent. To shape the reward function one could use the wrappers mechanism of OpenAI Gym. The second metric is a cooperative success rate (CSR), which is equal to 1 only if all of the agents have reached the target.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Interfaces for RL Frameworks</head><p>OpenAI Gym <ref type="bibr" target="#b0">(Brockman et al. 2016</ref>) is de facto standard interface for the agent to interact with the environment in RL. Unfortunately, Gym is designed for classic single-agent interaction, which restricts its application for PO-MAPF problems. PettingZoo <ref type="bibr" target="#b14">(Terry et al. 2020</ref>) framework provides a unified interaction interface for multi-agent RL (MARL).</p><p>Pogema provides PettingZoo and single-agent Gym integration out of the box (see example Figure <ref type="figure" target="#fig_1">3</ref>). Besides PettingZoo, MARL community has several other interfaces: vectorized Gym-like interaction, interaction used in Py-MARL <ref type="bibr" target="#b8">(Samvelyan et al. 2019)</ref> and Rllib <ref type="bibr" target="#b4">(Liang et al. 2017)</ref> interface. In addition to these frameworks we provide integration with high-quality Asynchronous-PPO algorithm, implemented in SampleFactory <ref type="bibr" target="#b6">(Petrenko et al. 2020)</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Builtin Benchmarks</head><p>We provide builtin configurations of the maps for easier comparison of different algorithms. Pogema benchmark consists of three scales of grid configurations with four levels of difficulty (see example in Figure <ref type="figure" target="#fig_2">4</ref>). We picked sizes: 8 × 8, 16 × 16, 32 × 32, 64 × 64. The obstacles are placed  Pogema-16x16-extra-hard-v0 randomly with density 30%. Maps with obstacle density between 30% and 40% present the greatest difficulty, since maps with less obstacles are trivial and maps with more obstacles are decomposed to several components. It's guaranteed that any agent can solve the task, if other agents do not interfere him. We provide four difficulty levels: easy, normal, hard and extra-hard, which corresponds to different density of agents on the map (see Table <ref type="table">2</ref>). For all these environments agent's the observation radius is the same, and equals to 5, which corresponds to 11x11 field of view.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Custom Maps</head><p>POGEMA provides a wide range of customization options. First, we describe how to adjust random maps. The main settings are defined in GridConfig: size of the environment, obstacle density, number of agents, radius of agent's field of view and maximum length of the episode. In addition Grid-Config has seeding option, which is None by default (thus, positions of obstacles, agents and targets are new after each reset).</p><p>To create an environment with a custom map, one is supposed to specify map field in GridConfig (see Figure <ref type="figure" target="#fig_4">5</ref>). Positions of agents and targets also can be defined in GridConfig if that needed. For the large configurations we suggest the option to store it in YAML format, which will be validated on POGEMA side.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experiments Planning Baseline</head><p>PO-MAPF problems can be solved with varied success by classical path-planning approaches such as A* <ref type="bibr" target="#b3">(Hart, Nilsson, and Raphael 1968)</ref>. Each agent plans its path independently, replanning the path on each iteration, receiving new observation. Other agents are considered as static obstacles, as their trajectories are unknown and they cannot communicate.</p><p>While pure A* can easily find a path for a single agent, in case of presence of large amount of agents on the map, they block each others paths. To increase the chances to find a solution, the suggested planning baseline uses some ad-hoc enhancements. First, in case of failure to find a trajectory for an agent, it moves to the adjacent cell that is the closest to the  goal. Second, in case of indicating an oscillating behavior, when agent repeatedly moves between the same cells, a wait action with 50% probability is added.</p><p>The results of the planning baseline with different combinations of enhancements are presented in Table <ref type="table" target="#tab_0">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PyMARL Baselines</head><p>Centralized methods are the standard techniques in MARL tasks. In this experiment we show POGEMAcapabilities for benchmarking such kinds of algorithms. We use PyMARL implementations of such algorithms as: QMIX <ref type="bibr" target="#b7">(Rashid et al. 2018)</ref>, VDN <ref type="bibr" target="#b11">(Sunehag et al. 2017</ref>) (see Figure <ref type="figure" target="#fig_6">6</ref>). Also, we provide results for decentralized approach IQL <ref type="bibr" target="#b13">(Tan 1993)</ref>.</p><p>For the experiment we used extra-hard version of 8×8 environment and trained each algorithm for 2 million steps. The results emphasize the requirement of cooperative behaviour of the agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPO Baseline</head><p>Besides small PO-MAPF tasks, POGEMAis suitable for large-scale RL experiments.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion</head><p>In this work we presented POGEMA fast and easy to use environment for creating a variety of PO-MAPF tasks. We've designed a number of builtin configurations to help the community benchmark both learning and planning approaches. POGEMA environments are procedurally generated, which ensures agent's ability to generalization. To simplify further experimentation we open source our code 1 with RL and planning algorithms.   </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: A typical PO-MAPF instance in POGEMA. The agent for whom the path is being constructed is indicated by a red circle, his goal is a white circle with a red border, his area of observation is a square with an intermittent red border. Static obstacles are shown in gray, other agents -in turquoise.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Sample code for creating Pogema environment with a parallel PettingZoo interface and single-agent Gym interface. Please note, Pogema-8x8-easy-v0 corresponds to a grid with size 8 × 8 with only one agent.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Easy and extra-hard Pogema configuration for 16× 16 map.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>#</head><figDesc>Define four rooms map as a string grid = """ .....#..... .....#..... ........... .....#..... .....#..... #.####..... .....###.## .....#..... .....#..... ........... .....#..... """ # Define new configuration with 8 randomly placed agents grid_config = GridConfig(map=grid, num_agents=8) # Create Pogema environment using Gym env = gym.make('Pogema-v0', grid_config=config)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: A sample code for creating PO-MAPF instance with custom map in Pogema.</figDesc><graphic coords="4,325.35,303.71,226.78,174.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Figure 7 presents training results for all difficulties of 32x32 configurations, trained with 100 millions steps. For this experiment, we use SampleFactory implementation of APPO algorithm. Fast environment and distributed RL framework allows us to train RL agent in a few hours on a single GPU, even with Impala (Espeholt et al. 2018) encoder and recurrent heads. Moreover, in 32x32 extra-hard configuration were simultaneously trained 128 agents in each environment worker. Increasing density of the agents and map size, significantly decreases the performance of the algorithms. Which shows the importance of both pathfinding and conflict resolution components.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Learning curves of PyMARL algorithms. Centralized methods (QMIX, VDN) show better results, since Extra-hard version of POGEMA 8 × 8 requires cooperative interaction.The results are averaged over three runs.</figDesc><graphic coords="4,319.50,53.99,238.50,183.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: CSR metrics for APPO trained on 32 × 32 builtin POGEMA configurations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Results for QMIX, VDN and IQL for the all difficulties of 8 × 8 benchmark. There is only one agent in easy configuration, thus we report combined plot for ISR/CSR metrics.</figDesc><graphic coords="6,61.62,483.61,156.23,120.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: Results for APPO for the all difficulties of 8 × 8, 16 × 16, 32 × 32 benchmarks. Rights plots reports sample throughput for APPO.</figDesc><graphic coords="7,65.39,423.08,156.23,120.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>Percentage of successfully solved instances by planning baseline. GA -greedy actions. FL -fix loops.</figDesc><table><row><cell></cell><cell>A*</cell><cell cols="3">A*+GA A*+FL A*+GA+FL</cell></row><row><cell>Pogema-8x8-easy-v0</cell><cell>100%</cell><cell>100%</cell><cell>100%</cell><cell>100%</cell></row><row><cell>Pogema-8x8-normal-v0</cell><cell>100%</cell><cell>100%</cell><cell>100%</cell><cell>100%</cell></row><row><cell>Pogema-8x8-hard-v0</cell><cell>82%</cell><cell>84%</cell><cell>90%</cell><cell>100%</cell></row><row><cell>Pogema-8x8-extra-hard-v0</cell><cell>60%</cell><cell>64%</cell><cell>66%</cell><cell>92%</cell></row><row><cell>Pogema-16x16-easy-v0</cell><cell>96%</cell><cell>96%</cell><cell>98%</cell><cell>100%</cell></row><row><cell>Pogema-16x16-normal-v0</cell><cell>68%</cell><cell>78%</cell><cell>96%</cell><cell>100%</cell></row><row><cell>Pogema-16x16-hard-v0</cell><cell>46%</cell><cell>50%</cell><cell>86%</cell><cell>100%</cell></row><row><cell cols="2">Pogema-16x16-extra-hard-v0 10%</cell><cell>14%</cell><cell>38%</cell><cell>84%</cell></row><row><cell>Pogema-32x32-easy-v0</cell><cell>38%</cell><cell>38%</cell><cell>98%</cell><cell>98%</cell></row><row><cell>Pogema-32x32-normal-v0</cell><cell>12%</cell><cell>16%</cell><cell>94%</cell><cell>96%</cell></row><row><cell>Pogema-32x32-hard-v0</cell><cell>0%</cell><cell>0%</cell><cell>62%</cell><cell>80%</cell></row><row><cell>Pogema-32x32-extra-hard-v0</cell><cell>2%</cell><cell>2%</cell><cell>6%</cell><cell>22%</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Code available at https://github.com/AIRI-Institute/pogema</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Builtin POGEMA configurations.</figDesc><table><row><cell></cell><cell>agent</cell><cell>num</cell><cell>Episode</cell></row><row><cell>Environment</cell><cell cols="2">density Agents</cell><cell>length</cell></row><row><cell>Pogema-8x8-easy-v0</cell><cell>2.2%</cell><cell>1</cell><cell>64</cell></row><row><cell>Pogema-8x8-normal-v0</cell><cell>4.5%</cell><cell>2</cell><cell>64</cell></row><row><cell>Pogema-8x8-hard-v0</cell><cell>8.9%</cell><cell>4</cell><cell>64</cell></row><row><cell>Pogema-8x8-extra-hard-v0</cell><cell>17.8%</cell><cell>8</cell><cell>64</cell></row><row><cell>Pogema-16x16-easy-v0</cell><cell>2.2%</cell><cell>4</cell><cell>128</cell></row><row><cell>Pogema-16x16-normal-v0</cell><cell>4.5%</cell><cell>8</cell><cell>128</cell></row><row><cell>Pogema-16x16-hard-v0</cell><cell>8.9%</cell><cell>16</cell><cell>128</cell></row><row><cell cols="2">Pogema-16x16-extra-hard-v0 17.8%</cell><cell>32</cell><cell>128</cell></row><row><cell>Pogema-32x32-easy-v0</cell><cell>2.2%</cell><cell>16</cell><cell>256</cell></row><row><cell>Pogema-32x32-normal-v0</cell><cell>4.5%</cell><cell>32</cell><cell>256</cell></row><row><cell>Pogema-32x32-hard-v0</cell><cell>8.9%</cell><cell>64</cell><cell>256</cell></row><row><cell cols="2">Pogema-32x32-extra-hard-v0 17.8%</cell><cell>128</cell><cell>256</cell></row><row><cell>Pogema-64x64-easy-v0</cell><cell>2.2%</cell><cell>64</cell><cell>512</cell></row><row><cell>Pogema-64x64-normal-v0</cell><cell>4.5%</cell><cell>128</cell><cell>512</cell></row><row><cell>Pogema-64x64-hard-v0</cell><cell>8.9%</cell><cell>256</cell><cell>512</cell></row><row><cell cols="2">Pogema-64x64-extra-hard-v0 17.8%</cell><cell>512</cell><cell>512</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pettersson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zaremba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.01540</idno>
+		<title level="m">Openai gym. 1 Code available at github.com/Tviskaron/pogema-baselines arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Prioritized planning algorithms for trajectory coordination of multiple mobile robots</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Čáp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Novák</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kleiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Selecký</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Automation Science and Engineering</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="835" to="849" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Impala: Scalable distributed deep-rl with importance weighted actor-learner architectures</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Espeholt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Soyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Munos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Doron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Firoiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Harley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Dunning</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1407" to="1416" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A formal basis for the heuristic determination of minimum cost paths</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">E</forename><surname>Hart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Nilsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Raphael</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE transactions on Systems Science and Cybernetics</title>
+		<imprint>
+			<date type="published" when="1968">1968</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="100" to="107" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">E</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Liaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nishihara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Goldberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stoica</surname></persName>
+		</author>
+		<idno>CoRR, abs/1712.09381</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Ray RLLib: A Composable and Scalable Reinforcement Learning Library</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mohanty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nygren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Laurent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Scheller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Watson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Egli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Eichenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Baumberger</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2012.05893</idno>
+		<title level="m">Flatland-rl: Multiagent reinforcement learning on trains</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Sample factory: Egocentric 3d control from pixels at 100000 fps with asynchronous reinforcement learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Petrenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sukhatme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Koltun</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="7652" to="7662" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Qmix: Monotonic value function factorisation for deep multi-agent reinforcement learning</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Samvelyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schroeder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Farquhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Whiteson</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4295" to="4304" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Samvelyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>De Witt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Farquhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nardelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">G J</forename><surname>Rudner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-M</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">H S</forename><surname>Torr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Foerster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Whiteson</surname></persName>
+		</author>
+		<idno>CoRR, abs/1902.04043</idno>
+		<title level="m">The StarCraft Multi-Agent Challenge</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Conflict-based search for optimal multiagent path finding</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sharon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Stern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Felner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">R</forename><surname>Sturtevant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence Journal</title>
+		<imprint>
+			<biblScope unit="volume">218</biblScope>
+			<biblScope unit="page" from="40" to="66" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Multi-agent pathfinding: Definitions, variants, and benchmarks</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Stern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">R</forename><surname>Sturtevant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Felner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Koenig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">T</forename><surname>Walker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Atzmon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">S</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 12th Annual Symposium on Combinatorial Search</title>
+		<meeting>the 12th Annual Symposium on Combinatorial Search</meeting>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+			<biblScope unit="page" from="151" to="158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Value-decomposition networks for cooperative multi-agent learning</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sunehag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gruslys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">M</forename><surname>Czarnecki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zambaldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jaderberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sonnerat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Leibo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tuyls</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.05296</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A novel approach to path planning for multiple robots in bi-connected graphs</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Surynek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2009 IEEE International Conference on Robotics and Automation</title>
+		<meeting>the 2009 IEEE International Conference on Robotics and Automation</meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2009">2009. 2009</date>
+			<biblScope unit="page" from="3613" to="3619" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Multi-agent reinforcement learning: Independent vs. cooperative agents</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the tenth international conference on machine learning</title>
+		<meeting>the tenth international conference on machine learning</meeting>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+			<biblScope unit="page" from="330" to="337" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">K</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Grammel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jayakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sulivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Santos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Horsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dieffendahl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">L</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lokesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sullivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ravi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.14471</idno>
+		<title level="m">Gym for Multi-Agent Reinforcement Learning</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">M*: A complete multirobot path planning algorithm with performance bounds</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wagner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Choset</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 2011 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2011</title>
+		<meeting>The 2011 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2011</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="3260" to="3267" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">MAgent: A Many-Agent Reinforcement Learning Platform for Artificial Collective Intelligence</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yu</surname></persName>
+		</author>
+		<idno>CoRR, abs/1712.00600</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

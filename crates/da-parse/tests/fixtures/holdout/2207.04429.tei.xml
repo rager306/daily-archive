@@ -1,0 +1,2935 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LM-Nav: Robotic Navigation with Large Pre-Trained Models of Language, Vision, and Action</title>
+				<funder ref="#_SMC4xZ8">
+					<orgName type="full">DARPA RACER, Toyota Research Institute</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">DARPA Assured Autonomy</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Polish-U.S. Fulbright Commission</orgName>
+				</funder>
+				<funder ref="#_cPxA65S">
+					<orgName type="full">AFOSR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Dhruv</forename><surname>Shah</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Warsaw</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Błażej</forename><surname>Osi Ński †βω</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Warsaw</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Robotics at Google</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Warsaw</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">U</forename><forename type="middle">C</forename><surname>Berkeley</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Warsaw</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">LM-Nav: Robotic Navigation with Large Pre-Trained Models of Language, Vision, and Action</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1BBF11DF989DF4DF91B90D4093642BE3</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T14:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>instruction following</term>
+					<term>language models</term>
+					<term>vision-based navigation</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Goal-conditioned policies for robotic navigation can be trained on large, unannotated datasets, providing for good generalization to real-world settings. However, particularly in vision-based settings where specifying goals requires an image, this makes for an unnatural interface. Language provides a more convenient modality for communication with robots, but contemporary methods typically require expensive supervision, in the form of trajectories annotated with language descriptions. We present a system, LM-Nav, for robotic navigation that enjoys the benefits of training on unannotated large datasets of trajectories, while still providing a high-level interface to the user. Instead of utilizing a labeled instruction following dataset, we show that such a system can be constructed entirely out of pre-trained models for navigation (ViNG), image-language association (CLIP), and language modeling (GPT-3), without requiring any fine-tuning or language-annotated robot data. We instantiate LM-Nav on a real-world mobile robot and demonstrate long-horizon navigation through complex, outdoor environments from natural language instructions.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>One of the central challenges in robotic learning is to enable robots to perform a wide variety of tasks on command, following high-level instructions from humans. This requires robots that can understand human instructions, and are equipped with a large repertoire of diverse behaviors to execute such instructions in the real world. Prior work on instruction following in navigation has largely focused on learning from trajectories annotated with textual instructions <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref>. This enables understanding of textual instructions, but the cost of data annotation impedes wide adoption. On the other hand, recent work has shown that learning robust navigation is possible through goalconditioned policies trained with self-supervision. These utilize large, unlabeled datasets to train vision-based controllers via hindsight relabeling <ref type="bibr" target="#b5">[6]</ref><ref type="bibr" target="#b6">[7]</ref><ref type="bibr" target="#b7">[8]</ref><ref type="bibr" target="#b8">[9]</ref><ref type="bibr" target="#b9">[10]</ref><ref type="bibr" target="#b10">[11]</ref>. They provide scalability, generalizability, and robustness, but usually involve a clunky mechanism for goal specification, using locations or images. In this work, we aim to combine the strengths of both approaches, enabling a self-supervised system for robotic navigation to execute natural language instructions by leveraging the capabilities of pre-trained models without any user-annotated navigational data. Our method uses these models to construct an "interface" that humans can use to communicate desired tasks to robots. This system enjoys the impressive generalization capabilities of the pre-trained language and vision-language models, enabling the robotic system to accept complex high-level instructions.</p><p>Our main observation is that we can utilize off-the-shelf pre-trained models trained on large corpora of visual and language datasets -that are widely available and show great few-shot generalization capabilities -to create this interface for embodied instruction following. To achieve this, we combine the strengths of two such robot-agnostic pre-trained models with a pre-trained navigation model. We use a visual navigation model (VNM: ViNG <ref type="bibr" target="#b10">[11]</ref>) to create a topological "mental map" of the environment using the robot's observations. Given free-form textual instructions, we use a † These authors contributed equally, order decided by a coin flip. Check out the project page for experiment videos, code, and a user-friendly Colab notebook that runs in your browser: <ref type="url" target="https://sites.google.com/view/lmnav">sites.google.com/view/lmnav</ref> Figure <ref type="figure">1</ref>: Embodied instruction following with LM-Nav: Our system takes as input a set of raw observations from the target environment and free-form textual instructions (left), deriving an actionable plan using three pretrained models: a large language model (LLM) for extracting landmarks, a vision-and-language model (VLM) for grounding, and a visual navigation model (VNM) for execution. This enables LM-Nav to follow textual instructions in complex environments purely from visual observations (right) without any fine-tuning.</p><p>pre-trained large language model (LLM: GPT-3 <ref type="bibr" target="#b11">[12]</ref>) to decode the instructions into a sequence of textual landmarks. We then use a vision-language model (VLM: CLIP <ref type="bibr" target="#b12">[13]</ref>) for grounding these textual landmarks in the topological map, by inferring a joint likelihood over the landmarks and nodes. A novel search algorithm is then used to maximize a probabilistic objective, and find a plan for the robot, which is then executed by VNM.</p><p>Our primary contribution is Large Model Navigation, or LM-Nav, an embodied instruction following system that combines three large independently pre-trained models -a self-supervised robotic control model that utilizes visual observations and physical actions (VNM), a vision-language model that grounds images in text but has no context of embodiment (VLM), and a large language model that can parse and translate text but has no sense of visual grounding or embodiment (LLM) -to enable long-horizon instruction following in complex, real-world environments. We present the first instantiation of a robotic system that combines the confluence of pre-trained vision-and-language models with a goal-conditioned controller, to derive actionable plans without any fine-tuning in the target environment. Notably, all three models are trained on large-scale datasets, with selfsupervised objectives, and used off-the-shelf with no fine-tuning -no human annotations of the robot navigation data are necessary to train LM-Nav. We show that LM-Nav is able to successfully follow natural language instructions in new environments over the course of 100s of meters of complex, suburban navigation, while disambiguating paths with fine-grained commands.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Early works in augmenting navigation policies with natural language commands use statistical machine translation <ref type="bibr" target="#b13">[14]</ref> to discover data-driven patterns to map free-form commands to a formal language defined by a grammar <ref type="bibr" target="#b14">[15]</ref><ref type="bibr" target="#b15">[16]</ref><ref type="bibr" target="#b16">[17]</ref><ref type="bibr" target="#b17">[18]</ref><ref type="bibr" target="#b18">[19]</ref>. However, these approaches tend to operate on structured state spaces. Our work is closely inspired by methods that instead reduce this task to a sequence prediction problem <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b20">21]</ref>. Notably, our goal is similar to the task of VLN -leveraging fine-grained instructions to control a mobile robot solely from visual observations <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2]</ref>.</p><p>However, most recent approaches to VLN use a large dataset of simulated trajectories -over 1M demonstrations -annotated with fine-grained language labels in indoor <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b21">22]</ref> and driving scenarios <ref type="bibr" target="#b22">[23]</ref><ref type="bibr" target="#b23">[24]</ref><ref type="bibr" target="#b24">[25]</ref><ref type="bibr" target="#b25">[26]</ref><ref type="bibr" target="#b26">[27]</ref><ref type="bibr" target="#b27">[28]</ref>, and rely on sim-to-real transfer for deployment in simple indoor environments <ref type="bibr" target="#b28">[29,</ref><ref type="bibr" target="#b29">30]</ref>. However, this necessitates building a photo-realistic simulator resembling the target environment, which can be challenging for unstructured environments, especially for the task of outdoor navigation. Instead, LM-Nav leverages free-form textual instructions to navigate a robot in complex, outdoor environments without access to any simulation or any trajectory-level annotations.</p><p>Recent progress in using large-scale models of natural language and images trained on diverse data has enabled applications in a wide variety of textual <ref type="bibr" target="#b30">[31]</ref><ref type="bibr" target="#b31">[32]</ref><ref type="bibr" target="#b32">[33]</ref>, visual <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b33">[34]</ref><ref type="bibr" target="#b34">[35]</ref><ref type="bibr" target="#b35">[36]</ref><ref type="bibr" target="#b36">[37]</ref><ref type="bibr" target="#b37">[38]</ref>, and embodied domains <ref type="bibr" target="#b38">[39]</ref><ref type="bibr" target="#b39">[40]</ref><ref type="bibr" target="#b40">[41]</ref><ref type="bibr" target="#b41">[42]</ref><ref type="bibr" target="#b42">[43]</ref><ref type="bibr" target="#b43">[44]</ref>. In the latter category, Shridhar et al. <ref type="bibr" target="#b38">[39]</ref>, Khandelwal et al. <ref type="bibr" target="#b43">[44]</ref> and Jang et al. <ref type="bibr" target="#b39">[40]</ref> fine-tune embeddings from pre-trained models on robot data with language labels, Huang et al. <ref type="bibr" target="#b40">[41]</ref> assume that the low-level agent can execute textual instructions (without addressing control), and Ahn et al. <ref type="bibr" target="#b41">[42]</ref> assumes that the robot has a set of text-conditioned skills that can follow atomic textual commands. All of these approaches require access to low-level skills that can follow rudimentary textual commands, which in turn requires language annotations for robotic experience and a strong assumption on the robot's capabilities. In contrast, we combine these pre-trained vision and language models with pre-trained visual policies that do not use any language annotations <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b44">45]</ref> without fine-tuning these models in the target environment or for the task of VLN. Data-driven approaches to vision-based mobile robot navigation often use photorealistic simulators <ref type="bibr" target="#b45">[46]</ref><ref type="bibr" target="#b46">[47]</ref><ref type="bibr" target="#b47">[48]</ref><ref type="bibr" target="#b48">[49]</ref> or supervised data collection <ref type="bibr" target="#b49">[50]</ref> to learn goal-reaching policies directly from raw observations. Self-supervised methods for navigation <ref type="bibr" target="#b5">[6]</ref><ref type="bibr" target="#b6">[7]</ref><ref type="bibr" target="#b7">[8]</ref><ref type="bibr" target="#b8">[9]</ref><ref type="bibr" target="#b9">[10]</ref><ref type="bibr" target="#b10">[11]</ref><ref type="bibr" target="#b50">51]</ref> instead can use unlabeled datasets of trajectories by automatically generating labels using onboard sensors and hindsight relabeling. Notably, such a policy can be trained on large, diverse datasets and generalize to previously unseen environments <ref type="bibr" target="#b44">[45,</ref><ref type="bibr" target="#b51">52]</ref>. Being self-supervised, such policies are adept at navigating to desired goals specified by GPS locations or images, but are unable to parse high-level instructions such as freeform text. LM-Nav uses self-supervised policies trained in a large number of prior environments, augmented with pre-trained vision and language models for parsing natural language instructions, and deploys them in novel real-world environments without any fine-tuning.</p><p>3 Preliminaries a photo of a stop sign a photo of a stop sign a photo of a stop sign a photo of a stop sign ViT-L Image Encoder T 1 T 2 T 3 … T M I 1 I 2 I 3 I N … Text Encoder LM-Nav consists of three large, pretrained models for processing language, associating images with language, and visual navigation.</p><formula xml:id="formula_0">I1ᐧT1 I2ᐧT2 I1ᐧT3 … I1ᐧTM I2ᐧT1 I2ᐧT2 I2ᐧT3 … I1ᐧTM I3ᐧT1 I3ᐧT2 I3ᐧT3 … I1ᐧTM INᐧT1 INᐧT2 INᐧT3 … INᐧT M … … … … … …<label>(</label></formula><p>Large language models are generative models based on the Transformer architecture <ref type="bibr" target="#b52">[53]</ref>, trained on large corpora of internet text. LM-Nav uses the GPT-3 LLM <ref type="bibr" target="#b11">[12]</ref>, to parse textual instructions into a sequence of landmarks.</p><p>Vision-and-language models refer to models that can associate images and text, e.g. image captioning, visual question-answering, etc. <ref type="bibr" target="#b53">[54]</ref><ref type="bibr" target="#b54">[55]</ref><ref type="bibr" target="#b55">[56]</ref>. We use the CLIP VLM <ref type="bibr" target="#b12">[13]</ref>, a model that jointly encodes images and text into an embedding space that allows it to determine how likely some string is to be associated with a given image. We can jointly encode a set of landmark descriptions t obtained from the LLM and a set of images i k to obtain their VLM embeddings {T, I k } (see Fig. <ref type="figure" target="#fig_1">3</ref>). Computing the cosine similarity between these embeddings, followed by a softmax operation results in probabilities P (i k |t), corresponding to the likelihood that image i k corresponds to the string t. LM-Nav uses this probability to align landmark descriptions with images.</p><p>Visual navigation models learn navigation behavior and navigational affordances directly from visual observations <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b50">51,</ref><ref type="bibr" target="#b56">[57]</ref><ref type="bibr" target="#b57">[58]</ref><ref type="bibr" target="#b58">[59]</ref>, associating images and actions through time. We use the ViNG VNM <ref type="bibr" target="#b10">[11]</ref>, a goal-conditioned model that predicts temporal distances between pairs of images and the corresponding actions to execute (see Fig. <ref type="figure" target="#fig_1">3</ref>). This provides an interface between images and embodiment. The VNM serves two purposes: (i) given a set of observations in the target environment, the distance predictions from the VNM can be used to construct a topological graph G(V, E) that represents a "mental map" of the environment; (ii) given a "walk", comprising of a sequence of connected subgoals to a goal node, the VNM can navigate the robot along this plan. The topological graph G is an important abstraction that allows a simple interface for planning over past experience in the environment and has been successfully used in prior work to perform long-horizon navigation <ref type="bibr" target="#b51">[52,</ref><ref type="bibr" target="#b59">60,</ref><ref type="bibr" target="#b60">61]</ref>. To deduce connectivity in G, we use a combination of learned distance estimates, temporal proximity (during data collection), and spatial proximity (using GPS measurements). For every connected pair of vertices {v i , v j }, we assign this distance estimate to the corresponding edge weight D(v i , v j ). For more details on the construction of this graph, see Appendix B. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">LM-Nav: Instruction Following with Pre-Trained Models</head><p>LM-Nav combines the components discussed earlier to follow textual instructions in the real world.</p><p>The LLM parses free-form instructions into a list of landmarks l (Sec. 4.2), the VLM associates these landmarks with nodes in the graph by estimating the probability that each node v corresponds to each l, P (v| l) (Sec. 4.3), and the VNM is then used to infer how effectively the robot can navigate between each pair of nodes in the graph, which we convert into a probability P (v i , v j ) derived from the estimated temporal distances. To find the optimal "walk" on the graph that both (i) adheres to the provided instructions and (ii) minimizes traversal cost, we derive a probabilistic objective (Sec. 4.1) and show how it can be optimized using a graph search algorithm (Sec. 4.4). This optimal walk is then executed in the real world by using the actions produced by the VNM model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Problem Formulation</head><p>Given a sequence of landmark descriptions l = ℓ 1 , ℓ 2 , ..., ℓ n extracted by the LLM from the language command, our method needs to determine a sequence of waypoints v = v 1 , v 2 , ..., v k to command to the robot (typically, k ≥ n, since each landmark needs to be visited, but the traversal might also require traversing other waypoints in-between the landmarks). We can formulate this as a probabilistic inference problem. A key element in this formulation is access to a distribution p(v i |ℓ j ) for each graph vertex v i and landmark description ℓ j . Recall that the graph vertices correspond to images observed by the robot, and thus, p(v i |ℓ i ) represents a distribution over images given a language description. This can be obtained directly from the VLM. Intuitively, the full likelihood that we need to optimize to determine the robot's plan will now depend on two terms: likelihoods of the form p(v ti |ℓ i ) that describe how likely v ti is to correspond to ℓ i for an assignment t 1 , t 2 , . . . , t n , and traversability likelihoods p(v i , v i+1 ) that describe how likely is the robot to be able to reach v i+1 from v i , which can be determined via the VNM.</p><p>While we can use a variety of traversability likelihood functions, a simple choice is to use a discounted Markovian model, where the discount γ models the probability of exiting at each time step, leading to a termination probability of 1 -γ at each step, and a probability of reaching v i+1 given by γ D(vi,vi+1) , where D(v i , v i+1 ) is the estimated number of time steps the robot needs to travel from v i to v i+1 , which is predicted by the VNM. While other traversability likelihoods could also be used, this choice is a convenient consequence of goal-conditioned reinforcement learning formulations <ref type="bibr" target="#b61">[62,</ref><ref type="bibr" target="#b62">63]</ref>, and thus, the log-likelihood corresponds to D(v i , v i+1 ). We can use these likelihoods to derive the probability that a given sequence v can be traversed successfully, which we denote with the auxiliary Bernoulli random variable c v (i.e., c v = 1 implies that v was traversed successfully):</p><formula xml:id="formula_1">P (c v = 1|v) = 1≤i&lt;T P (v i , v i+1 ) = 1≤i&lt;T γ D(vi,vi+1) ,<label>(1)</label></formula><p>The full likelihood used for planning is then given by:</p><formula xml:id="formula_2">P (success|v, l) ∝ P (c v = 1|v)P (v| l) = 1≤j&lt;k γ D(vj ,vj+1) max 1≤t1≤...≤tn≤k 1≤i≤n P (v ti |ℓ i ). (2)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Parsing Free-Form Textual Instructions</head><p>The user specifies the route they want the robot to take using natural language, while the objective above is defined in terms of a sequence of desired landmarks. To extract this sequence from the user's natural language instruction we employ a standard large language model, which in our prototype is GPT-3 <ref type="bibr" target="#b11">[12]</ref>. We used a prompt with 3 examples of correct landmarks' extractions, followed up by the description to be translated by the LLM. Such an approach worked for the instructions that we tested it on. Examples of instructions together with landmarks extracted by the model can be found in Fig. <ref type="figure" target="#fig_2">4</ref>. The appropriate selection of the prompt, including those 3 examples, was required for more nuanced cases. For details of the "prompt engineering" please see Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Visually Grounding Landmark Descriptions</head><p>Algorithm 1: Graph Search</p><formula xml:id="formula_3">1: Input: Landmarks (ℓ 1 , ℓ 2 , . . . , ℓ n ). 2: Input: Graph G(V, E). 3: Input: Starting node S. 4: ∀ i=0,...,n v∈V Q[i, v] = -∞ 5: Q[0, S] = 0 6: Dijkstra algorithm(G, Q[0, * ]) 7: for i in 1, 2, . . . , n do 8: ∀v ∈ V Q[i, v] = Q[i -1, v] + CLIP(v, ℓ i ) 9:</formula><p>Dijkstra algorithm(G, Q[i, * ]) 10: end for 11: destination = arg max(Q[n, * ]) 12: return backtrack(destination, Q[n, * ]) As discussed in Sec. 4.1, a crucial element of selecting the walk through the graph is computing P (v i |ℓ j ), the probability that landmark description v i refers to node ℓ j (see Eqn. 2). With each node containing an image taken during initial data collection, the probability can be computed using CLIP <ref type="bibr" target="#b12">[13]</ref> in the way described in Sec. 3 as the retrieval task. As presented in Fig. <ref type="figure" target="#fig_0">2</ref>, we apply CLIP to the image at node v i and caption prompt in the form of "This is a photo of a [ℓ j ]". To go from CLIP model outputs, which are logits, to probabilities we use P (v i |ℓ j ) = exp CLIP(vi,ℓj ) v∈V exp CLIP(v,ℓj ) . The resulting probability P (v i |ℓ j ), together with the inferred edges' distances will be used to select the optimal walk.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Graph Search for the Optimal Walk</head><p>As described in Sec. 4.1, LM-Nav aims at finding a walk v = (v 1 , v 2 , . . . , v k ) that maximizes the probability of successful execution of v that adheres to the given list of landmarks l. We can define a function R(v, t) for a monotonically increasing sequence of indices t = (t 1 , t 2 , . . . , t n ): R(v, t) :</p><formula xml:id="formula_4">= n i=1 CLIP(v ti , ℓ i ) -α T -1 j=1 D(v j , v j+1 ), where α = -log γ.<label>(3)</label></formula><p>R has the property that (v) maximizes P (success|v, l) defined in Eqn. 2, if and only if there exists t such that (v, t) maximizes R. In order to find such (v, t), we employ dynamic programming. In particular we define a helper function Q(i, v) for i ∈ {0, 1, . . . , n}, v ∈ V :</p><formula xml:id="formula_5">Q(i, v) = max v=(v1,v2,...,vj ),vj =v t=(t1,t2,...,ti) R(v, t).<label>(4)</label></formula><p>Q(i, v) represents the maximal value of R for a walk ending in v that visited the landmarks up to index i. The base case Q(0, v) visits none of the landmarks, and its value of R is simply equal to minus the length of shortest path from the starting node S. For i &gt; 0 we have:</p><formula xml:id="formula_6">Q(i, v) = max Q(i -1, v) + CLIP(v, ℓ i ), max w∈neighbors(v) Q(i, w) -α • D(v, w) .<label>(5)</label></formula><p>The base case for DP is to compute Q(0, V ). Then, in each step of DP i = 1, 2, . . . , n we compute Q(i, v). This computation resembles the Dijkstra algorithm ( <ref type="bibr" target="#b63">[64]</ref>). In each iteration, we pick the node v with the largest value of Q(i, v) and update its neighbors based on the Eqn. 5. Algorithm 1 summarizes this search process. The result of this algorithm is a walk v = (v 1 , v 2 , . . . , v k ) that maximizes the probability of successfully carrying out the instruction. Such a walk can be executed by VNM, using its action estimates to sequentially navigate to these nodes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">System Evaluation</head><p>We now describe our experiments deploying LM-Nav in a variety of outdoor settings to follow highlevel natural language instructions with a small ground robot. For all experiments, the weights of LLM, VLM, and VNM are frozen -there is no fine-tuning or annotation in the target environment. We evaluate the complete system, as well as the individual components of LM-Nav, to understand its strengths and limitations. Our experiments demonstrate the ability of LM-Nav to follow high-level instructions, disambiguate paths, and reach goals that are up to 800m away.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Mobile Robot Platform</head><p>We implement LM-Nav on a Clearpath Jackal UGV platform (see Fig. <ref type="figure">1(right)</ref>). The sensor suite consists of a 6-DoF IMU, a GPS unit for approximate localization, wheel encoders for local odometry, and front-and rear-facing RGB cameras with a 170 • field-of-view for capturing visual observations and localization in the topological graph. The LLM and VLM queries are pre-computed on a remote workstation and the computed path is commanded to the robot wirelessly. The VNM runs on-board and only uses forward RGB images and unfiltered GPS measurements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Following Instructions with LM-Nav</head><p>In each evaluation environment, we first construct the graph by manually driving the robot and collecting image and GPS observations. The graph is constructed automatically using the VNM from this data, and in principle such data could also be obtained from past traversals, or even with autonomous exploration methods <ref type="bibr" target="#b44">[45]</ref>. Once the graph is constructed, the robot can carry out instructions in that environment. We tested our system on 20 queries, in environments of varying difficulty, corresponding to a total combined length of over 6 km. Instructions include a set of prominent landmarks in the environment that can be identified from the robot's observations, e.g. traffic cones, buildings, stop signs, etc.</p><p>Fig. <ref type="figure" target="#fig_2">4</ref> shows qualitative examples of the path taken by the robot. Note that the overhead image and spatial localization of the landmarks is not available to the robot and is shown for visualization only. In Fig. <ref type="figure" target="#fig_2">4</ref>(a), LM-Nav is able to successfully localize the simple landmarks from its prior traversal and find a short path to the goal. While there are multiple stop signs in the environment, the objective in Eqn. 2 causes the robot to pick the correct stop sign in context, so as to minimize overall travel distance. Fig. <ref type="figure" target="#fig_2">4</ref>(b) highlights LM-Nav's ability to parse complex instructions with multiple landmarks specifying the route -despite the possibility of a shorter route directly to the final landmark that ignores instructions, the robot finds a path that visits all of the landmarks in the correct order.</p><p>Go straight toward the white building. Continue straight passing by a white truck until you reach a stop sign.</p><p>After passing a white building, take right next to a white truck. Then take left and go towards a square with a large tree. Go further, until you find a stop sign.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Start</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Goal Landmarks</head><p>Figure <ref type="figure">5</ref>: LM-Nav can successfully disambiguate instructions with same start-goal locations that differ slightly, and execute them. Extracted landmarks and their corresponding locations are highlighted and marked with a pin, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Disambiguation with instructions.</head><p>Since the objective of LM-Nav is to follow instructions, and not merely to reach the final goal, different instructions may lead to different traversals. Fig. <ref type="figure">5</ref> shows an example where modifying the instruction can disambiguate multiple paths to the goal. Given the shorter prompt (blue), LM-Nav prefers the more direct path. On specifying a more finegrained route (magenta), LM-Nav takes an alternate path that passes a different set of landmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Missing landmarks.</head><p>While LM-Nav is effective at parsing landmarks from instructions, localizing them on the graph, and finding a path to the goal, it relies on the assumption that the landmarks (i) exist in the environment, and (ii) can be identified by the VLM. Fig. <ref type="figure" target="#fig_2">4</ref>(c) illustrates a case where the executed path fails to visit one of the landmarks -a fire hydrant -and takes a path that goes around the top of the building rather than the bottom. This failure mode is attributed to the the inability of the VLM to detect a fire hydrant from the robot's observations. On independently evaluating the efficacy of our the VLM at retrieving landmarks (see Sec. 5.4), we find that despite being the best off-the-shelf model for our task, CLIP is unable to retrieve a small number of "hard" landmarks, including fire hydrants and cement mixers. In many practical cases, the robot is still successful in finding a path that visits the remaining landmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Quantitative Analysis</head><p>To quantify the performance of LM-Nav, we introduce some performance metrics. A walk produced by the graph search is considered successful, if (1) it matches the path intended by the user or (2) if the landmark images extracted by the search algorithm indeed contain said landmarks (i.e. if the produced path is valid, if not identical). The fraction of successful walks produced by the search algorithm is defined as planning success. For a successfully executed plan in the real world, we define efficiency as: min(1, length of described route length of executed route )</p><p>The second term -corresponding to the optimality of the executed route -is clipped at a maximum of 1 to account for occasional cases when the VNM executes a shorter, more direct path than the user intended. For a set of queries, we report the average efficiency over successful experiments. The planning efficiency is analogously defined as: min(1, length of described route length of planned walk )</p><p>Yet another metric -number of disengagements -counts the average number of human interventions required per experiment, due to unsafe maneuvers like collisions or falling off a curb, etc.</p><p>Table <ref type="table" target="#tab_0">1</ref> summarizes the quantitative performance of the system over 20 instructions. LM-Nav can consistently follow the instructions in 85% of the experiments, without collisions or disengagements (an average of 1 intervention per 6.4km of traversals). Comparing to baselines where the navigation model has been ablated (described in Sec. 5.4), LM-Nav performs consistently better in executing efficient, collision-free paths to the goal. In all the unsuccessful experiments, the failure can be attributed to the inability of the planning stage -the search algorithm is unable to visually localize certain "hard" landmarks in the graph -leading to incomplete execution of the instructions. Investigating these failure modes suggests that the most critical component of our system is the ability of VLM to detect unfamiliar landmarks, e.g. a fire hydrant, and in challenging lighting conditions, e.g. underexposed images. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Candidate Avg. Extraction Success</head><p>Noun Chunks 0.88 fairseq-1.3B <ref type="bibr" target="#b64">[65]</ref> 0.52 fairseq-13B <ref type="bibr" target="#b64">[65]</ref> 0.76 GPT-J-6B <ref type="bibr" target="#b65">[66]</ref> 0.80 GPT-NeoX-20B <ref type="bibr" target="#b66">[67]</ref> 0.72 GPT-3 <ref type="bibr" target="#b11">[12]</ref> 1.0</p><p>Table 2: GPT-3 consistently outperforms alternatives in parsing free-form instructions into landmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VLM Candidate Detection Rate</head><p>Faster-RCNN <ref type="bibr" target="#b67">[68]</ref> 0.07 ViLD <ref type="bibr" target="#b35">[36]</ref> 0.38 CLIP-ViT <ref type="bibr" target="#b12">[13]</ref> 0.87</p><p>Table 3: CLIP-ViT produces the most reliable landmark detections from visual observations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Dissecting LM-Nav</head><p>To understand the influence of each of the components of LM-Nav, we conduct experiments to evaluate these components in isolation. For more details about these experiments, see Appendix C.</p><p>To evaluate the performance of LLM candidates in parsing instructions into an ordered list of landmarks, we compare GPT-3 (used by LM-Nav) to other state-of-the-art pre-trained language models -fairseq <ref type="bibr" target="#b64">[65]</ref>, GPT-J-6B <ref type="bibr" target="#b65">[66]</ref>, and GPT-NeoX-20B <ref type="bibr" target="#b66">[67]</ref> -as well as a simple baseline using spaCy NLP library <ref type="bibr" target="#b68">[69]</ref> that extracts base noun phrases, followed by filtering. In Table <ref type="table">2</ref> we report the average extraction success for all the methods on the 20 prompts used in Section 5.3. GPT-3 significantly outperforms other models, owing to its superior representation capabilities and in-context learning <ref type="bibr" target="#b69">[70]</ref>. The noun chunking performs surprisingly reliably, correctly solving many simple prompts. For further details on these experiments, see Appendix C.2.</p><p>To evaluate the VLM's ability to ground these textual landmarks in visual observations, we set up an object detection experiment. Given an unlabeled image from the robot's on-board camera and a set of textual landmarks, the task is to retrieve the corresponding label. We run this experiment on a set of 100 images from the environments discussed earlier, and a set of 30 commonly-occurring landmarks. These landmarks are a combination of the landmarks retrieved by the LLM in our experiments from Sec. 5.2 and manually curated ones. We report the detection successful if any of the top 3 predictions adhere to the contents of the image. We compare the retrieval success of our VLM (CLIP) with some credible object detection alternatives -Faster-RCNN-FPN <ref type="bibr" target="#b67">[68,</ref><ref type="bibr" target="#b70">71]</ref>, a state-of-the-art object detection model pre-trained on MS-COCO <ref type="bibr" target="#b71">[72,</ref><ref type="bibr" target="#b72">73]</ref>, and ViLD <ref type="bibr" target="#b35">[36]</ref>, an openvocabulary object detector based on CLIP and Mask-RCNN <ref type="bibr" target="#b73">[74]</ref>. To evaluate against the closedvocabulary baseline, we modify the setup by projecting the landmarks onto the set of MS-COCO class labels. We find that CLIP outperforms baselines by a wide margin, suggesting that its visual model transfers very well to robot observations (see Table <ref type="table">3</ref>). Despite deriving from CLIP, ViLD struggles with detecting complex landmarks like "manhole cover" and "glass building". Faster- RCNN is unable to detect common MS-COCO objects like "traffic light", "person" and "stop sign", likely due to the on-board images being out-of-distribution for the model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Start Goal Collision</head><p>Figure <ref type="figure">6</ref>: GPS-Nav (red) fails to execute a plan due to its inability to reason about traversability through obstacles, while LM-Nav (blue) succeeds.</p><p>To understand the importance of the VNM, we run an ablation experiment of LM-Nav without the navigation model. Using GPS-based distance estimates and a naïve straight line controller between nodes of the topological graph. Table <ref type="table" target="#tab_0">1</ref> summarizes these results -without VNM's ability to reason about obstacles and traversability, the system frequently runs into small obstacles such as trees and curbs, resulting in failure. Fig. <ref type="figure">6</ref> illustrates such a case -while such a controller works well on open roads, it cannot reason about connectivity around buildings or obstacles, and results in collisions with a curb, a tree, and a wall in 3 individual attempts. This illustrates that using a learned policy and distance function from the VNM is critical for enabling LM-Nav to navigate in complex environments without collisions.</p><p>Lastly, to understand the importance of the two components of the graph search objective (Eqn. 3), we ran a set of ablations where the graph search only depends on P l , i.e. Max Likelihood Planning, which only picks the most likely landmark without reasoning about topological connectivity or traversability. Table <ref type="table" target="#tab_1">4</ref> shows that such a planner suffers greatly in the form of efficiency, because it does not utilize the spatial organization of nodes and their connectivity. For more details on these experiments, and qualitative examples, see Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion</head><p>We presented Large Model Navigation, or LM-Nav, a system for robotic navigation from textual instructions that can control a mobile robot without requiring any user annotations for navigational data. LM-Nav combines three pre-trained models: the LLM, which parses user instructions into a list of landmarks, the VLM, which estimates the probability that each observation in a "mental map" constructed from prior exploration of the environment matches these landmarks, and the VNM, which estimates navigational affordances (distances between landmarks) and robot actions. Each model is pre-trained on its own dataset, and we show that the complete system can execute a variety of user-specified instructions in real-world outdoor environments -choosing the correct sequence of landmarks through a combination of language and spatial context -and handle mistakes (such as missing landmarks). We also analyze the impact of each pre-trained model on the full system.</p><p>Limitations and future work. The most prominent limitation of LM-Nav is its reliance on landmarks: while the user can specify any instruction they want, LM-Nav only focuses on the landmarks and disregards any verbs or other commands (e.g., "go straight for three blocks" or "drive past the dog very slowly"). Grounding verbs and other nuanced commands is an important direction for future work. Additionally, LM-Nav uses a VNM that is specific to outdoor navigation with the Clearpath Jackal robot. An exciting direction for future work would be to design a more general "large navigation model" that can be utilized broadly on any robot, analogous to how the LLM and VLM handle any text or image. However, we believe that in its current form, LM-Nav provides a simple and attractive prototype for how pre-trained models can be combined to solve complex robotic tasks, and illustrates that these models can serve as an "interface" to robotic controllers that are trained without any language annotations. One of the implications of this result is that further progress on self-supervised robotic policies (e.g., goal-conditioned policies) can directly benefit instruction following systems. More broadly, understanding how modern pre-trained models enable effective decomposition of robotic control may enable broadly generalizable systems in the future, and we hope that our work will serve as a step in this direction.</p><p>the landmarks encountered in our experiments. While our experiments did not require more careful prompt engineering, Radford et al. <ref type="bibr" target="#b12">[13]</ref> and Zeng et al. <ref type="bibr" target="#b42">[43]</ref> report improved robustness by using an ensemble of slightly varying prompts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Building the Topological Graph with VNM</head><p>This section outlines finer details regarding how the topological graph is constructed using VNM.</p><p>We use a combination of learned distance estimates (from VNM), spatial proximity (from GPS), and temporal proximity (during data collection), to deduce edge connectivity. If the corresponding timestamps of two nodes are close (&lt; 2s), suggesting that they were captured in quick succession, then the corresponding nodes are connected -adding edges that were physically traversed. If the VNM estimates of the images at two nodes are close, suggesting that they are reachable, then the corresponding nodes are also connected -adding edges between distant nodes along the same route and giving us a mechanism to connect nodes that were collected in different trajectories or at different times of day but correspond to the nearby locations. To avoid cases of underestimated distances by the model due to aliased observations, e.g. green open fields or a white wall, we filter out prospective edges that are significantly further away as per their GPS estimates -thus, if two nodes are nearby as per their GPS, e.g. nodes on different sides of a wall, they may not be disconnected if the VNM does not estimate a small distance; but two similar-looking nodes 100s of meters away, that may be facing a white wall, may have a small VNM estimate but are not added to the graph to avoid wormholes. Algorithm 2 summarizes this process -the timestamp threshold is 1 second, the learned distance threshold τ is 80 time steps (corresponding to ∼ 20 meters), and the spatial threshold η is 100 meters.</p><p>Algorithm 2: Graph Building 1: Input: Nodes n i , n j ∈ G containing robot observations; VNM distance function f d ; hyperparameters {τ, , η} 2: Output: Boolean e ij corresponding to the existence of edge in G, and its weight 3: learned distance D ij = f d (n i ['image'], n j ['image ]) 4: timestamp distance T ij = |n i ['timestamp'] -n j ['timestamp']| 5: spatial distance X ij = n i ['GPS'] -n j ['GPS']) 6: if ( T ij &lt; ) then return {True, D ij } 7: else if (D ij &lt; τ ) AND (X ij &lt; η) then return {True, D ij } 8: else return False Since a graph obtained by such an analysis may be quite dense, we perform a transitive reduction operation on the graph to remove redundant edges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Miscellaneous Ablation Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Ablating the Search Objective</head><p>The graph search objective described in Section 4.4 can be factored into two components: visiting the required landmarks (denoted by P l (v| l)) and minimizing distance traveled (denoted by P t (v)). To analyze the importance of these two components, we ran a set of experiments where the nodes to be visited are selected based only on P l . This corresponds to a Max Likelihood planner, which only picks the most likely node for each landmark, without reasoning about their relative topological positions and traversability. This approach leads to a simpler algorithm: for each of the landmark descriptions, the algorithm selects the node with the highest CLIP score and connects it via the shortest path to the current node. The shortest path between each pair of nodes is computed using the Floyd-Warshall algorithm. Table <ref type="table" target="#tab_1">4</ref> summarizes the performance metrics for the two planners. Unsurprisingly, the max likelihood planner suffers greatly in the form of efficiency, because it does not incentivize shorter paths (see Figure <ref type="figure" target="#fig_3">7</ref> for an example). Interestingly, the planning success suffers as well, especially in complex environments. Further analysis of these failure modes reveals cases where VLM returns erroneous detections for some landmarks, likely due to the contrastive objective struggling with  variable binding (see Figure <ref type="figure" target="#fig_4">8</ref> for an example). While LM-Nav suffers from these failures as well, the second factor in the search objective P t (v) imposes a soft constraint on the search space of the landmarks, eliminating most of these cases and resulting in a significantly higher planning success rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Ablating the LLM</head><p>As described in Section 5.4 we run experiments comparing performance of different methods on extracting landmarks. Here we provide more details on the experiments. The source code to run this experiments is available in the file ablation text to landmark.ipynb in the repository (see Appendix D).</p><p>As the metric of performance we used average extraction success. For a query with a ground truth list of landmarks L gt , where a method extracts list L m , we define the methods extraction success as:</p><formula xml:id="formula_7">|LCS(L m , L gt )| |L gt | ,</formula><p>where LCS is longest common subsequence and | • | denotes a length of a sequence or a list. This metric is measuring not only if correct landmarks were extracted, but also whether they are in the same order as in the ground truth sequence. When comparing landmarks we ignore articles, as we don't expect them to have impact on the downstream tasks.</p><p>All the experiments were run using APIs serving models. We used OpenAI's API (<ref type="url" target="https://beta.openai.com/">https:  //beta.openai.com/</ref>) for GPT-3 and GooseAI (<ref type="url" target="https://goose.ai">https://goose.ai</ref>) for the other open-source models. Both providers conveniently share the same API. We used the same, default parameters, apart from setting temperature to 0: we don't expect that landmark extractions to require creativity and model's determinism improves reputability. For all the reported experiments, we used the same prompt as described in Appendix A. Please check out the released code for the exact prompts used.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Code Release</head><p>We released the code corresponding to the LLM interface, VLM scoring, and graph search algorithm -along with a user-friendly Colab notebook capable of running quantitative experiments from Section 5.3. The links to the code and pickled graph objects can be found at our project page: <ref type="url" target="https://sites.google.com/view/lmnav">sites.google.com/view/lmnav</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Experiment Videos</head><p>We are sharing experiment videos of LM-Nav deployed on a Clearpath Jackal mobile robotic platform -please see <ref type="url" target="https://sites.google.com/view/lmnav">sites.google.com/view/lmnav</ref>. The videos highlight the behavior learned by LM-Nav for the task of following free-form textual instructions and its ability to navigate complex environments and disambiguate between fine-grained commands.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: LM-Nav uses VLM to infer a joint probability distribution over textual landmarks and image observations. VNM constitutes an image-conditioned distance function and policy that can control the robot.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: System overview: (a) VNM uses a goal-conditioned distance function to infer connectivity between the set of raw observations and constructs a topological graph. (b) LLM translates natural language instructions into a sequence of textual landmarks. (c) VLM infers a joint probability distribution over the landmark descriptions and nodes in the graph, which is used by (d) a graph search algorithm to derive the optimal walk through the graph. (e) The robot drives following the walk in the real world using the VNM policy.</figDesc><graphic coords="4,117.90,72.00,376.13,142.84" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Qualitative examples of LM-Nav in real-world environments executing textual instructions (left). The landmarks extracted by LLM (highlighted in text) are grounded into visual observations by VLM (center; overhead image not available to the robot). The resulting walk of the graph is executed by VNM (right).</figDesc><graphic coords="6,108.00,72.00,395.98,128.06" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Examples of path planned by LM-Nav (left) and maximum likelihood planning (right). The start nodes and detected nodes are indicated with black arrows. In order to represent overlapping paths, we use colors interchangeably (start → L1: blue, L1 → L2: orange, L2 → L3: blue). The path taken by LM-Nav is significantly shorter, resulting in a 5× more efficient plan.</figDesc><graphic coords="17,117.90,72.00,178.20,174.08" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 8 :</head><label>8</label><figDesc>Figure8: An example of failure to pick the correct image by maximum likelihood planning. Both images were selected for a prompt A photo of a blue dumpster. The left one was selected as a part of the LM-Nav's graph search and the right was selected by maximum likelihood planning. In the latter case, the selected image contains a blue semi-truck and an orange trailer, but no blue dumpsters. This might be an example of an issue with the variable binding. The left image was edited to maintain anonymity.</figDesc><graphic coords="17,117.90,304.45,178.20,133.65" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Quantifying navigational instruction following with LM-Nav over 20 experiments. LM-Nav can successfully plan a path to the goal, and follow it efficiently, over 100s of meters. Ablating the VNM (GPS-Nav) severely hurts performance due to frequent disengagements inability to reason about collisions with obstacles.</figDesc><table><row><cell>System</cell><cell>Environment</cell><cell cols="4">Net Success ↑ Efficiency ↑ # Diseng. ↓ Planning ↑</cell></row><row><cell cols="2">GPS-Nav (No VNM) EnvSmall-10</cell><cell>0.23</cell><cell>0.93</cell><cell>0.75</cell><cell>0.9</cell></row><row><cell>LM-Nav (Ours)</cell><cell>EnvSmall-10 EnvLarge-10</cell><cell>0.8 0.8</cell><cell>0.96 0.89</cell><cell>0.1 0</cell><cell>0.9 0.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>Ablating</figDesc><table><row><cell></cell><cell></cell><cell>EnvSmall-10</cell><cell></cell><cell>EnvLarge-10</cell></row><row><cell>Planner</cell><cell cols="4">Pl. Success ↑ Pl. Efficiency ↑ Pl. Success ↑ Pl. Efficiency ↑</cell></row><row><cell>Max Likelihood</cell><cell>0.6</cell><cell>0.69</cell><cell>0.2</cell><cell>0.17</cell></row><row><cell>LM-Nav (Ours)</cell><cell>0.9</cell><cell>0.80</cell><cell>0.8</cell><cell>0.99</cell></row></table><note><p>the search algorithm (Sec. 4.4) gives a max likelihood planner that ignores reachability information, resulting in inefficient plans that are upto 6× longer than LM-Nav for the same instruction.</p></note></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This research was supported by <rs type="funder">DARPA Assured Autonomy</rs>, <rs type="funder">DARPA RACER, Toyota Research Institute</rs>, <rs type="grantNumber">ARL DCIST CRA W911NF-17-2-0181</rs>, and <rs type="funder">AFOSR</rs>. BO was supported by the <rs type="grantName">Fulbright Junior Research Award</rs> granted by the <rs type="funder">Polish-U.S. Fulbright Commission</rs>. We would like to thank <rs type="person">Alexander Toshev</rs> for pivotal discussions in early stages of the project. We would also like to thank <rs type="person">Kuan Fang</rs>, <rs type="person">Siddharth Karamcheti</rs>, and <rs type="person">Albertyna Osińska</rs> for useful discussions and feedback.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_SMC4xZ8">
+					<idno type="grant-number">ARL DCIST CRA W911NF-17-2-0181</idno>
+				</org>
+				<org type="funding" xml:id="_cPxA65S">
+					<orgName type="grant-name">Fulbright Junior Research Award</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Prompt Engineering</head><p>To use large language models for a particular task, as opposed to a general text completion, one needs to encode the task as a part of the text input to the model. There exist many ways to create such encoding and the process of the representation optimization is sometimes referred to as prompt engineering <ref type="bibr" target="#b12">[13]</ref>. In this section, we discuss the prompts we used for LLM and VLM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 LLM Prompt Engineering</head><p>All our experiments use GPT-3 <ref type="bibr" target="#b11">[12]</ref> as the LLM, accessible via OpenAI's API: <ref type="url" target="https://openai.com/api/">https://openai.com/api/</ref>. We used this model to extract a list of landmarks from freeform instructions. The model outputs were very reliable and robust to small changes in the input prompts. For parsing simple queries, GPT-3 was surprisingly effective with a single, zero-shot prompt. See the example below, where the model output is highlighted: Appendix C.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 VLM Prompt Engineering</head><p>In the case of our VLM-CLIP [13] -we use a simple family of prompts: This is a photo of , appended with the landmark description. This simple prompt was sufficient to detect over 95% of</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Vision-and-language navigation: Interpreting visually-grounded navigation instructions in real environments</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Teney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sünderhauf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gould</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hengel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Vision-and-language navigation: A survey of tasks, methods, and future directions</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Stefani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<idno>2022. 2</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Room-Across-Room: Multilingual vision-and-language navigation with dense spatiotemporal grounding</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Baldridge</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods for Natural Language Processing (EMNLP)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Stay on the path: Instruction fidelity in vision-and-language navigation</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Magalhaes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Baldridge</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Cross-lingual vision-language navigation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Self-supervised, goal-conditioned policies for navigation in unstructured environments</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Manderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Gamboa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wapnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shkurti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Meger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Dudek</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Improving robot navigation through self-supervised online learning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Sofman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">L</forename><surname>Ratliff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A D</forename><surname>Bagnell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Vandapel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Stentz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Field Robotics: Special Issue on Machine Learning Based Robotics in Unstructured Environments</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Learning to fly by crashing</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Learning to fly by myself: A self-supervised cnn-based approach for autonomous navigation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kouris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-S</forename><surname>Bouganis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Self-Supervised Deep RL with Generalized Computation Graphs for Robot Navigation</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Villaflor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">ViNG: Learning Open-World Navigation with Visual Goals</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rhinehart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Robotics and Automation (ICRA), 2021</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page">15</biblScope>
+		</imprint>
+	</monogr>
+	<note>Information Processing Systems, 2020. 2, 3, 5</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Learning transferable visual models from natural language supervision</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hallacy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Goh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clark</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021. 2, 3, 5, 8, 15</date>
+			<biblScope unit="page">16</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Statistical Machine Translation</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Koehn</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<publisher>Cambridge University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Learning for semantic parsing with statistical machine translation</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">W</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mooney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Human Language Technology Conference of the NAACL, Main Conference</title>
+		<meeting>the Human Language Technology Conference of the NAACL, Main Conference</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Following directions using statistical machine translation</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Matuszek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Koscher</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2010 5th ACM/IEEE International Conference on Human-Robot Interaction (HRI)</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Learning to interpret natural language navigation instructions from observations</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Mooney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Fifth AAAI Conference on Artificial Intelligence</title>
+		<meeting>the Twenty-Fifth AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Understanding natural language commands for robotic navigation and mobile manipulation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dickerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Walter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Teller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Fifth AAAI Conference on Artificial Intelligence</title>
+		<meeting>the Twenty-Fifth AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Learning to Parse Natural Language Commands to a Robot Control System</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Matuszek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Herbst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Learning to follow navigational route instructions</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shimizu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Haas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 21st International Joint Conference on Artificial Intelligence, IJCAI&apos;09</title>
+		<meeting>the 21st International Joint Conference on Artificial Intelligence, IJCAI&apos;09</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Listen, attend, and walk: Neural mapping of navigational instructions to action sequences</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Walter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">ALFRED: A Benchmark for Interpreting Grounded Instructions for Everyday Tasks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Touchdown: Natural language navigation and spatial reasoning in visual street environments</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Snavely</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Artzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Learning to follow directions in street view</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Malinowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mirowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Banki-Horvath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mirowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Banki-Horvath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Teplyashin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Malinowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">K</forename><surname>Grimes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</author>
+		<title level="m">The streetlearn environment and dataset</title>
+		<imprint>
+			<publisher>CoRR</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Talk2nav: Long-range vision-and-language navigation with dual attention and spatial memory</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">B</forename><surname>Vasudevan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Van Gool</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Comput. Vision</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Mapping instructions to actions in 3d environments with visual goal prediction</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">K</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bennett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Niklasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shatkhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Artzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Riloff</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Chiang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Hockenmaier</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Tsujii</surname></persName>
+		</editor>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Following high-level navigation instructions on a simulated quadcopter with imitation learning</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brukhim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bennett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Knepper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Artzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Beyond the nav-graph: Visionand-language navigation in continuous environments</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Krantz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision -ECCV 2020: 16th European Conference</title>
+		<meeting><address><addrLine>Glasgow, UK</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020">August 23-28, 2020. 2020</date>
+			<biblScope unit="volume">XXVIII</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Simto-real transfer for vision-and-language navigation</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Truong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Robot Learning</title>
+		<meeting>the 2020 Conference on Robot Learning</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Huggingface&apos;s transformers: State-of-the-art natural language processing</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Moi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Louf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Funtowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Brew</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Language models for dialog applications</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">D</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ghafouri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Menegali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Krikun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Krivokon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Rusch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pickett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Meier-Hellstern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Doshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">D</forename><surname>Santos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Duke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Soraker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zevenbergen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Prabhakaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Diaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hutchinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Olson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Molina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hoffman-John</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Aroyo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rajakumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Butryna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lamm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kuzmina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fenton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kurzweil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Aguera-Arcas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Croak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lamda</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">P</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">H</forename><surname>Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zaremba</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Evaluating large language models trained on code. CoRR, 2021. 2</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Hierarchical text-conditional image generation with clip latents</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Photorealistic text-to-image diffusion models with deep language understanding</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Saharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Whang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Denton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K S</forename><surname>Ghasemipour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">K</forename><surname>Ayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Mahdavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">G</forename><surname>Lopes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Salimans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Fleet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Norouzi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Open-vocabulary object detection via vision and language knowledge distillation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cui</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Scaling up visual and vision-language representation learning with noisy text supervision</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Parekh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-H</forename><surname>Sung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Duerig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Machine Learning</title>
+		<meeting>the 38th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">CLIP models are few-shot learners: Empirical studies on VQA and visual entailment</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wei</surname></persName>
+		</author>
+		<idno>2022. 2</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Cliport: What and where pathways for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Manuelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 5th Conference on Robot Learning (CoRL)</title>
+		<meeting>the 5th Conference on Robot Learning (CoRL)</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">BC-z: Zero-shot task generalization with robotic imitation learning</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khansari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kappler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ebert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">5th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.07207</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Extracting actionable knowledge for embodied agents</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.01691</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Do as i can, not as i say: Grounding language in robotic affordances. In arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Attarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tombari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Florence</surname></persName>
+		</author>
+		<idno>arXiv, 2022. 16</idno>
+		<title level="m">Socratic models: Composing zero-shot multimodal reasoning with language</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Simple but effective: Clip embeddings for embodied ai</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kembhavi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Rapid exploration for open-world navigation with latent goal models</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Eysenbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rhinehart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">5th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">6</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Habitat: A Platform for Embodied AI Research</title>
+		<author>
+			<persName><forename type="first">Manolis</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">*</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">*</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleksandr</forename><surname>Maksymets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">*</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Straub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF International Conference on Computer Vision (ICCV)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Gibson env: real-world perception for embodied agents</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Zamir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z.-Y</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sax</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision and Pattern Recognition (CVPR), 2018 IEEE Conference on</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">X</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Funkhouser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Koltun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Minos</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1712.03931</idno>
+		<title level="m">Multimodal indoor simulator for navigation in complex environments</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">AI2-THOR: an interactive 3d environment for visual AI</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kolve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Long-Range Indoor Navigation With PRM-RL</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Francis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Faust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">T L</forename><surname>Chiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Kew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">W E</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Robotics</title>
+		<imprint>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Deep visual MPC-policy learning for navigation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hirose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sadeghian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Viking: Vision-based kilometer-scale navigation with geographic hints</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shah</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<idno>2022. 3</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Robotics: Science and Systems</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">U</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">I</forename><surname>Guyon</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><forename type="middle">V</forename><surname>Luxburg</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Bengio</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Wallach</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Fergus</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Vishwanathan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Garnett</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Flamingo: a visual language model for few-shot learning</title>
+		<author>
+			<persName><forename type="first">J.-B</forename><surname>Alayrac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Luc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Miech</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Hasson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lenc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rutherford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Samangooei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monteiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Menick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nematzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sharifzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Binkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Barreira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Simonyan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Visualbert: A simple and performant baseline for vision and language</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">H</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yatskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-J</forename><surname>Hsieh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K.-W</forename><surname>Chang</surname></persName>
+		</author>
+		<editor>Arxiv</editor>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Uniter: Universal image-text representation learning</title>
+		<author>
+			<persName><forename type="first">Y.-C</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Kholy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Semi-Parametric Topological Memory for Navigation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Savinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Koltun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Learning to Explore using Active Neural SLAM</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">DD-PPO: Learning Near-Perfect PointGoal Navigators from 2.5 Billion Frames</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Wijmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Morcos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Essa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Savva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Scaling Local Control to Large-Scale Topological Navigation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ratliff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Learning deployable navigation policies at kilometer scale from a single traversal</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sunderhauf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mirowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Milford</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 2nd Conference on Robot Learning</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Billard</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Dragan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Peters</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Morimoto</surname></persName>
+		</editor>
+		<meeting>The 2nd Conference on Robot Learning</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Learning to achieve goals</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">P</forename><surname>Kaelbling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+			<biblScope unit="page" from="1094" to="1099" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Dynamical Distance Learning for Semi-Supervised and Unsupervised Skill Discovery</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hartikainen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Haarnoja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">A note on two problems in connexion with graphs. Numerische mathematik</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">W</forename><surname>Dijkstra</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1959">1959</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhosale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shleifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">V</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.10684</idno>
+		<title level="m">Efficient large scale language modeling with mixtures of experts</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">GPT-J-6B: A 6 Billion Parameter Autoregressive Language Model</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Komatsuzaki</surname></persName>
+		</author>
+		<ptr target="https://github.com/kingoflolz/mesh-transformer-jax" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hallahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Anthony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Golding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Leahy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mc-Donell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Phang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pieler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><forename type="middle">S</forename><surname>Prashanth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Weinbach</surname></persName>
+		</author>
+		<title level="m">Gpt-neox-20b: An open-source autoregressive language model</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Faster r-cnn: Towards real-time object detection with region proposal networks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">spacy: Industrial-strength natural language processing in python</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Honnibal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Montani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Van Landeghem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Boyd</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">8</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<monogr>
+		<title level="m" type="main">Extrapolating to unnatural language processing with gpt-3&apos;s in-context learning: The good, the bad, and the mysterious</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rong</surname></persName>
+		</author>
+		<ptr target="http://ai.stanford.edu/blog/in-context-learning/" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page">15</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Feature pyramid networks for object detection</title>
+		<author>
+			<persName><forename type="first">T.-Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hariharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Belongie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Microsoft coco: Common objects in context</title>
+		<author>
+			<persName><forename type="first">T.-Y</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Zitnick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kirillov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Massa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-Y</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+		<ptr target="https://github.com/facebookresearch/detectron2" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<analytic>
+		<title level="a" type="main">Mask r-cnn</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gkioxari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE International Conference on Computer Vision (ICCV)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

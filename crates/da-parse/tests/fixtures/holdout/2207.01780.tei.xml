@@ -1,0 +1,2407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CodeRL: Mastering Code Generation through Pretrained Models and Deep Reinforcement Learning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2022-11-03">3 Nov 2022</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+							<email>hungle@salesforce.com</email>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><roleName>Akhilesh</roleName><forename type="first">Deepak</forename><surname>Gotmare</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Steven</forename><forename type="middle">C H</forename><surname>Hoi</surname></persName>
+							<email>shoi@salesforce.com</email>
+							<affiliation key="aff0">
+								<orgName type="department">Salesforce Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CodeRL: Mastering Code Generation through Pretrained Models and Deep Reinforcement Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2022-11-03">3 Nov 2022</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">43C7FA381D46C01635A72953F7FBE6BF</idno>
+					<idno type="arXiv">arXiv:2207.01780v3[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T14:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Program synthesis or code generation aims to generate a program that satisfies a problem specification. Recent approaches using large-scale pretrained language models (LMs) have shown promising results, yet they have some critical limitations. In particular, they often follow a standard supervised fine-tuning procedure to train a code generation model only from the pairs of natural-language problem descriptions and ground-truth programs. Such paradigm largely ignores some important but potentially useful signals in the problem specification such as unit tests, which thus often results in poor performance when solving complex unseen coding tasks. To address the limitations, we propose "CodeRL", a new framework for program synthesis tasks through pretrained LMs and deep reinforcement learning (RL). Specifically, during training, we treat the code-generating LM as an actor network, and introduce a critic network that is trained to predict the functional correctness of generated programs and provide dense feedback signals to the actor. During inference, we introduce a new generation procedure with a critical sampling strategy that allows a model to automatically regenerate programs based on feedback from example unit tests and critic scores. For the model backbones, we extended the encoder-decoder architecture of CodeT5 with enhanced learning objectives, larger model sizes, and better pretraining data. Our method not only achieves new SOTA results on the challenging APPS benchmark, but also shows strong zero-shot transfer capability with new SOTA results on the simpler MBPP benchmark.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="33" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Program synthesis or code generation is the task of designing and building an executable computer program that satisfies a problem specification (see Figure <ref type="figure" target="#fig_7">1</ref>, right, for an example). Program synthesis research has gained much attention due to its significant impacts on the software industry, including better productivity and accessibility of programming jobs and education. Developing an AI model that can automatically generate programs based on human requirements can dramatically transform programming tools and the way we work with them.</p><p>Recent attempts employ deep learning methods, specifically Transformer-based pretrained language models (LMs) <ref type="bibr" target="#b63">[Vaswani et al., 2017</ref><ref type="bibr" target="#b6">, Brown et al., 2020]</ref>, which were originally intended for natural language learning tasks, to generate unique computer programs. These approaches <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr">, Chen et al., 2021a</ref><ref type="bibr" target="#b0">, Austin et al., 2021]</ref> consider program synthesis as a sequence-to-sequence task, which receives input sequence as problem specification in natural language and generates a sequence of codes as the output program. While these models achieve promising results, especially in basic programming tasks <ref type="bibr">[Chen et al., 2021a</ref><ref type="bibr" target="#b0">, Austin et al., 2021]</ref>, we observe that they still fail to generate codes to solve complex problems such as those at programming competitions <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr" target="#b32">, Li et al., 2022]</ref>.</p><p>There are two main limitations. First, current models are trained using a conventional next-token prediction (NTP) objective which maximizes the next ground-truth token likelihood. As noted in NLP domains <ref type="bibr" target="#b4">[Bengio et al., 2015</ref><ref type="bibr" target="#b48">, Ranzato et al., 2016]</ref>, training models only with next-token prediction objective in a "teacher-forcing" manner often leads to accumulating errors during test time when tokens are generated by conditioning on previously sampled tokens, not the ground-truth tokens. This issue becomes more serious in the domain of program synthesis, where token-matching scores such as BLEU <ref type="bibr" target="#b43">[Papineni et al., 2002</ref><ref type="bibr" target="#b50">, Ren et al., 2020]</ref> are more appropriate in partial program synthesis tasks (i.e. code completion) <ref type="bibr" target="#b25">[Husain et al., 2019]</ref> but have failed to measure the functional correctness of complete programs <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr">, Chen et al., 2021a]</ref>. Training only with NTP objective is hence, not ideal to tackle full program generation to solve programming problems.</p><p>Secondly, current models fail to utilize the potential meaningful signals from unit tests, which directly determine the model performance by the functional correctness of programs. Current approaches neglect this important signal during model optimization as well as generation procedure. During optimization, unit tests could be factored into learning objectives to match the final goal of generating semantically correct programs. During inference, since unit tests are often parts of problem description (i.e. example unit tests), they are potentially powerful to further improve output programs. Related approaches such as <ref type="bibr" target="#b32">[Li et al., 2022]</ref> use example unit tests to filter and rank final output programs. While this method naturally selects better program candidates, it does not allow models to improve the programs based on the initial (example) unit test results.</p><p>To address the above issues, we introduce "CodeRL", a new framework to improve pretrained LMs for program synthesis tasks through deep reinforcement learning (see Figure <ref type="figure" target="#fig_7">1</ref>, left, and Section 3 for more details). Specifically, we propose a training strategy that optimizes pretrained LMs for program synthesis tasks in an actor-critic RL approach <ref type="bibr" target="#b28">[Konda and</ref><ref type="bibr">Tsitsiklis, 1999, Sutton et al., 1999]</ref>. We treat the pretrained LM as an actor network and synthetically sample sequences from this actor, including both correct and incorrect programs. These program samples are passed to a critic model which is trained as an error predictor to assess the functional correctness of these samples. We use the token-level hidden states extracted from the learned critic model to estimate the values/scores of output tokens of these synthetic samples. The actor network is then finetuned on these synthetic samples weighted by their critic scores.</p><p>During inference, as part of the CodeRL framework, we introduce a new generation procedure that systematically exploits example unit test signals to allow models to further improve programs. Firstly, for samples that pass the example unit tests, we employ the critic model to filter and select sub-sequences. These sub-sequences are utilized as "seeds" that condition the model to resample new tokens and obtain new output programs. Secondly, among failed programs, the critic selects top programs based on their likelihood of passing unit tests. These program candidates are concatenated with the error information received from a compiler and passed to a program repair module. This generation procedure enables a dual strategy to automatically refine and repair output programs based on their functional correctness during test time. Together with CodeRL, we extend CodeT5 as a foundation model with improved pretraining strategies, including better pretraining objectives, larger model sizes, and massive pretraining data. Our comprehensive experiments (Section 4) show that our models can achieve SOTA performance on the challenging APPS benchmark <ref type="bibr" target="#b24">[Hendrycks et al., 2021]</ref>. Specifically, our models reach more than 2% pass@1, 6% pass@5, and 20% pass@1000. Since our RL method is model-agnostic, we also apply it to various large-scale models and achieve consistent performance gains. We further test its zero-shot transfer ability on a simpler MBPP benchmark <ref type="bibr" target="#b0">[Austin et al., 2021]</ref>, where it sets a new SOTA result of 63.0% pass@80 over a finetuned GPT-137B's 61.4%. We perform qualitative analysis to understand the problems that the model succeeds or fails to solve. Finally, we release the improved CodeT5-large (770M) model which outperforms many pretrained LMs of much larger sizes.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Program Synthesis</head><p>Program synthesis tasks can date back as early as the early adoption of machine learning research <ref type="bibr">[Waldinger and</ref><ref type="bibr">Lee, 1969, Manna and</ref><ref type="bibr" target="#b40">Waldinger, 1971]</ref>. Earlier tasks include problem specifications in the form of input-output (IO) examples <ref type="bibr" target="#b54">[Summers, 1977</ref><ref type="bibr" target="#b20">, Gulwani et al., 2012]</ref> and synthesis methods are limited to probabilistic approaches <ref type="bibr" target="#b34">[Liang et al., 2010]</ref> or simple programming concepts <ref type="bibr" target="#b27">[Joulin and</ref><ref type="bibr">Mikolov, 2015, Kurach et al., 2015]</ref>. As deep learning methods became popular, later approaches adopt neural models to induce output programs, assuming an inductive bias given a sufficient number of program samples <ref type="bibr" target="#b44">[Parisotto et al., 2016</ref><ref type="bibr" target="#b3">, Balog et al., 2016</ref><ref type="bibr" target="#b15">, Devlin et al., 2017]</ref>.</p><p>More recently, we witnessed the emergence of program synthesis tasks in which output programs are extended to general-purpose programming languages <ref type="bibr" target="#b75">[Yin and Neubig, 2017</ref><ref type="bibr" target="#b73">, Xu et al., 2018</ref><ref type="bibr">, Chen et al., 2021a]</ref> and program specifications are fully described in natural English text <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr" target="#b0">, Austin et al., 2021</ref><ref type="bibr" target="#b45">, Poesia et al., 2022]</ref>. These extensions have encouraged a rising number of applications of pretrained language models (LMs) to program synthesis to exploit the contextual representations learned from massive data of codes and natural languages <ref type="bibr" target="#b18">[Feng et al., 2020</ref><ref type="bibr" target="#b12">, Clement et al., 2020</ref><ref type="bibr">, Wang et al., 2021</ref><ref type="bibr" target="#b66">, Wang and Komatsuzaki, 2021</ref><ref type="bibr" target="#b10">, Chen et al., 2022]</ref>. <ref type="bibr" target="#b41">Nijkamp et al. [2022]</ref> proposed a conversational program synthesis approach with large pretrained language models. Despite impressive results in basic programming problems and initial commercial deployment<ref type="foot" target="#foot_0">foot_0</ref> , existing models still perform poorly against complex problems such as those from programming competitions on Codeforces <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr" target="#b32">, Li et al., 2022]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Program Synthesis in Visual Context.</head><p>Another related line of research is program synthesis in computer vision domains such as images and videos. Early papers such as <ref type="bibr" target="#b30">[Kulkarni et al., 2015</ref><ref type="bibr" target="#b74">, Yang et al., 2015]</ref> introduce inverse graphics networks to infer visual properties such as pose, shape, and lighting, of visual objects. <ref type="bibr" target="#b71">Wu et al. [2017]</ref>, <ref type="bibr" target="#b37">Liu et al. [2019]</ref>, <ref type="bibr" target="#b16">Ellis et al. [2018]</ref> study the problem of image rendering, which transforms an image to structured and compact representations, i.e. scene programs. <ref type="bibr" target="#b61">Tian et al. [2019]</ref> extends the prior work to render 3D shapes from images through shape programs, containing features to capture geometric and structural priors. <ref type="bibr" target="#b19">Ganin et al. [2018]</ref> introduces an RL-based approach to render realistic images through high-level graphics programs. <ref type="bibr" target="#b55">Sun et al. [2018]</ref>introduces program synthesis from demonstration synthetic videos to summarize the behaviors of the objects in the videos.</p><p>While this line of research has remarkable impacts on applications such as image/video editing, captioning, and extrapolating, these approaches are limited to programs of domain-specific languages defined for visual objects. For instance, in <ref type="bibr" target="#b55">[Sun et al., 2018]</ref>, programming language contains basic functions for object perception, action, and control flows. In our work, we focus on program synthesis from natural language problem specifications and the output programs are in generalpurpose languages such as Python. This type of programming task can range from basic programming problems to competition-level programming tasks that require a high level of problem-solving skills.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Reinforcement Learning for Sequence Generation</head><p>Related to the program synthesis tasks are research domains of sequence generation, in which RL approaches have demonstrated remarkable achievements. In these domains, RL approaches are used to exploit signals from non-differentiable metrics of the task at hand. Earlier work such as <ref type="bibr" target="#b48">[Ranzato et al., 2016]</ref> adopts this strategy with REINFORCE algorithm <ref type="bibr" target="#b70">[Williams, 1992]</ref> to directly optimize models for sequence-based test metrics such as BLEU <ref type="bibr" target="#b43">[Papineni et al., 2002]</ref> and ROUGE <ref type="bibr" target="#b36">[Lin, 2004]</ref> scores for translation models. In the same domain, <ref type="bibr" target="#b2">Bahdanau et al. [2016]</ref> introduced an actor-critic framework <ref type="bibr">[Sutton, 1984, Konda and</ref><ref type="bibr" target="#b28">Tsitsiklis, 1999]</ref>. In visual captioning domains, <ref type="bibr" target="#b52">Rennie et al. [2017]</ref>, <ref type="bibr" target="#b67">Wang et al. [2018]</ref> proposed to use RL to optimize image captioning models using variants of CIDEr scores <ref type="bibr" target="#b64">[Vedantam et al., 2015]</ref>. Alternatively, <ref type="bibr" target="#b51">Ren et al. [2017]</ref> derived a new goal-oriented return estimate using visual-semantic embedding. <ref type="bibr" target="#b26">Johnson et al. [2017]</ref>, <ref type="bibr" target="#b62">Trivedi et al. [2021]</ref> introduce program generation as an auxiliary task to learn interpretable policies in question-answering and synthetic navigation tasks.</p><p>Different from prior domains, in program synthesis, <ref type="bibr" target="#b0">Austin et al. [2021]</ref>, <ref type="bibr">Chen et al. [2021a]</ref>, <ref type="bibr" target="#b32">Li et al. [2022]</ref> demonstrated very low correlation between token-based similarity metrics and functional correctness of programs. Hence, it is not trivial to define an appropriate optimization goal in this domain. We propose to exploit unit test signals, which directly exhibit functional correctness of programs, during both -model optimization and test-time generation stages. More related to our work are RL-based program synthesis <ref type="bibr" target="#b22">[Guu et al., 2017</ref><ref type="bibr" target="#b8">, Bunel et al., 2018</ref><ref type="bibr" target="#b33">, Liang et al., 2018</ref><ref type="bibr" target="#b76">, Zhong et al., 2018]</ref> and execution-guided synthesis approaches <ref type="bibr" target="#b17">[Ellis et al., 2019</ref><ref type="bibr">, Chen et al., 2021b]</ref>. However, these are limited to programming languages defined within a specific application domain only.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Program Completion</head><p>Related to our work is the research of automatic program completion or code completion. Code completion aims to generate programs conditioned on partial codes (e.g. function signatures, code with blank gaps) and the output programs are often short snippets as potential code suggestions. Early work such as <ref type="bibr" target="#b53">[Robbes and</ref><ref type="bibr">Lanza, 2008, Bruch et al., 2009]</ref> shows that sufficient program samples and prior program history can facilitate better code completion systems in terms of the relevance of code suggestions. <ref type="bibr" target="#b49">Raychev et al. [2014]</ref>, <ref type="bibr" target="#b69">White et al. [2015]</ref> introduce deep learningbased approaches by considering the tasks as an NLP problem of predicting probabilities of tokens or sentences using neural language models. <ref type="bibr" target="#b60">Svyatkovskiy et al. [2021]</ref>, <ref type="bibr" target="#b21">Guo et al. [2021]</ref> improve code completion systems with a reranking strategy to select better program candidates and with structured predictions to generate more syntactically correct programs. Recent work such as <ref type="bibr" target="#b12">[Clement et al., 2020</ref><ref type="bibr">, Svyatkovskiy et al., 2020]</ref> adopt pretrained language models to exploit the learned representations from large source code data and <ref type="bibr" target="#b1">[Aye et al., 2021]</ref> tackles real-world code completion.</p><p>Compared to code completion, program synthesis requires systems to generate complete programs from scratch and these programs are typically evaluated by their functional correctness through some unit tests <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr" target="#b32">, Li et al., 2022]</ref>. In this work, while we focus on program synthesis from natural problem descriptions, we adopt a similar strategy to code completion in our generation procedure to improve output programs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">CodeRL</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Program Synthesis Task</head><p>Following a sequence-to-sequence approach, the program synthesis task contains a problem description as an input sequence D and an output sequence of program Ŵ = ( ŵ1 , ..., ŵT ), ŵt ∈ V<ref type="foot" target="#foot_1">foot_1</ref> that can solve the problem. The output at each decoding step t is a distribution over the vocabulary V, computed by the softmax function ŵt ∼ softmax(Linear(s t )) where s t is the contextual hidden state at decoding step t. Conventionally, during train time, model parameters, θ, are learned by maximizing the likelihood of the ground-truth reference programs. Denoting W = (w 1 , ...w T ) as the ground-truth program, the objective is to minimize the cross-entropy loss:</p><formula xml:id="formula_0">L ce (θ) = - t log p θ (W |D) = - t log[p θ (w t |w 1:t-1 , D)]<label>(1)</label></formula><p>where the conditional probability p θ is parameterized following the above softmax function. During test time, models generate sequences of programs by autoregressively sampling token ŵt from the distribution p θ (.| ŵ1:t-1 , D). Models are evaluated against unit tests corresponding to the problem. Each test includes a pair of input and ground-truth output. In real-world program synthesis tasks <ref type="bibr" target="#b24">[Hendrycks et al., 2021]</ref>, example unit tests are often given as parts of the problem specification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Pretraining Language Models on Code</head><p>We adopt Transformer models as the backbone of our program synthesis systems. Specifically, this paper extends the CodeT5 model <ref type="bibr">[Wang et al., 2021]</ref> as a foundation model for CodeRL.</p><p>CodeT5. CodeT5 <ref type="bibr">[Wang et al., 2021]</ref> is a multi-lingual code-aware language model pretrained on large-scale source code corpora curated from Github. With a unified encoder-decoder architecture, CodeT5 achieves state-of-the-art performance in a wide range of code intelligence tasks in the CodeXGLUE benchmark <ref type="bibr" target="#b39">[Lu et al., 2021]</ref> including both code understanding and generation tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Improving Pretraining Data.</head><p>We enlarge the Python pretraining dataset using the recently released large-scale Github Code dataset<ref type="foot" target="#foot_2">foot_2</ref> . We have compiled public, non-personal information from GitHub consisting of permissively licensed Python code (e.g. "mit", "apache-2", "bsd-3-clause", "bsd-2-126 clause", "cc0-1.0", "unlicense", "isc"). The resulting Python dataset (GCPY) has 10.5B tokens and is 10x larger than the CodeSearchNet (CSN) corpus <ref type="bibr" target="#b25">[Husain et al., 2019]</ref> used in the original CodeT5 <ref type="bibr">[Wang et al., 2021]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Improving Pretraining Objective.</head><p>While pretraining tasks in CodeT5 like masked span prediction (MSP) benefit code understanding tasks, they have a large discrepancy with program synthesis objectives. To mitigate this gap, we introduce a pretraining task of next-token prediction (NTP) into CodeT5. Specifically, we uniformly sample a pivot location for each code sample, then pass the content preceding the pivot to the encoder and remaining to the decoder. To control the length of input and output sequences, we restrict the pivot within 10% to 90% of the original sequence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Program Synthesis as an RL Problem</head><p>We propose to formulate the Program Synthesis as an RL problem (see Figure <ref type="figure" target="#fig_7">1</ref>, left) and apply an actor-critic RL approach to improve the performance of a pretrained LM by exploiting the unit test signals in both model optimization (see Figure <ref type="figure" target="#fig_0">2</ref>) and generation procedure (see Figure <ref type="figure" target="#fig_2">4</ref>).</p><p>More formally, we can view the learned parameters of an LM model, θ as a stochastic policy, which decides an action as the prediction of each token. Following each action</p><p>, an LM model updates its hidden state representations which are used by the policy to determine the next action in the next decoding step. At the end of the generation episode (i.e. an &lt;endoftext&gt; token is observed), the LM Problem Linear &amp; Softmax Sampled/Baseline/Ground-truth Programs Sequence-to-Sequence Model Unit Tests Return Estimation Sample Test Results Max Pooling Baseline Test Results model receives a return r measured by the functional correctness of the generated program. The goal of RL finetuning is to minimize the expected return:</p><formula xml:id="formula_1">L rl (θ) = -E W s ∼p θ [r(W s )]<label>(2)</label></formula><p>where W s = (w s 1 , ..., w s T ) is a synthetic sample in which each token w s t is sampled by the LM model at decoding time step t. Following the REINFORCE algorithm <ref type="bibr">[Williams, 1992, Sutton and</ref><ref type="bibr" target="#b57">Barto, 2018]</ref> and policy gradient theorem <ref type="bibr" target="#b58">[Sutton et al., 1999]</ref> we can define an estimate of the gradient ∇ θ L(θ) of the non-differentiable return r as:</p><formula xml:id="formula_2">∇ θ L rl (θ) ≈ -E W s ∼p θ [r(W s )∇ θ log p θ (W s |D)] ≈ -E W s ∼p θ [r(W s ) t ∇ θ log p θ (w s t |w s 1:t-1 , D)]<label>(3)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.1">Defining Return by Unit Test Signals</head><p>For each sample sequence W s , the return r can be defined heuristically by checking its functional correctness. We pass generated programs together with the corresponding unit tests to a compiler. From the outputs of the tests, we can determine the return r:</p><formula xml:id="formula_3">r(W s ) =        -1.0 , if W s cannot be compiled (i.e. compile error) (4) -0.6</formula><p>, if W s cannot be executed with unit tests (i.e. runtime error) (5) -0.3 , if W s failed any unit test (6) +1.0 , if W s passed all unit tests (7) However, in related domains such as text-to-SQL research <ref type="bibr" target="#b76">[Zhong et al., 2018</ref><ref type="bibr" target="#b73">, Xu et al., 2018]</ref>, we note that this approach to estimate returns can lead to unstable model training with high variance of the gradient estimate following Eq. ( <ref type="formula" target="#formula_2">3</ref>) with mini-batches in training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.2">Return with a Baseline</head><p>In order to alleviate this variance, we adopt a "baseline" <ref type="bibr" target="#b57">[Sutton and Barto, 2018]</ref>. Specifically, we use a greedy decoding strategy as a baseline and any generated samples that outperform this baseline are given positive return estimation, and negative return estimation otherwise. This relative normalization technique allows models to explore imperfect programs, as long as their returns are better than the baseline's. Given a training sample, we denote the return of the baseline r(W b ) and the expected gradient is computed as:</p><formula xml:id="formula_4">∇ θ L rl (θ) ≈ -E W s ∼p θ [(r(W s ) -r(W b )) t ∇ θ log p θ (w s t |w s 1:t-1 , D)]<label>(8)</label></formula><p>Note that at each decoding step t, our greedy decoding baseline is independent from the action w s t and hence, the expected gradient term ∇ θ L rl (θ) from Eq. ( <ref type="formula" target="#formula_2">3</ref>) remains the same in Eq. ( <ref type="formula" target="#formula_4">8</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.3">Intermediate Return by Critic as Error Predictor</head><p>We observe that the above gradient estimate is only based on a final return at the end of the decoding process. However, programs often follow fixed syntactical rules in which a single token such as an additional white-space can render a program erroneous. Therefore, Eq. ( <ref type="formula" target="#formula_4">8</ref>) becomes too restrictive.</p><p>A straightforward solution is to use token-based similarity scores <ref type="bibr" target="#b43">[Papineni et al., 2002</ref><ref type="bibr" target="#b50">, Ren et al., 2020]</ref>) between each subsequence W s 1:t and the ground truth. However, code matching is not an ideal return measure due to its poor correlation with program correctness <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr">, Chen et al., 2021a</ref><ref type="bibr" target="#b0">, Austin et al., 2021]</ref> which can only be measured against fully complete programs.</p><p>Alternatively, we introduce a critic model. Figure <ref type="figure" target="#fig_1">3</ref> shows an overview of our critic model. The critic model is parameterized as a neural network with parameters φ that receives inputs as the problem description D and a sampled program W s = {w s 1 , . . . , w s T }. The critic is trained to infer the unit test outcome; one of {CompileError, RuntimeError, FailedTest, PassedTest} as described in the return definitions in Eq. ( <ref type="formula">4</ref>) to ( <ref type="formula">7</ref>). The training objective of the critic φ can be expressed as:</p><formula xml:id="formula_5">L critic (φ) = -log p φ (u|W s , D)<label>(9)</label></formula><p>where u denotes the ground-truth unit test outcome given by the compiler after passing W s to the unit tests corresponding to the problem. We use Transformer models of smaller sizes than the actor model as the base architecture for the critic model. The contextual hidden states of the program tokens (h 1 , . . . , h T ) obtained from the critic model decoder are max-pooled along the sequence length dimension h pool = Pooling(h 1 , . . . , h T ). The critic's prediction on the unit test outcome is computed as û = softmax(Linear(h pool )).</p><p>Given a learned critic, we use the probability distribution vt = softmax(Linear(h t )) to estimate the token-level value q of w s t in relation to the ground-truth unit test output (note that we use the token level contextual representation h t here, before the pooling operation). Specifically, qφ (w s t ) = vt [u] where v[.] denotes the probability of a specific unit test outcome from the four possible ones. We use this estimate to train the actor LM model with intermediate returns:</p><formula xml:id="formula_6">∇ θ L rl (θ) ≈ -E W s ∼p θ [(r(W s ) -r(W b )) t qφ (w s t )∇ θ log p θ (w s t |w s 1:t-1 , D)]<label>(10)</label></formula><p>Note that since our critic model is applied in a supervised learning environment with available ground truth, we also use the training samples of perfect output programs W and assign them with the default test outcome u = PassedTest to train the critic.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.4">Generating Programs with Example Unit Tests and Critic</head><p>We leverage the unit tests provided in the input problem description to improve the generation procedure during inference too (see Figure <ref type="figure" target="#fig_2">4</ref> for an overview and Appendix A for step-by-step explanation). For each problem, we generate N programs, each of which is passed to example unit tests that are often embedded as parts of problem specifications. Among the N programs, we denote those that pass example tests as a set P and the remaining failed programs as a set F.</p><p>Program Refining. Note that although programs in P successfully pass example tests, it is not guaranteed that these programs will succeed against the final hidden tests. Hidden tests are often more comprehensive and may contain corner cases that challenge these programs. Therefore, we can apply another round of generation to further refine the programs.</p><p>Specifically, we use sub-sequences from these program samples from P as prompts (or "seed" sequences) to the actor LM. We employ a separate critic model (φ test ) to guide our choice of subsequences from these filtered samples. This critic model is trained with a similar objective as Eq. ( <ref type="formula" target="#formula_5">9</ref>), but in a binary classification setup with {FailedTest, PassedTest} labels. Let W pass = {w 1 , . . . , w T } denote a generated sample that passes the example unit tests. We use the critic model to assign a value to each token:</p><formula xml:id="formula_7">qφtest (w t ) = p φtest (û = PassedTest|w 1:t , D)<label>(11)</label></formula><p>Problem Example unit tests Filter by example unit test results Hidden unit tests Extract example input/output pairs 1 Seed M … Seed Sampling Fail Pass Seed 1 Sample sub-sequences by critic scoring Generated Programs Seed 1 Seed 1 Seed Seed 1 Seed 1 Seed 1 Seed Seed 1 Seed 1 Seed 1 Seed Sample top sequences by critic scoring Program Refining If NUM(pass)=0 Error Program + Error Type/Msg Error Program + Error Type/Msg Error Program + Error Type/Msg Buggy Program + Error Type/Msg Fail Fail Program Repairing Final Programs LMs finetuned for program synthesis/repair Error Program + Error Type/Msg Error Program + Error Type/Msg Error Program + Error Type/Msg Buggy Program + Error Type/Msg corresponding to the critic's predicted probability of the sub-sequence till t passing the unit tests. We split the sequence at position t max corresponding to the highest critic assigned value and use the left split as the seed for the next stage. If this seed sequence till t max contains a token with p φtest (FailedTest) &gt; p φtest (PassedTest), we further chop it at this token by removing tokens on the right. This is done to pick prompts that are likely to generate successful programs in the next round.</p><p>We use these seeds to initialize and condition the (actor) LM to resample new tokens till we encounter the &lt;endoftext &gt; token. In this round, each seed sequence can be stacked N/|P| times for upsampling. This results in the same number of output programs N as in the first round of generation. Finally, we evaluate these N refined programs against the hidden unit tests.</p><p>Program Repairing. Generating programs to solve a problem, especially a competition-level programming problem, involves a huge search space of possible programs. Very often, we observe complete failure where all programs fail against example tests, i.e. |F| = N . Therefore, for these cases, we employ an additional generation step to first repair programs before refining them.</p><p>Specifically, We use the same critic model that is also employed in program refining, to sample top candidates from the set F. Let W fail denote a generated sample that fails the example unit tests. We use the critic model to assign a value to this sample:</p><formula xml:id="formula_8">qφtest (W fail ) = p φtest (û = PassedTest|W fail , D)<label>(12)</label></formula><p>corresponding to the critic's predicted probability of the the program passing the unit tests. We select top M programs with the highest probabilities and pass them to a program repair model ω.</p><p>This program repair model is designed as a sequence-to-sequence generation model. The input sequence is the concatenation of the problem description D and buggy program W fail . We also include additional signals received from the unit test results, include the type of test outcomes (as defined in the return definitions in Eq. ( <ref type="formula">4</ref>) to ( <ref type="formula">7</ref>), and error subtypes (e.g. syntax errors, out-of-index errors). The error types are extracted from error traces returned by the compiler. To train the program repair model, we exploit the synthetic samples that is originally used in our RL training, as the buggy programs W fail = W s . The ground-truth program W can be used as the expected correct program. The training objective of the program repair model is to minimize the cross-entropy loss:</p><formula xml:id="formula_9">L repair ce (ω) = - t log p ω (W |D, W fail , u, c) = - t log[p ω (w t |w 1:t-1 , D, W fail , u, c)] (<label>13</label></formula><formula xml:id="formula_10">)</formula><p>where u is one of {CompileError, RuntimeError, FailedTest, PassedTest} and c is the error subtype. During test time, each selected failed sequence can be stacked N/M times for upsampling. This results in the same number of output programs N as in the first round of generation. Finally, we pass these N repaired programs and apply the code refining procedure as before.</p><p>Critic Sampling. We call the dual strategy of program repairing and refining as "Critic Sampling" (CS). This dual strategy allows models to generate and improve programs during inference, both from success cases (program refining), and from failure cases (program repairing). In practice, we use mini-batch generating to improve efficiency during inference and employ nucleus sampling with a batch size of N = 200. Note that during program refining, while we do incur additional computation costs to re-sample using the seed sequences, we are only required to generate partial programs in the re-generation stage, making this stage less expensive than conventional generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Implementation Details</head><p>Due to the potential large number of trajectories (i.e. V T ) to generate a sequence and the unstable feedback loop between actor and critic <ref type="bibr" target="#b35">[Lillicrap et al., 2015</ref><ref type="bibr" target="#b67">, Wang et al., 2018]</ref>, we applied imitation learning to first warm-start a pretrained LM model with L ce only for up to 10 epochs. We then sampled program sequences from this actor network to train the critic while keeping the parameters of the actor network frozen. For experiments with CodeT5 actor models, we use the CodeT5-small architecture for the critic model, and GPT2-small critic architecture when the actor models are GPT variants. Following <ref type="bibr" target="#b2">[Bahdanau et al., 2016]</ref>, since our RL method is applied in a supervised learning task, in addition to synthetic programs, we also use the ground-truth programs of training samples to train the critic. These samples are considered perfect programs and always have a label of PassedTest.</p><p>After training the critic, we then apply both L ce and L rl with equal weights to finetune the actor network. To optimize the LM actor network, in practice, following previous work <ref type="bibr" target="#b2">[Bahdanau et al., 2016</ref><ref type="bibr" target="#b52">, Rennie et al., 2017</ref><ref type="bibr" target="#b67">, Wang et al., 2018]</ref>, in each training optimization step, we can simply approximate the expected gradient with a single sample W s ∼ p θ :</p><formula xml:id="formula_11">∇ θ L rl (θ) ≈ -(r(W s ) -r(W b )) t qφ (w s t )∇ θ log p θ (w s t |w s 1:t-1 , D)<label>(14)</label></formula><p>4 Experiments</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setups</head><p>Pretraining. We pretrain a CodeT5-large model (770M) from scratch following T5-large's architecture <ref type="bibr" target="#b47">[Raffel et al., 2020]</ref>. We follow the pretraining setups in CodeT5 <ref type="bibr">[Wang et al., 2021]</ref> with the modifications as proposed in Section 3.2. Specifically, we adopt the code-specific tokenizer from <ref type="bibr">Wang et al. [2021]</ref>. We employ 6 programming languages (PLs) in CodeSearchNet <ref type="bibr" target="#b25">[Husain et al., 2019]</ref> (CSN) instead of 8 PLs in CodeT5 as C/C# datasets are not publicly available. We apply only the pretraining task of masked span prediction (MSP) from <ref type="bibr">[Wang et al., 2021]</ref> and hence, do not have to parse programs into abstract syntax trees (ASTs) to obtain the identifier information.</p><p>The last preprocessing step was required in other original pretraining tasks like masked identifier prediction <ref type="bibr">[Wang et al., 2021]</ref>. To further speed up training, we concatenate data samples to batch size 512 for pretraining with MSP and the resulting number of tokens is 1.1B. To validate the benefit of using this new pretrained CodeT5 as our foundation model, we evaluate this model on CodeXGLUE <ref type="bibr" target="#b39">[Lu et al., 2021]</ref> and achieve new SOTA results (see Appendix B.1).</p><p>We perform our experiments on a kubernetes with 16 A100-40G GPUs on Google Cloud Platform and the total pretraining duration is around 21 days. In the first pretraining stage with MSP, we employ a corruption rate of 15%, a peak learning rate (LR) of 2e-4, and a batch size of 2048. We pretrain on CSN for 150 epochs (10 days) and then on GCPY for 10 epochs (5 days). For the second stage pretraining with NTP, we adopt a peak LR of 1e-4 and a batch size of 256, and pretrain for 10 epochs (6 days). We set the maximum length to 768 and 600 for source and target sequences respectively for this objective. For all experiments, we employ an AdamW optimizer <ref type="bibr" target="#b38">[Loshchilov and Hutter, 2019]</ref> with a 0.05 weight decay and a linear decay LR scheduler with a warmup step of 1000.</p><p>Evaluation. We follow <ref type="bibr" target="#b24">[Hendrycks et al., 2021</ref><ref type="bibr">, Chen et al., 2021a]</ref> and evaluate the models using the pass@k metric, which is the percentage of problems solved by using k generated programs per problem. We also follow <ref type="bibr" target="#b32">[Li et al., 2022]</ref> and use n@k metric which only considers a subset of n candidates from k generated programs per problem. The subset of n candidates are typically selected by a filtering method by passing generated programs through example tests given as part of the problem description <ref type="bibr">[Chen et al., 2021a</ref><ref type="bibr" target="#b32">, Li et al., 2022]</ref>. Note that in our critic sampling procedure, we can perform multiple rounds to refine/repair the programs based on their initial test results. In practice, we limit to maximum one round of repairing and/or refining only.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Program Synthesis Benchmarks</head><p>APPS Benchmark. We choose the challenging APPS program synthesis benchmark <ref type="bibr" target="#b24">[Hendrycks et al., 2021]</ref>, as it has large coding problems of varying difficulties collected from multiple coding websites. APPS consists of 10,000 coding problems with a 50-50 train-test split. Each problem is accompanied by 23.2 correct Python programs and 21.2 unit tests on average. The average length per problem is 293.2 words and the average length per program is 18.0 lines. The dataset is categorized into three levels of difficulty: Introductory (3639, train/test=2639/1000), Interview (5000, train/test=2000/3000), and Competition (1361, train/test=361/1000). Each sample includes 20 unit tests on average to validate the functional correctness of programs. We follow the same preprocessing step as <ref type="bibr" target="#b24">[Hendrycks et al., 2021]</ref> to formulate the input sequences from problem descriptions.</p><p>On APPS, we finetune our pretrained CodeT5 following our CodeRL framework (Section 4.3). To warm-start CodeT5 models with L ce , we adopt a batch size of 64 and warmup LR from 0 to 2e-5 for the first 500 steps and polynomially (power=0.5) decay to 1e-5 until the end of 10 epochs, which takes around 30 hours on one A100 GPU. We set the maximum source and target sequence length to 600 and 512 respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MBPP Benchmark.</head><p>We additionally include another smaller and simpler Python program synthesis dataset called MBPP <ref type="bibr" target="#b0">[Austin et al., 2021]</ref> (Mostly Basic Programming Problems) for evaluation. The dataset contains 974 instances with 374/90/500 instances for training/validation/testing respectively and 10 reserved for few-shot learning. The problems are typically short, usually one sentence of natural language descriptions each. Each problem is accompanied by 1 correct solution (6.8 lines of code on average) and 3 unit tests in the form of assert statements for validating the functional correctness. Unlike APPS, unit tests in MBPP are not hidden and are explicitly incorporated into the source sequences for program synthesis models. This might encourage models to be overfitting to these assert statements via hard-coding an if-expression very occasionally. However, for a fair comparison with the baselines, we construct the source sequences in the same way as prior work. Specifically, we adopt the same prompt format as <ref type="bibr" target="#b0">[Austin et al., 2021]</ref> to prepare the input sequence as: problem descriptions + "Your code should satisfy these tests:" + 3 assert statements.</p><p>On MBPP, we experiment with in both zero-shot (Section 4.5) and full finetuning (Appendix B.2) setup. To finetune CodeT5, due to the small training set of MBPP, we finetune the models for 60 epochs with a constant LR of 2e-5 and a batch size of 32, which takes less than 30 mins on one A100. We set the maximum source and target length to 382 and 306 respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Experimental Results on APPS</head><p>Baselines. As reported by <ref type="bibr" target="#b24">Hendrycks et al. [2021]</ref>, we compared our models with several baselines, including GPT2 <ref type="bibr" target="#b46">[Radford et al., 2019]</ref>, GPT-Neo <ref type="bibr" target="#b5">[Black et al., 2021]</ref>, and GPT3 <ref type="bibr" target="#b6">[Brown et al., 2020]</ref>.</p><p>We also compare the results with Codex <ref type="bibr">[Chen et al., 2021a]</ref> and AlphaCode <ref type="bibr" target="#b32">[Li et al., 2022]</ref>. Note that by default, results of pretrained LMs (except for Codex and GPT3) are from models finetuned on APPS using the standard loss L ce only. In our ablations, since CodeRL is model-agnostic, we can also integrate it with GPT variants such as GPT-J <ref type="bibr" target="#b66">[Wang and Komatsuzaki, 2021]</ref> and GPT-Neo.</p><p>Table <ref type="table">1</ref>: Results on the APPS benchmark: Overall, CodeRL can bring the performance gains of CodeT5 models and achieves new SOTA on both pass@k and n@k metrics. "Intro": introductory, "Inter": interview, "Comp": competition-level tasks.</p><p>(a) Performance by pass@k with k = {1, 5, 1000}</p><p>pass@1 pass@5 pass@1000 Model Size Intro Inter Comp All Intro Inter Comp All Intro Inter Comp All Codex 12B 4.14 0.14 0.02 0.92 9.65 0.51 0.09 2.25 25.02 3.70 3.23 7.87 AlphaCode 1B --------17.67 5.24 7.06 8.09 GPT3 175B 0.20 0.03 0.00 0.06 --------GPT2 0.1B 1.00 0.33 0.00 0.40 2.70 0.73 0.00 1.02 ----GPT2 1.5B 1.30 0.70 0.00 0.68 3.60 1.03 0.00 1.34 25.00 9.27 8.80 12.32 GPT-Neo 2.7B 3.90 0.57 0.00 1.12 5.50 0.80 0.00 1.58 27.90 9.83 11.40 13.76 GPT-J 6B 5.60 1.00 0.50 1.82 9.20 1.73 1.00 3.08 35.20 13.15 13.51 17.63 CodeRL+CodeT5 770M 7.08 1.86 0.75 2.69 16.37 4.95 2.84 6.81 40.00 15.67 17.90 20.98 (b) Performance by n@k with k up to 50000 and n = {1, 5} 1@k 5@k Model Size k Intro Inter Comp All Intro Inter Comp All Codex 12B 1000 22.78 2.64 3.04 6.75 24.52 3.23 3.08 7.46 AlphaCode 1B 1000 ----14.36 5.63 4.58 7.17 AlphaCode 1B 10000 ----18.18 8.21 6.65 9.89 AlphaCode 1B 50000 ----20.36 9.66 7.75 11.42 CodeRL+CodeT5 770M 1000 17.17 6.78 4.88 8.48 25.61 9.53 8.91 12.62</p><p>Overall Results. Firstly, Table <ref type="table">1a</ref> shows that the CodeRL with the CodeT5 model can achieve significant performance gains, outperforming many pretrained LMs of much larger sizes. Specifically, our approach achieved new SOTA results of 2.69% pass@1, 6.81% pass@5, and 20.98% pass@1000.</p><p>Table <ref type="table">1b</ref> shows that when evaluating on a subset of filtered code samples, our CodeRL+CodeT5 can achieve SOTA results of 8.48% 1@k and 12.62% 5@k.</p><p>Secondly, similar to prior work <ref type="bibr" target="#b24">Hendrycks et al. [2021]</ref>, <ref type="bibr" target="#b0">Austin et al. [2021]</ref>, <ref type="bibr">Chen et al. [2021a]</ref>, we also observe the benefits of upsampling generation when increasing the number of generation samples k from 1 to 1000. Note that while CodeRL incurs additional computation cost during inference with CS, our approach only requires much lower k to achieve comparable performance with other models. Specifically, with k = 1000 only, our model performance is as good as AlphaCode with much a larger generation budget of k = 50000. Finally, from Table <ref type="table">1b</ref>, we found that for challenging programming tasks in interview and competition levels, finetuning can significantly improve model performance. Specifically, we note that Codex, which was not finetuned on APPS and tested in a few-shot setting, can achieve good n@1000 results, but the model fails dramatically at synthesis tasks in interview and competition levels. This observation indicates a significant gap between the pretraining stage and downstream synthesis tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Ablation Studies</head><p>In this section, for a fair comparison between variants of return estimates and learning objectives, we report the results of pass@k where k = {1, 5} with beam search decoding. For ablation analysis of CodeRL during inference with larger k, we report the results with and without the CS procedure.</p><p>Impacts of Return Estimates. Table <ref type="table" target="#tab_0">2</ref> show the results of CodeT5-770M trained by different approaches to estimate returns of code samples. Overall, we report that the CodeRL objective with relative token-level return estimates by our critic model (Model D) can achieve the best performance on pass@1 and pass@5. Secondly, we note that using absolute returns without a baseline (Model B) could lead to the most performance drop, as this approach heavily penalizes all incorrect samples (even though they might still be better than a naive baseline). Hence, considering relative return estimates that can effectively exploit imperfect codes can lead to better synthesis systems.</p><p>Thirdly, without a critic model, simply assigning identical rewards to all tokens in a code sample (Model A) is disadvantageous as these return estimates are too restrictive to be used as feedback signals for RL training. For instance, a program is considered incorrect only because of an additional blank space character, which can result in a Indentation Error in a Python program. Simply assigning an identical reward to all tokens in this program will heavily penalize correct parts of the program sequence. Finally, we experimented with a distance-based critic which assumes that token values q(w s t ) decay linearly from t = 1 to t = T (Model C). The lower performance suggests the benefit of training a critic network to compute the returns rather than relying on rule-based approaches.</p><p>Impacts of Learning Objectives. Table <ref type="table" target="#tab_1">3</ref> shows the results with different combinations of L ce and L rl . Since CodeRL is model-agnostic, we apply the ablation experiments to both CodeT5 and GPT-Neo <ref type="bibr" target="#b5">[Black et al., 2021]</ref>. Note that in these experiments, L ce and L rl are applied on models that are already warm-started/finetuned with L ce for up to 10 epochs. Firstly, when we experiment with using only L rl , we note the problem of vanishing gradients during finetuning, which was similarly observed by <ref type="bibr" target="#b48">Ranzato et al. [2016]</ref>, <ref type="bibr" target="#b2">Bahdanau et al. [2016]</ref>. Therefore, the final models actually deteriorate and lead to performance drops. Secondly, we note that by using only L ce for further finetuning, despite improvement in losses during training time, the model performance indeed degrades during test time. We expect these models are overfitting to the training data, as similarly observed in our analysis of pretrained models in Figure <ref type="figure" target="#fig_3">6</ref>. Interestingly, we found that a naive approach of L ce with synthetic samples W s , all of which are treated as correct codes with r(W s ) = 1, still leads to some performance improvement with GPT-Neo on pass@5. However, in all other cases, this training strategy does not work as well as considering a critic model to estimate returns of W s by their test results. Finally, we found that using both L ce and L rl results in a more consistent performance improvement overall on pass@1 and pass@5 for the GPT-Neo and CodeT5 models.</p><p>Impact of Critic Sampling. Table <ref type="table" target="#tab_2">4</ref> shows the ablation results of critical sampling (CS) during inference, applied on CodeT5 models. We experiment with different combinations of program refining and repairing steps. Overall, we found positive impacts of CS, combining both program refining and repairing, across all metrics, with particularly more significant gains on pass@1000. We Figure <ref type="figure">5</ref>: Results on APPS competition-level test samples: We investigate the most challenging programming problem tasks, i.e. competition level, in the APPS benchmark. Integrating CodeRL with both CodeT5 and GPT-J, we observe good performance improvement across pass@k and n@k metrics, with increasing performance gains as k increases.</p><p>note that just program refining alone can help to bring performance gains, but its impact is reduced on the 1@1000 metric. Note that n@k measures the solving rate among the subset P filtered from k samples. As program refining will technically increase the size of this subset, the n@k metric will consider an exponentially larger number of options of n samples than before. This will normalize n@k by a larger pool of n candidate set, resulting in less impact of program refining on model performance. We recommend additional post-processing steps such as candidate ranking <ref type="bibr" target="#b14">[Cobbe et al., 2021]</ref> to improve the performance of program refining, particularly on n@k metrics.</p><p>Secondly, when integrated program refining with program repairing (for problems where P = ∅), we found further performance gains in all metrics. Interestingly, when experimenting with different top-M selection schemes, we found the best overall performance with M = 1 and performance starts to drop from M = 2 to M = 4 (except for pass@200 results). This observation indicates the benefit of using the critic model to focus on the best candidates for program repairing rather than choosing multiple program candidates. Moreover, with larger M , each program candidate will have a smaller number of batch size (i.e. N/M ). This results in a lower chance for the program repair model to properly repair and generate correct programs.</p><p>Results on Competition-level Tasks. We choose to investigate a subset of the APPS test split, which contains the test samples of the highest difficulty level (i.e. competition programming tasks).</p><p>Figure <ref type="figure">5</ref> shows the results of pass@k and n@k with k ranging from 1 to 200 and n = {1, 5}, for CodeRL+CodeT5 and CodeT5 only. Since CodeRL is model-agnostic, we also integrate it with GPT-J <ref type="bibr" target="#b66">[Wang and Komatsuzaki, 2021]</ref> and report the results. To focus on the impact of our RL optimization, during test time, we compare models using only nucleus sampling and without the CS procedure. Figure <ref type="figure">5</ref> shows that the performance gains are quite consistent on both GPT-J and CodeT5. In particular, as k increases, the performance gain of CodeRL is more significant on both GPT-J and CodeT5 models. We attribute these gains to the CodeRL learning objective L rl that encourages models to explore code solutions drawn from the model's sampling distribution. During test time  with an increasing k sampling budget, models are allowed to generate diverse code solutions and the impact of L rl becomes more significant.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Impacts of Pretraining Approaches for CodeT5.</head><p>As commonly observed in prior work <ref type="bibr" target="#b0">[Austin et al., 2021</ref><ref type="bibr">, Chen et al., 2021a</ref><ref type="bibr" target="#b32">, Li et al., 2022]</ref>, the performance of synthesis systems is correlated with the quality of foundation models. In Table <ref type="table" target="#tab_3">5</ref>, we report the results of CodeT5 with different configurations of model sizes, pretraining data, and pretraining objectives. For a fair comparison, all models are only finetuned/ warm-started with L ce on APPS up to 12 epochs. As similarly observed in prior work <ref type="bibr">[Chen et al., 2021a</ref><ref type="bibr" target="#b0">, Austin et al., 2021]</ref>, we found that scaling up the number of model parameters (from 60M to 770M) can significantly improve model performance of downstream synthesis tasks. When we improve the pretraining data by adding the GCPY dataset (10x larger than the CSN dataset), we also observe good performance improvement, i.e. from 1.3 to 1.56 pass@1, and 1.72 to 2.06 pass@5. Finally, by combining the pretraining objective from Masked Span Prediction (MSP) and Next Token Prediction (NTP), the model is able to adapt better to the downstream synthesis task. Notably, adding NTP pretraining task can improve the performance from 2.06 to 2.9 pass@5.</p><p>Results by Finetuning Epochs with NTP Objective. Figure <ref type="figure" target="#fig_3">6</ref> shows the performance of CodeT5 model variants by finetuning epochs and by difficulty levels of programming tasks. Note that in these experiments, we only need to compare among CodeT5 model variants by pretraining strategies, and hence, only engage L ce in the finetuning stage on APPS. Consistent with our prior analysis, enhancing both pretraining data (with larger data of GCPY) and pretraining objectives (with NTP objective) improves model performance across training epochs in general. Moreover, as noted by our analysis of learning objectives, only using L ce often leads to overfitting performance, typically after epoch 10 in our case. Hence, to further finetune large-scale LMs, we recommend adopting our RL objective L rl to utilize synthetic training samples and avoid overfitting models.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Experimental Results on MBPP</head><p>Zero-shot evaluation on MBPP Benchmark. In addition to the APPS benchmark, we test the zero-shot transfer ability of CodeRL on another smaller and simpler program synthesis benchmark MBPP <ref type="bibr" target="#b0">[Austin et al., 2021]</ref>. Table <ref type="table" target="#tab_4">6</ref> reports the results of our CodeRL+CodeT5 on MBPP benchmark compared with finetuned GPT models of up to 137B size. Our CodeRL+CodeT5 (ZS) was trained on APPS and then evaluated on MBPP in a zero-shot setting. We observe that CodeRL with CodeT5 of a much smaller model size yields surprisingly good zero-shot performance, setting a new SOTA result of 63.0% pass@80 over GPT-137B's 61.4% pass@80. This validates the strong zero-shot transfer ability of CodeRL for unseen tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overlap between MBPP and APPS.</head><p>A common concern about transfer learning is that the source (APPS) and target (MBPP) tasks might have overlap in their training data, which could result in the source model tending to memorize these substantially similar data when applied to the target task. To address this concern, we analyze how many lines of code appear in both the training set of APPS and programs of MBPP following <ref type="bibr" target="#b0">Austin et al. [2021]</ref>. For this analysis, we discard code comments and normalize the whitespaces for each line, and then exclude lines that appear more than twice anywhere in MBPP, as these are likely to be common Python keywords such as return and break.</p><p>Figure <ref type="figure" target="#fig_4">7</ref> illustrates the number of absolute duplicated lines (Left) and relative fraction of duplicated lines (Right) in the MBPP programs. As can be seen, the overlap between APPS and MBPP seems to be minimal. Only 12.6% MBPP programs have more than half of their lines matched somewhere in the APPS training data. Besides, more than half (514 out of 974) of programs have a zero overlap and 90.9% have only no more than 3 lines overlapped with the APPS training set. If we further require  <ref type="formula">4</ref>) to ( <ref type="formula">7</ref>).</p><p>the lines to be consecutive, there are no more than 2 consecutive duplicated lines. More experimental analysis is included in Appendix B.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.6">Qualitative Analysis</head><p>Analysis by Unit Test Outcomes. Figure <ref type="figure" target="#fig_5">8</ref> demonstrates the average percentages of generated programs per problem, grouped by their test outcomes. Specifically, we use CodeT5 or CodeRL+CodeT5 to generate programs and randomly select 200 generated programs per test sample in the APPS test split. We pass programs to either example unit tests or hidden unit tests and group the output programs by their test outcomes. The outcomes are categorized according to our definition in Eq. ( <ref type="formula">4</ref>) to ( <ref type="formula">7</ref>), including CompileError, RuntimeError, FailedTest, and PassedTest. First, on both example unit tests and hidden unit tests, we observe that integrating CodeRL can increase the likelihood that a program can pass the tests, and reduces the probability that it fails one or more unit tests. The probability to pass unit tests are improved more significantly in introductory-level programming problems.</p><p>Secondly, we note that the percentages of having compiling errors decrease in CodeRL-generated programs, with more effects on interview and competition-level problems. As compiling errors are less likely to occur with CodeRL programs, these programs are still suffered from runtime errors. This leads to a higher probability that a CodeRL program contains runtime errors. More analysis of compiling and runtime failures is described in Appendix C.1.</p><p>We note that there are quite significant performance gaps by test outcomes between example unit tests (Figure <ref type="figure" target="#fig_5">8a</ref>) and hidden unit tests (Figure <ref type="figure" target="#fig_5">8b</ref>). This observation suggests that example tests are not as comprehensive as hidden tests and hence, limit the positive impacts of our CodeRL generation procedure due to false positives. We recommend additional methods to improve example unit tests, such as through data augmentation by mutating input/output pairs <ref type="bibr" target="#b0">[Austin et al., 2021]</ref>.</p><p>Example Generated Program. Figure <ref type="figure" target="#fig_6">9</ref> shows an example of a programming problem from the APPS benchmark and corresponding programs generated by CodeT5 variants. Specifically, based on the same foundation pretrained CodeT5 (pretrained with GCPY data and NTP objective), we compare the CodeT5 model that is finetuned by L ce only and another model that follows our CodeRL framework. In CodeRL+CodeT5, we further show programs before and after applying the CS procedure. We found that applying CodeRL can generate more appropriate programs and using the CS procedure further improves their functional correctness. For instance, in Figure <ref type="figure" target="#fig_6">9</ref>, CodeT5 model misunderstands the problem and focuses on finding the greatest common divisor between a and b only. Instead, the CodeRL model avoids this mistake and tackles the problem of finding the greatest common divisor between the factorials of a and b.</p><p>We also found that CodeRL can improve the complexity of the generated programs, an important quality in complex programming problems. For instance, in the interview-level program in Figure <ref type="figure" target="#fig_6">9</ref>, we note that without applying CS, the generated program is functionally correct but fails during execution due to a timeout error. This program simply computes separate factorials of both a and b, which will slow down the execution in scenarios with extremely large a or b. Applying the CS procedure can condition models on parts of the prior program and (re)generates new tokens to produce a more efficient program. In the example in Figure <ref type="figure" target="#fig_6">9</ref>, the factorials are computed on min(a,b) to improve the efficiency of the programs. Hence, the resulting final program is able to pass all hidden unit tests (including tests with extremely large values) without timeout errors.</p><p>For additional example generated programs, please refer to Appendix C.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Limitations and Broader Impacts</head><p>Program synthesis can lead to substantial positive social impacts, e.g., transforming future software developing tools, increasing the productivity of developers, and improving the accessibility and quality of programming courses. We propose CodeRL as a general framework to improve the performance of code generated from language models. We refer readers to the limitations and broader impacts discussed at length by <ref type="bibr">Chen et al. [2021a]</ref> as these would apply to the different actor models one can use with CodeRL. The risks and limitations are critical to be considered before deploying such models at scale.</p><p>One major limitation highlighted in many contemporary systems is that language models trained on code can generate code that is biased, and can even generate toxic natural language as code comments. Similar to previous work in language generation <ref type="bibr" target="#b42">[Ouyang et al., 2022]</ref>, besides improving functional correctness, RL could be used to align the models as per human preferences. Guided or weighted decoding schemes <ref type="bibr" target="#b29">[Krause et al., 2021]</ref> or safety-specific control tokens <ref type="bibr" target="#b72">[Xu et al., 2020]</ref> could also be explored to guide the generation of code towards desirable attributes like being secure, reliable, fast, efficient, fair, and representative.</p><p>Another data bias we need to consider is related to the system security of pretraining data. For example, pretraining data from public Github code repositories may contain vulnerabilities and the resulting synthesis models may generate programs with weak security measures <ref type="bibr" target="#b23">[Hammond Pearce et al., 2021]</ref>. Thus, similar to other code generation systems based on large LMs, CodeRL's output does warrant verification by qualified human developers.</p><p>Another limitation of our approach is the computational cost of training the critic model to estimate returns in addition to the original LM (actor network). However, in practice, we found that training a good critic model does not require large-scale models to attain a decent performance. For instance, a finetuned critic model initialized from a pretrained GPT-2 (small) can achieve over 75% error prediction accuracy on synthetic samples. Thus fine-tuning costs for the critic model are minor compared to the pretraining of the original LM. With CodeRL, we obtain performance superior to much larger pre-trained language models. Combining CodeRL with smaller models (e.g. a CodeT5-770M) will have significantly lesser inference costs for generating programs.</p><p>Finally, previous works on code generation have highlighted how systems trained with the next token prediction objective exhibit alignment failure -model outputs not being aligned with the user's intent despite the model being capable of doing so. This holds true for CodeRL too, as we do witness generated code that sometimes does not satisfy user requirements in terms of the unit tests. However, unlike previous works, CodeRL's output can be tailored heavily by a user through the problem description as well as the unit tests that the solution is expected to pass. By leveraging unit tests during training, and during inference, CodeRL, when applied with a base code generation system, improves its alignment with the user intent. CodeRL's ability to improve alignment can be crucial in addressing misalignment issues which are predicted by <ref type="bibr">Chen et al. [2021a]</ref> to get worse as we scale up data, parameters, and training time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>We present CodeRL, a novel framework for program synthesis, using deep reinforcement learning to improve pretrained LMs, by exploiting unit test signals in both training and inference stages. Specifically, we introduce an actor-critic training approach to optimize pretrained LMs with dense feedback signals on synthetic code samples. During inference, we propose a new generation procedure with critical sampling, which enables the model to automatically regenerate programs based on feedback from unit tests and critic scores. We integrate CodeRL with the improved CodeT5-large model (770M) and achieve new SOTA results on both the APPS and MBPP benchmarks, surpassing the prior SOTA by massive pretrained LMs of much larger model sizes. Our comprehensive analysis shows that CodeRL achieved consistent improvement upon the conventional pretrained LMs for code generation tasks. CodeRL is a general framework that integrates pretrained LMs and RL holistically for program synthesis, and can be extended and improved in various ways. For example, it can be easily integrated with other better pretrained LMs and can be improved with more fine-grained feedback from the environment, such as feedback received from a static code analyzer. Table 10: Ablation results of CodeRL with different CodeT5 model variants with different sizes, pretraining data and objectives on MBPP. CodeT5 † is finetuned on APPS and evaluated on MBPP in a zero-shot setting. Model Size Figure 10: Compiling Errors (Left): While current models are likely to generate programs with correct indentations, there are still more than 90% of compiling errors due to syntactical mistakes. Runtime Errors (Right): Major runtime errors include indexerror, valueerror, and typerror. Many of these errors occur due to mistakes in processing test inputs, e.g. wrong data types or mismatched numbers of elements. Refer to Table 11 for definitions of error types.</p><p>Table 11: Definitions of error types: Error definitions are extracted from official Python online documentation at <ref type="url" target="https://docs.python.org/3/tutorial/errors.html">https://docs.python.org/3/tutorial/errors.html</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Error Type Description Compiling Errors taberror</head><p>Raised when indentation contains an inconsistent use of tabs and spaces. This is a subclass of IndentationError. indentationerror Base class for syntax errors related to incorrect indentation. This is a subclass of SyntaxError. syntaxerror Raised when the parser encounters a syntax error. This may occur in an import statement, in a call to the built-in functions compile(), exec(), or eval().</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Runtime Errors attributeerror</head><p>Raised when an attribute reference or assignment fails. keyerror Raised when a mapping (dictionary) key is not found in the set of existing keys. zerodivisionerror Raised when the second argument of a division or modulo operation is zero. unboundlocalerror Raised when a reference is made to a local variable in a function or method, but no value has been bound to that variable. timeoutexception Raised when a system function timed out at the system level. nameerror Raised when a local or global name is not found. eoferror Raised when the input() function hits an end-of-file condition (EOF) without reading any data. typeerror</p><p>Raised when an operation or function is applied to an object of inappropriate type. valueerror</p><p>Raised when an operation or function receives an argument that has the right type but an inappropriate value. indexerror Raised when a sequence subscript is out of range.</p><p>Input: 6 2 1 0 1 1 1 1 2 10 4 7 Output: = ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>QUESTION:</head><p>After seeing the "ALL YOUR BASE ARE BELONG TO US" meme for the first time, numbers X and Y realised that they have different bases, which complicated their relations.</p><p>You're given a number X represented in base b_{x} and a number Y represented in base b_{y}. Compare those two numbers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----Input-----</head><p>The first line of the input contains two space-separated integers n and b_{x} (1 ≤ n ≤ 10, 2 ≤ b_{x} ≤ 40), where n is the number of digits in the b_{x}-based representation of X.</p><p>The second line contains n space-separated integers x_1, x_2, ..., x_{n} (0 ≤ x_{i} &lt; b_{x}) -the digits of X. They are given in the order from the most significant digit to the least significant one.</p><p>The following two lines describe Y in the same way: the third line contains two space-separated integers m and b_{y} (1 ≤ m ≤ 10, 2 ≤ b_{y} ≤ 40, b_{x} ≠ b_{y}), where m is the number of digits in the b_{y}-based representation of Y, and the fourth line contains m space-separated integers y_1, y_2, ..., y_{m} (0 ≤ y_{i} &lt; b_{y}) -the digits of Y.</p><p>There will be no leading zeroes. Both X and Y will be positive. All digits of both numbers are given in the standard decimal numeral system.</p><p>-----Output-----</p><p>Output a single character (quotes for clarity): '&lt;' if X &lt; Y '&gt;' if X &gt; Y '=' if X = Y -----Examples-----&lt;Examples are not shown here just for illustration purpose&gt; Use Standard Input format ANSWER: Input Problem CodeT5 Output Program CodeRL+CodeT5 Output Program (after CS) CodeRL+CodeT5 Output Program (before CS) Example Unit Tests Ground-truth Program Input: 6 29 1 1 1 1 1 1 10 21 1 1 1 1 1 1 1 1 1 1 Output: &lt; ... </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of our actor-critic framework to optimize pretrained LMs for program synthesis: We treat the LM as an actor network and sample synthetic samples from this actor. Another neural network is trained as a critic model to evaluate these synthetic samples based on their probabilities of passing unit tests. The returns are estimated based on critic scores and finally factored into the learning objective L rl to finetune the actor LM network using synthetic samples.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Overview of our critic model: The critic model is learned as an error predictor. The model receives problem specifications and programs as input sequences. For each program, the model is trained to predict one of four possible test outcomes: {CompileError, RuntimeError, FailedTest, PassedTest}. The learned hidden state representations from the critic are then used to estimate returns of synthetic samples to finetune the actor network. To improve and stabilize the training process, baseline programs are considered and relative returns are factored into the loss function to optimize the actor network.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Overview of our Critic Sampling approach for program synthesis during inference:(1) For each test problem, we first use finetuned LM to generate a set of solution programs. (2) From the problem description, we extract example unit tests and test against generated solutions. (3a) If there are any passed solutions, we pass them to the critic model to sample sub-sequences. (4a) The sub-sequences from (3a) are used as seed sequences to condition the LM to regenerate solution programs, repeating the steps from (1) onward. (3b) If there are no passed solutions from (2), we pass current solutions to the critic model to select the best candidates. (4b) These candidates from (3b) are passed to a program repair model, together with their error types and compiler error messages. We repeat the same steps as (2) onward. Dotted lines indicate optional processes that apply during program refining or repairing.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Ablation results by finetuning epochs: We report the finetuning progress of CodeT5-770M models that are pretrained on different configurations by pretraining data and pretraining tasks. CSN: CodeSearchNet, GCPY: Github Code Python, MSP: Masked Span Prediction, NTP: Next Token Prediction. All models are finetuned only with L ce on APPS.</figDesc><graphic coords="15,112.59,217.96,385.53,134.41" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Analysis of duplicated lines between MBPP and APPS: The overlap of data between APPS and MBPP appears to be minimal, with only 12.6% MBPP programs with &gt; 50% lines duplicated in APPS training data.</figDesc><graphic coords="16,109.39,228.67,389.30,160.81" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 8 :</head><label>8</label><figDesc>Figure8: Qualitative results by test outcomes: Using CodeT5 models with and without CodeRL, we generate 200 programs per test sample on APPS and report the % programs per sample by their unit test outcomes, including CompileError, RuntimeError, FailedTest, and PassedTest. Test outcomes are defined accordingly to our definition in Eq. (4) to (7).</figDesc><graphic coords="17,108.00,255.62,393.17,76.79" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: An example interview-level APPS programming task and programs generated by CodeT5 variants: The program generated by CodeT5 model fails all unit tests while CodeRL+CodeT5 (without CS generation) can generate a functionally correct program. However, this program leads to runtime errors in extreme test cases. After applying the CS generation procedure, the program is improved and able to pass all hidden unit tests.</figDesc><graphic coords="18,311.55,434.08,188.07,77.03" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Algorithm 1 :</head><label>1</label><figDesc>Critic sampling procedure to generate programs Input: Problem D, Language model θ, Critic model φ, Language model for program repair ω Output: A set of N generated solution programs 1 begin / * extract example unit tests from problem *Sampling p θ (W i |D) ←-Sampling p θ (w i t |w i 1:t-1 , D) 9 S ←-S ∪ { Ŵi } else / * repair current programs by LM * / upsampling param K = N/|R| for each filtered program Ŵ fail i ∈ R do Obtain corresponding test outcome u i and error message c i for K times do 15 Ŵj ←-Sampling p ω (W j |D, Ŵ fail i , u i , c i ) ←-Sampling p ω (w j t |w j 1:t-1 , D, Ŵ fail i , u i , c i ) 16 S ←-S ∪ { Ŵj } / *filter programs based on their test results * / sets of filtered programs P ← ∅, F ← ∅ for each generated program Ŵi ∈ S do Testoutcomes u i ←-RunTests( Ŵi , I) if u i = "PassedTest" then P ←-P ∪ { Ŵi } else F ←-F ∪ { Ŵi } if |P| &gt; 0 then break else / * Sort failed programs and select top candidates * / Sort F by critic scores p φ (u i = PassedTest| Ŵi , D) ∀ Ŵi ∈ F a set of programs R ←-top-M from F / * Use passed programs to select sub-sequences * / upsampling param N = N/|P| a set of output solutions S ←-∅ for each filtered program Ŵi ∈ P do subsequence Ŵ sub i ←-Sampling p φ (u i = PassedTest| Ŵi , D) ←-Sampling p φ (u i = PassedTest| ŵ1:t-1 , D) / * subsequence as seeds to regenerate programs * / length of subsequence m ←-| Ŵ sub i | for N times do Ŵj ←-Sampling p θ (W j | Ŵ sub i , D) ←-Sampling p θ (w j t |w j m:t-1 , Ŵ sub i , D) S ←-S ∪ { Ŵj }/ * return the regenerated programs for evaluation * / return S</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: An example synthesis task from the APPS benchmark and corresponding programs generated by CodeT5 variants: CodeRL+CodeT5 model can generate programs that pass both example tests and hidden tests, with or without the CS generation procedure.</figDesc><graphic coords="29,293.85,429.49,95.59,74.88" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><graphic coords="14,108.00,197.58,395.92,156.97" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Ablation results with variants of return estimates: CodeT5 model that is trained with return estimates using a baseline (W b ) and a trained critic model qθ can achieve the best performance. "dist." indicates a rule-based approach that estimates returns following a linear decay by token positions from t = 1 to t = T .</figDesc><table><row><cell cols="2"># W b</cell><cell>qφ</cell><cell cols="5">pass@1 Intro Inter Comp All Intro Inter Comp All pass@5</cell></row><row><cell>A</cell><cell></cell><cell>-</cell><cell>4.60 1.10</cell><cell>0.20</cell><cell>1.62 7.10 1.57</cell><cell>0.40</cell><cell>2.44</cell></row><row><cell>B</cell><cell>-</cell><cell></cell><cell>4.00 0.87</cell><cell>0.20</cell><cell>1.36 5.60 1.30</cell><cell>0.20</cell><cell>1.94</cell></row><row><cell>C</cell><cell></cell><cell cols="2">dist. 4.90 1.03</cell><cell>0.20</cell><cell>1.64 7.80 1.60</cell><cell>0.30</cell><cell>2.58</cell></row><row><cell>D</cell><cell></cell><cell></cell><cell>6.20 1.50</cell><cell>0.30</cell><cell>2.20 9.39 1.90</cell><cell>0.42</cell><cell>3.10</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Ablation results with different learning objectives: We experiment with both CodeT5 and GPT-Neo with different combinations of cross-entropy loss L ce and reinforcement learning loss L rl . Note that these losses are applied on models that are already warm-started with conventional cross-entropy losses for up to 10 epochs.</figDesc><table><row><cell>L ce</cell><cell>L rl</cell><cell cols="5">pass@1 Intro Inter Comp All Intro Inter Comp All pass@5</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">GPT-Neo</cell><cell></cell><cell></cell></row><row><cell>-</cell><cell>-</cell><cell>3.90 0.57</cell><cell>0.00</cell><cell>1.12 5.50 0.80</cell><cell>0.00</cell><cell>1.58</cell></row><row><cell></cell><cell>-</cell><cell>2.70 0.90</cell><cell>0.10</cell><cell>1.10 5.00 1.43</cell><cell>0.30</cell><cell>1.92</cell></row><row><cell>(+W s )</cell><cell>-</cell><cell>2.90 0.80</cell><cell>0.30</cell><cell>1.12 5.20 1.57</cell><cell>0.40</cell><cell>2.06</cell></row><row><cell>-</cell><cell></cell><cell>3.30 0.80</cell><cell>0.20</cell><cell>1.18 5.30 1.57</cell><cell>0.20</cell><cell>2.04</cell></row><row><cell></cell><cell></cell><cell>4.70 0.73</cell><cell>0.30</cell><cell>1.44 6.58 1.54</cell><cell>0.18</cell><cell>2.28</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">CodeT5-770M</cell><cell></cell><cell></cell></row><row><cell>-</cell><cell>-</cell><cell>6.60 1.03</cell><cell>0.30</cell><cell>2.00 8.80 1.67</cell><cell>0.70</cell><cell>2.90</cell></row><row><cell></cell><cell>-</cell><cell>4.60 0.93</cell><cell>0.10</cell><cell>1.50 7.00 1.37</cell><cell>0.20</cell><cell>2.26</cell></row><row><cell>(+W s )</cell><cell>-</cell><cell>5.10 1.10</cell><cell>0.40</cell><cell>1.76 8.30 1.43</cell><cell>0.70</cell><cell>2.66</cell></row><row><cell>-</cell><cell></cell><cell>5.00 0.90</cell><cell>0.50</cell><cell>1.64 7.60 1.53</cell><cell>0.60</cell><cell>2.56</cell></row><row><cell></cell><cell></cell><cell>6.20 1.50</cell><cell>0.30</cell><cell>2.20 9.39 1.90</cell><cell>0.42</cell><cell>3.10</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Ablation results of Critic Sampling (CS): We experiment with CodeT5 with different combinations of program refining and repairing steps. Overall, compared to results without CS, combining both approaches lead to the best program improvement. M : the number of top candidates selected from program samples that fail example unit tests.</figDesc><table><row><cell cols="2">Critic Sampling</cell><cell></cell><cell cols="2">pass@200</cell><cell></cell><cell></cell><cell>pass@1000</cell><cell></cell><cell>1@1000</cell></row><row><cell>Refine</cell><cell>Repair</cell><cell>Intro</cell><cell cols="2">Inter Comp</cell><cell>All</cell><cell>Intro</cell><cell>Inter Comp</cell><cell>All</cell><cell>Intro Inter Comp All</cell></row><row><cell>-</cell><cell>-</cell><cell cols="2">26.79 8.73</cell><cell>7.60</cell><cell cols="5">12.12 35.30 13.33 13.60 17.78 16.27 6.00</cell><cell>4.27</cell><cell>7.71</cell></row><row><cell></cell><cell>-</cell><cell cols="2">29.10 9.67</cell><cell>9.50</cell><cell cols="5">13.52 38.10 14.33 15.70 19.36 16.52 6.16</cell><cell>4.15</cell><cell>7.83</cell></row><row><cell></cell><cell cols="9">(M = 1) 29.80 10.43 10.80 14.38 40.00 15.67 17.90 20.98 17.17 6.78</cell><cell>4.88</cell><cell>8.48</cell></row><row><cell></cell><cell cols="9">(M = 2) 30.20 10.20 11.50 14.46 39.90 15.57 18.00 20.92 16.96 6.82</cell><cell>4.90</cell><cell>8.47</cell></row><row><cell></cell><cell cols="9">(M = 4) 29.50 10.60 10.80 14.42 39.40 15.37 17.60 20.62 16.99 6.63</cell><cell>4.78</cell><cell>8.33</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Ablation results of CodeT5 pretrained model variants: We report the results of models pretrained on different configurations by model size, pretraining data, and pretraining task. CSN: CodeSearchNet, GCPY: Github Code Python, MSP: Masked Span Predition, NTP: Next Token Prediction. For a fair comparison, all models are finetuned only with L ce on APPS.</figDesc><table><row><cell>Size</cell><cell>Data</cell><cell>Task</cell><cell cols="5">pass@1 Intro Inter Comp All Intro Inter Comp All pass@5</cell></row><row><cell>60M</cell><cell>CSN</cell><cell>MSP</cell><cell>1.40 0.67</cell><cell>0.00</cell><cell>0.68 2.60 0.87</cell><cell>0.10</cell><cell>1.06</cell></row><row><cell>220M</cell><cell>CSN</cell><cell>MSP</cell><cell>2.50 0.73</cell><cell>0.00</cell><cell>0.94 3.30 1.10</cell><cell>0.10</cell><cell>1.34</cell></row><row><cell>770M</cell><cell>CSN</cell><cell>MSP</cell><cell>3.60 0.90</cell><cell>0.20</cell><cell>1.30 4.30 1.37</cell><cell>0.20</cell><cell>1.72</cell></row><row><cell cols="3">770M +GCPY MSP</cell><cell>4.30 1.10</cell><cell>0.20</cell><cell>1.56 5.60 1.47</cell><cell>0.30</cell><cell>2.06</cell></row><row><cell cols="4">770M +GCPY +NTP 6.60 1.03</cell><cell>0.30</cell><cell>2.00 8.80 1.67</cell><cell>0.70</cell><cell>2.90</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 :</head><label>6</label><figDesc>Results on the MBPP benchmark: we test the zero-shot transfer ability of CodeRL. CodeRL+CodeT5 (ZS) which was trained on APPS with L rl and evaluated on MBPP (Mostly Basic Programming Problems) Benchmark<ref type="bibr" target="#b0">[Austin et al., 2021]</ref> in a zero-shot setting, achieves new SOTA.</figDesc><table><row><cell>Model</cell><cell>Size</cell><cell>pass@80</cell></row><row><cell>GPT</cell><cell>224M</cell><cell>7.2</cell></row><row><cell>GPT</cell><cell>422M</cell><cell>12.6</cell></row><row><cell>GPT</cell><cell>1B</cell><cell>22.4</cell></row><row><cell>GPT</cell><cell>4B</cell><cell>33.0</cell></row><row><cell>GPT</cell><cell>8B</cell><cell>40.6</cell></row><row><cell>GPT</cell><cell>68B</cell><cell>53.6</cell></row><row><cell>GPT</cell><cell>137B</cell><cell>61.4</cell></row><row><cell cols="2">CodeRL+CodeT5 (ZS) 770M</cell><cell>63.0</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://copilot.github.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>For simplicity, we use T as the notation of sequence length for all sequences which can actually be variable.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_2"><p>https://huggingface.co/datasets/lvwerra/github-code</p></note>
+		</body>
+		<back>
+
+			
+			<div type="acknowledgement">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Acknowledgements</head><p>We would like to thank our Salesforce Research team for fruitful discussions and feedback.</p></div>
+			</div>
+
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Data</head><p>Objective pass@80 pass@1000</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Critic Sampling Procedure</head><p>Refer to Algorithm 1 for a step-by-step explanation of our critic sampling procedure.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Additional Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 CodeXGLUE Benchmark Results</head><p>To validate the effectiveness of our simplified pretraining strategies of CodeT5-large, we extensively evaluate it on a variety of generation tasks in CodeXGLUE <ref type="bibr" target="#b39">[Lu et al., 2021]</ref>, including code-to-text generation (i.e. summarization, see Table <ref type="table" target="#tab_5">7</ref>), text-to-code generation (see Table <ref type="table">8</ref>), and code-to-code generation (i.e., code translation and code refinement, see Table <ref type="table" target="#tab_6">9</ref>). Different from APPS <ref type="bibr" target="#b24">[Hendrycks et al., 2021]</ref> and MBPP <ref type="bibr" target="#b0">[Austin et al., 2021]</ref>, we follow the default similarity-based evaluation metrics in the CodeXGLUE benchmark, including BLEU <ref type="bibr" target="#b43">[Papineni et al., 2002]</ref> and CodeBLEU <ref type="bibr" target="#b50">[Ren et al., 2020]</ref>, and exact match (EM) scores. Table <ref type="table" target="#tab_5">7</ref>, 8, and 9 show that our simplified pretrained CodeT5-large sets new SOTA results on a large majority of the tasks, and hence, can be served as a better foundation model for other code-related generation tasks. Note that in these experiments, we employ the conventional finetuning objective with L ce and there might be potential to improve the performance further with our CodeRL framework.  <ref type="bibr" target="#b0">Austin et al. [2021]</ref>, we adopt temperature sampling to generate multiple candidate solutions. We empirically find that CodeT5 benefits from a higher temperature of 1.2 (less greedy decoding or more diverse) than their GPT's temperature of 0.5 on this benchmark.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Following</head><p>Table <ref type="table">10</ref> reports the pass@80 and pass@1000 results for both finetuned and zero-shot settings. For baselines, we compared with GPT models with sizes ranging from 224M to 137B <ref type="bibr" target="#b0">[Austin et al., 2021]</ref>, which are pretrained on 2.93B web documents (13.8M containing source code) using standard language modeling objective. Results of GPT models are obtained from the original authors. From the comparison among various CodeT5 variants, we again confirm that larger model sizes and pretraining data, and better pretraining objective of NTP all lead to a performance boost. Particularly, our CodeT5-770M yields a pass@80 of 46.8%, surpassing GPT-8B's 40.6% with a much smaller model size.</p><p>In addition, we find CodeT5 models finetuned on APPS can achieve a surprisingly good zero-shot performance on MBPP with a pass@80 of 60.2% and further improved to 63.0% with the help of CodeRL, which even outperforms the largest GPT-137B's performance of 61.4%. This indicates APPS is a comprehensive program synthesis benchmark and CodeT5+CodeRL models trained on it are able to generalize to other simpler coding tasks. If we further increase the budget of GPT finetuned results GPT 224M Web Doc LM 7.2 -GPT 422M Web Doc LM 12.6 -GPT 1B Web Doc LM 22.4 -GPT 4B Web Doc LM 33.0 -GPT 8B Web Doc LM 40.6 -GPT 68B Web Doc LM 53.6 -GPT 137B Web Doc LM 61.4 -CodeT5 finetuned results CodeT5 60M CSN MSP 19.2 36.2 CodeT5 220M CSN MSP 24.0 42.8 CodeT5 770M CSN MSP 32.4 47.8 CodeT5 770M +GCPY MSP 34.6 51.6 CodeT5 770M +GCPY +NTP 46.8 66.2 CodeRL zero-shot results CodeT5 † 770M +GCPY +NTP 60.2 78.4 +CodeRL 770M +GCPY +NTP 63.0 81.8 attempts up to 1000, all models witness a consistent and significant boost in solving rate, especially our CodeT5+CodeRL yielding a new SOTA result of 81.8% pass@1000.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Additional Qualitative Analysis</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 Failure Analysis</head><p>Using a CodeT5+CodeRL model, we generate 200 programs per sample in the APPS test splits. We pass each program to the corresponding hidden unit tests. We filter for samples with either runtime or compiling errors and extract the error types from the compiler. From Figure <ref type="figure">10</ref>-left, (and error definitions in Table <ref type="table">11</ref>), we observe that current models are able to probably indent lines of code, with only 4% problems related to wrong tab tokens and 5% with wrong indentation levels. The majority of mistakes are syntactical problems, assuming more than 90% of compiling errors.</p><p>From Figure <ref type="figure">10</ref>-right, among runtime errors, the most popular types of errors are due to wrong data index processing, inappropriate values, or mismatched data types. We found that many of these problems occur during preprocessing of test inputs, suggesting potential ways to improve current models in understanding and constructing proper input variables.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Example Generated Programs</head><p>We present additional example generated programs in Figure <ref type="figure">11</ref> to 15. Specifically, we demonstrate cases where CodeRL+CodeT5 can successfully generate correct programs without the CS generation procedure (Figure <ref type="figure">11</ref>), with CS via program refining (Figure <ref type="figure" target="#fig_10">12</ref> and 13) and with CS via program repairing then refining (Figure <ref type="figure" target="#fig_12">14</ref>). In Figure <ref type="figure" target="#fig_13">15</ref>, we demonstrate a failure case in which the final program still fails hidden tests. This failure example shows an opposite model behavior to the example in Figure <ref type="figure">9</ref>, in which the CS generation procedure can successfully improve the efficiency of the output program to pass difficult test cases. As can be seen, compared to the ground-truth program, the output programs in Figure <ref type="figure" target="#fig_13">15</ref> requires a lot more drastic modifications and it would be harder for the current CodeRL model to refine/regenerate the code. There is no way for Allen to receive $125$ dollars in one or two bills.</p><p>In the second sample case, Allen can withdraw two $20$ dollar bills and three $1$ dollar bills.</p><p>In the third sample case, Allen can withdraw $100000000$ (ten million!) $100$ dollar bills. Use Standard Input format ANSWER: Input Problem CodeT5 Output Program CodeRL+CodeT5 Output Program (after CS) CodeRL+CodeT5 Output Program (before CS) Example Unit Tests Ground-truth Program Input: 74 Output: 8 Input: 82655 Output: 830 ... Input: bearbtear Output: 6 Input: bearaabearc Output: 20 ...</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>QUESTION:</head><p>The bear has a string s = s_1s_2... s_{|}s| (record |s| is the string's length), consisting of lowercase English letters. The bear wants to count the number of such pairs of indices i, j (1 ≤ i ≤ j ≤ |s|), that string x(i, j) = s_{i}s_{i} + 1... s_{j} contains at least one string "bear" as a substring.</p><p>String x(i, j) contains string "bear", if there is such index k (i ≤ k ≤ j -3), that s_{k} = b, s_{k} + 1 = e, s_{k} + 2 = a, s_{k} + 3 = r.</p><p>Help the bear cope with the given problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----Input-----</head><p>The first line contains a non-empty string s (1 ≤ |s| ≤ 5000). It is guaranteed that the string only consists of lowercase English letters.</p><p>-----Output-----Print a single number -the answer to the problem.</p><p>-----Examples-----&lt;Examples are not shown here just for illustration purpose&gt; -----Note-----In the first sample, the following pairs (i, j) match: (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9).</p><p>In the second sample, the following pairs (i, j) match: (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11), (2, 10), (2, 11), (3, 10), (3, 11), (4, 10), (4, 11), (5, 10), (5, 11), (6, 10), (6, 11), (7, 10), ( <ref type="formula">7</ref> An unpainted tile should be painted Red if it's index is divisible by a and an unpainted tile should be painted Blue if it's index is divisible by b. So the tile with the number divisible by a and b can be either painted Red or Blue.</p><p>After her painting is done, she will get p chocolates for each tile that is painted Red and q chocolates for each tile that is painted Blue.</p><p>Note that she can paint tiles in any order she wants.</p><p>Given the required information, find the maximum number of chocolates Joty can get.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>-----Input-----</head><p>The only line contains five integers n, a, b, p and q (1 ≤ n, a, b, p, q ≤ 10^9). </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 12 :</head><label>12</label><figDesc>is a right triangle ABC with ∠ABC=90°. Given the lengths of the three sides, |AB|,|BC| and |CA|, find the area of the right triangle ABC. It is guaranteed that the area of the triangle ABC is an integer. -----Constraints------1 \leq |AB|,|BC|,|CA| \leq 100 -All values in input are integers. -The area of the triangle ABC is an integer. -----Input-----Input is given from Standard Input in the following format: |AB| |BC| |CA| -----Output-----Print the area of the triangle ABC. An example synthesis task from the APPS benchmark and corresponding programs generated by CodeT5 variants: Without the CS generation procedure, CodeRL+CodeT5 model can generate programs that pass all example tests but fail hidden tests. With the CS generation procedure, the model can condition on prior programs and generate a better program that passes all hidden tests. has a LOT of money. He has $n$ dollars in the bank. For security reasons, he wants to withdraw it in cash (we will not disclose the reasons here). The denominations for dollar bills are $1$, $5$, $10$, $20$, $100$. What is the minimum number of bills Allen could receive after withdrawing his entire balance? -----Input-----The first and only line of input contains a single integer $n$ ($1 \le n \le 10^9$). -----Output-----Output the minimum number of bills that Allen could receive. -----Examples------Note-----In the first sample case, Allen can withdraw this with a $100$ dollar bill, a $20$ dollar bill, and a $5$ dollar bill.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 13 :</head><label>13</label><figDesc>An example synthesis task from the APPS benchmark and corresponding programs generated by CodeT5 variants: Without the CS generation procedure, CodeRL+CodeT5 model can generate programs that pass all example tests but fail hidden tests, especially those of corner cases. With the CS generation procedure, the model can condition on prior programs and refine the code. Specifically, we observe the model can simply reorder the elif blocks between line 11 and 15 to fix the error. The resulting program is functionally correct and passes all hidden tests.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 14 :</head><label>14</label><figDesc>An example synthesis task from the APPS benchmark and corresponding programs generated by CodeT5 variants: Without the CS generation procedure, CodeRL+CodeT5 model generates programs that fail example tests. This scenario will trigger the CS generation procedure to firstly repair then refine the programs. The resulting program can pass all hidden tests and fully satisfy the problem specification.got a task to do. She has a line of n tiles indexed from 1 to n. She has to paint them in a strange pattern.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Figure 15 :</head><label>15</label><figDesc>-----Output-----Print the only integer s -the maximum number of chocolates Joty can get.Note that the answer can be too large, so you should use 64-bit integer type to store it. In C++ you can use the long long integer type and in Java you can use long integer type.-----Examples-----&lt;Examples are not shown here just for illustration purpose&gt;Use Standard Input format ANSWER:An example synthesis task from the APPS benchmark and corresponding programs generated by CodeT5 variants: We demonstrate a failure case in which CodeRL+CodeT5 model generates incorrect programs, even with the application of the CS generation procedure. Compared to CodeT5 model, applying CodeRL can improve the correctness of the programs but still fail during execution due to timeout errors. The final program (after being refined by CS) still suffers from the same error and fails to pass hidden tests.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Code-to-Text generation results (smoothed BLEU-4) on CodeXGLUE</figDesc><table><row><cell>Model</cell><cell cols="3">Ruby JavaScript</cell><cell>Go</cell><cell cols="2">Python Java</cell><cell>PHP Overall</cell></row><row><cell>RoBERTa</cell><cell>11.17</cell><cell>11.90</cell><cell></cell><cell cols="4">17.72 18.14 16.47 24.02</cell><cell>16.57</cell></row><row><cell>CodeBERT</cell><cell>12.16</cell><cell>14.90</cell><cell></cell><cell cols="4">18.07 19.06 17.65 25.16</cell><cell>17.83</cell></row><row><cell>DOBF</cell><cell>-</cell><cell>-</cell><cell></cell><cell>-</cell><cell cols="2">18.24 19.05</cell><cell>-</cell><cell>-</cell></row><row><cell>PLBART</cell><cell>14.11</cell><cell>15.56</cell><cell></cell><cell cols="4">18.91 19.30 18.45 23.58</cell><cell>18.32</cell></row><row><cell>CoTexT</cell><cell>14.02</cell><cell>14.96</cell><cell></cell><cell cols="4">18.86 19.73 19.06 24.58</cell><cell>18.55</cell></row><row><cell cols="2">CodeT5-small 14.87</cell><cell>15.32</cell><cell></cell><cell cols="4">19.25 20.04 19.92 25.46</cell><cell>19.14</cell></row><row><cell>CodeT5-base</cell><cell>15.24</cell><cell>16.16</cell><cell></cell><cell cols="4">19.56 20.01 20.31 26.03</cell><cell>19.55</cell></row><row><cell cols="2">CodeT5-large 15.58</cell><cell>16.17</cell><cell></cell><cell cols="4">19.69 20.57 20.74 26.49</cell><cell>19.87</cell></row><row><cell cols="8">Table 8: Text-to-Code generation results on CodeXGLUE</cell></row><row><cell></cell><cell>Model</cell><cell></cell><cell></cell><cell>EM</cell><cell cols="3">BLEU-4 CodeBLEU</cell></row><row><cell></cell><cell>GPT-2</cell><cell></cell><cell cols="2">17.35</cell><cell>25.37</cell><cell>29.69</cell></row><row><cell></cell><cell>CodeGPT-2</cell><cell></cell><cell cols="2">18.25</cell><cell>28.69</cell><cell>32.71</cell></row><row><cell></cell><cell cols="4">CodeGPT-adapted 20.10</cell><cell>32.79</cell><cell>35.98</cell></row><row><cell></cell><cell>PLBART</cell><cell></cell><cell cols="2">18.75</cell><cell>36.69</cell><cell>38.52</cell></row><row><cell></cell><cell>CoTexT</cell><cell></cell><cell cols="2">20.10</cell><cell>37.40</cell><cell>40.14</cell></row><row><cell></cell><cell>UniXcoder</cell><cell></cell><cell cols="2">22.60</cell><cell>38.23</cell><cell>-</cell></row><row><cell></cell><cell cols="2">CodeT5-small</cell><cell cols="2">21.55</cell><cell>38.13</cell><cell>41.39</cell></row><row><cell></cell><cell>CodeT5-base</cell><cell></cell><cell cols="2">22.30</cell><cell>40.73</cell><cell>43.20</cell></row><row><cell></cell><cell cols="2">CodeT5-large</cell><cell cols="2">22.65</cell><cell>42.66</cell><cell>45.08</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 9 :</head><label>9</label><figDesc>Code-to-Code generation results on CodeXGLUE</figDesc><table><row><cell>Model</cell><cell cols="2">Java to C# BLEU-4 EM</cell><cell cols="2">C# to Java BLEU-4 EM</cell><cell cols="2">Refine Small BLEU-4 EM</cell><cell cols="2">Refine Medium BLEU-4 EM</cell></row><row><cell>Naive copy</cell><cell>18.54</cell><cell>0.00</cell><cell>18.69</cell><cell>0.00</cell><cell>78.06</cell><cell>0.00</cell><cell>90.91</cell><cell>0.00</cell></row><row><cell>Roborta (code)</cell><cell>77.46</cell><cell>56.10</cell><cell>71.99</cell><cell>57.90</cell><cell>77.30</cell><cell>15.90</cell><cell>90.07</cell><cell>4.10</cell></row><row><cell>CodeBERT</cell><cell>79.92</cell><cell>59.00</cell><cell>72.14</cell><cell>58.00</cell><cell>77.42</cell><cell>16.40</cell><cell>91.07</cell><cell>5.20</cell></row><row><cell>GraphCodeBERT</cell><cell>80.58</cell><cell>59.40</cell><cell>72.64</cell><cell>58.80</cell><cell>80.02</cell><cell>17.30</cell><cell>91.31</cell><cell>9.10</cell></row><row><cell>PLBART</cell><cell>83.02</cell><cell>64.60</cell><cell>78.35</cell><cell>65.00</cell><cell>77.02</cell><cell>19.21</cell><cell>88.50</cell><cell>8.98</cell></row><row><cell>CoTexT</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>77.79</cell><cell>21.03</cell><cell>88.40</cell><cell>13.11</cell></row><row><cell>NSEdit</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>71.06</cell><cell>24.04</cell><cell>85.72</cell><cell>13.87</cell></row><row><cell>CodeT5-small</cell><cell>82.98</cell><cell>64.10</cell><cell>79.10</cell><cell>65.60</cell><cell>76.23</cell><cell>19.06</cell><cell>89.20</cell><cell>10.92</cell></row><row><cell>CodeT5-base</cell><cell>84.03</cell><cell>65.90</cell><cell>79.87</cell><cell>66.90</cell><cell>77.43</cell><cell>21.61</cell><cell>87.64</cell><cell>13.96</cell></row><row><cell>CodeT5-large</cell><cell>83.56</cell><cell>66.00</cell><cell>79.77</cell><cell>67.00</cell><cell>77.38</cell><cell>21.70</cell><cell>89.22</cell><cell>14.76</cell></row><row><cell cols="3">B.2 MBPP Benchmark Results</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Learning autocompletion from real-world datasets</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Aye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE/ACM 43rd International Conference on Software Engineering: Software Engineering in Practice (ICSE-SEIP)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="131" to="139" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">An actor-critic algorithm for sequence prediction</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Brakel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lowe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1607.07086</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Balog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Gaunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nowozin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tarlow</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Deepcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1611.01989</idno>
+		<title level="m">Learning to write programs</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Scheduled sampling for sequence prediction with recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jaitly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">28</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Leo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Leahy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biderman</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo</idno>
+		<ptr target="https://doi.org/10.5281/zenodo" />
+		<title level="m">Gpt-neo: Large scale autoregressive language modeling with mesh-tensorflow</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page">5297715</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Learning from examples to improve code completion systems</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bruch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mezini</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 7th joint meeting of the European software engineering conference and the ACM SIGSOFT symposium on the foundations of software engineering</title>
+		<meeting>the 7th joint meeting of the European software engineering conference and the ACM SIGSOFT symposium on the foundations of software engineering</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="213" to="222" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Leveraging grammar and reinforcement learning for neural program synthesis</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bunel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=H1Xw62kRZ" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">VarCLR: Variable semantic representation pre-training via contrastive learning</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lacomis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Schwartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Vasilescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Le</forename><surname>Goues</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Software Engineering, ICSE &apos;22</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Latent execution for neural program synthesis beyond domain-specific languages</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">PyMT5: multi-mode translation of natural language and python code with transformers</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Clement</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Timcheck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<idno>doi: 10.18653</idno>
+		<ptr target="1/2020.emnlp-main" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020-11">Nov. 2020</date>
+			<biblScope unit="page" from="9052" to="9065" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<ptr target="https://aclanthology.org/2020.emnlp-main.728" />
+		<title level="m">URL</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Robustfill: Neural program learning under noisy i/o</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhupatiraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>-R. Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="990" to="998" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Learning to infer graphics programs from hand-drawn images</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ritchie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="page">31</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Write, execute, assess: Program synthesis with a repl</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Pu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">CodeBERT: A pre-trained model for programming and natural languages</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.findings-emnlp.139</idno>
+		<ptr target="https://aclanthology.org/2020.findings-emnlp.139" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2020</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020-11">Nov. 2020</date>
+			<biblScope unit="page" from="1536" to="1547" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Synthesizing programs for images using reinforced adversarial learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ganin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Eslami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1666" to="1675" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Spreadsheet data manipulation using examples</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gulwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">R</forename><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="97" to="105" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Learning to complete code with sketches</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Allamanis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">From language to programs: Bridging reinforcement learning and maximum marginal likelihood</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Guu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P17-1097</idno>
+		<ptr target="https://aclanthology.org/P17-1097" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 55th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vancouver, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017-07">July 2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1051" to="1062" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">An empirical cybersecurity evaluation of github copilot&apos;s code contributions</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Hammond Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karri</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.09293</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Measuring coding challenge competence with apps</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Puranik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<publisher>NeurIPS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Codesearchnet challenge: Evaluating the state of semantic code search</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Husain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Gazit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Allamanis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<idno>CoRR, abs/1909.09436</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Inferring and executing programs for visual reasoning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hariharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Van Der Maaten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hoffman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Lawrence</forename><surname>Zitnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE International Conference on Computer Vision</title>
+		<meeting>the IEEE International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2989" to="2998" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Inferring algorithmic patterns with stack-augmented recurrent nets</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mikolov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">28</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Advances in neural information processing systems</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Konda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tsitsiklis</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="volume">12</biblScope>
+		</imprint>
+	</monogr>
+	<note>Actor-critic algorithms</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">GeDi: Generative discriminator guided sequence generation</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Gotmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mccann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">S</forename><surname>Keskar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">F</forename><surname>Rajani</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.findings-emnlp.424</idno>
+		<ptr target="https://aclanthology.org/2021.findings-emnlp.424" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2021</title>
+		<meeting><address><addrLine>Punta Cana, Dominican Republic</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021-11">Nov. 2021</date>
+			<biblScope unit="page" from="4929" to="4952" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Deep convolutional inverse graphics network</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">F</forename><surname>Whitney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kurach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Andrychowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.06392</idno>
+		<title level="m">Neural random-access machines</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Lago</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.07814</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Memory augmented policy optimization for program synthesis and semantic parsing</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Berant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Lao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="page">31</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Learning programs: A hierarchical bayesian approach</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Klein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th International Conference on Machine Learning (ICML-10)</title>
+		<meeting>the 27th International Conference on Machine Learning (ICML-10)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="639" to="646" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Hunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pritzel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tassa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wierstra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1509.02971</idno>
+		<title level="m">Continuous control with deep reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Rouge: A package for automatic evaluation of summaries</title>
+		<author>
+			<persName><forename type="first">C.-Y</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Text Summarization Branches Out</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Learning to describe scenes with programs</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ritchie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">T</forename><surname>Freeman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=SyNPk2R9K7" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Decoupled weight decay regularization</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hutter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR (Poster). OpenReview.net</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Codexglue: A machine learning benchmark dataset for code understanding and generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Blanco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">B</forename><surname>Clement</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Shou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS Datasets and Benchmarks</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Toward automatic program synthesis</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Manna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Waldinger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="151" to="165" />
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<title level="m">A conversational paradigm for program synthesis</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.02155</idno>
+		<title level="m">Training language models to follow instructions with human feedback</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Bleu: a method for automatic evaluation of machine translation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Papineni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roukos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-J</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 40th annual meeting on association for computational linguistics</title>
+		<meeting>the 40th annual meeting on association for computational linguistics</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="311" to="318" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Parisotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>-R. Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1611.01855</idno>
+		<title level="m">Neuro-symbolic program synthesis</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Synchromesh: Reliable code generation from pre-trained language models</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tiwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Soares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Meek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gulwani</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=KmtVD97J43e" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Language models are unsupervised multitask learners</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI blog</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">9</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Exploring the limits of transfer learning with a unified text-to-text transformer</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="page">67</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Sequence level training with recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Auli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zaremba</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/1511.06732" />
+	</analytic>
+	<monogr>
+		<title level="m">4th International Conference on Learning Representations</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</editor>
+		<meeting><address><addrLine>San Juan, Puerto Rico</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016-05-02">2016. May 2-4, 2016. 2016</date>
+		</imprint>
+	</monogr>
+	<note>Conference Track Proceedings</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Code completion with statistical language models</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Raychev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Vechev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Yahav</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 35th ACM SIGPLAN Conference on Programming Language Design and Implementation</title>
+		<meeting>the 35th ACM SIGPLAN Conference on Programming Language Design and Implementation</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="419" to="428" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Blanco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.10297</idno>
+		<title level="m">Codebleu: a method for automatic evaluation of code synthesis</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Deep reinforcement learning-based image captioning with embedding reward</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-J</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="290" to="298" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Self-critical sequence training for image captioning</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Rennie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marcheret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mroueh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Goel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="7008" to="7024" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">How program history can improve code completion</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Robbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lanza</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2008 23rd IEEE/ACM International Conference on Automated Software Engineering</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="317" to="326" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">A methodology for lisp program construction from examples</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">D</forename><surname>Summers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM (JACM)</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="161" to="175" />
+			<date type="published" when="1977">1977</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Neural program synthesis from diverse demonstration videos</title>
+		<author>
+			<persName><forename type="first">S.-H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Noh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Somasundaram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lim</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v80/sun18a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 35th International Conference on Machine Learning</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Dy</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Krause</surname></persName>
+		</editor>
+		<meeting>the 35th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2018-07">Jul 2018</date>
+			<biblScope unit="volume">80</biblScope>
+			<biblScope unit="page" from="10" to="15" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Temporal credit assignment in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Massachusetts Amherst</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Reinforcement learning: An introduction</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>MIT press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Policy gradient methods for reinforcement learning with function approximation</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mcallester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mansour</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Intellicode compose: Code generation using transformer</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sundaresan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 28th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1433" to="1443" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Fast and memory-efficient neural code completion</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hadjitofi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riechert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">V</forename><surname>Franco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Allamanis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2021 IEEE/ACM 18th International Conference on Mining Software Repositories (MSR)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="329" to="340" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Learning to infer and execute 3d shape programs</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">T</forename><surname>Freeman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=rylNH20qFQ" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<analytic>
+		<title level="a" type="main">Learning to synthesize programs as interpretable and generalizable policies</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-H</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Lim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="25146" to="25163" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ł</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Cider: Consensus-based image description evaluation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vedantam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Lawrence</forename><surname>Zitnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="4566" to="4575" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Prow: A step toward automatic program writing</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Waldinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">C</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 1st international joint conference on Artificial intelligence</title>
+		<meeting>the 1st international joint conference on Artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="1969">1969</date>
+			<biblScope unit="page" from="241" to="252" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<monogr>
+		<title level="m" type="main">GPT-J-6B: A 6 Billion Parameter Autoregressive Language Model</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Komatsuzaki</surname></persName>
+		</author>
+		<ptr target="https://github.com/kingoflolz/mesh-transformer-jax" />
+		<imprint>
+			<date type="published" when="2021-05">May 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Video captioning via hierarchical reinforcement learning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">Y</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4213" to="4222" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<analytic>
+		<title level="a" type="main">Codet5: Identifier-aware unified pre-trained encoder-decoder models for code understanding and generation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C H</forename><surname>Hoi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP (1)</title>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="8696" to="8708" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b69">
+	<analytic>
+		<title level="a" type="main">Toward deep learning software repositories</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Vendome</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Linares-Vásquez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Poshyvanyk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM 12th Working Conference on Mining Software Repositories</title>
+		<imprint>
+			<biblScope unit="page" from="334" to="345" />
+			<date type="published" when="2015">2015. 2015</date>
+			<publisher>IEEE</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b70">
+	<analytic>
+		<title level="a" type="main">Simple statistical gradient-following algorithms for connectionist reinforcement learning</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="229" to="256" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b71">
+	<analytic>
+		<title level="a" type="main">Neural scene de-rendering</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</meeting>
+		<imprint>
+			<date type="published" when="2017-07">July 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b72">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-L</forename><surname>Boureau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Dinan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.07079</idno>
+		<title level="m">Recipes for safety in open-domain chatbots</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b73">
+	<monogr>
+		<title level="m" type="main">SQLNet: Generating structured queries from natural language without reinforcement learning</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=SkYibHlRb" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b74">
+	<analytic>
+		<title level="a" type="main">Weakly-supervised disentangling with recurrent transformations for 3d view synthesis</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">E</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b75">
+	<analytic>
+		<title level="a" type="main">A syntactic neural model for general-purpose code generation</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P17-1041</idno>
+		<ptr target="https://aclanthology.org/P17-1041" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 55th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vancouver, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017-07">July 2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="440" to="450" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b76">
+	<monogr>
+		<title level="m" type="main">Seq2SQL: Generating structured queries from natural language using reinforcement learning</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Socher</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=Syx6bz-Ab" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1851 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LLM-Planner: Few-Shot Grounded Planning for Embodied Agents with Large Language Models</title>
+				<funder ref="#_zhuntDz">
+					<orgName type="full">ARL</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-03-30">30 Mar 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Chan</forename><forename type="middle">Hee</forename><surname>Song</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">The Ohio State University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jiaman</forename><surname>Wu</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">The Ohio State University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Clayton</forename><surname>Washington</surname></persName>
+							<email>washington.534@osu.edu</email>
+							<affiliation key="aff2">
+								<orgName type="institution">The Ohio State University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Brian</forename><forename type="middle">M</forename><surname>Sadler</surname></persName>
+							<email>brian.m.sadler6.civ@army.mil</email>
+						</author>
+						<author>
+							<persName><forename type="first">Devcom</forename><surname>Arl</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Wei-Lun</forename><surname>Chao</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">The Ohio State University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">The Ohio State University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">LLM-Planner: Few-Shot Grounded Planning for Embodied Agents with Large Language Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-03-30">30 Mar 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">918EBD231A2A3E7E72C70F9441E5E97F</idno>
+					<idno type="arXiv">arXiv:2212.04088v3[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T14:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>This study focuses on using large language models (LLMs) as a planner for embodied agents that can follow natural language instructions to complete complex tasks in a visually-perceived environment. The high data cost and poor sample efficiency of existing methods hinders the development of versatile agents that are capable of many tasks and can learn new tasks quickly. In this work, we propose a novel method, LLM-Planner, that harnesses the power of large language models to do few-shot planning for embodied agents. We further propose a simple but effective way to enhance LLMs with physical grounding to generate and update plans that are grounded in the current environment. Experiments on the ALFRED dataset show that our method can achieve very competitive few-shot performance: Despite using less than 0.5% of paired training data, LLM-Planner achieves competitive performance with recent baselines that are trained using the full training data. Existing methods can barely complete any task successfully under the same few-shot setting. Our work opens the door for developing versatile and sample-efficient embodied agents that can quickly learn many tasks. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Building versatile embodied agents such as robots that can follow natural language commands to do different tasks as well as learn to do new tasks quickly has long been desired. However, contemporary language-driven agents still require a large number of labeled examples (pairs of language instructions and gold trajectories) to learn each task, which is highly costly and hinders the development of truly versatile agents <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b15">16]</ref>. Re- After receiving the natural language instruction (t = 0), LLM-Planner first generates a high-level plan by prompting a large language model (e.g., GPT-3). When the embodied agent gets stuck during the execution of the current plan (t = 5 and 20), LLM-Planner re-plans based on observations from the environment to generate a more grounded plan, which may help the agent get unstuck. The commonsense knowledge in the LLM (e.g., food is often stored in a fridge) allows it to produce plausible high-level plans and re-plan based on new environmental perception.</p><p>cently, an array of seminal work has shown the remarkable potential of large language models (LLMs) such as GPT-3 <ref type="bibr" target="#b3">[4]</ref> as a few-shot planner for embodied AI agents <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b34">35]</ref>. Agents equipped with LLM-based planners have started to show the ability to learn a new task with a few training examples.</p><p>While showing great promises as proof of concepts, existing work still presents significant limitations that may prevent larger-scale applications beyond their limited eval-uation setting. As an example, SayCan <ref type="bibr" target="#b0">[1]</ref>, one of the pioneering work on using LLMs for embodied instruction following, is evaluated on two environments with only 15 object types. The agent is assumed to be able to enumerate all admissible skills (i.e., [action, object] pairs) up front so it can use an LLM to rank the skills. This assumption could break easily in partially-observable environments when deploying an agent to new environments. The cost could also quickly pile up in more complex environments with more objects because the agent needs to call the LLM to evaluate every admissible skill at every step; efficiency deteriorates at the same time. Finally, most existing work <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b34">35,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b23">24]</ref> uses LLMs to generate a single static plan from the language instruction and then executes on the entire plan. However, the optimal plan for the same language instruction is dependent on the environment; different environments may need different plans. There lacks a way to dynamically adjust the plan from LLMs based on environmental perception.</p><p>Building on existing work, we propose LLM-Planner, an LLM-based planner for embodied instruction following. An important design goal is to be able to handle a wide range of tasks in diverse, partially-observable environments, and can dynamically adjust the plan based on perceptions from the environment. Therefore, different from SayCan, we use LLMs to directly generate plans instead of ranking admissible skills, obviating the need to have sufficient knowledge about the environment a priori while also significantly reducing the number of calls to LLMs. Another unique strength of LLM-Planner is its ability to dynamically re-plan based on what the agent observes in the current environment, which produces more grounded plans.</p><p>More specifically, we adopt hierarchical planning models (e.g., <ref type="bibr" target="#b37">[38,</ref><ref type="bibr" target="#b32">33]</ref>), which consist of a high-level planner and a low-level planner. We use LLMs to generate high-level plans (HLPs), i.e., a sequence of subgoals (e.g., [Navigation potato, Pickup potato, Navigation microwave, ...]) that the agent needs to achieve, in the specified order, to accomplish the final goal specified by the language instruction. The lowlevel planner then maps each subgoal into a sequence of primitive actions for achieving that subgoal in the current environment and state. An important observation is that, given a high-level plan, low-level planning becomes conditionally independent of the natural language instruction. It becomes the classic object localization and navigation problem <ref type="bibr" target="#b5">[6]</ref> (for navigation subgoals) or simply executing the specified interaction action with the right objects (for interaction subgoals). The low-level planner can be trained with data synthesized from the simulator (see, e.g., <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b2">3]</ref>).</p><p>Furthermore, we follow the in-context learning paradigm <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b19">20]</ref> and only use a small number of paired examples. In addition, no parameter update is needed, which saves development time. For the example in Fig -ure <ref type="figure" target="#fig_0">1</ref>, at the beginning of an episode (t = 0), given a natural language instruction, we directly prompt the LLM to generate the HLP by giving it several exemplar pairs of (instruction, HLP) in its context. We also leverage established techniques such as dynamic in-context example retrieval <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b30">31,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b18">19]</ref> and logit biases <ref type="bibr" target="#b9">[10]</ref> to further improve the in-context learning performance.</p><p>While the HLPs generated by LLMs are already plausible at first glance, they still lack a fundamental aspect of embodied agents -physical grounding; i.e., the generated HLP needs to be grounded to the environment the agent is in. Previous approaches <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b34">35,</ref><ref type="bibr" target="#b12">13]</ref> train a separate model that translates the LLM plans to the grounded admissible actions. However, this is possible under the assumption that the LLM plan can be matched to a reasonable admissible action. If the LLM plans are not contained in the list of admissible action, which is the case in the diverse environments, this creates an undetermined behavior for those agents. To overcome this problem, we propose a novel grounded replanning algorithm to empower LLM-Planner with physical grounding. Specifically, as an agent is executing the initial HLP, whenever it has taken too many steps to reach the current subgoal or has made too many failed attempts, we dynamically prompt the LLM again to generate a new continuation of the partial HLP that has been completed at that point. For grounding, we add the list of objects perceived in the environment so far into the prompt as a simple but effective description of the current environment. Figure <ref type="figure" target="#fig_0">1</ref> demonstrates how our grounded re-planning algorithm can help the agent overcome a plan that is unattainable. For the example at t = 5, the agent is taking too long to find a potato. It re-prompts the LLM with the object fridge observed in the environment, and LLM-Planner generates a new HLP from scratch (because no subgoal has been completed so far) that directs the agent to look for a potato in the fridge. By introducing a way to incorporate feedback from the environment, we aim to create a closed-loop between the environment and the LLMs where LLMs can dynamically adapt the generated high-level plans to the environment.</p><p>While most existing work <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b34">35,</ref><ref type="bibr" target="#b23">24]</ref> is evaluated under a limited setting (e.g., limited/known environments, short-horizon tasks, or simple environments with a small number of objects), we evaluate LLM-Planner on ALFRED <ref type="bibr" target="#b33">[34]</ref>, a large-scale dataset with diverse partiallyobservable environments and a wide variety of tasks and objects. We test our LLM-Planner by integrating it with the perception module and low-level planner from a strong baseline model, HLSM <ref type="bibr" target="#b2">[3]</ref>. Using less than 0.5% of paired training data, LLM-Planner achieves competitive performance compared with HLSM and outperforms multiple other baselines, which are trained with the full training set. Under the same few-shot setting, existing methods can barely complete any task successfully. Our work opens a new door for developing versatile and extremely sampleefficient embodied agents by harnessing the power of large language models and grounding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Vision-and-language Navigation</head><p>In navigation-only VLN datasets such as R2R <ref type="bibr" target="#b1">[2]</ref>, models that generate the action sequence end-to-end with a Transformer model can already achieve a good performance <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b26">27]</ref>. Recent work <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b10">11]</ref> employs BERT and its variants <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b21">22]</ref> to get better language understanding. These models jointly learn the linguistic and visual representations with cross-attention for grounding.</p><p>However, in more complex VLN, or embodied instruction following in datasets such as ALFRED <ref type="bibr" target="#b33">[34]</ref>, hierarchical planning models <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b17">18]</ref> that separate the high-level and low-level planning have proven to be most effective. These models use pretrained language models (e.g. BERT) to generate high-level plans and construct a semantic map to guide the agent to find the target objects specified in the high-level plan.</p><p>Recent work has shown that hierarchical planning models are advantageous in the low-data regime. (SL) 3  <ref type="bibr" target="#b32">[33]</ref> uses 10% of ALFRED's training data to learn how to generate natural language subtasks and then match primitive actions to each subtask. We take this modular approach one step further and propose to use large language models (LLMs) under the few-shot setting. More discussion of (SL) 3 is in the supplementary materials.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Prompting for VLN</head><p>The use of LLMs for decision making has become an increasingly popular topic for research. Two major branches of LLM usages among existing works are 1) using the LLM as an auxiliary helper or 2) using the LLM as a planner. We categorize each work into these categories and outline the difference between those works and ours. LLM as an Auxiliary Helper This branch of work uses LLM as an auxiliary helper to generate relevant information to help the main model. LM-Nav <ref type="bibr" target="#b31">[32]</ref> prompts LLMs with raw navigation instructions and 3 in-context examples to generate a list of landmarks for a vision-language model to infer a joint probability distribution over landmarks and images. However, we show that LLM can be used for more than an auxiliary information generator and can be used to perform planning while being grounded to the environment. LLM as a Planner This branch of LLM usage focuses on the LLM's ability to generate a plan that is executable in the environment directly or indirectly by using a low-level planner. Several studies have explored the usage of LLM as a planner for embodied agents <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b40">41,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b34">35]</ref>. Majority of the works assume the availability of admissible ac-tions in the environment and formulate the approach based on that assumption. Some are due to the underlying evaluation setup <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b34">35,</ref><ref type="bibr" target="#b23">24]</ref>, while others try to train a model to predict a list of admissible actions in the environment <ref type="bibr" target="#b0">[1]</ref>. However, such an assumption leads to various implications on practicality: 1) This admissible action list may be hard or infeasible to obtain, especially in partially-observable environments, and 2) the length of the list grows combinatorially w.r.t. environment complexity (e.g., # of objects). In contrast, LLM-Planner is a generative model. It generates the high-level plan without assuming the knowledge of specifics of the current environment, and dynamically refines the plan based on new observations. To validate our claim, we implement one of the major works, SayCan <ref type="bibr" target="#b0">[1]</ref> to our evaluation dataset (ALFRED) and compare the difference in section 5.</p><p>Other work <ref type="bibr" target="#b40">[41]</ref> that does not evaluate under that assumption uses LLM as a static generator for high-level plans. However, we take one step further and propose a LLM-Planner without the aforementioned assumptions. LLM-Planner is able to ground the LLM to the current environment by using a pre-trained vision model. Next, it can directly predict HLP without relying on a list of admissible actions in the current environment. Additionally, LLM-Planner can perform the aforementioned capabilities while re-planning during the task execution to dynamically adapt the high-level plans to the current environment. At last, LLM-Planner is evaluated on a diverse set of tasks in the ALFRED environment, testing the real-life applicability of our approach. With careful prompt design and other techniques for better in-context learning, we show that LLM-Planner can generate complete and high-quality high-level plans that are grounded in the current environment with a fraction of labeled data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Preliminaries</head><p>Vision-and-Language Navigation. Embodied instruction following is often also referred as vision-and-language navigation (VLN), though it additionally involves interaction actions and usually features a much longer time horizon than typical VLN tasks (e.g., Room2Room <ref type="bibr" target="#b1">[2]</ref>). To be consistent with the literature, we will use these two terms interchangeably. We will primarily focus on the standard ALFRED <ref type="bibr" target="#b33">[34]</ref> dataset, which is built on top of the AI2-Thor <ref type="bibr" target="#b14">[15]</ref> simulator, but our method can easily generalize to other datasets and environment. We choose ALFRED mainly considering its diversity in task types (7 different task types) and long-horizon tasks (on average 50 actions per task).</p><p>The VLN task is defined as following: Given a language instruction I, an agent needs to predict and carry out a sequence of primitive actions in the environment E to accom-Create a high-level plan for completing a household task using the allowed actions and visible objects. Allowed actions: OpenObject, CloseObject, PickupObject, PutObject, ToggleObjectOn, ToggleObjectOff, SliceObject, Navigation Task description: Put a heated egg in the sink. We consider hierarchical planning models <ref type="bibr" target="#b37">[38]</ref> for VLN, which is explored to various extent in several recent studies <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b35">36]</ref>, but none of them considers the few-shot setting or LLMs for planning. In this formulation, planning is modeled in a hierarchical fashion. The high-level planner maps the instruction I into a high-level plan (HLP)</p><formula xml:id="formula_0">L h = [g 0 , g 1 , • • • , g T ],</formula><p>where each subgoal g i is specified as (high-level action, object). We define a high-level action to be a collection of primitive actions that can complete a single goal-condition in ALFRED <ref type="bibr" target="#b33">[34]</ref>. We take the the interaction actions directly from ALFRED and we only add the Navigation action. Therefore, the high-level action space consists of 1 navigation action (Navigation) and 7 interaction actions (PickupObject, PutObject, OpenObject, CloseObject, Tog-gleOnObject, ToggleOffObject, SliceObject). Similar actions are commonly used in other related work such as SayCan <ref type="bibr" target="#b0">[1]</ref> and LM zero-shot planner <ref type="bibr" target="#b12">[13]</ref>.</p><p>The low-level planner maps each subgoal into a sequence of primitive actions <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b2">3]</ref> use a map-based low-level planner and a simple path-finding algorithm to find the target object in the current subgoal from the map. It is important to note that, once the high-level plan L h is specified, the low-level planning becomes independent of the instruction I. More formally, P (L l |I, L h , E) = P (L l |L h , E). All the components involved in the low-level planner are either deterministic or trained using synthetic data from the simulator. No paired data involving language instructions is needed.</p><formula xml:id="formula_1">L l = [a 0 , a 1 , • • • , a Ti ]. State-of-the-art VLN methods</formula><p>In-Context Learning/Prompting. Recently, in-context learning (also known as prompting) <ref type="bibr" target="#b3">[4]</ref> has drawn great attention with the rise of LLMs. By designing different prompts, LLMs can be adapted to different downstream tasks with a few examples as demonstration without updating any of the parameters. In this work, we explore incontext learning with LLMs for embodied agent planning. True Few-Shot Setting. While only using a small number of training examples, many few-shot studies use a large validation set for prompt design and model selection <ref type="bibr" target="#b3">[4]</ref>. Recent studies <ref type="bibr" target="#b27">[28]</ref> have shown that such large validation sets are responsible for overestimation of the efficacy of language models because they create a strong bias for model selection and violate the intended few-shot setting. To avoid such bias, we adhere to the true few-shot setting <ref type="bibr" target="#b27">[28]</ref> in which prompt design and model selection is conducted via cross-validation on the same small training set instead of using a separate validation set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">LLM-Planner</head><p>In this section, we describe our method, LLM-Planner, which leverages LLMs such as GPT-3 (TEXT-DAVINCI-003) to do few-shot grounded high-level planning for embodied agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Overview</head><p>LLMs such as GPT-3 are pre-trained to generate natural language. To adapt them as high-level planners, the first step is to design an appropriate prompt to guide them to generate high-level plans. We discuss our prompt design in Section 4.2. The choice of in-context examples is critical for the performance of LLMs, and recent works <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b8">9]</ref> have shown that dynamically retrieving similar examples for each test example is beneficial. We adopt a k-nearestneighbor (kNN) retriever to select the in-context examples (Section 4.3). We also use logit biases <ref type="bibr" target="#b9">[10]</ref> to further constrain the output space of the LLM to the allowed set of actions and objects. With all the above designs, we have obtained the static version of LLM-Planner, which can already generate reasonable HLPs. In Section 4.4, we propose a novel grounded re-planning algorithm to enhance LLMs with the ability to ground to the current environment, which further improves the HLP quality. Finally, we discuss how to integrate LLM-Planner into existing embodied agents to empower them with few-shot planning capabilities in Section 4.5. An overview of LLM-Planner is shown in Figure <ref type="figure" target="#fig_1">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Prompt Design</head><p>While GPT-3 is shown to be a powerful few-shot learner in a variety of tasks, its power can only be unleashed with carefully designed prompts that are tailored for the desired behavior. The final HLP quality can be sensitive to minor design choices in the prompt (e.g., how the HLP is presented, or sometimes even the choice of punctuation). Therefore, we identify core components of the prompt and systemically compare different design choices under the true few-shot setting based on leave-one-out crossvalidation (LOOCV). The evaluations for some of the key design choices are discussed in Section 5.5 and 5.6.</p><p>Our final optimal prompt is shown in Figure <ref type="figure" target="#fig_1">2</ref>. The prompt begins with an intuitive explanation of the task and the list of allowable high-level actions. It is then followed by the in-context examples selected by the kNN retriever (Section 4.3). When we provide only the high-level goal instruction to GPT-3, we use the format "Task descrip-</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>tion: [high-level goal instruction]." When we include the step-by-step instructions, we include another line "Step-bystep instructions: [step-by-step instructions]" following the goal instruction.</head><p>For dynamic grounded re-planning (Section 4.4), we add the subgoals that have been completed and the list of objects observed so far in the environment after the task description. Finally, we append the test example in the same format that ends with "Next plan:".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">In-context Example Retrieval</head><p>The in-context examples are an important source of taskspecific information for the LLM. Different examples could provide different information for the current task. Intuitively, if the current task is to "cook a potato," an in-context example that demonstrates the HLP for "cooking an egg" is likely more informative than one that demonstrates how to "clean a plate." Specifically, we use a frozen BERT-base model <ref type="bibr" target="#b6">[7]</ref> to evaluate the pairwise similarity between each training example and the current test example. The similarity of two examples is defined based on the Euclidean distance between the BERT embedding of their corresponding instruction. For each test example, we then retrieve the K most similar examples from the small set of paired training examples we have, where K is a hyperparameter that we tune under the true few-shot setting (Section 5.6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Dynamic Grounded Re-planning with LLM-Planner</head><formula xml:id="formula_2">I ← Instruction O ← Set of observed object G ← List of completed subgoals so far S ← LLM-Planner(I, O, G) Full HLP t ← 0 Time step k ← 0 Subgoal index s ← S[k]</formula><p>First subgoal at ← Low-Level-Planner(s)</p><p>First action while k &lt;len(S) do execute at Ot ← Object-Detector(current camera input) O.insert(Ot) if current subgoal s fails or after n time steps then S ← LLM-Planner(I, O, G)</p><formula xml:id="formula_3">New HLP k ← 0 s ← S[k] else if current subgoal s is completed then k ← k + 1 s ← S[k] Get next subgoal end if t ← t + 1 at ← Low-Level-Planner(s) end while</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Grounded Re-planning</head><p>Using LLM-Planner as a static high-level planner that only predicts an HLP at the beginning of a task already shows good data efficiency and accuracy. As discussed earlier, however, such static planning lacks grounding to the physical environment and can lead to incorrect objects and unattainable plans (Figure <ref type="figure" target="#fig_0">1</ref>). When such issues happen, the agent cannot complete the current subgoal specified in the HLP, which will lead to one of two possible situations: 1) it fails to execute an action (e.g., bumping into a wall or failing to interact with an object), or 2) it takes a long time and still has not completed the current subgoal (e.g., wandering endlessly). Intuitively, knowing the objects in the current environment can be very helpful for addressing both of these issues. For example, knowing that there is a fridge, the LLM may produce an HLP that directs the agent to go to the fridge and try to find a potato in that, because it may have learned the commonsense knowledge that food is likely stored in a fridge during language model pre-training.</p><p>To this end, we present a simple but effective way to enhance LLMs with physical grounding by injecting a list of observed objects, which may be detected using the object detector of the embodied agent, from the environment into the prompt (Figure <ref type="figure" target="#fig_1">2</ref>). We also add logit biases to these observed objects so LLM-Planner can prioritize producing a plan with those objects if they are relevant for the task.</p><p>Based on that, we propose a grounded re-planning algorithm (Algorithm 1) to dynamically update the HLP during the course of completing a task. This is in contrast with most existing work that adopts a similar hierarchical planning model (e.g., <ref type="bibr" target="#b25">[26]</ref>), which only predicts a fixed HLP up front and sticks to that no matter what happens during the execution. In our algorithm, re-planning will be triggered under either of two conditions: 1) the agent fails to execute an action, or 2) after a fixed number of time steps. A new continuation of the already-completed partial HLP will be generated by LLM-Planner based on the observed objects, and the agent will carry on with the new plan, which may help it get unstuck.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5.">Integration with Existing VLN models</head><p>We now discuss how to integrate LLM-Planner with the existing models to empower them with the few-shot planning capability. LLM-Planner provides a fairly generic and flexible interface for integration. As shown in Algorithm 1, it only needs the embodied agent to provide an object list and has a low-level planner that can turn the predicted HLP into low-level actions. It has no assumption about the inner working of the agent. For evaluating the end-to-end task completion performance of LLM-Planner, we integrate it with a strong baseline method, HLSM <ref type="bibr" target="#b2">[3]</ref>, which satisfies such an interface.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Dataset</head><p>We evaluate the efficacy of LLM-Planner in generating high-level plans using the ALFRED <ref type="bibr" target="#b33">[34]</ref> benchmark, a vision-and-language navigation dataset that requires embodied agents to follow instructions and use visual input to complete tasks in a simulated, spatially continuous household environment. The dataset consists of 7 task types spanning across 207 unique environments, 115 different object types, and 4,703 tasks. The task ranges in difficulty from moving a single object to a new location to placing a heated slice of an object into a receptacle. Each task is accompanied by human-written annotations of a high-level goal and a series of more granular step-by-step instructions, created by human annotators as they watched expert demonstrations of the tasks. Due to the noise in the natural language instructions and the complexity of planning required to complete such long-horizon tasks, ALFRED is a challenging test of an embodied agent's ability to produce robust and accurate plans.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Metrics</head><p>We report two main metrics used by ALFRED and one metric created by us to calculate the high-level planning accuracy. Success rate (SR) is the percentage of tasks fully completed by the agent. A task is only considered complete when all the subgoals are completed. Goal-condition success rate (GC) is the percentage of completed goalconditions. Goal-conditions are defined as state changes necessary to complete the task. For example, in the task "Slice a heated bread," bread being sliced and bread being heated are both goal-conditions.</p><p>To directly evaluate high-level planning, we introduce a new metric named high-level planning accuracy (HLP ACC), i.e., the accuracy of the predicted HLP compared to the ground-truth HLP. For the static planning setting, we compare the generated HLP with the ground-truth HLP and deems a plan as incorrect if it does not perfectly match the ground truth, and correct otherwise. For the dynamic planning setting, we report a range because we cannot fully separate LLM-Planner's performance with the low-level controller choice because we do not have access to an oracle low-level controller. The lower bound is the HLP accuracy of the full generated plan regardless of whether it was executed successfully by the low-level controller (i.e. same as evaluating static HLP). The upper bound is the HLP accuracy of the predicted HLP that was successfully executed in the environment by the low-level controller when a task has ended (i.e. a task success or a catastrophic failure).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.">Implementation Details</head><p>We choose 100 examples for our LLM-Planner among 21,023 ALFRED training examples. We apply random stratified sampling to ensure we have a fair representation of all 7 task types in the 100-example set. For the kNN retriever, we use the pretrained BERT-base-uncased model from the Huggingface Transformers Library <ref type="bibr" target="#b38">[39]</ref>. For the LLM, we use the public GPT-3 <ref type="bibr" target="#b3">[4]</ref> API with 9 in-context examples chosen from the 100 training examples by the kNN retriever. We set the temperature to 0 and apply a logit bias of 0.1 to all allowable output tokens. The object list for grounded re-planning is retrieved from the object detector. Specifically, we use the pretrained object detector from HLSM's perception model. We only include objects with a label confidence more than 80% to reduce noise. It is worth noting that we can potentially use any object detector to obtain the object list, and we only use HLSM's perception model to save computation cost and time. To avoid violating our few-shot assumption, we use the pretrained navigation, perception, and depth model from HLSM which are trained using only synthesized trajectories from the simulator, without any paired training data involving natural language instructions or human annotations.</p><p>We compare with two main baseline models, HLSM [3] and FILM <ref type="bibr" target="#b25">[26]</ref> They are also hierarchical planning models and achieve strong performance on the ALFRED leaderboard. We directly replace the trained high-level planner for both models with our LLM-Planner and did not modify any other parts. In addition, we re-train these models to compare with LLM-Planner under the same few-shot shot setting. We also compare with several other published baselines models that are trained with the full data. Additionally, we also implement SayCan<ref type="foot" target="#foot_0">foot_0</ref> to ALFRED and compare under the same few-shot setting as LLM-Planner. Further implementation details can be found in the supplementary.</p><p>SayCan <ref type="bibr" target="#b0">[1]</ref> is a ranking based high-level planner that requires a list of admissible actions and ranks them using the LLM. To make it possible for SayCan to work in the complex, partially-observable environments in ALFRED, we give it an unfair competitive advantage-it knows all the objects and affordances in the current environment a priori to compile the list of skills. We also equip SayCan with the same kNN retriever from LLM-Planner, which was not needed in their original paper because of the less diverse tasks. More details on the implementation is provided in the supplementary materials.</p><p>Other Baselines. For other baselines included in Table <ref type="table" target="#tab_0">1</ref>, we retrieve the results directly from the published version of the corresponding paper. If the ALFRED leaderboard entry is better than the numbers in the original paper, we report the higher.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4.">Main Results</head><p>The main results are shown in Table <ref type="table" target="#tab_0">1</ref>. We first compare the performance of HLSM when using our LLM-Planner as the high-level planner compared with its native version, which is trained using the full training set of ALFRED. We find that LLM-Planner's few-shot performance is competitive to the original HLSM, and outperforms several recent baselines such as E.T., HiTUT, and M-TRACK, despite using less than 0.5% of paired training data. On the other hand, when trained using the same 100 examples (i.e., retraining HLSM's high-level planner), HLSM (and FILM as well) can barely complete any task successfully. Furthermore, the results show that SayCan still largely underperforms LLM-Planner despite the access to the full environment information. Another significant difference is cost and efficiency. Because of SayCan's ranking nature, it needs to call the LLM many more times than a generative model like LLM-Planner: LLM-Planner calls GPT-3 avg. 7 times per task and SayCan calls it 22 times, even with oracle knowledge of the current environment to shrink the skill list. Lastly, we see a considerable improvement from grounded re-planning over static planning, especially in the goal instruction only setting, where it improves 1.83% SR in the unseen test split. This confirms the effectiveness of the grounded re-planning. But we also note that there is still a large room for further improvement. Object Localization (navigation, cabinet) (open, cabinet) Object Disambiguation LLM Planner LLM Planner Finds Cup Finds Lamp (navigation, desklamp) Visible objects: fridge, cabinet, countertop Visible objects: chair, safe, desklamp </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.5.">Ablation Studies</head><p>We conduct an ablation study on different components of LLM-Planner to validate their effectiveness. We follow the LOOCV process and use only the high-level planning accuracy to determine our choices. Results from this study are in Table <ref type="table">2</ref>. We first ablate the kNN retriever module, by replacing it with a retriever that randomly selects in-context examples from the 100 example set. Results in Table <ref type="table">2</ref> show that this leads to a significant drop in performance, confirming the necessity of dynamic retrieval.</p><p>Furthermore, we find that enabling logit biases to favor objects that appear in the environment lead to a decent boost in the high-level planning accuracy. Having LLM-Planner favor objects that appear in the environment makes it more robust in the cases where the instruction is ambiguous or objects are referred with different names. For example, for an instruction "Turn on the lamp," different types of lamps, e.g., table lamps or floor lamps, could be. By enabling logit biases to favor objects that appear in the environment (e.g., TableLamp), we can correctly guide LLM-Planner to output (TurnOnObject, TableLamp). Another example is when the instruction refers to RecycleBin but the object name used in the environment is GarbageCan. In this case, using logit biases can correctly guide LLM-Planner to output the relevant and correct objects. Table 2: Ablation of LLM-Planner's components.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.6.">Fine-grained Analyses</head><p>any cross-validation because it is our target number for the few-shot setting. We then use LOOCV to select the best number of in-context examples using the 100 sampled training examples. However, we are still curious about the effect of different choices, so we conduct this analysis after the main experiments to show the sensitivity to these hyperparameters. It is worth noting that the design choices for the main experiments are not informed by this analysis, to respect the true few-shot setting. As shown in Figure <ref type="figure" target="#fig_2">3</ref>, HLP accuracy generally improves with more training examples, though we start to get a diminishing return around 250 training examples. A decent improvement can be expected for the main experiments in Table 1 if we choose to use more training examples (e.g., 250). Furthermore, we find that 9 is generally a good number for in-context examples. Although adding more in-context examples could still improve the performance slightly, it may not be meaningful enough to justify the additional cost. Not too surprisingly, more in-context examples is more beneficial when there is less training examples, because there are less useful examples to retrieve from. Case Studies. In Figure <ref type="figure" target="#fig_3">4</ref>, we show two examples where LLM-Planner helps with object localization and disambiguation through grounded re-planning. For the first case, even using only the high-level goal instruction, LLM-Planner correctly predicts that the cup is likely located in the cabinet after failing to find a cup but observing a cabinet in the environment. This shows LLM-Planner can achieve a similar effect to what the semantic map tries to achieve in FILM <ref type="bibr" target="#b25">[26]</ref>, i.e., predicting plausible location for target objects. For the second case, we show that LLM-Planner can correctly ground the word "lamp" to the desklamp in the environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>We demonstrate a novel high-level planner based on large language models for embodied agents that can be used in diverse, partially-observable, and complex environments. It can also dynamically re-plan based on environmental perception to produce more grounded plans. Our work can dramatically reduce the amount of human annotations needed for learning the instruction following task. Furthermore, it opens a new door for developing versatile and extremely sample-efficient embodied agents by harnessing the power of large language models and enhancing them with physical grounding. Promising future directions include exploring other LLMs such as Codex <ref type="bibr" target="#b4">[5]</ref>, better prompt design, and more advanced methods for grounding and dynamic replanning.</p><p>ner, and a low-level planner. At the beginning of each task, five separate BERT-based classifiers <ref type="bibr" target="#b6">[7]</ref> are used to predict five parameters (task type, target objects, receptacles, parent objects, and whether slicing is needed), each of which takes the goal and optionally the step-by-step instructions as input to predict the respective parameter. FILM then generates the high-level plan by choosing a pre-defined template based on the predicted task type and filling the other parameters into the template. In addition, the semantic map is updated at each time step with the sensory image inputs. At every 25 steps, the semantic search policy predicts the coordinates of the target object on the semantic map, which are then used by a deterministic low-level planner to decide on a low-level plan to navigate from the current location to the target object's location.</p><p>Only the BERT-based classifiers need the languagerelated data for training. Therefore, to adapt FILM to the few-shot setting, the five BERT-based classifiers are retrained with the same 100 training examples used by the LLM-Planner. Similar to HLSM, we concatenate the goal and the step-by-step instructions as input to the BERT-based classifiers. We use default hyperparameters for BERT models that are found in the paper. We use the predictions from these models to generate the high-level plans with the same pre-defined templates in FILM. We leave other components intact, which are downloaded from the official codebase. <ref type="foot" target="#foot_2">4</ref></p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. SayCan</head><p>SayCan <ref type="bibr" target="#b0">[1]</ref> consists of 3 components: an LLM ranker, set of skills, and a value function. We use the LLM ranker adapted from SayCan's codebase <ref type="foot" target="#foot_3">5</ref> with the same settings (e.g. temperature and log probability) and use GPT-3 (textdavinci-003) as the choice of LLM. First, SayCan generates a list of skills and their affordance score in the current environment using a pre-trained value function. Then, it prompts the LLM with natural language description of each skill and generates a probability that represents how relevant it is to the task success. Finally, SayCan combines the skill's LLM probability and the affordance score to choose which skill to execute.</p><p>To adapt SayCan to ALFRED, we need to define a skill in the ALFRED environment. From SayCan, a skill is defined as "atomic" behaviors that are capable of low-level visuomotor control. Each skill can perform a short task, such as picking up a particular object. This is identical to our definition of high-level plan in §3, therefore we treat each skill as analogous to the (high-level action, object) pair. This formulation allows us to use the same low-level controller we used for LLM-Planner. Furthermore, the value function is an another important concept for the SayCan.</p><p>Options Task Introduction Goal Instruction Step-by-step Instructions Plan List Object List Retrieval Message Default Create a high-level plan for completing a household task using the allowed actions and visible objects. Allowed actions are [action list] Task description: [goal instruction] Step-by-step instructions: [instructions] (Completed, Next) plan: [subgoals] Visible objects are [objects] Next plan: Punctuation ("PickupObject") ("PickupObject", "Apple") (PickupObject) (PickupObject, Apple) PickupObject PickupObject, Apple Naturalization PickupObject PickupObject Pickup Pickup Pick up Pick up Delimiter Pick up, go to Pickup, Navigate Apple, orange Pick up. Go to. Pickup. Navigate Apple. orange Pick up \n Go to Pickup \n Navigate Apple \n Orange</p><p>Table <ref type="table">3</ref>: For each element in our prompt design, we list the default phrasing. For the representation of actions, objects, and lists, we additionally experiment with different choices of punctuation, naturalization, and the delimiter between elements in a list. We select the optimal prompt design using LOOCV on the 100 training examples. The chosen options are highlighted in bold. The value function predicts how likely an individual skill is to be executable in the current environment. However, due to the resource constraint we were not able to generate the data and train a policy for the value function. On the other hand, we decided to give SayCan an unfair advantage: we use the ground truth object information to construct an oracle value function. Additionally, instead of iterating through a list of all possible (high-level action, object), we shrink the size of the skill to contain only the object type available in the current environment. As we described in §5.3, this gives SayCan an unfair competitive advantage by giving it the oracle knowledge of all objects and affordances in the current environment a priori to compiling the list of skills. Even though SayCan can shrink the skill space with the extra knowledge, SayCan's ranking nature calls LLM significantly more times than a generative model like LLM-Planner. In fact, LLM-Planner calls GPT-3 avg. 7 times per task and SayCan calls it 22 times even with the oracle knowledge of the current environment to shrink the skill list.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Comparison with (SL) 3 on ALFRED</head><p>(SL) 3 [33] is a recent hierarchical planning model that is also evaluated on the ALFRED benchmark. It randomly samples 10% of ALFRED's training data for training. The high-level planner is based on a pre-trained T5-small <ref type="bibr" target="#b29">[30]</ref> model, which is fine-tuned to generate high-level plans from the goal instruction. The low-level planner is another finetuned T5-small model, which is tasked of generating a lowlevel plan for each subgoal in the high-level plan. Both goal and step-by-step instructions are needed for training, but only goal instructions are needed at inference time.</p><p>We could not compare (SL) 3 under the same few-shot setting as LLM-Planner because its code was not publicly available at the time of submission. However, we would like to highlight that our method achieves comparable performance on the validation set despite using only less than 1/20 of training data than (SL) 3 (0.5% vs. 10% of AL-FRED's training data).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>1Figure 1 :</head><label>1</label><figDesc>Figure1: An illustration of LLM-Planner for high-level planning. After receiving the natural language instruction (t = 0), LLM-Planner first generates a high-level plan by prompting a large language model (e.g., GPT-3). When the embodied agent gets stuck during the execution of the current plan (t = 5 and 20), LLM-Planner re-plans based on observations from the environment to generate a more grounded plan, which may help the agent get unstuck. The commonsense knowledge in the LLM (e.g., food is often stored in a fridge) allows it to produce plausible high-level plans and re-plan based on new environmental perception.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of LLM-Planner with prompt design and grounded re-planning.plish the task. In datasets like ALFRED<ref type="bibr" target="#b33">[34]</ref>, the instruction I consists of a high-level goal I H and (optionally) a list of step-by-step instructions I L . A VLN task can thus be represented by a tuple (I, E, G), where G is the goal test. We consider hierarchical planning models<ref type="bibr" target="#b37">[38]</ref> for VLN, which is explored to various extent in several recent studies<ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b35">36]</ref>, but none of them considers the few-shot setting or LLMs for planning. In this formulation, planning is modeled in a hierarchical fashion. The high-level planner maps the instruction I into a high-level plan (HLP)L h = [g 0 , g 1 , • • • , g T ],where each subgoal g i is specified as (high-level action, object). We define a high-level action to be a collection of primitive actions that can complete a single goal-condition in ALFRED<ref type="bibr" target="#b33">[34]</ref>. We take the the interaction actions directly from ALFRED and we only add the Navigation action. Therefore, the high-level action space consists of 1 navigation action (Navigation) and 7 interaction actions (PickupObject, PutObject, OpenObject, CloseObject, Tog-gleOnObject, ToggleOffObject, SliceObject). Similar actions are commonly used in other related work such as SayCan<ref type="bibr" target="#b0">[1]</ref> and LM zero-shot planner<ref type="bibr" target="#b12">[13]</ref>.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: LOOCV HLP accuracy for varying number of incontext examples and training examples.Goal: "Put a warm cup in the cabinet"Goal: "Carry a clock while turning on a lamp"</figDesc><graphic coords="7,487.71,246.00,56.73,56.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Case studies for LLM-Planner.</figDesc><graphic coords="7,430.93,246.00,56.78,56.78" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Effect of Number of Examples. For the main experiments, we chose 100 as the number of training examples without HLSM 16.42 23.37 18.20 26.77 15.36 29.88 46.59 -68.31 16.45 30.11 50.33 -71.84Main results on the ALFRED dataset. "(Static)" means the static planning setting, otherwise it is the default dynamic setting with grounded re-planning. Some methods support using only the goal instruction or additionally using the step-by-step instructions. We compare under both configurations. We could not evaluate SayCan on the test split because ALFRED prohibits using the test metadata, which is needed by SayCan for compiling the admissible actions.</figDesc><table><row><cell>Model</cell><cell cols="2">Test Unseen</cell><cell cols="2">Test Seen</cell><cell></cell><cell cols="2">Valid Unseen</cell><cell></cell><cell cols="2">Valid Seen</cell></row><row><cell></cell><cell>SR</cell><cell>GC</cell><cell>SR</cell><cell>GC</cell><cell>SR</cell><cell>GC</cell><cell>HLP ACC</cell><cell>SR</cell><cell>GC</cell><cell>HLP ACC</cell></row><row><cell cols="4">Full-data setting: 21,023 (instruction, trajectory) pairs</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Goal instruction only</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>HiTUT [40]</cell><cell cols="6">11.12 17.89 13.63 21.11 10.23 20.71</cell><cell>-</cell><cell cols="2">18.41 25.27</cell><cell>-</cell></row><row><cell>HLSM [3]</cell><cell cols="10">20.27 27.24 25.11 35.79 18.28 31.24 31.24 -70.17 29.63 38.74 38.74 -77.64</cell></row><row><cell>Step-by-step instructions</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>E.T. [27]</cell><cell cols="6">8.57 18.56 38.42 45.44 7.32 20.87</cell><cell>-</cell><cell cols="2">46.59 52.92</cell><cell>-</cell></row><row><cell>HiTUT [40]</cell><cell cols="6">13.87 20.31 21.27 29.97 12.44 23.71</cell><cell>-</cell><cell cols="2">25.24 34.85</cell><cell>-</cell></row><row><cell>M-TRACK [36]</cell><cell cols="6">16.29 22.60 24.79 33.35 17.29 28.98</cell><cell>-</cell><cell cols="2">26.70 33.21</cell><cell>-</cell></row><row><cell>FILM [26]</cell><cell cols="4">27.80 38.52 28.83 39.55</cell><cell>-</cell><cell>-</cell><cell>54.93</cell><cell>-</cell><cell>-</cell><cell>60.86</cell></row><row><cell>LEBP [18]</cell><cell cols="4">28.30 36.79 28.97 36.33</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="4">Few-shot setting: 100 (instruction, high-level plan) pairs</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Goal instruction only</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="7">LLM-Planner (Static) + HLSM 11.58 18.47 13.05 20.58 11.10 22.44</cell><cell>28.67</cell><cell cols="2">11.82 23.54</cell><cell>27.45</cell></row><row><cell>LLM-Planner + HLSM</cell><cell cols="10">13.41 22.89 15.33 24.57 12.92 25.35 33.81 -55.85 13.53 28.28 35.08 -54.33</cell></row><row><cell>Step-by-step instructions</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>HLSM [3]</cell><cell>0.61</cell><cell>3.72</cell><cell>0.82</cell><cell>6.88</cell><cell>0.00</cell><cell>1.86</cell><cell>0.00</cell><cell>0.13</cell><cell>2.82</cell><cell>0.00</cell></row><row><cell>FILM [26]</cell><cell>0.20</cell><cell>6.71</cell><cell>0.00</cell><cell>4.23</cell><cell>0.00</cell><cell>9.65</cell><cell>0.00</cell><cell cols="2">0.00 13.19</cell><cell>0.00</cell></row><row><cell>SayCan [1]</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell cols="2">9.88 22.54</cell><cell>37.57</cell><cell cols="2">12.30 24.52</cell><cell>35.15</cell></row><row><cell cols="7">LLM-Planner (Static) + HLSM 15.83 20.99 17.87 23.10 14.26 26.12</cell><cell>43.24</cell><cell cols="2">15.84 25.43</cell><cell>39.87</cell></row><row><cell cols="4">LLM-Planner + LOOCV HLP accuracy</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Best Model</cell><cell></cell><cell>40.59</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>-kNN Retriever</cell><cell></cell><cell>17.48</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>-Logit Biases</cell><cell></cell><cell>38.10</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>-Both</cell><cell></cell><cell>13.43</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 4 :</head><label>4</label><figDesc>Static LLM-Planner's high-level planning accuracy breakdown by task type.</figDesc><table><row><cell>Task Type</cell><cell cols="2">HLP Accuracy</cell></row><row><cell></cell><cell cols="2">Valid Unseen Valid Seen</cell></row><row><cell>Pick &amp; Place</cell><cell>51</cell><cell>46</cell></row><row><cell>Stack &amp; Place</cell><cell>38</cell><cell>25</cell></row><row><cell>Place Two</cell><cell>39</cell><cell>45</cell></row><row><cell>Examine</cell><cell>44.4</cell><cell>49</cell></row><row><cell>Heat &amp; Place</cell><cell>36</cell><cell>48</cell></row><row><cell>Cool &amp; Place</cell><cell>43</cell><cell>46</cell></row><row><cell>Clean &amp; Place</cell><cell>48.8</cell><cell>32</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://github.com/google-research/ google-research/tree/master/saycan</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://github.com/valtsblukis/hlsm</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>https://github.com/soyeonm/FILM</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>https://github.com/google-research/ google-research/tree/master/saycan</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgement</head><p>The authors would like to thank the colleagues from the <rs type="affiliation">OSU NLP group</rs> for their thoughtful comments. This research was supported by <rs type="funder">ARL</rs> <rs type="grantNumber">W911NF2220144</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_zhuntDz">
+					<idno type="grant-number">W911NF2220144</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendices</head><p>In this supplementary material, we present additional details and clarifications that are omitted in the main text due to space constraints.</p><p>• Appendix A: Additional Model Implementation Details</p><p>• Appendix B: Comparison with (SL) 3 on ALFRED.</p><p>• Appendix C: Prompt design choices and prompt selection under true few-shot setting (cf. section 4.2 in the main paper).</p><p>• Appendix D: Additional fine-grained analyses (cf. section 5 in the main paper).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Additional Model Implementation Details</head><p>A.1. HLSM HLSM [3] consists of three components: a semantic voxel map, a high-level planner, and a low-level planner. First, a 3D semantic voxel map is constructed by applying semantic segmentation and depth estimation to the visual inputs, which stores the agent's and the objects' real-time locations. Next, the high-level planner takes the language instructions, the semantic map encoding, and the previous subgoal history to predict the next subgoal. Lastly, the lowlevel planner is a mixture of deterministic algorithms and learned components (e.g., learning a yaw and pitch angle to face the object). HLSM first processes the sensory image input to create/update a map, which is used as an input to the high-level planner along with the language instructions to predict the next subgoal. Finally, the low-level planner maps the subgoal into a sequence of primitive actions.</p><p>To adapt HLSM to the few-shot setting, we need to re-train the components of the model that need paired trajectory-instruction data for training. For HLSM, paired data was only used for training the high-level controller. Therefore, we re-train the high-level controller with the same 100 training examples we use for LLM-Planner. Specifically, we use the same set of hyperparameters as HLSM. While the original HLSM focuses on the goal instruction only setting, we found that the step-by-step instructions are essential for the few-shot setting, so we concatenate goal instruction with step-by-step instructions for re-training HLSM's high-level planner. We leave the other components intact, which are downloaded from the official codebase. 3   A.2. FILM FILM <ref type="bibr" target="#b25">[26]</ref> consists of four components: a semantic map, a semantic search policy, a template-based high-level plan-</p><p>Training Size 50 100 500 1k 10k Full (21k) LLM-Planner 10.06 15.36 16.59 16.46 16.83 17.80 HLSM 0.00 0.00 0.37 1.59 9.51 18.28</p><p>Table 5: Scaling experiment of LLM-Planner and HLSM on valid unseen. Metric used is the task success rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Prompt Design Choices</head><p>In-context learning with GPT-3 could be sensitive to the prompt design. In Table <ref type="table">3</ref>, we show different prompt design choices we have experimented for LLM-Planner. We structure our prompt into six consecutive parts: task introduction, goal instruction, step-by-step instruction, plan list, object list, and retrieval message. For each part, we have a default phrase and a list of additional options to try on top of the default phrasing signified as []. All the options listed only modify the phrase that goes in []. First, we try adding punctuation marks around actions and object. Next, we naturalize each action name as a plain English text. Lastly, we experiment with finding the optimal delimiter between action list and step-by-step instruction list. We compared comma, period, and newline inserted between the sentences. The best prompt was chosen from the LOOCV accuracy for high-level plans and is bolded.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Additional Fine-Grained Analyses</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.1. HLP Accuracy by Task Type</head><p>We show LLM-Planner's high-level planning (HLP) accuracy breakdown by task type in Table <ref type="table">4</ref>. Because it is difficulty to determine a single value for the HLP accuracy for dynamic LLM-Planner, here we focus on the static version, but the HLP accuracy of the dynamic version generally correlates well with that of the static version. From the results, we observe that the results do not depend much on the difficulty of the task. For example, the task "Stack &amp; Place" is often considered as the most difficult task based on the success rate of state-of-the-art models, but LLM-Planner's HLP accuracy is similar to those of easier tasks such as "Place two". We find that LLM-Planner is not overly sensitive to the complexity of tasks. This suggests that it could generalize well to different types of tasks with only a few in-context examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2. End-to-End Performance by Task Type</head><p>We show the end-to-end performance breakdown by task type of dynamic LLM-Planner + HLSM in Figure <ref type="figure" target="#fig_4">5</ref>. As a reference, we also compare with HLSM and FILM trained with the full training set of ALFRED. Keep in mind that this is not apples-to-apples comparison because LLM-Planner is under the few-shot setting. Despite that, we can see that LLM-Planner + HLSM achieves comparable performance with HLSM, and the distribution of the two are similar. This is likely due to the shared low-level planner and object detector, which introduce a similar error profile. This again shows that our few-shot high-level planner is as good as HLSM's high-level planner that is trained with the full training set. On the other hand, it also shows that there is still a large room to improve by using better low-level planners and object detectors. For example, even though our HLP accuracy for "Heat &amp; Place" is 36% as shown in Table <ref type="table">4</ref>, we could only get 1.8% success rate due to the object detector from HLSM often failing to detect the "microwave". If we use FILM's low-level planner and object detector, we may be able to achieve much better performance on this task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.3. Scaling Comparison with HLSM</head><p>We show LLM-Planner's scaling experiments in comparison with the HLSM <ref type="bibr" target="#b2">[3]</ref> in Table <ref type="table">5</ref>. We can see that LLM-Planner significantly outperforms HLSM on almost all data size except for the full data setting. This result shows that LLM-Planner is more data-efficient across the board compared to the existing methods. Even with the full data setting, LLM-Planner only falls behind 0.48 SR compared to the HLSM. Our work can dramatically reduce the amount of human annotations needed for learning the task while maintaining a similar performance.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Success rate by task type on ALFRED valid unseen split.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosario</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Jauregui Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sally</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolina</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jornell</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jarek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zeng</surname></persName>
+		</author>
+		<title level="m">Do as i can and not as i say: Grounding language in robotic affordances</title>
+		<imprint>
+			<biblScope unit="page">12</biblScope>
+		</imprint>
+	</monogr>
+	<note>In arXiv preprint arXiv:2204.01691, 2022. 1, 2, 3, 4, 7, 8</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Vision-and-language navigation: Interpreting visually-grounded navigation instructions in real environments</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Teney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niko</forename><surname>Sunderhauf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Gould</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hengel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A persistent spatial semantic representation for high-level natural language instruction execution</title>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2, 3, 4, 6, 8, 12, 14</date>
+			<biblScope unit="page" from="706" to="717" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Infor-mation Processing Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Ranzato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Hadsell</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Lin</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yura</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">W</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><surname>William</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Arun</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">M</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<imprint>
+			<pubPlace>Elizabeth Barnes, Ariel Herbert-Voss</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Evaluating large language models trained on code. ArXiv, abs/2107.03374, 2021. 9</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Vision for mobile robot navigation: a survey</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">N</forename><surname>Desouza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Kak</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="237" to="267" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">BERT: pre-training of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL-HLT 2019</title>
+		<title level="s">Long and Short Papers</title>
+		<editor>
+			<persName><forename type="first">Jill</forename><surname>Burstein</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Christy</forename><surname>Doran</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Thamar</forename><surname>Solorio</surname></persName>
+		</editor>
+		<meeting>the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL-HLT 2019<address><addrLine>Minneapolis, MN, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">June 2-7, 2019. 2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">12</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Speaker-follower models for vision-and-language navigation</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronghang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volkan</forename><surname>Cirik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis-Philippe</forename><surname>Morency</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Berg-Kirkpatrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kate</forename><surname>Saenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Darrell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Making pretrained language models better few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</title>
+		<meeting>the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021-08">Aug. 2021</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Clay Washington</title>
+		<author>
+			<persName><forename type="first">Jiménez</forename><surname>Bernal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Gutiérrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lang</forename><surname>Mcneal ; Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.08410</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Thinking about gpt-3 in-context learning for biomedical ie? think again</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">A recurrent vision-and-language bert for navigation</title>
+		<author>
+			<persName><forename type="first">Yicong</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuankai</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Rodriguez-Opazo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Gould</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</meeting>
+		<imprint>
+			<date type="published" when="2021-06">June 2021</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Visual language maps for robot navigation</title>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oier</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfram</forename><surname>Burgard</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.05714</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Language models as zero-shot planners</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.07207</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Extracting actionable knowledge for embodied agents</title>
+		<imprint>
+			<date type="published" when="2004">2022. 1, 2, 3, 4</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Kolve</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roozbeh</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winson</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eli</forename><surname>Vanderbilt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Weihs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvaro</forename><surname>Herrasti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+		<idno>arXiv, 2017. 3</idno>
+		<title level="m">An Interactive 3D Environment for Visual AI</title>
+		<meeting><address><addrLine>AI2-THOR</addrLine></address></meeting>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Room-Across-Room: Multilingual visionand-language navigation with dense spatiotemporal grounding</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Ku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roma</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Ie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Baldridge</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Empirical Methods for Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Robust navigation with language pretraining and stochastic sampling</title>
+		<author>
+			<persName><forename type="first">Xiujun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunyuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaolin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)<address><addrLine>Hong Kong, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-11">Nov. 2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Lebp -language expectation &amp; binding policy: A two-stream framework for embodied vision-and-language interaction task learning agents</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2203.04637</idno>
+		<imprint>
+			<date type="published" when="2008">2022. 3, 8</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">The 3rd Workshop on Knowledge Extraction and Integration for Deep Learning Architectures</title>
+		<author>
+			<persName><forename type="first">Jiachang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinghan</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Dolan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Carin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Deep Learning Inside Out</title>
+		<meeting>Deep Learning Inside Out<address><addrLine>Dublin, Ireland and Online</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-05">DeeLIO 2022. May 2022</date>
+			<biblScope unit="page" from="100" to="114" />
+		</imprint>
+	</monogr>
+	<note>What makes good incontext examples for GPT-3?</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Pre-train, prompt, and predict: A systematic survey of prompting methods in natural language processing</title>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhe</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlan</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Comput. Surv</title>
+		<imprint>
+			<date type="published" when="2002">sep 2022. 2</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">A planning based neural-symbolic approach for embodied instruction following</title>
+		<author>
+			<persName><forename type="first">Xiaotian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hector</forename><surname>Palacios</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Muise</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Interactions</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page">17</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Roberta: A robustly optimized bert pretraining approach</title>
+		<author>
+			<persName><forename type="first">Yinhan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Myle</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfei</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veselin</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Vilbert: Pretraining task-agnostic visiolinguistic representations for vision-and-language tasks</title>
+		<author>
+			<persName><forename type="first">Jiasen</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Neuro-symbolic procedural planning with commonsense prompting</title>
+		<author>
+			<persName><forename type="first">Yujie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixi</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanrong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenda</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miguel</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Eckstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Yang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Improving visionand-language navigation with image-text pairs from the web</title>
+		<author>
+			<persName><forename type="first">Arjun</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayush</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision-ECCV 2020: 16th European Conference</title>
+		<meeting><address><addrLine>Glasgow, UK</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020">August 23-28, 2020. 2020</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+	<note>Proceedings, Part VI</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">FILM: Following instructions in language with modular methods</title>
+		<author>
+			<persName><forename type="first">So</forename><surname>Yeon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devendra</forename><surname>Singh Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Kumar Ravikumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2, 3, 4, 6, 8, 12</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Episodic Transformer for Vision-and-Language Navigation</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Pashevich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cordelia</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2008">2021. 1, 3, 8</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">True fewshot learning with language models</title>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Beygelzimer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Dauphin</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">Wortman</forename><surname>Vaughan</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Virtualhome: Simulating household activities via programs</title>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Ra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marko</forename><surname>Boben</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaman</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tingwu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanja</forename><surname>Fidler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="8494" to="8502" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Exploring the limits of transfer learning with a unified text-to-text transformer</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">140</biblScope>
+			<biblScope unit="page" from="1" to="67" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">It&apos;s not just size that matters: Small language models are also few-shot learners</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hinrich</forename><surname>Schütze</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference of the North American Chapter</title>
+		<meeting>the 2021 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>Human Language Technologies</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="2339" to="2352" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Robotic navigation with large pre-trained models of language, vision, and action</title>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Błażej</forename><surname>Osiński</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">6th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Skill induction and planning with latent language</title>
+		<author>
+			<persName><forename type="first">Pratyusha</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-05">May 2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">13</biblScope>
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">ALFRED: A Benchmark for Interpreting Grounded Instructions for Everyday Tasks</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winson</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roozbeh</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2006">2020. 1, 2, 3, 4, 6</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">ProgPrompt: Generating situated robot task plans using large language models</title>
+		<author>
+			<persName><forename type="first">Ishika</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Valts</forename><surname>Blukis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arsalan</forename><surname>Mousavian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankit</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danfei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tremblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Animesh</forename><surname>Garg</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">One step at a time: Long-horizon vision-and-language navigation with milestones</title>
+		<author>
+			<persName><forename type="first">Hee</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tai-Yu</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">M</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Lun</forename><surname>Sadler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Chao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting>the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</meeting>
+		<imprint>
+			<date type="published" when="2022-06">June 2022</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page">8</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Embodied bert: A transformer model for embodied, language-guided visual task completion</title>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Suglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaozi</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Govind</forename><surname>Thattai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Sukhatme</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Between mdps and semi-mdps: A framework for temporal abstraction in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Richard S Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page">4</biblScope>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Transformers: State-of-the-art natural language processing</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clement</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Moi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierric</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Louf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Funtowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Davison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Shleifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clara</forename><surname>Patrick Von Platen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Plu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teven</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Le Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariama</forename><surname>Gugger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Drame</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">M</forename><surname>Lhoest</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rush</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</meeting>
+		<imprint>
+			<date type="published" when="2020-10">Oct. 2020</date>
+			<biblScope unit="page" from="38" to="45" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Hierarchical task learning from language instructions with unified transformers and self-monitoring</title>
+		<author>
+			<persName><forename type="first">Yichi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joyce</forename><surname>Chai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL-IJCNLP 2021</title>
+		<imprint>
+			<date type="published" when="2021-08">Aug. 2021</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">8</biblScope>
+		</imprint>
+	</monogr>
+	<note>Online</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">A neurosymbolic commonsense reasoning framework for conversational embodied agents</title>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Qing</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zonglin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuehai</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Eric</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<idno>ArXiv, abs/2208.13266, 2022. 3</idno>
+		<imprint>
+			<pubPlace>Jarvis</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

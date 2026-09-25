@@ -1,0 +1,1742 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">REAC T : SYNERGIZING REASONING AND ACTING IN LANGUAGE MODELS</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-03-10">10 Mar 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+							<email>shunyuy@princeton.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Princeton University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+							<email>jeffreyzhao@google.com</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Google Research</orgName>
+								<address>
+									<country>Brain team</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+							<email>dianyu@google.com</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Google Research</orgName>
+								<address>
+									<country>Brain team</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+							<email>dunan@google.com</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Google Research</orgName>
+								<address>
+									<country>Brain team</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Google Research</orgName>
+								<address>
+									<country>Brain team</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+							<email>karthikn@princeton.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">Princeton University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+							<email>yuancao@google.com</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Google Research</orgName>
+								<address>
+									<country>Brain team</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">REAC T : SYNERGIZING REASONING AND ACTING IN LANGUAGE MODELS</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-03-10">10 Mar 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">7FB2C7E66B7B7785D3971B44469F04F9</idno>
+					<idno type="arXiv">arXiv:2210.03629v3[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.1" ident="GROBID" when="2026-09-25T14:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.1</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[["figure","table","note","formula"]], flavor=null, debugLabelingCollector=disabled</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>While large language models (LLMs) have demonstrated impressive performance across tasks in language understanding and interactive decision making, their abilities for reasoning (e.g. chain-of-thought prompting) and acting (e.g. action plan generation) have primarily been studied as separate topics. In this paper, we explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner, allowing for greater synergy between the two: reasoning traces help the model induce, track, and update action plans as well as handle exceptions, while actions allow it to interface with and gather additional information from external sources such as knowledge bases or environments. We apply our approach, named ReAct, to a diverse set of language and decision making tasks and demonstrate its effectiveness over state-of-the-art baselines in addition to improved human interpretability and trustworthiness. Concretely, on question answering (HotpotQA) and fact verification (Fever), ReAct overcomes prevalent issues of hallucination and error propagation in chain-of-thought reasoning by interacting with a simple Wikipedia API, and generating human-like task-solving trajectories that are more interpretable than baselines without reasoning traces. Furthermore, on two interactive decision making benchmarks (ALFWorld and WebShop), ReAct outperforms imitation and reinforcement learning methods by an absolute success rate of 34% and 10% respectively, while being prompted with only one or two in-context examples.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<facsimile>
+		<surface n="1" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="2" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="3" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="4" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="5" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="6" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="7" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="8" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="9" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="10" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="11" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="12" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="13" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="14" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="15" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="16" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="17" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="18" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="19" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="20" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="21" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="22" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="23" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="24" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="25" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="26" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="27" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="28" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="29" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="30" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="31" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="32" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+		<surface n="33" ulx="0.0" uly="0.0" lrx="612.0" lry="792.0"/>
+	</facsimile>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>A unique feature of human intelligence is the ability to seamlessly combine task-oriented actions with verbal reasoning (or inner speech, <ref type="bibr" target="#b2">Alderson-Day &amp; Fernyhough, 2015)</ref>, which has been theorized to play an important role in human cognition for enabling self-regulation or strategization <ref type="bibr" target="#b30">(Vygotsky, 1987;</ref><ref type="bibr" target="#b19">Luria, 1965;</ref><ref type="bibr" target="#b9">Fernyhough, 2010)</ref> and maintaining a working memory <ref type="bibr" target="#b3">(Baddeley, 1992)</ref>. Consider the example of cooking up a dish in the kitchen. Between any two specific actions, we may reason in language in order to track progress ("now that everything is cut, I should heat up the pot of water"), to handle exceptions or adjust the plan according to the situation ("I don't have salt, so let me use soy sauce and pepper instead"), and to realize when external information is needed ("how do I prepare dough? Let me search on the Internet"). We may also act (open a cookbook to read the recipe, open the fridge, check ingredients) to support the reasoning and to answer questions ("What dish can I make right now?"). This tight synergy between "acting" and "reasoning" allows humans to learn new tasks quickly and perform robust decision making or reasoning, even under previously unseen circumstances or facing information uncertainties.</p><p>Recent results have hinted at the possibility of combining verbal reasoning with interactive decision making in autonomous systems. On one hand, properly prompted large language models (LLMs) have demonstrated emergent capabilities to carry out several steps of reasoning traces to derive  <ref type="bibr">(Shridhar et al., 2020b)</ref> game. In both domains, we omit in-context examples in the prompt, and only show task solving trajectories generated by the model (Act, Thought) and the environment (Obs).</p><p>answers from questions in arithmetic, commonsense, and symbolic reasoning tasks <ref type="bibr" target="#b33">(Wei et al., 2022)</ref>. However, this "chain-of-thought" reasoning is a static black box, in that the model uses its own internal representations to generate thoughts and is not grounded in the external world, which limits its ability to reason reactively or update its knowledge. This can lead to issues like fact hallucination and error propagation over the reasoning process (Figure <ref type="figure" target="#fig_0">1 (1b)</ref>). On the other hand, recent work has explored the use of pre-trained language models for planning and acting in interactive environments <ref type="bibr" target="#b1">(Ahn et al., 2022;</ref><ref type="bibr" target="#b22">Nakano et al., 2021;</ref><ref type="bibr">Yao et al., 2020;</ref><ref type="bibr">Huang et al., 2022a)</ref>, with a focus on predicting actions via language priors. These approaches usually convert multi-modal observations into text, use a language model to generate domain-specific actions or plans, and then use a controller to choose or execute them. However, they do not employ language models to reason abstractly about high-level goals or maintain a working memory to support acting, barring <ref type="bibr">Huang et al. (2022b)</ref> who perform a limited form of verbal reasoning to reiterate spatial facts about the current state. Beyond such simple embodied tasks to interact with a few blocks, there have not been studies on how reasoning and acting can be combined in a synergistic manner for general task solving, and if such a combination can bring systematic benefits compared to reasoning or acting alone.</p><p>In this work, we present ReAct, a general paradigm to combine reasoning and acting with language models for solving diverse language reasoning and decision making tasks (Figure <ref type="figure" target="#fig_0">1</ref>). ReAct prompts LLMs to generate both verbal reasoning traces and actions pertaining to a task in an interleaved manner, which allows the model to perform dynamic reasoning to create, maintain, and adjust high-level plans for acting (reason to act), while also interact with the external environments (e.g. Wikipedia) to incorporate additional information into reasoning (act to reason).</p><p>We conduct empirical evaluations of ReAct and state-of-the-art baselines on four diverse benchmarks: question answering (HotPotQA, <ref type="bibr" target="#b34">Yang et al., 2018)</ref>, fact verification <ref type="bibr">(Fever, Thorne et al., 2018</ref>), text-based game (ALFWorld, <ref type="bibr">Shridhar et al., 2020b)</ref>, and webpage navigation <ref type="bibr" target="#b36">(WebShop, Yao et al., 2022)</ref>. For HotPotQA and Fever, with access to a Wikipedia API that the model can interact with, ReAct outperforms vanilla action generation models while being competitive with chain-ofthought reasoning (CoT) <ref type="bibr" target="#b33">(Wei et al., 2022)</ref>. The best approach overall is a combination of ReAct and CoT that allows for the use of both internal knowledge and externally obtained information during reasoning. On ALFWorld and WebShop, two or even one-shot ReAct prompting is able to outperform imitation or reinforcement learning methods trained with 10 3 ∼ 10 5 task instances, with an absolute improvement of 34% and 10% in success rates respectively. We also demonstrate the importance of sparse, versatile reasoning in decision making by showing consistent advantages over controlled baselines with actions only. Besides general applicability and performance boost, the combination of reasoning and acting also contributes to model interpretability, trustworthiness, and diagnosability across all domains, as humans can readily distinguish information from model's internal knowledge versus external environments, as well as inspect reasoning traces to understand the decision basis of model actions.</p><p>To summarize, our key contributions are the following: (1) we introduce ReAct, a novel promptbased paradigm to synergize reasoning and acting in language models for general task solving; (2) we perform extensive experiments across diverse benchmarks to showcase the advantage of ReAct in a few-shot learning setup over prior approaches that perform either reasoning or action generation in isolation; (3) we present systematic ablations and analysis to understand the importance of acting in reasoning tasks, and reasoning in interactive tasks; (4) we analyze the limitations of ReAct under the prompting setup (i.e. limited support of reasoning and acting behaviors), and perform initial finetuning experiments showing the potential of ReAct to improve with additional training data. Scaling up ReAct to train and operate on more tasks and combining it with complementary paradigms like reinforcement learning could further unlock the potential of large language models. 2 REAC T : SYNERGIZING REASONING + AC T ING Consider a general setup of an agent interacting with an environment for task solving. At time step t, an agent receives an observation o t ∈ O from the environment and takes an action a t ∈ A following some policy π(a t |c t ), where c t = (o 1 , a 1 , • • • , o t-1 , a t-1 , o t ) is the context to the agent. Learning a policy is challenging when the mapping c t → a t is highly implicit and requires extensive computation. For example, the agent shown in Figure <ref type="figure" target="#fig_0">1</ref>(1c) is unable to generate the correct final action (Act 4) to finish the QA task as it requires complex reasoning over the trajectory context (Question, Act 1-3, Obs 1-3). Similarly, the agent shown in Figure <ref type="figure" target="#fig_0">1</ref>(2a) fails to comprehend from the context that sinkbasin 1 does not contain peppershaker 1, thus keep producing hallucinating actions.</p><p>The idea of ReAct is simple: we augment the agent's action space to Â = A ∪ L, where L is the space of language. An action ât ∈ L in the language space, which we will refer to as a thought or a reasoning trace, does not affect the external environment, thus leading to no observation feedback. Instead, a thought ât aims to compose useful information by reasoning over the current context c t , and update the context c t+1 = (c t , ât ) to support future reasoning or acting. As shown in Figure <ref type="figure" target="#fig_0">1</ref>, there could be various types of useful thoughts, e.g. decomposing task goals and create action plans (2b, Act 1; 1d, Thought 1), injecting commonsense knowledge relevant to task solving (2b, Act 1), extracting important parts from observations (1d, Thought2, 4), track progress and transit action plans (2b, Act 8), handle exceptions and adjust action plans (1d, Thought 3), and so on.</p><p>However, as the language space L is unlimited, learning in this augmented action space is difficult and requires strong language priors. In this paper, we mainly focus on the setup where a frozen large language model, PaLM-540B <ref type="bibr" target="#b5">(Chowdhery et al., 2022)</ref> <ref type="foot" target="#foot_0">foot_0</ref> , is prompted with few-shot in-context examples to generate both domain-specific actions and free-form language thoughts for task solving (Figure <ref type="figure" target="#fig_0">1</ref> (1d), ( <ref type="formula">2b</ref>)). Each in-context example is a human trajectory of actions, thoughts, and environment observations to solve a task instance (see Appendix C). For the tasks where reasoning is of primary importance (Figure <ref type="figure" target="#fig_0">1</ref>(1)), we alternate the generation of thoughts and actions so that the task-solving trajectory consists of multiple thought-action-observation steps. In contrast, for decision making tasks that potentially involve a large number of actions (Figure <ref type="figure" target="#fig_0">1</ref>(2)), thoughts only need to appear sparsely in the most relevant positions of a trajectory, so we let the language model decide the asynchronous occurrence of thoughts and actions for itself.</p><p>Since decision making and reasoning capabilities are integrated into a large language model, ReAct enjoys several unique features: A) Intuitive and easy to design: Designing ReAct prompts is straightforward as human annotators just type down their thoughts in language on top of their actions taken. No ad-hoc format choice, thought design, or example selection is used in this paper. We detail prompt design for each task in Sections 3 and 4. B) General and flexible: Due to the flexible thought space and thought-action occurrence format, ReAct works for diverse tasks with distinct action spaces and reasoning needs, including but not limited to QA, fact verification, text game, and web navigation. C) Performant and robust: ReAct shows strong generalization to new task instances while learning solely from one to six in-context examples, consistently outperforming baselines with only reasoning or acting across different domains. We also show in Section 3 additional benefits when finetuning is enabled, and in Section 4 how ReAct performance is robust to prompt selections. D) Human aligned and controllable: ReAct promises an interpretable sequential decision making and reasoning process where humans can easily inspect reasoning and factual correctness. Moreover, humans can also control or correct the agent behavior on the go by thought editing, as shown in Figure <ref type="figure" target="#fig_3">5</ref> in Section 4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">KNOWLEDGE-INTENSIVE REASONING TASKS</head><p>We begin with knowledge-intensive reasoning tasks like multi-hop question answering and fact verification. As shown in Figure <ref type="figure" target="#fig_0">1</ref>(1d), by interacting with a Wikipedia API, ReAct is able to retrieve information to support reasoning, while also use reasoning to target what to retrieve next, demonstrating a synergy of reasoning and acting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">SETUP</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Domains</head><p>We consider two datasets challenging knowledge retrieval and reasoning: (1) Hot-PotQA <ref type="bibr" target="#b34">(Yang et al., 2018)</ref>, a multi-hop question answering benchmark that requires reasoning over two or more Wikipedia passages, and (2) FEVER <ref type="bibr" target="#b29">(Thorne et al., 2018)</ref>, a fact verification benchmark where each claim is annotated SUPPORTS, REFUTES, or NOT ENOUGH INFO, based on if there exists a Wikipedia passage to verify the claim. In this work, we operate in a question-only setup for both tasks, where models only receive the question/claim as input without access to support paragraphs, and have to rely on their internal knowledge or retrieve knowledge via interacting with an external environment to support reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Action Space</head><p>We design a simple Wikipedia web API with three types of actions to support interactive information retrieval: (1) search[entity], which returns the first 5 sentences from the corresponding entity wiki page if it exists, or else suggests top-5 similar entities from the Wikipedia search engine, (2) lookup[string], which would return the next sentence in the page containing string, simulating Ctrl+F functionality on the browser. ( <ref type="formula">3</ref>) finish[answer], which would finish the current task with answer. We note that this action space mostly can only retrieve a small part of a passage based on exact passage name, which is significantly weaker than state-of-theart lexical or neural retrievers. The purpose is to simulate how humans would interact with Wikipedia, and force models to retrieve via explicit reasoning in language.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">METHODS</head><p>ReAct Prompting For HotpotQA and Fever, we randomly select 6 and 3 cases<ref type="foot" target="#foot_2">foot_2</ref> from the training set and manually compose ReAct-format trajectories to use as few-shot exemplars in the prompts. Similar to Figure <ref type="figure" target="#fig_0">1(d</ref>), each trajectory consists of multiple thought-action-observation steps (i.e. dense thought), where free-form thoughts are used for various purposes. Specifically, we use a combination of thoughts that decompose questions ("I need to search x, find y, then find z"), extract information from Wikipedia observations ("x was started in 1844", "The paragraph does not tell x"), perform commonsense ("x is not y, so z must instead be...") or arithmetic reasoning ("1844 &lt; 1989"), guide</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt Method a</head><p>HotpotQA Fever (EM) (Acc) Standard 28.7 57.1 CoT <ref type="bibr" target="#b33">(Wei et al., 2022)</ref> 29.4 56.3 CoT-SC <ref type="bibr">(Wang et al., 2022a)</ref> 33.4 60.4</p><p>Act 25.7 58.9 ReAct 27.4 60.9 CoT-SC → ReAct 34.2 64.6 ReAct→ CoT-SC 35.1 62.0 Supervised SoTA b 67.5 89.5 Table 1: PaLM-540B prompting results on HotpotQA and Fever. a HotpotQA EM is 27.1, 28.9, 33.8 for Standard, CoT, CoT-SC in Wang et al. (2022b). b (Zhu et al., 2021; Lewis et al., 2020) 0 5 10 15 20 #CoT-SC trials 26 28 30 32 34 HotpotQA EM 0 5 10 15 20 #CoT-SC trials 47.5 50.0 52.5 55.0 57.5 60.0 62.5 65.0 Fever Acc Method CoT-SC -&gt; ReAct ReAct -&gt; CoT-SC CoT-SC ReAct CoT search reformulation ("maybe I can search/look up x instead"), and synthesize the final answer ("...so the answer is x"). See Appendix C for more details.</p><p>Baselines We systematically ablate ReAct trajectories to build prompts for multiple baselines (with formats as Figure <ref type="figure" target="#fig_0">1(1a-1c</ref>)): (a) Standard prompting (Standard), which removes all thoughts, actions, observations in ReAct trajectories. (b) Chain-of-thought prompting (CoT) <ref type="bibr" target="#b33">(Wei et al., 2022)</ref>, which removes actions and observations and serve as a reasoning-only baseline. We also build a self-consistency baseline (CoT-SC) <ref type="bibr">(Wang et al., 2022a;</ref><ref type="bibr">b)</ref> by sampling 21 CoT trajectories with decoding temperature 0.7 during inference and adopting the majority answer, which is found to consistently boost performance over CoT. (c) Acting-only prompt (Act), which removes thoughts in ReAct trajectories, loosely resembling how WebGPT <ref type="bibr" target="#b22">(Nakano et al., 2021)</ref> interacts with the Internet to answer questions, though it operates on a different task and action space, and uses imitation and reinforcement learning instead of prompting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Combining Internal and External Knowledge</head><p>As will be detail in Section 3.3, we observe that the problem solving process demonstrated by ReAct is more factual and grounded, whereas CoT is more accurate in formulating reasoning structure but can easily suffer from hallucinated facts or thoughts. We therefore propose to incorporate ReAct and CoT-SC, and let the model decide when to switch to the other method based on the following heuristics: A) ReAct → CoT-SC: when ReAct fails to return an answer within given steps, back off to CoT-SC. We set 7 and 5 steps for HotpotQA and FEVER respectively as we find more steps will not improve ReAct performance<ref type="foot" target="#foot_3">foot_3</ref> . B) CoT-SC → ReAct: when the majority answer among n CoT-SC samples occurs less than n/2 times (i.e. internal knowledge might not support the task confidently), back off to ReAct.</p><p>Finetuning Due to the challenge of manually annotating reasoning traces and actions at scale, we consider a bootstraping approach similar to <ref type="bibr" target="#b37">Zelikman et al. (2022)</ref>, using 3,000 trajectories with correct answers generated by ReAct (also for other baselines) to finetune smaller language models (PaLM-8/62B) to decode trajectories (all thoughts, actions, observations) conditioned on input questions/claims. More details are in Appendix B.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">RESULTS AND OBSERVATIONS</head><p>ReAct outperforms Act consistently Table <ref type="table">1</ref> shows HotpotQA and Fever results using PaLM-540B as the base model with different prompting methods. We note that ReAct is better than Act on both tasks, demonstrating the value of reasoning to guide acting, especially for synthesizing the final answer, as shown in Figure <ref type="figure" target="#fig_0">1 (1c-d</ref>). Fine-tuning results 3 also confirm the benefit of reasoning traces for more informed acting.</p><p>Type Definition ReAct CoT Success True positive Correct reasoning trace and facts 94% 86% False positive Hallucinated reasoning trace or facts 6% 14% Failure Reasoning error Wrong reasoning trace (including failing to recover from repetitive steps) 47% 16% Search result error Search return empty or does not contain useful information 23% -Hallucination Hallucinated reasoning trace or facts 0% 56% Label ambiguity Right prediction but did not match the label precisely 29% 28% A) Hallucination is a serious problem for CoT, resulting in much higher false positive rate than ReAct (14% vs. 6%) in success mode, and make up its major failure mode (56%). In contrast, the problem solving trajectory of ReActis more grounded, fact-driven, and trustworthy, thanks to the access of an external knowledge base. B) While interleaving reasoning, action and observation steps improves ReAct's groundedness and trustworthiness, such a structural constraint also reduces its flexibility in formulating reasoning steps, leading to more reasoning error rate than CoT. we note that there is one frequent error pattern specific to ReAct, in which the model repetitively generates the previous thoughts and actions, and we categorize it as part of "reasoning error" as the model fails to reason about what the proper next action to take and jump out of the loop<ref type="foot" target="#foot_4">foot_4</ref> . C) For ReAct, successfully retrieving informative knowledge via search is critical. Noninformative search, which counts for 23% of the error cases, derails the model reasoning and gives it a hard time to recover and reformulate thoughts. This is perhaps an expected trade-off between factuality and flexibility, which motivates our proposed strategies of combining two methods.</p><p>We provide examples for each success and failure modes in Appendix E.1. We also find some HotpotQA questions may contain outdated answer labels, see Figure <ref type="figure">4</ref> for example.</p><p>ReAct + CoT-SC perform best for prompting LLMs Also shown in Table <ref type="table">1</ref>, the best prompting method on HotpotQA and Fever are ReAct → CoT-SC and CoT-SC → ReAct respectively. Furthermore, Figure <ref type="figure" target="#fig_1">2</ref> shows how different methods perform with respect to the number of CoT-SC samples used. While two ReAct + CoT-SC methods are advantageous at one task each, they both significantly and consistently outperform CoT-SC across different number of samples, reaching CoT-SC performance with 21 samples using merely 3-5 samples. These results indicate the value of properly combining model internal knowledge and external knowledge for reasoning tasks.</p><p>ReAct performs best for fine-tuning Figure <ref type="figure" target="#fig_2">3</ref> shows the scaling effect of prompting/finetuning four methods (Standard, CoT, Act, ReAct) on HotpotQA. With PaLM-8/62B, prompting ReAct performs worst among four methods due to the difficulty to learn both reasoning and acting from in-context examples. However, when finetuned with just 3,000 examples, ReAct becomes the best method among the four, with PaLM-8B finetuned ReAct outperforming all PaLM-62B prompting methods, and PaLM-62B finetuned ReAct outperforming all 540B prompting methods. In contrast, finetuning Standard or CoT is significantly worse than finetuning ReAct or Act for both PaLM-8/62B, as the former essentially teaches models to memorize (potentially halluincated) knowledge facts, and the latter teaches models how to (reason and) act to access information from Wikipedia, a more generalizable skill for knowledge reasoning. As all prompting methods are still significantly far from domain-specific state-of-the-art approaches (Table <ref type="table">1</ref>), we believe finetuning with more human-written data might be a better way to unleash the power of ReAct. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">DECISION MAKING TASKS</head><p>We also test ReAct on two language-based interactive decision-making tasks, ALFWorld and WebShop, both of which feature complex environments that require agents to act over long horizons with sparse rewards, warranting the need for reasoning to act and explore effectively.</p><p>ALFWorld ALFWorld <ref type="bibr">(Shridhar et al., 2020b)</ref> (Figure <ref type="figure" target="#fig_0">1</ref>(2)) is a synthetic text-based game designed to align with the embodied ALFRED benchmark <ref type="bibr">(Shridhar et al., 2020a)</ref>. It includes 6 types of tasks in which an agent needs to achieve a high-level goal (e.g. examine paper under desklamp) by navigating and interacting with a simulated household via text actions (e.g. go to coffeetable 1, take paper 2, use desklamp 1). A task instance can have more than 50 locations and take an expert policy more than 50 steps to solve, thus challenging an agent to plan and track subgoals, as well as explore systematically (e.g. check all desks one by one for desklamp). In particular, one challenge built into ALFWorld is the need to determine likely locations for common household items (e.g. desklamps will likely be on desks, shelfs, or dressers), making this environment a good fit for LLMs to exploit their pretrained commonsense knowledge. To prompt ReAct, we randomly annotate three trajectories from the training set for each task type, where each trajectory includes sparse thoughts that (1) decompose the goal, (2) track subgoal completion, (3) determine the next subgoal, and (4) reason via commonsense where to find an object and what to do with it. We show prompts used for ALFWorld in Appendix C.4. Following <ref type="bibr">Shridhar et al. (2020b)</ref>, we evaluate on 134 unseen evaluation games in a task-specific setup. For robustness, we construct 6 prompts for each task type through each permutation of 2 annotated trajectories from the 3 we annotate. Act prompts are constructed using the same trajectories, but without thoughts -since task instances are randomly chosen from the training set, it favors neither ReAct nor Act and provides a fair and controlled comparison to test the importance of sparse thoughts. For baselines, we use BUTLER <ref type="bibr">(Shridhar et al., 2020b)</ref>, an imitation learning agent trained on 10<ref type="foot" target="#foot_5">foot_5</ref> expert trajectories for each task type 5 .</p><p>WebShop Can ReAct also interact with noisy real-world language environments for practical applications? We investigate WebShop <ref type="bibr" target="#b36">(Yao et al., 2022)</ref>, a recently proposed online shopping website environment with 1.18M real-world products and 12k human instructions. Unlike ALFWorld, Webshop contains a high variety of structured and unstructured texts (e.g. product titles, descriptions, and options crawled from Amazon), and requires an agent to purchase a product based on a user instruction (e.g. "I am looking for a nightstand with drawers. It should have a nickel finish, and priced lower than $140") through web interactions (e.g. search "nightstand drawers", choose buttons such as "color: modern-nickel-white" or "back to search"). This task is evaluated by average score (percentage of desired attributes covered by the chosen product averaged across all episodes) and success rate (percentage of episodes where the chosen product satisfies all requirements) on 500 test instructions. We formulate Act prompts with actions to search, choose product, choose options, and buy, with ReAct prompts additionally reasoning to determine what to explore, when to buy, and what products options are relevant to the instruction. See Table <ref type="table" target="#tab_2">6</ref> for an example prompt, and Table <ref type="table">10</ref> for model predictions in the Appendix. We compare to an imitation learning (IL) method Table 4: Score and success rate (SR) on Webshop. IL/IL+RL taken from Yao et al. (2022).</p><p>trained with 1,012 human annotated trajectories, and a imitation + reinforcement learning (IL + RL) method additionally trained with 10,587 training instructions.</p><p>Results ReAct outperforms Act on both ALFWorld (Table <ref type="table" target="#tab_1">3</ref>) and Webshop (Table <ref type="table">4</ref>). On ALFWorld, the best ReAct trial achieves an average success rate of 71%, significantly outperforming the best Act (45%) and BUTLER (37%) trials. In fact, even the worse ReAct trial (48%) beats the best trial of both methods. Moreover, the advantage of ReAct over Act is consistent across six controlled trials, with relative performance gain ranging from 33% to 90% and averaging 62%. Qualitatively, we saw that, without any thoughts at all, Act fails to correctly decompose goals into smaller subgoals, or loses track of the current state of the environment. Example trajectories comparing ReAct and Act can be found in Appendix D.2.1 and Appendix D.2.2.</p><p>On Webshop, one-shot Act prompting already performs on par with IL and IL+RL methods. With additional sparse reasoning, ReAct achieves significantly better performance, with an absolute 10% improvement over the previous best success rate. By checking examples, we find that ReAct is more likely to identify instruction-relevant products and options by reasoning to bridge the gap between noisy observations and actions (e.g. "For 'space-saving ottoman bench for living room', the item has options '39x18x18inch' and 'blue' and seems good to buy."). However, existing methods are still far from the performance of expert humans (Table <ref type="table">4</ref>), who perform significantly more product explorations and query re-formulations that are still challenging for prompting-based methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>On the value of internal reasoning vs. external feedback</head><p>To our knowledge, ReAct is the first demonstration of combined reasoning and action using an LLM applied to an interactive environment within a closed-loop system. Perhaps the closest prior work is Inner Monologue (IM), from <ref type="bibr">Huang et al. (2022b)</ref>, in which actions from an embodied agent are motivated by an eponymous "inner monologue". However, IM's "inner monologue" is limited to observations of the environment state and what needs to be completed by the agent for the goal to be satisfied. In contrast, the reasoning traces in ReAct for decision making is flexible and sparse, allowing diverse reasoning types (see Section 2) to be induced for different tasks.</p><p>To demonstrate the differences between ReAct and IM, and to highlight the importance of internal reasoning vs. simple reactions to external feedback, we ran an ablation experiment using a thought pattern composed of IM-like dense external feedback. As can be seen in Table <ref type="table" target="#tab_1">3</ref>, ReAct substantially outperforms IM-style prompting (ReAct-IM) (71 vs. 53 overall success rate), with consistent advantages on five out of six tasks. Qualitatively, we observed that ReAct-IM often made mistakes in identifying when subgoals were finished, or what the next subgoal should be, due to a lack of highlevel goal decomposition. Additionally, many ReAct-IM trajectories struggled to determine where an item would likely be within the ALFWorld environment, due to a lack of commonsense reasoning. Both shortcomings can be addressed in the ReAct paradigm. More details about ReAct-IM is in Appendix B.2. An example prompt for ReAct-IM can be found in Appendix C.4, and an example trajectory in Appendix D.2.3.</p><p>Language model for reasoning Perhaps the most well-known work of using LLMs for reasoning is Chain-of-Thought (CoT) <ref type="bibr" target="#b33">(Wei et al., 2022)</ref>, which reveals the ability of LLMs to formulate their own "thinking procedure" for problem solving. Several follow-up works have since been performed, including least-to-most prompting for solving complicated tasks <ref type="bibr" target="#b38">(Zhou et al., 2022)</ref>, zero-shot-CoT <ref type="bibr" target="#b15">(Kojima et al., 2022)</ref>, and reasoning with self-consistency <ref type="bibr">(Wang et al., 2022a)</ref>. Recently, <ref type="bibr" target="#b20">(Madaan &amp; Yazdanbakhsh, 2022)</ref> systematically studied the formulation and structure of CoT, and observed that the presence of symbols, patterns and texts is crucial to the effectiveness of CoT. Other work has also been extended to more sophisticated reasoning architecture beyond simple prompting. For example Selection-Inference <ref type="bibr">(Creswell et al., 2022)</ref> divides the reasoning process into two steps of "selection" and "inference". STaR <ref type="bibr" target="#b37">(Zelikman et al., 2022)</ref> bootstraps the reasoning process by finetuning the model on correct rationales generated by the model itself. Faithful reasoning <ref type="bibr">(Creswell &amp; Shanahan, 2022)</ref> decomposes multi-step reasoning into three steps, each performed by a dedicated LM respectively. Similar approaches like Scratchpad <ref type="bibr" target="#b23">(Nye et al., 2021)</ref>, which finetunes a LM on intermediate computation steps, also demonstrate improvement on multi-step computation problems. In contrast to these methods, ReAct performs more than just isolated, fixed reasoning, and integrates model actions and their corresponding observations into a coherent stream of inputs for the model to reason more accurately and tackle tasks beyond reasoning (e.g. interactive decision making).</p><p>Language model for decision making The strong capability of LLMs has enabled them to perform tasks beyond language generation, and it is becoming more popular to take advantage of LLMs as a policy model for decision making, especially in interactive environments. WebGPT <ref type="bibr" target="#b22">(Nakano et al., 2021)</ref> uses an LM to interact with web browsers, navigate through web pages, and infer answers to complicated questions from ELI5 <ref type="bibr" target="#b8">(Fan et al., 2019)</ref>. In comparison to ReAct, WebGPT does not explicitly model the thinking and reasoning procedure, instead rely on expensive human feedback for reinforcement learning. In conversation modeling, chatbots like BlenderBot <ref type="bibr">(Shuster et al., 2022b)</ref> and Sparrow <ref type="bibr" target="#b10">(Glaese et al., 2022)</ref> and task-oriented dialogue systems like SimpleTOD (Hosseini-Asl et al., 2020) also train LMs to make decision about API calls. Unlike ReAct, they do not explicitly consider the reasoning procedure either, and also relies on expensive datasets and human feedback collections for policy learning. In contrast, ReAct learns a policy in a much cheaper way, since the decision making process only requires language description of the reasoning procedure. <ref type="foot" target="#foot_6">6</ref>LLMS have also been increasingly employed in interactive and embodied environments for planning and decision making. Perhaps most relevant to ReAct in this respect are SayCan <ref type="bibr" target="#b1">(Ahn et al., 2022)</ref> and Inner Monologue <ref type="bibr">(Huang et al., 2022b)</ref>, which use LLMs for robotic action planning and decision making. In SayCan, LLMs were prompted to directly predict possible actions a robot can take, which is then reranked by an affordance model grounded on the visual environments for final prediction. Inner Monologue made further improvements by adding the eponymous "inner monologue", which is implemented as injected feedback from the environment. To our knowledge, Inner Monologue is the first work that demonstrates such a closed-loop system, which ReAct builds on. However, we argue that Inner Monologue does not truly comprise of inner thoughts -this is elaborated in Section 4. We also note that leveraging language as semantically-rich inputs in the process of interactive decision making has been shown to be successful under other settings <ref type="bibr" target="#b0">(Abramson et al., 2020;</ref><ref type="bibr" target="#b14">Karamcheti et al., 2021;</ref><ref type="bibr">Huang et al., 2022a;</ref><ref type="bibr" target="#b18">Li et al., 2022)</ref>. It is becoming more evident that with the help of LLMs, language as a fundamental cognitive mechanism will play a critical role in interaction and decision making. What is more, progress in LLMs has also inspired the development of versatile and generalist agents like <ref type="bibr" target="#b24">Reed et al. (2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION</head><p>We have proposed ReAct -a simple yet effective method for synergizing reasoning and acting in large language models. Through a diverse set of experiments on multi-hop question-answering, fact checking, and interactive decision-making tasks, we show that ReAct leads to superior performance with interpretable decision traces. Despite the simplicity of our method, complex tasks with large action spaces require more demonstrations to learn well, which unfortunately can easily go beyond the input length limit of in-context learning. We explore the fine-tuning approach on HotpotQA with initial promising results, but learning from more high-quality human annotations will be the desiderata to further improve the performance. Scaling up ReAct with multi-task training and combining it with complementary paradigms like reinforcement learning could result in stronger agents that further unlock the potential of LLMs for more applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ACKNOWLEDGMENTS</head><p>We thank the support and feedback of many people from Google Brain team and Princeton NLP Group. This work was supported in part by the National Science Foundation under Grant No. 2107048. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>REPRODUCIBILITY STATEMENT</head><p>Our main experiments are done on PaLM <ref type="bibr" target="#b5">(Chowdhery et al., 2022)</ref>, which is not an openly accessible model yet. To increase reproducibility, we have included all used prompts in Appendix C, additional experiments using GPT-3 <ref type="bibr" target="#b4">(Brown et al., 2020)</ref> in Appendix A.1, and associated GPT-3 ReAct prompting code at <ref type="url" target="https://anonymous.4open.science/r/ReAct-2268/">https://anonymous.4open.science/r/ReAct-2268/</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ETHICS STATEMENT</head><p>ReAct prompts large language models to generate more human interpretable, diagnosable, and controllable task-solving trajectories than previous methods. However, hooking up a large language model with an action space to interact with external environments (e.g. the web, physical environments) has potential dangers, e.g. looking up inappropriate or private information, or taking harmful actions in an environment. Our experiments minimize such risks by limiting the interactions to specific websites (Wikipedia or WebShop) that are free of private information, without any dangerous actions in the action space design (i.e. models cannot really buy products on WebShop the research benchmark, or edit Wikipedia). We believe researchers should be aware of such risks before designing more extensive experiments in the future. is difficult for Act and previous RL methods, as a human cannot change the model parameters, and changing a few actions might not edit the rest of the model behavior. This paradigm is also more than human dialogue to update the goal or subgoal as in Huang et al. (2022b) -while editing ReAct thoughts can do these, it can also modify the model's internal belief, reasoning styles, or anything the flexible thought space supports, for better task solving. We believe this is an exciting direction for human alignment and leave more systematic study as future work. B EXPERIMENT DETAILS B.1 HOTPOTQA FINETUNING DETAILS For all finetuning we use a batch size of 64. On PaLM-8B, we finetune ReAct and Act methods for 4, 000 steps and Standard and CoT methods for 2, 000 steps. On PaLM-62B, we finetune ReAct and Act methods for 4, 000 steps and Standard and CoT methods for 1, 000 steps. We find ReAct and Act methods generally benefit from more training steps (and more training data), while Standard and CoT methods degrade soon after finetuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 ALFWORLD IM-STYLE DETAILS</head><p>For the IM-style ablation, the same expert trajectories used in ReAct are reannotated with dense external feedback thoughts within these trajectories, that limit ReAct-IM to only think about (1) decomposing the current goal and (2) the current subgoal that needs to be completed. In particular, ReAct-IM lacks thoughts that (1) determine when a subgoal is completed (2) determine what the next subgoal should be (3) inducing the LLM to refer to its internal pretraining knowledge to identify where items can be within the environment.</p><p>C PROMPTS C.1 HOTPOTQA Hotpot QA Prompts Original Question What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into? Answer 1,800 to 7,000 ft Question Musician and satirist Allie Goertz wrote a song about the "The Simpsons" character Milhouse, who Matt Groening named after who? Answer Richard Nixon Question Which documentary is about Finnish rock groups, Adam Clayton Powell or The Saimaa Gesture? Answer The Saimaa Gesture Question What profession does Nicholas Ray and Elia Kazan have in common? Answer director, screenwriter, actor Question Which magazine was started first Arthur's Magazine or First for Women? Answer Arthur's Magazine Question Were Pavel Urysohn and Leonid Levin known for the same type of work? Answer Yes Act Question What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into? Action 1 Search[Colorado orogeny] Observation 1 The Colorado orogeny was an episode of mountain building (an orogeny) in Colorado and surrounding areas. Action 2 Lookup[eastern sector] Observation 2 (Result 1 / 1) The eastern sector extends into the High Plains and is called the Central Plains orogeny. Action 3 Search[High Plains] Observation 3 High Plains refers to one of two distinct land regions: Action 4 Search[High Plains (United States)] Observation 4 The High Plains are a subregion of the Great Plains. From east to west, the High Plains rise in elevation from around 1,800 to 7,000 ft (550 to 2,130 m).[3] Action 5 Finish[1,800 to 7,000 ft] Question Musician and satirist Allie Goertz wrote a song about the "The Simpsons" character Milhouse, who Matt Groening named after who? Action 1 Search[Milhouse] Observation 1 Milhouse Mussolini Van Houten is a recurring character in the Fox animated television series The Simpsons voiced by Pamela Hayden and created by Matt Groening. Action 2 Lookup[named after] Observation 2 (Result 1 / 1) Milhouse was named after U.S. president Richard Nixon, whose middle name was Milhous. Action 3 Finish[Richard Nixon] Question Which documentary is about Finnish rock groups, Adam Clayton Powell or The Saimaa Gesture? Action 1 Search[Adam Clayton Powell] Observation 1 Could not find [Adam Clayton Powell]. Similar: ['Adam Clayton Powell III', 'Seventh Avenue (Manhattan)', 'Adam Clayton Powell Jr. State Office Building', 'Isabel Washington Powell', 'Adam Powell', 'Adam Clayton Powell (film)', 'Giancarlo Esposito']. Action 2 Search[Adam Clayton Powell (film)] Observation 2 Adam Clayton Powell is a 1989 American documentary film directed by Richard Kilberg. The film is about the rise and fall of influential African-American politician Adam Clayton Powell Jr.[3][4] It was later aired as part of the PBS series The American Experience. Action 3 Finish[The Saimaa Gesture] Question What profession does Nicholas Ray and Elia Kazan have in common? Action 1 Search[Nicholas Ray] Observation 1 Nicholas Ray (born Raymond Nicholas Kienzle Jr., August 7, 1911 -June 16, 1979) was an American film director, screenwriter, and actor best known for the 1955 film Rebel Without a Cause. Action 2 Search[Elia Kazan] Observation 2 Elia Kazan was an American film and theatre director, producer, screenwriter and actor. Continued on next page Hotpot QA Prompts -Continued from previous page Action 3 Finish[director, screenwriter, actor] Question Which magazine was started first Arthur's Magazine or First for Women? Action 1 Search[Arthur's Magazine] Observation 1 Arthur's Magazine (1844-1846) was an American literary periodical published in Philadelphia in the 19th century. Action 2 Search[First for Women] Observation 2 First for Women is a woman's magazine published by Bauer Media Group in the USA.[1] The magazine was started in 1989. Action 3 Finish[Arthur's Magazine] Question Were Pavel Urysohn and Leonid Levin known for the same type of work? Action 1 Search[Pavel Urysohn] Observation 1 Pavel Samuilovich Urysohn (February 3, 1898 -August 17, 1924) was a Soviet mathematician who is best known for his contributions in dimension theory. Action 2 Search[Leonid Levin] Observation 2 Leonid Anatolievich Levin is a Soviet-American mathematician and computer scientist. Action 3 Finish[yes] CoT Question What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into? Thought Let's think step by step. The eastern sector of Colorado orogeny extends into the High Plains. High Plains rise in elevation from around 1,800 to 7,000 ft, so the answer is 1,800 to 7,000 ft. Answer 1,800 to 7,000 ft Question Musician and satirist Allie Goertz wrote a song about the "The Simpsons" character Milhouse, who Matt Groening named after who? Thought Let's think step by step. Milhouse was named after U.S. president Richard Nixon, so the answer is Richard Nixon. Answer Richard Nixon Question Which documentary is about Finnish rock groups, Adam Clayton Powell or The Saimaa Gesture? Thought Let's think step by step. Adam Clayton Powell (film) is a documentary about an African-American politician, not Finnish rock groups. So the documentary about Finnish rock groups must instead be The Saimaa Gesture. Answer The Saimaa Gesture Question What profession does Nicholas Ray and Elia Kazan have in common? Thought Let's think step by step. Professions of Nicholas Ray are director, screenwriter, and actor. Professions of Elia Kazan are director, producer, screenwriter, and actor. So profession Nicholas Ray and Elia Kazan have in common is director, screenwriter, and actor. Answer director, screenwriter, actor Question Which magazine was started first Arthur's Magazine or First for Women? Thought Let's think step by step. Arthur's Magazine was started in 1844. First for Women was started in 1989. 1844 (Arthur's Magazine) &lt; 1989 (First for Women), so Arthur's Magazine was started first. Answer Arthur's Magazine Question Were Pavel Urysohn and Leonid Levin known for the same type of work? Thought Let's think step by step. Pavel Urysohn is a mathematician. Leonid Levin is a mathematician and computer scientist. So Pavel Urysohn and Leonid Levin have the same type of work. Answer Yes ReAct Question What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into? Thought 1 I need to search Colorado orogeny, find the area that the eastern sector of the Colorado orogeny extends into, then find the elevation range of the area. Action 1 Search[Colorado orogeny] Observation 1 The Colorado orogeny was an episode of mountain building (an orogeny) in Colorado and surrounding areas. Thought 2 It does not mention the eastern sector. So I need to look up eastern sector. Action 2 Lookup[eastern sector] Observation 2 (Result 1 / 1) The eastern sector extends into the High Plains and is called the Central Plains orogeny. Thought 3 The eastern sector of Colorado orogeny extends into the High Plains. So I need to search High Plains and find its elevation range. Action 3 Search[High Plains] Observation 3 High Plains refers to one of two distinct land regions Thought 4 I need to instead search High Plains (United States). Action 4 Search[High Plains (United States)] Continued on next page Hotpot QA Prompts -Continued from previous page Observation 4 The High Plains are a subregion of the Great Plains. From east to west, the High Plains rise in elevation from around 1,800 to 7,000 ft (550 to 2,130 m).[3] Thought 5 High Plains rise in elevation from around 1,800 to 7,000 ft, so the answer is 1,800 to 7,000 ft. Action 5 Finish[1,800 to 7,000 ft] Question Musician and satirist Allie Goertz wrote a song about the "The Simpsons" character Milhouse, who Matt Groening named after who? Thought 1 The question simplifies to "The Simpsons" character Milhouse is named after who. I only need to search Milhouse and find who it is named after. Action 1 Search[Milhouse] Observation 1 Milhouse Mussolini Van Houten is a recurring character in the Fox animated television series The Simpsons voiced by Pamela Hayden and created by Matt Groening. Thought 2 The paragraph does not tell who Milhouse is named after, maybe I can look up "named after". Action 2 Lookup[named after] Observation 2 (Result 1 / 1) Milhouse was named after U.S. president Richard Nixon, whose middle name was Milhous. Thought 3 Milhouse was named after U.S. president Richard Nixon, so the answer is Richard Nixon. Action 3 Finish[Richard Nixon] Question Which documentary is about Finnish rock groups, Adam Clayton Powell or The Saimaa Gesture? Thought 1 I need to search Adam Clayton Powell and The Saimaa Gesture, and find which documentary is about Finnish rock groups. Action 1 Search[Adam Clayton Powell] Observation 1 Could not find [Adam Clayton Powell]. Similar: ['Adam Clayton Powell III', 'Seventh Avenue (Manhattan)', 'Adam Clayton Powell Jr. State Office Building', 'Isabel Washington Powell', 'Adam Powell', 'Adam Clayton Powell (film)', 'Giancarlo Esposito']. Thought 2 To find the documentary, I can search Adam Clayton Powell (film). Action 2 Search[Adam Clayton Powell (film)] Observation 2 Adam Clayton Powell is a 1989 American documentary film directed by Richard Kilberg. The film is about the rise and fall of influential African-American politician Adam Clayton Powell Jr.[3][4] It was later aired as part of the PBS series The American Experience. Thought 3 Adam Clayton Powell (film) is a documentary about an African-American politician, not Finnish rock groups. So the documentary about Finnish rock groups must instead be The Saimaa Gesture. Action 3 Finish[The Saimaa Gesture] Question What profession does Nicholas Ray and Elia Kazan have in common? Thought 1 I need to search Nicholas Ray and Elia Kazan, find their professions, then find the profession they have in common. Action 1 Search[Nicholas Ray] Observation 1 Nicholas Ray (born Raymond Nicholas Kienzle Jr., August 7, 1911 -June 16, 1979) was an American film director, screenwriter, and actor best known for the 1955 film Rebel Without a Cause. Thought 2 Professions of Nicholas Ray are director, screenwriter, and actor. I need to search Elia Kazan next and find his professions. Action 2 Search[Elia Kazan] Observation 2 Elia Kazan was an American film and theatre director, producer, screenwriter and actor. Thought 3 Professions of Elia Kazan are director, producer, screenwriter, and actor. So profession Nicholas Ray and Elia Kazan have in common is director, screenwriter, and actor. Action 3 Finish[director, screenwriter, actor] Question Which magazine was started first Arthur's Magazine or First for Women? Thought 1 I need to search Arthur's Magazine and First for Women, and find which was started first. Action 1 Search[Arthur's Magazine] Observation 1 Arthur's Magazine (1844-1846) was an American literary periodical published in Philadelphia in the 19th century. Thought 2 Arthur's Magazine was started in 1844. I need to search First for Women next. Action 2 Search[First for Women] Observation 2 First for Women is a woman's magazine published by Bauer Media Group in the USA.[1] The magazine was started in 1989. Thought 3 First for Women was started in 1989. 1844 (Arthur's Magazine) &lt; 1989 (First for Women), so Arthur's Magazine was started first. Action 3 Finish[Arthur's Magazine] Question Were Pavel Urysohn and Leonid Levin known for the same type of work? Thought 1 I need to search Pavel Urysohn and Leonid Levin, find their types of work, then find if they are the same. Action 1 Search[Pavel Urysohn] Published as a conference paper at ICLR 2023 Hotpot QA Prompts -Continued from previous page Observation 1 Pavel Samuilovich Urysohn (February 3, 1898 -August 17, 1924) was a Soviet mathematician who is best known for his contributions in dimension theory. Thought 2 Pavel Urysohn is a mathematician. I need to search Leonid Levin next and find its type of work. Action 2 Search[Leonid Levin] Observation 2 Leonid Anatolievich Levin is a Soviet-American mathematician and computer scientist. Thought 3 Leonid Levin is a mathematician and computer scientist. So Pavel Urysohn and Leonid Levin have the same type of work. Action 3 Finish[yes] C.2 FEVER FEVER Prompts Original Determine if there is Observation that SUPPORTS or REFUTES a Claim, or if there is NOT ENOUGH INFORMATION. Claim Nikolaj Coster-Waldau worked with the Fox Broadcasting Company. Answer SUPPORTS Claim Stranger Things is set in Bloomington, Indiana. Answer REFUTES Claim Beautiful reached number two on the Billboard Hot 100 in 2003. Answer NOT ENOUGH INFO Act Determine if there is Observation that SUPPORTS or REFUTES a Claim, or if there is NOT ENOUGH INFORMATION. Claim Nikolaj Coster-Waldau worked with the Fox Broadcasting Company. Action2 Search[Nikolaj Coster-Waldau] Observation 1 Nikolaj William Coster-Waldau (born 27 July 1970) is a Danish actor and producer. He graduated from the Danish National School of Performing Arts in Copenhagen in 1993,[1] and had his breakthrough role in Denmark with the film Nightwatch (1994). He played Jaime Lannister in the HBO fantasy drama series Game of Thrones, for which he received two Primetime Emmy Award nominations for Outstanding Supporting Actor in a Drama Series.. Coster-Waldau has appeared in numerous films in his native Denmark and Scandinavia, including Headhunters (2011) and A Thousand Times Good Night (2013). In the U.S, his debut film role was in the war film Black Hawk Down (2001), playing Medal of Honor recipient Gary Gordon.[2] He then played a detective in the short-lived Fox television series New Amsterdam (2008), and appeared in the 2009 Fox television film Virtuality, originally intended as a pilot. Action 2 Finish[SUPPORTS] Claim Stranger Things is set in Bloomington, Indiana. Action 1 Search[Stranger Things] Observation 1 Stranger Things is an American science fiction horror drama television series created by the Duffer Brothers. Set in the 1980s, primarily in the fictional town of Hawkins, Indiana, the series centers on a number of mysteries and supernatural events occurring around the town and their impact on an ensemble of child and adult characters. Action 2 Finish[REFUTES] Claim Beautiful reached number two on the Billboard Hot 100 in 2003. Action 1 Search[Beautiful] Observation 1 Could not find [Beautiful]. Similar: ['Beautiful', 'Beautiful, Beautiful', 'A Beautiful Mind (film)', 'Beautiful (Christina Aguilera song)', 'Life Is Beautiful']. Action 2 Search[Beautiful (Christina Aguilera song) Observation 2 "Beautiful" is a song recorded by American singer Christina Aguilera for her fourth studio album, Stripped (2002). Action 3 Lookup[Billboard Hot 100] Observation 3 (Result 1 / 3) The song peaked at number two on the Billboard Hot 100 in the United States, where it was certified Gold for 500,000 units shipped. Action 4 Finish[NOT ENOUGH INFO] CoT Determine if there is Observation that SUPPORTS or REFUTES a Claim, or if there is NOT ENOUGH INFORMATION. Claim Nikolaj Coster-Waldau worked with the Fox Broadcasting Company. Thought Nikolaj William Coster-Waldau appeared in the 2009 Fox television film Virtuality, so he has worked with the Fox Broadcasting Company. Answer SUPPORTS Claim Stranger Things is set in Bloomington, Indiana. Thought Stranger Things is in the fictional town of Hawkins, Indiana, not in Bloomington, Indiana. Answer REFUTES Continued on next page Fever Prompts -Continued from previous page Claim Beautiful reached number two on the Billboard Hot 100 in 2003. Thought The song peaked at number two on the Billboard Hot 100 in the United States, but not sure if it was in 2003. Answer NOT ENOUGH INFO ReAct Determine if there is Observation that SUPPORTS or REFUTES a Claim, or if there is NOT ENOUGH INFORMATION. Claim Nikolaj Coster-Waldau worked with the Fox Broadcasting Company. Thought 1 I need to search Nikolaj Coster-Waldau and find if he has worked with the Fox Broadcasting Company. Action 1 Search[Nikolaj Coster-Waldau] Observation 1 Nikolaj William Coster-Waldau (born 27 July 1970) is a Danish actor and producer. He graduated from the Danish National School of Performing Arts in Copenhagen in 1993,[1] and had his breakthrough role in Denmark with the film Nightwatch (1994). He played Jaime Lannister in the HBO fantasy drama series Game of Thrones, for which he received two Primetime Emmy Award nominations for Outstanding Supporting Actor in a Drama Series.. Coster-Waldau has appeared in numerous films in his native Denmark and Scandinavia, including Headhunters (2011) and A Thousand Times Good Night (2013). In the U.S, his debut film role was in the war film Black Hawk Down (2001), playing Medal of Honor recipient Gary Gordon.[2] He then played a detective in the short-lived Fox television series New Amsterdam (2008), and appeared in the 2009 Fox television film Virtuality, originally intended as a pilot. Thought 2 Because he "appeared in the 2009 Fox television film Virtuality", he should have worked with the Fox Broadcasting Company. Action 2 Finish[SUPPORTS] Claim Stranger Things is set in Bloomington, Indiana. Thought 1 I should search for Stranger Things, and see if it is set in Bloomington, Indiana. Action 1 Search[Stranger Things] Observation 1</p><p>Stranger Things is an American science fiction horror drama television series created by the Duffer Brothers. Set in the 1980s, primarily in the fictional town of Hawkins, Indiana, the series centers on a number of mysteries and supernatural events occurring around the town and their impact on an ensemble of child and adult characters. Thought 2</p><p>The observation says that it is set in a "fictional town of Hawkins, Indiana", so it is not set in Bloomington. Table 7: An Act prompt on the ALFWorld clean task. No thoughts are provided.</p><p>You are in the middle of a room. Looking quickly around you, you see a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 1, a diningtable 1, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1. Your task is to: put a clean lettuce in diningtable. &gt; go to fridge 1 The fridge 1 is closed. &gt; open fridge 1 You open the fridge 1. The fridge 1 is open. In it, you see a cup 3, a egg 2, a potato 3, and a potato 2. &gt; go to diningtable 1 On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a lettuce 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1. &gt; take lettuce 1 from diningtable 1 You pick up the lettuce 1 from the diningtable 1. &gt; go to sinkbasin 1 On the sinkbasin 1, you see a apple 2, a ladle 2, a spoon 1, and a tomato 3. &gt; clean lettuce 1 with sinkbasin 1 You clean the lettuce 1 using the sinkbasin 1. &gt; think: Now I clean a lettuce (1). Next, I need to put it in/on diningtable 1. OK. &gt; go to diningtable 1 On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1. &gt; put lettuce 1 in/on diningtable 1 You put the lettuce 1 in/on the diningtable 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 8: An ReAct prompt on the ALFWorld clean task.</head><p>You are in the middle of a room. Looking quickly around you, you see a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 1, a diningtable 1, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1. Your task is to: put a clean lettuce in diningtable. &gt; think: To solve the task, I need to find and take a lettuce, then clean it with sinkbasin, then put it in diningtable. OK. &gt; think: First I need to find a lettuce. A lettuce is more likely to appear in fridge (1), diningtable (1), sinkbasin (1), stoveburner (1-3), cabinet (1-13). I can check one by one, starting with fridge 1. OK. &gt; go to fridge 1 The fridge 1 is closed. &gt; open fridge 1 You open the fridge 1. The fridge 1 is open. In it, you see a cup 3, a egg 2, a potato 3, and a potato 2. &gt; go to diningtable 1 On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a lettuce 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1. &gt; think: Now I find a lettuce (1). Next, I need to take it. OK. &gt; take lettuce 1 from diningtable 1 You pick up the lettuce 1 from the diningtable 1. &gt; think: Now I take a lettuce (1). Next, I need to go to sinkbasin (1) and clean it. OK. &gt; go to sinkbasin 1 On the sinkbasin 1, you see a apple 2, a ladle 2, a spoon 1, and a tomato 3. &gt; clean lettuce 1 with sinkbasin 1 You clean the lettuce 1 using the sinkbasin 1. &gt; think: Now I clean a lettuce (1). Next, I need to put it in/on diningtable 1. OK. &gt; go to diningtable 1 On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1. &gt; put lettuce 1 in/on diningtable 1 You put the lettuce 1 in/on the diningtable 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Table 9: An ReAct-IM prompt on the ALFWorld clean task.</head><p>You are in the middle of a room. Looking quickly around you, you see a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 1, a diningtable 1, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1. Your task is to: put a clean lettuce in diningtable. &gt; think: To solve the task, I need to find and take a lettuce, then clean it with sinkbasin, then put it in diningtable. OK. &gt; think: First I need to find a lettuce. OK. &gt; go to fridge 1 The fridge 1 is closed. &gt; think: First I need to find a lettuce. OK. &gt; open fridge 1 You open the fridge 1. The fridge 1 is open. In it, you see a cup 3, a egg 2, a potato 3, and a potato 2. &gt; think: First I need to find a lettuce. OK. &gt; go to diningtable 1 On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a lettuce 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1. &gt; think: First I need to find a lettuce. OK. &gt; take lettuce 1 from diningtable 1 You pick up the lettuce 1 from the diningtable 1. &gt; think: I need to clean this lettuce (1) using sinkbasin 1. OK. &gt; go to sinkbasin 1 On the sinkbasin 1, you see a apple 2, a ladle 2, a spoon 1, and a tomato 3. &gt; think: I need to clean this lettuce (1) using sinkbasin 1. OK. &gt; clean lettuce 1 with sinkbasin 1 You clean the lettuce 1 using the sinkbasin 1. &gt; think: I need to put this cleaned lettuce (1) in/on diningtable 1. OK. &gt; go to diningtable 1 On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1. &gt; think: I need to put this cleaned lettuce (1) in/on diningtable 1. OK. &gt; put lettuce 1 in/on diningtable 1 You put the lettuce 1 in/on the diningtable 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D TRAJECTORIES D.1 FEVER TRAJECTORIES</head><p>We provide some trajectories produced by ReAct, CoTand Acton several randomly selected examples from the FEVER dev set below. Search results are omitted to space.</p><p>Example 2491 (gt: REFUTES) ReAct Claim: Bermuda Triangle is a loosely-defined region in the Pacific Ocean. Thought 1: I need to search Bermuda Triangle and find if it is in the Pacific Ocean. Action 1: Search[Bermuda Triangle] Observation 1: Reportedly haunted locations... Thought 2: The observation says that it is in the western part of the North Atlantic Ocean, so it is not in the Pacific Ocean. Action 2: Finish[REFUTES] Observation 2: Episode finished Act Claim: Bermuda Triangle is a loosely-defined region in the Pacific Ocean. Action 1 : Search[Bermuda Triangle] Observation 1 : Reportedly haunted locations:... Action 2: Finish[REFUTES] Observation 2: Episode finished CoT Claim: Bermuda Triangle is a loosely-defined region in the Pacific Ocean. Thought: Let's think step by step. The Bermuda Triangle is a loosely-defined region in the Atlantic Ocean. The Pacific Ocean is not the Atlantic Ocean. Answer: REFUTES Example 5908 (gt: SUPPORTS) ReAct Claim: Princess Mononoke is a film. Thought 1: I need to search Princess Mononoke and find if it is a film. Action 1: Search[Princess Mononoke] Observation 1: Princess Mononoke ... Thought 2: From the observation, it says that Princess Mononoke is a film. Action 2: Finish[SUPPORTS] Observation 2: Episode finished Act Claim: Princess Mononoke is a film. Action 1: Search[Princess Mononoke] Observation 1: Princess Mononoke ... Action 2: Finish[SUPPORTS] Observation 2: Episode finished CoT Claim: Princess Mononoke is a film. Thought: Let's think step by step. Princess Mononoke is a movie, and movies are films. Answer: SUPPORTS Example 1951 (gt: REFUTES) ReAct Claim: Soyuz was part of the American space program. Thought 1: I need to search Soyuz and find if it was part of the American space program. Action 1: Search[Soyuz] Observation 1: Soyuz is a transliteration... Thought 2: It does not mention the American space program, so I need to search "American space program" to find if it was part of it. Action 2: Search[American space program] Observation 2: The space policy... Thought 3: It does not mention Soyuz, so I am not sure if this claim is true or not. Action 3: Finish[NOT ENOUGH INFO] Observation 3: Episode finished Act Claim: Soyuz was part of the American space program. Action 1: Search[Soyuz] Observation 1: Soyuz is a transliteration... Action 2: Finish[NOT ENOUGH INFO] Observation 2: Episode finished CoT Claim: Soyuz was part of the American space program. Thought: Let's think step by step. Soyuz is a Russian spacecraft. The American space program is NASA. NASA and Russia have worked together on the International Space Station. Answer: SUPPORTS Example 3208 (gt: REFUTES) ReAct Claim: Reign Over Me is an American film made in 2010. Thought 1: I need to search for Reign Over Me and find if it is an American film made in 2010. Action 1: Search[Reign Over Me] Observation 1: Reign Over Me ... Thought 2: The observation says that it is an American film made in 2007, so it is not made in 2010. Action 2: Finish[REFUTES] Observation 2: Episode finished Act Claim: Reign Over Me is an American film made in 2010. Action 1: Search[Reign Over Me] Action 2: Finish[SUPPORTS] Observation 2: Episode finished CoT Claim: Reign Over Me is an American film made in 2010. Thought: Let's think step by step. First, is Reign Over Me an American film? Yes, it is. Second, was it made in 2010? Yes, it was. Answer: SUPPORTS</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2 ALFWORLD TRAJECTORIES</head><p>We provide an example trajectory of ReAct, Act, and ReAct-IM on the same ALFWorld game, pick_clean_then_place_in_recep-Knife-None-CounterTop-10/ trial_T20190909_110445_675754.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2.1 REAC T TRAJECTORY</head><p>ReAct is able to correctly find the knife, clean it, and then place it on a countertop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ReAct ALFWorld trajectory</head><p>You are in the middle of a room. Looking quickly around you, you see a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 3, a countertop 2, a countertop 1, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1.</p><p>Your task is to: put a clean knife in countertop. &gt; think: To solve the task, I need to find and take a knife, then clean it with sinkbasin, then put it in countertop. OK. &gt; think: First I need to find a knife. A knife is more likely to appear in cabinet (1-6), drawer (1-3), countertop (1-3), fridge (1), garbagecan (1), shelf (1-3), sinkbasin (1), stoveburner (1-4), toaster (1).</p><p>I can check one by one, starting with cabinet 1. OK. &gt; go to cabinet 1 On the cabinet 1, you see a bowl 1. &gt; go to cabinet 2 The cabinet 2 is closed. &gt; go to cabinet 3 On the cabinet 3, you see a glassbottle 1. &gt; go to cabinet 4 On the cabinet 4, you see a mug 1. &gt; go to cabinet 5 The cabinet 5 is closed. &gt; go to cabinet 6 The cabinet 6 is closed. &gt; go to drawer 1 The drawer 1 is closed. &gt; go to drawer 2 The drawer 2 is closed. &gt; go to drawer 3 The drawer 3 is closed. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; go to countertop 2 On the countertop 2, you see a cup 1, a dishsponge 1, a glassbottle 3, a knife 1, a plate 2, a potato 3, and a statue 1. &gt; think: Now I find a knife (1). Next, I need to take it. OK. &gt; take knife 1 from countertop 2 You pick up the knife 1 from the countertop 2. &gt; think: Now I take a knife (1). Next, I need to go to sinkbasin (1) and clean it. OK. &gt; go to sinkbasin 1 On the sinkbasin 1, you see a fork 3, a lettuce 3, and a spatula 2. &gt; clean knife 1 with sinkbasin 1 You clean the knife 1 using the sinkbasin 1. &gt; think: Now I clean a knife (1). Next, I need to put it in/on countertop 1. OK. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; put knife 1 in/on countertop 1 You put the knife 1 in/on the countertop 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2.2 AC T TRAJECTORY</head><p>Act is able to correctly find the knife, but tries to clean it using a sinkbasin before actually going to the sinkbasin. From there on, the model is unable to recover, and is stuck repeating the same sequence of commands. With ReAct, an existing thought would have concretely identified that the knife had been taken, and that the next subgoal was to go to a sinkbasin to clean it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Act ALFWorld trajectory</head><p>You are in the middle of a room. Looking quickly around you, you see a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 3, a countertop 2, a countertop 1, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1.</p><p>Your task is to: put a clean knife in countertop. &gt; go to countertop 1</p><p>On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; go to countertop 2 On the countertop 2, you see a cup 1, a dishsponge 1, a glassbottle 3, a knife 1, a plate 2, a potato 3, and a statue 1. &gt; take knife 1 from countertop 2 You pick up the knife 1 from the countertop 2. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; clean knife 1 with sinkbasin 1 Nothing happens. &gt; go to countertop 3 On the countertop 3, you see a bread 3, a butterknife 2, a cellphone 1, a creditcard 1, a fork 2, a houseplant 1, a knife 2, a spatula 1, a statue 3, a tomato 3, a tomato 2, a tomato 1, and a vase 2. &gt; take knife 2 from countertop 3 Nothing happens. &gt; go to countertop 2 On the countertop 2, you see a cup 1, a dishsponge 1, a glassbottle 3, a plate 2, a potato 3, and a statue 1. &gt; take knife 1 from countertop 2 Nothing happens. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; clean knife 1 with sinkbasin 1 Nothing happens. &gt; go to countertop 3 On the countertop 3, you see a bread 3, a butterknife 2, a cellphone 1, a creditcard 1, a fork 2, a houseplant 1, a knife 2, a spatula 1, a statue 3, a tomato 3, a tomato 2, a tomato 1, and a vase 2. &gt; take knife 2 from countertop 3 Nothing happens. &gt; go to countertop 2 On the countertop 2, you see a cup 1, a dishsponge 1, a glassbottle 3, a plate 2, a potato 3, and a statue 1. &gt; take knife 1 from countertop 2 Nothing happens. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; clean knife 1 with sinkbasin 1 Nothing happens. &gt; go to countertop 3 On the countertop 3, you see a bread 3, a butterknife 2, a cellphone 1, a creditcard 1, a fork 2, a houseplant 1, a knife 2, a spatula 1, a statue 3, a tomato 3, a tomato 2, a tomato 1, and a vase 2. &gt; take knife 2 from countertop 3 Nothing happens. &gt; go to countertop 2 On the countertop 2, you see a cup 1, a dishsponge 1, a glassbottle 3, a plate 2, a potato 3, and a statue 1. &gt; take knife 1 from countertop 2 Nothing happens. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; clean knife 1 with sinkbasin 1 Nothing happens.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D.2.3 REAC T-IM TRAJECTORY</head><p>ReAct-IM is able to correctly find the knife, but is unable to clean it as well. The LLM then gets stuck trying to place this knife on a countertop. One possible issue is the incorrect thought think: I need to find a clean knife., which seems to trick the LLM in believing that the knife is already cleaned. In ReAct, this sequence of subgoals would be concretely captured by each thought.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>ReAct-IM ALFWorld trajectory</head><p>You are in the middle of a room. Looking quickly around you, you see a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 3, a countertop 2, a countertop 1, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1. Your task is to: put a clean knife in countertop. &gt; think: To solve the task, I need to find and take a clean knife,</p><p>then put it in countertop. OK. &gt; think: I need to find a clean knife. OK. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; think: I need to find a clean knife. OK. &gt; go to countertop 2 On the countertop 2, you see a cup 1, a dishsponge 1, a glassbottle 3, a knife 1, a plate 2, a potato 3, and a statue 1. &gt; think: I need to find a clean knife. OK. &gt; take knife 1 from countertop 2 You pick up the knife 1 from the countertop 2. &gt; think: I need to put this knife (1) in/on countertop 1. OK. &gt; go to countertop 1 On the countertop 1, you see a lettuce 2, a mug 2, a peppershaker 1, and a spoon 2. &gt; think: I need to put this knife (1) in/on countertop 1. OK. &gt; put knife 1 in/on countertop 1 You put the knife 1 in/on the countertop 1. &gt; think: I need to put this knife (1) in/on countertop 1. OK. &gt; put knife 1 in/on countertop 1 Nothing happens. &gt; think: I need to put this knife (1) in/on countertop 1. OK. &gt; put knife 1 in/on countertop 1 Nothing happens. &gt; think: I need to put this knife (1) in/on countertop 1. OK. &gt; put knife 1 in/on countertop 1 Nothing happens. &gt; think: I need to put this knife (1) in/on countertop 1. OK. &gt; put knife 1 in/on countertop 1 Nothing happens. &gt; think: I need to put this knife (1) in/on countertop 1. OK. &gt; put knife 1 in/on countertop 1 Nothing happens. &gt; think: I need to put this knife (1) in/on countertop 1. OK. E MORE ANALYSIS E.1 SUCCESS AND FAILURE MODES ANALYSIS We provide some examples corresponding to the success and error mode analysis given in Sec. 3.3. Search results and non-representative steps are omitted to reduce space. Success: True positive ReAct Question: Author David Chanoff has collaborated with a U.S. Navy admiral who served as the ambassador to the United Kingdom under which President? Thought 1: I need to search David Chanoff and find the U.S. Navy admiral he collaborated with. Action 1: Search[David Chanoff] Observation 1: David Chanoff is a noted author... Action 2: Search[William J. Crowe] Observation 2: William J. Crowe is... Thought 3: William J. Crowe served as the ambassador to the United Kingdom under President Bill Clinton. So the answer is Bill Clinton. Action 3: Finish[Bill Clinton] Observation 3: Episode finished CoT Question: What was the name of the team that represented an Arizona university in the conference that covers a broad expanse of the western United States, including Arizona, California, and New Mexico? Thought: Let's think step by step. The name of the team that represented an Arizona university in the conference that covers a broad expanse of the western United States, including Arizona, California, and New Mexico is Arizona State Sun Devils. Answer: Arizona State Sun Devils Success: False positive ReAct Question: Did the board game San Marco or About Time come out first? Thought 1: I need to search San Marco and About Time, and find which came out first. Action 1: Search[San Marco] Observation 1: San Marco is one of the ... The was built in venice. Thought 2: San Marco is a sestiere of Venice. I need to search About Time next. Action 2: Search[About Time] Observation 2: Could not find [About Time]. Similar: [...]. Thought 3: About Time is a 2013 film. So San Marco came out first. Action 3: Finish[San Marco] Observation 3: Episode finished CoT Question: Was Vanderbilt University or Emory University founded first? Thought: Let's think step by step. Vanderbilt University was founded in 1873. Emory University was founded in 1836. 1873 (Vanderbilt University) &gt; 1836 (Emory University), so Vanderbilt University was founded first. Answer: Emory University Failure: Reasoning error ReAct Question: What was the middle name of the actress who was cast alongside Harvey Fierstein, Linda Hart, Dick Latessa, Clarke Thorell, Mary Bond Davis, Laura Bell Bundy, Matthew Morrison, Corey Reynolds, and Marissa Jaret Winokur in Hairspray? Thought 1: I need to search Harvey Fierstein, Linda Hart, Dick Latessa, Clarke Thorell, Mary Bond Davis, Laura Bell Bundy, Matthew Morrison, Corey Reynolds, and Marissa Jaret Winokur, find the actress that was cast alongside them in Hairspray, then find its middle name. Action 1: Search[Harvey Fierstein] Observation 1: Harvey Forbes Fierstein ... Thought 2: Harvey Fierstein is an actor, playwright, and screenwriter. I need to search Linda Hart next... Action 2: Search[Linda Hart]... CoT Question: Who is older Danny Green or James Worthy? Thought: Let's think step by step. Danny Green was born in 1987. James Worthy was born in 1961. 1987 (Danny Green) &gt; 1961 (James Worthy), so Danny Green is older. Answer: Danny Green Failure: Search error ReAct Question: What does the goddess associated with the goddess frigg consists of what tales? Thought 1: I need to search goddess frigg and find its associated goddess. Action 1: Search[goddess frigg] Observation 1: Could not find goddess frigg. Similar: ['Frigg', 'Frigg and Freyja common origin hypothesis', 'Freyja (section Relation to Frigg and other goddesses and figures)', 'Eir (redirect from Eir (goddess))', 'Baldr']. Thought 2: I need to search Frigg instead... Failure: Hallucination CoT Question: What was the first year a scientific journal published by an organization located in the Bronx was published? Thought: Let's think step by step. The first year a scientific journal published by an organization located in the Bronx was published was 1916. Answer: 1916 (Label: 1909) Failure: Label ambiguity ReAct Question: What nationality is the man who developed the dictator game? Thought 1: I need to search dictator game, find the man who developed it, then find his nationality. Action 1: Search[dictator game] Observation 1: The dictator game is a popular experimental instrument in social psychology and economics... Action 3: Search[Amos Tversky] Observation 3: Amos Nathan Tversky... Thought 4: Amos Tversky is an Israeli cognitive and mathematical psychologist. So the man who developed the dictator game is Israeli. Action 4: Finish[Israeli] (label: Israel-American) CoT Question: Kurt Fuller from Stockton, CA appeared in which American Detective Comedy Drama television series created by Steve Franks? Thought: Let's think step by step. Kurt Fuller from Stockton, CA appeared in Psych. Psych is an American Detective Comedy Drama television series created by Steve Franks. Answer: Psych (label: Psych is an American detective comedy-drama)</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: (1) Comparison of 4 prompting methods, (a) Standard, (b) Chain-of-thought (CoT, Reason Only), (c) Act-only, and (d) ReAct (Reason+Act), solving a HotpotQA (Yang et al., 2018) question. (2) Comparison of (a) Act-only and (b) ReAct prompting to solve an AlfWorld (Shridhar et al., 2020b) game. In both domains, we omit in-context examples in the prompt, and only show task solving trajectories generated by the model (Act, Thought) and the environment (Obs).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: PaLM-540B prompting results with respect to number of CoT-SC samples used.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Scaling results for prompting and finetuning on HotPotQA with ReAct (ours) and baselines.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: A human-in-the-loop behavior correction example with ReAct in AlfWorld. (a) ReAct trajectory fails due to a hallucinating thought (Act 17). (b) By a human simply editing two thoughts (Act 17, 23), the ReAct trajectory produces desirable reasoning traces and actions and succeeds.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Types of success and failure modes of ReAct and CoT on HotpotQA, as well as their percentages in randomly selected examples studied by human.</figDesc><table><row><cell>ReAct vs. CoT On the other hand, ReAct outperforms CoT on Fever (60.9 vs. 56.3) and slightly</cell></row><row><cell>lags behind CoT on HotpotQA (27.4 vs. 29.4). Fever claims for SUPPORTS/REFUTES might only</cell></row><row><cell>differ by a slight amount (see Appendix D.1), so acting to retrieve accurate and up-to-date knowledge</cell></row><row><cell>is vital. To better understand the behavioral difference between ReAct and CoT on HotpotQA, we</cell></row><row><cell>randomly sampled 50 trajectories with correct and incorrect answers (judged by EM) from ReAct</cell></row><row><cell>and CoT respectively (thus 200 examples in total), and manually labeled their success and failure</cell></row><row><cell>modes in Table 2. Some key observations are as follows:</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>AlfWorld task-specific success rates (%). BUTLER and BUTLER g results are from Table4ofShridhar et al. (2020b). All methods use greedy decoding, except that BUTLER uses beam search.</figDesc><table><row><cell>Method</cell><cell cols="7">Pick Clean Heat Cool Look Pick 2 All</cell><cell cols="2">Method Score SR</cell></row><row><cell>Act (best of 6)</cell><cell>88</cell><cell>42</cell><cell>74</cell><cell>67</cell><cell>72</cell><cell>41</cell><cell>45</cell><cell>Act</cell><cell>62.3 30.1</cell></row><row><cell>ReAct (avg)</cell><cell>65</cell><cell>39</cell><cell>83</cell><cell>76</cell><cell>55</cell><cell>24</cell><cell>57</cell><cell>ReAct</cell><cell>66.6 40.0</cell></row><row><cell>ReAct (best of 6)</cell><cell>92</cell><cell>58</cell><cell>96</cell><cell>86</cell><cell>78</cell><cell>41</cell><cell>71</cell><cell>IL</cell><cell>59.9 29.1</cell></row><row><cell>ReAct-IM (avg)</cell><cell>55</cell><cell>59</cell><cell>60</cell><cell>55</cell><cell>23</cell><cell>24</cell><cell>48</cell><cell>IL+RL</cell><cell>62.4 28.7</cell></row><row><cell>ReAct-IM (best of 6) BUTLER g (best of 8)</cell><cell>62 33</cell><cell>68 26</cell><cell>87 70</cell><cell>57 76</cell><cell>39 17</cell><cell>33 12</cell><cell>53 22</cell><cell>Human Expert</cell><cell>82.1 59.6</cell></row><row><cell>BUTLER (best of 8)</cell><cell>46</cell><cell>39</cell><cell>74</cell><cell>100</cell><cell>22</cell><cell>24</cell><cell>37</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 6 :</head><label>6</label><figDesc>Prompts used for the Webshop experiments in Section 4. We use the prompt on the left for Act, and use the prompt on the right (add reasoning) for ReAct.: i would like a 3 ounce bottle of bright citrus deodorant for sensitive skin, and price lower than 50.00 dollars You have clicked bright citrus.You have clicked 3 ounce (pack of 1).</figDesc><table><row><cell>Action 2</cell><cell>Finish[REFUTES]</cell></row><row><cell>Claim</cell><cell>Beautiful reached number two on the Billboard Hot 100 in 2003.</cell></row><row><cell>Thought 1</cell><cell>I need to search the song Beautiful and find if it reached number two on the</cell></row><row><cell></cell><cell>Billboard Hot 100 in 2003.</cell></row><row><cell>Action 1</cell><cell>Search[Beautiful]</cell></row><row><cell>Observation 1</cell><cell>Could not find [Beautiful]. Similar: ['Beautiful', 'Beautiful, Beautiful',</cell></row><row><cell></cell><cell>'A Beautiful Mind (film)', 'Beautiful (Christina Aguilera song)', 'Life Is</cell></row><row><cell></cell><cell>Beautiful'].</cell></row><row><cell>Thought 2</cell><cell>From suggestions, I should search "Beautiful (Christina Aguilera song)" to</cell></row><row><cell></cell><cell>find the song.</cell></row><row><cell>Action 2</cell><cell>Search[Beautiful (Christina Aguilera song)]</cell></row><row><cell>Observation 2</cell><cell>"Beautiful" is a song recorded by American singer Christina Aguilera for her</cell></row><row><cell></cell><cell>fourth studio album, Stripped (2002).</cell></row><row><cell>Thought 3</cell><cell>It does not mention Billboard, so I need to look up "Billboard Hot 100" to</cell></row><row><cell></cell><cell>find if it reached number two on it in 2003.</cell></row><row><cell>Action 3</cell><cell>Lookup[Billboard Hot 100]</cell></row><row><cell>Observation 3</cell><cell>(Result 1 / 3) The song peaked at number two on the Billboard Hot 100 in the</cell></row><row><cell></cell><cell>United States, where it was certified Gold for 500,000 units shipped.</cell></row><row><cell>Thought 4</cell><cell>It only says the song peaked at number two on the Billboard Hot 100, but not</cell></row><row><cell></cell><cell>if it was in 2003. I am not sure if this claim is true or not.</cell></row><row><cell>Action 4</cell><cell>Finish[NOT ENOUGH INFO]</cell></row></table><note><p>InstructionAction: click[bright citrus]</p><p>Observation:</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>We show some GPT-3(Brown et al.,  </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>2020) results in AppendixA.1, which outperforms PaLM-540B.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>We find more examples do not improve performance.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_3"><p>Of all trajectories with correct final answers, those with 7 steps on HotpotQA and 5 steps on FEVER only take up 0.84% and 1.33% respectively.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_4"><p>We suspect that this could be due to the sub-optimal greedy decoding procedure, and future work using better decoding (e.g. beam search) might help address this issue.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_5"><p><ref type="bibr" target="#b21">Micheli &amp; Fleuret (2021)</ref> finetuned a GPT-2 model on 3553 task instances and achieved a much improved performance than BUTLER, but it is trained on all task types, thus not included as a baseline.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_6"><p>Human feedback can also be incorporated in a complementary manner but we leave it for future work.</p></note>
+		</body>
+		<back>
+
+			<div type="availability">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p><ref type="url" target="https://react-lm.github.io/">https://react-lm.github.io/</ref>.</p></div>
+			</div>
+
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A ADDITIONAL RESULTS</head><p>A.1 GPT-3 EXPERIMENTS PaLM-540B  HotpotQA (exact match) 29.4 30.8 ALFWorld (success rate %) 70.9 78.4</p><p>Table <ref type="table" target="#tab_3">5</ref>: ReAct prompting results using PaLM-540B vs. GPT-3 (text-davinci-002, greedy decoding). On HotpotQA, we randomly sample a subset of 500 validation questions. On ALFWorld, we use all 134 unseen validation task instances, and use the best prompt set according to PaLM-540B.</p><p>We run additional GPT-3 <ref type="bibr" target="#b4">(Brown et al., 2020)</ref> experiments to confirm ReAct prompting performance is general across different large language models. As shown in During trajectory inspection, we also find that sometimes ReAct does not agree with dataset labels as the labels themselves could be outdated. For example, as shown in Figure <ref type="figure">4</ref>, the question asks about the size of a hotel, which increased from the HotpotQA construction time. While Standard and CoT give wrong answers due to hallucination, Act fails despite the access of real-world web interaction, due to a lack of reasoning to guide how to interact with the Internet for QA. Only ReAct is able to retrieve up-to-date information from the Internet and provide a reasonable answer. Therefore, better incorporation of reasoning abilities might benefit recent Internet-augmented language models <ref type="bibr" target="#b22">(Nakano et al., 2021;</ref><ref type="bibr" target="#b16">Lazaridou et al., 2022;</ref><ref type="bibr">Shuster et al., 2022a)</ref> for up-to-date task solving.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 HUMAN-IN-THE-LOOP BEHAVIOR CORRECTION ON ALFWORLD</head><p>We also explore human-in-the-loop interaction with ReAct, to allow a human to inspect and edit ReAct's reasoning traces. Figure <ref type="figure">5</ref> shows that by simply removing a hallucinating sentence in Act 17 and adding some hints in Act 23, ReAct can be made to change its behavior drastically to align with these human thought edits and succeed in the task. From a human perspective, solving such a task becomes significantly easier, from typing tens of actions to only editing a couple of thoughts, which enables new forms of human-machine collaboration. We note that such a policy edit on-the-go Published as a conference paper at ICLR 2023 D.3 WEBSHOP TRAJECTORIES </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5</head><label>5</label><figDesc>Another example HotpotQA question, where the original label is outdated. Only ReAct is able to obtain the up-to-date answer thanks to real-world web interaction plus reasoning.</figDesc><table><row><cell>, GPT-3 (text-davinci-002,</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 10 :</head><label>10</label><figDesc>Example trajectories for Webshop predicted by Act and ReAct. Compared to Act, ReAct uses reasoning to find products that satisfy all target attributes.: get me a sixteen pack of apple cinnamon freeze dried banana chips, and price lower than 50.00 dollars Turn Freeze-Dried Fruit Snacks -Banana Crisps -Perfect For School Lunches or an On-The-Go Snack -No Sugar Added, Non GMO, Gluten Free, Nothing Artificial (0.53oz) 6-Pack $12.99</figDesc><table><row><cell>Act</cell><cell>ReAct</cell></row><row><cell>Action: search sixteen pack apple cinnamon freeze dried banana</cell><cell>Action: search sixteen pack apple cinnamon freeze dried banana</cell></row><row><cell>chips</cell><cell>chips</cell></row><row><cell>Observation:</cell><cell>Observation:</cell></row><row><cell>Back to Search</cell><cell>Back to Search</cell></row><row><cell>Page 1 (Total results: 50)</cell><cell>Page 1 (Total results: 50)</cell></row><row><cell>Next</cell><cell>Next</cell></row><row><cell>B0061IVFZE</cell><cell>B0061IVFZE</cell></row><row><cell>Brothers-ALL-Natural Fruit Crisps, Strawberry Banana, 0.42 -</cell><cell>Brothers-ALL-Natural Fruit Crisps, Strawberry Banana, 0.42 -</cell></row><row><cell>Ounce (Pack of 100)</cell><cell>Ounce (Pack of 100)</cell></row><row><cell>$85.0</cell><cell>$85.0</cell></row><row><cell>B096H2P6G2</cell><cell>B096H2P6G2</cell></row><row><cell>Moon Fruit Freeze Dried Fruit Snacks. Fruit Snacks for Kids -</cell><cell>Moon Fruit Freeze Dried Fruit Snacks. Fruit Snacks for Kids -</cell></row><row><cell>(Variety Pack)</cell><cell>(Variety Pack)</cell></row><row><cell>$18.99</cell><cell>$18.99</cell></row><row><cell>B092JLLYK6</cell><cell>B092JLLYK6</cell></row><row><cell>Nature's Turn Freeze-Dried Fruit Snacks -Banana Crisps -Perfect</cell><cell>Nature's</cell></row><row><cell>For School Lunches or an On-The-Go Snack -No Sugar Added,</cell><cell></cell></row><row><cell>Non GMO, Gluten Free, Nothing Artificial (0.53oz) 6-Pack</cell><cell></cell></row><row><cell>$12.99</cell><cell></cell></row><row><cell>Action: click B0061IVFZE</cell><cell></cell></row><row><cell>Observation:</cell><cell></cell></row><row><cell>Back to Search</cell><cell></cell></row><row><cell>Prev</cell><cell></cell></row><row><cell>flavor name [asian pear][banana][fuji apple &amp; cinnamon][strawberry</cell><cell></cell></row><row><cell>banana] Brothers-ALL-Natural Fruit Crisps, Strawberry Banana,</cell><cell></cell></row><row><cell>0.42 Ounce (Pack of 100)</cell><cell></cell></row><row><cell>Price: $85.0</cell><cell></cell></row><row><cell>Rating: N.A.</cell><cell></cell></row><row><cell>[Description]</cell><cell></cell></row><row><cell>[Features]</cell><cell></cell></row><row><cell>[Reviews]</cell><cell></cell></row><row><cell>[Buy Now]</cell><cell></cell></row><row><cell>Action: click[Buy Now]</cell><cell></cell></row></table><note><p>Instruction</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Imitating interactive intelligence</title>
+		<author>
+			<persName><forename type="first">Josh</forename><surname>Abramson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arun</forename><surname>Ahuja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iain</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Brussee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Carnevale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mary</forename><surname>Cassin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachita</forename><surname>Chhaparia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bogdan</forename><surname>Damoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Dudzik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Petko</forename><surname>Georgiev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurelia</forename><surname>Guy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Harley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alden</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Kenton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessica</forename><surname>Landon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kory</forename><surname>Mathewson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soňa</forename><surname>Mokrá</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alistair</forename><surname>Muldal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Santoro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolay</forename><surname>Savinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikrant</forename><surname>Varma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duncan</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathaniel</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Zhu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2012.05672" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Michael Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ibarz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosario</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Jauregui Ruano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sally</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jesmonth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nikhil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kuang-Huei</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolina</forename><surname>Luu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Parada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jornell</forename><surname>Pastor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Quiambao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jarek</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diego</forename><surname>Rettinghouse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Reyes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clayton</forename><surname>Sievers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zeng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2204.01691" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>Do as i can, not as i say: Grounding language in robotic affordances</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Inner speech: development, cognitive functions, phenomenology, and neurobiology</title>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Alderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-</forename><surname>Day</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Fernyhough</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological bulletin</title>
+		<imprint>
+			<biblScope unit="volume">141</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page">931</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Working memory</title>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Baddeley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">255</biblScope>
+			<biblScope unit="issue">5044</biblScope>
+			<biblScope unit="page" from="556" to="559" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Faithful reasoning using large language models</title>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murray</forename><surname>Shanahan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2208.14271" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Selection-inference: Exploiting large language models for interpretable logical reasoning</title>
+		<author>
+			<persName><forename type="first">Antonia</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Murray</forename><surname>Shanahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Irina</forename><surname>Higgins</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2205.09712" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">ELI5: Long form question answering</title>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Grangier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Auli</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P19-1346</idno>
+		<ptr target="https://aclanthology.org/P19-1346" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-07">July 2019</date>
+			<biblScope unit="page" from="3558" to="3567" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Vygotsky, luria, and the social brain. Self and social regulation: Social interaction and the development of social understanding and executive functions</title>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Fernyhough</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="56" to="79" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Improving alignment of dialogue agents via targeted human judgements</title>
+		<author>
+			<persName><forename type="first">Amelia</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nat</forename><surname>Mcaleese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maja</forename><surname>Trebacz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Aslanides</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vlad</forename><surname>Firoiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Ewalds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maribeth</forename><surname>Rauh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Weidinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Chadwick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phoebe</forename><surname>Thacker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucy</forename><surname>Campbell-Gillingham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramona</forename><surname>Comanescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abigail</forename><surname>See</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumanth</forename><surname>Dathathri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rory</forename><surname>Greig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doug</forename><surname>Fritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaume</forename><surname>Sanchez Elias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soňa</forename><surname>Mokrá</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Fernando</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxi</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Foley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Susannah</forename><surname>Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iason</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Isaac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Mellor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Demis</forename><surname>Hassabis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><forename type="middle">Anne</forename><surname>Hendricks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<ptr target="https://storage.googleapis.com/deepmind-media/DeepMind.com/Authors-Notes/sparrow/sparrow-final.pdf" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">A simple language model for task-oriented dialogue</title>
+		<author>
+			<persName><forename type="first">Ehsan</forename><surname>Hosseini-Asl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bryan</forename><surname>Mccann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Sheng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Semih</forename><surname>Yavuz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="20179" to="20191" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.07207</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Inner monologue: Embodied reasoning through planning with language models</title>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harris</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacky</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chebotar</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05608</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Language-informed latent actions</title>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megha</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dorsa</forename><surname>Sadigh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lila</surname></persName>
+		</author>
+		<ptr target="https://proceedings.mlr.press/v164/karamcheti22a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">CoRL</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1379" to="1390" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Internetaugmented language models through few-shot prompting for open-domain question answering</title>
+		<author>
+			<persName><forename type="first">Angeliki</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Gribovskaya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Stokowiec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolai</forename><surname>Grigorev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.05115</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Pre-trained language models for interactive decision-making</title>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Puig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Paxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clinton</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linxi</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">De-An</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ekin</forename><surname>Akyürek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Zhu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2202.01771" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Ls vygotsky and the problem of localization of functions</title>
+		<author>
+			<persName><forename type="first">Aleksandr</forename><surname>Romanovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luria</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neuropsychologia</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="387" to="392" />
+			<date type="published" when="1965">1965</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Text and patterns: For effective chain of thought, it takes two to tango</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2209.07686" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Language models are few-shot butlers</title>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Micheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">François</forename><surname>Fleuret</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2104.07972</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Webgpt: Browser-assisted question-answering with human feedback</title>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tyna</forename><surname>Eloundou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2112.09332" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2112.00114" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konrad</forename><surname>Zolna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilio</forename><surname>Parisotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><forename type="middle">Gomez</forename><surname>Colmenarejo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Barth-Maron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mai</forename><surname>Gimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yury</forename><surname>Sulsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackie</forename><surname>Kay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jost</forename><surname>Tobias Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Bruce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Razavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashley</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutian</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raia</forename><surname>Hadsell</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2205.06175" />
+		<title level="m">Oriol Vinyals, Mahyar Bordbar, and Nando de Freitas. A generalist agent</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Alfred: A benchmark for interpreting grounded instructions for everyday tasks</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Thomason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Winson</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roozbeh</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="10740" to="10749" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Alfworld: Aligning text and embodied environments for interactive learning</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Shridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingdi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc-Alexandre</forename><surname>Côté</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Trischler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2010.03768</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Language models that seek for knowledge: Modular search &amp; generation for dialogue and prompt completion</title>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonard</forename><surname>Adolphs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Szlam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13224</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Blenderbot 3: a deployed conversational agent that continually learns to responsibly engage</title>
+		<author>
+			<persName><forename type="first">Kurt</forename><surname>Shuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mojtaba</forename><surname>Komeili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Da</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><forename type="middle">Michael</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Roller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Megan</forename><surname>Ung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moya</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kushal</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Lane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morteza</forename><surname>Behrooz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Ngan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Spencer</forename><surname>Poff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Szlam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y-Lan</forename><surname>Boureau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Kambadur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2208.03188" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Fever: a large-scale dataset for fact extraction and verification</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Thorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Vlachos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Christodoulopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arpit</forename><surname>Mittal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.05355</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Thinking and speech. The collected works of LS Vygotsky</title>
+		<author>
+			<persName><forename type="first">Lev</forename><forename type="middle">S</forename><surname>Vygotsky</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1987">1987</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="39" to="285" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2203.11171" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.00747</idno>
+		<title level="m">Rationale-augmented ensembles in language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Chain of thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruslan</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.09600</idno>
+		<title level="m">Hotpotqa: A dataset for diverse, explainable multi-hop question answering</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Keep CALM and explore: Language models for action generation in text-based games</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Hausknecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.emnlp-main.704</idno>
+		<ptr target="https://aclanthology.org/2020.emnlp-main.704" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<biblScope unit="page" from="8736" to="8754" />
+		</imprint>
+	</monogr>
+	<note>Online, November 2020</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Webshop</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.01206</idno>
+		<title level="m">Towards scalable real-world web interaction with grounded language agents</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Zelikman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhuai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2203.14465" />
+		<title level="m">Star: Bootstrapping reasoning with reasoning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2205.10625" />
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">B096H2P6G2 is fruit snacks, not freeze dried banana chips. B092JLLYK6 is banana crisps, not apple cinnamon. I can check B092JLLYK6 first. Observation: OK. Action: click B092JLLYK6 Observation: Back to Search Prev flavor name</title>
+		<author>
+			<persName><forename type="first">Yunchang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanyan</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huawei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xueqi</forename><surname>Cheng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2109.06747</idno>
+		<idno>Score: 0.125 Score: 1.0</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Adaptive information seeking for open-domain question answering Action: think[B0061IVFZE is strawberry banana, not apple cinnamon apple cinnamon peach][pear] [strawberry strawberry banana sampler variety pack mega variety pack orchard variety pack] size [0.53 ounce (pack of 6) 0.53 ounce (pack of 8) ounce (pack of 16)] Nature&apos;s Turn Freeze-Dried Fruit Snacks -Banana Crisps -Perfect For School Lunches or an On-The-Go Snack -No Sugar Added, Non GMO Gluten Free, Nothing Artificial (0.53oz) 6-Pack Price: $12.99 Rating: N.A. [Description] [Features] [Reviews] [Buy Now Action: think[For sixteen pack of apple cinnamon freeze dried banana chips, the item has options &apos;apple cinnamon&apos; and &apos;0.53 ounce (pack of 16)&apos; and seems good to buy Observation: OK. Action: click[apple cinnamon] Observation: You have clicked apple cinnamon. Action: click[0.53 ounce (pack of 16)] Observation: You have clicked 0.53 ounce (pack of 16 Action: click[Buy Now</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -17,6 +17,12 @@
 //!   D204) and freezes the raw TEI plus a `provenance.yaml` carrying the
 //!   endpoint, the probed live release, the profile and consolidation flags,
 //!   the capture revision and per-document latency.
+//! - **`--capture --only-new`** — incremental capture for a grown population:
+//!   a declared article whose committed fixture still matches its provenance
+//!   pin is adopted unchanged (pin and latency preserved verbatim) and only the
+//!   remaining articles are sent to the reference. A pinned fixture whose bytes
+//!   drifted blocks as `only_new_pinned_reference_drift:<id>`, so a rerun can
+//!   never silently overwrite frozen bytes.
 //! - **`--verify --in <dir>`** — re-hashes the frozen bytes and compares them
 //!   with both the provenance and the DATA pins; `--offline` skips the live
 //!   release re-probe so the check stays hermetic.
@@ -94,6 +100,12 @@ struct Args {
     /// Output directory for `--capture`.
     #[arg(long, value_name = "DIR", default_value = FIXTURE_DIR)]
     out: PathBuf,
+    /// Adopt verified existing pins and capture only the declared articles
+    /// that are not already frozen in `--out`. Existing frozen bytes and their
+    /// provenance pins are kept byte-for-byte; a pinned fixture whose bytes
+    /// drifted is a named blocker, never a silent overwrite.
+    #[arg(long)]
+    only_new: bool,
     /// Verify a frozen reference directory.
     #[arg(long)]
     verify: bool,
@@ -732,6 +744,69 @@ fn ymap(pairs: Vec<(&str, Value)>) -> Value {
     Value::Mapping(map)
 }
 
+/// One `documents[*]` entry exactly as it appears in `provenance.yaml`.
+fn reference_document_value(
+    article: &ArticleIdentity,
+    sha256: &str,
+    size_bytes: u64,
+    latency_ms: u128,
+) -> Value {
+    ymap(vec![
+        ("article_id", ystr(&article.article_id)),
+        (
+            "path",
+            ystr(&format!("{FIXTURE_DIR}/{}.tei.xml", article.article_id)),
+        ),
+        ("sha256", ystr(sha256)),
+        ("size_bytes", ynum(size_bytes)),
+        ("source_pdf_sha256", ystr(&article.sha256)),
+        ("latency_ms", ynum(latency_ms as u64)),
+    ])
+}
+
+/// Under `--only-new`, return the existing provenance entry for `article`
+/// when its frozen fixture is present and still matches. A fixture that exists
+/// but drifted from its own pin is a named blocker, never a silent overwrite.
+/// With an empty `existing_documents` (the plain `--capture` path) this is a
+/// no-op and the article is captured normally.
+fn adopt_existing_pin(
+    existing_documents: &[Value],
+    out_dir: &Path,
+    article: &ArticleIdentity,
+) -> Result<Option<(Value, u64)>> {
+    let Some(existing) = existing_documents
+        .iter()
+        .find(|document| field_str(document, "article_id") == Some(article.article_id.as_str()))
+    else {
+        return Ok(None);
+    };
+    let fixture = out_dir.join(format!("{}.tei.xml", article.article_id));
+    let Ok(frozen) = std::fs::read(&fixture) else {
+        // No frozen bytes yet: this article is simply not captured.
+        return Ok(None);
+    };
+    let frozen_sha = format!("sha256:{}", sha256_hex(&frozen));
+    let frozen_size = frozen.len() as u64;
+    let pinned_sha = field_str(existing, "sha256").unwrap_or_default();
+    let pinned_size = field_u64(existing, "size_bytes");
+    if frozen_sha != pinned_sha || pinned_size != Some(frozen_size) {
+        // A pinned fixture that no longer matches its own pin is never papered
+        // over: refuse and name the article.
+        anyhow::bail!(
+            "{PREFIX} only_new_pinned_reference_drift:{}: frozen bytes \
+             sha256={frozen_sha} size_bytes={frozen_size} disagree with the \
+             provenance pin sha256={pinned_sha} size_bytes={}",
+            article.article_id,
+            pinned_size.map_or_else(|| "absent".to_string(), |s| s.to_string())
+        );
+    }
+    println!(
+        "CAPTURE {} -> adopted existing pin sha256={} size_bytes={}",
+        article.article_id, pinned_sha, frozen_size
+    );
+    Ok(Some((existing.clone(), frozen_size)))
+}
+
 async fn run_capture(root: &Path, args: &Args, preflight: &Preflight) -> Result<()> {
     let out_dir = if args.out.is_absolute() {
         args.out.clone()
@@ -756,10 +831,39 @@ async fn run_capture(root: &Path, args: &Args, preflight: &Preflight) -> Result<
         u8::from(profile.consolidate_citations())
     );
 
-    let mut documents: Vec<(ArticleIdentity, String, u64, u128)> = Vec::new();
+    // `--only-new`: adopt every declared article whose frozen fixture still
+    // matches its provenance pin, and capture only the rest. This is what lets
+    // a grown population extend the frozen reference without overwriting the
+    // already-committed rows: T01 measured that a re-capture is not
+    // byte-identical (0/5), so a blind `--capture` would silently replace them
+    // and break their DATA pins.
+    let existing_documents: Vec<Value> = if args.only_new {
+        let path = out_dir.join(PROVENANCE_FILE);
+        if path.is_file() {
+            field(&read_yaml(&path)?, "documents")
+                .and_then(Value::as_sequence)
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
+
+    let mut document_pins: Vec<Value> = Vec::new();
     let mut total_bytes: u64 = 0;
+    let mut adopted: usize = 0;
+    let mut captured: usize = 0;
 
     for article in &preflight.articles {
+        if let Some((pin, size)) = adopt_existing_pin(&existing_documents, &out_dir, article)? {
+            total_bytes += size;
+            document_pins.push(pin);
+            adopted += 1;
+            continue;
+        }
+
         let pdf_path = root.join(&article.pdf_path);
         let pdf_bytes = std::fs::read(&pdf_path)
             .with_context(|| format!("{PREFIX} cannot read `{}`", pdf_path.display()))?;
@@ -783,8 +887,16 @@ async fn run_capture(root: &Path, args: &Args, preflight: &Preflight) -> Result<
             "CAPTURE {} -> ok sha256={} size_bytes={} latency_ms={}",
             article.article_id, sha256, size_bytes, latency_ms
         );
-        documents.push((article.clone(), sha256, size_bytes, latency_ms));
+        document_pins.push(reference_document_value(
+            article, &sha256, size_bytes, latency_ms,
+        ));
+        captured += 1;
     }
+
+    println!(
+        "CAPTURE summary -> adopted={adopted} captured={captured} declared={}",
+        preflight.articles.len()
+    );
 
     let size_note = if total_bytes > SIZE_NOTE_LIMIT_BYTES {
         format!(
@@ -799,25 +911,6 @@ async fn run_capture(root: &Path, args: &Args, preflight: &Preflight) -> Result<
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or_default();
-
-    let document_pins = Value::Sequence(
-        documents
-            .iter()
-            .map(|(article, sha256, size_bytes, latency_ms)| {
-                ymap(vec![
-                    ("article_id", ystr(&article.article_id)),
-                    (
-                        "path",
-                        ystr(&format!("{FIXTURE_DIR}/{}.tei.xml", article.article_id)),
-                    ),
-                    ("sha256", ystr(sha256)),
-                    ("size_bytes", ynum(*size_bytes)),
-                    ("source_pdf_sha256", ystr(&article.sha256)),
-                    ("latency_ms", ynum(*latency_ms as u64)),
-                ])
-            })
-            .collect(),
-    );
 
     let provenance = ymap(vec![
         (
@@ -873,7 +966,7 @@ async fn run_capture(root: &Path, args: &Args, preflight: &Preflight) -> Result<
         ("captured_at_revision", ystr(&capture_revision(root))),
         ("captured_at_unix_secs", ynum(captured_at_unix_secs)),
         ("capture_timeout_secs", ynum(args.timeout_secs)),
-        ("documents", document_pins),
+        ("documents", Value::Sequence(document_pins)),
         ("total_size_bytes", ynum(total_bytes)),
         ("size_note", ystr(&size_note)),
     ]);
