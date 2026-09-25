@@ -1138,6 +1138,36 @@
           "path": "scripts/governor/checks/external_holdout_package.yaml",
           "note": "контракт ограниченного пакета: элементы, acceptance margins, cost accounting, invalidation",
           "state": "present"
+        },
+        {
+          "path": "crates/da-cli/examples/external_holdout_release_probe.rs",
+          "note": "runtime-половина S08: переизмеряет 5 пиннутых TEI через единственный SUT в форме GAR-006 (reference/executed/evaluated), 30 именованных fail-closed guard'ов; внешняя полоса и human-решение не трогаются",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-cli/tests/external_holdout_release_probe_test.rs",
+          "note": "6-тестовый pin замороженного артефакта: 41 мутация, 30 guard-меток, byte-равенство двум независимым прогонам, удержание external band и human decision",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/external_holdout_probe_semantics.rs",
+          "note": "независимый per-document оракул (dev-only): 731 source occurrences → 705 admitted → 705 conserved, 5/5 согласны, 10/10 margin PASS; self-scan guard запрещает call-формы SUT",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/external_holdout_probe_contract.rs",
+          "note": "контракт release-probe lane: 6 тестов и 12 негативов по именам; попытка флипа execution_status отклоняется как external_lane_state_flipped",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/external_holdout_package_contract.rs",
+          "note": "герметичный контракт пакета удерживает GAR-015 open и запрещает выдавать external-ряд за executed evidence (17 негативов по именам)",
+          "state": "present"
+        },
+        {
+          "path": "doc/review/M511-S08-release-decision-package.md",
+          "note": "пакет решения для человека: что исполнено, что НЕ заявляется, поля PENDING и условие закрытия H20; ни одно человеческое поле не заполнено",
+          "state": "present"
         }
       ],
       "verification_evidence": [
@@ -1149,14 +1179,56 @@
         },
         {
           "mode": "artifact",
+          "ref": "artifacts/parse_compat/external_holdout_release_probe.json",
+          "expected": "замороженный bounded local-proxy замер: 731 source → 705 admitted → 705 conserved, 5/5 документов согласны, 10/10 margin PASS; sha256 30479a60…, байт-идентичен двум независимым прогонам",
+          "status": "pass"
+        },
+        {
+          "mode": "artifact",
           "ref": "artifacts/parse_compat/holdout_results.json",
-          "expected": "исполненный результат пакета доступен как артефакт",
-          "status": "pending"
+          "expected": "пилотный отчёт 2026-09-12 (total 5, succeeded 5) доступен; он не является релизным решением",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test external_holdout_probe_semantics",
+          "expected": "независимый per-document оракул: 5/5 согласны, 10/10 margin PASS, 0 lost, 0 fabricated; self-scan independence guard зелёный",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test external_holdout_probe_contract",
+          "expected": "6 тестов контракта lane зелёные; 12 негативов по именам; external lane state не флипается",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-cli --test external_holdout_release_probe_test",
+          "expected": "6 тестов: артефакт пинится, 30 guard'ов отвергают свои нарушения, byte-равенство прогонов, external band и human decision остаются открытыми",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test external_holdout_package_contract",
+          "expected": "GAR-015 остаётся open, external-ряд не выдаётся за executed evidence, human-гейт недостижим без записи",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo run -p da-cli --example external_holdout_capture -- --preflight",
+          "expected": "измерено в S08/T02 на живом релизе: пять PDF ok, java_release ok, external_dataset_bytes ok, CENSUS production_materialization_overlap -> 4/5",
+          "status": "pass"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "scholarly_parse_plane external_holdout_release_probe binding (sha256 30479a60…)",
+          "expected": "артефакт привязан в обеих поверхностях; знаменатели и identity пересчитываются из замороженных входов; drift → fail-closed",
+          "status": "pass"
         },
         {
           "mode": "runtime",
-          "ref": "исполнение замороженного внешнего пакета с acceptance margins и cost accounting",
-          "expected": "margins проверены, стоимость учтена, pooled-заявление о качестве запрещено",
+          "ref": "исполнение внешней bytes_absent полосы с acceptance margins и cost accounting",
+          "expected": "external band остаётся not_executed/bytes_absent; проба не цитируема и релиз не авторизуется без записанного решения человека",
           "status": "pending"
         }
       ],
@@ -1192,6 +1264,16 @@
           "id": "H20-N2",
           "scenario": "Неисполненный внешний ряд цитируется как доказательство",
           "expected": "fail-closed: unexecuted_external_rows_are_evidence=false"
+        },
+        {
+          "id": "H20-N3",
+          "scenario": "Проба цитируется как релизное доказательство при decision=pending",
+          "expected": "fail-closed: citation_without_release_decision=forbidden, requires_recorded_human_release_decision=true"
+        },
+        {
+          "id": "H20-N4",
+          "scenario": "Подмена или дрейф замороженного артефакта/референса пробы",
+          "expected": "pinned-флаг: artifact sha256 / reference byte pin / identity digest расходятся с диском и объявленным значением → fail-closed отказ"
         }
       ],
       "test_matrix": [
@@ -1217,10 +1299,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H20 не закрыт: релизный замороженный прогон не исполнен и решение человека о релизе не записано (reviewer=null, decision=pending). Пилот существует и не подменяет релизное решение.",
+        "reason": "H20 остаётся открытым ровно по одному названному остатку: нет записанного решения человека о релизе (reviewer=null, decision=pending). Замороженная проба ИСПОЛНЕНА и измерена на локальном прокси (5 документов, 731→705→705, 5/5 согласны, 10/10 margin PASS, артефакт sha256 30479a60…), но внешняя bytes_absent-полоса не исполнена, проба не цитируема, а релиз не авторизуется.",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "Исполнен замороженный релизный пакет с проверенными margins и cost accounting И записано решение человека (named_reviewer, explicit_decision); до этого остаётся открытым."
+        "closure_condition": "Записано решение человека о релизе в release_decision_package (named_reviewer + explicit_decision) и пройдены гейты quality/cost/rights; остальное исполнено и покрыто evidence, поэтому закрытие зависит только от этого решения."
       }
     },
     {

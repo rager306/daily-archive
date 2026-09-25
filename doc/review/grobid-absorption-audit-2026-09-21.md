@@ -727,6 +727,60 @@ Governor review: `stages=8 unresolved=8 complete=0 claims=0`, exit=0.
 нему не заявляется. H21 остаётся `pending` с `implementation_pass=false` и
 `verification_pass=false`; ни один PASS не заявлен.
 
+### Свидетельства среза M511-j7wz2f/S08 (пакет решения релиза: замер bounded external probe и честные границы)
+
+Задача среза — заморозить и исполнить внешнюю holdout-пробу так, чтобы решение о
+релизе осталось за человеком. Исполнено: свежий live-Java референс заморожен ДО
+измерения (structural-профиль, `processFulltextDocument`, 5 sha256-пиннутых TEI,
+byte-пинны в DATA), независимый per-document оракул и GAR-006-артефакт измеряют
+консервацию семантики, а пакет решения подготовлен с незаполненными человеческими
+полями.
+
+**Измерено.** 5 не-gold документов: `1203.2295`, `2401.17167`, `2411.07228`,
+`2505.16270`, `2608.22118`.
+
+| article_id | source_population | admitted | conserved | lost | fabricated | agreement | width | latency_ms |
+|---|---|---|---|---|---|---|---|---|
+| 1203.2295 | 57 | 56 | 56 | 0 | 0 | 1.000000 | 0.064196 | 46 341 |
+| 2401.17167 | 283 | 268 | 268 | 0 | 0 | 1.000000 | 0.014132 | 10 255 |
+| 2411.07228 | 128 | 121 | 121 | 0 | 0 | 1.000000 | 0.030772 | 5 420 |
+| 2505.16270 | 221 | 219 | 219 | 0 | 0 | 1.000000 | 0.017239 | 8 089 |
+| 2608.22118 | 42 | 41 | 41 | 0 | 0 | 1.000000 | 0.085670 | 3 883 |
+
+Агрегат: 731 source occurrences → 705 admitted → 705 conserved; 5/5 документов
+согласны; 10/10 margin-вердиктов PASS; `no_denominator_documents=0`;
+`counts_only=true` (это счётчики, а не корпусная доля). Артефакт
+`artifacts/parse_compat/external_holdout_release_probe.json` (sha256 `30479a60…`,
+36 511 B) байт-идентичен двум независимым прогонам из разных рабочих каталогов;
+30 именованных fail-closed guard'ов проверены `--self-check`. Identity пробы
+`sha256:22df1b7e…` пересчитывается из `data/parse/holdout_manifests.yaml`, а не
+доверяется объявленному значению. Пилот 2026-09-12 (`total 5, succeeded 5`)
+остаётся отдельным артефактом `artifacts/parse_compat/holdout_results.json` и не
+подменяет релизное решение.
+
+**Что НЕ заявляется.** Внешняя полоса не тронута: `execution_status=not_executed`,
+`external_bytes=bytes_absent`, `external_rows_are_evidence=false`, проба не
+цитируема без записанного решения человека. Независимость пакета ограничена
+именем `non_gold`: 4/5 id (`1203.2295`, `2401.17167`, `2411.07228`, `2505.16270`)
+пересекаются с materialized production coverage (`data/processed/<id>/`), а
+`2608.22118` — нет; 5 документов — не статистический корпус;
+production-достижимость не доказана. Latency и cost — bounded, not measured
+(неизвестное никогда не ноль). Замки и D127 сохранены: `import_eligible=false`,
+`deployed=false`, `production_route=forbidden`, `auto_promote=forbidden`,
+`graph_write=forbidden`.
+
+**Человеческое решение.** Поля `release_decision_package.package_status`,
+`human_release_review.reviewer`, `human_release_review.decision` и статусы
+`quality`/`cost`/`rights` остаются `PENDING`; их заполняет человек по форме
+`doc/review/HUMAN-REVIEW-TEMPLATE.md`, и ни одно из них агентом не заполнено.
+H20 остаётся `pending` ровно по одному названному остатку — нет записанного
+решения человека (implementation_pass=false, verification_pass=false); GAR-015
+остаётся `open`.
+
+**Границы.** Исторический RED S05 в этом разделе не трогается (его обновление —
+S09). Мера среза — целостность пакета и честность границ, а не релиз: ни один
+PASS по релизу не заявлен.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |

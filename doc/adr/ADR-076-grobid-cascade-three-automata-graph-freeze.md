@@ -908,3 +908,48 @@ fail-closed флагами (`scholarly_parse_plane_parity_ledger_missing` /
 `implementation_pass=false` и `verification_pass=false` в follow-up-реестре
 (`doc/review/grobid-absorption-followup.json`); ни один PASS не заявлен.
 
+## 22. Корректировка 2026-09-25: frozen external probe измерена и пакет решения подготовлен; релиз остаётся за человеком (M511-j7wz2f/S08)
+
+**Что решено.** Внешняя holdout-проба получает отдельную объявленную lane
+(`external_holdout_contract.release_probe`, additive child с закрытым набором
+ключей), а не флип `execution_status`: полосы M510 (`not_executed`) и внешняя
+`bytes_absent` остаются неизменными, а попытка флипа отклоняется по имени
+(`external_lane_state_flipped`).
+
+**Что измерено.** Свежий live-Java референс заморожен ДО измерения
+(structural-профиль: `consolidateHeader=0`, `consolidateCitations=0`,
+`teiCoordinates=figure,table,note,formula`; 5 sha256-пиннутых не-gold TEI;
+`reference_tei` byte-пинны — см. `data/parse/acceptance_manifest.yaml`). Пять
+документов дают 731 source occurrences → 705 admitted → 705 conserved, 0 lost,
+0 fabricated; 5/5 документов согласны; 10/10 margin-вердиктов PASS
+(`document_agreement_ratio at_least 0.9`, `document_uncertainty_interval_width
+at_most 0.25`); latency — из `recorded_wall_clock_per_document` (min 3 883 /
+max 46 341 мс); cost — `bounded_not_measured` с `unknown_is_not_zero`. Артефакт
+`artifacts/parse_compat/external_holdout_release_probe.json` (sha256 `30479a60…`)
+байт-идентичен двум независимым прогонам; identity пробы `sha256:22df1b7e…`
+пересчитывается из `data/parse/holdout_manifests.yaml`, а не доверяется
+объявленному значению.
+
+**Что это НЕ значит.** Проба — bounded local proxy, а не внешняя полоса и не
+production-маршрут: `execution_status` остаётся `not_executed`, `external_bytes`
+— `bytes_absent`, `external_rows_are_evidence=false`, проба не цитируема. 4/5 id
+(`1203.2295`, `2401.17167`, `2411.07228`, `2505.16270`) пересекаются с
+materialized production coverage (`data/processed/<id>/`), `2608.22118` — нет;
+5 документов — не статистический корпус; production-достижимость не доказана.
+Latency/cost — bounded, not measured. D127 закрыт: `import_eligible=false`,
+`deployed=false`, `production_route=forbidden`, `auto_promote=forbidden`,
+`graph_write=forbidden`, `this_wave_promotes=none`; разрешение M511 не является
+разрешением снять D127.
+
+**Человеческое решение и остаток.** `release_decision_package` остаётся
+`pending_human_review` с `reviewer=null` и `decision=pending`; поля
+`package_status`, `human_release_review.reviewer`, `human_release_review.decision`
+и статусы `quality`/`cost`/`rights` заполняет человек по форме
+`doc/review/HUMAN-REVIEW-TEMPLATE.md`, и ни одно из них агентом не заполнено.
+H20 остаётся `pending` ровно по одному названному остатку — нет записанного
+решения человека (`implementation_pass=false`, `verification_pass=false`);
+GAR-015 остаётся `open`. Проверка:
+`PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml`
+(`stages=8 unresolved=8 complete=0 claims=0`), `governor --phase preflight`
+(exit 0), `pytest scripts/tests/test_scholarly_parse_governance.py`.
+
