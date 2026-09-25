@@ -27,7 +27,9 @@
 //!
 //! ## Measured scope (read before quoting any number)
 //!
-//! A small, non-gold local holdout (five documents in the recorded measurement).
+//! A small, non-gold local holdout; its population is read at run time from the
+//! frozen source manifest (`data/parse/holdout_manifests.yaml#articles`), never a
+//! compiled-in size (50 rows in the recorded measurement).
 //! This is NOT a statistical corpus: every number is a COUNT over the measured
 //! documents, never a corpus rate, and the probe makes no pooled claim
 //! (`claim_scope = local_proxy_only`).  The probe
@@ -100,6 +102,12 @@ const EXECUTION_EVIDENCE: &str = "tracked_offline_fixture:external_holdout_relea
 /// rollback label, and the divergence is the named open item H21.
 const RELEASE_LABEL: &str = "java-grobid-http@0.9.1";
 const ROLLBACK_TARGET: &str = "java-grobid-http@0.9.0-crf";
+
+/// The census identifier.  Count-neutral on purpose: the population is DATA (50
+/// rows in the recorded measurement), so a name carrying a fixed count would go
+/// stale the moment the lane grew.  The producer and the guard share this one
+/// constant, so they cannot drift apart.
+const CENSUS_KIND: &str = "filesystem_presence_of_the_holdout_identities";
 
 // The probe population is NOT a literal here: it is the number of article
 // identities declared by `data/parse/holdout_manifests.yaml#articles`, read at
@@ -260,6 +268,19 @@ struct LaneReferenceRow {
     size_bytes: u64,
 }
 
+/// One frozen reference row the lane cannot measure, carried as DATA with its own
+/// byte pins and a reason drawn from the manifest's closed reason vocabulary.
+/// This is the opposite of a silent filter: the document keeps a name, a pin and
+/// a cause, so an exclusion is auditable and never an implicit drop.
+#[derive(Debug, Clone, PartialEq)]
+struct LaneExceptionRow {
+    article_id: String,
+    declared_sha256: String,
+    path: PathBuf,
+    size_bytes: u64,
+    reason: String,
+}
+
 /// The declared cost bounds, read from `external_holdout_contract.cost_bounds`.
 #[derive(Debug, Clone)]
 struct LaneCostBounds {
@@ -275,6 +296,9 @@ struct LaneCostBounds {
 #[derive(Debug, Clone)]
 struct LaneData {
     reference: Vec<LaneReferenceRow>,
+    /// The frozen references this lane cannot measure, each with a named reason
+    /// from the manifest's closed vocabulary. DATA, never a silent filter.
+    exceptions: Vec<LaneExceptionRow>,
     metrics: Vec<LaneMetricDefinition>,
     margins: Vec<LaneMargin>,
     identity_digest: String,
@@ -301,6 +325,14 @@ struct LaneData {
 impl LaneData {
     fn margin(&self, name: &str) -> Option<&LaneMargin> {
         self.margins.iter().find(|margin| margin.metric == name)
+    }
+
+    /// The frozen population the lane declares: the measurable subset plus the
+    /// named exceptions. It must equal `expected_documents` (the source
+    /// manifest's article identities); a partition that drops or double-counts a
+    /// document is refused in `read_lane`, never measured.
+    fn frozen_documents(&self) -> usize {
+        self.reference.len() + self.exceptions.len()
     }
 }
 
@@ -548,6 +580,80 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
         });
     }
 
+    // The typed exception list. The frozen population is a partition: the rows
+    // above are what this lane can measure, and the rows below are what it
+    // cannot, each with its own byte pins and a reason drawn from the closed
+    // vocabulary declared in the manifest. Nothing here filters silently: an
+    // unlisted reason or a nameless exclusion is refused by label.
+    let reason_vocabulary: BTreeSet<String> = lane
+        .get("reference_exception_reasons")
+        .and_then(Yaml::as_sequence)
+        .ok_or("probe_reference_exception_vocabulary_missing")?
+        .iter()
+        .map(|entry| {
+            let reason =
+                yaml_str(entry, "reason").ok_or("probe_reference_exception_vocabulary_missing")?;
+            if yaml_str(entry, "detail")
+                .map(str::trim)
+                .filter(|detail| !detail.is_empty())
+                .is_none()
+            {
+                return Err("probe_reference_exception_vocabulary_missing".to_string());
+            }
+            Ok(reason.to_string())
+        })
+        .collect::<Result<_, String>>()?;
+    if reason_vocabulary.is_empty() {
+        return Err("probe_reference_exception_vocabulary_missing".into());
+    }
+
+    let exception_value = lane
+        .get("reference_exceptions")
+        .and_then(Yaml::as_sequence)
+        .ok_or("probe_reference_exceptions_missing")?;
+    let mut exceptions = Vec::with_capacity(exception_value.len());
+    for row in exception_value {
+        let article_id = yaml_str(row, "article_id")
+            .ok_or("probe_reference_exception_row_missing")?
+            .to_string();
+        let declared_sha256 = yaml_str(row, "sha256")
+            .ok_or("probe_reference_exception_row_missing")?
+            .to_string();
+        let path_str = yaml_str(row, "path").ok_or("probe_reference_exception_row_missing")?;
+        let size_bytes = row
+            .get("size_bytes")
+            .and_then(Yaml::as_u64)
+            .ok_or("probe_reference_exception_row_missing")?;
+        let reason = yaml_str(row, "reason")
+            .ok_or("probe_reference_exception_row_missing")?
+            .to_string();
+        if !reason_vocabulary.contains(&reason) {
+            return Err(format!(
+                "probe_reference_exception_reason_unlisted:{article_id}"
+            ));
+        }
+        let path = check_reference_path(path_str)?;
+        // An exclusion still pins bytes: the row is verified against disk here,
+        // so a stale exclusion cannot hide a drift behind the word "excluded".
+        let bytes = std::fs::read(&path)
+            .map_err(|_| format!("probe_reference_exception_missing:{article_id}"))?;
+        if sha256_prefixed(&bytes) != declared_sha256 {
+            return Err(format!(
+                "probe_reference_exception_bytes_drift:{article_id}"
+            ));
+        }
+        if bytes.len() as u64 != size_bytes {
+            return Err(format!("probe_reference_exception_size_drift:{article_id}"));
+        }
+        exceptions.push(LaneExceptionRow {
+            article_id,
+            declared_sha256,
+            path,
+            size_bytes,
+            reason,
+        });
+    }
+
     // The frozen identity must recompute from the source manifest.
     let identity_digest = recompute_identity_digest(lane)?;
     let declared_digest =
@@ -573,11 +679,12 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
     // while `holdout_manifests.yaml` pins the source PDF: the two hashes are
     // deliberately different objects, so the cross-check is on identity, and the
     // byte pins are re-verified against the files themselves before measurement.
-    // The population size is DATA, not a literal: the lane's frozen rows must
-    // cover exactly the article identities the source manifest declares.  A lane
-    // covering a different number of documents is refused by name here, before
-    // any measurement, rather than audited against a stale table.
-    if reference.len() != articles.len() {
+    // The population size is DATA, not a literal: the measurable subset and the
+    // named exceptions must partition exactly the article identities the source
+    // manifest declares. A lane that drops a document, double-counts one, or
+    // covers a different number is refused by name here, before any measurement,
+    // rather than audited against a stale fixed-size table.
+    if reference.len() + exceptions.len() != articles.len() {
         return Err("probe_reference_population_size_drift".into());
     }
     let expected_documents = articles.len();
@@ -588,7 +695,15 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
         .collect();
     let reference_ids: BTreeSet<String> =
         reference.iter().map(|row| row.article_id.clone()).collect();
-    if reference_ids != manifest_ids {
+    let exception_ids: BTreeSet<String> = exceptions
+        .iter()
+        .map(|row| row.article_id.clone())
+        .collect();
+    if !reference_ids.is_disjoint(&exception_ids) {
+        return Err("probe_reference_exception_overlap".into());
+    }
+    let covered: BTreeSet<String> = reference_ids.union(&exception_ids).cloned().collect();
+    if covered != manifest_ids {
         return Err("probe_reference_source_mismatch".into());
     }
 
@@ -668,6 +783,7 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
 
     Ok(LaneData {
         reference,
+        exceptions,
         metrics,
         margins,
         identity_digest,
@@ -806,12 +922,36 @@ fn verify_provenance(lane: &LaneData, provenance: &Provenance) -> Result<(), Str
         return Err("provenance_document_population_drift".into());
     }
     for row in &provenance.documents {
-        let lane_row = lane
+        // The frozen population is the measurable subset plus the named
+        // exceptions: the provenance record covers every frozen document, so the
+        // lookup must too. An id in neither list is a provenance document the
+        // lane never declared, refused by name.
+        let frozen = lane
             .reference
             .iter()
             .find(|candidate| candidate.article_id == row.article_id)
+            .map(|candidate| {
+                (
+                    candidate.declared_sha256.as_str(),
+                    candidate.size_bytes,
+                    candidate.path.as_path(),
+                )
+            })
+            .or_else(|| {
+                lane.exceptions
+                    .iter()
+                    .find(|candidate| candidate.article_id == row.article_id)
+                    .map(|candidate| {
+                        (
+                            candidate.declared_sha256.as_str(),
+                            candidate.size_bytes,
+                            candidate.path.as_path(),
+                        )
+                    })
+            })
             .ok_or_else(|| format!("provenance_unknown_document:{}", row.article_id))?;
-        if lane_row.declared_sha256 != row.sha256 || lane_row.size_bytes != row.size_bytes {
+        let (declared_sha256, size_bytes, path) = frozen;
+        if declared_sha256 != row.sha256 || size_bytes != row.size_bytes {
             return Err(format!("provenance_byte_pin_drift:{}", row.article_id));
         }
         if row.latency_ms == 0 {
@@ -821,12 +961,7 @@ fn verify_provenance(lane: &LaneData, provenance: &Provenance) -> Result<(), Str
             return Err(format!("provenance_source_pdf_missing:{}", row.article_id));
         }
         // The provenance path is the fixture the lane pins; nothing else.
-        if Path::new(&row.path)
-            != lane_row
-                .path
-                .strip_prefix(repo_root())
-                .unwrap_or(&lane_row.path)
-        {
+        if Path::new(&row.path) != path.strip_prefix(repo_root()).unwrap_or(path) {
             return Err(format!("provenance_fixture_path_drift:{}", row.article_id));
         }
     }
@@ -852,6 +987,17 @@ struct ExpectedDocument {
     high_micros: Option<u64>,
 }
 
+/// One named exclusion: a frozen document the lane cannot measure, with the reason
+/// drawn from the manifest's closed vocabulary.  The artifact publishes it so the
+/// exclusion is visible evidence, never an implicit drop.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ExpectedException {
+    document_id: String,
+    identity_sha256: String,
+    size_bytes: u64,
+    reason: String,
+}
+
 /// One margin verdict recomputed from the DATA thresholds.  A report whose
 /// verdict disagrees with this is a re-fitted verdict, not a measured one.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -874,7 +1020,12 @@ struct ExpectedProbe {
     release_consolidation: String,
     captured_at_revision: String,
     cost_currency: String,
+    /// The frozen population the lane declares (measurable subset + exceptions),
+    /// recomputed from the source manifest.  `documents` below is the measured
+    /// subset only; the two differ by exactly the named exceptions.
+    frozen_documents: usize,
     documents: Vec<ExpectedDocument>,
+    exceptions: Vec<ExpectedException>,
     verdicts: Vec<ExpectedVerdict>,
     aggregate: Aggregate,
     canonical_catalog_present: usize,
@@ -2450,8 +2601,14 @@ fn catalog_census(lane: &LaneData, source_manifest: &Yaml) -> CatalogCensus {
         absent_from_every_locator: 0,
     };
 
-    for row in &lane.reference {
-        let id = row.article_id.as_str();
+    let frozen_ids: Vec<&str> = lane
+        .reference
+        .iter()
+        .map(|row| row.article_id.as_str())
+        .chain(lane.exceptions.iter().map(|row| row.article_id.as_str()))
+        .collect();
+
+    for id in frozen_ids {
         let declared_path = declared_paths
             .iter()
             .find(|(article_id, _)| article_id == id)
@@ -2516,7 +2673,7 @@ fn catalog_census(lane: &LaneData, source_manifest: &Yaml) -> CatalogCensus {
 /// The declared guard list.  Every label is proven to fire on its own violating
 /// input by `--self-check`, and the committed artifact is audited with the same
 /// predicate before it is written.
-const GUARD_LABELS: [&str; 30] = [
+const GUARD_LABELS: [&str; 32] = [
     "schema_version_drift",
     "reference_population_role",
     "reference_documents",
@@ -2547,6 +2704,8 @@ const GUARD_LABELS: [&str; 30] = [
     "production_catalog_overlap_absent",
     "named_limitations_missing",
     "class_narrowings_incomplete",
+    "reference_measurable_documents",
+    "reference_exceptions_drift",
 ];
 
 fn collect_strings<'a>(value: &'a Json, out: &mut Vec<&'a str>) {
@@ -2597,6 +2756,9 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     }
 
     // ── reference population: identity-only, distinct pinned bytes ───────────
+    // The frozen population is the measurable subset plus the named exceptions;
+    // the byte pins cover all of them, so an exclusion is visible evidence with
+    // its own pin, never a silent drop from the denominator.
     let reference = &report["reference_population"];
     if reference.get("role").and_then(Json::as_str) != Some("identity_only") {
         errors.insert("reference_population_role".to_string());
@@ -2621,26 +2783,72 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     {
         errors.insert("source_manifest_sha_drift".to_string());
     }
-    if u64_of(&reference["documents"]) != Some(expected.documents.len() as u64) {
+    if u64_of(&reference["documents"]) != Some(expected.frozen_documents as u64) {
         errors.insert("reference_documents".to_string());
+    }
+    if u64_of(&reference["measurable_documents"]) != Some(expected.documents.len() as u64) {
+        errors.insert("reference_measurable_documents".to_string());
+    }
+    if u64_of(&reference["excluded_documents"]) != Some(expected.exceptions.len() as u64) {
+        errors.insert("reference_exceptions_drift".to_string());
+    }
+    let declared_exceptions = reference["exceptions"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    if declared_exceptions.len() != expected.exceptions.len() {
+        errors.insert("reference_exceptions_drift".to_string());
+    } else {
+        for expected_exception in &expected.exceptions {
+            let declared = declared_exceptions.iter().find(|row| {
+                row.get("document_id").and_then(Json::as_str)
+                    == Some(expected_exception.document_id.as_str())
+            });
+            let matches = declared
+                .map(|row| {
+                    row.get("identity_sha256").and_then(Json::as_str)
+                        == Some(expected_exception.identity_sha256.as_str())
+                        && u64_of(&row["size_bytes"]) == Some(expected_exception.size_bytes)
+                        && row.get("reason").and_then(Json::as_str)
+                            == Some(expected_exception.reason.as_str())
+                })
+                .unwrap_or(false);
+            if !matches {
+                errors.insert("reference_exceptions_drift".to_string());
+            }
+        }
     }
     let pins = reference["byte_pins"]
         .as_array()
         .cloned()
         .unwrap_or_default();
-    if pins.len() != expected.documents.len() {
+    if pins.len() != expected.frozen_documents {
         errors.insert("reference_byte_pins_drift".to_string());
     } else {
-        for expected_document in &expected.documents {
-            let pinned = pins.iter().find(|pin| {
-                pin.get("document_id").and_then(Json::as_str)
-                    == Some(expected_document.document_id.as_str())
-            });
+        let expected_pins = expected.documents.iter().map(|document| {
+            (
+                document.document_id.as_str(),
+                document.identity_sha256.as_str(),
+                document.size_bytes,
+            )
+        });
+        let expected_exception_pins = expected.exceptions.iter().map(|exception| {
+            (
+                exception.document_id.as_str(),
+                exception.identity_sha256.as_str(),
+                exception.size_bytes,
+            )
+        });
+        for (document_id, identity_sha256, size_bytes) in
+            expected_pins.chain(expected_exception_pins)
+        {
+            let pinned = pins
+                .iter()
+                .find(|pin| pin.get("document_id").and_then(Json::as_str) == Some(document_id));
             let matches = pinned
                 .map(|pin| {
-                    pin.get("identity_sha256").and_then(Json::as_str)
-                        == Some(expected_document.identity_sha256.as_str())
-                        && u64_of(&pin["size_bytes"]) == Some(expected_document.size_bytes)
+                    pin.get("identity_sha256").and_then(Json::as_str) == Some(identity_sha256)
+                        && u64_of(&pin["size_bytes"]) == Some(size_bytes)
                 })
                 .unwrap_or(false);
             if !matches {
@@ -2892,9 +3100,8 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
 
     // ── the census is a measurement and the limitations are declared ───────
     let census = &report["production_catalog_overlap"];
-    let census_ok = census.get("census_kind").and_then(Json::as_str)
-        == Some("filesystem_presence_of_the_five_holdout_identities")
-        && u64_of(&census["documents"]) == Some(expected.documents.len() as u64)
+    let census_ok = census.get("census_kind").and_then(Json::as_str) == Some(CENSUS_KIND)
+        && u64_of(&census["documents"]) == Some(expected.frozen_documents as u64)
         && u64_of(&census["canonical_catalog_present_count"])
             == Some(expected.canonical_catalog_present as u64)
         && u64_of(&census["sources_archive_present_count"])
@@ -2905,7 +3112,7 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
             .get("locators")
             .and_then(Json::as_array)
             .map(Vec::len)
-            == Some(expected.documents.len());
+            == Some(expected.frozen_documents);
     if !census_ok {
         errors.insert("production_catalog_overlap_absent".to_string());
     }
@@ -3054,7 +3261,19 @@ fn build_report(
     json!({
         "schema_version": REPORT_SCHEMA,
         "artifact_id": "external_holdout_release_probe",
-        "measured_scope": "five non-gold local holdout documents; every number is a count, never a corpus rate; no pooled claim",
+        "measured_scope": format!(
+            "{} of {} frozen non-gold local holdout documents are measurable; the other {} are named typed exceptions ({}); every number is a count, never a corpus rate; no pooled claim",
+            measured.len(),
+            lane.frozen_documents(),
+            lane.exceptions.len(),
+            lane.exceptions
+                .iter()
+                .map(|row| row.reason.as_str())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
         "units": {
             "agreement_ratio": "ratio_micros",
             "uncertainty": "ratio_micros",
@@ -3076,7 +3295,15 @@ fn build_report(
             "identity_digest_is_byte_hash": false,
             "source_manifest": lane.source_manifest,
             "source_manifest_sha256": lane.source_manifest_sha256,
-            "documents": lane.reference.len(),
+            "documents": lane.frozen_documents(),
+            "measurable_documents": lane.reference.len(),
+            "excluded_documents": lane.exceptions.len(),
+            "exceptions": lane.exceptions.iter().map(|row| json!({
+                "document_id": row.article_id,
+                "identity_sha256": row.declared_sha256.strip_prefix("sha256:").unwrap_or(&row.declared_sha256),
+                "size_bytes": row.size_bytes,
+                "reason": row.reason,
+            })).collect::<Vec<Json>>(),
             "reference_release": {
                 "backend": lane.release_backend,
                 "version": lane.reference_version,
@@ -3096,7 +3323,11 @@ fn build_report(
                 "document_id": row.article_id,
                 "identity_sha256": row.declared_sha256.strip_prefix("sha256:").unwrap_or(&row.declared_sha256),
                 "size_bytes": row.size_bytes,
-            })).collect::<Vec<Json>>(),
+            })).chain(lane.exceptions.iter().map(|row| json!({
+                "document_id": row.article_id,
+                "identity_sha256": row.declared_sha256.strip_prefix("sha256:").unwrap_or(&row.declared_sha256),
+                "size_bytes": row.size_bytes,
+            }))).collect::<Vec<Json>>(),
         },
         "executed_population": {
             "corpus_execution": true,
@@ -3138,8 +3369,8 @@ fn build_report(
             })).collect::<Vec<Json>>()
         }).collect::<Vec<Json>>(),
         "production_catalog_overlap": {
-            "census_kind": "filesystem_presence_of_the_five_holdout_identities",
-            "documents": measured.len(),
+            "census_kind": CENSUS_KIND,
+            "documents": lane.frozen_documents(),
             "declared_pdf_present_count": census.declared_pdf_present,
             "canonical_catalog_present_count": census.canonical_catalog_present,
             "sources_archive_present_count": census.sources_archive_present,
@@ -3189,7 +3420,18 @@ fn build_report(
         },
         "redaction": REDACTION_FLAGS.iter().map(|flag| ((*flag).to_string(), json!(false))).collect::<serde_json::Map<String, Json>>(),
         "named_limitations": [
-            "five documents is not a statistical corpus; every number is a count",
+            format!(
+                "{} of {} frozen documents are measured; the other {} are excluded by name, not silently dropped",
+                measured.len(),
+                lane.frozen_documents(),
+                lane.exceptions.len()
+            ),
+            "excluded documents declare a typed reason (for example header_date_absent: a frozen TEI header with no dated element is fatal to both this probe and the native header composer); they are not measured and are not zero rows"
+                .to_string(),
+            format!(
+                "{} documents is not a statistical corpus; every number is a count",
+                measured.len()
+            ),
             "the probe does not claim independence from the production route: the reference was produced by the declared live Java release and the admitted band is a local proxy",
             "latency and cost are bounded, not measured; an unknown value is never zero",
             "the probe does not lift the external bytes_absent band and does not authorize release; a named human release decision is still required",
@@ -3215,7 +3457,22 @@ fn expected_probe(
         release_consolidation: lane.config_fingerprint.clone(),
         captured_at_revision: provenance.captured_at_revision.clone(),
         cost_currency: lane.cost.currency.clone(),
+        frozen_documents: lane.frozen_documents(),
         documents: measured.iter().map(MeasuredDocument::expected).collect(),
+        exceptions: lane
+            .exceptions
+            .iter()
+            .map(|row| ExpectedException {
+                document_id: row.article_id.clone(),
+                identity_sha256: row
+                    .declared_sha256
+                    .strip_prefix("sha256:")
+                    .unwrap_or(&row.declared_sha256)
+                    .to_string(),
+                size_bytes: row.size_bytes,
+                reason: row.reason.clone(),
+            })
+            .collect(),
         verdicts: measured
             .iter()
             .flat_map(MeasuredDocument::expected_verdicts)
@@ -3232,7 +3489,16 @@ fn expected_probe(
 /// A synthetic valid report plus its ledger.  Built in code on purpose: the
 /// self-check must prove the guard predicate, not the current repo state, so it
 /// reads no file, touches no network and writes nothing.
-fn synthetic_pair(document_count: usize) -> (Json, ExpectedProbe) {
+fn synthetic_pair(document_count: usize, exception_count: usize) -> (Json, ExpectedProbe) {
+    let frozen_count = document_count + exception_count;
+    let exceptions: Vec<ExpectedException> = (0..exception_count)
+        .map(|index| ExpectedException {
+            document_id: format!("x{}", index + 1),
+            identity_sha256: format!("{:064x}", 9000 + index + 1),
+            size_bytes: 500 + index as u64,
+            reason: SYNTHETIC_EXCEPTION_REASON.to_string(),
+        })
+        .collect();
     let documents: Vec<(String, String, u64, usize, usize)> = (0..document_count)
         .map(|index| {
             (
@@ -3288,7 +3554,9 @@ fn synthetic_pair(document_count: usize) -> (Json, ExpectedProbe) {
         release_consolidation: "consolidation=synthetic".to_string(),
         captured_at_revision: "git:synthetic".to_string(),
         cost_currency: "USD".to_string(),
+        frozen_documents: frozen_count,
         documents: expected_documents.clone(),
+        exceptions: exceptions.clone(),
         verdicts,
         aggregate: Aggregate {
             documents: document_count,
@@ -3312,7 +3580,7 @@ fn synthetic_pair(document_count: usize) -> (Json, ExpectedProbe) {
             no_denominator_documents: 0,
         },
         canonical_catalog_present: 0,
-        sources_archive_present: document_count,
+        sources_archive_present: frozen_count,
         gold_standard_present: 0,
     };
 
@@ -3354,7 +3622,15 @@ fn synthetic_pair(document_count: usize) -> (Json, ExpectedProbe) {
             "identity": "canonical_dataset_id_plus_identity",
             "identity_sha256": expected.identity_digest,
             "source_manifest_sha256": expected.source_manifest_sha256,
-            "documents": document_count,
+            "documents": frozen_count,
+            "measurable_documents": document_count,
+            "excluded_documents": exception_count,
+            "exceptions": exceptions.iter().map(|exception| json!({
+                "document_id": exception.document_id,
+                "identity_sha256": exception.identity_sha256,
+                "size_bytes": exception.size_bytes,
+                "reason": exception.reason,
+            })).collect::<Vec<Json>>(),
             "reference_release": {
                 "label": expected.release_label,
                 "profile": expected.release_profile,
@@ -3365,7 +3641,11 @@ fn synthetic_pair(document_count: usize) -> (Json, ExpectedProbe) {
                 "document_id": document.document_id,
                 "identity_sha256": document.identity_sha256,
                 "size_bytes": document.size_bytes,
-            })).collect::<Vec<Json>>(),
+            })).chain(exceptions.iter().map(|exception| json!({
+                "document_id": exception.document_id,
+                "identity_sha256": exception.identity_sha256,
+                "size_bytes": exception.size_bytes,
+            }))).collect::<Vec<Json>>(),
         },
         "executed_population": {
             "corpus_execution": true,
@@ -3416,12 +3696,14 @@ fn synthetic_pair(document_count: usize) -> (Json, ExpectedProbe) {
             }
         ],
         "production_catalog_overlap": {
-            "census_kind": "filesystem_presence_of_the_five_holdout_identities",
-            "documents": document_count,
+            "census_kind": CENSUS_KIND,
+            "documents": frozen_count,
             "canonical_catalog_present_count": expected.canonical_catalog_present,
             "sources_archive_present_count": expected.sources_archive_present,
             "gold_standard_present_count": expected.gold_standard_present,
-            "locators": (0..document_count).map(|index| json!({"document_id": format!("d{}", index + 1)})).collect::<Vec<Json>>(),
+            "locators": (0..document_count).map(|index| json!({"document_id": format!("d{}", index + 1)}))
+                .chain((0..exception_count).map(|index| json!({"document_id": format!("x{}", index + 1)})))
+                .collect::<Vec<Json>>(),
         },
         "cost_accounting": {
             "status": "bounded_not_measured",
@@ -3554,6 +3836,12 @@ fn mutants(report: &Json, document_count: usize) -> Vec<(&'static str, Json)> {
     mutate("class_narrowings_incomplete", &|clone| {
         clone["class_narrowings"] = json!([]);
     });
+    mutate("reference_measurable_documents", &|clone| {
+        clone["reference_population"]["measurable_documents"] = json!(0);
+    });
+    mutate("reference_exceptions_drift", &|clone| {
+        clone["reference_population"]["exceptions"][0]["reason"] = json!("unlisted_reason");
+    });
 
     out
 }
@@ -3564,6 +3852,12 @@ fn mutants(report: &Json, document_count: usize) -> Vec<(&'static str, Json)> {
 /// and the `--documents` flag, so the guard matrix can be exercised at any
 /// population size (the N=5/N=7 scalability proof) with no code change.
 const SYNTHETIC_DOCUMENT_COUNT: usize = 5;
+
+/// The default synthetic exception population.  The frozen population is always
+/// `measured + exceptions`, so the guard matrix proves the partition at a fixed
+/// exception count while `--documents` scales the measured side.
+const SYNTHETIC_EXCEPTION_COUNT: usize = 2;
+const SYNTHETIC_EXCEPTION_REASON: &str = "synthetic_exclusion";
 
 /// The hermetic guard matrix: the unmutated synthetic report must be clean, and
 /// each declared guard must fire on its own mutant.  No repo read, no network,
@@ -3578,7 +3872,7 @@ fn self_check(document_count: usize) -> bool {
     // Record the exercised population first: a failing run must still say which
     // population failed.
     println!("guard self-check population: {document_count} documents");
-    let (valid, expected) = synthetic_pair(document_count);
+    let (valid, expected) = synthetic_pair(document_count, SYNTHETIC_EXCEPTION_COUNT);
     let baseline = report_errors(&valid, &expected);
     if !baseline.is_empty() {
         println!("guard baseline: rejected {baseline:?}");
@@ -3730,11 +4024,16 @@ fn run(args: &Args) -> anyhow::Result<()> {
             }
         }
         println!(
-            "PROBE FROZEN documents={} probe_identity={} source_manifest_sha256={}",
+            "PROBE FROZEN frozen_documents={} measurable_documents={} excluded_documents={} probe_identity={} source_manifest_sha256={}",
+            lane.frozen_documents(),
             measured.len(),
+            lane.exceptions.len(),
             lane.identity_digest,
             lane.source_manifest_sha256
         );
+        for row in &lane.exceptions {
+            println!("PROBE EXCLUDED {} reason={}", row.article_id, row.reason);
+        }
         println!(
             "PROBE CENSUS canonical_catalog={} sources_archive={} gold_standard={} absent={} declared={}",
             census.canonical_catalog_present,
