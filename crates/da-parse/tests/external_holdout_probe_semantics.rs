@@ -67,9 +67,10 @@
 //! oracle, never used as its input.
 
 use da_parse::*;
+use serde_json::{Value as Json, json};
 use serde_yaml::Value;
 use sha2::{Digest, Sha256};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 
 /// Every failure message carries this prefix so an inspection never guesses.
@@ -95,6 +96,13 @@ const MARGIN_REF_KEY: &str = "acceptance_margins";
 
 const MANIFEST_REL: &str = "data/parse/acceptance_manifest.yaml";
 const FIXTURE_DIR: &str = "crates/da-parse/tests/fixtures/holdout";
+const FROZEN_TABLES_REL: &str = "crates/da-parse/tests/fixtures/holdout/frozen_tables.json";
+const ARTIFACT_REL: &str = "artifacts/parse_compat/external_holdout_release_probe.json";
+const FROZEN_TABLES_SCHEMA: &str = "external-holdout-frozen-tables.v1";
+/// sha256 of the committed recorded tables.  A recorded number cannot change
+/// without this literal changing with it: the tables are content-addressed by it.
+const FROZEN_TABLES_SHA256: &str =
+    "8eddf88217720484bb39ed2e7128d54690a938f6259eee1ec58db992d0d3eba0";
 
 /// The z of the 95% Wilson score interval.  Not a margin.
 const WILSON_Z: f64 = 1.96;
@@ -1909,628 +1917,29 @@ fn metrics_mut(manifest: &mut Value) -> &mut Value {
 
 // ───────────────────────────── frozen measurement ──────────────────────────
 
-/// One frozen per-class row: `(class, source_population, admitted, conserved,
-/// fabricated)`.  Every number is asserted, so a deviation in either direction
-/// fails.  `admitted == conserved` and `fabricated == 0` everywhere is the frozen
-/// claim of this probe.
+// ───────────────────── the recorded measurement tables ─────────────────────
+//
+// The per-document expectations are committed DATA (`frozen_tables.json`), not
+// compiled Rust literals: at census scale the recorded tables are ~17-19k lines of
+// generated Rust across two test targets (D451).  The file is a projection of the
+// canonical runtime artifact and is content-addressed by `FROZEN_TABLES_SHA256`.
+// The oracle below still *measures* the frozen TEI independently; the file only
+// carries the recorded expectation it is compared against, so oracle independence
+// is unchanged.
+
+/// One recorded per-class row: `(class, source_population, admitted, conserved,
+/// rejected)`.  `rejected` is the artifact's `fabricated` count: emitted carriers
+/// matching neither an admitted nor an independently measured source value (zero
+/// in the frozen measurement).
+type FrozenClassRow = (String, usize, usize, usize, usize);
+
 struct FrozenDocument {
-    article_id: &'static str,
-    classes: [(&'static str, usize, usize, usize, usize); CLASS_COUNT],
+    article_id: String,
+    classes: Vec<FrozenClassRow>,
 }
 
-/// The measured profile of 2026-09-24 on the sha256-pinned frozen holdout TEI.
-/// The table is written out rather than derived so that a change in any counter is
-/// visible as a diff in the assertion, not as a silently recomputed baseline.
-/// Its length is deliberately a slice length, not a type-level literal: the audit
-/// compares it to the measured population by name, so a manifest that declares a
-/// different number of documents cannot be silently truncated by `zip`.
-static FROZEN_PROFILE: &[FrozenDocument] = &[
-    FrozenDocument {
-        article_id: "1203.2295",
-        classes: [
-            (CLASS_AUTHOR_LINE, 2, 2, 2, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 3, 3, 3, 0),
-            (CLASS_REFERENCE_DOMAIN, 22, 22, 22, 0),
-            (CLASS_CITATION_DOI, 7, 7, 7, 0),
-            (CLASS_CITATION_ARXIV, 1, 1, 1, 0),
-            (CLASS_CITATION_URL, 4, 4, 4, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 13, 13, 13, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2401.17167",
-        classes: [
-            (CLASS_AUTHOR_LINE, 239, 235, 235, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 16, 6, 6, 0),
-            (CLASS_REFERENCE_DOMAIN, 16, 16, 16, 0),
-            (CLASS_CITATION_DOI, 2, 2, 2, 0),
-            (CLASS_CITATION_ARXIV, 0, 0, 0, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 5, 5, 5, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2411.07228",
-        classes: [
-            (CLASS_AUTHOR_LINE, 11, 8, 8, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 11, 8, 8, 0),
-            (CLASS_REFERENCE_DOMAIN, 53, 53, 53, 0),
-            (CLASS_CITATION_DOI, 1, 1, 1, 0),
-            (CLASS_CITATION_ARXIV, 20, 20, 20, 0),
-            (CLASS_CITATION_URL, 2, 2, 2, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 27, 27, 27, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2505.16270",
-        classes: [
-            (CLASS_AUTHOR_LINE, 10, 9, 9, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 3, 3, 3, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 7, 7, 7, 0),
-            (CLASS_REFERENCE_DOMAIN, 100, 100, 100, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 57, 57, 57, 0),
-            (CLASS_CITATION_URL, 1, 1, 1, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 40, 40, 40, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2608.22118",
-        classes: [
-            (CLASS_AUTHOR_LINE, 1, 1, 1, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 14, 14, 14, 0),
-            (CLASS_CITATION_DOI, 1, 1, 1, 0),
-            (CLASS_CITATION_ARXIV, 2, 2, 2, 0),
-            (CLASS_CITATION_URL, 14, 14, 14, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 7, 7, 7, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1409.0473",
-        classes: [
-            (CLASS_AUTHOR_LINE, 3, 3, 3, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 3, 2, 2, 0),
-            (CLASS_REFERENCE_DOMAIN, 29, 29, 29, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 2, 2, 2, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 21, 21, 21, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1410.4615",
-        classes: [
-            (CLASS_AUTHOR_LINE, 2, 2, 2, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 2, 2, 2, 0),
-            (CLASS_REFERENCE_DOMAIN, 46, 46, 46, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 11, 11, 11, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 13, 13, 13, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1410.5401",
-        classes: [
-            (CLASS_AUTHOR_LINE, 5, 5, 5, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 3, 3, 3, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 42, 42, 42, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 2, 2, 2, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 29, 29, 29, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1506.02438",
-        classes: [
-            (CLASS_AUTHOR_LINE, 5, 5, 5, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 4, 4, 4, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 5, 5, 5, 0),
-            (CLASS_REFERENCE_DOMAIN, 25, 25, 25, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 3, 3, 3, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 19, 19, 19, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1511.08228",
-        classes: [
-            (CLASS_AUTHOR_LINE, 2, 2, 2, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 33, 33, 33, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 0, 0, 0, 0),
-            (CLASS_CITATION_URL, 23, 23, 23, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 17, 17, 17, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1606.01540",
-        classes: [
-            (CLASS_AUTHOR_LINE, 7, 7, 7, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 7, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 15, 15, 15, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 3, 3, 3, 0),
-            (CLASS_CITATION_URL, 1, 1, 1, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 8, 8, 8, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1703.00050",
-        classes: [
-            (CLASS_AUTHOR_LINE, 4, 4, 4, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 4, 4, 4, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 4, 4, 4, 0),
-            (CLASS_REFERENCE_DOMAIN, 20, 20, 20, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 0, 0, 0, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 18, 18, 18, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1706.03741",
-        classes: [
-            (CLASS_AUTHOR_LINE, 5, 5, 5, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 4, 4, 4, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 2, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 45, 45, 45, 0),
-            (CLASS_CITATION_DOI, 1, 1, 1, 0),
-            (CLASS_CITATION_ARXIV, 7, 7, 7, 0),
-            (CLASS_CITATION_URL, 1, 1, 1, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 32, 32, 32, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1712.00600",
-        classes: [
-            (CLASS_AUTHOR_LINE, 6, 6, 6, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 6, 6, 6, 0),
-            (CLASS_REFERENCE_DOMAIN, 4, 4, 4, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 0, 0, 0, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 3, 3, 3, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "1902.04043",
-        classes: [
-            (CLASS_AUTHOR_LINE, 10, 10, 10, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 10, 10, 10, 0),
-            (CLASS_REFERENCE_DOMAIN, 35, 35, 35, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 14, 14, 14, 0),
-            (CLASS_CITATION_URL, 9, 9, 9, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 16, 16, 16, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2010.03768",
-        classes: [
-            (CLASS_AUTHOR_LINE, 7, 7, 7, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 7, 7, 7, 0),
-            (CLASS_REFERENCE_DOMAIN, 58, 58, 58, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 9, 9, 9, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 40, 40, 40, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2010.09776",
-        classes: [
-            (CLASS_AUTHOR_LINE, 38, 36, 36, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 44, 9, 9, 0),
-            (CLASS_REFERENCE_DOMAIN, 82, 82, 82, 0),
-            (CLASS_CITATION_DOI, 2, 2, 2, 0),
-            (CLASS_CITATION_ARXIV, 14, 14, 14, 0),
-            (CLASS_CITATION_URL, 34, 34, 34, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 30, 30, 30, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2107.06857",
-        classes: [
-            (CLASS_AUTHOR_LINE, 10, 10, 10, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 84, 84, 84, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 31, 31, 31, 0),
-            (CLASS_CITATION_URL, 2, 2, 2, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 47, 47, 47, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2112.09332",
-        classes: [
-            (CLASS_AUTHOR_LINE, 3, 3, 3, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 3, 3, 3, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 35, 35, 35, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 23, 23, 23, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 6, 6, 6, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2201.11903",
-        classes: [
-            (CLASS_AUTHOR_LINE, 9, 9, 9, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 9, 9, 9, 0),
-            (CLASS_REFERENCE_DOMAIN, 84, 84, 84, 0),
-            (CLASS_CITATION_DOI, 23, 23, 23, 0),
-            (CLASS_CITATION_ARXIV, 26, 26, 26, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 13, 13, 13, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2203.07540",
-        classes: [
-            (CLASS_AUTHOR_LINE, 4, 4, 4, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 3, 3, 3, 0),
-            (CLASS_REFERENCE_DOMAIN, 55, 55, 55, 0),
-            (CLASS_CITATION_DOI, 20, 20, 20, 0),
-            (CLASS_CITATION_ARXIV, 12, 12, 12, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 40, 40, 40, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2205.10625",
-        classes: [
-            (CLASS_AUTHOR_LINE, 11, 11, 11, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 11, 11, 11, 0),
-            (CLASS_REFERENCE_DOMAIN, 36, 36, 36, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 7, 7, 7, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 20, 20, 20, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2205.11916",
-        classes: [
-            (CLASS_AUTHOR_LINE, 7, 6, 6, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 7, 6, 6, 0),
-            (CLASS_REFERENCE_DOMAIN, 55, 55, 55, 0),
-            (CLASS_CITATION_DOI, 1, 1, 1, 0),
-            (CLASS_CITATION_ARXIV, 7, 7, 7, 0),
-            (CLASS_CITATION_URL, 43, 43, 43, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 28, 28, 28, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2206.09889",
-        classes: [
-            (CLASS_AUTHOR_LINE, 7, 7, 7, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 4, 4, 4, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 7, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 42, 42, 42, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 11, 11, 11, 0),
-            (CLASS_CITATION_URL, 1, 1, 1, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 26, 26, 26, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2206.10498",
-        classes: [
-            (CLASS_AUTHOR_LINE, 5, 5, 5, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 3, 3, 3, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 5, 5, 5, 0),
-            (CLASS_REFERENCE_DOMAIN, 36, 36, 36, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 19, 19, 19, 0),
-            (CLASS_CITATION_URL, 4, 4, 4, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 8, 8, 8, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2206.10944",
-        classes: [
-            (CLASS_AUTHOR_LINE, 4, 4, 4, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 4, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 17, 17, 17, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 4, 4, 4, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 10, 10, 10, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2207.01206",
-        classes: [
-            (CLASS_AUTHOR_LINE, 4, 4, 4, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 3, 3, 3, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 4, 4, 4, 0),
-            (CLASS_REFERENCE_DOMAIN, 59, 59, 59, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 26, 26, 26, 0),
-            (CLASS_CITATION_URL, 2, 2, 2, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 26, 26, 26, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2207.01780",
-        classes: [
-            (CLASS_AUTHOR_LINE, 5, 5, 5, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 5, 5, 5, 0),
-            (CLASS_REFERENCE_DOMAIN, 77, 77, 77, 0),
-            (CLASS_CITATION_DOI, 5, 5, 5, 0),
-            (CLASS_CITATION_ARXIV, 14, 14, 14, 0),
-            (CLASS_CITATION_URL, 15, 15, 15, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 53, 53, 53, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2210.03350",
-        classes: [
-            (CLASS_AUTHOR_LINE, 11, 10, 10, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 7, 7, 7, 0),
-            (CLASS_REFERENCE_DOMAIN, 60, 60, 60, 0),
-            (CLASS_CITATION_DOI, 7, 7, 7, 0),
-            (CLASS_CITATION_ARXIV, 0, 0, 0, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 28, 28, 28, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2210.03629",
-        classes: [
-            (CLASS_AUTHOR_LINE, 7, 7, 7, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 6, 6, 6, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 7, 7, 7, 0),
-            (CLASS_REFERENCE_DOMAIN, 40, 40, 40, 0),
-            (CLASS_CITATION_DOI, 2, 2, 2, 0),
-            (CLASS_CITATION_ARXIV, 14, 14, 14, 0),
-            (CLASS_CITATION_URL, 17, 17, 17, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 10, 10, 10, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2212.04088",
-        classes: [
-            (CLASS_AUTHOR_LINE, 7, 7, 7, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 2, 2, 2, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 5, 5, 5, 0),
-            (CLASS_REFERENCE_DOMAIN, 41, 41, 41, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 4, 4, 4, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 30, 30, 30, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2212.08073",
-        classes: [
-            (CLASS_AUTHOR_LINE, 51, 51, 51, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 20, 20, 20, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 3, 3, 3, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 2, 2, 2, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2212.10509",
-        classes: [
-            (CLASS_AUTHOR_LINE, 4, 4, 4, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 4, 4, 4, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 4, 4, 4, 0),
-            (CLASS_REFERENCE_DOMAIN, 37, 37, 37, 0),
-            (CLASS_CITATION_DOI, 3, 3, 3, 0),
-            (CLASS_CITATION_ARXIV, 12, 12, 12, 0),
-            (CLASS_CITATION_URL, 2, 2, 2, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 22, 22, 22, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2212.14024",
-        classes: [
-            (CLASS_AUTHOR_LINE, 8, 8, 8, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 61, 61, 61, 0),
-            (CLASS_CITATION_DOI, 9, 9, 9, 0),
-            (CLASS_CITATION_ARXIV, 35, 35, 35, 0),
-            (CLASS_CITATION_URL, 15, 15, 15, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 24, 24, 24, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2302.00923",
-        classes: [
-            (CLASS_AUTHOR_LINE, 6, 6, 6, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 4, 4, 4, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 6, 6, 6, 0),
-            (CLASS_REFERENCE_DOMAIN, 66, 66, 66, 0),
-            (CLASS_CITATION_DOI, 9, 9, 9, 0),
-            (CLASS_CITATION_ARXIV, 4, 4, 4, 0),
-            (CLASS_CITATION_URL, 2, 2, 2, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 33, 33, 33, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2302.01560",
-        classes: [
-            (CLASS_AUTHOR_LINE, 6, 6, 6, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 4, 4, 4, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 9, 8, 8, 0),
-            (CLASS_REFERENCE_DOMAIN, 48, 48, 48, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 31, 31, 31, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 14, 14, 14, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2302.06590",
-        classes: [
-            (CLASS_AUTHOR_LINE, 4, 4, 4, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 1, 1, 1, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 4, 1, 1, 0),
-            (CLASS_REFERENCE_DOMAIN, 14, 14, 14, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 5, 5, 5, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 10, 10, 10, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2302.08468",
-        classes: [
-            (CLASS_AUTHOR_LINE, 8, 8, 8, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 70, 70, 70, 0),
-            (CLASS_CITATION_DOI, 14, 14, 14, 0),
-            (CLASS_CITATION_ARXIV, 22, 22, 22, 0),
-            (CLASS_CITATION_URL, 28, 28, 28, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 35, 35, 35, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2303.06689",
-        classes: [
-            (CLASS_AUTHOR_LINE, 9, 8, 8, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 6, 6, 6, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 10, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 86, 86, 86, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 3, 3, 3, 0),
-            (CLASS_CITATION_URL, 1, 1, 1, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 36, 36, 36, 0),
-        ],
-    },
-    FrozenDocument {
-        article_id: "2303.08268",
-        classes: [
-            (CLASS_AUTHOR_LINE, 5, 5, 5, 0),
-            (CLASS_HEADER_TITLE, 2, 1, 1, 0),
-            (CLASS_HEADER_EMAIL, 0, 0, 0, 0),
-            (CLASS_HEADER_IDS, 1, 1, 1, 0),
-            (CLASS_AUTHOR_AFFILIATION, 0, 0, 0, 0),
-            (CLASS_REFERENCE_DOMAIN, 31, 31, 31, 0),
-            (CLASS_CITATION_DOI, 0, 0, 0, 0),
-            (CLASS_CITATION_ARXIV, 8, 8, 8, 0),
-            (CLASS_CITATION_URL, 0, 0, 0, 0),
-            (CLASS_CITATION_ARTICLE_TITLE, 14, 14, 14, 0),
-        ],
-    },
-];
-
-/// The frozen per-document metrics.  Fractions are stored in micros so the
-/// assertion is exact rather than a floating-point comparison.
 struct FrozenMetrics {
-    article_id: &'static str,
+    article_id: String,
     source_population: usize,
     admitted: usize,
     conserved: usize,
@@ -2540,568 +1949,178 @@ struct FrozenMetrics {
     width_micros: u64,
 }
 
-static FROZEN_METRICS: &[FrozenMetrics] = &[
-    FrozenMetrics {
-        article_id: "1203.2295",
-        source_population: 57,
-        admitted: 56,
-        conserved: 56,
-        agreement_micros: 1000000,
-        low_micros: 935804,
-        high_micros: 1000000,
-        width_micros: 64196,
-    },
-    FrozenMetrics {
-        article_id: "2401.17167",
-        source_population: 283,
-        admitted: 268,
-        conserved: 268,
-        agreement_micros: 1000000,
-        low_micros: 985868,
-        high_micros: 1000000,
-        width_micros: 14132,
-    },
-    FrozenMetrics {
-        article_id: "2411.07228",
-        source_population: 128,
-        admitted: 121,
-        conserved: 121,
-        agreement_micros: 1000000,
-        low_micros: 969228,
-        high_micros: 1000000,
-        width_micros: 30772,
-    },
-    FrozenMetrics {
-        article_id: "2505.16270",
-        source_population: 221,
-        admitted: 219,
-        conserved: 219,
-        agreement_micros: 1000000,
-        low_micros: 982761,
-        high_micros: 1000000,
-        width_micros: 17239,
-    },
-    FrozenMetrics {
-        article_id: "2608.22118",
-        source_population: 42,
-        admitted: 41,
-        conserved: 41,
-        agreement_micros: 1000000,
-        low_micros: 914330,
-        high_micros: 1000000,
-        width_micros: 85670,
-    },
-    FrozenMetrics {
-        article_id: "1409.0473",
-        source_population: 61,
-        admitted: 59,
-        conserved: 59,
-        agreement_micros: 1000000,
-        low_micros: 938869,
-        high_micros: 1000000,
-        width_micros: 61131,
-    },
-    FrozenMetrics {
-        article_id: "1410.4615",
-        source_population: 79,
-        admitted: 78,
-        conserved: 78,
-        agreement_micros: 1000000,
-        low_micros: 953061,
-        high_micros: 1000000,
-        width_micros: 46939,
-    },
-    FrozenMetrics {
-        article_id: "1410.5401",
-        source_population: 84,
-        admitted: 83,
-        conserved: 83,
-        agreement_micros: 1000000,
-        low_micros: 955763,
-        high_micros: 1000000,
-        width_micros: 44237,
-    },
-    FrozenMetrics {
-        article_id: "1506.02438",
-        source_population: 64,
-        admitted: 63,
-        conserved: 63,
-        agreement_micros: 1000000,
-        low_micros: 942527,
-        high_micros: 1000000,
-        width_micros: 57473,
-    },
-    FrozenMetrics {
-        article_id: "1511.08228",
-        source_population: 80,
-        admitted: 79,
-        conserved: 79,
-        agreement_micros: 1000000,
-        low_micros: 953627,
-        high_micros: 1000000,
-        width_micros: 46373,
-    },
-    FrozenMetrics {
-        article_id: "1606.01540",
-        source_population: 44,
-        admitted: 36,
-        conserved: 36,
-        agreement_micros: 1000000,
-        low_micros: 903578,
-        high_micros: 1000000,
-        width_micros: 96422,
-    },
-    FrozenMetrics {
-        article_id: "1703.00050",
-        source_population: 53,
-        admitted: 52,
-        conserved: 52,
-        agreement_micros: 1000000,
-        low_micros: 931205,
-        high_micros: 1000000,
-        width_micros: 68795,
-    },
-    FrozenMetrics {
-        article_id: "1706.03741",
-        source_population: 100,
-        admitted: 97,
-        conserved: 97,
-        agreement_micros: 1000000,
-        low_micros: 961905,
-        high_micros: 1000000,
-        width_micros: 38095,
-    },
-    FrozenMetrics {
-        article_id: "1712.00600",
-        source_population: 23,
-        admitted: 22,
-        conserved: 22,
-        agreement_micros: 1000000,
-        low_micros: 851340,
-        high_micros: 1000000,
-        width_micros: 148660,
-    },
-    FrozenMetrics {
-        article_id: "1902.04043",
-        source_population: 98,
-        admitted: 97,
-        conserved: 97,
-        agreement_micros: 1000000,
-        low_micros: 961905,
-        high_micros: 1000000,
-        width_micros: 38095,
-    },
-    FrozenMetrics {
-        article_id: "2010.03768",
-        source_population: 124,
-        admitted: 123,
-        conserved: 123,
-        agreement_micros: 1000000,
-        low_micros: 969713,
-        high_micros: 1000000,
-        width_micros: 30287,
-    },
-    FrozenMetrics {
-        article_id: "2010.09776",
-        source_population: 248,
-        admitted: 210,
-        conserved: 210,
-        agreement_micros: 1000000,
-        low_micros: 982035,
-        high_micros: 1000000,
-        width_micros: 17965,
-    },
-    FrozenMetrics {
-        article_id: "2107.06857",
-        source_population: 177,
-        admitted: 176,
-        conserved: 176,
-        agreement_micros: 1000000,
-        low_micros: 978639,
-        high_micros: 1000000,
-        width_micros: 21361,
-    },
-    FrozenMetrics {
-        article_id: "2112.09332",
-        source_population: 73,
-        admitted: 72,
-        conserved: 72,
-        agreement_micros: 1000000,
-        low_micros: 949347,
-        high_micros: 1000000,
-        width_micros: 50653,
-    },
-    FrozenMetrics {
-        article_id: "2201.11903",
-        source_population: 169,
-        admitted: 168,
-        conserved: 168,
-        agreement_micros: 1000000,
-        low_micros: 977645,
-        high_micros: 1000000,
-        width_micros: 22355,
-    },
-    FrozenMetrics {
-        article_id: "2203.07540",
-        source_population: 139,
-        admitted: 138,
-        conserved: 138,
-        agreement_micros: 1000000,
-        low_micros: 972916,
-        high_micros: 1000000,
-        width_micros: 27084,
-    },
-    FrozenMetrics {
-        article_id: "2205.10625",
-        source_population: 89,
-        admitted: 88,
-        conserved: 88,
-        agreement_micros: 1000000,
-        low_micros: 958171,
-        high_micros: 1000000,
-        width_micros: 41829,
-    },
-    FrozenMetrics {
-        article_id: "2205.11916",
-        source_population: 152,
-        admitted: 149,
-        conserved: 149,
-        agreement_micros: 1000000,
-        low_micros: 974865,
-        high_micros: 1000000,
-        width_micros: 25135,
-    },
-    FrozenMetrics {
-        article_id: "2206.09889",
-        source_population: 101,
-        admitted: 93,
-        conserved: 93,
-        agreement_micros: 1000000,
-        low_micros: 960331,
-        high_micros: 1000000,
-        width_micros: 39669,
-    },
-    FrozenMetrics {
-        article_id: "2206.10498",
-        source_population: 83,
-        admitted: 82,
-        conserved: 82,
-        agreement_micros: 1000000,
-        low_micros: 955248,
-        high_micros: 1000000,
-        width_micros: 44752,
-    },
-    FrozenMetrics {
-        article_id: "2206.10944",
-        source_population: 42,
-        admitted: 37,
-        conserved: 37,
-        agreement_micros: 1000000,
-        low_micros: 905939,
-        high_micros: 1000000,
-        width_micros: 94061,
-    },
-    FrozenMetrics {
-        article_id: "2207.01206",
-        source_population: 127,
-        admitted: 126,
-        conserved: 126,
-        agreement_micros: 1000000,
-        low_micros: 970413,
-        high_micros: 1000000,
-        width_micros: 29587,
-    },
-    FrozenMetrics {
-        article_id: "2207.01780",
-        source_population: 179,
-        admitted: 178,
-        conserved: 178,
-        agreement_micros: 1000000,
-        low_micros: 978874,
-        high_micros: 1000000,
-        width_micros: 21126,
-    },
-    FrozenMetrics {
-        article_id: "2210.03350",
-        source_population: 117,
-        admitted: 115,
-        conserved: 115,
-        agreement_micros: 1000000,
-        low_micros: 967675,
-        high_micros: 1000000,
-        width_micros: 32325,
-    },
-    FrozenMetrics {
-        article_id: "2210.03629",
-        source_population: 106,
-        admitted: 105,
-        conserved: 105,
-        agreement_micros: 1000000,
-        low_micros: 964705,
-        high_micros: 1000000,
-        width_micros: 35295,
-    },
-    FrozenMetrics {
-        article_id: "2212.04088",
-        source_population: 92,
-        admitted: 91,
-        conserved: 91,
-        agreement_micros: 1000000,
-        low_micros: 959495,
-        high_micros: 1000000,
-        width_micros: 40505,
-    },
-    FrozenMetrics {
-        article_id: "2212.08073",
-        source_population: 80,
-        admitted: 79,
-        conserved: 79,
-        agreement_micros: 1000000,
-        low_micros: 953627,
-        high_micros: 1000000,
-        width_micros: 46373,
-    },
-    FrozenMetrics {
-        article_id: "2212.10509",
-        source_population: 91,
-        admitted: 90,
-        conserved: 90,
-        agreement_micros: 1000000,
-        low_micros: 959063,
-        high_micros: 1000000,
-        width_micros: 40937,
-    },
-    FrozenMetrics {
-        article_id: "2212.14024",
-        source_population: 155,
-        admitted: 154,
-        conserved: 154,
-        agreement_micros: 1000000,
-        low_micros: 975662,
-        high_micros: 1000000,
-        width_micros: 24338,
-    },
-    FrozenMetrics {
-        article_id: "2302.00923",
-        source_population: 133,
-        admitted: 132,
-        conserved: 132,
-        agreement_micros: 1000000,
-        low_micros: 971720,
-        high_micros: 1000000,
-        width_micros: 28280,
-    },
-    FrozenMetrics {
-        article_id: "2302.01560",
-        source_population: 115,
-        admitted: 113,
-        conserved: 113,
-        agreement_micros: 1000000,
-        low_micros: 967121,
-        high_micros: 1000000,
-        width_micros: 32879,
-    },
-    FrozenMetrics {
-        article_id: "2302.06590",
-        source_population: 41,
-        admitted: 37,
-        conserved: 37,
-        agreement_micros: 1000000,
-        low_micros: 905939,
-        high_micros: 1000000,
-        width_micros: 94061,
-    },
-    FrozenMetrics {
-        article_id: "2302.08468",
-        source_population: 180,
-        admitted: 179,
-        conserved: 179,
-        agreement_micros: 1000000,
-        low_micros: 978989,
-        high_micros: 1000000,
-        width_micros: 21011,
-    },
-    FrozenMetrics {
-        article_id: "2303.06689",
-        source_population: 154,
-        admitted: 142,
-        conserved: 142,
-        agreement_micros: 1000000,
-        low_micros: 973659,
-        high_micros: 1000000,
-        width_micros: 26341,
-    },
-    FrozenMetrics {
-        article_id: "2303.08268",
-        source_population: 61,
-        admitted: 60,
-        conserved: 60,
-        agreement_micros: 1000000,
-        low_micros: 939826,
-        high_micros: 1000000,
-        width_micros: 60174,
-    },
-];
+fn frozen_tables_path() -> PathBuf {
+    repo_root().join(FROZEN_TABLES_REL)
+}
 
-/// The frozen corpus-wide aggregate: counts over the documents, never a rate and
+/// The recorded tables are content-addressed by `FROZEN_TABLES_SHA256`: a file
+/// whose bytes do not hash to the pin is a substituted measurement, never a
+/// silently newer one.
+fn check_frozen_tables_pin(bytes: &[u8]) -> Result<(), String> {
+    let digest = format!("{:x}", Sha256::digest(bytes));
+    if digest != FROZEN_TABLES_SHA256 {
+        return Err(format!(
+            "frozen_tables_sha256_mismatch: pinned {FROZEN_TABLES_SHA256}, recorded {digest}"
+        ));
+    }
+    Ok(())
+}
+
+fn frozen_tables() -> Json {
+    let path = frozen_tables_path();
+    let bytes = std::fs::read(&path)
+        .unwrap_or_else(|error| panic!("FATAL {PROBE} cannot read {}: {error}", path.display()));
+    check_frozen_tables_pin(&bytes).unwrap_or_else(|error| panic!("FATAL {PROBE} {error}"));
+    let value: Json = serde_json::from_slice(&bytes).unwrap_or_else(|error| {
+        panic!("FATAL {PROBE} the frozen tables are not valid JSON: {error}")
+    });
+    assert_eq!(
+        value["schema_version"].as_str(),
+        Some(FROZEN_TABLES_SCHEMA),
+        "{PROBE} the frozen tables must declare the pinned schema"
+    );
+    value
+}
+
+/// The recorded per-class profile, per document.
+fn frozen_profile() -> Vec<FrozenDocument> {
+    frozen_tables()["documents"]
+        .as_array()
+        .expect("the frozen tables declare a documents list")
+        .iter()
+        .map(|document| FrozenDocument {
+            article_id: document["article_id"]
+                .as_str()
+                .expect("article_id")
+                .to_string(),
+            classes: document["profile"]
+                .as_array()
+                .expect("profile")
+                .iter()
+                .map(|class| {
+                    (
+                        class["class"].as_str().expect("class").to_string(),
+                        class["source_population"]
+                            .as_u64()
+                            .expect("source_population") as usize,
+                        class["admitted"].as_u64().expect("admitted") as usize,
+                        class["conserved"].as_u64().expect("conserved") as usize,
+                        class["rejected"].as_u64().expect("rejected") as usize,
+                    )
+                })
+                .collect(),
+        })
+        .collect()
+}
+
+/// The recorded per-document metrics.  Fractions are stored in micros so the
+/// assertion is exact rather than a floating-point comparison.
+fn frozen_metrics() -> Vec<FrozenMetrics> {
+    frozen_tables()["documents"]
+        .as_array()
+        .expect("the frozen tables declare a documents list")
+        .iter()
+        .map(|document| FrozenMetrics {
+            article_id: document["article_id"]
+                .as_str()
+                .expect("article_id")
+                .to_string(),
+            source_population: document["source_population"]
+                .as_u64()
+                .expect("source_population") as usize,
+            admitted: document["admitted"].as_u64().expect("admitted") as usize,
+            conserved: document["conserved"].as_u64().expect("conserved") as usize,
+            agreement_micros: document["agreement_micros"]
+                .as_u64()
+                .expect("agreement_micros"),
+            low_micros: document["uncertainty_low_micros"]
+                .as_u64()
+                .expect("uncertainty_low_micros"),
+            high_micros: document["uncertainty_high_micros"]
+                .as_u64()
+                .expect("uncertainty_high_micros"),
+            width_micros: document["uncertainty_width_micros"]
+                .as_u64()
+                .expect("uncertainty_width_micros"),
+        })
+        .collect()
+}
+
+/// The recorded, named admission narrowings: `(article_id, class,
+/// source_population, admitted)`.  Every class whose admitted band is smaller than
+/// the real carrier population must appear here; a narrowing that is not recorded
+/// is a silent shrink and fails.
+fn frozen_narrowings() -> Vec<(String, String, usize, usize)> {
+    frozen_tables()["documents"]
+        .as_array()
+        .expect("the frozen tables declare a documents list")
+        .iter()
+        .flat_map(|document| {
+            let id = document["article_id"]
+                .as_str()
+                .expect("article_id")
+                .to_string();
+            document["narrowings"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .map(move |narrowing| {
+                    (
+                        id.clone(),
+                        narrowing["class"].as_str().expect("class").to_string(),
+                        narrowing["source_population"]
+                            .as_u64()
+                            .expect("source_population") as usize,
+                        narrowing["admitted"].as_u64().expect("admitted") as usize,
+                    )
+                })
+        })
+        .collect()
+}
+
+/// The recorded classes whose frozen reference declares no such carrier at all:
+/// reported as `no_denominator`, never as a vacuum `1.0` (MEM1702).  Derived from
+/// the recorded profile rows rather than a second literal table.
+fn frozen_no_denominator_classes() -> Vec<(String, String)> {
+    let mut classes = Vec::new();
+    for document in frozen_profile() {
+        for (class, source_population, _, _, _) in &document.classes {
+            if *source_population == 0 {
+                classes.push((document.article_id.clone(), class.clone()));
+            }
+        }
+    }
+    classes
+}
+
+/// The recorded corpus-wide aggregate: counts over the documents, never a rate and
 /// never a pooled corpus claim.  `documents` and `agreeing_documents` are derived
-/// from the frozen per-document tables rather than restated as literals, so a
-/// table/population drift cannot be hidden by a matching hardcoded count.
+/// from the recorded per-document rows rather than restated, so a table/population
+/// drift cannot be hidden by a matching hardcoded count.
 fn frozen_aggregate() -> Aggregate {
+    let tables = frozen_tables();
+    let aggregate = &tables["aggregate"];
     Aggregate {
-        documents: FROZEN_PROFILE.len(),
-        source_population: 4445,
-        admitted: 4308,
-        tp: 4308,
-        fn_: 0,
-        fp: 0,
-        agreeing_documents: FROZEN_METRICS
+        documents: tables["documents"].as_array().expect("documents").len(),
+        source_population: aggregate["source_population"]
+            .as_u64()
+            .expect("source_population") as usize,
+        admitted: aggregate["admitted"].as_u64().expect("admitted") as usize,
+        tp: aggregate["tp"].as_u64().expect("tp") as usize,
+        fn_: aggregate["fn"].as_u64().expect("fn") as usize,
+        fp: aggregate["fp"].as_u64().expect("fp") as usize,
+        agreeing_documents: frozen_metrics()
             .iter()
             .filter(|metrics| metrics.agreement_micros == 1_000_000)
             .count(),
-        margin_pass: 80,
-        margin_fail: 0,
-        no_denominator_documents: 0,
+        margin_pass: aggregate["margin_pass"].as_u64().expect("margin_pass") as usize,
+        margin_fail: aggregate["margin_fail"].as_u64().expect("margin_fail") as usize,
+        no_denominator_documents: aggregate["no_denominator_documents"]
+            .as_u64()
+            .expect("no_denominator_documents") as usize,
     }
 }
-
-/// The frozen, named admission narrowings: `(article_id, class,
-/// source_population, admitted)`.  Every class whose admitted band is smaller
-/// than the real carrier population must appear here; a narrowing that is not
-/// declared is a silent shrink and fails.
-static FROZEN_NARROWINGS: [(&str, &str, usize, usize); 59] = [
-    ("1203.2295", CLASS_HEADER_TITLE, 2, 1),
-    ("2401.17167", CLASS_AUTHOR_LINE, 239, 235),
-    ("2401.17167", CLASS_HEADER_TITLE, 2, 1),
-    ("2401.17167", CLASS_AUTHOR_AFFILIATION, 16, 6),
-    ("2411.07228", CLASS_AUTHOR_LINE, 11, 8),
-    ("2411.07228", CLASS_HEADER_TITLE, 2, 1),
-    ("2411.07228", CLASS_AUTHOR_AFFILIATION, 11, 8),
-    ("2505.16270", CLASS_AUTHOR_LINE, 10, 9),
-    ("2505.16270", CLASS_HEADER_TITLE, 2, 1),
-    ("2608.22118", CLASS_HEADER_TITLE, 2, 1),
-    ("1409.0473", CLASS_HEADER_TITLE, 2, 1),
-    ("1409.0473", CLASS_AUTHOR_AFFILIATION, 3, 2),
-    ("1410.4615", CLASS_HEADER_TITLE, 2, 1),
-    ("1410.5401", CLASS_HEADER_TITLE, 2, 1),
-    ("1506.02438", CLASS_HEADER_TITLE, 2, 1),
-    ("1511.08228", CLASS_HEADER_TITLE, 2, 1),
-    ("1606.01540", CLASS_HEADER_TITLE, 2, 1),
-    ("1606.01540", CLASS_AUTHOR_AFFILIATION, 7, 0),
-    ("1703.00050", CLASS_HEADER_TITLE, 2, 1),
-    ("1706.03741", CLASS_HEADER_TITLE, 2, 1),
-    ("1706.03741", CLASS_AUTHOR_AFFILIATION, 2, 0),
-    ("1712.00600", CLASS_HEADER_TITLE, 2, 1),
-    ("1902.04043", CLASS_HEADER_TITLE, 2, 1),
-    ("2010.03768", CLASS_HEADER_TITLE, 2, 1),
-    ("2010.09776", CLASS_AUTHOR_LINE, 38, 36),
-    ("2010.09776", CLASS_HEADER_TITLE, 2, 1),
-    ("2010.09776", CLASS_AUTHOR_AFFILIATION, 44, 9),
-    ("2107.06857", CLASS_HEADER_TITLE, 2, 1),
-    ("2112.09332", CLASS_HEADER_TITLE, 2, 1),
-    ("2201.11903", CLASS_HEADER_TITLE, 2, 1),
-    ("2203.07540", CLASS_HEADER_TITLE, 2, 1),
-    ("2205.10625", CLASS_HEADER_TITLE, 2, 1),
-    ("2205.11916", CLASS_AUTHOR_LINE, 7, 6),
-    ("2205.11916", CLASS_HEADER_TITLE, 2, 1),
-    ("2205.11916", CLASS_AUTHOR_AFFILIATION, 7, 6),
-    ("2206.09889", CLASS_HEADER_TITLE, 2, 1),
-    ("2206.09889", CLASS_AUTHOR_AFFILIATION, 7, 0),
-    ("2206.10498", CLASS_HEADER_TITLE, 2, 1),
-    ("2206.10944", CLASS_HEADER_TITLE, 2, 1),
-    ("2206.10944", CLASS_AUTHOR_AFFILIATION, 4, 0),
-    ("2207.01206", CLASS_HEADER_TITLE, 2, 1),
-    ("2207.01780", CLASS_HEADER_TITLE, 2, 1),
-    ("2210.03350", CLASS_AUTHOR_LINE, 11, 10),
-    ("2210.03350", CLASS_HEADER_TITLE, 2, 1),
-    ("2210.03629", CLASS_HEADER_TITLE, 2, 1),
-    ("2212.04088", CLASS_HEADER_TITLE, 2, 1),
-    ("2212.08073", CLASS_HEADER_TITLE, 2, 1),
-    ("2212.10509", CLASS_HEADER_TITLE, 2, 1),
-    ("2212.14024", CLASS_HEADER_TITLE, 2, 1),
-    ("2302.00923", CLASS_HEADER_TITLE, 2, 1),
-    ("2302.01560", CLASS_HEADER_TITLE, 2, 1),
-    ("2302.01560", CLASS_AUTHOR_AFFILIATION, 9, 8),
-    ("2302.06590", CLASS_HEADER_TITLE, 2, 1),
-    ("2302.06590", CLASS_AUTHOR_AFFILIATION, 4, 1),
-    ("2302.08468", CLASS_HEADER_TITLE, 2, 1),
-    ("2303.06689", CLASS_AUTHOR_LINE, 9, 8),
-    ("2303.06689", CLASS_HEADER_TITLE, 2, 1),
-    ("2303.06689", CLASS_AUTHOR_AFFILIATION, 10, 0),
-    ("2303.08268", CLASS_HEADER_TITLE, 2, 1),
-];
-
-/// The frozen classes whose frozen reference declares no such carrier at all:
-/// reported as `no_denominator`, never as a vacuum `1.0` (MEM1702).
-static FROZEN_NO_DENOMINATOR_CLASSES: [(&str, &str); 67] = [
-    ("2401.17167", CLASS_CITATION_ARXIV),
-    ("2401.17167", CLASS_CITATION_URL),
-    ("2411.07228", CLASS_HEADER_EMAIL),
-    ("2505.16270", CLASS_CITATION_DOI),
-    ("2608.22118", CLASS_HEADER_EMAIL),
-    ("2608.22118", CLASS_AUTHOR_AFFILIATION),
-    ("1409.0473", CLASS_HEADER_EMAIL),
-    ("1409.0473", CLASS_CITATION_DOI),
-    ("1409.0473", CLASS_CITATION_URL),
-    ("1410.4615", CLASS_CITATION_DOI),
-    ("1410.4615", CLASS_CITATION_URL),
-    ("1410.5401", CLASS_AUTHOR_AFFILIATION),
-    ("1410.5401", CLASS_CITATION_DOI),
-    ("1410.5401", CLASS_CITATION_URL),
-    ("1506.02438", CLASS_CITATION_DOI),
-    ("1506.02438", CLASS_CITATION_URL),
-    ("1511.08228", CLASS_AUTHOR_AFFILIATION),
-    ("1511.08228", CLASS_CITATION_DOI),
-    ("1511.08228", CLASS_CITATION_ARXIV),
-    ("1606.01540", CLASS_HEADER_EMAIL),
-    ("1606.01540", CLASS_CITATION_DOI),
-    ("1703.00050", CLASS_CITATION_DOI),
-    ("1703.00050", CLASS_CITATION_ARXIV),
-    ("1703.00050", CLASS_CITATION_URL),
-    ("1712.00600", CLASS_CITATION_DOI),
-    ("1712.00600", CLASS_CITATION_ARXIV),
-    ("1712.00600", CLASS_CITATION_URL),
-    ("1902.04043", CLASS_CITATION_DOI),
-    ("2010.03768", CLASS_HEADER_EMAIL),
-    ("2010.03768", CLASS_CITATION_DOI),
-    ("2010.03768", CLASS_CITATION_URL),
-    ("2107.06857", CLASS_HEADER_EMAIL),
-    ("2107.06857", CLASS_AUTHOR_AFFILIATION),
-    ("2107.06857", CLASS_CITATION_DOI),
-    ("2112.09332", CLASS_AUTHOR_AFFILIATION),
-    ("2112.09332", CLASS_CITATION_DOI),
-    ("2112.09332", CLASS_CITATION_URL),
-    ("2201.11903", CLASS_CITATION_URL),
-    ("2203.07540", CLASS_CITATION_URL),
-    ("2205.10625", CLASS_CITATION_DOI),
-    ("2205.10625", CLASS_CITATION_URL),
-    ("2206.09889", CLASS_CITATION_DOI),
-    ("2206.10498", CLASS_CITATION_DOI),
-    ("2206.10944", CLASS_HEADER_EMAIL),
-    ("2206.10944", CLASS_CITATION_DOI),
-    ("2206.10944", CLASS_CITATION_URL),
-    ("2207.01206", CLASS_CITATION_DOI),
-    ("2210.03350", CLASS_CITATION_ARXIV),
-    ("2210.03350", CLASS_CITATION_URL),
-    ("2212.04088", CLASS_CITATION_DOI),
-    ("2212.04088", CLASS_CITATION_URL),
-    ("2212.08073", CLASS_AUTHOR_AFFILIATION),
-    ("2212.08073", CLASS_CITATION_DOI),
-    ("2212.08073", CLASS_CITATION_URL),
-    ("2212.14024", CLASS_HEADER_EMAIL),
-    ("2212.14024", CLASS_AUTHOR_AFFILIATION),
-    ("2302.01560", CLASS_CITATION_DOI),
-    ("2302.01560", CLASS_CITATION_URL),
-    ("2302.06590", CLASS_CITATION_DOI),
-    ("2302.06590", CLASS_CITATION_URL),
-    ("2302.08468", CLASS_HEADER_EMAIL),
-    ("2302.08468", CLASS_AUTHOR_AFFILIATION),
-    ("2303.06689", CLASS_CITATION_DOI),
-    ("2303.08268", CLASS_HEADER_EMAIL),
-    ("2303.08268", CLASS_AUTHOR_AFFILIATION),
-    ("2303.08268", CLASS_CITATION_DOI),
-    ("2303.08268", CLASS_CITATION_URL),
-];
 
 // ──────────────────────────────── tests ────────────────────────────────────
 
@@ -4079,67 +3098,91 @@ fn the_sut_refuses_a_corrupted_envelope_instead_of_accepting_it() {
     }
 }
 
-/// The frozen per-class profile, per-document metrics and named narrowings: every
-/// measured number is asserted, so a drift in either direction fails.
-/// `documents=40` sits next to every number.
+/// The recorded per-class profile, per-document metrics and named narrowings: every
+/// measured number is asserted, so a drift in either direction fails.  The
+/// per-class rows are matched by class label, never by position: the recorded file
+/// carries the artifact's class order and the mapping must not depend on it.
 #[test]
 fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
     let data = load_probe_data();
     let measured = measure_all(&data);
+    let frozen_profile = frozen_profile();
     assert_eq!(
         measured.len(),
-        FROZEN_PROFILE.len(),
-        "{PROBE} the frozen per-document profile covers {} documents but the lane measured {}; \
+        frozen_profile.len(),
+        "{PROBE} the recorded per-document profile covers {} documents but the lane measured {}; \
          a population change requires a fresh measurement, not auditing a subset against a \
          stale table (data/parse/holdout_manifests.yaml#articles)",
-        FROZEN_PROFILE.len(),
+        frozen_profile.len(),
         measured.len(),
     );
 
-    for (document, frozen) in measured.iter().zip(FROZEN_PROFILE.iter()) {
+    for (document, frozen) in measured.iter().zip(frozen_profile.iter()) {
         assert_eq!(document.article_id, frozen.article_id);
         assert_eq!(document.profiles.len(), CLASS_COUNT);
         assert_eq!(document.profiles.len(), frozen.classes.len());
-        for (profile, row) in document.profiles.iter().zip(frozen.classes.iter()) {
-            let (class, source_population, admitted, conserved, fabricated) = *row;
-            assert_eq!(profile.class, class, "{}: class order", document.article_id);
+        let recorded_classes: BTreeMap<&str, &FrozenClassRow> = frozen
+            .classes
+            .iter()
+            .map(|row| (row.0.as_str(), row))
+            .collect();
+        let measured_classes: BTreeSet<&str> = document
+            .profiles
+            .iter()
+            .map(|profile| profile.class)
+            .collect();
+        let recorded_class_set: BTreeSet<&str> = recorded_classes.keys().copied().collect();
+        assert_eq!(
+            measured_classes, recorded_class_set,
+            "{}: the recorded per-class rows must name exactly the measured classes",
+            document.article_id,
+        );
+        for profile in &document.profiles {
+            let (class, source_population, admitted, conserved, rejected) =
+                recorded_classes.get(profile.class).unwrap_or_else(|| {
+                    panic!(
+                        "{}: the measured class {} is not recorded in the frozen table",
+                        document.article_id, profile.class
+                    )
+                });
             assert_eq!(
-                profile.source_population, source_population,
+                profile.source_population, *source_population,
                 "{}/{class}: source_population drifted (measured {}, frozen {source_population})",
                 document.article_id, profile.source_population,
             );
             assert_eq!(
-                profile.admitted, admitted,
+                profile.admitted, *admitted,
                 "{}/{class}: admitted drifted (measured {}, frozen {admitted})",
                 document.article_id, profile.admitted,
             );
             assert_eq!(
-                profile.conserved, conserved,
+                profile.conserved, *conserved,
                 "{}/{class}: conserved drifted (measured {}, frozen {conserved})",
                 document.article_id, profile.conserved,
             );
             assert_eq!(
                 profile.lost,
-                admitted - conserved,
+                *admitted - *conserved,
                 "{}/{class}: lost must be admitted - conserved",
                 document.article_id,
             );
             assert_eq!(
-                profile.fabricated, fabricated,
-                "{}/{class}: fabricated drifted (measured {}, frozen {fabricated})",
+                profile.fabricated, *rejected,
+                "{}/{class}: fabricated drifted (measured {}, frozen {rejected})",
                 document.article_id, profile.fabricated,
             );
         }
     }
 
+    let frozen_metrics = frozen_metrics();
     assert_eq!(
         measured.len(),
-        FROZEN_METRICS.len(),
-        "{PROBE} the frozen per-document metrics cover {} documents but the lane measured {}",
-        FROZEN_METRICS.len(),
+        frozen_metrics.len(),
+        "{PROBE} the recorded per-document metrics cover {} documents but the lane measured {}",
+        frozen_metrics.len(),
         measured.len(),
     );
-    for (document, frozen) in measured.iter().zip(FROZEN_METRICS.iter()) {
+    for (document, frozen) in measured.iter().zip(frozen_metrics.iter()) {
         assert_eq!(document.article_id, frozen.article_id);
         assert_eq!(
             document.metrics.source_population, frozen.source_population,
@@ -4225,8 +3268,8 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
         );
     }
 
-    // Every narrowing is named and frozen; nothing is silently shrunk.
-    let mut observed_narrowings: Vec<(&str, &str, usize, usize)> = measured
+    // Every narrowing is named and recorded; nothing is silently shrunk.
+    let mut observed_narrowings: Vec<(String, String, usize, usize)> = measured
         .iter()
         .flat_map(|document| {
             document
@@ -4235,8 +3278,8 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
                 .filter(|profile| profile.admitted < profile.source_population)
                 .map(|profile| {
                     (
-                        document.article_id.as_str(),
-                        profile.class,
+                        document.article_id.to_string(),
+                        profile.class.to_string(),
                         profile.source_population,
                         profile.admitted,
                     )
@@ -4244,33 +3287,33 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
                 .collect::<Vec<_>>()
         })
         .collect();
-    let mut expected_narrowings = FROZEN_NARROWINGS.to_vec();
+    let mut expected_narrowings = frozen_narrowings();
     observed_narrowings.sort();
     expected_narrowings.sort();
     assert_eq!(
         observed_narrowings, expected_narrowings,
-        "the admitted band's narrowings must be exactly the declared, named ones"
+        "the admitted band's narrowings must be exactly the recorded, named ones"
     );
 
     // The classes with no source population are reported as `no_denominator`,
     // never as a vacuum 1.0.
-    let mut observed_void: Vec<(&str, &str)> = measured
+    let mut observed_void: Vec<(String, String)> = measured
         .iter()
         .flat_map(|document| {
             document
                 .profiles
                 .iter()
                 .filter(|profile| profile.source_population == 0)
-                .map(|profile| (document.article_id.as_str(), profile.class))
+                .map(|profile| (document.article_id.to_string(), profile.class.to_string()))
                 .collect::<Vec<_>>()
         })
         .collect();
-    let mut expected_void = FROZEN_NO_DENOMINATOR_CLASSES.to_vec();
+    let mut expected_void = frozen_no_denominator_classes();
     observed_void.sort();
     expected_void.sort();
     assert_eq!(
         observed_void, expected_void,
-        "the classes without a denominator must be exactly the declared ones"
+        "the classes without a denominator must be exactly the recorded ones"
     );
     for (article_id, class) in &observed_void {
         let document = measured
@@ -4280,7 +3323,7 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
         let profile = document
             .profiles
             .iter()
-            .find(|profile| profile.class == *class)
+            .find(|profile| profile.class == class.as_str())
             .expect("the class is measured");
         assert_eq!(
             profile.admission_coverage(),
@@ -4290,158 +3333,270 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
     }
 }
 
-/// The recorded measurement tables are DERIVED FROM the committed runtime
-/// artifact, not hand-typed: this guard re-reads
-/// `artifacts/parse_compat/external_holdout_release_probe.json` and asserts that
-/// the compiled `FROZEN_*` tables are exactly its `class_profiles`, `outcomes`,
-/// `class_narrowings`, no-denominator set and aggregate.  A hand edit, a stale
-/// artifact, or a table regenerated without the other is a failure here, so the
-/// static table can never drift away from the recorded measurement.
-#[test]
-fn frozen_tables_are_derived_from_the_committed_artifact() {
-    let path = repo_root().join("artifacts/parse_compat/external_holdout_release_probe.json");
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("FATAL {PROBE} cannot read {}: {error}", path.display()));
-    let artifact: serde_json::Value =
-        serde_json::from_str(&text).expect("the committed artifact is valid JSON");
-
-    // outcomes -> FROZEN_METRICS
-    let outcomes = artifact["outcomes"].as_array().expect("outcomes");
-    assert_eq!(outcomes.len(), FROZEN_METRICS.len());
-    for (row, frozen) in outcomes.iter().zip(FROZEN_METRICS.iter()) {
-        assert_eq!(row["document_id"].as_str(), Some(frozen.article_id));
-        assert_eq!(
-            row["source_population"].as_u64(),
-            Some(frozen.source_population as u64)
-        );
-        assert_eq!(row["admitted"].as_u64(), Some(frozen.admitted as u64));
-        assert_eq!(row["conserved"].as_u64(), Some(frozen.conserved as u64));
-        assert_eq!(
-            row["agreement_ratio_micros"].as_u64(),
-            Some(frozen.agreement_micros)
-        );
-        assert_eq!(row["uncertainty_low"].as_u64(), Some(frozen.low_micros));
-        assert_eq!(row["uncertainty_high"].as_u64(), Some(frozen.high_micros));
-        assert_eq!(
-            row["uncertainty_width_micros"].as_u64(),
-            Some(frozen.width_micros)
-        );
+/// Compare the recorded tables against the committed artifact row by row, naming
+/// every disagreement.  The names are the guard's contract:
+/// `frozen_tables_artifact_sha256` (the tables describe a different artifact),
+/// `frozen_tables_missing:<id>` (a document present on one side but not the
+/// other), and `frozen_tables_row_drift:<id>` (a recorded value the artifact does
+/// not carry).  A pure function so the guard can prove its own rejections.
+fn frozen_tables_drift(tables: &Json, artifact: &Json, artifact_bytes: &[u8]) -> Vec<String> {
+    let mut drift = Vec::new();
+    let recorded_sha = format!("{:x}", Sha256::digest(artifact_bytes));
+    if tables["artifact_sha256"].as_str() != Some(recorded_sha.as_str()) {
+        drift.push("frozen_tables_artifact_sha256".to_string());
     }
 
-    // class_profiles -> FROZEN_PROFILE
-    let profiles = artifact["class_profiles"]
+    let empty: Vec<Json> = Vec::new();
+    let recorded: BTreeMap<&str, &Json> = tables["documents"]
         .as_array()
-        .expect("class_profiles");
-    assert_eq!(profiles.len(), FROZEN_PROFILE.len());
-    for (row, frozen) in profiles.iter().zip(FROZEN_PROFILE.iter()) {
-        assert_eq!(row["document_id"].as_str(), Some(frozen.article_id));
-        let classes = row["classes"].as_array().expect("classes");
-        assert_eq!(classes.len(), frozen.classes.len());
-        for (class, frozen_class) in classes.iter().zip(frozen.classes.iter()) {
-            let (token, source_population, admitted, conserved, fabricated) = *frozen_class;
-            assert_eq!(class["class"].as_str(), Some(token));
-            assert_eq!(
-                class["source_population"].as_u64(),
-                Some(source_population as u64)
-            );
-            assert_eq!(class["admitted"].as_u64(), Some(admitted as u64));
-            assert_eq!(class["conserved"].as_u64(), Some(conserved as u64));
-            assert_eq!(class["fabricated"].as_u64(), Some(fabricated as u64));
+        .unwrap_or(&empty)
+        .iter()
+        .filter_map(|document| Some((document["article_id"].as_str()?, document)))
+        .collect();
+    let outcomes: BTreeMap<&str, &Json> = artifact["outcomes"]
+        .as_array()
+        .unwrap_or(&empty)
+        .iter()
+        .filter_map(|outcome| Some((outcome["document_id"].as_str()?, outcome)))
+        .collect();
+    let profiles: BTreeMap<&str, &Json> = artifact["class_profiles"]
+        .as_array()
+        .unwrap_or(&empty)
+        .iter()
+        .filter_map(|profile| Some((profile["document_id"].as_str()?, profile)))
+        .collect();
+
+    for (document_id, outcome) in &outcomes {
+        let Some(document) = recorded.get(document_id) else {
+            drift.push(format!("frozen_tables_missing:{document_id}"));
+            continue;
+        };
+        let mut row_ok = true;
+        let observed = (
+            outcome["identity_sha256"].as_str(),
+            outcome["source_population"].as_u64(),
+            outcome["admitted"].as_u64(),
+            outcome["conserved"].as_u64(),
+            outcome["fabricated"].as_u64(),
+            outcome["agreement_ratio_micros"].as_u64(),
+            outcome["uncertainty_low"].as_u64(),
+            outcome["uncertainty_high"].as_u64(),
+            outcome["uncertainty_width_micros"].as_u64(),
+            outcome["latency_ms"].as_u64(),
+        );
+        let expected = (
+            document["sha256"].as_str(),
+            document["source_population"].as_u64(),
+            document["admitted"].as_u64(),
+            document["conserved"].as_u64(),
+            document["rejected"].as_u64(),
+            document["agreement_micros"].as_u64(),
+            document["uncertainty_low_micros"].as_u64(),
+            document["uncertainty_high_micros"].as_u64(),
+            document["uncertainty_width_micros"].as_u64(),
+            document["latency_ms"].as_u64(),
+        );
+        if observed != expected {
+            row_ok = false;
+        }
+        let margins = outcome["margins"].as_array().cloned().unwrap_or_default();
+        let margin_pass = margins
+            .iter()
+            .filter(|margin| margin["verdict"].as_str() == Some("PASS"))
+            .count() as u64;
+        let margin_fail = margins
+            .iter()
+            .filter(|margin| margin["verdict"].as_str() == Some("FAIL"))
+            .count() as u64;
+        if document["margin_pass"].as_u64() != Some(margin_pass)
+            || document["margin_fail"].as_u64() != Some(margin_fail)
+            || document["no_denominator"].as_bool()
+                != Some(outcome["agreement_ratio_micros"].is_null())
+        {
+            row_ok = false;
+        }
+        match profiles.get(document_id) {
+            Some(profile) => {
+                let artifact_classes: BTreeMap<&str, &Json> = profile["classes"]
+                    .as_array()
+                    .unwrap_or(&empty)
+                    .iter()
+                    .filter_map(|class| Some((class["class"].as_str()?, class)))
+                    .collect();
+                let recorded_classes = document["profile"].as_array().cloned().unwrap_or_default();
+                if recorded_classes.len() != artifact_classes.len() {
+                    row_ok = false;
+                }
+                for class in &recorded_classes {
+                    let Some(artifact_class) =
+                        artifact_classes.get(class["class"].as_str().unwrap_or_default())
+                    else {
+                        row_ok = false;
+                        continue;
+                    };
+                    if class["source_population"].as_u64()
+                        != artifact_class["source_population"].as_u64()
+                        || class["admitted"].as_u64() != artifact_class["admitted"].as_u64()
+                        || class["conserved"].as_u64() != artifact_class["conserved"].as_u64()
+                        || class["rejected"].as_u64() != artifact_class["fabricated"].as_u64()
+                    {
+                        row_ok = false;
+                    }
+                }
+            }
+            None => row_ok = false,
+        }
+        if !row_ok {
+            drift.push(format!("frozen_tables_row_drift:{document_id}"));
+        }
+    }
+    for document_id in recorded.keys() {
+        if !outcomes.contains_key(document_id) {
+            drift.push(format!("frozen_tables_missing:{document_id}"));
         }
     }
 
-    // class_narrowings -> FROZEN_NARROWINGS
-    let mut artifact_narrowings: Vec<(String, String, usize, usize)> = artifact["class_narrowings"]
+    let aggregate = &artifact["evaluated_population"]["aggregate"];
+    let recorded_aggregate = &tables["aggregate"];
+    let aggregate_ok = recorded_aggregate["documents"].as_u64() == aggregate["documents"].as_u64()
+        && recorded_aggregate["source_population"].as_u64()
+            == aggregate["source_population"].as_u64()
+        && recorded_aggregate["admitted"].as_u64() == aggregate["admitted"].as_u64()
+        && recorded_aggregate["tp"].as_u64() == aggregate["tp"].as_u64()
+        && recorded_aggregate["fn"].as_u64() == aggregate["fn"].as_u64()
+        && recorded_aggregate["fp"].as_u64() == aggregate["fp"].as_u64()
+        && recorded_aggregate["agreeing_documents"].as_u64()
+            == aggregate["agreeing_documents"].as_u64()
+        && recorded_aggregate["margin_pass"].as_u64() == aggregate["margin_pass"].as_u64()
+        && recorded_aggregate["margin_fail"].as_u64() == aggregate["margin_fail"].as_u64()
+        && recorded_aggregate["no_denominator_documents"].as_u64()
+            == aggregate["no_denominator_documents"].as_u64();
+    if !aggregate_ok {
+        drift.push("frozen_tables_row_drift:aggregate".to_string());
+    }
+
+    let mut recorded_narrowings: BTreeSet<(String, String, u64, u64)> = BTreeSet::new();
+    for document in tables["documents"].as_array().unwrap_or(&empty) {
+        let id = document["article_id"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string();
+        for narrowing in document["narrowings"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+        {
+            recorded_narrowings.insert((
+                id.clone(),
+                narrowing["class"].as_str().unwrap_or_default().to_string(),
+                narrowing["source_population"].as_u64().unwrap_or(0),
+                narrowing["admitted"].as_u64().unwrap_or(0),
+            ));
+        }
+    }
+    let artifact_narrowings: BTreeSet<(String, String, u64, u64)> = artifact["class_narrowings"]
         .as_array()
-        .expect("class_narrowings")
+        .unwrap_or(&empty)
         .iter()
         .map(|row| {
             (
-                row["document_id"]
-                    .as_str()
-                    .expect("document_id")
-                    .to_string(),
-                row["class"].as_str().expect("class").to_string(),
-                row["source_population"].as_u64().expect("source") as usize,
-                row["admitted"].as_u64().expect("admitted") as usize,
+                row["document_id"].as_str().unwrap_or_default().to_string(),
+                row["class"].as_str().unwrap_or_default().to_string(),
+                row["source_population"].as_u64().unwrap_or(0),
+                row["admitted"].as_u64().unwrap_or(0),
             )
         })
         .collect();
-    artifact_narrowings.sort();
-    let mut frozen_narrowings: Vec<(String, String, usize, usize)> = FROZEN_NARROWINGS
-        .iter()
-        .map(|(doc, class, source_population, admitted)| {
-            (
-                (*doc).to_string(),
-                (*class).to_string(),
-                *source_population,
-                *admitted,
-            )
-        })
-        .collect();
-    frozen_narrowings.sort();
-    assert_eq!(artifact_narrowings, frozen_narrowings);
+    if recorded_narrowings != artifact_narrowings {
+        drift.push("frozen_tables_row_drift:narrowings".to_string());
+    }
 
-    // class_profiles with no carrier -> FROZEN_NO_DENOMINATOR_CLASSES
-    let mut artifact_void: Vec<(String, String)> = profiles
-        .iter()
-        .flat_map(|document| {
-            let id = document["document_id"]
-                .as_str()
-                .unwrap_or_default()
-                .to_string();
-            document["classes"]
-                .as_array()
-                .cloned()
-                .unwrap_or_default()
-                .into_iter()
-                .filter(|class| class["source_population"].as_u64() == Some(0))
-                .map(|class| {
-                    (
-                        id.clone(),
-                        class["class"].as_str().unwrap_or_default().to_string(),
-                    )
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect();
-    artifact_void.sort();
-    let mut frozen_void: Vec<(String, String)> = FROZEN_NO_DENOMINATOR_CLASSES
-        .iter()
-        .map(|(document, class)| ((*document).to_string(), (*class).to_string()))
-        .collect();
-    frozen_void.sort();
-    assert_eq!(artifact_void, frozen_void);
+    drift
+}
 
-    // evaluated aggregate -> frozen_aggregate()
-    let aggregate = &artifact["evaluated_population"]["aggregate"];
-    let frozen = frozen_aggregate();
-    assert_eq!(
-        aggregate["documents"].as_u64(),
-        Some(frozen.documents as u64)
+/// The recorded measurement tables are DERIVED FROM the committed runtime
+/// artifact, not hand-typed: this guard re-reads
+/// `artifacts/parse_compat/external_holdout_release_probe.json` and asserts that
+/// the recorded profile, outcomes, narrowings and aggregate are exactly its
+/// `class_profiles`, `outcomes`, `class_narrowings` and aggregate.  A substituted
+/// number, a removed document, a stale artifact, or a table regenerated without
+/// the other fails here by name (`frozen_tables_artifact_sha256`,
+/// `frozen_tables_missing:<id>`, `frozen_tables_row_drift:<id>`), so the recorded
+/// table can never drift away from the recorded measurement.
+#[test]
+fn frozen_tables_are_derived_from_the_committed_artifact() {
+    let tables = frozen_tables();
+    let artifact_path = repo_root().join(ARTIFACT_REL);
+    let artifact_bytes = std::fs::read(&artifact_path).unwrap_or_else(|error| {
+        panic!(
+            "FATAL {PROBE} cannot read {}: {error}",
+            artifact_path.display()
+        )
+    });
+    let artifact: Json =
+        serde_json::from_slice(&artifact_bytes).expect("the committed artifact is valid JSON");
+    let drift = frozen_tables_drift(&tables, &artifact, &artifact_bytes);
+    assert!(
+        drift.is_empty(),
+        "{PROBE} the recorded tables drifted from the committed artifact: {drift:#?}"
     );
-    assert_eq!(
-        aggregate["source_population"].as_u64(),
-        Some(frozen.source_population as u64)
+
+    // The guard's own rejections, one mutation at a time: a substituted row the
+    // pin would refuse, a removed document, and a table that describes another
+    // artifact.
+    let mut substituted = tables.clone();
+    let bumped = substituted["documents"][0]["admitted"]
+        .as_u64()
+        .unwrap_or(0)
+        + 1;
+    substituted["documents"][0]["admitted"] = json!(bumped);
+    let substituted_id = substituted["documents"][0]["article_id"]
+        .as_str()
+        .expect("article_id")
+        .to_string();
+    let substituted_bytes =
+        serde_json::to_vec(&substituted).expect("serialize the substituted tables");
+    assert_ne!(
+        format!("{:x}", Sha256::digest(&substituted_bytes)),
+        FROZEN_TABLES_SHA256,
+        "a substituted recorded row must not keep the pinned digest"
     );
-    assert_eq!(aggregate["admitted"].as_u64(), Some(frozen.admitted as u64));
-    assert_eq!(aggregate["tp"].as_u64(), Some(frozen.tp as u64));
-    assert_eq!(aggregate["fn"].as_u64(), Some(frozen.fn_ as u64));
-    assert_eq!(aggregate["fp"].as_u64(), Some(frozen.fp as u64));
-    assert_eq!(
-        aggregate["agreeing_documents"].as_u64(),
-        Some(frozen.agreeing_documents as u64)
+    assert!(
+        check_frozen_tables_pin(&substituted_bytes).is_err(),
+        "the pin must refuse a substituted recorded row"
     );
-    assert_eq!(
-        aggregate["margin_pass"].as_u64(),
-        Some(frozen.margin_pass as u64)
+    let drift = frozen_tables_drift(&substituted, &artifact, &artifact_bytes);
+    assert!(
+        drift
+            .iter()
+            .any(|name| name == &format!("frozen_tables_row_drift:{substituted_id}")),
+        "a substituted row must fail by name: {drift:#?}"
     );
-    assert_eq!(
-        aggregate["margin_fail"].as_u64(),
-        Some(frozen.margin_fail as u64)
+
+    let mut removed = tables.clone();
+    let removed_id = removed["documents"]
+        .as_array_mut()
+        .expect("documents")
+        .pop()
+        .expect("a recorded document")["article_id"]
+        .as_str()
+        .expect("article_id")
+        .to_string();
+    let drift = frozen_tables_drift(&removed, &artifact, &artifact_bytes);
+    assert!(
+        drift
+            .iter()
+            .any(|name| name == &format!("frozen_tables_missing:{removed_id}")),
+        "a removed document must fail by name: {drift:#?}"
     );
-    assert_eq!(
-        aggregate["no_denominator_documents"].as_u64(),
-        Some(frozen.no_denominator_documents as u64)
+
+    let mut foreign = tables.clone();
+    foreign["artifact_sha256"] = json!("0".repeat(64));
+    let drift = frozen_tables_drift(&foreign, &artifact, &artifact_bytes);
+    assert!(
+        drift
+            .iter()
+            .any(|name| name == "frozen_tables_artifact_sha256"),
+        "a table that describes another artifact must fail by name: {drift:#?}"
     );
 }

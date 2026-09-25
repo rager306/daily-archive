@@ -74,13 +74,15 @@ use serde::Deserialize;
 use serde_json::{Value as Json, json};
 use serde_yaml::Value as Yaml;
 use sha2::{Digest, Sha256};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 
 /// Every failure message carries this prefix so an inspection never guesses.
 const PROBE: &str = "[external-holdout-release-probe]";
 
 const REPORT_SCHEMA: &str = "external-holdout-release-probe.v1";
+/// The recorded-tables schema the `--emit-frozen-tables` generator writes.
+const FROZEN_TABLES_SCHEMA: &str = "external-holdout-frozen-tables.v1";
 const MANIFEST_REL: &str = "data/parse/acceptance_manifest.yaml";
 const PROVENANCE_REL: &str = "crates/da-parse/tests/fixtures/holdout/provenance.yaml";
 const FIXTURE_DIR: &str = "crates/da-parse/tests/fixtures/holdout";
@@ -3440,6 +3442,117 @@ fn build_report(
     })
 }
 
+/// Project the canonical artifact into the recorded measurement tables.
+///
+/// The tables are a *projection of the artifact*, not a second measurement: the
+/// same `--report` run that passes the artifact guards emits them, so a recorded
+/// row can never be written beside an artifact it does not describe.  Every
+/// number is read back from the artifact JSON (never recomputed), and each
+/// narrowing reason is the artifact's own typed-gap reason.  A narrowing the
+/// artifact leaves unexplained (an occurrence conserved by the source subtree
+/// rather than rejected by the admitted band) records a null reason, never an
+/// invented one.
+fn build_frozen_tables(report: &Json, artifact_sha256: &str) -> Json {
+    let empty: Vec<Json> = Vec::new();
+    let outcomes = report["outcomes"].as_array().unwrap_or(&empty);
+    let profiles = report["class_profiles"].as_array().unwrap_or(&empty);
+    let narrowings = report["class_narrowings"].as_array().unwrap_or(&empty);
+    let profile_by_document: BTreeMap<&str, &Json> = profiles
+        .iter()
+        .filter_map(|profile| Some((profile["document_id"].as_str()?, profile)))
+        .collect();
+
+    let documents: Vec<Json> = outcomes
+        .iter()
+        .map(|outcome| {
+            let document_id = outcome["document_id"].as_str().unwrap_or_default();
+            let classes = profile_by_document
+                .get(document_id)
+                .and_then(|profile| profile["classes"].as_array())
+                .cloned()
+                .unwrap_or_default();
+            let gaps: BTreeMap<&str, &str> = outcome["typed_gaps"]
+                .as_array()
+                .map(Vec::as_slice)
+                .unwrap_or(&[])
+                .iter()
+                .filter_map(|gap| Some((gap["class"].as_str()?, gap["reason"].as_str()?)))
+                .collect();
+            let margins = outcome["margins"].as_array().cloned().unwrap_or_default();
+            let margin_pass = margins
+                .iter()
+                .filter(|margin| margin["verdict"].as_str() == Some("PASS"))
+                .count();
+            let margin_fail = margins
+                .iter()
+                .filter(|margin| margin["verdict"].as_str() == Some("FAIL"))
+                .count();
+            let document_narrowings: Vec<Json> = narrowings
+                .iter()
+                .filter(|narrowing| narrowing["document_id"].as_str() == Some(document_id))
+                .map(|narrowing| {
+                    let class = narrowing["class"].as_str().unwrap_or_default();
+                    json!({
+                        "class": class,
+                        "reason": gaps.get(class).copied().map(Json::from).unwrap_or(Json::Null),
+                        "source_population": narrowing["source_population"],
+                        "admitted": narrowing["admitted"],
+                    })
+                })
+                .collect();
+            json!({
+                "article_id": document_id,
+                "sha256": outcome["identity_sha256"],
+                "source_population": outcome["source_population"],
+                "admitted": outcome["admitted"],
+                "conserved": outcome["conserved"],
+                "rejected": outcome["fabricated"],
+                "agreement_micros": outcome["agreement_ratio_micros"],
+                "uncertainty_low_micros": outcome["uncertainty_low"],
+                "uncertainty_high_micros": outcome["uncertainty_high"],
+                "uncertainty_width_micros": outcome["uncertainty_width_micros"],
+                "latency_ms": outcome["latency_ms"],
+                "margin_pass": margin_pass,
+                "margin_fail": margin_fail,
+                "no_denominator": outcome["agreement_ratio_micros"].is_null(),
+                "profile": classes.iter().map(|class| json!({
+                    "class": class["class"],
+                    "source_population": class["source_population"],
+                    "admitted": class["admitted"],
+                    "conserved": class["conserved"],
+                    "rejected": class["fabricated"],
+                })).collect::<Vec<Json>>(),
+                "narrowings": document_narrowings,
+            })
+        })
+        .collect();
+
+    let aggregate = &report["evaluated_population"]["aggregate"];
+    let recorded_at = report["reference_population"]["reference_release"]["captured_at_unix_secs"]
+        .as_i64()
+        .and_then(|seconds| chrono::DateTime::from_timestamp(seconds, 0))
+        .map(|timestamp| timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string())
+        .unwrap_or_default();
+    json!({
+        "schema_version": FROZEN_TABLES_SCHEMA,
+        "recorded_at": recorded_at,
+        "artifact_sha256": artifact_sha256,
+        "aggregate": {
+            "documents": aggregate["documents"],
+            "source_population": aggregate["source_population"],
+            "admitted": aggregate["admitted"],
+            "tp": aggregate["tp"],
+            "fn": aggregate["fn"],
+            "fp": aggregate["fp"],
+            "agreeing_documents": aggregate["agreeing_documents"],
+            "margin_pass": aggregate["margin_pass"],
+            "margin_fail": aggregate["margin_fail"],
+            "no_denominator_documents": aggregate["no_denominator_documents"],
+        },
+        "documents": documents,
+    })
+}
+
 fn expected_probe(
     lane: &LaneData,
     provenance: &Provenance,
@@ -3938,6 +4051,11 @@ struct Args {
     /// Print the per-document profile and the aggregate to stdout.
     #[arg(long)]
     print: bool,
+    /// Write the recorded measurement tables to this path.  The tables are a
+    /// projection of the canonical run, so `--report` is required: a recorded
+    /// measurement is never written without the artifact it describes.
+    #[arg(long, value_name = "PATH")]
+    emit_frozen_tables: Option<PathBuf>,
 }
 
 fn run(args: &Args) -> anyhow::Result<()> {
@@ -4067,6 +4185,25 @@ fn run(args: &Args) -> anyhow::Result<()> {
         expected.aggregate.documents,
         expected.aggregate.admitted
     );
+
+    // The recorded tables are emitted from the same validated run, and always
+    // after the artifact they project: `--emit-frozen-tables` cannot be used to
+    // record a measurement the canonical artifact does not carry (`main` refuses
+    // the run without `--report`, so this branch always has a written artifact).
+    if let Some(tables_path) = args.emit_frozen_tables.as_ref() {
+        let artifact_sha256 = format!("{:x}", Sha256::digest(&bytes));
+        let tables = build_frozen_tables(&report, &artifact_sha256);
+        let mut tables_bytes = serde_json::to_vec_pretty(&tables)?;
+        tables_bytes.push(b'\n');
+        std::fs::write(tables_path, &tables_bytes)?;
+        println!(
+            "PROBE FROZEN TABLES wrote {} ({} bytes, documents={}, artifact_sha256={})",
+            tables_path.display(),
+            tables_bytes.len(),
+            report["outcomes"].as_array().map(Vec::len).unwrap_or(0),
+            artifact_sha256
+        );
+    }
     Ok(())
 }
 
