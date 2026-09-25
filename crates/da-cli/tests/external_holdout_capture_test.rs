@@ -38,14 +38,62 @@ use std::process::{Command, Output};
 
 /// Committed frozen-reference directory (the DATA pins point here).
 const FIXTURE_DIR: &str = "crates/da-parse/tests/fixtures/holdout";
-/// The five declared holdout documents, in declaration order.
-const ARTICLE_IDS: [&str; 5] = [
-    "1203.2295",
-    "2401.17167",
-    "2411.07228",
-    "2505.16270",
-    "2608.22118",
-];
+
+/// Read the acceptance manifest (DATA lane + frozen pins).
+fn acceptance_manifest() -> Yaml {
+    serde_yaml::from_str(
+        &fs::read_to_string(repo_root().join("data/parse/acceptance_manifest.yaml"))
+            .expect("read acceptance manifest"),
+    )
+    .expect("acceptance manifest is valid YAML")
+}
+
+/// The `external_holdout_contract.release_probe` lane.
+fn release_probe_lane(manifest: &Yaml) -> &Yaml {
+    manifest
+        .get("external_holdout_contract")
+        .and_then(|contract| contract.get("release_probe"))
+        .expect("release_probe lane")
+}
+
+/// The `article_id`s of one lane partition list.
+fn lane_ids(lane: &Yaml, key: &str) -> BTreeSet<String> {
+    lane.get(key)
+        .and_then(Yaml::as_sequence)
+        .map(|rows| {
+            rows.iter()
+                .filter_map(|row| row.get("article_id").and_then(Yaml::as_str))
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The full frozen holdout population, from the holdout manifest DATA.
+fn holdout_ids() -> BTreeSet<String> {
+    let manifest: Yaml = serde_yaml::from_str(
+        &fs::read_to_string(repo_root().join("data/parse/holdout_manifests.yaml"))
+            .expect("read holdout manifest"),
+    )
+    .expect("holdout manifest is valid YAML");
+    manifest
+        .get("articles")
+        .and_then(Yaml::as_sequence)
+        .expect("holdout articles")
+        .iter()
+        .filter_map(|row| row.get("article_id").and_then(Yaml::as_str))
+        .map(str::to_string)
+        .collect()
+}
+
+/// How many declared holdout ids are also production-materialized
+/// (`data/processed`). Computed, never hardcoded: growing the population must
+/// not leave a stale literal behind.
+fn production_overlap(ids: &BTreeSet<String>) -> usize {
+    ids.iter()
+        .filter(|id| repo_root().join("data/processed").join(id).is_dir())
+        .count()
+}
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -258,15 +306,21 @@ fn preflight_checks_the_committed_inputs_and_writes_nothing() {
     let fixture_dir = repo_root().join(FIXTURE_DIR);
     let before = directory_fingerprint(&fixture_dir);
 
-    // Preflight is read-only by construction and probes whatever endpoint the
-    // environment provides, so this asserts the hermetic half (the declared
-    // PDF bytes, the DATA release pin, and the no-write property) and accepts
-    // either outcome for the live half.
+    // The population is read from DATA, so the test grows with the manifest
+    // instead of pinning five literals. Preflight is read-only by construction
+    // and probes whatever endpoint the environment provides, so this asserts
+    // the hermetic half (the declared PDF bytes, the DATA release pin, and the
+    // no-write property) and accepts either outcome for the live half.
     let output = run(&["--preflight"]);
     let stdout = stdout_of(&output);
     let lines = labelled_lines(&stdout, "PREFLIGHT ");
 
-    for article_id in ARTICLE_IDS {
+    let frozen = holdout_ids();
+    assert!(
+        !frozen.is_empty(),
+        "the frozen population must be declared in DATA, not an empty list"
+    );
+    for article_id in &frozen {
         assert_eq!(
             lines
                 .get(&format!("article:{article_id}"))
@@ -290,7 +344,11 @@ fn preflight_checks_the_committed_inputs_and_writes_nothing() {
         "preflight must print a summary line:\n{stdout}"
     );
     assert!(
-        stdout.contains("CENSUS production_materialization_overlap -> 4/5"),
+        stdout.contains(&format!(
+            "CENSUS production_materialization_overlap -> {}/{}",
+            production_overlap(&frozen),
+            frozen.len()
+        )),
         "the production overlap census is measured, never asserted:\n{stdout}"
     );
 
@@ -311,7 +369,19 @@ fn verify_is_green_on_the_committed_reference_offline() {
         stderr_of(&output)
     );
     let checks = labelled_lines(&stdout, "VERIFY ");
-    for article_id in ARTICLE_IDS {
+    // `--verify` re-hashes the measurable subset AND the typed exceptions, so a
+    // document excluded from measurement is still byte-verified rather than
+    // skipped. Read the expectation from the lane partition DATA.
+    let manifest = acceptance_manifest();
+    let lane = release_probe_lane(&manifest);
+    let mut verified = lane_ids(lane, "reference_tei");
+    verified.extend(lane_ids(lane, "reference_exceptions"));
+    assert_eq!(
+        verified,
+        holdout_ids(),
+        "the measurable subset plus the typed exceptions must cover the frozen population"
+    );
+    for article_id in &verified {
         assert_eq!(
             checks
                 .get(&format!("reference:{article_id}"))
@@ -462,65 +532,72 @@ fn verify_fails_closed_without_a_provenance_record() {
 #[test]
 fn frozen_reference_matches_its_declared_pins_on_disk() {
     // An independent reading of the committed artefacts: the DATA pins, the
-    // provenance record and the files on disk must all agree, and the declared
-    // set must be exactly the five non-gold documents.
-    let manifest: Yaml = serde_yaml::from_str(
-        &fs::read_to_string(repo_root().join("data/parse/acceptance_manifest.yaml"))
-            .expect("read acceptance manifest"),
-    )
-    .expect("acceptance manifest is valid YAML");
-    let lane = manifest
-        .get("external_holdout_contract")
-        .and_then(|contract| contract.get("release_probe"))
-        .expect("release_probe lane");
-    let rows = lane
-        .get("reference_tei")
-        .and_then(Yaml::as_sequence)
-        .expect("reference_tei pins");
-    let pinned: BTreeSet<&str> = rows
-        .iter()
-        .filter_map(|row| row.get("article_id").and_then(Yaml::as_str))
-        .collect();
+    // provenance record and the files on disk must all agree for BOTH the
+    // measurable subset and the typed exceptions, and the two halves must
+    // partition the declared frozen population exactly (no overlap, no gaps, no
+    // document read as a measured zero).
+    let manifest = acceptance_manifest();
+    let lane = release_probe_lane(&manifest);
+    let measurable = lane_ids(lane, "reference_tei");
+    let exceptions = lane_ids(lane, "reference_exceptions");
+    let frozen = holdout_ids();
     assert_eq!(
-        pinned,
-        ARTICLE_IDS.iter().copied().collect::<BTreeSet<&str>>(),
-        "the frozen reference must be exactly the five declared holdout documents"
+        measurable.len() + exceptions.len(),
+        frozen.len(),
+        "measurable + exceptions must cover the frozen population"
+    );
+    assert!(
+        measurable.is_disjoint(&exceptions),
+        "the two partition halves must not overlap"
+    );
+    let mut union = measurable.clone();
+    union.extend(exceptions.iter().cloned());
+    assert_eq!(
+        union, frozen,
+        "the partition must cover exactly the declared frozen documents"
     );
 
     let provenance = read_provenance(&repo_root().join(FIXTURE_DIR));
-    let provenance_hashes: BTreeSet<&str> = provenance
+    let provenance_hashes: BTreeSet<String> = provenance
         .get("documents")
         .and_then(Yaml::as_sequence)
         .expect("provenance documents")
         .iter()
         .filter_map(|row| row.get("sha256").and_then(Yaml::as_str))
+        .map(str::to_string)
         .collect();
 
-    for row in rows {
-        let article_id = row
-            .get("article_id")
-            .and_then(Yaml::as_str)
-            .expect("article id");
-        let path = row.get("path").and_then(Yaml::as_str).expect("pin path");
-        let pin = row
-            .get("sha256")
-            .and_then(Yaml::as_str)
-            .expect("pin sha256");
-        let bytes = fs::read(repo_root().join(path))
-            .unwrap_or_else(|error| panic!("frozen reference `{path}` unreadable: {error}"));
-        assert_eq!(
-            sha256_prefixed(&bytes),
-            pin,
-            "the committed fixture `{article_id}` must match its DATA pin"
-        );
-        assert_eq!(
-            bytes.len() as u64,
-            row.get("size_bytes").and_then(Yaml::as_u64).unwrap_or(0),
-            "the committed fixture `{article_id}` must match its declared size"
-        );
-        assert!(
-            provenance_hashes.contains(pin),
-            "the provenance record must carry the same pin for `{article_id}`"
-        );
+    for key in ["reference_tei", "reference_exceptions"] {
+        let rows = lane
+            .get(key)
+            .and_then(Yaml::as_sequence)
+            .unwrap_or_else(|| panic!("lane partition `{key}`"));
+        for row in rows {
+            let article_id = row
+                .get("article_id")
+                .and_then(Yaml::as_str)
+                .expect("article id");
+            let path = row.get("path").and_then(Yaml::as_str).expect("pin path");
+            let pin = row
+                .get("sha256")
+                .and_then(Yaml::as_str)
+                .expect("pin sha256");
+            let bytes = fs::read(repo_root().join(path))
+                .unwrap_or_else(|error| panic!("frozen reference `{path}` unreadable: {error}"));
+            assert_eq!(
+                sha256_prefixed(&bytes),
+                pin,
+                "the committed fixture `{article_id}` must match its DATA pin"
+            );
+            assert_eq!(
+                bytes.len() as u64,
+                row.get("size_bytes").and_then(Yaml::as_u64).unwrap_or(0),
+                "the committed fixture `{article_id}` must match its declared size"
+            );
+            assert!(
+                provenance_hashes.contains(pin),
+                "the provenance record must carry the same pin for `{article_id}`"
+            );
+        }
     }
 }

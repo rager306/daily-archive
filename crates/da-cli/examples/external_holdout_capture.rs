@@ -7,10 +7,11 @@
 //! the only writer of that reference:
 //!
 //! - **`--preflight`** (default) — read-only. It resolves every declared input
-//!   (the five sha256-pinned holdout PDFs, the Java endpoint, the declared Java
-//!   release, the external `bytes_absent` band, the production-materialization
-//!   census) and prints one `PREFLIGHT <req> -> ok|blocked:<label>` line per
-//!   requirement. Any blocker exits non-zero and writes nothing.
+//!   (the sha256-pinned holdout PDFs declared in the manifest, the Java
+//!   endpoint, the declared Java release, the external `bytes_absent` band, the
+//!   production-materialization census) and prints one
+//!   `PREFLIGHT <req> -> ok|blocked:<label>` line per requirement. Any blocker
+//!   exits non-zero and writes nothing.
 //! - **`--capture --out <dir>`** — after a green preflight, runs each PDF
 //!   through the existing typed REST transport (one
 //!   `POST /api/processFulltextDocument` per document, `structural` profile per
@@ -64,7 +65,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 /// Panic/log prefix, so a failure names the tool that produced it.
 const PREFIX: &str = "[external-holdout-capture]";
 
-/// Declared holdout identity list (five sha256-pinned non-gold arXiv PDFs).
+/// Declared holdout identity manifest (sha256-pinned non-gold arXiv PDFs; the
+/// population size is read from DATA, never pinned in code).
 const HOLDOUT_MANIFEST: &str = "data/parse/holdout_manifests.yaml";
 /// Sanctioned DATA carrier holding the frozen release-probe lane (D377).
 const ACCEPTANCE_MANIFEST: &str = "data/parse/acceptance_manifest.yaml";
@@ -454,14 +456,23 @@ fn reference_freeze(manifest: &Value) -> Result<ReferenceFreeze> {
             "{PREFIX} probe_lane_missing: `{ACCEPTANCE_MANIFEST}` carries no \
              external_holdout_contract.release_probe"
         ))?;
-    let documents = field(lane, "reference_tei")
+    let measurable = field(lane, "reference_tei")
         .and_then(Value::as_sequence)
         .context(format!(
             "{PREFIX} reference_freeze_captured_absent: the release_probe lane carries no \
              `reference_tei` list"
         ))?;
+    // The frozen population is partitioned into the measurable `reference_tei`
+    // subset and the typed `reference_exceptions`. `--verify` re-hashes BOTH:
+    // an exception is frozen reference bytes too, so its pins are checked rather
+    // than skipped. The split is a measurement fact, not a licence to stop
+    // verifying the excluded bytes.
+    let exceptions: Vec<Value> = field(lane, "reference_exceptions")
+        .and_then(Value::as_sequence)
+        .cloned()
+        .unwrap_or_default();
     let mut pins = Vec::new();
-    for document in documents {
+    for document in measurable.iter().chain(exceptions.iter()) {
         pins.push(ReferenceDocument {
             article_id: field_str(document, "article_id")
                 .unwrap_or_default()
@@ -549,7 +560,9 @@ fn release_pin_reference(root: &Path, release_pin: &str) -> Option<(String, Stri
 }
 
 /// Count how many declared holdout ids are also materialized production
-/// coverage. Measured, never asserted: the census is printed as `n/5`.
+/// coverage. Measured, never asserted: the census is printed as
+/// `n/<declared population>`, so growing the population cannot leave a stale
+/// literal behind.
 fn production_materialization_overlap(root: &Path, articles: &[ArticleIdentity]) -> usize {
     articles
         .iter()
@@ -834,9 +847,9 @@ async fn run_capture(root: &Path, args: &Args, preflight: &Preflight) -> Result<
     // `--only-new`: adopt every declared article whose frozen fixture still
     // matches its provenance pin, and capture only the rest. This is what lets
     // a grown population extend the frozen reference without overwriting the
-    // already-committed rows: T01 measured that a re-capture is not
-    // byte-identical (0/5), so a blind `--capture` would silently replace them
-    // and break their DATA pins.
+    // already-committed rows: T01 measured that a re-capture of the five pilot
+    // documents is not byte-identical (0/5), so a blind `--capture` would
+    // silently replace them and break their DATA pins.
     let existing_documents: Vec<Value> = if args.only_new {
         let path = out_dir.join(PROVENANCE_FILE);
         if path.is_file() {

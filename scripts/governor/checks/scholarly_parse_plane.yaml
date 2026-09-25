@@ -135,7 +135,7 @@ bindings:
     - path: data/parse/api_compatibility_ledger.yaml
       sha256: fcce2f3e54780ba6385935aa111b733eb1a3dd25510e0907fa9baa0279092c28
     - path: data/parse/acceptance_manifest.yaml
-      sha256: c3909678ca20063bfd98f7d96e8bedfc133f33809351febeb57cea811d20ccbd
+      sha256: c3286bc40ebcd1ff27d9594de8228ac5c84d29016112414b064e9eee4e655972
     - path: data/parse/grobid_compatibility.yaml
       sha256: ddabd07e735551e8791b0625e25932f11f47ed862749fc95617cfd6149378201
     - path: data/parse/native_visual_heads.yaml
@@ -167,7 +167,7 @@ bindings:
     # here so the existing identity loop covers it by artifact-relative path; a
     # mutated artifact is named, never silently read as the frozen one.
     - path: artifacts/parse_compat/external_holdout_release_probe.json
-      sha256: 30479a606720bcd03cd87348ec9f16b13a75dfbd4e32376dda64a7c1fed6eefa
+      sha256: 8c6888750f5c89ee532f43d25a5ae13cb75621f30ba8d3067fa3d825f47869a6
   shared_promotion_contract: scripts/governor/checks/promotion_evidence_contract.yaml
   rollback_target: java-grobid-http@0.9.0-crf
   integration_evidence:
@@ -205,6 +205,27 @@ release_probe_lane:
   manifest: data/parse/acceptance_manifest.yaml
   lane_ref: external_holdout_contract.release_probe
   holdout_manifest: data/parse/holdout_manifests.yaml
+  # M512/S02/T06: the frozen population is partitioned into the measurable
+  # subset (`reference_tei`) and typed exceptions (`reference_exceptions`), both
+  # declared as DATA on the lane. The check consumes the partition instead of
+  # assuming every frozen document is measurable: frozen counters bind to the
+  # full population, measurable counters bind to the subset, and every exception
+  # is verified for identity, byte pins and a reason drawn from the closed
+  # vocabulary at `reference_exception_reasons`. A count the partition cannot
+  # reproduce is `release_probe_denominator` at the exact path, and an exception
+  # missing its pins or reason is named too — the exception list is never read
+  # as a measured zero and never silently skipped.
+  population_partition:
+    measurable_ref: reference_tei
+    exceptions_ref: reference_exceptions
+    exception_reasons_ref: reference_exception_reasons
+    frozen_counters:
+    - reference_population.documents
+    - production_catalog_overlap.documents
+    measurable_counters:
+    - evaluated_population.documents
+    - evaluated_population.aggregate.documents
+    - executed_population.documents
   # The release decision stays with a real human: every citation guard stays
   # closed until that decision is recorded.
   expected_values:

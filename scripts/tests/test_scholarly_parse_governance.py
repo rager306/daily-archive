@@ -268,9 +268,10 @@ def _copy_checker_surface(destination: Path) -> None:
         if holdout_rel:
             paths.add(holdout_rel)
         lane = _ref(_load(ROOT / str(lane_spec.get("manifest") or "")), str(lane_spec.get("lane_ref") or "")) or {}
-        for entry in lane.get("reference_tei") or []:
-            if isinstance(entry, dict) and entry.get("path"):
-                paths.add(str(entry["path"]))
+        for key in ("reference_tei", "reference_exceptions"):
+            for entry in lane.get(key) or []:
+                if isinstance(entry, dict) and entry.get("path"):
+                    paths.add(str(entry["path"]))
     for relative in paths:
         source = ROOT / relative
         target = destination / relative
@@ -305,6 +306,28 @@ def _probe_population(root: Path) -> int:
     """The expected document count, read from the holdout manifest DATA."""
     holdout = yaml.safe_load(_probe_holdout_path(root).read_text(encoding="utf-8")) or {}
     return len([article for article in (holdout.get("articles") or []) if isinstance(article, dict)])
+
+def _probe_partition_refs(root: Path) -> tuple[str, str]:
+    """The measurable and exception lane refs declared by the policy partition."""
+    partition = _load(POLICY_PATH)["release_probe_lane"].get("population_partition") or {}
+    return (
+        str(partition.get("measurable_ref") or "reference_tei"),
+        str(partition.get("exceptions_ref") or "reference_exceptions"),
+    )
+
+def _probe_measurable_population(root: Path) -> int:
+    """The measured subset, read from the lane partition DATA."""
+    spec = _load(POLICY_PATH)["release_probe_lane"]
+    lane = _ref(_load(root / str(spec["manifest"])), str(spec["lane_ref"])) or {}
+    measurable_ref, _ = _probe_partition_refs(root)
+    return len([entry for entry in (lane.get(measurable_ref) or []) if isinstance(entry, dict)])
+
+def _probe_exception_population(root: Path) -> int:
+    """The typed-exception count, read from the lane partition DATA."""
+    spec = _load(POLICY_PATH)["release_probe_lane"]
+    lane = _ref(_load(root / str(spec["manifest"])), str(spec["lane_ref"])) or {}
+    _, exceptions_ref = _probe_partition_refs(root)
+    return len([entry for entry in (lane.get(exceptions_ref) or []) if isinstance(entry, dict)])
 
 
 def test_canonical_shadow_report_uses_closed_snake_case_taxonomy():
@@ -3051,16 +3074,34 @@ def test_release_probe_counter_drift_reports_expected_and_observed(tmp_path: Pat
 
 def test_release_probe_document_counter_drift_is_flagged(tmp_path: Path):
     _copy_checker_surface(tmp_path)
-    documents = _probe_population(tmp_path)
+    measurable = _probe_measurable_population(tmp_path)
     path = _probe_artifact_path(tmp_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
-    payload["evaluated_population"]["aggregate"]["documents"] = documents - 1
+    payload["evaluated_population"]["aggregate"]["documents"] = measurable - 1
     path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
     flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
     assert any(
         "evaluated_population.aggregate.documents" in item.evidence
-        and f"expected={documents}" in item.evidence
-        and f"observed={documents - 1}" in item.evidence
+        and f"expected={measurable}" in item.evidence
+        and f"observed={measurable - 1}" in item.evidence
+        for item in flags
+    ), flags
+
+def test_release_probe_measurable_counter_binds_to_the_subset(tmp_path: Path):
+    """A measurable counter pinned to the frozen population is rejected, so the
+    typed exceptions stay visible instead of being read as measured rows."""
+    _copy_checker_surface(tmp_path)
+    measurable = _probe_measurable_population(tmp_path)
+    frozen = _probe_population(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["evaluated_population"]["documents"] = frozen
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "evaluated_population.documents" in item.evidence
+        and f"expected={measurable}" in item.evidence
+        and f"observed={frozen}" in item.evidence
         for item in flags
     ), flags
 
@@ -3113,6 +3154,8 @@ def test_release_probe_population_expectation_follows_the_manifest_data(tmp_path
     ]
     holdout_path.write_text(yaml.safe_dump(holdout), encoding="utf-8")
     grown = documents + 2
+    measurable = _probe_measurable_population(tmp_path)
+    exceptions = _probe_exception_population(tmp_path)
     flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
     # The expectation came from the article manifest, not a literal: the frozen
     # artifact still declares the old population and every carrier is named.
@@ -3122,12 +3165,22 @@ def test_release_probe_population_expectation_follows_the_manifest_data(tmp_path
         and f"observed={documents}" in item.evidence
         for item in flags
     ), flags
+    # The measurable subset keeps its own denominator: the grown population must
+    # be covered by reference_tei + reference_exceptions, so the flag names the
+    # expected measurable count (grown - exceptions) against the declared subset
+    # rather than demanding the frozen count.
     assert any(
-        "reference_tei" in item.evidence
-        and f"expected={grown}" in item.evidence
-        and f"observed={documents}" in item.evidence
+        ".reference_tei" in item.evidence
+        and f"expected={grown - exceptions}" in item.evidence
+        and f"observed={measurable}" in item.evidence
         for item in flags
     ), flags
+    # The two synthetic documents belong to neither half: the partition gap is
+    # named per document, not silently absorbed.
+    for synthetic in ("9999.00001", "9999.00002"):
+        assert any(
+            f"partition row for {synthetic}" in item.evidence for item in flags
+        ), flags
 
 
 def test_release_probe_policy_pins_the_population_carrier_not_the_count():
@@ -3207,6 +3260,69 @@ def test_release_probe_reference_byte_drift_is_flagged(tmp_path: Path):
     tei.write_bytes(tei.read_bytes() + b"\n")
     flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
     assert any("reference_tei" in item.evidence for item in flags), flags
+
+def test_release_probe_exception_unknown_reason_is_flagged(tmp_path: Path):
+    """An exception reason from outside the closed vocabulary fails closed."""
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    lane = manifest["external_holdout_contract"]["release_probe"]
+    lane["reference_exceptions"][0]["reason"] = "invented_reason"
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "reference_exceptions" in item.evidence
+        and ".reason" in item.evidence
+        and "invented_reason" in item.evidence
+        for item in flags
+    ), flags
+
+def test_release_probe_exception_byte_drift_is_flagged(tmp_path: Path):
+    """Exceptions carry frozen bytes; drifting exception bytes are not a skip."""
+    _copy_checker_surface(tmp_path)
+    lane = _load(_probe_lane_path(tmp_path))["external_holdout_contract"]["release_probe"]
+    tei = tmp_path / lane["reference_exceptions"][0]["path"]
+    tei.write_bytes(tei.read_bytes() + b"\n")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any("reference_exceptions" in item.evidence for item in flags), flags
+
+def test_release_probe_partition_duplicate_is_flagged(tmp_path: Path):
+    """A document in both halves of the partition is named, not double counted."""
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    lane = manifest["external_holdout_contract"]["release_probe"]
+    lane["reference_exceptions"].append(
+        dict(lane["reference_tei"][0], reason="header_date_absent")
+    )
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any("exactly one partition row" in item.evidence for item in flags), flags
+
+def test_release_probe_partition_missing_row_is_flagged(tmp_path: Path):
+    """Dropping a frozen document from both halves is named, not read as zero."""
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    lane = manifest["external_holdout_contract"]["release_probe"]
+    dropped = lane["reference_tei"].pop()["article_id"]
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(f"partition row for {dropped}" in item.evidence for item in flags), flags
+
+def test_release_probe_artifact_exception_row_drift_is_flagged(tmp_path: Path):
+    """The artifact's typed exception rows are compared to the manifest DATA."""
+    _copy_checker_surface(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["reference_population"]["exceptions"][0]["reason"] = "invented_reason"
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "reference_population.exceptions" in item.evidence
+        and "invented_reason" in item.evidence
+        for item in flags
+    ), flags
 
 
 def test_governor_validate_yaml_passes_for_the_probe_lane_surface():

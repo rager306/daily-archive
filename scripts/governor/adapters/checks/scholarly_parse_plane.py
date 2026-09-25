@@ -1409,16 +1409,179 @@ def _check_release_probe_lane(root: Path, contract: dict[str, Any], flag: Any) -
     digest = _release_probe_digest(articles, lane)
     manifest_sha = "sha256:" + _sha256(root / holdout_rel)
 
-    declared_counts = {
-        "reference_population.documents": _probe_dotted(artifact, "reference_population.documents"),
-        "evaluated_population.documents": _probe_dotted(artifact, "evaluated_population.documents"),
-        "evaluated_population.aggregate.documents": _probe_dotted(artifact, "evaluated_population.aggregate.documents"),
-        "executed_population.documents": _probe_dotted(artifact, "executed_population.documents"),
-        "production_catalog_overlap.documents": _probe_dotted(artifact, "production_catalog_overlap.documents"),
+    # M512/S02/T06: the frozen population is partitioned into the measurable
+    # subset (`reference_tei`) and typed exceptions (`reference_exceptions`),
+    # both declared as DATA on the lane. The check consumes that partition
+    # rather than assuming every frozen document is measurable: a check that
+    # demanded the measurable counters equal the frozen population would flag an
+    # honest artifact, and one that silently skipped the exceptions would read
+    # absent evidence as a measured zero. Frozen counters bind to the full
+    # population, measurable counters to the subset, each exception must name a
+    # frozen document, carry its own pins and pick a reason from the closed
+    # vocabulary, and every frozen document must land in exactly one half.
+    partition = spec.get("population_partition") or {}
+    measurable_ref = str(partition.get("measurable_ref") or "reference_tei")
+    exceptions_ref = str(partition.get("exceptions_ref") or "reference_exceptions")
+    reasons_ref = str(partition.get("exception_reasons_ref") or "reference_exception_reasons")
+    frozen_counter_keys = [str(key) for key in (partition.get("frozen_counters") or [])] or [
+        "reference_population.documents",
+        "production_catalog_overlap.documents",
+    ]
+    measurable_counter_keys = [str(key) for key in (partition.get("measurable_counters") or [])] or [
+        "evaluated_population.documents",
+        "evaluated_population.aggregate.documents",
+        "executed_population.documents",
+    ]
+
+    lane_tei = [entry for entry in (lane.get(measurable_ref) or []) if isinstance(entry, dict)]
+    lane_exceptions = [entry for entry in (lane.get(exceptions_ref) or []) if isinstance(entry, dict)]
+    reason_vocabulary = {
+        str(item.get("reason"))
+        for item in (lane.get(reasons_ref) or [])
+        if isinstance(item, dict) and item.get("reason")
     }
-    for key, observed in declared_counts.items():
-        if observed != documents:
-            flag("release_probe_denominator", "integration", f"{artifact_rel}#{key}", documents, observed)
+    measurable = len(lane_tei)
+    frozen_ids = [
+        str(article.get("article_id"))
+        for article in articles
+        if article.get("article_id") is not None
+    ]
+
+    role_of: dict[str, str] = {}
+    for role, entries in ((measurable_ref, lane_tei), (exceptions_ref, lane_exceptions)):
+        for entry in entries:
+            article_id = str(entry.get("article_id"))
+            if article_id in role_of:
+                flag(
+                    "release_probe_denominator",
+                    "integration",
+                    f"{manifest_rel}#{lane_ref}.{role}[{article_id}]",
+                    "exactly one partition row",
+                    {"first_role": role_of[article_id], "second_role": role},
+                )
+            else:
+                role_of[article_id] = role
+    frozen_set = set(frozen_ids)
+    for article_id, role in role_of.items():
+        if article_id not in frozen_set:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{manifest_rel}#{lane_ref}.{role}[{article_id}]",
+                "frozen population identity",
+                article_id,
+            )
+    for article_id in frozen_ids:
+        if article_id not in role_of:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{manifest_rel}#{lane_ref}",
+                f"partition row for {article_id}",
+                "missing",
+            )
+    if measurable + len(lane_exceptions) != documents:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{manifest_rel}#{lane_ref}.{measurable_ref}",
+            documents - len(lane_exceptions),
+            measurable,
+        )
+    if not reason_vocabulary:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{manifest_rel}#{lane_ref}.{reasons_ref}",
+            "closed reason vocabulary",
+            "empty",
+        )
+    for entry in lane_exceptions:
+        article_id = str(entry.get("article_id"))
+        reason = str(entry.get("reason") or "")
+        if reason not in reason_vocabulary:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{manifest_rel}#{lane_ref}.{exceptions_ref}[{article_id}].reason",
+                sorted(reason_vocabulary),
+                reason,
+            )
+
+    declared_counts: dict[str, tuple[int, Any]] = {
+        **{key: (documents, _probe_dotted(artifact, key)) for key in frozen_counter_keys},
+        **{key: (measurable, _probe_dotted(artifact, key)) for key in measurable_counter_keys},
+        "reference_population.measurable_documents": (
+            measurable,
+            _probe_dotted(artifact, "reference_population.measurable_documents"),
+        ),
+        "reference_population.excluded_documents": (
+            len(lane_exceptions),
+            _probe_dotted(artifact, "reference_population.excluded_documents"),
+        ),
+    }
+    for key, (expected_count, observed) in declared_counts.items():
+        if observed != expected_count:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{artifact_rel}#{key}",
+                expected_count,
+                observed,
+            )
+
+    # The artifact carries typed exception rows (identity, size, reason) beside
+    # the measurable rows. They are compared against the manifest exceptions, so
+    # an exception dropped from the artifact, re-pinned or re-reasoned is named
+    # there too instead of being a manifest-only declaration.
+    artifact_exceptions = {
+        str(row.get("document_id")): row
+        for row in (_probe_dotted(artifact, "reference_population.exceptions") or [])
+        if isinstance(row, dict)
+    }
+    manifest_exception_ids = {str(entry.get("article_id")) for entry in lane_exceptions}
+    for entry in lane_exceptions:
+        article_id = str(entry.get("article_id"))
+        declared_sha = str(entry.get("sha256") or "")
+        pin_sha = declared_sha[len("sha256:") :] if declared_sha.startswith("sha256:") else declared_sha
+        row = artifact_exceptions.get(article_id)
+        if row is None:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{artifact_rel}#reference_population.exceptions",
+                f"exception row for {article_id}",
+                "missing",
+            )
+            continue
+        if (
+            row.get("identity_sha256") != pin_sha
+            or row.get("size_bytes") != entry.get("size_bytes")
+            or row.get("reason") != entry.get("reason")
+        ):
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{artifact_rel}#reference_population.exceptions[{article_id}]",
+                {
+                    "identity_sha256": pin_sha,
+                    "size_bytes": entry.get("size_bytes"),
+                    "reason": entry.get("reason"),
+                },
+                {
+                    "identity_sha256": row.get("identity_sha256"),
+                    "size_bytes": row.get("size_bytes"),
+                    "reason": row.get("reason"),
+                },
+            )
+    for article_id in sorted(set(artifact_exceptions) - manifest_exception_ids):
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{artifact_rel}#reference_population.exceptions[{article_id}]",
+            "manifest exception row",
+            "artifact exception without a manifest exception",
+        )
 
     # The census counters are not trusted as declarations: the per-document
     # locator list is their only evidence, so every counter is recomputed from
@@ -1482,15 +1645,6 @@ def _check_release_probe_lane(root: Path, contract: dict[str, Any], flag: Any) -
             agreeing,
         )
 
-    lane_tei = [entry for entry in (lane.get("reference_tei") or []) if isinstance(entry, dict)]
-    if len(lane_tei) != documents:
-        flag(
-            "release_probe_denominator",
-            "integration",
-            f"{manifest_rel}#{lane_ref}.reference_tei",
-            documents,
-            len(lane_tei),
-        )
     if lane.get("identity_digest") != digest or _probe_dotted(artifact, "reference_population.identity_sha256") != digest:
         flag(
             "release_probe_denominator",
@@ -1522,35 +1676,57 @@ def _check_release_probe_lane(root: Path, contract: dict[str, Any], flag: Any) -
         for pin in (_probe_dotted(artifact, "reference_population.byte_pins") or [])
         if isinstance(pin, dict)
     }
-    for entry in lane_tei:
-        article_id = str(entry.get("article_id"))
-        tei_rel = str(entry.get("path"))
-        declared_sha = str(entry.get("sha256") or "")
-        declared_size = entry.get("size_bytes")
-        tei_path = root / tei_rel
-        if not tei_path.is_file():
-            flag("release_probe_denominator", "integration", tei_rel, declared_sha, "missing")
-            continue
-        observed_sha = "sha256:" + _sha256(tei_path)
-        observed_size = tei_path.stat().st_size
-        if observed_sha != declared_sha or observed_size != declared_size:
-            flag(
-                "release_probe_denominator",
-                "integration",
-                f"{manifest_rel}#{lane_ref}.reference_tei[{article_id}]",
-                {"sha256": declared_sha, "size_bytes": declared_size},
-                {"sha256": observed_sha, "size_bytes": observed_size},
-            )
-        pin = pins.get(article_id) or {}
-        pin_sha = declared_sha[len("sha256:") :] if declared_sha.startswith("sha256:") else declared_sha
-        if pin.get("identity_sha256") != pin_sha or pin.get("size_bytes") != declared_size:
-            flag(
-                "release_probe_denominator",
-                "integration",
-                f"{artifact_rel}#reference_population.byte_pins[{article_id}]",
-                {"identity_sha256": pin_sha, "size_bytes": declared_size},
-                {"identity_sha256": pin.get("identity_sha256"), "size_bytes": pin.get("size_bytes")},
-            )
+    # Both halves of the partition carry frozen bytes, so both are re-hashed and
+    # matched against their DATA pin and the artifact's own byte_pins. The
+    # exception list is not a skip list: an exception with missing or drifting
+    # bytes is flagged exactly like a measurable document, and a byte pin with
+    # no partition row (or a partition row with no byte pin) is named.
+    for role, entries in ((measurable_ref, lane_tei), (exceptions_ref, lane_exceptions)):
+        for entry in entries:
+            article_id = str(entry.get("article_id"))
+            tei_rel = str(entry.get("path"))
+            declared_sha = str(entry.get("sha256") or "")
+            declared_size = entry.get("size_bytes")
+            tei_path = root / tei_rel
+            if not tei_path.is_file():
+                flag("release_probe_denominator", "integration", tei_rel, declared_sha, "missing")
+                continue
+            observed_sha = "sha256:" + _sha256(tei_path)
+            observed_size = tei_path.stat().st_size
+            if observed_sha != declared_sha or observed_size != declared_size:
+                flag(
+                    "release_probe_denominator",
+                    "integration",
+                    f"{manifest_rel}#{lane_ref}.{role}[{article_id}]",
+                    {"sha256": declared_sha, "size_bytes": declared_size},
+                    {"sha256": observed_sha, "size_bytes": observed_size},
+                )
+            pin = pins.get(article_id) or {}
+            pin_sha = declared_sha[len("sha256:") :] if declared_sha.startswith("sha256:") else declared_sha
+            if pin.get("identity_sha256") != pin_sha or pin.get("size_bytes") != declared_size:
+                flag(
+                    "release_probe_denominator",
+                    "integration",
+                    f"{artifact_rel}#reference_population.byte_pins[{article_id}]",
+                    {"identity_sha256": pin_sha, "size_bytes": declared_size},
+                    {"identity_sha256": pin.get("identity_sha256"), "size_bytes": pin.get("size_bytes")},
+                )
+    for article_id in sorted(set(pins) - set(role_of)):
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{artifact_rel}#reference_population.byte_pins[{article_id}]",
+            "measurable or exception partition row",
+            "byte pin without a partition row",
+        )
+    for article_id in sorted(set(role_of) - set(pins)):
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{artifact_rel}#reference_population.byte_pins",
+            f"byte pin for {article_id}",
+            "missing",
+        )
 
     # Citation state: while the release decision remains with a real human,
     # every citation guard stays closed and every GAR-015 authorization stays
