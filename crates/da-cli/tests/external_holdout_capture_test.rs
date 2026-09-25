@@ -601,3 +601,558 @@ fn frozen_reference_matches_its_declared_pins_on_disk() {
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// `--rederive`: the declared selection rule is executable (S03/T02, D453)
+//
+// The census is only a derivation if the declared population can be reproduced
+// from the corpus by the declared rule. The corpus under `data/sources/arxiv`
+// is gitignored (`data/**/*.pdf`), so the corpus walk cannot be a hermetic test
+// subject; the rule is therefore covered against purpose-built temp corpora and
+// driven through the real `--rederive` mode with `--corpus`/`--manifest`
+// overrides. The production corpus run is operator evidence, not a test asset.
+// ---------------------------------------------------------------------------
+
+/// Write a corpus asset. The bytes are irrelevant to identity selection (only
+/// the path shape matters), so the fixture stays tiny.
+fn touch_pdf(path: &Path) {
+    fs::create_dir_all(path.parent().expect("asset parent")).expect("create corpus directory");
+    fs::write(path, b"%PDF-1.4\n% census fixture\n").expect("write corpus asset");
+}
+
+/// Minimal `selection` manifest for hermetic `--rederive` runs. The corpus root
+/// and the gold glob are absolute so a temp corpus never depends on the repo
+/// checkout and gold exclusion is testable without touching `data/gold_standard`.
+fn write_selection_manifest(
+    path: &Path,
+    corpus_root: &Path,
+    gold_glob: &Path,
+    excluded: &[&str],
+    take_first: Option<u64>,
+    articles: &[&str],
+) {
+    let mut selection = serde_yaml::Mapping::new();
+    selection.insert(
+        Yaml::String("rule_version".into()),
+        Yaml::String("external-holdout-selection.v1".into()),
+    );
+    selection.insert(
+        Yaml::String("corpus_root".into()),
+        Yaml::String(corpus_root.to_string_lossy().into_owned()),
+    );
+    selection.insert(
+        Yaml::String("ordering".into()),
+        Yaml::String("ascending_article_id".into()),
+    );
+    if let Some(limit) = take_first {
+        selection.insert(
+            Yaml::String("take_first".into()),
+            Yaml::Number(limit.into()),
+        );
+    }
+    let mut exclude = serde_yaml::Mapping::new();
+    exclude.insert(
+        Yaml::String("gold_standard_glob".into()),
+        Yaml::String(gold_glob.to_string_lossy().into_owned()),
+    );
+    exclude.insert(
+        Yaml::String("identities".into()),
+        Yaml::Sequence(
+            excluded
+                .iter()
+                .map(|id| Yaml::String((*id).to_string()))
+                .collect(),
+        ),
+    );
+    selection.insert(Yaml::String("exclude".into()), Yaml::Mapping(exclude));
+
+    let mut manifest = serde_yaml::Mapping::new();
+    manifest.insert(
+        Yaml::String("schema_version".into()),
+        Yaml::String("external-holdout-manifest.v1".into()),
+    );
+    manifest.insert(Yaml::String("selection".into()), Yaml::Mapping(selection));
+    manifest.insert(
+        Yaml::String("articles".into()),
+        Yaml::Sequence(
+            articles
+                .iter()
+                .map(|id| {
+                    let mut row = serde_yaml::Mapping::new();
+                    row.insert(
+                        Yaml::String("article_id".into()),
+                        Yaml::String((*id).to_string()),
+                    );
+                    Yaml::Mapping(row)
+                })
+                .collect(),
+        ),
+    );
+    let rendered = serde_yaml::to_string(&Yaml::Mapping(manifest)).expect("render manifest");
+    fs::write(path, rendered).expect("write manifest");
+}
+
+/// `REDERIVE article -> <id> <path>` rows in printed order.
+fn rederive_articles(stdout: &str) -> Vec<(String, String)> {
+    stdout
+        .lines()
+        .filter_map(|line| {
+            let rest = line.strip_prefix("REDERIVE article -> ")?;
+            let (article_id, path) = rest.split_once(' ')?;
+            Some((article_id.to_string(), path.to_string()))
+        })
+        .collect()
+}
+
+/// The winning asset path printed for one derived identity.
+fn rederive_path_for<'a>(rows: &'a [(String, String)], article_id: &str) -> Option<&'a str> {
+    rows.iter()
+        .find(|(id, _)| id == article_id)
+        .map(|(_, path)| path.as_str())
+}
+
+/// Recursive (relative path -> sha256) fingerprint, used to prove a read-only
+/// mode wrote nothing anywhere in a tree (the flat `directory_fingerprint`
+/// helper cannot walk the nested corpus).
+fn tree_fingerprint(root: &Path) -> BTreeMap<String, String> {
+    fn walk(base: &Path, dir: &Path, out: &mut BTreeMap<String, String>) {
+        for entry in fs::read_dir(dir).expect("read tree directory") {
+            let entry = entry.expect("tree entry");
+            let path = entry.path();
+            if path.is_dir() {
+                walk(base, &path, out);
+            } else {
+                let relative = path
+                    .strip_prefix(base)
+                    .expect("relative path")
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                out.insert(
+                    relative,
+                    sha256_prefixed(&fs::read(&path).expect("read tree file")),
+                );
+            }
+        }
+    }
+    let mut fingerprint = BTreeMap::new();
+    walk(root, root, &mut fingerprint);
+    fingerprint
+}
+
+#[test]
+fn rederive_collapses_versions_and_orders_ascending() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    touch_pdf(&corpus.join("cs-cl/2501.00001/source/2501.00001.pdf"));
+    touch_pdf(&corpus.join("cs-cl/2501.00002v1/source/2501.00002v1.pdf"));
+    touch_pdf(&corpus.join("cs-cl/2501.00002v2/source/2501.00002v2.pdf"));
+    touch_pdf(&corpus.join("cs-cl/2501.00003/source/2501.00003.pdf"));
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    write_selection_manifest(
+        &manifest,
+        &corpus,
+        &gold.join("*.gold.json"),
+        &[],
+        None,
+        &["2501.00001", "2501.00002", "2501.00003"],
+    );
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let stdout = stdout_of(&output);
+    assert!(
+        output.status.success(),
+        "the derivation must match the declaration:\n{stdout}\n{}",
+        stderr_of(&output)
+    );
+    let counters = labelled_lines(&stdout, "REDERIVE ");
+    assert_eq!(counters.get("assets").map(String::as_str), Some("4"));
+    assert_eq!(counters.get("identities").map(String::as_str), Some("3"));
+    assert_eq!(counters.get("declared").map(String::as_str), Some("3"));
+    assert_eq!(counters.get("derived").map(String::as_str), Some("3"));
+    assert_eq!(counters.get("summary").map(String::as_str), Some("ok"));
+
+    let rows = rederive_articles(&stdout);
+    let ids: Vec<&str> = rows.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(
+        ids,
+        ["2501.00001", "2501.00002", "2501.00003"],
+        "derived order must be ascending article_id:\n{stdout}"
+    );
+    // `v1`/`v2` collapse into one identity and the lowest revision wins.
+    let winner = rederive_path_for(&rows, "2501.00002").expect("winner for 2501.00002");
+    assert!(
+        winner.ends_with("2501.00002v1.pdf"),
+        "the lowest revision must win, saw `{winner}`"
+    );
+}
+
+#[test]
+fn rederive_inherits_identity_from_the_nearest_matching_ancestor() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    // 2512.24601-like: `original.pdf` is the ONLY asset. The literal "parent
+    // directory" rule would resolve to `source` and lose the real article.
+    touch_pdf(&corpus.join("cs-ar/2512.24601/source/original.pdf"));
+    // A sibling `<id>.pdf` exists; `original.pdf` still inherits the identity.
+    touch_pdf(&corpus.join("cs-ai/2503.00003/source/original.pdf"));
+    touch_pdf(&corpus.join("cs-ai/2503.00003/source/2503.00003.pdf"));
+    // A versioned ancestor directory contributes the identity and its revision.
+    touch_pdf(&corpus.join("cs-cv/2504.00004v2/source/original.pdf"));
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    write_selection_manifest(
+        &manifest,
+        &corpus,
+        &gold.join("*.gold.json"),
+        &[],
+        None,
+        &["2503.00003", "2504.00004", "2512.24601"],
+    );
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let stdout = stdout_of(&output);
+    assert!(
+        output.status.success(),
+        "literal `original.pdf` handling must not break the derivation:\n{stdout}\n{}",
+        stderr_of(&output)
+    );
+    let rows = rederive_articles(&stdout);
+    let ids: Vec<&str> = rows.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(
+        ids,
+        ["2503.00003", "2504.00004", "2512.24601"],
+        "the inherited identities must be derived:\n{stdout}"
+    );
+    assert!(
+        !ids.contains(&"source"),
+        "the literal parent-directory rule must not leak a `source` identity"
+    );
+    let lone = rederive_path_for(&rows, "2512.24601").expect("lone original.pdf");
+    assert!(
+        lone.ends_with("2512.24601/source/original.pdf"),
+        "the sole `original.pdf` must keep the article identity, saw `{lone}`"
+    );
+    let sibling = rederive_path_for(&rows, "2503.00003").expect("sibling asset");
+    assert!(
+        sibling.ends_with("2503.00003.pdf"),
+        "equal revisions break on the smallest path, saw `{sibling}`"
+    );
+    let inherited = rederive_path_for(&rows, "2504.00004").expect("versioned ancestor");
+    assert!(
+        inherited.ends_with("2504.00004v2/source/original.pdf"),
+        "a versioned ancestor directory must supply the identity, saw `{inherited}`"
+    );
+}
+
+#[test]
+fn rederive_tie_break_prefers_lowest_revision_then_smallest_path() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    // Revision beats path: the v3 asset sorts before the versionless one, so a
+    // path-only tie-break would pick the wrong revision.
+    touch_pdf(&corpus.join("cs-ne/2505.00005/source/2505.00005v3.pdf"));
+    touch_pdf(&corpus.join("cs-ne/w/2505.00005/source/2505.00005.pdf"));
+    // Equal revisions: the lexicographically smaller path wins.
+    touch_pdf(&corpus.join("cs-cv/2504.00004/b/2504.00004.pdf"));
+    touch_pdf(&corpus.join("cs-cv/2504.00004/a/2504.00004.pdf"));
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    write_selection_manifest(
+        &manifest,
+        &corpus,
+        &gold.join("*.gold.json"),
+        &[],
+        None,
+        &["2504.00004", "2505.00005"],
+    );
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let stdout = stdout_of(&output);
+    assert!(
+        output.status.success(),
+        "the tie-break must be deterministic:\n{stdout}\n{}",
+        stderr_of(&output)
+    );
+    let rows = rederive_articles(&stdout);
+    let by_revision = rederive_path_for(&rows, "2505.00005").expect("winner");
+    assert!(
+        by_revision.contains("/w/"),
+        "the v3 asset must lose to the versionless one despite sorting earlier, saw `{by_revision}`"
+    );
+    let by_path = rederive_path_for(&rows, "2504.00004").expect("winner");
+    assert!(
+        by_path.contains("/a/"),
+        "equal revisions must break on the lexicographically smaller path, saw `{by_path}`"
+    );
+}
+
+#[test]
+fn rederive_excludes_gold_identities_and_declared_identities() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    touch_pdf(&corpus.join("cs-lg/2506.00006/source/2506.00006.pdf"));
+    touch_pdf(&corpus.join("cs-lg/2507.00007/source/2507.00007.pdf"));
+    touch_pdf(&corpus.join("cs-lg/2508.00008/source/2508.00008.pdf"));
+    fs::write(gold.join("2506.00006.gold.json"), b"{}").expect("gold fixture");
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    write_selection_manifest(
+        &manifest,
+        &corpus,
+        &gold.join("*.gold.json"),
+        &["2507.00007"],
+        None,
+        &["2508.00008"],
+    );
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let stdout = stdout_of(&output);
+    assert!(
+        output.status.success(),
+        "gold and declared exclusions must be applied:\n{stdout}\n{}",
+        stderr_of(&output)
+    );
+    let counters = labelled_lines(&stdout, "REDERIVE ");
+    assert_eq!(counters.get("identities").map(String::as_str), Some("3"));
+    assert_eq!(counters.get("excluded_gold").map(String::as_str), Some("1"));
+    assert_eq!(counters.get("derived").map(String::as_str), Some("1"));
+    let rows = rederive_articles(&stdout);
+    let ids: Vec<&str> = rows.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(
+        ids,
+        ["2508.00008"],
+        "the gold identity and the declared exclusion must be removed"
+    );
+}
+
+#[test]
+fn rederive_honours_the_declared_take_first_cap() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    touch_pdf(&corpus.join("cs-cl/2501.00001/source/2501.00001.pdf"));
+    touch_pdf(&corpus.join("cs-cl/2501.00002/source/2501.00002.pdf"));
+    touch_pdf(&corpus.join("cs-cl/2501.00003/source/2501.00003.pdf"));
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    write_selection_manifest(
+        &manifest,
+        &corpus,
+        &gold.join("*.gold.json"),
+        &[],
+        Some(2),
+        &["2501.00001", "2501.00002"],
+    );
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let stdout = stdout_of(&output);
+    assert!(
+        output.status.success(),
+        "a declared partial population must be reproduced:\n{stdout}\n{}",
+        stderr_of(&output)
+    );
+    let counters = labelled_lines(&stdout, "REDERIVE ");
+    assert_eq!(counters.get("derived").map(String::as_str), Some("2"));
+    let rows = rederive_articles(&stdout);
+    let ids: Vec<&str> = rows.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(
+        ids,
+        ["2501.00001", "2501.00002"],
+        "the cap must be applied after the ascending ordering"
+    );
+}
+
+#[test]
+fn rederive_reports_selection_rule_drift_by_name_without_writing() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    touch_pdf(&corpus.join("cs-cl/2501.00001/source/2501.00001.pdf"));
+    touch_pdf(&corpus.join("cs-cl/2501.00002/source/2501.00002.pdf"));
+    touch_pdf(&corpus.join("cs-cl/2501.00003/source/2501.00003.pdf"));
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    // One declared id is absent from the corpus and one does not exist at all.
+    write_selection_manifest(
+        &manifest,
+        &corpus,
+        &gold.join("*.gold.json"),
+        &[],
+        None,
+        &["2501.00001", "2501.00002", "2509.99999"],
+    );
+    let corpus_before = tree_fingerprint(&corpus);
+    let manifest_before = fs::read(&manifest).expect("read manifest");
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let combined = format!("{}{}", stdout_of(&output), stderr_of(&output));
+    assert!(
+        !output.status.success(),
+        "a drifted declaration must fail:\n{combined}"
+    );
+    assert!(
+        combined.contains("selection_rule_drift"),
+        "the drift must be named:\n{combined}"
+    );
+    // `missing` is declared-but-not-derived (the bogus declaration); `extra`
+    // is derived-but-not-declared (the real, undeclared corpus article).
+    assert!(
+        combined.contains("missing=[2509.99999]"),
+        "the declared-but-absent id must be named first:\n{combined}"
+    );
+    assert!(
+        combined.contains("extra=[2501.00003]"),
+        "the derived-but-undeclared id must be named first:\n{combined}"
+    );
+    assert_eq!(
+        tree_fingerprint(&corpus),
+        corpus_before,
+        "--rederive must not write to the corpus"
+    );
+    assert_eq!(
+        fs::read(&manifest).expect("read manifest"),
+        manifest_before,
+        "--rederive must not rewrite the manifest"
+    );
+}
+
+#[test]
+fn rederive_corpus_override_wins_over_the_declared_root() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("real-corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    touch_pdf(&corpus.join("cs-cl/2501.00001/source/2501.00001.pdf"));
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    // Declare a corpus root that does not exist: only the override can make the
+    // run succeed, which proves the override is honoured.
+    write_selection_manifest(
+        &manifest,
+        &temp.path().join("absent-corpus"),
+        &gold.join("*.gold.json"),
+        &[],
+        None,
+        &["2501.00001"],
+    );
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+        "--corpus",
+        corpus.to_str().expect("corpus path"),
+    ]);
+    let stdout = stdout_of(&output);
+    assert!(
+        output.status.success(),
+        "the `--corpus` override must be used instead of the declared root:\n{stdout}\n{}",
+        stderr_of(&output)
+    );
+    let rows = rederive_articles(&stdout);
+    let ids: Vec<&str> = rows.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(ids, ["2501.00001"]);
+}
+
+#[test]
+fn rederive_fails_closed_on_an_unsupported_rule_version() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let corpus = temp.path().join("corpus");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    touch_pdf(&corpus.join("cs-cl/2501.00001/source/2501.00001.pdf"));
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    write_selection_manifest(
+        &manifest,
+        &corpus,
+        &gold.join("*.gold.json"),
+        &[],
+        None,
+        &["2501.00001"],
+    );
+    // Declare a rule the runner does not implement: it must refuse rather than
+    // silently apply the v1 algorithm to a v2 declaration.
+    let text = fs::read_to_string(&manifest).expect("read manifest");
+    fs::write(
+        &manifest,
+        text.replace(
+            "external-holdout-selection.v1",
+            "external-holdout-selection.v2",
+        ),
+    )
+    .expect("write manifest");
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let combined = format!("{}{}", stdout_of(&output), stderr_of(&output));
+    assert!(
+        !output.status.success(),
+        "an unknown rule version must fail closed:\n{combined}"
+    );
+    assert!(
+        combined.contains("selection_rule_version_unsupported:external-holdout-selection.v2"),
+        "the unsupported version must be named:\n{combined}"
+    );
+}
+
+#[test]
+fn rederive_fails_closed_when_the_corpus_root_is_absent() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let gold = temp.path().join("gold");
+    fs::create_dir_all(&gold).expect("gold dir");
+    let manifest = temp.path().join("holdout_manifests.yaml");
+    write_selection_manifest(
+        &manifest,
+        &temp.path().join("absent-corpus"),
+        &gold.join("*.gold.json"),
+        &[],
+        None,
+        &[],
+    );
+
+    let output = run(&[
+        "--rederive",
+        "--manifest",
+        manifest.to_str().expect("manifest path"),
+    ]);
+    let combined = format!("{}{}", stdout_of(&output), stderr_of(&output));
+    assert!(
+        !output.status.success(),
+        "an absent corpus root must fail closed:\n{combined}"
+    );
+    assert!(
+        combined.contains("selection_corpus_unreadable"),
+        "the missing corpus must be named:\n{combined}"
+    );
+}

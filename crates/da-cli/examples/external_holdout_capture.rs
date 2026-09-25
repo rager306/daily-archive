@@ -6,6 +6,10 @@
 //! bytes and an exact release before any measurement happens. This example is
 //! the only writer of that reference:
 //!
+//! - **`--rederive`** — read-only rule execution: walks the declared corpus,
+//!   derives the non-gold population with the declared `selection` rule and
+//!   fails with `selection_rule_drift:<detail>` when the derived sequence does
+//!   not reproduce the declared `articles` list. No network, no writes.
 //! - **`--preflight`** (default) — read-only. It resolves every declared input
 //!   (the sha256-pinned holdout PDFs declared in the manifest, the Java
 //!   endpoint, the declared Java release, the external `bytes_absent` band, the
@@ -53,14 +57,16 @@
 //! divergence is itself a named open item (H21, deferred to S09) and is recorded
 //! machine-visibly in the same DATA block instead of being papered over.
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use da_parse::{GrobidHttpBackend, GrobidProfile, ParseBackend};
 use serde_yaml::{Mapping, Value};
 use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use walkdir::WalkDir;
 
 /// Panic/log prefix, so a failure names the tool that produced it.
 const PREFIX: &str = "[external-holdout-capture]";
@@ -86,6 +92,13 @@ const DA_GROBID_URL_KEY: &str = "DA_GROBID_URL";
 const GROBID_URL_ALIAS_KEY: &str = "GROBID_URL";
 /// Above this many frozen bytes the provenance records a `size_note`.
 const SIZE_NOTE_LIMIT_BYTES: u64 = 4 * 1024 * 1024;
+/// Declared selection rule family; `selection.rule_version` selects the
+/// implementation, so an unknown version is a named blocker rather than a
+/// silent reuse of some other rule's semantics.
+const SELECTION_RULE_VERSION: &str = "external-holdout-selection.v1";
+/// The only ordering the executable rule implements: ascending `article_id`
+/// (string order, so the derivation is byte-stable across environments).
+const SELECTION_ORDERING: &str = "ascending_article_id";
 
 #[derive(Parser, Debug)]
 #[command(
@@ -126,6 +139,18 @@ struct Args {
     /// Bounded per-document request timeout in seconds.
     #[arg(long, default_value_t = 900)]
     timeout_secs: u64,
+    /// Re-derive the declared population from the corpus with the declared
+    /// selection rule (read-only: no network, no writes).
+    #[arg(long)]
+    rederive: bool,
+    /// Corpus root override for `--rederive` (defaults to
+    /// `selection.corpus_root`).
+    #[arg(long, value_name = "DIR")]
+    corpus: Option<PathBuf>,
+    /// Manifest override for `--rederive` (defaults to the committed holdout
+    /// manifest).
+    #[arg(long, value_name = "PATH")]
+    manifest: Option<PathBuf>,
 }
 
 // ---------------------------------------------------------------------------
@@ -416,6 +441,439 @@ fn declared_articles(root: &Path) -> Result<Vec<ArticleIdentity>> {
         });
     }
     Ok(declared)
+}
+
+// ---------------------------------------------------------------------------
+// Executable selection rule (`external-holdout-selection.v1`)
+//
+// The `selection` block of the holdout manifest used to be prose: no code read
+// it, so the declared population was only as trustworthy as a hand-kept list,
+// and a rule that disagrees with the corpus (the literal "`original.pdf`
+// inherits the parent directory's identity" rule resolves to `source`) could
+// not be detected. `--rederive` executes the declared rule against the corpus
+// and refuses a declaration the rule does not reproduce
+// (`selection_rule_drift`), so the census is a derivation rather than an
+// inventory (D453). The rule itself is DATA-driven: `rule_version` selects the
+// algorithm, `ordering` and `exclude` are read from the manifest.
+// ---------------------------------------------------------------------------
+
+/// Resolved `selection` block: where to scan and what to exclude.
+struct SelectionSpec {
+    corpus_root: PathBuf,
+    gold_glob: String,
+    excluded_identities: BTreeSet<String>,
+    take_first: Option<usize>,
+}
+
+/// One derived holdout row: the winning asset for one arXiv identity.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DerivedRow {
+    article_id: String,
+    display_path: String,
+}
+
+/// Derived census: measured counters plus the ascending derived sequence.
+struct Selection {
+    assets: usize,
+    identities: usize,
+    excluded_gold: usize,
+    derived: Vec<DerivedRow>,
+}
+
+fn selection_spec(
+    root: &Path,
+    manifest: &Value,
+    corpus_override: Option<&Path>,
+) -> Result<SelectionSpec> {
+    let selection = field(manifest, "selection").context(format!(
+        "{PREFIX} selection_block_absent: the holdout manifest carries no `selection` block"
+    ))?;
+    let rule_version = field_str(selection, "rule_version").unwrap_or_default();
+    if rule_version != SELECTION_RULE_VERSION {
+        bail!("selection_rule_version_unsupported:{rule_version}");
+    }
+    let ordering = field_str(selection, "ordering").unwrap_or_default();
+    if ordering != SELECTION_ORDERING {
+        bail!("selection_ordering_unsupported:{ordering}");
+    }
+    let corpus_root = match corpus_override {
+        Some(dir) => dir.to_path_buf(),
+        None => PathBuf::from(field_str(selection, "corpus_root").context(format!(
+            "{PREFIX} selection_corpus_root_absent: `selection.corpus_root` is required unless \
+             `--corpus` is passed"
+        ))?),
+    };
+    let corpus_root = if corpus_root.is_absolute() {
+        corpus_root
+    } else {
+        root.join(corpus_root)
+    };
+    let exclude = field(selection, "exclude");
+    let gold_glob = exclude
+        .and_then(|block| field_str(block, "gold_standard_glob"))
+        .context(format!(
+            "{PREFIX} selection_gold_glob_absent: `selection.exclude.gold_standard_glob` is \
+             required"
+        ))?
+        .to_string();
+    let excluded_identities = exclude
+        .and_then(|block| field(block, "identities"))
+        .and_then(Value::as_sequence)
+        .map(|rows| {
+            rows.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect::<BTreeSet<String>>()
+        })
+        .unwrap_or_default();
+    let take_first = field(selection, "take_first")
+        .and_then(Value::as_u64)
+        .map(|value| value as usize);
+    Ok(SelectionSpec {
+        corpus_root,
+        gold_glob,
+        excluded_identities,
+        take_first,
+    })
+}
+
+/// Classic `*`/`?` wildcard match over a single path component.
+fn glob_match(pattern: &str, name: &str) -> bool {
+    let (pattern, name) = (pattern.as_bytes(), name.as_bytes());
+    let (mut p, mut n) = (0usize, 0usize);
+    let mut star: Option<usize> = None;
+    let mut star_name = 0usize;
+    while n < name.len() {
+        if p < pattern.len() && (pattern[p] == b'?' || pattern[p] == name[n]) {
+            p += 1;
+            n += 1;
+        } else if p < pattern.len() && pattern[p] == b'*' {
+            star = Some(p);
+            star_name = n;
+            p += 1;
+        } else if let Some(index) = star {
+            p = index + 1;
+            star_name += 1;
+            n = star_name;
+        } else {
+            return false;
+        }
+    }
+    while p < pattern.len() && pattern[p] == b'*' {
+        p += 1;
+    }
+    p == pattern.len()
+}
+
+/// The gold identity a matched gold file denotes, per the declared
+/// `gold_identity_rule`: the file name with the glob's literal suffix removed.
+fn gold_identity(name: &str, pattern: &str) -> String {
+    match pattern.rfind('*') {
+        Some(index) => {
+            let suffix = &pattern[index + 1..];
+            name.strip_suffix(suffix).unwrap_or(name).to_string()
+        }
+        None => name.to_string(),
+    }
+}
+
+/// Expand the declared gold glob into the set of gold identities. Only the
+/// final component may carry wildcards, which is the declared shape
+/// (`data/gold_standard/*.gold.json`); a relative glob resolves against the
+/// repo root, an absolute one is used as given (hermetic tests).
+fn gold_identities(root: &Path, glob: &str) -> Result<BTreeSet<String>> {
+    let pattern = Path::new(glob);
+    let expanded = if pattern.is_absolute() {
+        pattern.to_path_buf()
+    } else {
+        root.join(pattern)
+    };
+    let dir = expanded
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .context(format!(
+            "{PREFIX} selection_gold_glob_malformed: `{glob}` has no directory component"
+        ))?;
+    let name_pattern = expanded
+        .file_name()
+        .and_then(|name| name.to_str())
+        .context(format!(
+            "{PREFIX} selection_gold_glob_malformed: `{glob}` has no file component"
+        ))?;
+    let unreadable = || {
+        format!(
+            "{PREFIX} selection_gold_glob_unreadable: `{}` cannot be read",
+            dir.display()
+        )
+    };
+    let mut identities = BTreeSet::new();
+    for entry in std::fs::read_dir(dir).with_context(unreadable)? {
+        let entry = entry.with_context(unreadable)?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        if glob_match(name_pattern, &name) {
+            identities.insert(gold_identity(&name, name_pattern));
+        }
+    }
+    Ok(identities)
+}
+
+/// `^\d{4}\.\d{4,5}$` — the arXiv identity shape the rule recognises.
+fn is_arxiv_identity(value: &str) -> bool {
+    let Some((year, number)) = value.split_once('.') else {
+        return false;
+    };
+    year.len() == 4
+        && year.bytes().all(|byte| byte.is_ascii_digit())
+        && (number.len() == 4 || number.len() == 5)
+        && number.bytes().all(|byte| byte.is_ascii_digit())
+}
+
+/// Split a trailing `vN` (N >= 1, no leading zero) off a name, returning the
+/// remainder and the revision (0 when the name carries no version suffix).
+fn strip_version_suffix(name: &str) -> (&str, u32) {
+    let bytes = name.as_bytes();
+    let mut start = bytes.len();
+    while start > 0 && bytes[start - 1].is_ascii_digit() {
+        start -= 1;
+    }
+    if start == bytes.len() || start == 0 || bytes[start - 1] != b'v' {
+        return (name, 0);
+    }
+    let digits = &name[start..];
+    if digits.starts_with('0') {
+        return (name, 0);
+    }
+    match digits.parse::<u32>() {
+        Ok(revision) => (&name[..start - 1], revision),
+        Err(_) => (name, 0),
+    }
+}
+
+/// The arXiv identity of one PDF, plus its revision. The PDF stem wins when it
+/// is an identity; otherwise the nearest ancestor directory that is one
+/// (`<cat>/<id>/source/original.pdf` inherits `<id>`). The revision comes from
+/// the identity-bearing name, so a versioned directory is honoured.
+fn asset_identity(relative: &Path) -> Option<(String, u32)> {
+    let mut candidates: Vec<&str> = Vec::new();
+    if let Some(stem) = relative.file_stem().and_then(|stem| stem.to_str()) {
+        candidates.push(stem);
+    }
+    let mut ancestor = relative.parent();
+    while let Some(directory) = ancestor {
+        if let Some(name) = directory.file_name().and_then(|name| name.to_str()) {
+            candidates.push(name);
+        }
+        ancestor = directory.parent();
+    }
+    for candidate in candidates {
+        let (stripped, revision) = strip_version_suffix(candidate);
+        if is_arxiv_identity(stripped) {
+            return Some((stripped.to_string(), revision));
+        }
+    }
+    None
+}
+
+/// Repo-relative display path when the corpus lives inside the repo, otherwise
+/// the corpus-relative path (hermetic tests use temp directories).
+fn display_path(corpus_root: &Path, relative: &Path) -> String {
+    let absolute = corpus_root.join(relative);
+    match absolute.strip_prefix(repo_root()) {
+        Ok(repo_relative) => repo_relative.to_string_lossy().replace('\\', "/"),
+        Err(_) => relative.to_string_lossy().replace('\\', "/"),
+    }
+}
+
+/// Path relative to the repo root when possible, else the absolute path.
+fn relative_display(root: &Path, path: &Path) -> String {
+    match path.strip_prefix(root) {
+        Ok(relative) => relative.to_string_lossy().replace('\\', "/"),
+        Err(_) => path.to_string_lossy().replace('\\', "/"),
+    }
+}
+
+/// Execute the declared rule: walk the corpus, resolve each asset's identity,
+/// keep the winning asset per identity (lowest revision, then lexicographically
+/// smallest path), drop the declared exclusions and order ascending.
+fn derive_selection(root: &Path, spec: &SelectionSpec) -> Result<Selection> {
+    let gold = gold_identities(root, &spec.gold_glob)?;
+    let mut by_identity: BTreeMap<String, (u32, PathBuf)> = BTreeMap::new();
+    let mut assets = 0usize;
+    for entry in WalkDir::new(&spec.corpus_root).follow_links(false) {
+        let entry = entry.with_context(|| {
+            format!(
+                "{PREFIX} selection_corpus_unreadable: `{}` cannot be walked",
+                spec.corpus_root.display()
+            )
+        })?;
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let path = entry.path();
+        let is_pdf = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("pdf"));
+        if !is_pdf {
+            continue;
+        }
+        assets += 1;
+        let relative = path
+            .strip_prefix(&spec.corpus_root)
+            .with_context(|| {
+                format!(
+                    "{PREFIX} selection_corpus_root_escape: `{}` is outside the corpus root",
+                    path.display()
+                )
+            })?
+            .to_path_buf();
+        let (identity, revision) = asset_identity(&relative).ok_or_else(|| {
+            anyhow::anyhow!("selection_asset_without_identity:{}", relative.display())
+        })?;
+        let replace = match by_identity.get(&identity) {
+            Some((best_revision, best_path)) => {
+                (revision, relative.as_path()) < (*best_revision, best_path.as_path())
+            }
+            None => true,
+        };
+        if replace {
+            by_identity.insert(identity, (revision, relative));
+        }
+    }
+    let identities = by_identity.len();
+    let mut excluded_gold = 0usize;
+    let mut derived = Vec::new();
+    for (article_id, (_revision, relative)) in by_identity {
+        if gold.contains(&article_id) {
+            excluded_gold += 1;
+            continue;
+        }
+        if spec.excluded_identities.contains(&article_id) {
+            continue;
+        }
+        derived.push(DerivedRow {
+            article_id,
+            display_path: display_path(&spec.corpus_root, &relative),
+        });
+    }
+    derived.sort_by(|left, right| left.article_id.cmp(&right.article_id));
+    if let Some(limit) = spec.take_first {
+        derived.truncate(limit);
+    }
+    Ok(Selection {
+        assets,
+        identities,
+        excluded_gold,
+        derived,
+    })
+}
+
+/// The declared `articles[].article_id` sequence, in file order.
+fn declared_article_ids(manifest: &Value) -> Result<Vec<String>> {
+    let articles = field(manifest, "articles")
+        .and_then(Value::as_sequence)
+        .context(format!(
+            "{PREFIX} the holdout manifest carries no `articles` list"
+        ))?;
+    let mut ids = Vec::with_capacity(articles.len());
+    for article in articles {
+        ids.push(
+            field_str(article, "article_id")
+                .context(format!(
+                    "{PREFIX} a holdout article carries no `article_id`"
+                ))?
+                .to_string(),
+        );
+    }
+    Ok(ids)
+}
+
+/// The `selection_rule_drift` detail: the first diverging ids, so a failing run
+/// localises the disagreement without diffing hundreds of lines by hand.
+fn selection_drift(derived: &[DerivedRow], declared: &[String]) -> Option<String> {
+    let derived_list: Vec<&str> = derived.iter().map(|row| row.article_id.as_str()).collect();
+    let declared_list: Vec<&str> = declared.iter().map(String::as_str).collect();
+    let derived_set: BTreeSet<&str> = derived_list.iter().copied().collect();
+    let declared_set: BTreeSet<&str> = declared_list.iter().copied().collect();
+    let missing: Vec<&str> = declared_list
+        .iter()
+        .copied()
+        .filter(|id| !derived_set.contains(id))
+        .take(3)
+        .collect();
+    let extra: Vec<&str> = derived_list
+        .iter()
+        .copied()
+        .filter(|id| !declared_set.contains(id))
+        .take(3)
+        .collect();
+    if !missing.is_empty() || !extra.is_empty() {
+        return Some(format!(
+            "missing=[{}];extra=[{}]",
+            missing.join(","),
+            extra.join(",")
+        ));
+    }
+    if derived_list.len() != declared_list.len() {
+        return Some(format!(
+            "length:{}!={}",
+            derived_list.len(),
+            declared_list.len()
+        ));
+    }
+    for (index, (derived_id, declared_id)) in
+        derived_list.iter().zip(declared_list.iter()).enumerate()
+    {
+        if derived_id != declared_id {
+            return Some(format!("order@{index}:{derived_id}!={declared_id}"));
+        }
+    }
+    None
+}
+
+/// `--rederive`: execute the declared rule and compare the derived sequence
+/// with the declared one. Read-only by construction: the corpus is only walked,
+/// the network is never touched and nothing is written.
+fn run_rederive(root: &Path, args: &Args) -> Result<bool> {
+    let manifest_path = match &args.manifest {
+        Some(path) if path.is_absolute() => path.clone(),
+        Some(path) => root.join(path),
+        None => root.join(HOLDOUT_MANIFEST),
+    };
+    let manifest = read_yaml(&manifest_path)?;
+    let spec = selection_spec(root, &manifest, args.corpus.as_deref())?;
+    let selection = derive_selection(root, &spec)?;
+    let declared = declared_article_ids(&manifest)?;
+
+    println!(
+        "REDERIVE manifest -> {}",
+        relative_display(root, &manifest_path)
+    );
+    println!(
+        "REDERIVE corpus_root -> {}",
+        relative_display(root, &spec.corpus_root)
+    );
+    println!("REDERIVE assets -> {}", selection.assets);
+    println!("REDERIVE identities -> {}", selection.identities);
+    println!("REDERIVE excluded_gold -> {}", selection.excluded_gold);
+    println!("REDERIVE declared -> {}", declared.len());
+    println!("REDERIVE derived -> {}", selection.derived.len());
+    for row in &selection.derived {
+        println!(
+            "REDERIVE article -> {} {}",
+            row.article_id, row.display_path
+        );
+    }
+    match selection_drift(&selection.derived, &declared) {
+        None => {
+            println!("REDERIVE summary -> ok");
+            Ok(true)
+        }
+        Some(detail) => {
+            println!("REDERIVE summary -> blocked:selection_rule_drift:{detail}");
+            Ok(false)
+        }
+    }
 }
 
 /// The T02-declared Java release identity, cross-checked against the release pin.
@@ -1462,6 +1920,15 @@ async fn main() -> Result<()> {
     }
     let _log_guard = da_cli::logging::init_pipeline_logging("external_holdout_capture");
     let root = repo_root();
+
+    if args.rederive {
+        // Read-only rule execution: no network, no writes.
+        return if run_rederive(&root, &args)? {
+            Ok(())
+        } else {
+            std::process::exit(1);
+        };
+    }
 
     if args.verify {
         let report = run_verify(&root, &args).await?;
