@@ -3626,3 +3626,79 @@ def test_s09_census_revision_label_resolution_is_typed_and_content_bound():
         == ledger["observed_checkout_revision"]
     )
     assert ledger["observed_checkout_revision"] != ledger["capture_declared_revision"]
+
+
+# --- M512/S03/T05: lane pin census and live-root lane silence -----------------
+#
+# T04 moved both the accepted manifest and the release-probe artifact, so every
+# SHA-256 pin on the three governor lane surfaces went stale at once: the
+# manifest is pinned in `bindings.source_data` of `scholarly_parse_plane.yaml`
+# and of `external_holdout_package.yaml` and mirrored in the positive fixture,
+# while the probe artifact is byte-pinned in the `canonical_artifacts` of both
+# scholarly surfaces. A stale pin only fails as `..._evidence_substitution` or
+# `..._binding_mismatch` at the next `--phase preflight`, which is too late to
+# be noticed by the run that moved the bytes. These probes read the shipped DATA
+# and the disk bytes, then run the report's own lane flag sources over the live
+# ROOT, so a re-pin that missed a surface or a lane surface that started
+# flagging the live tree fails here.
+
+EXTERNAL_HOLDOUT_POLICY_PATH = (
+    ROOT / "scripts/governor/checks/external_holdout_package.yaml"
+)
+LANE_SURFACES = {
+    "scholarly policy": POLICY_PATH,
+    "scholarly fixture": POSITIVE_PATH,
+    "external holdout policy": EXTERNAL_HOLDOUT_POLICY_PATH,
+}
+LANE_FLAG_PREFIXES = (
+    "scholarly_parse_plane",
+    "external_holdout_package",
+    "release_probe",
+)
+
+
+def _lane_named_flags(flags):
+    """Only the findings a lane check can emit, from a report or a check.
+
+    A preflight report is shared with unrelated dimensions (`logs/*` schema
+    drift, `target/` bloat, GSD planning projections); those are not lane
+    findings, so the probe filters by flag name instead of by evidence text --
+    an unrelated flag may legitimately mention a lane artifact in its evidence.
+    """
+    def _name(flag):
+        if isinstance(flag, dict):
+            return str(flag.get("flag", ""))
+        return str(getattr(flag, "flag", ""))
+
+    return [flag for flag in flags if _name(flag).startswith(LANE_FLAG_PREFIXES)]
+
+
+def test_lane_policy_pins_match_the_disk_digests_t04_measured():
+    manifest = "data/parse/acceptance_manifest.yaml"
+    manifest_digest = _sha256(ROOT / manifest)
+    probe_digest = _sha256(ROOT / PROBE_ARTIFACT)
+    # The accepted manifest is pinned on all three lane surfaces.
+    for name, surface in LANE_SURFACES.items():
+        pins = _pinned_digests(_load(surface), manifest)
+        assert pins, f"{name} declares no pin for {manifest}"
+        assert set(pins) == {manifest_digest}, (name, pins)
+    # The probe artifact is byte-pinned on both scholarly surfaces.
+    for name in ("scholarly policy", "scholarly fixture"):
+        pins = _pinned_digests(_load(LANE_SURFACES[name]), PROBE_ARTIFACT)
+        assert pins, f"{name} declares no pin for {PROBE_ARTIFACT}"
+        assert set(pins) == {probe_digest}, (name, pins)
+
+
+def test_live_root_lane_flag_sources_report_nothing():
+    """The report's lane flag sources stay silent on the shipped tree.
+
+    `build_report` composes the scholarly dimension from
+    `_check_scholarly_parse_plane` and the external holdout contract from
+    `TrajectoryService._check_external_holdout_package`; running both over ROOT
+    is the lane half of a real `--phase preflight` without the
+    environment-dependent resource/disk flags the census filters out.
+    """
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = ROOT
+    assert _lane_named_flags(_check_scholarly_parse_plane(ROOT)) == []
+    assert _lane_named_flags(service._check_external_holdout_package()) == []
