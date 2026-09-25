@@ -1419,6 +1419,69 @@ def _check_release_probe_lane(root: Path, contract: dict[str, Any], flag: Any) -
     for key, observed in declared_counts.items():
         if observed != documents:
             flag("release_probe_denominator", "integration", f"{artifact_rel}#{key}", documents, observed)
+
+    # The census counters are not trusted as declarations: the per-document
+    # locator list is their only evidence, so every counter is recomputed from
+    # those rows and the census is bound to the manifest-derived population.
+    # A counter that no row backs, or a census shorter than the population, is
+    # `release_probe_denominator` at the exact artifact path — never a silent
+    # pass. Nothing here pins a literal count; the expectation is the DATA
+    # population (`documents`) and the artifact's own rows.
+    census = _probe_dotted(artifact, "production_catalog_overlap")
+    census = census if isinstance(census, dict) else {}
+    locators = [row for row in (census.get("locators") or []) if isinstance(row, dict)]
+    if len(locators) != documents:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{artifact_rel}#production_catalog_overlap.locators",
+            documents,
+            len(locators),
+        )
+    for counter_key, row_field in (
+        ("declared_pdf_present_count", "declared_pdf_present"),
+        ("sources_archive_present_count", "sources_archive_present"),
+        ("canonical_catalog_present_count", "canonical_catalog_present"),
+        ("gold_standard_present_count", "gold_standard_present"),
+    ):
+        recomputed = sum(row.get(row_field) is True for row in locators)
+        declared_counter = census.get(counter_key)
+        if declared_counter != recomputed:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{artifact_rel}#production_catalog_overlap.{counter_key}",
+                recomputed,
+                declared_counter,
+            )
+    present_fields = (
+        "declared_pdf_present",
+        "sources_archive_present",
+        "canonical_catalog_present",
+        "gold_standard_present",
+    )
+    recomputed_absent = sum(
+        not any(row.get(field) is True for field in present_fields) for row in locators
+    )
+    declared_absent = census.get("absent_from_every_locator_count")
+    if declared_absent != recomputed_absent:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{artifact_rel}#production_catalog_overlap.absent_from_every_locator_count",
+            recomputed_absent,
+            declared_absent,
+        )
+    agreeing = _probe_dotted(artifact, "evaluated_population.aggregate.agreeing_documents")
+    if not isinstance(agreeing, int) or isinstance(agreeing, bool) or not 0 <= agreeing <= documents:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{artifact_rel}#evaluated_population.aggregate.agreeing_documents",
+            f"int in [0, {documents}]",
+            agreeing,
+        )
+
     lane_tei = [entry for entry in (lane.get("reference_tei") or []) if isinstance(entry, dict)]
     if len(lane_tei) != documents:
         flag(

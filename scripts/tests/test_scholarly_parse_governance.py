@@ -22,6 +22,7 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _cascade_observe_tokens,
     _check_scholarly_parse_plane,
     _empty_native_consult_tokens,
+    _release_probe_digest,
     _java_absent_endpoint_tokens,
     _native_rules_not_consulted_tokens,
     _body_accounting_quarantine_spec,
@@ -292,6 +293,18 @@ def _probe_lane_path(root: Path) -> Path:
 
 def _probe_artifact_path(root: Path) -> Path:
     return root / "artifacts/parse_compat/external_holdout_release_probe.json"
+
+
+def _probe_holdout_path(root: Path) -> Path:
+    """The DATA carrier of the probe population declared by the policy."""
+    spec = _load(POLICY_PATH)["release_probe_lane"]
+    return root / str(spec["holdout_manifest"])
+
+
+def _probe_population(root: Path) -> int:
+    """The expected document count, read from the holdout manifest DATA."""
+    holdout = yaml.safe_load(_probe_holdout_path(root).read_text(encoding="utf-8")) or {}
+    return len([article for article in (holdout.get("articles") or []) if isinstance(article, dict)])
 
 
 def test_canonical_shadow_report_uses_closed_snake_case_taxonomy():
@@ -3019,10 +3032,18 @@ def test_release_probe_counter_drift_reports_expected_and_observed(tmp_path: Pat
     lane = manifest["external_holdout_contract"]["release_probe"]
     lane["identity_digest"] = "sha256:" + "0" * 64
     path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    articles = [
+        article
+        for article in (
+            yaml.safe_load(_probe_holdout_path(tmp_path).read_text(encoding="utf-8")) or {}
+        ).get("articles", [])
+        if isinstance(article, dict)
+    ]
+    expected_digest = _release_probe_digest(articles, lane)
     flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
     assert any(
         "release_probe.identity_digest" in item.evidence
-        and "22df1b7e" in item.evidence
+        and expected_digest in item.evidence
         and "0000000000000000" in item.evidence
         for item in flags
     ), flags
@@ -3030,17 +3051,91 @@ def test_release_probe_counter_drift_reports_expected_and_observed(tmp_path: Pat
 
 def test_release_probe_document_counter_drift_is_flagged(tmp_path: Path):
     _copy_checker_surface(tmp_path)
+    documents = _probe_population(tmp_path)
     path = _probe_artifact_path(tmp_path)
     payload = json.loads(path.read_text(encoding="utf-8"))
-    payload["evaluated_population"]["aggregate"]["documents"] = 4
+    payload["evaluated_population"]["aggregate"]["documents"] = documents - 1
     path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
     flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
     assert any(
         "evaluated_population.aggregate.documents" in item.evidence
-        and "expected=5" in item.evidence
-        and "observed=4" in item.evidence
+        and f"expected={documents}" in item.evidence
+        and f"observed={documents - 1}" in item.evidence
         for item in flags
     ), flags
+
+
+def test_release_probe_locator_census_must_match_the_population(tmp_path: Path):
+    """A census row list shorter than the population is a named denominator failure."""
+    _copy_checker_surface(tmp_path)
+    documents = _probe_population(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["production_catalog_overlap"]["locators"] = payload["production_catalog_overlap"][
+        "locators"
+    ][: documents - 1]
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "production_catalog_overlap.locators" in item.evidence
+        and f"expected={documents}" in item.evidence
+        and f"observed={documents - 1}" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_present_counter_must_equal_its_locator_rows(tmp_path: Path):
+    """A declaration the per-document rows do not back is named, not trusted."""
+    _copy_checker_surface(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows = payload["production_catalog_overlap"]["locators"]
+    recomputed = sum(row.get("sources_archive_present") is True for row in rows)
+    payload["production_catalog_overlap"]["sources_archive_present_count"] = recomputed + 4
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "production_catalog_overlap.sources_archive_present_count" in item.evidence
+        and f"expected={recomputed}" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_population_expectation_follows_the_manifest_data(tmp_path: Path):
+    """Growing the DATA population must flag the frozen artifact, never pass silently."""
+    _copy_checker_surface(tmp_path)
+    documents = _probe_population(tmp_path)
+    holdout_path = _probe_holdout_path(tmp_path)
+    holdout = yaml.safe_load(holdout_path.read_text(encoding="utf-8"))
+    holdout["articles"] = list(holdout["articles"]) + [
+        {"article_id": "9999.00001"},
+        {"article_id": "9999.00002"},
+    ]
+    holdout_path.write_text(yaml.safe_dump(holdout), encoding="utf-8")
+    grown = documents + 2
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    # The expectation came from the article manifest, not a literal: the frozen
+    # artifact still declares the old population and every carrier is named.
+    assert any(
+        "reference_population.documents" in item.evidence
+        and f"expected={grown}" in item.evidence
+        and f"observed={documents}" in item.evidence
+        for item in flags
+    ), flags
+    assert any(
+        "reference_tei" in item.evidence
+        and f"expected={grown}" in item.evidence
+        and f"observed={documents}" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_policy_pins_the_population_carrier_not_the_count():
+    spec = _load(POLICY_PATH)["release_probe_lane"]
+    assert spec["holdout_manifest"] == "data/parse/holdout_manifests.yaml"
+    assert spec["manifest"] == "data/parse/acceptance_manifest.yaml"
+    assert "documents" not in spec, "the policy must reference DATA, not pin the count"
+    assert "expected_documents" not in spec
 
 
 def test_release_probe_identity_drift_is_flagged(tmp_path: Path):
