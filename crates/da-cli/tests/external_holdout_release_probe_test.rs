@@ -7,12 +7,14 @@
 //! `da-parse` test `external_holdout_probe_semantics.rs` (S08/T03) and its DATA
 //! carrier `data/parse/acceptance_manifest.yaml#external_holdout_contract.release_probe`
 //! (S08/T01/T02).  This test owns the *runtime* half: the example
-//! `examples/external_holdout_release_probe.rs` re-measures the same five
-//! sha256-pinned frozen TEI, fails FATAL on drift/absence/non-UTF-8, and emits
+//! `examples/external_holdout_release_probe.rs` re-measures the same frozen
+//! sha256-pinned TEI (the measurable subset of the frozen population; the
+//! remainder is the lane's named typed exceptions), fails FATAL on
+//! drift/absence/non-UTF-8, and emits
 //! `artifacts/parse_compat/external_holdout_release_probe.json`.
 //!
 //! The artifact is the same-n surface the governor and H20 need, so the audit
-//! below pins the identity (five distinct sha256, the probe digest recomputed
+//! below pins the identity (one distinct sha256 per frozen document, the probe digest recomputed
 //! from the source manifest by the declared canonicalization handles), the
 //! GAR-006 population split (a distinguishable reference/executed/evaluated
 //! population with no legacy `denominators`/`corpus` block), the measured
@@ -79,55 +81,440 @@ const FROZEN_DOCUMENTS: &[FrozenDocument] = &[
         "a230094fff20d5434e1871ee9511ce61d71777b6ff0454faeaedc79cdfef6629",
         57,
         56,
-        1_000_000,
-        935_804,
-        1_000_000,
-        64_196,
-        46_341,
+        1000000,
+        935804,
+        1000000,
+        64196,
+        46341,
     ),
     (
         "2401.17167",
         "7c9c42adc0ddbc22a9bf889c31dd3387b26d6dd8cd007909fb3127c29628c262",
         283,
         268,
-        1_000_000,
-        985_868,
-        1_000_000,
-        14_132,
-        10_255,
+        1000000,
+        985868,
+        1000000,
+        14132,
+        10255,
     ),
     (
         "2411.07228",
         "97a3f9f0eab21f512a2fed28a7e98058d002c3a056297d86f7bc4e025b4ec0db",
         128,
         121,
-        1_000_000,
-        969_228,
-        1_000_000,
-        30_772,
-        5_420,
+        1000000,
+        969228,
+        1000000,
+        30772,
+        5420,
     ),
     (
         "2505.16270",
         "2d09c727aa300bf8446efbdf55a94d7713b4d7d39e9fd3f84ee84b12453426bc",
         221,
         219,
-        1_000_000,
-        982_761,
-        1_000_000,
-        17_239,
-        8_089,
+        1000000,
+        982761,
+        1000000,
+        17239,
+        8089,
     ),
     (
         "2608.22118",
         "635dc993492fbb3e83b9d8478fe85be56042bcacf435a627b8e254f1761a2714",
         42,
         41,
-        1_000_000,
-        914_330,
-        1_000_000,
-        85_670,
-        3_883,
+        1000000,
+        914330,
+        1000000,
+        85670,
+        3883,
+    ),
+    (
+        "1409.0473",
+        "11c46c00dc4b97b47c9591356d29eedd888e467d0d042fa104d2583ee6f3bb55",
+        61,
+        59,
+        1000000,
+        938869,
+        1000000,
+        61131,
+        3376,
+    ),
+    (
+        "1410.4615",
+        "4236917ee79e85b48908ea242f848d34043f1ca9e86586c7892e1a77182f94ce",
+        79,
+        78,
+        1000000,
+        953061,
+        1000000,
+        46939,
+        3280,
+    ),
+    (
+        "1410.5401",
+        "a73daefd41d7f04a390515ec22f0a56cc87d8aaf668205d72308bec2181b382b",
+        84,
+        83,
+        1000000,
+        955763,
+        1000000,
+        44237,
+        3378,
+    ),
+    (
+        "1506.02438",
+        "6a6a0633e0a451642dbb61878b23774adf0a4ff312c6d98e6a090178963f5be1",
+        64,
+        63,
+        1000000,
+        942527,
+        1000000,
+        57473,
+        2947,
+    ),
+    (
+        "1511.08228",
+        "6b19ce1f5702fe3e34a3061e911ab3dede76acd8652827d923e995a51cf0764c",
+        80,
+        79,
+        1000000,
+        953627,
+        1000000,
+        46373,
+        2431,
+    ),
+    (
+        "1606.01540",
+        "4fb94fb9b986409621b0392d637b276d37edde6638d7c3fff5da47700247e1f6",
+        44,
+        36,
+        1000000,
+        903578,
+        1000000,
+        96422,
+        1590,
+    ),
+    (
+        "1703.00050",
+        "fe95602ca1b0eaadff08f99e7e79e9767be668dab3b92ce75da1425cebed4b42",
+        53,
+        52,
+        1000000,
+        931205,
+        1000000,
+        68795,
+        2877,
+    ),
+    (
+        "1706.03741",
+        "311948c84b492cceff43e03fadbdd45c5671eab6bd0c12db28fd3e4da421a4f4",
+        100,
+        97,
+        1000000,
+        961905,
+        1000000,
+        38095,
+        3140,
+    ),
+    (
+        "1712.00600",
+        "44dff1010d73b0ad72897dfe58ffce7dc666c380175081588717fa14a996ade2",
+        23,
+        22,
+        1000000,
+        851340,
+        1000000,
+        148660,
+        1469,
+    ),
+    (
+        "1902.04043",
+        "03d0ef3b738435b16be7c4aaf95e6cb9c4a2245fb7b11343dacb57dd2df900a1",
+        98,
+        97,
+        1000000,
+        961905,
+        1000000,
+        38095,
+        3003,
+    ),
+    (
+        "2010.03768",
+        "60fbb3f794ac17b64482cfc57878feed03d0b6767cdad95182bc1b6e9a562e4a",
+        124,
+        123,
+        1000000,
+        969713,
+        1000000,
+        30287,
+        3804,
+    ),
+    (
+        "2010.09776",
+        "7ad0356afe67dc9be7232cdd65aa2488071ae2067a7865f87e5e613a377ad8b7",
+        248,
+        210,
+        1000000,
+        982035,
+        1000000,
+        17965,
+        3548,
+    ),
+    (
+        "2107.06857",
+        "d7baa798e5cee89fbd5202c54d822662b5ea8fdc60ef3ef22d935151ee6c6ee3",
+        177,
+        176,
+        1000000,
+        978639,
+        1000000,
+        21361,
+        6445,
+    ),
+    (
+        "2112.09332",
+        "1463ee2772e04070d919c1e4fc3572756deac27d2d98433d023635acf51563ed",
+        73,
+        72,
+        1000000,
+        949347,
+        1000000,
+        50653,
+        5235,
+    ),
+    (
+        "2201.11903",
+        "c1cd041d3aed55a92698c80d9d94d0c7a62572924b4ec67cbd48b7cb01121f10",
+        169,
+        168,
+        1000000,
+        977645,
+        1000000,
+        22355,
+        6986,
+    ),
+    (
+        "2203.07540",
+        "c0aaa035976e5d94a00305d6f9b1646ba115eb1d0f5c573205a6f6921de5970d",
+        139,
+        138,
+        1000000,
+        972916,
+        1000000,
+        27084,
+        4629,
+    ),
+    (
+        "2205.10625",
+        "c884f2c28a17331bc3c39d20ff912a65745daf216f63ba874e8cb7ba8cc10aa3",
+        89,
+        88,
+        1000000,
+        958171,
+        1000000,
+        41829,
+        10247,
+    ),
+    (
+        "2205.11916",
+        "5dc63bb5d2d16833ebaaed3b1b6968e57fc4ea4c1b27c1ae4cee3ed663b1de2b",
+        152,
+        149,
+        1000000,
+        974865,
+        1000000,
+        25135,
+        7170,
+    ),
+    (
+        "2206.09889",
+        "de03a7562632711e7010ba511534ac2ad883a99621ef05b53ababf059d3b811f",
+        101,
+        93,
+        1000000,
+        960331,
+        1000000,
+        39669,
+        3217,
+    ),
+    (
+        "2206.10498",
+        "0a50b6d4c4dab11120fc539c12f052a301bf98e29393ec1a800229769d42aa6b",
+        83,
+        82,
+        1000000,
+        955248,
+        1000000,
+        44752,
+        6893,
+    ),
+    (
+        "2206.10944",
+        "7c91c6d6a0669dea3cca44c176855b82809352b8283a9e73af018c2ff024b764",
+        42,
+        37,
+        1000000,
+        905939,
+        1000000,
+        94061,
+        2021,
+    ),
+    (
+        "2207.01206",
+        "e68cf8cba1bb3ac3f1cb20e8666242d47c95628f1007a5cd7c784bac065772c6",
+        127,
+        126,
+        1000000,
+        970413,
+        1000000,
+        29587,
+        5120,
+    ),
+    (
+        "2207.01780",
+        "de39d4ec3079735cb939c1d3be9a2d16a9c7e00a1591e4cb843d36772e9c131c",
+        179,
+        178,
+        1000000,
+        978874,
+        1000000,
+        21126,
+        6025,
+    ),
+    (
+        "2210.03350",
+        "937361d23baab081d241b8c4cb76579bc7654d9ce294e2cfb67f099f172524f7",
+        117,
+        115,
+        1000000,
+        967675,
+        1000000,
+        32325,
+        4231,
+    ),
+    (
+        "2210.03629",
+        "dd4335ea14681bf25f3c28bf15ba82760b8b7521d92217bbfcf75d55bc371958",
+        106,
+        105,
+        1000000,
+        964705,
+        1000000,
+        35295,
+        5208,
+    ),
+    (
+        "2212.04088",
+        "7a828241c0b2d5d1bb498ca6a1a019181e3e6d355f5cfb8cbd9974161ef1f3d8",
+        92,
+        91,
+        1000000,
+        959495,
+        1000000,
+        40505,
+        3685,
+    ),
+    (
+        "2212.08073",
+        "558b12fdaf7201b84fd4d59899bb7ab95fb1770e5d22370e5f0a07ab921c2887",
+        80,
+        79,
+        1000000,
+        953627,
+        1000000,
+        46373,
+        5336,
+    ),
+    (
+        "2212.10509",
+        "b5d1469fcbabfde6f06d63c90bb1ba44234a1886faabf1963c391fa98e510a35",
+        91,
+        90,
+        1000000,
+        959063,
+        1000000,
+        40937,
+        4260,
+    ),
+    (
+        "2212.14024",
+        "85b977cbabb26499378efbd79311bf31d0305d46ece192ad7cb08c7fb5412653",
+        155,
+        154,
+        1000000,
+        975662,
+        1000000,
+        24338,
+        3860,
+    ),
+    (
+        "2302.00923",
+        "1d6e7e56485e1686f232fc84befaa130c47d789eda9087cf3249a58fcd1b6219",
+        133,
+        132,
+        1000000,
+        971720,
+        1000000,
+        28280,
+        4489,
+    ),
+    (
+        "2302.01560",
+        "e4d5bf5937e01fd1c0622f89e3bb877fafb1bd84f090a54826848f8285de009c",
+        115,
+        113,
+        1000000,
+        967121,
+        1000000,
+        32879,
+        5965,
+    ),
+    (
+        "2302.06590",
+        "a890ab82ba968ff39ebbe14641ba317cb5af7a7206eea5e1d8dd1700fdf97a0b",
+        41,
+        37,
+        1000000,
+        905939,
+        1000000,
+        94061,
+        1801,
+    ),
+    (
+        "2302.08468",
+        "f867b907733e2a59325c887ba540f1231f3d1fb9963b1ed6db7105270d9f1c2f",
+        180,
+        179,
+        1000000,
+        978989,
+        1000000,
+        21011,
+        4401,
+    ),
+    (
+        "2303.06689",
+        "8386fea1bcc7bb6455be55d54374bb32b53afdd1c0634322f205666d691546d4",
+        154,
+        142,
+        1000000,
+        973659,
+        1000000,
+        26341,
+        4801,
+    ),
+    (
+        "2303.08268",
+        "1b94db6d6c0de92021e93330579262b1d64987b636a3eb5813e36071e0f30bd5",
+        61,
+        60,
+        1000000,
+        939826,
+        1000000,
+        60174,
+        2672,
     ),
 ];
 
@@ -138,16 +525,16 @@ const FROZEN_DOCUMENTS: &[FrozenDocument] = &[
 /// population number; every other value is the recorded aggregate measurement.
 fn frozen_aggregate() -> (u64, u64, u64, u64, u64, u64, u64, u64, u64) {
     (
-        731,
-        705,
-        705,
+        4445,
+        4308,
+        4308,
         0,
         0,
         FROZEN_DOCUMENTS
             .iter()
             .filter(|(_, _, _, _, agreement, _, _, _, _)| *agreement == 1_000_000)
             .count() as u64,
-        10,
+        80,
         0,
         0,
     )
@@ -156,7 +543,7 @@ fn frozen_aggregate() -> (u64, u64, u64, u64, u64, u64, u64, u64, u64) {
 /// The frozen named admission narrowings, identical to the S08/T03 table:
 /// `(document_id, class, source_population, admitted)`.  Every class whose
 /// admitted band is smaller than its real carrier population must appear here.
-const FROZEN_NARROWINGS: [(&str, &str, u64, u64); 10] = [
+const FROZEN_NARROWINGS: [(&str, &str, u64, u64); 59] = [
     ("1203.2295", "SemanticFieldLoss::HeaderTitle", 2, 1),
     ("2401.17167", "AdmittedAuthorLine", 239, 235),
     ("2401.17167", "SemanticFieldLoss::HeaderTitle", 2, 1),
@@ -167,6 +554,55 @@ const FROZEN_NARROWINGS: [(&str, &str, u64, u64); 10] = [
     ("2505.16270", "AdmittedAuthorLine", 10, 9),
     ("2505.16270", "SemanticFieldLoss::HeaderTitle", 2, 1),
     ("2608.22118", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1409.0473", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1409.0473", "SemanticFieldLoss::AuthorAffiliation", 3, 2),
+    ("1410.4615", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1410.5401", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1506.02438", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1511.08228", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1606.01540", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1606.01540", "SemanticFieldLoss::AuthorAffiliation", 7, 0),
+    ("1703.00050", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1706.03741", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1706.03741", "SemanticFieldLoss::AuthorAffiliation", 2, 0),
+    ("1712.00600", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("1902.04043", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2010.03768", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2010.09776", "AdmittedAuthorLine", 38, 36),
+    ("2010.09776", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2010.09776", "SemanticFieldLoss::AuthorAffiliation", 44, 9),
+    ("2107.06857", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2112.09332", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2201.11903", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2203.07540", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2205.10625", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2205.11916", "AdmittedAuthorLine", 7, 6),
+    ("2205.11916", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2205.11916", "SemanticFieldLoss::AuthorAffiliation", 7, 6),
+    ("2206.09889", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2206.09889", "SemanticFieldLoss::AuthorAffiliation", 7, 0),
+    ("2206.10498", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2206.10944", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2206.10944", "SemanticFieldLoss::AuthorAffiliation", 4, 0),
+    ("2207.01206", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2207.01780", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2210.03350", "AdmittedAuthorLine", 11, 10),
+    ("2210.03350", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2210.03629", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2212.04088", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2212.08073", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2212.10509", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2212.14024", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2302.00923", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2302.01560", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2302.01560", "SemanticFieldLoss::AuthorAffiliation", 9, 8),
+    ("2302.06590", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2302.06590", "SemanticFieldLoss::AuthorAffiliation", 4, 1),
+    ("2302.08468", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2303.06689", "AdmittedAuthorLine", 9, 8),
+    ("2303.06689", "SemanticFieldLoss::HeaderTitle", 2, 1),
+    ("2303.06689", "SemanticFieldLoss::AuthorAffiliation", 10, 0),
+    ("2303.08268", "SemanticFieldLoss::HeaderTitle", 2, 1),
 ];
 
 /// The two release labels the artifact may spell.  Any other `@`-bearing string
@@ -211,7 +647,7 @@ const FORBIDDEN_KEYS: [&str; 12] = [
 
 /// The guards the runner declares.  The self-check must prove each one rejects
 /// its own violating input, so a guard that silently stops firing is visible.
-const GUARD_LABELS: [&str; 30] = [
+const GUARD_LABELS: [&str; 32] = [
     "schema_version_drift",
     "reference_population_role",
     "reference_documents",
@@ -242,6 +678,8 @@ const GUARD_LABELS: [&str; 30] = [
     "production_catalog_overlap_absent",
     "named_limitations_missing",
     "class_narrowings_incomplete",
+    "reference_measurable_documents",
+    "reference_exceptions_drift",
 ];
 
 fn repo_root() -> PathBuf {
@@ -439,10 +877,24 @@ fn artifact_errors(
     let contract = yaml_at(&manifest, "external_holdout_contract");
     let lane = &contract["release_probe"];
 
-    // The frozen table is the recorded measurement of the declared population.
-    // If DATA moved the population off the table, the artifact cannot be audited
-    // against it: refuse by name rather than compare against a stale table.
-    if declared != FROZEN_DOCUMENTS.len() {
+    // The frozen population is a DATA partition: the measurable `reference_tei`
+    // rows plus the typed `reference_exceptions` rows.  The frozen reference
+    // surface (`reference_population`, `production_catalog_overlap`) is audited
+    // against `declared`; the measured surface (`executed_population`,
+    // `evaluated_population`, `outcomes`) is audited against the measurable
+    // subset.  If DATA moved the population off the frozen table, or the frozen
+    // table no longer covers the measurable subset, the artifact cannot be
+    // audited against it: refuse by name rather than compare against a stale
+    // table.
+    let measurable = lane["reference_tei"]
+        .as_sequence()
+        .map(Vec::len)
+        .unwrap_or(0);
+    let exceptions = lane["reference_exceptions"]
+        .as_sequence()
+        .map(Vec::len)
+        .unwrap_or(0);
+    if declared != measurable + exceptions || FROZEN_DOCUMENTS.len() != measurable {
         errors.push("probe:reference_population.frozen_table_drift".into());
         return errors;
     }
@@ -451,7 +903,7 @@ fn artifact_errors(
         errors.push("probe:schema_version".into());
     }
 
-    // ── identity: five distinct sha256, recomputed digest ───────────────────
+    // ── identity: distinct sha256 per frozen document, recomputed digest ──────
     let reference = &report["reference_population"];
     if reference["role"].as_str() != Some("identity_only") {
         errors.push("probe:reference_population.role".into());
@@ -524,8 +976,8 @@ fn artifact_errors(
     if executed["execution_evidence"].as_str() != Some(EXECUTION_EVIDENCE) {
         errors.push("probe:executed_population.execution_evidence".into());
     }
-    if executed["documents"].as_u64() != Some(declared as u64)
-        || executed["accepted"].as_u64() != Some(declared as u64)
+    if executed["documents"].as_u64() != Some(measurable as u64)
+        || executed["accepted"].as_u64() != Some(measurable as u64)
     {
         errors.push("probe:executed_population.documents".into());
     }
@@ -556,7 +1008,7 @@ fn artifact_errors(
     if evaluated["status"].as_str() != Some("evaluated") {
         errors.push("probe:evaluated_population.status".into());
     }
-    if evaluated["documents"].as_u64() != Some(declared as u64) {
+    if evaluated["documents"].as_u64() != Some(measurable as u64) {
         errors.push("probe:evaluated_population.documents".into());
     }
     let aggregate = &evaluated["aggregate"];
@@ -601,7 +1053,7 @@ fn artifact_errors(
 
     // ── outcomes: the frozen per-document measurement ──────────────────────
     let outcomes = report["outcomes"].as_array().cloned().unwrap_or_default();
-    if outcomes.len() != declared {
+    if outcomes.len() != measurable {
         errors.push("probe:outcomes.cardinality".into());
     }
     let mut measured_ids: BTreeSet<&str> = BTreeSet::new();
@@ -795,7 +1247,7 @@ fn artifact_errors(
     // ── catalog overlap: a real measurement, not an assertion ──────────────
     let census = &report["production_catalog_overlap"];
     let locators = census["locators"].as_array().cloned().unwrap_or_default();
-    if census["census_kind"].as_str() != Some("filesystem_presence_of_the_five_holdout_identities")
+    if census["census_kind"].as_str() != Some("filesystem_presence_of_the_holdout_identities")
         || census["documents"].as_u64() != Some(declared as u64)
         || locators.len() != declared
     {
@@ -928,10 +1380,17 @@ fn artifact_errors(
 /// A lane byte pin from the manifest: `(identity sha256 without prefix, size)`.
 fn reference_pin_from_manifest(document_id: &str) -> Option<(String, u64)> {
     let manifest = manifest_yaml();
-    let rows = yaml_at(&manifest, "external_holdout_contract")["release_probe"]["reference_tei"]
-        .as_sequence()?
-        .clone();
-    rows.iter()
+    let contract = yaml_at(&manifest, "external_holdout_contract");
+    let lane = &contract["release_probe"];
+    // The frozen population is the measurable pins plus the typed exceptions:
+    // the artifact's `byte_pins` covers all 50, so the manifest lookup must too.
+    let mut rows: Vec<&serde_yaml::Value> = Vec::new();
+    for key in ["reference_tei", "reference_exceptions"] {
+        if let Some(entries) = lane[key].as_sequence() {
+            rows.extend(entries.iter());
+        }
+    }
+    rows.into_iter()
         .find(|row| row["article_id"].as_str() == Some(document_id))
         .and_then(|row| {
             Some((
@@ -1400,4 +1859,76 @@ fn missing_report_fails_closed_without_writing_an_artifact() {
         stderr.contains("--report <path> is required for the canonical run"),
         "the refusal must name the missing argument:\n{stderr}"
     );
+}
+
+/// The recorded measurement tables are DERIVED FROM the committed artifact, not
+/// hand-typed: this guard re-reads
+/// `artifacts/parse_compat/external_holdout_release_probe.json` and asserts that
+/// the compiled `FROZEN_DOCUMENTS`, `frozen_aggregate` and `FROZEN_NARROWINGS`
+/// are exactly its `outcomes`, aggregate and `class_narrowings`.  A hand edit, a
+/// stale artifact, or a table regenerated without the other is a failure here.
+/// The audit itself still compares a *mutated* artifact against these static
+/// tables, so this guard does not make the mutation matrix self-referential.
+#[test]
+fn frozen_tables_are_derived_from_the_committed_artifact() {
+    let report = load_committed_artifact();
+    let outcomes = report["outcomes"].as_array().expect("outcomes");
+    assert_eq!(outcomes.len(), FROZEN_DOCUMENTS.len());
+    for (row, frozen) in outcomes.iter().zip(FROZEN_DOCUMENTS.iter()) {
+        let (document_id, sha, source_population, admitted, agreement, low, high, width, latency) =
+            *frozen;
+        assert_eq!(row["document_id"].as_str(), Some(document_id));
+        assert_eq!(row["identity_sha256"].as_str(), Some(sha));
+        assert_eq!(row["source_population"].as_u64(), Some(source_population));
+        assert_eq!(row["admitted"].as_u64(), Some(admitted));
+        assert_eq!(row["agreement_ratio_micros"].as_u64(), Some(agreement));
+        assert_eq!(row["uncertainty_low"].as_u64(), Some(low));
+        assert_eq!(row["uncertainty_high"].as_u64(), Some(high));
+        assert_eq!(row["uncertainty_width_micros"].as_u64(), Some(width));
+        assert_eq!(row["latency_ms"].as_u64(), Some(latency));
+    }
+
+    let aggregate = &report["evaluated_population"]["aggregate"];
+    let frozen = frozen_aggregate();
+    assert_eq!(aggregate["source_population"].as_u64(), Some(frozen.0));
+    assert_eq!(aggregate["admitted"].as_u64(), Some(frozen.1));
+    assert_eq!(aggregate["tp"].as_u64(), Some(frozen.2));
+    assert_eq!(aggregate["fn"].as_u64(), Some(frozen.3));
+    assert_eq!(aggregate["fp"].as_u64(), Some(frozen.4));
+    assert_eq!(aggregate["agreeing_documents"].as_u64(), Some(frozen.5));
+    assert_eq!(aggregate["margin_pass"].as_u64(), Some(frozen.6));
+    assert_eq!(aggregate["margin_fail"].as_u64(), Some(frozen.7));
+    assert_eq!(
+        aggregate["no_denominator_documents"].as_u64(),
+        Some(frozen.8)
+    );
+
+    let artifact_narrowings: BTreeSet<(String, String, u64, u64)> = report["class_narrowings"]
+        .as_array()
+        .expect("class_narrowings")
+        .iter()
+        .map(|row| {
+            (
+                row["document_id"]
+                    .as_str()
+                    .expect("document_id")
+                    .to_string(),
+                row["class"].as_str().expect("class").to_string(),
+                row["source_population"].as_u64().expect("source"),
+                row["admitted"].as_u64().expect("admitted"),
+            )
+        })
+        .collect();
+    let frozen_narrowings: BTreeSet<(String, String, u64, u64)> = FROZEN_NARROWINGS
+        .iter()
+        .map(|(document_id, class, source_population, admitted)| {
+            (
+                (*document_id).to_string(),
+                (*class).to_string(),
+                *source_population,
+                *admitted,
+            )
+        })
+        .collect();
+    assert_eq!(artifact_narrowings, frozen_narrowings);
 }

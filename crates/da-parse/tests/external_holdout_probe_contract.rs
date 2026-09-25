@@ -65,7 +65,7 @@ const SOURCE_MANIFEST: &str = "data/parse/holdout_manifests.yaml";
 /// The closed key set of the `release_probe` lane. A lane that gains an
 /// undeclared key is `probe_lane_unknown_key`: the declaration is closed DATA,
 /// not an extensible bag.
-const RELEASE_PROBE_KEYS: [&str; 25] = [
+const RELEASE_PROBE_KEYS: [&str; 27] = [
     "schema_version",
     "identity_input",
     "digest_is_byte_hash",
@@ -86,6 +86,10 @@ const RELEASE_PROBE_KEYS: [&str; 25] = [
     // S08/T02 frozen reference binding (plan-named keys).
     "declared_release",
     "reference_tei",
+    // S08/T05 typed exceptions: the frozen population is the measurable
+    // `reference_tei` rows plus these named, typed exclusions.
+    "reference_exceptions",
+    "reference_exception_reasons",
     "source_manifest_sha256",
     "reference_endpoint",
     "reference_java_version",
@@ -113,6 +117,15 @@ const RELEASE_PROBE_DECLARED_RELEASE_KEYS: [&str; 10] = [
 
 /// Closed keys of one frozen reference document pin.
 const RELEASE_PROBE_REFERENCE_ROW_KEYS: [&str; 4] = ["article_id", "path", "sha256", "size_bytes"];
+
+/// Closed keys of one typed reference exception row: a named, pinned document
+/// that this lane cannot measure, with a reason from the closed vocabulary.
+const RELEASE_PROBE_EXCEPTION_ROW_KEYS: [&str; 5] =
+    ["article_id", "path", "sha256", "size_bytes", "reason"];
+
+/// Closed keys of one declared exception reason (the vocabulary the exception
+/// rows must draw from).
+const RELEASE_PROBE_EXCEPTION_REASON_KEYS: [&str; 2] = ["reason", "detail"];
 
 /// Closed keys of the D204 consolidation declaration carried with the pins.
 const RELEASE_PROBE_CONSOLIDATION_KEYS: [&str; 3] = [
@@ -417,11 +430,15 @@ fn identity_digest_from_source(lane: &Yaml, source: &Yaml) -> Result<String, Str
 /// truncation to the shorter of the two.
 fn reference_population_binding(lane: &Yaml, source: &Yaml) -> Result<usize, &'static str> {
     let rows = seq(lane, "reference_tei").ok_or("probe_reference_population_missing")?;
+    let exceptions = seq(lane, "reference_exceptions").map(Vec::len).unwrap_or(0);
     let articles = seq(source, "articles").ok_or("probe_identity_source_missing")?;
-    if rows.len() != articles.len() {
+    // The frozen population is the measurable rows plus the typed exceptions:
+    // a lane whose measurable subset silently shrank cannot be rescued by the
+    // pin count alone, and an exception is a named row, never a dropped one.
+    if rows.len() + exceptions != articles.len() {
         return Err("probe_reference_population_drift");
     }
-    Ok(rows.len())
+    Ok(rows.len() + exceptions)
 }
 
 /// How the caller claims the recorded human release decision is satisfied.
@@ -713,6 +730,45 @@ fn release_probe_lane_is_declared_with_a_closed_key_set() {
                 .map(ToString::to_string)
                 .collect::<BTreeSet<String>>(),
             "{PREFIX} reference_tei rows must carry exactly the declared pin keys"
+        );
+    }
+
+    // S08/T05 typed exceptions are closed DATA too: each exclusion names its
+    // document, its byte pin and a reason drawn from the declared vocabulary.
+    let exception_rows =
+        seq(lane, "reference_exceptions").expect("release_probe.reference_exceptions");
+    let exception_reasons = seq(lane, "reference_exception_reasons")
+        .expect("release_probe.reference_exception_reasons");
+    assert!(
+        !exception_rows.is_empty(),
+        "{PREFIX} the lane must carry its typed exceptions as DATA, not a silent filter"
+    );
+    let reason_tokens: BTreeSet<String> = exception_reasons
+        .iter()
+        .filter_map(|row| str_at(row, "reason").map(str::to_string))
+        .collect();
+    for row in exception_rows {
+        assert_eq!(
+            keys_of(row),
+            RELEASE_PROBE_EXCEPTION_ROW_KEYS
+                .iter()
+                .map(ToString::to_string)
+                .collect::<BTreeSet<String>>(),
+            "{PREFIX} reference_exceptions rows must carry exactly the declared keys"
+        );
+        assert!(
+            reason_tokens.contains(str_at(row, "reason").unwrap_or_default()),
+            "{PREFIX} every exception must name a reason from the declared vocabulary"
+        );
+    }
+    for row in exception_reasons {
+        assert_eq!(
+            keys_of(row),
+            RELEASE_PROBE_EXCEPTION_REASON_KEYS
+                .iter()
+                .map(ToString::to_string)
+                .collect::<BTreeSet<String>>(),
+            "{PREFIX} exception reasons must carry exactly the declared keys"
         );
     }
     let flags = at(lane, "reference_consolidation_flags")
@@ -1304,12 +1360,17 @@ fn grown_lane(lane: &Yaml, source: &Yaml, population: usize) -> Yaml {
     let mut grown = lane.clone();
     if let Some(root) = grown.as_mapping_mut() {
         root.insert(Yaml::String("reference_tei".into()), Yaml::Sequence(rows));
+        // The grown lane measures every grown article: no typed exceptions.
+        root.insert(
+            Yaml::String("reference_exceptions".into()),
+            Yaml::Sequence(Vec::new()),
+        );
         root.insert(Yaml::String("identity_digest".into()), Yaml::String(digest));
     }
     grown
 }
 
-/// The declared population is DATA, not a compiled-in five: the same contract
+/// The declared population is DATA, not a compiled-in count: the same contract
 /// derives the frozen population from the frozen source manifest and a different
 /// population from a synthetic source manifest that exists only inside this
 /// test.  A lane whose pins do not cover the declared articles is refused by
