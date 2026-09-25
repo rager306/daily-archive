@@ -1,6 +1,7 @@
 # Аудит абсорбции GROBID в Rust
 
 Исходная ревизия: `bcdd0cfc5e34f64821798463fe23b2f3845efe56`, ветка `feat/da-parse`. Дата проверки окружения: 2026-09-21. Исправления runtime не выполнялись; этот документ описывает измерения и следующий объём работ, а не разрешение на выпуск.
+Ревизия квалификации: 6a384227a9579a21933e4a0757c1abfb10831b7b — измеренный `git rev-parse HEAD` на момент прогона команд раздела `M511-j7wz2f/S09` (замер на рабочем дереве поверх HEAD).
 
 ## Вывод
 
@@ -463,7 +464,7 @@ shadow-композитор; production-достижимость не доказ
 `deployed=false`, `import_eligible=false`, `auto_promote=forbidden`,
 `graph_write=forbidden`, `this_wave_promotes=none`, D127 не снят.
 
-### Свидетельства среза M511-j7wz2f/S05 (независимая семантическая регрессия реального корпуса: замер и названный RED)
+### Свидетельства среза M511-j7wz2f/S05 (независимая семантическая регрессия реального корпуса: замер и исторический RED, снятый S05/T07)
 
 S05 закрывает требование H18 «регрессия на РЕАЛЬНОМ корпусе, а не на синтетических
 фикстурах» на **измеренной** области из трёх sha256-пиннутых preserved TEI
@@ -472,8 +473,8 @@ S05 закрывает требование H18 «регрессия на РЕА
 измерено `conserved == admitted` и `fabricated == 0` для всех классов. Поэтому
 «историческим RED» S05 является **отсутствие независимой корпусной регрессии**
 (H18 держался `pending`), а текущий замер — не «исправленный дефект», а впервые
-полученные числа. Ниже — и числа, и фактический RED собственного набора среза,
-названный в T06.
+полученные числа. Ниже — и числа, и исторический RED собственного набора среза,
+названный в T06 на ревизии `4af6a2dd3` и снятый S05/T07.
 
 - **Оракул (S05/T01).** `crates/da-parse/tests/native_fulltext_corpus_semantics.rs`
   — test-only; `crates/da-parse/src` не тронут. admitted-полоса строится ИЗ
@@ -543,8 +544,11 @@ hub 80 / rlm 49 / reca 78 = 207 reference-текстов.
 
 - **Runtime-артефакт (S05/T04).** `artifacts/parse_compat/native_fulltext_corpus_shadow.json`
   — byte-детерминированный
-  (`efc1984c3ff778da3f2d8d4929cdf7dc5c46eddbb2d80d6b6d23c1837cbe467f`, два прогона
-  из разных рабочих каталогов byte-идентичны). `source_identity.identity_kind=preserved_three_sha`,
+  (`1f2a24953e79481fc704d991be47ecc266f35c931d84b21b21148416138b8d27`, два прогона
+  из разных рабочих каталогов byte-идентичны; это измеренное с диска значение на
+  ревизии квалификации S09). Прежний литерал относился к форме артефакта до
+  GAR-006-перевода (см. историческую запись ниже); никакие измеренные числа не
+  пере-выведены. `source_identity.identity_kind=preserved_three_sha`,
   `unique_source_sha256=3`, `denominators.documents=3`, 3 строки с 3 различными
   sha, `corpus.aggregate` TP=573/FP=0/FN=0/P=R=F1=1.0/admission_coverage=0.993068,
   `mutation_summary` (12 id→detector), policy-замки и 15-флаговый redaction-блок.
@@ -558,36 +562,45 @@ hub 80 / rlm 49 / reca 78 = 207 reference-текстов.
   что схлопнутая (3 sha → 1) или переименованная corpus-identity падает ПО ИМЕНИ
   артефакта. Набор `test_scholarly_parse_governance.py` 437 → 443 (≥441).
 
-#### Названный RED собственного набора среза (T06): corpus-артефакт vs GAR-006
+#### Исторический RED собственного набора среза (T06), снятый S05/T07: corpus-артефакт vs GAR-006
 
-Финальный замер среза обнаружил **фактический RED**, а не PASS:
+**Исторический RED (ревизия `4af6a2dd3`, не текущее состояние).** Финальный
+замер того среза обнаружил **фактический RED**, а не PASS:
 `cargo test -p da-parse --tests` → **exit 101**,
-`data_contracts::population_contract_enumerates_every_shadow_report` падает с
+`data_contracts::population_contract_enumerates_every_shadow_report` падал с
 `shadow reports missing from population_contract.report_paths: ["artifacts/parse_compat/native_fulltext_corpus_shadow.json"]`.
-Причина измерена, а не предположена: артефакт попадает под glob
-`artifacts/parse_compat/*_shadow.json` (GAR-006), но объявить его в
-`population_contract` нельзя — форма, предписанная S05/T04 (`denominators` +
-`corpus`, без разбиения reference/executed/evaluated), даёт ровно пять
-контрактных ошибок: 3 отсутствующих блока (`reference_population`,
-`executed_population`, `evaluated_population`) и 2 запрещённых legacy-блока
-(`denominators`, `corpus`). Проверено эмпирически (артефакт объявлен → пять
-ошибок → откат). Это конфликт внутри самого плана S05: T04 предписывает форму
-артефакта, несовместимую с GAR-006-контрактом, который T06 обязан держать
-зелёным. Разрешение (привести артефакт к разбиению reference/executed/evaluated
-либо явно классифицировать его вне перечисления population_contract) лежит вне
-файловой поверхности T06 и требует решения на уровне среза. H18 поэтому остаётся
-`pending`; PASS не выдуман.
+Причина измерена, а не предположена: артефакт попадал под glob
+`artifacts/parse_compat/*_shadow.json` (GAR-006), но форма, предписанная S05/T04
+(`denominators` + `corpus`, без разбиения reference/executed/evaluated), не
+позволяла объявить его в `population_contract`: ровно пять контрактных ошибок —
+3 отсутствующих блока (`reference_population`, `executed_population`,
+`evaluated_population`) и 2 запрещённых legacy-блока (`denominators`, `corpus`);
+проверено эмпирически (артефакт объявлен → пять ошибок → откат).
 
-| Проверка (актуальная ревизия `4af6a2dd3`) | Результат |
+**Разрешение (S05/T07), а не замазывание.** Артефакт приведён к
+GAR-006-разбиению reference/executed/evaluated: измеренный носитель теперь несёт
+блоки `reference_population` / `executed_population` / `evaluated_population`, и
+целевой гейт снова зелёный (`cargo test -p da-parse --tests` → 112 suites /
+1489 passed / 0 failed / 0 ignored, замер S07/T05; свежий замер S09/T02 на
+ревизии квалификации — 114 suites / 1508 passed / 0 failed / 0 ignored,
+`population_contract_enumerates_every_shadow_report ... ok`). Исторические числа
+RED сохранены в таблице выше как история ревизии `4af6a2dd3` и задним числом не
+пере-выведены.
+
+H18 остаётся `pending`, но уже **не** из-за снятого RED, а из-за собственной
+области (ровно 3 документа, 9 не измеренных `CitationFieldRole`-вариантов);
+PASS не выдуман.
+
+| Проверка (зелёный замер S05/T07–S08; исторические значения ревизии `4af6a2dd3` помечены) | Результат |
 |---|---|
 | `cargo test -p da-parse --test native_fulltext_corpus_semantics` | exit=0, 7 passed |
 | `cargo test -p da-parse --test native_fulltext_corpus_data_contract` | exit=0, 3 passed |
 | `cargo test -p da-parse --test native_fulltext_corpus_mutations -- --nocapture` | exit=0, 5 passed; 12 declared / 12 detected / 0 survived |
-| `cargo run -p da-cli --features pdf-layout --example native_fulltext_corpus_shadow -- --report artifacts/parse_compat/native_fulltext_corpus_shadow.json` | exit=0; documents=3 accepted=3 TP=573 FP=0 FN=0 P=R=F1=1.0 coverage=0.993068; sha256 `efc1984c…` |
+| `cargo run -p da-cli --features pdf-layout --example native_fulltext_corpus_shadow -- --report artifacts/parse_compat/native_fulltext_corpus_shadow.json` | exit=0; documents=3 accepted=3 TP=573 FP=0 FN=0 P=R=F1=1.0 coverage=0.993068; sha256 `1f2a2495…` |
 | `... native_fulltext_corpus_shadow --self-check` | exit=0, 8 guards |
 | `cargo test -p da-cli --features pdf-layout --test native_fulltext_corpus_shadow_test` | exit=0, 6 passed |
 | `cargo test -p da-cli --features pdf-layout --tests` | exit=0, 618 passed, 38 suites |
-| `cargo test -p da-parse --tests` | **exit=101, 1 failed** (`data_contracts::population_contract_enumerates_every_shadow_report`) — названный RED; fail-fast останавливается после 732 passed (20 targets) на цели `data_contracts` (102 passed / 1 failed); с `--no-fail-fast` полный итог **1444 passed / 1 failed** — единственный провал |
+| `cargo test -p da-parse --tests` | exit=0, зелёный: 112 suites / 1489 passed / 0 failed / 0 ignored (замер S07/T05); свежий замер S09/T02 на ревизии квалификации — 114 suites / 1508 passed / 0 failed / 0 ignored. Историческое значение ревизии `4af6a2dd3`: **exit=101, 1 failed** (`data_contracts::population_contract_enumerates_every_shadow_report`), fail-fast после 732 passed (20 targets), с `--no-fail-fast` **1444 passed / 1 failed** — снято S05/T07 (см. ниже) |
 | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q` | 443 passed |
 | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q` | 368 passed |
 | `governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 (stages=8 unresolved=8 complete=0 claims=0) |
@@ -781,6 +794,79 @@ H20 остаётся `pending` ровно по одному названному
 S09). Мера среза — целостность пакета и честность границ, а не релиз: ни один
 PASS по релизу не заявлен.
 
+### Свидетельства среза M511-j7wz2f/S09 (согласование документов и независимая квалификация: текущая зелёная картина и названные остатки)
+
+Задача среза — привести ADR и review-поверхности в соответствие с уже измеренным
+состоянием S01–S08 и удержать это машинно, а не на прозе. Ни одна стадия H14–H21
+не закрывается, ни один замок не меняется, promotion/import/graph write не
+заявляются. Опорная ревизия этого раздела — та, что записана в шапке аудита
+(`6a384227a9579a21933e4a0757c1abfb10831b7b`, измеренный HEAD на момент прогонов);
+она же — контракт для кросс-поверхностной пробы T04 и `reviewed_source` roadmap C12 (T03).
+
+**Карта кросс-срезовой интеграции (что на что опирается).**
+
+| Звено | Что передаётся | Где удерживается |
+|---|---|---|
+| S01 → S02 | fail-closed XML/TEI-консервация (измеренный класс A-XML) | S02 reference-link проба |
+| S02 → S03 | целостность ссылок (A-REF) как предпосылка семантических полей | S03 field-loss проба |
+| S03 → S05 | типизированные `SemanticFieldLoss`/`CitationFieldRole` под корпусную регрессию | S05 corpus semantics |
+| S04 → S05 / S06 | byte accounting и типизированная absence; глобальные бюджеты и bounded reorder | S05 corpus identity; S06 batch-budget артефакт |
+| S03 → S07 | словарь ролей/отказов как поверхность parity ledger | S07 ledger + мутационная матрица |
+| S05 + S07 → S08 | corpus semantics + parity ledger питают внешнюю holdout-пробу релизного пакета | S08 release package + probe artifact |
+| всё → S09 | согласование документов и независимая квалификация на текущей ревизии | этот раздел; audit §S09 |
+
+**Собственная таблица команд (фактические RC на опорной ревизии).**
+
+| # | Команда (реально исполнена в S09/T02) | RC | Измерено |
+|---|---|---|---|
+| 1 | `cargo test -p da-parse --tests` | 0 | 114 suites / 1508 passed / 0 failed / 0 ignored |
+| 2 | `cargo test -p da-parse --test native_fulltext_corpus_semantics` | 0 | 7 passed / 0 failed |
+| 3 | `cargo test -p da-parse --test native_fulltext_corpus_data_contract` | 0 | 3 passed / 0 failed |
+| 4 | `cargo test -p da-parse --test native_fulltext_corpus_mutations -- --nocapture` | 0 | 5 passed / 0 failed; 12 declared / 12 detected / 0 survived |
+| 5 | `cargo test -p da-cli --features pdf-layout --test native_fulltext_corpus_shadow_test` | 0 | 6 passed / 0 failed |
+| 6 | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q` | 0 | 469 passed (503.01 s) |
+| 7 | `sha256sum artifacts/parse_compat/native_fulltext_corpus_shadow.json` | 0 | `1f2a2495…b8d27` — совпадает с governor-пинами и зеркальной фикстурой |
+
+Ни один RC не выведен из прозы: все семь — фактические коды завершения
+подпроцессов этого прогона. Числа `114/1508` — свежий замер; исторические
+`112/1489` (S07/T05) сохранены в разделе S05 как атрибутированный замер, а не
+пере-выведены.
+
+**Census замок (ни один не изменён).** `import_eligible=false`,
+`deployed=false`, `production_route=forbidden`, `graph_write=forbidden`,
+`auto_promote=forbidden` согласованы по поверхностям:
+`scripts/governor/checks/scholarly_parse_plane.yaml` (блоки `policy` и `locks`,
+там же `promotion_receipt=forbidden`, `raw_payload=forbidden`),
+`data/parse/acceptance_manifest.yaml` (`import_eligible=false`,
+`auto_promote=forbidden`, `production_route=forbidden`,
+`graph_write_or_import=blocked`),
+`doc/review/grobid-absorption-roadmap-2026-09-21.yaml#locks`
+(`this_wave_promotes=none`) и ADR-076 §23. D127 не снят. Java GROBID остаётся TEI
+oracle и rollback target.
+
+**Разрешение revision label (типизированно, без правки DATA-носителя).**
+Три идентичности с РАЗНЫМИ `kind`: rollback-метка `java-grobid-http@0.9.0-crf`
+(`kind: rollback_target_label`), capture-declared revision `0b0ab53b…`
+(`kind: capture_declared_revision`) и наблюдаемая checkout-ревизия `523bb8e9…`
+(`kind: content_bound_checkout_revision`). Авторитет привязки — `content_sha256`,
+а не ярлык: S07/T06 независимо пересчитал **16/16** `java_sources` против
+vendor-дерева (0 расхождений, 0 отсутствующих) и подтвердил `git rev-parse HEAD`
+== `observed_checkout_revision`; S08 измерил живой `/api/version` = `0.9.1` при
+rollback-метке `0.9.0-crf`. Носитель `data/parse/grobid_compatibility.yaml` при
+этом не редактировался и его digest не пере-пинился.
+
+**Честные остатки (не закрываются в S09).** H05 — Java-CPU
+(`java_cpu_wall_clock_ns` против `grobid_sidecar_cgroup_cpuacct`; субстрат без
+Java-процесса). H18 — ровно 3 документа и 9 не измеренных `CitationFieldRole`
+(исторический RED снят S05/T07, текущим остатком не является). H20 — решение
+человека (`reviewer=null`, `decision=pending`, GAR-015 open). H21 — 16
+absent-строк без Rust-реализации и `learning.ruvllm_ablation` без GROBID-донора
+(label теперь разрешён типизированно, эти два остатка — нет). S08 — остаток
+canonical-path: канонический замер требует `--report <path>`, без него
+инструмент отказывает и ничего не пишет. Ни одна из H14–H21 не переведена в
+`complete`; ни одна planning-запись не несёт `implementation_pass=true` или
+`verification_pass=true`.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |
@@ -800,6 +886,8 @@ PASS по релизу не заявлен.
 | PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q | 446 passed (S06/T06; +3 новых пробы на batch-budget артефакт) |
 | cargo test -p da-parse --tests (S06/T06) | 110 suites / 1470 passed / 0 failed / 0 ignored; `population_contract_enumerates_every_shadow_report` ok |
 | cargo test -p da-parse --tests (S07/T05) | 112 suites / 1489 passed / 0 failed / 0 ignored; ledger-контракт 14 passed, мутационная матрица 20/20 обнаружено, 0 выживших |
+| cargo test -p da-parse --tests (S09/T02, ревизия квалификации) | 114 suites / 1508 passed / 0 failed / 0 ignored |
+| PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q (S09/T02) | 469 passed |
 | governor review: horizon, GAR | exit=0; H05/GAR-015 остаются открытыми |
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
@@ -808,7 +896,8 @@ PASS по релизу не заявлен.
 а после S04/T01–T05 — 104 suites / 1430 passed / 0 failed / 0 ignored (раздел S04),
 а после S05/T01–T05 тот же набор `cargo test -p da-parse --tests` валится на
 `data_contracts::population_contract_enumerates_every_shadow_report` (exit 101) —
-названный RED раздела S05 выше; без `--no-fail-fast` Cargo останавливается на
+названный исторический RED раздела S05 выше (снят S05/T07 и текущим не является);
+без `--no-fail-fast` Cargo останавливается на
 упавшей цели. После S06/T05–T06 тот же набор снова зелёный: 110 suites /
 1470 passed / 0 failed / 0 ignored, `population_contract_enumerates_every_shadow_report
 ... ok` — целевой гейт снят GAR-006-разбиением reference/executed/evaluated, а не
@@ -837,13 +926,15 @@ GAR-015 не закрыт. A-XML закрыт на замеренной обла
 замеренной области S04. H18 (независимая корпусная регрессия) построен и
 измерен на трёх пиннутых сохранённых TEI в S05, но остаётся `pending`:
 измеренная область — ровно 3 документа (не статистический корпус),
-9 `CitationFieldRole`-вариантов без реальной carrier-формы не измерены, и
-собственный набор среза RED по GAR-006-перечислению (раздел S05 выше).
-H21 (ledger паритета Java→Rust→тест) построен и измерен в S07 (раздел S07 выше),
-но остаётся `pending`: расхождение revision label не разрешено (сверка хэшей
-против vendor-дерева — S07/T06, согласование ярлыка — S09), 16 absent-строк без
-Rust-реализации и `learning.ruvllm_ablation` без GROBID-донора названы, а не
-выданы за паритет.
+9 `CitationFieldRole`-вариантов без реальной carrier-формы не измерены.
+Исторический RED набора S05 по GAR-006-перечислению снят S05/T07 и текущим
+остатком не является.
+H21 (ledger паритета Java→Rust→тест) построен и измерен в S07 (раздел S07 выше);
+расхождение revision label разрешено типизированно в S09 (авторитет — content
+sha256; 16/16 sha256-match против vendor-дерева — S07/T06; live `/api/version`
+0.9.1 — S08; раздел S09 ниже), но H21 остаётся `pending` по собственным остаткам:
+16 absent-строк без Rust-реализации и `learning.ruvllm_ablation` без
+GROBID-донора названы, а не выданы за паритет.
 Исторические PASS задним числом не
 переписываются.
 
