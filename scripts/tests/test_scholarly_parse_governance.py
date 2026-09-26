@@ -249,7 +249,22 @@ def _ref(mapping, ref: str):
 
 
 def _copy_checker_surface(destination: Path) -> None:
-    """Build a tracked-only synthetic root for report-level mutations."""
+    """Build a tracked-only synthetic root for report-level mutations.
+
+    Two classes of file end up in the synthetic root:
+
+    * small, mutated or pinned-by-tests-carrier files (policy DATA, contract
+      DATA, fixtures, the release-probe artifact). These stay real copies,
+      because the tests rewrite them to exercise negative cases.
+    * the frozen holdout reference corpus carried by the release-probe lane
+      (``reference_tei`` / ``reference_exceptions``): one ``.tei.xml`` per
+      censused document. Every test only *reads* those bytes -- their sha256 is
+      the pin under test -- so copying them per test cost ~99 MiB of scratch per
+      call (119 call sites, ~14-38 GiB per suite run, which twice filled the
+      filesystem and aborted auto-mode with ENOSPC on 2026-09-26). They are
+      linked read-only instead, which is byte-identical for every reader and
+      keeps the mutation surface unchanged.
+    """
     policy = _load(POLICY_PATH)
     paths = {
         "scripts/governor/checks/scholarly_parse_plane.yaml",
@@ -262,6 +277,7 @@ def _copy_checker_surface(destination: Path) -> None:
         paths.add(binding["path"])
     # M511/S08/T05: the release-probe lane reads the frozen holdout manifest and
     # the pinned reference bytes, so the synthetic root carries them too.
+    link_only: set[str] = set()
     lane_spec = policy.get("release_probe_lane") or {}
     if lane_spec:
         holdout_rel = str(lane_spec.get("holdout_manifest") or "")
@@ -272,11 +288,30 @@ def _copy_checker_surface(destination: Path) -> None:
             for entry in lane.get(key) or []:
                 if isinstance(entry, dict) and entry.get("path"):
                     paths.add(str(entry["path"]))
+                    link_only.add(str(entry["path"]))
     for relative in paths:
         source = ROOT / relative
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
+        if relative in link_only and source.exists():
+            target.symlink_to(source.resolve())
+            continue
         shutil.copy2(source, target)
+
+
+def _detach_linked_fixture(path: Path) -> Path:
+    """Give a linked fixture a private copy so a mutation cannot reach the repo.
+
+    ``_copy_checker_surface`` links the frozen holdout corpus instead of copying
+    it. A test that wants to *mutate* one of those files must detach it first,
+    otherwise the write follows the link into the tracked fixture: on
+    2026-09-26 two holdout ``.tei.xml`` files were modified in place that way.
+    """
+    if path.is_symlink():
+        source = path.resolve()
+        path.unlink()
+        shutil.copy2(source, path)
+    return path
 
 
 def _release_probe_flags(flags, suffix: str = ""):
@@ -3256,7 +3291,7 @@ def test_release_probe_external_band_flip_is_flagged(tmp_path: Path):
 def test_release_probe_reference_byte_drift_is_flagged(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     lane = _load(_probe_lane_path(tmp_path))["external_holdout_contract"]["release_probe"]
-    tei = tmp_path / lane["reference_tei"][0]["path"]
+    tei = _detach_linked_fixture(tmp_path / lane["reference_tei"][0]["path"])
     tei.write_bytes(tei.read_bytes() + b"\n")
     flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
     assert any("reference_tei" in item.evidence for item in flags), flags
@@ -3281,7 +3316,7 @@ def test_release_probe_exception_byte_drift_is_flagged(tmp_path: Path):
     """Exceptions carry frozen bytes; drifting exception bytes are not a skip."""
     _copy_checker_surface(tmp_path)
     lane = _load(_probe_lane_path(tmp_path))["external_holdout_contract"]["release_probe"]
-    tei = tmp_path / lane["reference_exceptions"][0]["path"]
+    tei = _detach_linked_fixture(tmp_path / lane["reference_exceptions"][0]["path"])
     tei.write_bytes(tei.read_bytes() + b"\n")
     flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
     assert any("reference_exceptions" in item.evidence for item in flags), flags
