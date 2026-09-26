@@ -346,8 +346,30 @@ fn load_yaml(rel: &str) -> serde_yaml::Value {
     serde_yaml::from_str(&text).expect("DATA file must be valid YAML")
 }
 
-fn manifest_yaml() -> serde_yaml::Value {
-    load_yaml(MANIFEST_REL)
+/// A parsed DATA file, cached for the process lifetime.
+///
+/// The audit resolves one row at a time from the same frozen manifest and
+/// provenance on every mutation (41 audits x ~610 pins / ~531 outcomes), so
+/// re-reading and re-parsing ~150-190 KB of YAML per row made the census-scale
+/// target CPU-bound (~49k parses, measured ~2700 s).  DATA files are read-only
+/// within a test process, so a single parse is enough: the audit stays
+/// semantically identical and becomes O(rows) instead of O(rows x parses).
+fn cached_yaml(rel: &str) -> std::sync::Arc<serde_yaml::Value> {
+    static CACHE: std::sync::OnceLock<
+        std::sync::Mutex<std::collections::HashMap<String, std::sync::Arc<serde_yaml::Value>>>,
+    > = std::sync::OnceLock::new();
+    let cache = CACHE.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+    let mut guard = cache.lock().expect("DATA cache must not be poisoned");
+    if let Some(value) = guard.get(rel) {
+        return std::sync::Arc::clone(value);
+    }
+    let value = std::sync::Arc::new(load_yaml(rel));
+    guard.insert(rel.to_string(), std::sync::Arc::clone(&value));
+    value
+}
+
+fn manifest_yaml() -> std::sync::Arc<serde_yaml::Value> {
+    cached_yaml(MANIFEST_REL)
 }
 
 fn yaml_at<'a>(root: &'a serde_yaml::Value, key: &str) -> &'a serde_yaml::Value {
@@ -410,7 +432,7 @@ fn declared_margins(manifest: &serde_yaml::Value) -> BTreeMap<String, (String, f
 }
 
 fn provenance_latency(document_id: &str) -> u64 {
-    let provenance = load_yaml(PROVENANCE_REL);
+    let provenance = cached_yaml(PROVENANCE_REL);
     provenance["documents"]
         .as_sequence()
         .expect("provenance documents")
@@ -564,7 +586,7 @@ fn artifact_errors(
         errors.push("probe:reference_population.release.profile".into());
     }
     if release["captured_at_revision"].as_str()
-        != load_yaml(PROVENANCE_REL)["captured_at_revision"].as_str()
+        != cached_yaml(PROVENANCE_REL)["captured_at_revision"].as_str()
     {
         errors.push("probe:reference_population.release.captured_at_revision".into());
     }
