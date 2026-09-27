@@ -1103,7 +1103,7 @@
     {
       "stage_id": "H20",
       "title": "P2: замороженный внешний holdout и реальное решение человека о релизе",
-      "scope": "P2. Пакет замороженного внешнего holdout объявлен как DATA, и пилот уже исполнен (data/parse/external_holdout_results.yaml, 2026-09-12: total 5, succeeded 5; отчёт artifacts/parse_compat/holdout_results.json). Не исполнен именно релизный замороженный прогон: в data/parse/acceptance_manifest.yaml external_holdout_status=not_executed, release_decision_package.package_status=pending_human_review, human_release_review.reviewer=null, decision=pending. Решение о релизе принимает человек; автоматическая проверка не может прочитать его за рецензента, и проза не даёт права на цитирование.",
+      "scope": "P2. Пакет замороженного внешнего holdout объявлен как DATA. Исторический ограниченный пилот 2026-09-12 (data/parse/external_holdout_results.yaml; отчёт artifacts/parse_compat/holdout_results.json) суперседирован переписью: релизная замороженная проба ИСПОЛНЕНА в S08 на полной партиции 610 объявленных = 531 измеримых + 79 типизированных исключений и записана в artifacts/parse_compat/external_holdout_release_probe.json. Внешняя bytes_absent-полоса при этом не тронута: в data/parse/acceptance_manifest.yaml external_holdout_status=not_executed, release_decision_package.package_status=pending_human_review, human_release_review.reviewer=null, decision=pending. Решение о релизе принимает человек; автоматическая проверка не может прочитать его за рецензента, и проза не даёт права на цитирование.",
       "status": "pending",
       "depends_on": [
         "H18"
@@ -1121,7 +1121,7 @@
         },
         {
           "path": "data/parse/external_holdout_results.yaml",
-          "note": "исполненный пилот 2026-09-12 (total 5, succeeded 5) — пилот существует, релизный прогон нет",
+          "note": "исторический пилот 2026-09-12 (ограниченная выборка; его собственные счётчики — в самом отчёте) — суперседирован релизной пробой S08 на партиции 610/531/79",
           "state": "present"
         },
         {
@@ -1141,7 +1141,7 @@
         },
         {
           "path": "crates/da-cli/examples/external_holdout_release_probe.rs",
-          "note": "runtime-половина S08: переизмеряет 5 пиннутых TEI через единственный SUT в форме GAR-006 (reference/executed/evaluated), 30 именованных fail-closed guard'ов; внешняя полоса и human-решение не трогаются",
+          "note": "runtime-половина S08: переизмеряет 531 измеримый TEI (610 объявленных − 79 исключений) через единственный SUT в форме GAR-006 (reference/executed/evaluated), 30 именованных fail-closed guard'ов; внешняя полоса и human-решение не трогаются",
           "state": "present"
         },
         {
@@ -1151,7 +1151,7 @@
         },
         {
           "path": "crates/da-parse/tests/external_holdout_probe_semantics.rs",
-          "note": "независимый per-document оракул (dev-only): 731 source occurrences → 705 admitted → 705 conserved, 5/5 согласны, 10/10 margin PASS; self-scan guard запрещает call-формы SUT",
+          "note": "независимый per-document оракул (dev-only): 79621 source occurrences → 74910 admitted → 74910 conserved, 0 lost, 0 fabricated, 531/531 документов согласны, 1062/1062 margin PASS; self-scan guard запрещает call-формы SUT",
           "state": "present"
         },
         {
@@ -1180,19 +1180,19 @@
         {
           "mode": "artifact",
           "ref": "artifacts/parse_compat/external_holdout_release_probe.json",
-          "expected": "замороженный bounded local-proxy замер: 731 source → 705 admitted → 705 conserved, 5/5 документов согласны, 10/10 margin PASS; sha256 30479a60…, байт-идентичен двум независимым прогонам",
+          "expected": "замороженный bounded local-proxy замер: 531 из 610 объявленных документов измеримы (79 типизированных исключений), 79621 source → 74910 admitted → 74910 conserved, 0 lost, 0 fabricated, 531/531 документов согласны, 1062/1062 margin PASS; sha256 793d551f…, байт-идентичен двум независимым прогонам",
           "status": "pass"
         },
         {
           "mode": "artifact",
           "ref": "artifacts/parse_compat/holdout_results.json",
-          "expected": "пилотный отчёт 2026-09-12 (total 5, succeeded 5) доступен; он не является релизным решением",
+          "expected": "пилотный отчёт 2026-09-12 доступен (историческая ограниченная выборка; счётчики в самом отчёте); он не является релизным решением",
           "status": "pass"
         },
         {
           "mode": "command",
           "ref": "cargo test -p da-parse --test external_holdout_probe_semantics",
-          "expected": "независимый per-document оракул: 5/5 согласны, 10/10 margin PASS, 0 lost, 0 fabricated; self-scan independence guard зелёный",
+          "expected": "независимый per-document оракул: 531/531 согласны, 1062/1062 margin PASS, 0 lost, 0 fabricated; self-scan independence guard зелёный",
           "status": "pass"
         },
         {
@@ -1216,12 +1216,12 @@
         {
           "mode": "command",
           "ref": "cargo run -p da-cli --example external_holdout_capture -- --preflight",
-          "expected": "измерено в S08/T02 на живом релизе: пять PDF ok, java_release ok, external_dataset_bytes ok, CENSUS production_materialization_overlap -> 4/5",
+          "expected": "измерено в S08/T02 на живом релизе: объявленные PDF разрешаются по sha256, java_release ok, external_dataset_bytes ok, CENSUS production_materialization_overlap -> 603/610 (объявлено 610; число измеряется, никогда не утверждается)",
           "status": "pass"
         },
         {
           "mode": "governor_rule",
-          "ref": "scholarly_parse_plane external_holdout_release_probe binding (sha256 30479a60…)",
+          "ref": "scholarly_parse_plane external_holdout_release_probe binding (sha256 793d551f…)",
           "expected": "артефакт привязан в обеих поверхностях; знаменатели и identity пересчитываются из замороженных входов; drift → fail-closed",
           "status": "pass"
         },
@@ -1299,7 +1299,7 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H20 остаётся открытым ровно по одному названному остатку: нет записанного решения человека о релизе (reviewer=null, decision=pending). Замороженная проба ИСПОЛНЕНА и измерена на локальном прокси (5 документов, 731→705→705, 5/5 согласны, 10/10 margin PASS, артефакт sha256 30479a60…), но внешняя bytes_absent-полоса не исполнена, проба не цитируема, а релиз не авторизуется.",
+        "reason": "H20 остаётся открытым ровно по одному названному остатку: нет записанного решения человека о релизе (reviewer=null, decision=pending). Замороженная проба ИСПОЛНЕНА и измерена на локальном прокси (610 объявленных = 531 измеримых + 79 исключений; 79621→74910→74910, 531/531 согласны, 1062/1062 margin PASS, артефакт sha256 793d551f…), но внешняя bytes_absent-полоса не исполнена, проба не цитируема, а релиз не авторизуется.",
         "since": "2026-09-21",
         "accepted": false,
         "closure_condition": "Записано решение человека о релизе в release_decision_package (named_reviewer + explicit_decision) и пройдены гейты quality/cost/rights; остальное исполнено и покрыто evidence, поэтому закрытие зависит только от этого решения."
