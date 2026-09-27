@@ -396,19 +396,60 @@ def _run_architecture_gate(args) -> int:
             ("da-parse tests", ["cargo", "test", "-p", "da-parse", "--lib"]),
             ("da-application tests", ["cargo", "test", "-p", "da-application", "--tests"]),
             ("da-adapters tests", ["cargo", "test", "-p", "da-adapters", "--tests"]),
+            # The da-cli tests below exec example binaries out of
+            # `target/debug/examples/` and `cargo test --tests` does NOT build
+            # examples, so they must be provisioned explicitly first. Only these
+            # seven are executed by the ungated test files:
+            #   acceptance_evidence_test, cross_stage_semantic_invariants_example,
+            #   derived_maturity_rehearsal_example, external_holdout_capture_test,
+            #   native_family_gate_rehearsal_test, parse_batch_budget_shadow_test,
+            #   rest_batch_asset_shadow_test.
+            # Building `--examples` would compile all ~86 example runners, each
+            # statically linking the dependency tree (~0.3G per binary); naming
+            # the seven keeps the coverage and drops the rest. Add a name here
+            # when a new ungated test starts driving an example.
+            # NOTE: policy_ablation_artifact_test is NOT in this list on purpose -
+            # it is `#![cfg(feature = "learning-evaluation")]` and its example
+            # `parse_policy_ablation` carries required-features=["learning-evaluation"],
+            # so naming it here fails the whole build command and no gate step
+            # enables that feature (pre-existing coverage gap, out of this change).
+            # A cargo build command fails as a unit, so one unbuildable name
+            # silently drops every other example in the same step.
+            ("da-cli examples (default)", ["cargo", "build", "-p", "da-cli",
+                                            "--example", "acceptance_evidence",
+                                            "--example", "cross_stage_semantic_invariants",
+                                            "--example", "derived_maturity_rehearsal",
+                                            "--example", "external_holdout_capture",
+                                            "--example", "native_family_gate_rehearsal",
+                                            "--example", "parse_batch_budget_shadow",
+                                            "--example", "rest_batch_asset_shadow"]),
             ("da-cli tests", ["cargo", "test", "-p", "da-cli", "--tests"]),
-            # Feature-gated example contracts. Nine da-cli test files declare
-            # `#![cfg(feature = "pdf-layout")]` because the examples they drive
-            # carry `required-features = ["pdf-layout"]`; a plain
+            # Feature-gated example contracts. Twelve da-cli test files declare
+            # `#![cfg(feature = "pdf-layout")]`; a plain
             # `cargo test -p da-cli --tests` compiles them to empty targets, so
-            # without these two steps their coverage is nominal rather than
-            # real. `cargo test --test NAME` does NOT build examples, so the
-            # examples must be provisioned explicitly first. Running `--tests`
-            # (not a hardcoded target list) keeps future gated test files in
-            # scope automatically. Both steps run LAST: enabling the feature
-            # here would otherwise force a rebuild for every step above.
+            # without these steps their coverage is nominal rather than real.
+            # `cargo test --test NAME` does NOT build examples, and neither does
+            # `cargo test --example NAME` — that leaves a *libtest harness* which
+            # rejects the example's own `--manifest` flag (native_visual_heads
+            # documents this), so a plain `cargo build --example X` is the only
+            # correct provisioning. Only these eleven runners are driven by the
+            # gated tests: building `--examples` compiled all ~86 runners for
+            # ~25G of target/debug/examples, which is what this list avoids. Add
+            # a name here when a new gated test starts driving an example.
+            # Both steps run LAST: enabling the feature here would otherwise
+            # force a rebuild for every step above.
             ("da-cli feature-gated example runners", ["cargo", "build", "-p", "da-cli",
-                                                        "--features", "pdf-layout", "--examples"]),
+                                                        "--features", "pdf-layout",
+                                                        "--example", "callout_matching_shadow",
+                                                        "--example", "consolidation_specialized_shadow",
+                                                        "--example", "document_segmentation_shadow",
+                                                        "--example", "external_holdout_release_probe",
+                                                        "--example", "feature_tagger_training_shadow",
+                                                        "--example", "fulltext_block_semantics_shadow",
+                                                        "--example", "layout_bakeoff",
+                                                        "--example", "native_fulltext_composition_shadow",
+                                                        "--example", "native_fulltext_corpus_shadow",
+                                                        "--example", "native_visual_heads_shadow"]),
             ("da-cli feature-gated example contracts", ["cargo", "test", "-p", "da-cli",
                                                          "--features", "pdf-layout", "--tests"]),
         ])
