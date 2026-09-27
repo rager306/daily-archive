@@ -3847,3 +3847,172 @@ def test_m512_s04_census_claim_scan_rejects_a_reintroduced_stale_claim():
     assert _superseded_census_hits(
         "610 объявленных = 531 измеримых + 79 типизированных исключений"
     ) == []
+
+# --- M512/S05/T04: cross-surface census qualification ------------------------
+#
+# S05 reconciled ADR-076/ADR-075/ADR-INDEX, the audit qualification revision and
+# the live review surfaces to the measured M512 census. Reconciliation held by
+# prose decays: any of the surfaces can drift back to a superseded literal while
+# every reviewer-facing sentence still reads correctly. This block turns that
+# agreement into an executable cross-surface qualification. It adds no second
+# scanner -- the ADR scan, the census scan, the lock faces and the unresolved
+# stage scan all reuse the helpers above -- and it widens the S04 claim-surface
+# set to the two review surfaces S05 re-pinned. Each non-vacuous negative probe
+# injects exactly the drift its positive counterpart claims to catch, so a probe
+# that stops discriminating fails here instead of passing quietly.
+
+CENSUS_CLAIM_SURFACES = CENSUS_CLAIM_SURFACES + (
+    "doc/review/manifest.yaml",
+    "doc/review/README.md",
+)
+
+ADR_076_PATH = ROOT / "doc/adr/ADR-076-grobid-cascade-three-automata-graph-freeze.md"
+ADR_075_PATH = ROOT / "doc/adr/ADR-075-scholarly-parse-plane-staged-platform.md"
+ADR_INDEX_PATH = ROOT / "doc/adr/ADR-INDEX.md"
+REVIEW_README_PATH = ROOT / "doc/review/README.md"
+REVIEW_MANIFEST_PATH = ROOT / "doc/review/manifest.yaml"
+GAR_FINDINGS_PATH = ROOT / "doc/review/grobid-absorption-review-2026-09-10.jsonl"
+
+
+def _gar_finding(finding_id: str) -> dict:
+    """The GAR registry record for `finding_id`, read from the shipped JSONL."""
+    for line in GAR_FINDINGS_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        if record.get("finding_id") == finding_id:
+            return record
+    raise AssertionError(f"{finding_id} not found in {GAR_FINDINGS_PATH}")
+
+
+def test_m512_s05_adr_sections_record_the_measured_census():
+    adr_076 = ADR_076_PATH.read_text(encoding="utf-8")
+    assert re.search(r"^## 24\.", adr_076, re.MULTILINE), "ADR-076 §24 missing"
+    for literal in ("610", "531", "793d551f"):
+        assert literal in adr_076, (literal, "ADR-076")
+    adr_075 = ADR_075_PATH.read_text(encoding="utf-8")
+    assert re.search(r"^## 10\.", adr_075, re.MULTILINE), "ADR-075 §10 missing"
+    for literal in ("610", "531"):
+        assert literal in adr_075, (literal, "ADR-075")
+    rows: dict[str, str] = {}
+    for line in ADR_INDEX_PATH.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^\|\s*\[(075|076)\]", line)
+        if match:
+            rows[match.group(1)] = line
+    assert set(rows) == {"075", "076"}, sorted(rows)
+    assert "10 dated amendment 2026-09-27" in rows["075"], rows["075"]
+    assert "24 dated correction 2026-09-27" in rows["076"], rows["076"]
+
+
+def test_m512_s05_census_denominators_agree_across_carriers():
+    assert _measured_census() == (531, 79, 610)
+    assert len(_load(HOLDOUT_MANIFEST_PATH)["articles"]) == 610
+    artifact = json.loads((ROOT / PROBE_ARTIFACT).read_text(encoding="utf-8"))
+    assert artifact["reference_population"]["documents"] == 610
+    assert artifact["executed_population"]["documents"] == 531
+    assert artifact["evaluated_population"]["documents"] == 531
+    binding = _load(EXECUTED_POPULATION_BINDING_PATH)["census_binding"]
+    assert {"manifest", "report", "measurable_key", "exception_key"} <= set(
+        binding
+    ), binding
+
+
+def test_m512_s05_audit_section_carries_census_and_revision():
+    audit = AUDIT_PATH.read_text(encoding="utf-8")
+    assert "### Свидетельства среза M512-lxafs8/S05" in audit
+    revisions = re.findall(r"Ревизия квалификации:\s*([0-9a-f]{40})", audit)
+    assert len(revisions) == 1, revisions
+    reviewed_source = _load(ROADMAP_PATH)["reviewed_source"]
+    assert revisions[0] in reviewed_source, (revisions, reviewed_source)
+    # The final-gate label may be recorded as dated history; when it carries a
+    # machine-readable 40-hex literal there must be at most one.
+    final_gate = re.findall(r"Ревизия финального гейта:\s*([0-9a-f]{40})", audit)
+    assert len(final_gate) <= 1, final_gate
+
+
+def test_m512_s05_locks_are_unchanged_across_surfaces():
+    assert _lock_face_violations(_qualification_lock_faces()) == []
+
+
+def test_m512_s05_lock_census_rejects_a_permissive_lock():
+    faces = _qualification_lock_faces()
+    permissive = copy.deepcopy(faces)
+    permissive["policy"]["import_eligible"] = True
+    violations = _lock_face_violations(permissive)
+    assert "policy:import_eligible=True" in violations, violations
+
+
+def test_m512_s05_unresolved_stages_never_claim_pass():
+    pairs = (
+        (_load(HORIZON_CONTRACT_PATH)["registry"], _load(HORIZON_PATH)),
+        (_load(ROADMAP_PATH)["registry"], _load(FOLLOWUP_PATH)),
+    )
+    for registry, review in pairs:
+        assert registry["unresolved_status"], review["review_id"]
+        assert _unresolved_pass_violations(registry, review) == [], review["review_id"]
+
+
+def test_m512_s05_unresolved_pass_scan_rejects_a_pass_claim():
+    registry = {"unresolved_status": ["pending"]}
+    review = {
+        "stages": [
+            {
+                "stage_id": "H20",
+                "status": "pending",
+                "implementation_pass": True,
+                "verification_pass": False,
+            }
+        ]
+    }
+    violations = _unresolved_pass_violations(registry, review)
+    assert "H20:implementation_pass" in violations, violations
+
+
+def test_m512_s05_human_gate_stays_pending():
+    package = _load(MANIFEST_PATH)["release_decision_package"]
+    assert package["package_status"] == "pending_human_review"
+    review = package["human_release_review"]
+    assert review["reviewer"] is None
+    assert review["decision"] == "pending"
+    assert _gar_finding("GAR-015")["status"] == "open"
+
+
+def test_m512_s05_h20_stage_stays_pending_and_unowned():
+    stages = {stage["stage_id"]: stage for stage in _load(FOLLOWUP_PATH)["stages"]}
+    h20 = stages["H20"]
+    assert h20["status"] == "pending"
+    assert h20["owner"] == "unassigned"
+    assert h20["implementation_pass"] is False
+    assert h20["verification_pass"] is False
+
+
+def test_m512_s05_live_surfaces_carry_the_measured_census():
+    for path in (
+        REVIEW_README_PATH,
+        REVIEW_MANIFEST_PATH,
+        ROADMAP_PATH,
+    ):
+        text = path.read_text(encoding="utf-8")
+        assert "610" in text, path
+        assert "531" in text, path
+    # The superseded S09 qualification revision is dated history; the live README
+    # must not carry it as a current literal.
+    assert "6a384227" not in REVIEW_README_PATH.read_text(encoding="utf-8")
+    hits = {
+        surface: _superseded_census_hits((ROOT / surface).read_text(encoding="utf-8"))
+        for surface in CENSUS_CLAIM_SURFACES
+    }
+    assert hits == {surface: [] for surface in CENSUS_CLAIM_SURFACES}, {
+        surface: found for surface, found in hits.items() if found
+    }
+
+
+def test_m512_s05_census_scan_rejects_a_reintroduced_stale_claim():
+    stale = "Артефакт 30479a60…, identity 22df1b7e…, 5 sha256-пиннутых документов."
+    names = {item.split(":", 1)[0] for item in _superseded_census_hits(stale)}
+    assert "superseded_artifact_sha" in names, names
+    assert "superseded_identity_digest" in names, names
+    assert "five_document_sha_pin" in names, names
+    assert _superseded_census_hits(
+        "610 объявленных = 531 измеримых + 79 типизированных исключений"
+    ) == []
