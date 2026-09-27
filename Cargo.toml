@@ -91,5 +91,13 @@ debug = 1
 # incremental=true for fast iteration. This allows sccache to cache dependency
 # compilation across cargo clean / workspace switches.
 # See: https://doc.rust-lang.org/cargo/reference/profiles.html#overrides
+#
+# debug = false drops the debuginfo of every dependency. Dependencies are the
+# bulk of target/: each one is linked into every example and test binary, and
+# the repo has ~86 heavyweight example runners, so dependency DWARF is paid for
+# dozens of times per build. Our own crates keep `debug = 1`, so stepping through
+# da-*/kg-* code is unaffected; backtraces through dependencies lose file/line
+# detail but keep symbol names.
 [profile.dev.package."*"]
 incremental = false
+debug = false
