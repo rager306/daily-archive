@@ -972,6 +972,41 @@ D127 не снят; Java GROBID остаётся TEI oracle и rollback target.
 стадия H14–H21 не переведена в `complete`; ни одна planning-запись не несёт
 `implementation_pass=true` или `verification_pass=true`.
 
+**Финальный независимый прогон S05/T05 (фактические RC и счётчики).**
+
+Ни одно число в таблице не выведено из прозы: каждый RC — фактический код
+завершения своего подпроцесса, снятый отдельным `run()` в
+`.gsd/t05-gate/run.sh` (одиночная оболочка с одним финальным rc не
+использовалась, поэтому провал шага не может быть замаскирован под общий успех).
+
+| # | Команда (исполнена в S05/T05) | RC | Измерено |
+|---|---|---|---|
+| 1 | `cargo build -p da-cli --features pdf-layout --examples` | 0 | example-раннеры provisioned до feature-gated тестов (137 s) |
+| 2 | `cargo test -p da-parse --tests` | 0 | 114 suites / 1511 passed / 0 failed / 0 ignored (290 s) |
+| 3 | `cargo test -p da-cli --features pdf-layout --tests` | 0 | 41 suites / 652 passed / 0 failed / 0 ignored (850 s) |
+| 4 | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q` | 0 | 504 passed (1116 s) |
+| 5 | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q` | 0 | 378 passed (79 s) |
+| 6 | `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | 0 | stages=8 unresolved=8 complete=0 claims=0 |
+| 7 | `PYTHONPATH=scripts python3 -m governor --validate-yaml` | 0 | YAML validation PASS: 65 rules, 19 dimensions |
+| 8 | `PYTHONPATH=scripts python3 -m governor --phase preflight` | 0 | exit=0; verdict=DRIFT_RISK, 10 названных флагов (ресурсные/схемные), census-флагов 0 |
+| 9 | `PYTHONPATH=scripts python3 -m governor architecture` | 0 | ARCHITECTURE GATE: PASS; GATE_RC=0 (16 шагов, 1653 s) |
+
+Числа шага 2 (114/1511) и шага 3 (41/652) — свежий замер S05/T05; исторические
+`114/1508` (S09/T02) и `41/635` (S09/T04) сохранены в разделе S09 как
+атрибутированные замеры другой ревизии и за текущие не выдаются. Полный
+архитектурный гейт исполнен детачированно (`setsid`, вне in-band cap 600 s):
+16 шагов, 1653 s, фактический `GATE_RC=0`, все шаги `OK`, финальная строка
+`ARCHITECTURE GATE: PASS`.
+
+Ревизия финального гейта: 1d59f1f711744e8943a91382145a10490d54f966 — измеренный HEAD на момент финального прогона S05/T05. Она отличается от квалификационной ревизии S05 (`1a22cd0e…`) намеренно: S05/T02–T04 изменили документы и тест-файл среза, и коммиты сдвинули HEAD после записи квалификационного замера; Rust-исходники не менялись, поэтому числа раздела остаются привязанными к квалификационной ревизии, а прогон гейта записан отдельно на этой ревизии. Живая строка `Ревизия финального гейта:` ровно одна; строка S09 `Ревизия финального гейта (M511-j7wz2f/S09): aa0de0c0…` остаётся датированной историей (скобочная форма под живой регексп не подпадает).
+
+Прибор диска: preflight назвал `resource_target_bloat [high]` (`target/`
+63.8 GB) и рекомендовал прибрать `incremental`/`examples`; после полного
+архитектурного гейта `target/` вырос до 75 GB, свободно 17 GB. Прибор не
+применялся (удаление `target/debug/incremental`/`examples` не требовалось:
+свободного места хватало на все прогоны), поэтому нехватка диска не спутана с
+падением теста — это названный остаток, а не замазанный флаг.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |

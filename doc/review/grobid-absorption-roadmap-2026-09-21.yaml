@@ -186,7 +186,7 @@ measured_state:
       unknown_rights: blocked
   tests:
     command: "cargo test -p da-parse --tests"
-    measured_at: "2026-09-25"
+    measured_at: "2026-09-27"
     suites: 114
     # S01/T01 (2026-09-21) дал базовые 1352 passed / 1 ignored, где ignored —
     # целевой гейт preserved_tei_composition_is_independently_well_formed (RED).
@@ -197,7 +197,7 @@ measured_state:
     # markup-aware DOCTYPE и pinned лимиты 4 MiB/128; ниже — свежий замер после
     # этих правок (исторические счётчики относятся к S01/T01 и S01/T03 и
     # сохранены в C07/C08).
-    passed: 1508
+    passed: 1511
     ignored: 0
     failed: 0
     test_files_in_crates_da_parse_tests: 113
@@ -212,11 +212,18 @@ measured_state:
     # плюс пробы rest.isalive в backend_contract). См. C10.
     composition_contract_passed: 28
     composition_properties_passed: 8
-    # S09/T04 (2026-09-25): свежие замеры финального прогона, не пере-выведенные.
-    governance_pytest_passed: 479
-    governance_pytest_measured_at: "2026-09-25"
+    # S09/T04 (2026-09-25) — датированная история того прогона. S05/T05
+    # (2026-09-27) переизмерил финальный независимый прогон на ревизии
+    # 1d59f1f711744e8943a91382145a10490d54f966: governance pytest — 504
+    # passed (1116 s), da-cli feature-gated — 41 suites / 652 passed (850 s),
+    # полный архитектурный гейт — ARCHITECTURE GATE: PASS, GATE_RC=0
+    # (16 шагов, 1653 s, детачированно вне in-band cap 600 s). Числа только
+    # фактически измеренные; S09-значения 479 / 635 сохранены выше как история
+    # другого прогона, а не как текущее основание.
+    governance_pytest_passed: 504
+    governance_pytest_measured_at: "2026-09-27"
     da_cli_pdf_layout_suites: 41
-    da_cli_pdf_layout_passed: 635
+    da_cli_pdf_layout_passed: 652
     architecture_gate_rc: 0
     architecture_gate_steps: 16
     # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
@@ -565,6 +572,12 @@ corrections:
       квалификации:` строковым равенством (D447). GAR-015 остаётся
       единственной открытой записью; человеческое релизное решение pending
       (reviewer=null, decision=pending).
+      Финальный независимый прогон S05/T05 (2026-09-27) на ревизии
+      `1d59f1f7…` записан в audit §S05: `cargo test -p da-parse --tests` —
+      114 suites / 1511 passed / 0 failed / 0 ignored; `cargo test -p da-cli
+      --features pdf-layout --tests` — 41 suites / 652 passed; governance
+      pytest — 504 passed; `governor architecture` — ARCHITECTURE GATE: PASS с
+      измеренным GATE_RC=0 (16 шагов, 1653 s). Числа только измеренные.
     evidence: artifacts/parse_compat/external_holdout_release_probe.json
 
 # ---------------------------------------------------------------------------
@@ -625,3 +638,24 @@ validation_commands:
     expected: "exit=0; 0 census/lane-флагов (ресурсные/схемные флаги вне census-контура)"
   - command: "PYTHONPATH=scripts python3 -m governor architecture"
     expected: "ARCHITECTURE GATE: PASS с измеренным GATE_RC (полный прогон S05/T05, вне in-band cap)"
+  # S05/T05 (2026-09-27) — финальный независимый прогон на ревизии
+  # 1d59f1f711744e8943a91382145a10490d54f966. Каждый RC снят runner'ом
+  # по отдельности; compound-оболочка с одним финальным rc не использовалась.
+  - command: "cargo build -p da-cli --features pdf-layout --examples"
+    expected: "exit=0 (provisioning example-раннеров до feature-gated тестов; 137 s)"
+  - command: "cargo test -p da-parse --tests"
+    expected: "114 suites / 1511 passed / 0 failed / 0 ignored (замер S05/T05, 2026-09-27; исторический S09/T02 — 1508 passed, см. C13)"
+  - command: "cargo test -p da-cli --features pdf-layout --tests"
+    expected: "41 suites / 652 passed / 0 failed / 0 ignored (замер S05/T05, 2026-09-27; исторический S09/T04 — 635 passed)"
+  - command: "PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q"
+    expected: "504 passed (замер S05/T05, 2026-09-27; исторический S09/T04 — 479 passed)"
+  - command: "PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q"
+    expected: "exit=0; 378 passed (замер S05/T05, 2026-09-27)"
+  - command: "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml"
+    expected: "exit=0; stages=8 unresolved=8 complete=0 claims=0 (замер S05/T05)"
+  - command: "PYTHONPATH=scripts python3 -m governor --validate-yaml"
+    expected: "PASS: 65 rules, 19 dimensions (замер S05/T05)"
+  - command: "PYTHONPATH=scripts python3 -m governor --phase preflight"
+    expected: "exit=0; verdict=DRIFT_RISK; 10 флагов (ресурсные/схемные: target bloat high, hardcoded URL, 2 stale artifacts, 6 log-файлов вне SCHEMA), census/lane-флагов 0 (замер S05/T05)"
+  - command: "PYTHONPATH=scripts python3 -m governor architecture"
+    expected: "ARCHITECTURE GATE: PASS; GATE_RC=0 (16 шагов, 1653 s; замер S05/T05, детачированно вне in-band cap)"
