@@ -3737,3 +3737,113 @@ def test_live_root_lane_flag_sources_report_nothing():
     service.root = ROOT
     assert _lane_named_flags(_check_scholarly_parse_plane(ROOT)) == []
     assert _lane_named_flags(service._check_external_holdout_package()) == []
+
+
+# --- M512/S04/T04: no claim surface may assert a superseded census -----------
+#
+# T04 proves the absence of stale five-document claims by scanning the
+# census-consuming claim surfaces for the superseded formulations and by
+# re-deriving every declared count from the manifest and the frozen artifact.
+# The scanned set is the current-fact surfaces a reader (or governor) consumes;
+# the dated historical records (ADR-076's dated correction, the dated audit,
+# the S08 decision package, CHANGELOG, the dated pilot report) restate the S08
+# pilot as history and are deliberately out of the scan set. The negative probe
+# below injects a superseded formulation so the scan cannot pass vacuously.
+
+EXECUTED_POPULATION_BINDING_PATH = (
+    ROOT / "scripts/governor/checks/executed_population_binding.yaml"
+)
+HOLDOUT_MANIFEST_PATH = ROOT / "data/parse/holdout_manifests.yaml"
+
+SUPERSEDED_CENSUS_PATTERNS = {
+    # S08 pilot artifact identity: sha, byte size and identity digest.
+    "superseded_artifact_sha": r"30479a60",
+    "superseded_artifact_bytes": r"36\s?511",
+    "superseded_identity_digest": r"22df1b7e",
+    # Compiled-in population literals the lane used to carry.
+    "compiled_in_document_count": r"SYNTHETIC_DOCUMENT_COUNT",
+    "documents_equals_five": r"documents\s*=\s*5\b",
+    "documents_equals_forty": r"documents=40",
+    "five_document_sha_pin": r"(5|five)\s+sha256",
+    "five_of_five_documents": r"5/5\s*(документ|document)",
+    "fifty_document_sample": r"(?<![0-9])50[-\s]document",
+    "fifty_row_sample": r"(?<![0-9])50\s*rows",
+}
+
+CENSUS_CLAIM_SURFACES = (
+    "data/parse/acceptance_manifest.yaml",
+    "data/parse/holdout_manifests.yaml",
+    "data/parse/license_inventory.yaml",
+    "scripts/governor/checks/executed_population_binding.yaml",
+    "doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+    "doc/review/grobid-absorption-followup.json",
+    "crates/da-parse/tests/external_holdout_probe_semantics.rs",
+    "crates/da-parse/tests/external_holdout_probe_contract.rs",
+    "crates/da-parse/tests/external_holdout_package_contract.rs",
+    "crates/da-cli/tests/external_holdout_capture_test.rs",
+    "crates/da-cli/tests/external_holdout_release_probe_test.rs",
+    "crates/da-cli/examples/external_holdout_capture.rs",
+    "crates/da-cli/examples/external_holdout_release_probe.rs",
+)
+
+
+def _superseded_census_hits(text: str) -> list[str]:
+    """Every superseded census formulation in `text`, named by its pattern."""
+    return [
+        f"{name}: {match.group(0)!r}"
+        for name, pattern in SUPERSEDED_CENSUS_PATTERNS.items()
+        for match in re.finditer(pattern, text, re.IGNORECASE)
+    ]
+
+
+def _measured_census() -> tuple[int, int, int]:
+    """`(measurable, exceptions, declared)` read from the shared manifest."""
+    lane = _load(MANIFEST_PATH)["external_holdout_contract"]["release_probe"]
+    measurable = len(lane["reference_tei"])
+    exceptions = len(lane["reference_exceptions"])
+    return measurable, exceptions, measurable + exceptions
+
+
+def test_m512_s04_census_claim_surfaces_carry_no_superseded_document_count():
+    measurable, exceptions, declared = _measured_census()
+    # The measured census of the M512 expansion, pinned so an unintended drift is
+    # visible here instead of only at the next governor preflight.
+    assert (measurable, exceptions, declared) == (531, 79, 610)
+    # Every other census surface agrees with the manifest, not with a literal.
+    assert len(_load(HOLDOUT_MANIFEST_PATH)["articles"]) == declared
+    artifact = json.loads((ROOT / PROBE_ARTIFACT).read_text(encoding="utf-8"))
+    assert artifact["reference_population"]["documents"] == declared
+    assert artifact["executed_population"]["documents"] == measurable
+    assert artifact["evaluated_population"]["documents"] == measurable
+    # The governor census binding names the same two surfaces and keys, so the
+    # check and this probe cannot disagree about where the count comes from.
+    binding = _load(EXECUTED_POPULATION_BINDING_PATH)["census_binding"]
+    assert binding["manifest"] == "data/parse/acceptance_manifest.yaml"
+    assert binding["report"] == PROBE_ARTIFACT
+    assert binding["measurable_key"] == "reference_tei"
+    assert binding["exception_key"] == "reference_exceptions"
+    # No current-fact surface restates the superseded S08 pilot or a literal.
+    hits = {
+        surface: _superseded_census_hits((ROOT / surface).read_text(encoding="utf-8"))
+        for surface in CENSUS_CLAIM_SURFACES
+    }
+    assert hits == {surface: [] for surface in CENSUS_CLAIM_SURFACES}, {
+        surface: found for surface, found in hits.items() if found
+    }
+
+
+def test_m512_s04_census_claim_scan_rejects_a_reintroduced_stale_claim():
+    """Negative probe: a reintroduced superseded claim must be caught."""
+    stale = (
+        "Измерено: 5 sha256-пиннутых не-gold TEI дают 731 → 705 admitted; "
+        "артефакт sha256 30479a60…, identity sha256:22df1b7e…."
+    )
+    found = _superseded_census_hits(stale)
+    names = {item.split(":", 1)[0] for item in found}
+    assert "five_document_sha_pin" in names, found
+    assert "superseded_artifact_sha" in names, found
+    assert "superseded_identity_digest" in names, found
+    # The measured formulation is not itself a hit.
+    assert _superseded_census_hits(
+        "610 объявленных = 531 измеримых + 79 типизированных исключений"
+    ) == []

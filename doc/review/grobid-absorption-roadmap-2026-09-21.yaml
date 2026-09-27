@@ -467,31 +467,33 @@ corrections:
       пробы в реестре не было.
     corrected: >
       S08 (2026-09-25) заморозил и исполнил внешнюю holdout-пробу как bounded
-      local proxy и опубликовал измеренный runtime-артефакт
-      artifacts/parse_compat/external_holdout_release_probe.json
-      (sha256 30479a606720bcd03cd87348ec9f16b13a75dfbd4e32376dda64a7c1fed6eefa,
-      36 511 байт, schema external-holdout-release-probe.v1), привязанный к
-      governor на обеих поверхностях. Измерено: 5 sha256-пиннутых не-gold TEI
-      дают 731 source occurrences → 705 admitted → 705 conserved, 0 lost,
-      0 fabricated, 5/5 документов согласны, 10/10 margin-вердиктов PASS
-      (document_agreement_ratio at_least 0.9; document_uncertainty_interval_width
-      at_most 0.25), latency — из recorded_wall_clock_per_document (min 3883 /
-      max 46341 мс), cost — bounded_not_measured с unknown_is_not_zero. Identity
-      пробы (sha256:22df1b7e…) пересчитывается из data/parse/holdout_manifests.yaml,
-      а 30 именованных fail-closed guard'ов и 6-тестовый pin доказывают
-      byte-детерминизм артефакта. Внешняя bytes_absent-полоса НЕ тронута
-      (execution_status=not_executed, external_bytes=bytes_absent,
-      external_rows_are_evidence=false); 4/5 id (1203.2295, 2401.17167,
-      2411.07228, 2505.16270) пересекаются с materialized production coverage
-      (data/processed/<id>/), 2608.22118 — нет; 5 документов — не статистический
-      корпус, production-достижимость не доказана. H20 остаётся `pending` ровно
-      по одному остатку: нет записанного решения человека (reviewer=null,
+      local proxy и опубликовал measured runtime-артефакт
+      artifacts/parse_compat/external_holdout_release_probe.json, привязанный к
+      governor на обеих поверхностях. M512-lxafs8/S04 (2026-09-27) расширил
+      замороженный список с пилота до полной переписи не-gold корпуса и
+      перепинил артефакт: sha256
+      793d551fbc0c59b5b12d1a064d2c9d4a7e60c923308f19052962825fe4c297c5, schema
+      external-holdout-release-probe.v1. Измерено: 610 объявленных = 531
+      измеримых + 79 типизированных исключений; 79621 source occurrences →
+      74910 admitted → 74910 conserved, 0 lost, 0 fabricated; 531/531 документов
+      согласны; 1062/1062 margin-вердиктов PASS (document_agreement_ratio
+      at_least 0.9; document_uncertainty_interval_width at_most 0.25); cost —
+      bounded_not_measured с unknown_is_not_zero. Identity пробы
+      (sha256:eee622ae57286faff567b1793f31ee54c5df3118e544a4bb8edf1c7376955c6d)
+      пересчитывается из data/parse/holdout_manifests.yaml, а 30 именованных
+      fail-closed guard'ов и 6-тестовый pin доказывают byte-детерминизм
+      артефакта; census_binding в
+      scripts/governor/checks/executed_population_binding.yaml сверяет
+      знаменатели с манифестом и артефактом. Файловая перепись артефакта: 610
+      объявленных PDF присутствуют, 0 в каноническом каталоге, 586 в sources
+      archive, production identity overlap — none; перепись — не статистический
+      корпус, production-достижимость не доказана. Внешняя bytes_absent-полоса
+      НЕ тронута (execution_status=not_executed, external_bytes=bytes_absent,
+      external_rows_are_evidence=false). H20 остаётся `pending` ровно по одному
+      остатку: нет записанного решения человека (reviewer=null,
       decision=pending), поэтому проба не цитируема, а релиз не авторизуется;
       проза, ADR или зелёный тест решения не заменяют. implementation_pass=false
-      и verification_pass=false сохранены, GAR-015 остаётся open. Замер pytest на
-      S08: 469 passed (scripts/tests/test_scholarly_parse_governance.py),
-      governor preflight exit=0, governor review stages=8 unresolved=8
-      complete=0 claims=0.
+      и verification_pass=false сохранены, GAR-015 остаётся open.
     evidence: artifacts/parse_compat/external_holdout_release_probe.json
 
   - id: C12
@@ -513,8 +515,9 @@ corrections:
       reference/executed/evaluated и текущим не является. Ledger паритета:
       38 строк == 38 capabilities, 16 пиннутых `java_sources`, мутационная
       матрица 20 declared / 20 detected / 0 survived. Замороженная внешняя
-      проба: 5 документов, sha256
-      30479a606720bcd03cd87348ec9f16b13a75dfbd4e32376dda64a7c1fed6eefa.
+      проба (M512-lxafs8/S04, полная перепись): 610 объявленных = 531 измеримых
+      + 79 типизированных исключений, sha256
+      793d551fbc0c59b5b12d1a064d2c9d4a7e60c923308f19052962825fe4c297c5.
       Бюджет батча: пик удержанных байт 61146 B внутри потолка 262144 B.
       Governance pytest на S09/T02 — 469 passed. `governor review` — exit=0 с
       claims=0. Расхождение revision label разрешено типизированно (см.
