@@ -1499,6 +1499,21 @@ def _resolve_pointer_values(node, segments) -> list:
     return resolved
 
 
+def _population_document_count(population, documents_key: str):
+    """The integer document count of a declared population, or None.
+
+    `bool` is rejected explicitly because it is an `int` subclass: a report that
+    writes `documents: true` is an unresolvable count, not the number 1, so the
+    census binding fails closed instead of reading a boolean as a measurement.
+    """
+    if not isinstance(population, dict):
+        return None
+    value = population.get(documents_key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value
+
+
 def _digest_pattern_matches(pattern, key: str) -> bool:
     """Mini-syntax of `digest_field_patterns`: anchored regex or exact literal.
 
@@ -2610,6 +2625,71 @@ class TrajectoryService:
                 _flag("report_broken",
                       f"{relative}: populations are not bound to execution "
                       f"evidence: {sorted(violations)}")
+
+        # ── the census document count (M512/S04) ─────────────────────────
+        # The count is DATA-bound, never a literal: the expected count is read
+        # from the shared manifest's declared partition, the observed count from
+        # the governed census artifact's own populations. A mismatch names both
+        # paths, and an unresolvable binding fails closed rather than skipping
+        # the comparison.
+        census = contract.get("census_binding")
+        if isinstance(census, dict) and census:
+            census_report_rel = str(census.get("report") or "")
+            lane_path = str(census.get("manifest_lane") or "")
+            measurable_key = str(census.get("measurable_key") or "")
+            exception_key = str(census.get("exception_key") or "")
+            reference_key = str(census.get("reference_population_key") or "")
+            executed_key = str(census.get("executed_population_key") or "")
+            documents_key = str(census.get("documents_key") or "documents")
+            lane = manifest
+            for segment in lane_path.split("."):
+                lane = lane.get(segment) if isinstance(lane, dict) else None
+            census_report_path = self.root / census_report_rel
+            if not census_report_rel or not isinstance(lane, dict) or not measurable_key:
+                _flag("census_binding_unresolvable",
+                      "census binding cannot resolve "
+                      f"{manifest_path}#{lane_path} or census artifact "
+                      f"{census_report_rel or '<missing>'}")
+            else:
+                measurable = lane.get(measurable_key)
+                exceptions = lane.get(exception_key)
+                if not isinstance(measurable, list) or not isinstance(exceptions, list):
+                    _flag("census_binding_unresolvable",
+                          f"{manifest_path}#{lane_path}.{measurable_key}/"
+                          f"{exception_key} must both declare lists")
+                elif not census_report_path.is_file():
+                    _flag("census_binding_unresolvable",
+                          f"missing census artifact {census_report_rel}")
+                else:
+                    try:
+                        census_report = json.loads(
+                            census_report_path.read_text(encoding="utf-8"))
+                    except (ValueError, OSError) as error:
+                        _flag("census_binding_unresolvable",
+                              f"unreadable census artifact {census_report_rel}: {error}")
+                    else:
+                        expected_reference = len(measurable) + len(exceptions)
+                        expected_executed = len(measurable)
+                        observed_reference = _population_document_count(
+                            census_report.get(reference_key), documents_key)
+                        observed_executed = _population_document_count(
+                            census_report.get(executed_key), documents_key)
+                        if observed_reference is None or observed_executed is None:
+                            _flag("census_binding_unresolvable",
+                                  f"{census_report_rel} must declare integer "
+                                  f"{reference_key}.{documents_key} and "
+                                  f"{executed_key}.{documents_key}")
+                        else:
+                            if observed_reference != expected_reference:
+                                _flag("census_reference_population_mismatch",
+                                      f"{census_report_rel}#{reference_key}.{documents_key}="
+                                      f"{observed_reference} != {manifest_path}#{lane_path}."
+                                      f"{measurable_key}+{exception_key}={expected_reference}")
+                            if observed_executed != expected_executed:
+                                _flag("census_executed_population_mismatch",
+                                      f"{census_report_rel}#{executed_key}.{documents_key}="
+                                      f"{observed_executed} != {manifest_path}#{lane_path}."
+                                      f"{measurable_key}={expected_executed}")
         return flags
 
     def _check_prompt_normative_contract(self) -> list[DriftFlag]:

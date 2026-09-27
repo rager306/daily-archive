@@ -6238,6 +6238,108 @@ def test_executed_population_binding_live_report_missing_is_flagged():
     assert rel in missing[0].evidence
 
 
+_CENSUS_REPORT = "artifacts/parse_compat/external_holdout_release_probe.json"
+
+
+def test_executed_population_binding_census_count_is_manifest_bound():
+    """The committed census artifact agrees with the committed manifest.
+
+    Expected: `reference_tei` + `reference_exceptions` (the declared census)
+    and `reference_tei` (the measurable partition). Observed: the artifact's
+    own `reference_population.documents` / `executed_population.documents`.
+    """
+    service = _executed_population_service()
+    manifest = yaml.safe_load(
+        (service.root / _EXECUTED_POPULATION_MANIFEST).read_text(encoding="utf-8")
+    )
+    lane = manifest["external_holdout_contract"]["release_probe"]
+    report = json.loads(
+        (service.root / _CENSUS_REPORT).read_text(encoding="utf-8")
+    )
+    assert report["reference_population"]["documents"] == (
+        len(lane["reference_tei"]) + len(lane["reference_exceptions"])
+    )
+    assert report["executed_population"]["documents"] == len(lane["reference_tei"])
+    assert service._check_executed_population_binding() == []
+
+
+def test_executed_population_binding_census_reference_mutation_is_flagged():
+    """A mutated census reference count fails with both paths named."""
+    service = _executed_population_service()
+    report = json.loads(
+        (service.root / _CENSUS_REPORT).read_text(encoding="utf-8")
+    )
+    report["reference_population"]["documents"] = 5
+    _write(service.root / _CENSUS_REPORT, json.dumps(report))
+    flags = service._check_executed_population_binding()
+    mismatch = _executed_population_flags_named(
+        flags, "census_reference_population_mismatch"
+    )
+    assert len(mismatch) == 1
+    assert _CENSUS_REPORT in mismatch[0].evidence
+    assert _EXECUTED_POPULATION_MANIFEST in mismatch[0].evidence
+    assert "=5" in mismatch[0].evidence
+    assert mismatch[0].severity == "high"
+    assert mismatch[0].dimension == "population_honesty"
+
+
+def test_executed_population_binding_census_executed_mutation_is_flagged():
+    """A mutated executed-population count fails with both paths named."""
+    service = _executed_population_service()
+    report = json.loads(
+        (service.root / _CENSUS_REPORT).read_text(encoding="utf-8")
+    )
+    report["executed_population"]["documents"] = 1
+    _write(service.root / _CENSUS_REPORT, json.dumps(report))
+    flags = service._check_executed_population_binding()
+    mismatch = _executed_population_flags_named(
+        flags, "census_executed_population_mismatch"
+    )
+    assert len(mismatch) == 1
+    assert _CENSUS_REPORT in mismatch[0].evidence
+    assert _EXECUTED_POPULATION_MANIFEST in mismatch[0].evidence
+
+
+def test_executed_population_binding_census_manifest_partition_mutation_is_flagged():
+    """The expected count is read from the manifest, not pinned in the check."""
+    service = _executed_population_service()
+    manifest = yaml.safe_load(
+        (service.root / _EXECUTED_POPULATION_MANIFEST).read_text(encoding="utf-8")
+    )
+    manifest["external_holdout_contract"]["release_probe"][
+        "reference_exceptions"
+    ].pop()
+    _write(
+        service.root / _EXECUTED_POPULATION_MANIFEST,
+        yaml.safe_dump(manifest, sort_keys=False),
+    )
+    flags = service._check_executed_population_binding()
+    mismatch = _executed_population_flags_named(
+        flags, "census_reference_population_mismatch"
+    )
+    assert len(mismatch) == 1
+    assert _EXECUTED_POPULATION_MANIFEST in mismatch[0].evidence
+
+
+def test_executed_population_binding_census_binding_unresolvable_is_flagged():
+    """An unresolvable census binding fails closed, never silently skipped."""
+    service = _executed_population_service()
+    contract = _executed_population_contract_document(service)
+    contract["census_binding"]["manifest_lane"] = (
+        "external_holdout_contract.absent_lane"
+    )
+    _write(
+        service.root / _EXECUTED_POPULATION_CONTRACT,
+        yaml.safe_dump(contract, sort_keys=False),
+    )
+    flags = service._check_executed_population_binding()
+    unresolvable = _executed_population_flags_named(
+        flags, "census_binding_unresolvable"
+    )
+    assert len(unresolvable) == 1
+    assert "absent_lane" in unresolvable[0].evidence
+
+
 def test_executed_population_binding_undeclared_report_is_flagged():
     """A shadow report outside the shared contract is never bound: fail closed."""
     service = _executed_population_service()

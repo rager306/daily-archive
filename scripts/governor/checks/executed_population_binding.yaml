@@ -28,6 +28,12 @@
 #     checked, so a corpus-scale reference count carried into the evaluated
 #     population beside a small execution is
 #     `evaluated_population_exceeds_executed` — the plan's named failing case;
+#   - the census document count is DATA-bound, never a literal: the expected
+#     count is read from the shared manifest's declared partition and the
+#     observed count from the governed census artifact, so a mutated count is
+#     `census_reference_population_mismatch` /
+#     `census_executed_population_mismatch` with both paths named, and an
+#     unresolvable binding fails closed as `census_binding_unresolvable`;
 #   - absence fails closed. A missing reference/executed/evaluated population,
 #     a population without a numeric `documents` count, a measured status with
 #     `corpus_execution` not literally true and an oversized identity/evidence
@@ -139,6 +145,27 @@ report_contract:
     - report_invalid
     - report_broken
     - report_undeclared
+
+# M512/S04: the census document count is DATA-bound, never a literal. The
+# expected count is read from the shared manifest's declared partition
+# (`reference_tei` + `reference_exceptions` = the census), the observed count
+# from the governed census artifact's own populations. A mismatch names BOTH
+# paths, so a mutated count cannot pass as the declared census; an unresolvable
+# binding fails closed instead of skipping the comparison.
+census_binding:
+  manifest: data/parse/acceptance_manifest.yaml
+  manifest_lane: external_holdout_contract.release_probe
+  measurable_key: reference_tei
+  exception_key: reference_exceptions
+  report: artifacts/parse_compat/external_holdout_release_probe.json
+  reference_population_key: reference_population
+  executed_population_key: executed_population
+  documents_key: documents
+  # Closed set of census labels this rule can emit.
+  violations:
+    - census_binding_unresolvable
+    - census_reference_population_mismatch
+    - census_executed_population_mismatch
 
 fixtures:
   positive:
