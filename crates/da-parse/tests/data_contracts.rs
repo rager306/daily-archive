@@ -3404,6 +3404,42 @@ fn population_string<'a>(block: &'a serde_json::Value, key: &str) -> Option<&'a 
         .filter(|text| !text.trim().is_empty())
 }
 
+/// GAR-006: the executed population names its execution evidence.  A non-empty
+/// token string is accepted for a small execution, while a corpus-scale
+/// execution carries a structured receipt.  This function owns the receipt
+/// SHAPE only: `kind` and `population_identity` must be non-empty strings and
+/// `documents` must be an unsigned integer.  Whether the receipt BINDS the
+/// population it claims — the count equalling the executed population, the
+/// identity matching that population, the kind belonging to the governor's
+/// closed `evidence_kinds` vocabulary and the `corpus_scale_documents`
+/// threshold — is a value contract, not a shape contract.  It is owned by the
+/// governor's independent oracle
+/// (`scripts/governor/adapters/checks/executed_population_binding.py`) and
+/// mirrored by the independent runtime audit
+/// (`crates/da-cli/tests/external_holdout_release_probe_test.rs`); it is
+/// deliberately not restated here, so a shape-valid receipt is not accepted as
+/// a bound one by this contract.
+fn population_evidence(block: &serde_json::Value) -> bool {
+    match block.get("execution_evidence") {
+        Some(serde_json::Value::String(text)) => !text.trim().is_empty(),
+        Some(serde_json::Value::Object(receipt)) => {
+            receipt
+                .get("kind")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|kind| !kind.trim().is_empty())
+                && receipt
+                    .get("population_identity")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|identity| !identity.trim().is_empty())
+                && receipt
+                    .get("documents")
+                    .and_then(serde_json::Value::as_u64)
+                    .is_some()
+        }
+        _ => false,
+    }
+}
+
 fn population_documents(block: &serde_json::Value) -> Option<u64> {
     block.get("documents")?.as_u64()
 }
@@ -3478,9 +3514,9 @@ fn validate_shadow_population_report(
                 "[population-contract-distinguishable] `{rel}` `corpus_execution` must be a boolean"
             ));
         }
-        if population_string(executed, "execution_evidence").is_none() {
+        if !population_evidence(executed) {
             errs.push(format!(
-                "[population-contract-distinguishable] `{rel}` executed population must name non-empty `execution_evidence`"
+                "[population-contract-distinguishable] `{rel}` executed population must name non-empty `execution_evidence` (a token or a receipt with non-empty `kind`/`population_identity` and an unsigned `documents` count)"
             ));
         }
         if population_documents(executed).is_none() {
@@ -4503,6 +4539,125 @@ fn gar006_mixed_or_missing_shadow_populations_are_rejected() {
         &validate_shadow_population_report("synthetic.json", &legacy, contract),
         "legacy denominators block",
     );
+}
+
+/// GAR-006 shape contract (the value contract lives elsewhere): the executed
+/// population's evidence is a non-empty token string or a typed receipt, and a
+/// receipt must publish a non-empty `kind` string, a non-empty
+/// `population_identity` string and an unsigned-integer `documents` count.
+/// Whether such a receipt actually BINDS the population it claims — the count
+/// equalling the executed population, the identity matching that population,
+/// the kind belonging to the governor's closed vocabulary and the corpus-scale
+/// threshold — is audited by the governor oracle and the independent runtime
+/// audit, deliberately not here.
+#[test]
+fn gar006_execution_receipt_shape_is_typed() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    let contract = &manifest.population_contract;
+
+    let with_evidence = |evidence: serde_json::Value| {
+        let mut report = population_report_fixture();
+        report["executed_population"]["execution_evidence"] = evidence;
+        validate_shadow_population_report("synthetic.json", &report, contract)
+    };
+    let refused_shape = |evidence: serde_json::Value| {
+        with_evidence(evidence)
+            .iter()
+            .any(|error| error.contains("`execution_evidence`"))
+    };
+
+    // Positive: a token and a fully typed receipt both satisfy the shape.
+    for (case, evidence) in [
+        (
+            "non-empty token",
+            serde_json::json!("tracked_offline_fixture:synthetic-shadow"),
+        ),
+        (
+            "typed receipt",
+            serde_json::json!({
+                "kind": "tracked_offline_fixture",
+                "population_identity": "reviewed_synthetic_reference",
+                "documents": 1,
+            }),
+        ),
+    ] {
+        let errors = with_evidence(evidence);
+        assert!(
+            errors.is_empty(),
+            "the {case} must satisfy the shape contract: {errors:#?}"
+        );
+    }
+
+    // Negative: an absent, untyped or empty receipt field is refused by name.
+    for (case, receipt) in [
+        (
+            "missing kind",
+            serde_json::json!({"population_identity": "reviewed_synthetic_reference", "documents": 1}),
+        ),
+        (
+            "null kind",
+            serde_json::json!({"kind": null, "population_identity": "reviewed_synthetic_reference", "documents": 1}),
+        ),
+        (
+            "empty kind",
+            serde_json::json!({"kind": "", "population_identity": "reviewed_synthetic_reference", "documents": 1}),
+        ),
+        (
+            "blank kind",
+            serde_json::json!({"kind": "   ", "population_identity": "reviewed_synthetic_reference", "documents": 1}),
+        ),
+        (
+            "non-string kind",
+            serde_json::json!({"kind": 7, "population_identity": "reviewed_synthetic_reference", "documents": 1}),
+        ),
+        (
+            "missing identity",
+            serde_json::json!({"kind": "tracked_offline_fixture", "documents": 1}),
+        ),
+        (
+            "null identity",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": null, "documents": 1}),
+        ),
+        (
+            "empty identity",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": "", "documents": 1}),
+        ),
+        (
+            "non-string identity",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": 3, "documents": 1}),
+        ),
+        (
+            "missing documents",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": "reviewed_synthetic_reference"}),
+        ),
+        (
+            "null documents",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": "reviewed_synthetic_reference", "documents": null}),
+        ),
+        (
+            "string documents",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": "reviewed_synthetic_reference", "documents": "1"}),
+        ),
+        (
+            "float documents",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": "reviewed_synthetic_reference", "documents": 1.5}),
+        ),
+        (
+            "negative documents",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": "reviewed_synthetic_reference", "documents": -1}),
+        ),
+        (
+            "boolean documents",
+            serde_json::json!({"kind": "tracked_offline_fixture", "population_identity": "reviewed_synthetic_reference", "documents": true}),
+        ),
+        ("empty receipt", serde_json::json!({})),
+        ("null evidence", serde_json::Value::Null),
+    ] {
+        assert!(
+            refused_shape(receipt),
+            "the {case} receipt must be refused by the shape contract"
+        );
+    }
 }
 
 #[test]

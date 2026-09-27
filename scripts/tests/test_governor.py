@@ -5756,6 +5756,37 @@ def _executed_population_contract_document(service: TrajectoryService) -> dict:
 def _executed_population_fixture(service: TrajectoryService, rel: str):
     return json.loads((service.root / rel).read_text(encoding="utf-8"))
 
+def _executed_population_claim(
+    documents: int,
+    evidence,
+    *,
+    reference_documents: int = 600,
+    executed_identity: str = "reviewed_corpus_reference",
+    corpus_execution: bool = True,
+    status: str = "not_evaluated",
+) -> dict:
+    """A shadow report with one declared population and the given evidence.
+
+    The reference population is large enough that only the claim/evidence
+    relation can be violated, so a caller isolates receipt-kind behaviour from
+    the `executed ⊆ reference` relation instead of accidentally testing both.
+    """
+    return {
+        "report_id": "receipt_kind_probe",
+        "reference_population": {
+            "role": "identity_only",
+            "identity": "reviewed_corpus_reference",
+            "documents": reference_documents,
+        },
+        "executed_population": {
+            "corpus_execution": corpus_execution,
+            "identity": executed_identity,
+            "documents": documents,
+            "execution_evidence": evidence,
+        },
+        "evaluated_population": {"status": status, "documents": 0},
+    }
+
 
 def test_executed_population_binding_pass_on_clean_fixtures():
     """The committed DATA, fixtures, markers and all ten shadow reports pass."""
@@ -6037,6 +6068,148 @@ def test_executed_population_binding_oracle_accepts_bound_receipt_and_bounds_ide
     assert executed_population_violations(oversized, contract) == {
         "oversized_population_value"
     }
+
+
+def test_executed_population_binding_oracle_rejects_receipt_without_declared_kind():
+    """Every malformed receipt kind fails closed for a claimed execution.
+
+    A receipt that binds the count and the identity but does not name a declared
+    evidence kind is not bound: the absent/null/empty/whitespace/non-string
+    shapes were previously skipped because the kind check only ran on a
+    non-empty string, and a padded declared kind is not a declared kind because
+    membership is on the original string. Each shape is an independent negative,
+    and the declared control proves the rejects discriminate rather than reject
+    everything.
+    """
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    declared = contract["populations"]["evidence_kinds"]
+    assert declared, "the contract must declare a non-empty kind vocabulary"
+    bound = {
+        "population_identity": "reviewed_corpus_reference",
+        "documents": 50,
+    }
+    malformed = [
+        ("absent", dict(bound)),
+        ("null", {**bound, "kind": None}),
+        ("empty", {**bound, "kind": ""}),
+        ("whitespace", {**bound, "kind": "   "}),
+        ("integer", {**bound, "kind": 42}),
+        ("boolean", {**bound, "kind": True}),
+        ("list", {**bound, "kind": ["tracked_offline_fixture"]}),
+        ("mapping", {**bound, "kind": {"kind": "tracked_offline_fixture"}}),
+        ("undeclared", {**bound, "kind": "not_a_declared_kind"}),
+        ("padded declared kind", {**bound, "kind": f" {declared[0]} "}),
+    ]
+    for label, evidence in malformed:
+        violations = executed_population_violations(
+            _executed_population_claim(50, evidence), contract
+        )
+        assert "unknown_execution_evidence_kind" in violations, (label, violations)
+    control = executed_population_violations(
+        _executed_population_claim(50, {**bound, "kind": declared[0]}), contract
+    )
+    assert control == set(), control
+
+
+def test_executed_population_binding_oracle_no_claim_ignores_receipt_kind():
+    """A report that makes no claim is not required to carry a receipt kind.
+
+    The kind requirement is gated on the claim, so tightening it must not turn
+    an honest no-claim synthetic report into a violation (preserved semantics).
+    """
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    record = _executed_population_claim(
+        1,
+        {"population_identity": "reviewed_corpus_reference", "documents": 1},
+        corpus_execution=False,
+    )
+    assert executed_population_violations(record, contract) == set()
+
+
+def test_executed_population_binding_oracle_token_boundary_at_49_and_50():
+    """A bare token binds below the corpus scale and is refused at it.
+
+    The threshold is DATA (`corpus_scale_documents: 50`): 49 is the last accepted
+    bare token and 50 the first refused one. The threshold is read back from the
+    committed rule so this test pins the boundary to the value the rule ships.
+    """
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    assert contract["populations"]["corpus_scale_documents"] == 50
+    token = "tracked_source_pdfs_with_sha256"
+    assert executed_population_violations(
+        _executed_population_claim(49, token), contract
+    ) == set()
+    assert executed_population_violations(
+        _executed_population_claim(50, token), contract
+    ) == {"execution_evidence_unbound"}
+
+
+def test_executed_population_binding_oracle_accepts_bound_receipt_at_corpus_scale():
+    """The structured receipt, not the bare token, is what binds corpus scale."""
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    for documents in (50, 531):
+        receipt = {
+            "kind": "tracked_source_pdfs_with_sha256",
+            "population_identity": "reviewed_corpus_reference",
+            "documents": documents,
+        }
+        record = _executed_population_claim(
+            documents, receipt, reference_documents=610,
+        )
+        assert executed_population_violations(record, contract) == set(), documents
+
+
+def test_executed_population_binding_oracle_rejects_receipt_mutations():
+    """A receipt that binds only one of kind/count/identity is spliced, not bound."""
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+
+    def receipt(**overrides):
+        base = {
+            "kind": "tracked_source_pdfs_with_sha256",
+            "population_identity": "reviewed_corpus_reference",
+            "documents": 531,
+        }
+        base.update(overrides)
+        return base
+
+    wrong_count = executed_population_violations(
+        _executed_population_claim(
+            531, receipt(documents=530), reference_documents=610,
+        ),
+        contract,
+    )
+    assert "execution_receipt_mismatch" in wrong_count, wrong_count
+    wrong_identity = executed_population_violations(
+        _executed_population_claim(
+            531, receipt(population_identity="some_other_report"),
+            reference_documents=610,
+        ),
+        contract,
+    )
+    assert "execution_receipt_mismatch" in wrong_identity, wrong_identity
+    wrong_kind = executed_population_violations(
+        _executed_population_claim(
+            531, receipt(kind="not_a_declared_kind"),
+            reference_documents=610,
+        ),
+        contract,
+    )
+    assert "unknown_execution_evidence_kind" in wrong_kind, wrong_kind
+    clean = executed_population_violations(
+        _executed_population_claim(531, receipt(), reference_documents=610),
+        contract,
+    )
+    assert clean == set(), clean
 
 
 def test_executed_population_binding_live_report_presented_as_executed_is_flagged():
@@ -7014,6 +7187,11 @@ def _run_all_tests() -> int:
         test_executed_population_binding_oracle_rejects_large_reference_beside_small_execution,
         test_executed_population_binding_oracle_rejects_replayed_and_spliced_receipts,
         test_executed_population_binding_oracle_accepts_bound_receipt_and_bounds_identity,
+        test_executed_population_binding_oracle_rejects_receipt_without_declared_kind,
+        test_executed_population_binding_oracle_no_claim_ignores_receipt_kind,
+        test_executed_population_binding_oracle_token_boundary_at_49_and_50,
+        test_executed_population_binding_oracle_accepts_bound_receipt_at_corpus_scale,
+        test_executed_population_binding_oracle_rejects_receipt_mutations,
         test_executed_population_binding_live_report_presented_as_executed_is_flagged,
         test_executed_population_binding_live_report_missing_is_flagged,
         test_executed_population_binding_undeclared_report_is_flagged,

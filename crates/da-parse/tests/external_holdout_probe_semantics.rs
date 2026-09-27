@@ -102,7 +102,7 @@ const FROZEN_TABLES_SCHEMA: &str = "external-holdout-frozen-tables.v1";
 /// sha256 of the committed recorded tables.  A recorded number cannot change
 /// without this literal changing with it: the tables are content-addressed by it.
 const FROZEN_TABLES_SHA256: &str =
-    "21b63c52739e56b856f52fc071b21f3495f2de1be5e38aa7a421f73382c034f6";
+    "560a6e806f50557ce28a40524597e5f47cd0643330c541ffaa7ab5df8eaf953e";
 
 /// The z of the 95% Wilson score interval.  Not a margin.
 const WILSON_Z: f64 = 1.96;

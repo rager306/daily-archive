@@ -35,6 +35,11 @@ population it claims:
   * evidence is a string and the executed count is corpus-scale ->
     ``execution_evidence_unbound``: a bare token cannot bind a corpus-scale
     number, so replaying a valid token from another report is rejected;
+  * evidence is a mapping whose ``kind`` is absent, ``null``, empty,
+    whitespace-only, not a string, or not a declared ``evidence_kinds`` member
+    -> ``unknown_execution_evidence_kind``: a receipt that does not name a
+    declared evidence kind cannot bind the claim, so every malformed kind fails
+    closed instead of being skipped;
   * evidence is a mapping whose ``population_identity``/``documents`` disagree
     with the executed population (or cannot be compared at all) ->
     ``execution_receipt_mismatch``: a spliced receipt is rejected.
@@ -325,8 +330,15 @@ def executed_population_violations(record: Any, contract: Any) -> set[str]:
             violations.add("execution_receipt_mismatch")
         elif not isinstance(identity, str) or not identity or identity != target:
             violations.add("execution_receipt_mismatch")
+        # The receipt kind is provenance evidence in its own right, so a
+        # missing, null, empty, whitespace-only or non-string kind is not a
+        # declared kind and fails closed exactly like an undeclared one. The
+        # trimmed value only detects emptiness; membership is on the original
+        # string, so a padded declared kind is not a declared kind.
         kind = evidence.get(receipt_keys["receipt_kind_key"])
-        if isinstance(kind, str) and kind and evidence_kinds and kind not in evidence_kinds:
+        if not isinstance(kind, str) or not kind.strip():
+            violations.add("unknown_execution_evidence_kind")
+        elif evidence_kinds and kind not in evidence_kinds:
             violations.add("unknown_execution_evidence_kind")
         return violations
 

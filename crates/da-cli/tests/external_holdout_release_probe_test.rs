@@ -50,13 +50,28 @@ const FROZEN_TABLES_SCHEMA: &str = "external-holdout-frozen-tables.v1";
 /// sha256 of the committed recorded tables.  A recorded number cannot change
 /// without this literal changing with it: the tables are content-addressed by it.
 const FROZEN_TABLES_SHA256: &str =
-    "21b63c52739e56b856f52fc071b21f3495f2de1be5e38aa7a421f73382c034f6";
+    "560a6e806f50557ce28a40524597e5f47cd0643330c541ffaa7ab5df8eaf953e";
 const MANIFEST_REL: &str = "data/parse/acceptance_manifest.yaml";
 const SOURCE_MANIFEST_REL: &str = "data/parse/holdout_manifests.yaml";
 const PROVENANCE_REL: &str = "crates/da-parse/tests/fixtures/holdout/provenance.yaml";
 const LATENCY_SOURCE_REF: &str =
     "crates/da-parse/tests/fixtures/holdout/provenance.yaml#documents[].latency_ms";
-const EXECUTION_EVIDENCE: &str = "tracked_offline_fixture:external_holdout_release_probe_reference";
+/// The closed `evidence_kinds` vocabulary declared by the governor DATA
+/// (`scripts/governor/checks/executed_population_binding.yaml`).  Mirrored here
+/// so the audit cannot accept a kind the control plane does not declare.
+const EXECUTION_EVIDENCE_KINDS: [&str; 7] = [
+    "offline_loopback_stub_existing_typed_transport",
+    "tracked_offline_fixture",
+    "tracked_offline_join_fixture",
+    "tracked_reviewed_oracle_receipts",
+    "tracked_source_pdfs_with_sha256",
+    "tracked_source_pdfs_with_sha256_and_donor_lanes",
+    "tracked_synthetic_clone_fixture",
+];
+/// A document count at or above this is corpus-scale: a bare token cannot bind
+/// it, only a structured receipt.  Mirrors `corpus_scale_documents` in the
+/// governor DATA.
+const CORPUS_SCALE_DOCUMENTS: u64 = 50;
 
 /// The declared probe population.  DATA is the only carrier of the population
 /// size: the source manifest's article list.  No literal governs it, and the
@@ -485,6 +500,45 @@ fn raw_key_errors(report: &Value) -> Vec<String> {
     errors
 }
 
+/// GAR-006 binding half: whether the executed population's `execution_evidence`
+/// BINDS the population it claims.  A small execution may name a token from the
+/// governor's declared vocabulary; a bare token cannot bind a corpus-scale
+/// count.  A corpus-scale claim must carry a receipt whose `documents` equals
+/// the executed count, whose `population_identity` equals the declared
+/// population identity, and whose `kind` is a non-empty member of the
+/// vocabulary.  The SHAPE half (types and non-emptiness) is the contract in
+/// `crates/da-parse/tests/data_contracts.rs` (`population_evidence`); this pure
+/// predicate is the independent value/vocabulary mirror of the governor oracle
+/// (`executed_population_binding.py`), so the binding tests can exercise it
+/// directly.
+fn execution_evidence_binding(executed: &Value, reference: &Value) -> bool {
+    let executed_documents = executed["documents"].as_u64();
+    let evidence_identity = executed["identity"]
+        .as_str()
+        .or_else(|| reference["identity"].as_str())
+        .filter(|text| !text.is_empty());
+    match &executed["execution_evidence"] {
+        Value::String(token) => {
+            let kind = token.split(':').next().unwrap_or("").trim();
+            EXECUTION_EVIDENCE_KINDS.contains(&kind)
+                && executed_documents.is_some_and(|count| count < CORPUS_SCALE_DOCUMENTS)
+        }
+        Value::Object(receipt) => {
+            executed_documents.is_some()
+                && receipt.get("documents").and_then(Value::as_u64) == executed_documents
+                && evidence_identity.is_some()
+                && receipt.get("population_identity").and_then(Value::as_str) == evidence_identity
+                && receipt
+                    .get("kind")
+                    .and_then(Value::as_str)
+                    .is_some_and(|kind| {
+                        !kind.is_empty() && EXECUTION_EVIDENCE_KINDS.contains(&kind)
+                    })
+        }
+        _ => false,
+    }
+}
+
 /// Every reason the runtime probe artifact is unacceptable.  A pure predicate so
 /// the negative test can prove it rejects one violation at a time.
 fn artifact_errors(
@@ -596,7 +650,8 @@ fn artifact_errors(
     if executed["corpus_execution"].as_bool() != Some(true) {
         errors.push("probe:executed_population.corpus_execution".into());
     }
-    if executed["execution_evidence"].as_str() != Some(EXECUTION_EVIDENCE) {
+    // GAR-006: the executed population names the evidence that produced it.
+    if !execution_evidence_binding(executed, reference) {
         errors.push("probe:executed_population.execution_evidence".into());
     }
     if executed["documents"].as_u64() != Some(measurable as u64)
@@ -1278,6 +1333,167 @@ fn artifact_audit_rejects_every_declared_violation() {
             "the audit accepted the mutation `{name}`"
         );
     }
+}
+
+/// GAR-006 binding boundary: the audit's own binding predicate (not the
+/// producer's) is exercised at the corpus-scale threshold.  A token binds below
+/// 50 and is refused at 50; a receipt binds both at the boundary and at census
+/// scale; a receipt whose count, identity or kind disagrees with the executed
+/// population — or whose kind is absent, null, empty or non-string — is refused.
+#[test]
+fn execution_evidence_binding_enforces_token_threshold_and_receipt_contract() {
+    let identity = "canonical_dataset_id_plus_identity";
+    let token = json!("tracked_offline_fixture:external_holdout_release_probe_reference");
+    let reference = json!({"documents": 610, "identity": identity});
+    let executed_with = |documents: u64, evidence: Value| {
+        json!({
+            "documents": documents,
+            "identity": identity,
+            "execution_evidence": evidence,
+        })
+    };
+    let build_receipt = |documents: u64, receipt_identity: &str, kind: &str| {
+        json!({
+            "documents": documents,
+            "population_identity": receipt_identity,
+            "kind": kind,
+        })
+    };
+    let bound = |documents: u64, evidence: Value| {
+        execution_evidence_binding(&executed_with(documents, evidence), &reference)
+    };
+
+    // A bare token binds a small execution and is refused at the threshold.
+    assert!(
+        bound(49, token.clone()),
+        "a token must bind below the corpus-scale threshold"
+    );
+    assert!(
+        !bound(50, token.clone()),
+        "a bare token must not bind at the corpus-scale threshold"
+    );
+    assert!(
+        !bound(531, token),
+        "a bare token must not bind at census scale"
+    );
+
+    // A receipt binds at the boundary and at census scale.
+    assert!(bound(
+        50,
+        build_receipt(50, identity, "tracked_offline_fixture")
+    ));
+    assert!(bound(
+        531,
+        build_receipt(531, identity, "tracked_offline_fixture")
+    ));
+
+    // Wrong count, identity or kind is refused.
+    assert!(!bound(
+        531,
+        build_receipt(530, identity, "tracked_offline_fixture")
+    ));
+    assert!(!bound(
+        50,
+        build_receipt(50, "some_other_report", "tracked_offline_fixture")
+    ));
+    assert!(!bound(50, build_receipt(50, identity, "undeclared_kind")));
+
+    // Missing/null/empty/non-string receipt fields are refused.
+    for (case, evidence) in [
+        (
+            "missing kind",
+            json!({"documents": 50, "population_identity": identity}),
+        ),
+        (
+            "null kind",
+            json!({"kind": null, "documents": 50, "population_identity": identity}),
+        ),
+        (
+            "empty kind",
+            json!({"kind": "", "documents": 50, "population_identity": identity}),
+        ),
+        (
+            "non-string kind",
+            json!({"kind": 7, "documents": 50, "population_identity": identity}),
+        ),
+        (
+            "missing identity",
+            json!({"kind": "tracked_offline_fixture", "documents": 50}),
+        ),
+        (
+            "null identity",
+            json!({"kind": "tracked_offline_fixture", "documents": 50, "population_identity": null}),
+        ),
+        (
+            "empty identity",
+            json!({"kind": "tracked_offline_fixture", "documents": 50, "population_identity": ""}),
+        ),
+        (
+            "non-string identity",
+            json!({"kind": "tracked_offline_fixture", "documents": 50, "population_identity": 3}),
+        ),
+        (
+            "missing documents",
+            json!({"kind": "tracked_offline_fixture", "population_identity": identity}),
+        ),
+        (
+            "null documents",
+            json!({"kind": "tracked_offline_fixture", "documents": null, "population_identity": identity}),
+        ),
+        (
+            "string documents",
+            json!({"kind": "tracked_offline_fixture", "documents": "50", "population_identity": identity}),
+        ),
+    ] {
+        assert!(
+            !bound(50, evidence),
+            "the {case} receipt must be refused as unbound"
+        );
+    }
+
+    // Unknown token kinds and absent evidence are refused.
+    assert!(!bound(10, json!("undeclared_kind:target")));
+    assert!(!bound(10, json!("")));
+    assert!(!bound(10, Value::Null));
+}
+
+/// The audit's Rust mirror of the governor DATA must equal the DATA it claims to
+/// mirror.  A threshold or vocabulary edit in `executed_population_binding.yaml`
+/// that is not carried here would silently desynchronize the runtime audit from
+/// the control plane, so this pins both halves against the cached YAML.
+#[test]
+fn governor_executed_population_binding_matches_the_audit_mirror() {
+    let contract = cached_yaml("scripts/governor/checks/executed_population_binding.yaml");
+    let populations = &contract["populations"];
+    assert_eq!(
+        populations["corpus_scale_documents"].as_u64(),
+        Some(CORPUS_SCALE_DOCUMENTS),
+        "the governor corpus-scale threshold must equal the audit mirror"
+    );
+    let declared: BTreeSet<String> = populations["evidence_kinds"]
+        .as_sequence()
+        .expect("the governor contract declares evidence_kinds")
+        .iter()
+        .filter_map(|kind| kind.as_str().map(str::to_string))
+        .collect();
+    let mirror: BTreeSet<String> = EXECUTION_EVIDENCE_KINDS
+        .iter()
+        .map(|kind| kind.to_string())
+        .collect();
+    assert_eq!(
+        declared, mirror,
+        "the governor evidence vocabulary must equal the audit mirror"
+    );
+    // The receipt keys the audit reads are the keys the contract declares.
+    assert_eq!(populations["receipt_kind_key"].as_str(), Some("kind"));
+    assert_eq!(
+        populations["receipt_identity_key"].as_str(),
+        Some("population_identity")
+    );
+    assert_eq!(
+        populations["receipt_documents_key"].as_str(),
+        Some("documents")
+    );
 }
 
 #[test]

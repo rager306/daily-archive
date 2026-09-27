@@ -94,10 +94,30 @@ const GOLD_STANDARD_DIR: &str = "data/gold_standard";
 /// reading would destroy byte determinism and is never a source.
 const LATENCY_SOURCE_REF: &str =
     "crates/da-parse/tests/fixtures/holdout/provenance.yaml#documents[].latency_ms";
-/// The named execution evidence.  The token before `:` is a member of the
-/// governor's declared `evidence_kinds` vocabulary (`tracked_offline_fixture`),
-/// so the executed population names the byte carrier that produced it.
-const EXECUTION_EVIDENCE: &str = "tracked_offline_fixture:external_holdout_release_probe_reference";
+/// The named execution evidence kind.  A member of the governor's declared
+/// `evidence_kinds` vocabulary (`tracked_offline_fixture`); the executed
+/// population names it inside a structured receipt, because a bare token cannot
+/// bind a corpus-scale number (GAR-006).
+const EXECUTION_EVIDENCE_KIND: &str = "tracked_offline_fixture";
+/// The closed `evidence_kinds` vocabulary declared by the governor DATA
+/// (`scripts/governor/checks/executed_population_binding.yaml`).  Mirrored here
+/// so the producer cannot name a kind the control plane does not declare.
+const EXECUTION_EVIDENCE_KINDS: [&str; 7] = [
+    "offline_loopback_stub_existing_typed_transport",
+    "tracked_offline_fixture",
+    "tracked_offline_join_fixture",
+    "tracked_reviewed_oracle_receipts",
+    "tracked_source_pdfs_with_sha256",
+    "tracked_source_pdfs_with_sha256_and_donor_lanes",
+    "tracked_synthetic_clone_fixture",
+];
+/// A document count at or above this is corpus-scale: a bare token cannot bind
+/// it, only a structured receipt.  Mirrors `corpus_scale_documents` in the
+/// governor DATA.
+const CORPUS_SCALE_DOCUMENTS: u64 = 50;
+/// The executed-population identity the reference, executed and receipt all
+/// carry, so a receipt can never be spliced in from another report.
+const POPULATION_IDENTITY: &str = "canonical_dataset_id_plus_identity";
 /// The two release labels this artifact may spell.  Any other `@`-bearing string
 /// is a leak, not an identity: the measured release and the declared rollback
 /// target.  The DATA-plane authority label (`java-grobid-http@0.9.0-crf`) IS the
@@ -2747,6 +2767,71 @@ fn u64_of(value: &Json) -> Option<u64> {
     value.as_u64()
 }
 
+/// Whether `evidence` BINDS the executed population, mirroring the governor's
+/// independent oracle (`executed_population_binding.py`).  This is the
+/// value/vocabulary half of GAR-006: the receipt's SHAPE (non-empty string
+/// `kind`/`population_identity`, unsigned-integer `documents`) is the contract
+/// in `crates/da-parse/tests/data_contracts.rs` (`population_evidence`) and is
+/// re-checked here because a shape-valid receipt is not a bound one.
+/// `Some(label)` is a violation: a bare token at corpus scale
+/// (`execution_evidence_unbound`), an unknown kind, or a receipt whose count,
+/// identity or kind disagrees with the population it claims to have produced.
+/// `None` means the evidence binds.
+fn execution_evidence_binding(
+    evidence: &Json,
+    executed: &Json,
+    reference: &Json,
+) -> Option<String> {
+    let executed_documents = executed.get("documents").and_then(Json::as_u64);
+    let identity = executed
+        .get("identity")
+        .and_then(Json::as_str)
+        .or_else(|| reference.get("identity").and_then(Json::as_str))
+        .filter(|text| !text.is_empty());
+    match evidence {
+        Json::String(token) => {
+            let kind = token.split(':').next().unwrap_or("").trim();
+            if !EXECUTION_EVIDENCE_KINDS.contains(&kind) {
+                return Some("execution_evidence_unbound:unknown_kind".to_string());
+            }
+            if executed_documents.map_or(true, |count| count >= CORPUS_SCALE_DOCUMENTS) {
+                return Some("execution_evidence_unbound:bare_token".to_string());
+            }
+            None
+        }
+        Json::Object(receipt) => {
+            if executed_documents.is_none()
+                || receipt.get("documents").and_then(Json::as_u64) != executed_documents
+            {
+                return Some("execution_evidence_unbound:receipt_documents".to_string());
+            }
+            let Some(target) = identity else {
+                return Some("execution_evidence_unbound:receipt_identity".to_string());
+            };
+            if receipt.get("population_identity").and_then(Json::as_str) != Some(target) {
+                return Some("execution_evidence_unbound:receipt_identity".to_string());
+            }
+            match receipt.get("kind").and_then(Json::as_str) {
+                Some(kind) if !kind.is_empty() && EXECUTION_EVIDENCE_KINDS.contains(&kind) => None,
+                _ => Some("execution_evidence_unbound:receipt_kind".to_string()),
+            }
+        }
+        _ => Some("execution_evidence_unbound:absent".to_string()),
+    }
+}
+
+/// The structured execution receipt the executed population publishes.  A bare
+/// token cannot bind a corpus-scale number (GAR-006), so the receipt carries the
+/// same identity the populations declare and the document count this run
+/// actually executed; the governor oracle checks both.
+fn execution_receipt(identity: &str, documents: u64) -> Json {
+    json!({
+        "kind": EXECUTION_EVIDENCE_KIND,
+        "population_identity": identity,
+        "documents": documents,
+    })
+}
+
 /// Every reason the runtime probe artifact is unacceptable.  A pure predicate over
 /// the parsed report plus the recomputed ledger, so `--self-check` can prove it
 /// rejects one violation at a time without touching a fixture.
@@ -2864,8 +2949,12 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     if executed.get("corpus_execution").and_then(Json::as_bool) != Some(true) {
         errors.insert("executed_population_not_executed".to_string());
     }
-    if executed.get("execution_evidence").and_then(Json::as_str) != Some(EXECUTION_EVIDENCE) {
-        errors.insert("execution_evidence_unbound".to_string());
+    if let Some(label) = execution_evidence_binding(
+        &executed["execution_evidence"],
+        executed,
+        &report["reference_population"],
+    ) {
+        errors.insert(label);
     }
     if u64_of(&executed["documents"]) != Some(expected.documents.len() as u64)
         || u64_of(&executed["accepted"]) != Some(expected.documents.len() as u64)
@@ -3292,7 +3381,7 @@ fn build_report(
         })).collect::<Vec<Json>>(),
         "reference_population": {
             "role": "identity_only",
-            "identity": "canonical_dataset_id_plus_identity",
+            "identity": POPULATION_IDENTITY,
             "identity_sha256": lane.identity_digest,
             "identity_digest_is_byte_hash": false,
             "source_manifest": lane.source_manifest,
@@ -3333,10 +3422,10 @@ fn build_report(
         },
         "executed_population": {
             "corpus_execution": true,
-            "execution_evidence": EXECUTION_EVIDENCE,
+            "execution_evidence": execution_receipt(POPULATION_IDENTITY, measured.len() as u64),
             "execution_route": format!("{}/{}/processFulltextDocument", lane.release_backend, lane.reference_version),
             "execution_route_profile": lane.reference_profile,
-            "identity": "canonical_dataset_id_plus_identity",
+            "identity": POPULATION_IDENTITY,
             "documents": measured.len(),
             "accepted": measured.len(),
             "synthetic_corpus_execution": false,
@@ -3732,7 +3821,7 @@ fn synthetic_pair(document_count: usize, exception_count: usize) -> (Json, Expec
         "schema_version": REPORT_SCHEMA,
         "reference_population": {
             "role": "identity_only",
-            "identity": "canonical_dataset_id_plus_identity",
+            "identity": POPULATION_IDENTITY,
             "identity_sha256": expected.identity_digest,
             "source_manifest_sha256": expected.source_manifest_sha256,
             "documents": frozen_count,
@@ -3762,7 +3851,7 @@ fn synthetic_pair(document_count: usize, exception_count: usize) -> (Json, Expec
         },
         "executed_population": {
             "corpus_execution": true,
-            "execution_evidence": EXECUTION_EVIDENCE,
+            "execution_evidence": execution_receipt(POPULATION_IDENTITY, document_count as u64),
             "documents": document_count,
             "accepted": document_count,
         },
@@ -3891,6 +3980,29 @@ fn mutants(report: &Json, document_count: usize) -> Vec<(&'static str, Json)> {
     });
     mutate("execution_evidence_unbound", &|clone| {
         clone["executed_population"]["execution_evidence"] = json!("n/a");
+    });
+    // A receipt spliced in from another report (identity drift) must redden the
+    // same guard: the dict branch is exercised, not only the string branch.
+    mutate("execution_evidence_unbound", &|clone| {
+        clone["executed_population"]["execution_evidence"]["population_identity"] =
+            json!("some_other_report");
+    });
+    // The receipt's own fields are independently required: an undeclared kind, a
+    // missing kind and a document count that disagrees with the executed
+    // population each redden the same guard, so removing one check is not hidden
+    // by the identity mutant above.
+    mutate("execution_evidence_unbound", &|clone| {
+        clone["executed_population"]["execution_evidence"]["kind"] = json!("undeclared_kind");
+    });
+    mutate("execution_evidence_unbound", &|clone| {
+        clone["executed_population"]["execution_evidence"]
+            .as_object_mut()
+            .expect("the baseline receipt is an object")
+            .remove("kind");
+    });
+    mutate("execution_evidence_unbound", &|clone| {
+        clone["executed_population"]["execution_evidence"]["documents"] =
+            json!(document_count as u64 + 1);
     });
     mutate("accepted_documents", &|clone| {
         clone["executed_population"]["accepted"] = json!(1);
