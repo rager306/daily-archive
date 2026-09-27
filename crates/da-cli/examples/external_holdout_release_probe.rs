@@ -27,9 +27,9 @@
 //!
 //! ## Measured scope (read before quoting any number)
 //!
-//! A small, non-gold local holdout; its population is read at run time from the
+//! A non-gold local holdout census; its population is read at run time from the
 //! frozen source manifest (`data/parse/holdout_manifests.yaml#articles`), never a
-//! compiled-in size (50 rows in the recorded measurement).
+//! compiled-in size (610 rows in the recorded census).
 //! This is NOT a statistical corpus: every number is a COUNT over the measured
 //! documents, never a corpus rate, and the probe makes no pooled claim
 //! (`claim_scope = local_proxy_only`).  The probe
@@ -4071,16 +4071,11 @@ fn mutants(report: &Json, document_count: usize) -> Vec<(&'static str, Json)> {
     out
 }
 
-/// The default synthetic self-check population.  Deliberately independent of the
-/// repo: the self-check proves the guard predicate over code-built fixtures, so
-/// it reads no manifest.  The count flows through the `synthetic_pair` parameter
-/// and the `--documents` flag, so the guard matrix can be exercised at any
-/// population size (the N=5/N=7 scalability proof) with no code change.
-const SYNTHETIC_DOCUMENT_COUNT: usize = 5;
-
-/// The default synthetic exception population.  The frozen population is always
+/// The synthetic exception population.  The frozen population is always
 /// `measured + exceptions`, so the guard matrix proves the partition at a fixed
-/// exception count while `--documents` scales the measured side.
+/// exception count while `--documents` supplies the measured side (the N/N+2
+/// scalability proof).  There is no compiled-in document count: the population is
+/// DATA, supplied per invocation, so no literal can drift from the manifest.
 const SYNTHETIC_EXCEPTION_COUNT: usize = 2;
 const SYNTHETIC_EXCEPTION_REASON: &str = "synthetic_exclusion";
 
@@ -4154,10 +4149,9 @@ struct Args {
     /// Run the hermetic guard self-check (no repo read, no network, no write).
     #[arg(long)]
     self_check: bool,
-    /// The synthetic population the hermetic guard self-check exercises.  DATA,
-    /// not a compiled-in constant: the same binary proves the guard matrix at any
-    /// N (defaults to `SYNTHETIC_DOCUMENT_COUNT`).  Only meaningful together with
-    /// `--self-check`.
+    /// The population the hermetic guard self-check exercises.  DATA, never a
+    /// compiled-in constant: the same binary proves the guard matrix at any N.
+    /// Required together with `--self-check`; refused without it.
     #[arg(long, value_name = "N")]
     documents: Option<usize>,
     /// Print the per-document profile and the aggregate to stdout.
@@ -4325,7 +4319,14 @@ fn main() -> anyhow::Result<()> {
     // whole process.  `--self-check` is a pure predicate matrix with no repo,
     // network or log surface, so it deliberately runs before the root is opened.
     if args.self_check {
-        let document_count = args.documents.unwrap_or(SYNTHETIC_DOCUMENT_COUNT);
+        // The population is DATA, never a compiled-in constant: a bare
+        // `--self-check` has no population to exercise and is refused by name.
+        let Some(document_count) = args.documents else {
+            eprintln!(
+                "--self-check requires --documents <N>: the population is DATA, never a compiled-in constant"
+            );
+            std::process::exit(2);
+        };
         return if self_check(document_count) {
             Ok(())
         } else {

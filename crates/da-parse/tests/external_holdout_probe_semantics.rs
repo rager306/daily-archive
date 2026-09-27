@@ -14,8 +14,8 @@
 //!
 //! ## Measured scope (read this before quoting any number)
 //!
-//! A sha256-pinned, non-gold local holdout (the 40 measurable documents of the
-//! 50-document frozen population in the recorded measurement; the other 10 are a
+//! A sha256-pinned, non-gold local holdout (the 531 measurable documents of the
+//! 610-document frozen population in the recorded census; the other 79 are a
 //! typed, named exception list).  This is NOT a statistical corpus: every number
 //! below is a COUNT over the measured documents, never a corpus rate, and
 //! the probe makes no pooled claim (`claim_scope = local_proxy_only`).  The
@@ -2539,7 +2539,7 @@ fn real_holdout_probe_profile_is_measured_per_document() {
 }
 
 /// The frozen aggregate: the measured numbers are asserted, so any drift in
-/// either direction fails.  `documents=40` is printed next to the counts, and the
+/// either direction fails.  `documents=531` is printed next to the counts, and the
 /// rendered aggregate is counts-only — never a corpus rate.
 #[test]
 fn measured_probe_aggregate_is_frozen() {

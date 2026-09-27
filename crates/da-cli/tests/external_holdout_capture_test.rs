@@ -307,7 +307,7 @@ fn preflight_checks_the_committed_inputs_and_writes_nothing() {
     let before = directory_fingerprint(&fixture_dir);
 
     // The population is read from DATA, so the test grows with the manifest
-    // instead of pinning five literals. Preflight is read-only by construction
+    // instead of pinning a fixed literal count. Preflight is read-only by construction
     // and probes whatever endpoint the environment provides, so this asserts
     // the hermetic half (the declared PDF bytes, the DATA release pin, and the
     // no-write property) and accepts either outcome for the live half.

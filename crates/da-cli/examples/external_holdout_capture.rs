@@ -1305,9 +1305,9 @@ async fn run_capture(root: &Path, args: &Args, preflight: &Preflight) -> Result<
     // `--only-new`: adopt every declared article whose frozen fixture still
     // matches its provenance pin, and capture only the rest. This is what lets
     // a grown population extend the frozen reference without overwriting the
-    // already-committed rows: T01 measured that a re-capture of the five pilot
-    // documents is not byte-identical (0/5), so a blind `--capture` would
-    // silently replace them and break their DATA pins.
+    // already-committed rows: the pilot measurement found that a re-capture of
+    // the already-adopted documents is not byte-identical, so a blind `--capture`
+    // would silently replace them and break their DATA pins.
     let existing_documents: Vec<Value> = if args.only_new {
         let path = out_dir.join(PROVENANCE_FILE);
         if path.is_file() {

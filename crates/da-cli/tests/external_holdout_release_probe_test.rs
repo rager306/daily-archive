@@ -1499,7 +1499,11 @@ fn governor_executed_population_binding_matches_the_audit_mirror() {
 #[test]
 fn guard_self_check_rejects_every_declared_violation() {
     let output = Command::new(example_binary())
-        .arg("--self-check")
+        .args([
+            "--self-check",
+            "--documents",
+            &declared_population().to_string(),
+        ])
         .current_dir(repo_root())
         .output()
         .expect("run the release probe guard self-check");
@@ -1524,6 +1528,24 @@ fn guard_self_check_rejects_every_declared_violation() {
     );
 }
 
+#[test]
+fn self_check_requires_the_documents_flag() {
+    let output = Command::new(example_binary())
+        .arg("--self-check")
+        .current_dir(repo_root())
+        .output()
+        .expect("run the release probe guard self-check without --documents");
+    assert!(
+        !output.status.success(),
+        "--self-check without --documents must fail closed: there is no compiled-in population"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("--self-check requires --documents"),
+        "the refusal must name the missing argument:\n{stderr}"
+    );
+}
+
 /// The lane's guard surface must follow the DATA, not a compiled-in population:
 /// one binary, two populations, no code change between the runs.  The synthetic
 /// fixture is code-built and lives only for the run, never written into the
@@ -1532,7 +1554,7 @@ fn guard_self_check_rejects_every_declared_violation() {
 fn guard_self_check_scales_to_any_population_without_a_code_change() {
     let binary = example_binary();
     let base = declared_population();
-    let populations = [base, base + 2]; // N=5 and N=7 on the frozen manifest.
+    let populations = [base, base + 2]; // N and N+2 at the declared population.
     let mut recorded: BTreeMap<usize, String> = BTreeMap::new();
     for population in populations {
         let output = Command::new(&binary)
