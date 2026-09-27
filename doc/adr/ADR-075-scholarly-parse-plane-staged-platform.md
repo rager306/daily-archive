@@ -403,3 +403,37 @@ locks are unchanged: `candidate`, `deployed=false`, `auto_promote=forbidden`,
 Java GROBID remains the TEI oracle and the rollback target. Human release
 decision (H20/GAR-015) and Java-CPU (H05) remain named open items outside this
 amendment.
+
+## 10. Dated amendment (2026-09-27) — qualification corpus expanded from five pilot documents to the non-gold census
+
+Added by M512-lxafs8/S05. This amendment records measurement only. It
+authorizes no promotion, no import and no graph write; it does not lift D127 and
+does not move `production_route` off Java. Sections 1–9 are not rewritten.
+
+**What changed in the measured basis.** The qualification corpus is no longer
+the five-document S08 pilot recorded in §9. It is the frozen non-gold census:
+610 declared documents = 531 measurable (`reference_tei`) + 79 named typed
+exceptions (`header_date_absent` 72 / `header_title_absent` 5 /
+`header_author_absent` 2). The runtime artifact
+(`external_holdout_release_probe.json`) carries sha256 `793d551f…`; its identity
+is recomputed from `data/parse/holdout_manifests.yaml` as `sha256:eee622ae…`,
+not trusted from the declared value. Executed and evaluated populations agree
+(531 = 531); the aggregate reads 79621 source occurrences → 74910 admitted →
+74910 conserved, tp 74910 / fn 0 / fp 0, margin 1062 pass / 0 fail. The
+production-overlap census: 610 declared, 610 declared PDFs present, 586 source
+archives present, 0 canonical-catalog, 0 gold, 0 absent, identity overlap none.
+The S08 pilot in §9 (5 sha256, 731 → 705) is dated history and is superseded as
+the current basis by this census; §9 is not edited.
+
+**Cross-surface binding.** The census is bound across the audit slice section
+`### Свидетельства среза M512-lxafs8/S05`, roadmap correction `C13`, and the
+governor rule `executed_population_binding.census_binding`, so a mutated count
+fails closed by name rather than passing as prose.
+
+**What this does not mean.** No stage is promoted and the candidate/quarantine
+locks are unchanged: `candidate`, `deployed=false`, `auto_promote=forbidden`,
+`promotion_receipt=forbidden`, `import_eligible=false`,
+`production_route=forbidden`, `graph_write=forbidden`. D127 remains closed.
+Java GROBID remains the TEI oracle and the rollback target. Human release
+decision (H20/GAR-015) and Java-CPU (H05) remain named open items outside this
+amendment.

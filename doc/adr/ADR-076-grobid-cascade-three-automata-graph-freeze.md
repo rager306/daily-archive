@@ -1011,3 +1011,52 @@ D127 не снят. `deployed=false`, `import_eligible=false`,
 человеческое релизное решение H20/GAR-015 (`reviewer=null`, `decision=pending`) и
 Java-CPU H05 (`java_cpu_wall_clock_ns` против `grobid_sidecar_cgroup_cpuacct`).
 
+## 24. Корректировка 2026-09-27: согласование документов, записей и независимая квалификация переписи (M512-lxafs8/S05)
+
+Секция не закрывает ни одну стадию H14–H21 и не меняет ни один замок: она
+приводит документы в соответствие с уже измеренной переписью M512 и добавляет
+независимую кросс-поверхностную машинную квалификацию на текущей ревизии
+источника. История S01–S09 не переписывается: §14–§23 остаются как были. В
+частности датированный S08-пилот из §22 (5 sha256, 731 source → 705 admitted →
+705 conserved, artifact `30479a60…`, identity `22df1b7e…`) остаётся записью того
+среза и больше не читается как текущее основание.
+
+**Что измерено (перепись M512).** Объявленная партия — 610 замороженных
+не-gold документов, из них 531 измеримы (`reference_tei`) и 79 названы
+типизированными исключениями (`header_date_absent` 72 / `header_title_absent` 5
+/ `header_author_absent` 2), то есть 610 = 531 + 79 без молчаливого выпадения.
+Артефакт `artifacts/parse_compat/external_holdout_release_probe.json` несёт
+sha256 `793d551fbc0c59b5b12d1a064d2c9d4a7e60c923308f19052962825fe4c297c5`;
+identity пересчитывается из `data/parse/holdout_manifests.yaml` (sha256
+`ef91d3c2…`) как
+`sha256:eee622ae57286faff567b1793f31ee54c5df3118e544a4bb8edf1c7376955c6d`, а не
+доверяется объявленному значению. Исполненная и оценённая популяции совпадают:
+`executed = evaluated = 531`; агрегат 79621 source → 74910 admitted → 74910
+conserved, tp 74910 / fn 0 / fp 0, margin pass 1062 / fail 0.
+`production_catalog_overlap`: documents 610, declared_pdf_present 610,
+sources_archive_present 586, canonical 0, gold 0, absent 0,
+`production_corpus_identity_overlap=none`. Каждое число — счётчик, не корпусная
+ставка; 531 документ не статистический корпус.
+
+**Кросс-поверхностный census.** Перепись не живёт в одной прозе: она закреплена
+на трёх поверхностях, которые обязаны сходиться — audit-раздел
+`### Свидетельства среза M512-lxafs8/S05` в
+`doc/review/grobid-absorption-audit-2026-09-21.md`, correction `C13` в
+`doc/review/grobid-absorption-roadmap-2026-09-21.yaml` и governor-правило
+`executed_population_binding.census_binding`
+(`scripts/governor/checks/executed_population_binding.yaml`), где число census
+привязано к DATA (объявленная партиция манифеста против наблюдаемой популяции
+артефакта), а расхождение падает fail-closed именами
+`census_reference_population_mismatch` / `census_executed_population_mismatch` /
+`census_binding_unresolvable`.
+
+**Что это НЕ значит.** Ни одна стадия H14–H21 не закрыта; ни одна
+planning-запись не несёт `implementation_pass=true` или
+`verification_pass=true`. Ни один замок не изменён: `import_eligible=false`,
+`deployed=false`, `production_route=forbidden`, `graph_write=forbidden`,
+`auto_promote=forbidden`; D127 не снят. Java GROBID остаётся TEI oracle и
+rollback target. Человеческое релизное решение H20/GAR-015 остаётся
+`pending_human_review` с `reviewer=null` и `decision=pending`; GAR-015 остаётся
+`open`. Названный остаток Java-CPU H05 (`java_cpu_wall_clock_ns` против
+`grobid_sidecar_cgroup_cpuacct`) не закрыт.
+
