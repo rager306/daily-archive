@@ -14,7 +14,14 @@ name: daily-archive-parser-sidecars
 
 services:
   grobid:
-    image: ${GROBID_IMAGE:-grobid/grobid:0.9.0-crf}
+    # Pinned by digest, not by tag: a tag can be re-pointed upstream and a cached
+    # image can vanish under prune. This digest is the declared production release
+    # (tag `0.9.1-crf`) and must equal
+    # data/parse/acceptance_manifest.yaml#declared_release.image_digest, which
+    # `cargo test -p da-cli --test grobid_release_identity_test` enforces. The
+    # previous release (tag `0.9.0-crf`, digest sha256:24ba90eb1c95...) is the
+    # documented rollback; see .docker/grobid-release.override.yml.
+    image: ${GROBID_IMAGE:-grobid/grobid@sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd}
     container_name: ${GROBID_CONTAINER_NAME:-daily-archive-grobid}
     ports:
       - "${GROBID_HOST_PORT:-8070}:8070"
