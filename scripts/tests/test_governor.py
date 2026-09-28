@@ -13,6 +13,7 @@ import subprocess
 import sys
 import shutil
 import tempfile
+import atexit
 from pathlib import Path
 
 import yaml
@@ -58,13 +59,31 @@ from governor.domain.trajectory import DriftFlag, TrajectoryVerdict
 
 
 def _make_root() -> Path:
-    """Create a temp project root with minimal structure."""
+    """Create a temp project root with minimal structure.
+
+    `mkdtemp` never removes its directory, so every test in this file used to leave
+    a `governor-test-*` directory in /tmp: 28 849 of them (~8.7 GB) by 2026-09-27,
+    found by the log review and reported by the governor as `tmp_scratch_bloat`.
+    Cleanup is registered at interpreter exit rather than per test, because scratch
+    that survives a crash is diagnostic evidence: a crashed run should leave its
+    tree behind, a completed run should not.
+    """
     root = Path(tempfile.mkdtemp(prefix="governor-test-"))
+    _SCRATCH_ROOTS.append(root)
     (root / "crates" / "kg-ontology").mkdir(parents=True)
     (root / "crates" / "da-domain").mkdir(parents=True)
     (root / "artifacts").mkdir(parents=True)
     (root / "doc" / "adr").mkdir(parents=True)
     return root
+
+_SCRATCH_ROOTS: list[Path] = []
+
+def _cleanup_scratch_roots() -> None:
+    for root in _SCRATCH_ROOTS:
+        shutil.rmtree(root, ignore_errors=True)
+    _SCRATCH_ROOTS.clear()
+
+atexit.register(_cleanup_scratch_roots)
 
 
 def _write(path: Path, content: str) -> None:

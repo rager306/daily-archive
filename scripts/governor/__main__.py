@@ -57,6 +57,34 @@ def main() -> int:
     review.add_argument("--root", default=None)
     review.add_argument("--registry", default="scripts/governor/checks/grobid_absorption_review.yaml")
 
+    # ── Subcommand: hygiene (GSD runtime-store retention, dry run by default) ──
+    hygiene = sub.add_parser("hygiene", help="Report and prune GSD runtime stores (dry run by default)")
+    hygiene.add_argument("--root", default=None)
+    hygiene.add_argument("--tmp-dir", default="/tmp", help="scratch directory to sweep")
+    hygiene.add_argument("--apply", action="store_true", help="perform deletions (default: dry run)")
+    hygiene.add_argument("--days-exec", type=int, default=None, help="retention for .gsd/exec evidence")
+    hygiene.add_argument("--days-quarantine", type=int, default=None, help="retention for quarantined projections")
+    hygiene.add_argument("--days-activity", type=int, default=None, help="retention for .gsd/activity")
+    hygiene.add_argument("--min-age-hours", type=int, default=None, help="never touch anything newer than this")
+    hygiene.add_argument("--no-scratch", action="store_true", help="keep /tmp scratch directories")
+
+    # ── Subcommand: doctor-baseline (accepted engine-doctor divergence) ──
+    baseline = sub.add_parser(
+        "doctor-baseline",
+        help="List unbaselined engine-doctor divergence, or accept one after review",
+    )
+    baseline.add_argument("--root", default=None)
+    baseline.add_argument("--accept", default=None, help="divergence code to record as accepted")
+    baseline.add_argument("--milestone", default=None, help="milestone the acceptance is scoped to")
+    baseline.add_argument(
+        "--code-wide",
+        action="store_true",
+        help="accept the code for every milestone (requires --reason)",
+    )
+    baseline.add_argument("--reason", default=None, help="why a code-wide acceptance is safe")
+    baseline.add_argument("--evidence", default=None, help="what was checked/where the file went")
+    baseline.add_argument("--by", default="agent", choices=["agent", "human"])
+
     parser.add_argument(
         "--phase",
         choices=["preflight", "active", "closeout"],
@@ -115,6 +143,10 @@ def main() -> int:
         # fall through to default trajectory logic
     elif args.command == "review":
         return _run_review_registry(args)
+    elif args.command == "hygiene":
+        return _run_hygiene(args)
+    elif args.command == "doctor-baseline":
+        return _run_doctor_baseline(args)
 
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
@@ -218,6 +250,122 @@ def _resolve_review_contract(project_root: Path, registry: str | None) -> str | 
     if (project_root / committed).is_file():
         return str(committed)
     return registry
+
+
+def _run_hygiene(args) -> int:
+    """Report and (with --apply) prune GSD runtime stores. Dry run by default."""
+    from dataclasses import replace
+
+    from governor.application.retention_service import (
+        apply_plan,
+        build_plan,
+        load_retention_policy,
+        store_report,
+    )
+
+    project_root = Path(args.root).resolve() if getattr(args, "root", None) else _detect_root()
+    tmp_dir = Path(getattr(args, "tmp_dir", "/tmp"))
+    if not (project_root / ".gsd").exists():
+        print(f"not a GSD project: {project_root}", file=sys.stderr)
+        return 1
+
+    # The contract owns the policy so the flag that fires and the command that clears
+    # it cannot disagree; an explicit CLI flag is a deliberate one-off override.
+    policy = load_retention_policy(project_root)
+    overrides = {
+        key: value
+        for key, value in (
+            ("days_exec", args.days_exec),
+            ("days_quarantine", args.days_quarantine),
+            ("days_activity", args.days_activity),
+            ("min_age_hours", args.min_age_hours),
+        )
+        if value is not None
+    }
+    if overrides:
+        policy = replace(policy, **overrides)
+
+    sizes = store_report(project_root, tmp_dir)
+    print("GSD runtime stores:")
+    for name, data in sizes.items():
+        print(f"  {name:12s} {int(data['files']):7d} files  {data['mb']:9.1f} MB")
+    print(
+        f"policy: exec {policy.days_exec}d, quarantine {policy.days_quarantine}d, "
+        f"activity {policy.days_activity}d, min age {policy.min_age_hours}h"
+    )
+
+    plan = build_plan(
+        project_root,
+        policy,
+        tmp_dir=tmp_dir,
+        include_scratch=not getattr(args, "no_scratch", False),
+    )
+    counts = plan.counts()
+    print(
+        "plan: "
+        f"{counts['scratch_dirs']} scratch dirs, {counts['exec_captures']} exec captures, "
+        f"{counts['quarantine_runs']} quarantine runs, {counts['activity_files']} activity files "
+        f"({plan.total_bytes() / 1e6:.1f} MB)"
+    )
+    if not getattr(args, "apply", False):
+        print("dry run — pass --apply to delete")
+        return 0
+    if plan.is_empty():
+        print("nothing to remove")
+        return 0
+    manifest = apply_plan(plan, project_root)
+    print(f"removed; manifest at {manifest}")
+    return 0
+
+
+def _run_doctor_baseline(args) -> int:
+    """List unbaselined doctor divergence, or record one explicit acceptance."""
+    from governor.application.doctor_baseline_service import (
+        BaselineError,
+        accept,
+        report,
+    )
+
+    project_root = Path(args.root).resolve() if getattr(args, "root", None) else _detect_root()
+
+    if getattr(args, "accept", None):
+        try:
+            entry = accept(
+                project_root,
+                code=args.accept,
+                milestone=getattr(args, "milestone", None),
+                code_wide=bool(getattr(args, "code_wide", False)),
+                reason=getattr(args, "reason", None),
+                evidence=getattr(args, "evidence", None),
+                recorded_by=getattr(args, "by", "agent"),
+            )
+        except BaselineError as error:
+            print(f"refused: {error}", file=sys.stderr)
+            return 1
+        print(f"accepted: {json.dumps(entry, ensure_ascii=False)}")
+        return 0
+
+    try:
+        current = report(project_root)
+    except BaselineError as error:
+        print(f"baseline unreadable: {error}", file=sys.stderr)
+        return 1
+    print(
+        f"latest doctor run: {current.latest_ts or 'none'} "
+        f"({current.latest_errors} error(s) counted, {current.accepted_count} acceptance(s) recorded)"
+    )
+    if not current.unbaselined:
+        print("no unbaselined divergence")
+        return 0
+    print("unbaselined divergence:")
+    for label in current.unbaselined:
+        print(f"  - {label}")
+    print("codes reported by the latest run:", ", ".join(current.available_codes) or "(none)")
+    print(
+        "accept one after review: governor doctor-baseline --accept <code> "
+        "--milestone M### --evidence \"...\""
+    )
+    return 0
 
 
 def _run_review_registry(args) -> int:
