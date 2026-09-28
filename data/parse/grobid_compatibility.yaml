@@ -2305,9 +2305,79 @@ parity_ledger:
     capture:
       artifact: artifacts/parse_compat/java_grobid_layout_source.json
       pointer: source_files/document_source/sha256
+  # ------------------------------------------------------------------------
+  # Fourth link (M513-r7dg4z/S03, D471): each `scope: required` row binds the
+  # S02 Java-relative corpus parity measurement. This is a coverage inventory,
+  # not a correctness proof (MEM1732): correctness stays with the row's third
+  # link (java/rust/test) and the S02 oracle. The link is measured, not
+  # declared: the judge re-hashes both content-addressed files and reconciles
+  # every declared token against the pinned artifact.
+  # ------------------------------------------------------------------------
+  parity_measurement:
+    artifact:
+      path: artifacts/parse_compat/external_holdout_release_probe.json
+      sha256: a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275
+    frozen_tables:
+      path: crates/da-parse/tests/fixtures/holdout/frozen_tables.json
+      sha256: d25a446a2aa1aec8fce09b988c812b95b965e98929147713cd90880fdb734ba2
+      artifact_sha256: a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275
+    identity_digest: sha256:eee622ae57286faff567b1793f31ee54c5df3118e544a4bb8edf1c7376955c6d
+    declared_release:
+      label: java-grobid-http@0.9.1
+      image_digest: sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd
+      rollback_label: java-grobid-http@0.9.0-crf
+      label_divergence_item: H21
+    claim_scope: local_proxy_only
+    aggregation: micro_occurrence
+    aggregate_kind: declared_population_count
+    pooled_quality_claim: forbidden
+    classes:
+    - AdmittedAuthorLine
+    - CitationFieldRole::article_title
+    - CitationFieldRole::arxiv_id
+    - CitationFieldRole::doi
+    - CitationFieldRole::url
+    - SemanticFieldLoss::AuthorAffiliation
+    - SemanticFieldLoss::HeaderEmail
+    - SemanticFieldLoss::HeaderIds
+    - SemanticFieldLoss::HeaderTitle
+    - source_listbibl_direct_children
+    state_vocabulary:
+    - measured_by_corpus_parity
+    - outside_corpus_parity
+    outside_reason_vocabulary:
+    - rest_transport_surface
+    - dialect_flag_surface
+    - pdf_input_stage_not_in_tei_composition
+    - lane_not_admitted_in_measurement
+    - visual_lane_not_admitted_in_measurement
+    - java_side_profile_surface
+    - not_in_measured_runner_path
+    class_parity_declaration:
+      aggregation: micro_occurrence
+      claim_scope: local_proxy_only
+      denominator: source_population
+      extra: fabricated
+      f1: harmonic_mean_of_precision_and_recall
+      missing: source_population_minus_conserved
+      numerator: conserved
+      precision: conserved_over_conserved_plus_fabricated
+      recall: conserved_over_source_population
+      schema_version: external-holdout-class-parity.v1
+      source_consumed_classes:
+      - SemanticFieldLoss::HeaderEmail
+      - SemanticFieldLoss::HeaderIds
+      - SemanticFieldLoss::HeaderTitle
+      source_consumed_rule: >-
+        the source subtree copied into the emission carries these carriers too,
+        so they are covered rather than lost and a per-class recall below 1.0
+        for them is a band-definition choice, not a defect; the 0.5000
+        HeaderTitle narrowing is not fabricated loss
+      zero_zero_denominator: recall_is_one_at_empty_source_population
   rows:
   # --- implemented rows (state != absent) ---------------------------------
   - capability: rest.isalive
+    measurement: {state: outside_corpus_parity, reason: rest_transport_surface}
     scope: required
     state: proxy
     parity: full
@@ -2320,6 +2390,7 @@ parity_ledger:
       vocabulary: [ProbeFailure]
     license: inventory:java-grobid-0.9.0-crf
   - capability: rest.health
+    measurement: {state: outside_corpus_parity, reason: rest_transport_surface}
     scope: required
     state: proxy
     parity: full
@@ -2332,6 +2403,7 @@ parity_ledger:
       vocabulary: [ProbeFailure]
     license: inventory:java-grobid-0.9.0-crf
   - capability: rest.version
+    measurement: {state: outside_corpus_parity, reason: rest_transport_surface}
     scope: required
     state: proxy
     parity: full
@@ -2344,6 +2416,7 @@ parity_ledger:
       vocabulary: [ProbeFailure]
     license: inventory:java-grobid-0.9.0-crf
   - capability: rest.processFulltextDocument
+    measurement: {state: outside_corpus_parity, reason: rest_transport_surface}
     scope: required
     state: proxy
     parity: full
@@ -2356,6 +2429,7 @@ parity_ledger:
       vocabulary: [ParseBackendFailure, FailurePhase, LimitKind]
     license: inventory:java-grobid-0.9.0-crf
   - capability: rest.processHeaderDocument
+    measurement: {state: outside_corpus_parity, reason: rest_transport_surface}
     scope: required
     state: proxy
     parity: full
@@ -2369,6 +2443,7 @@ parity_ledger:
       vocabulary: [ParseBackendFailure, FailurePhase]
     license: inventory:java-grobid-0.9.0-crf
   - capability: rest.processReferences
+    measurement: {state: outside_corpus_parity, reason: rest_transport_surface}
     scope: required
     state: proxy
     parity: full
@@ -2382,6 +2457,7 @@ parity_ledger:
       vocabulary: [ParseBackendFailure, FailurePhase]
     license: inventory:java-grobid-0.9.0-crf
   - capability: dialect.teiCoordinates
+    measurement: {state: outside_corpus_parity, reason: dialect_flag_surface}
     scope: required
     state: proxy
     parity: full
@@ -2478,6 +2554,7 @@ parity_ledger:
     error_semantics: null
     license: inventory:project-owned-da-parse
   - capability: stage.pdfalto_layout
+    measurement: {state: outside_corpus_parity, reason: pdf_input_stage_not_in_tei_composition}
     scope: required
     state: shadow
     parity: full
@@ -2490,6 +2567,7 @@ parity_ledger:
       vocabulary: [ParseBackendFailure, FailurePhase]
     license: inventory:pdfalto_runtime
   - capability: stage.document_segmentation
+    measurement: {state: outside_corpus_parity, reason: lane_not_admitted_in_measurement}
     scope: required
     state: shadow
     parity: full
@@ -2502,6 +2580,7 @@ parity_ledger:
       vocabulary: [SegmentationError, FullSegmentationError]
     license: inventory:feature-tagger-training-corpus-and-models
   - capability: stage.header_composition
+    measurement: {state: measured_by_corpus_parity, classes: [AdmittedAuthorLine, SemanticFieldLoss::HeaderTitle, SemanticFieldLoss::HeaderEmail, SemanticFieldLoss::HeaderIds, SemanticFieldLoss::AuthorAffiliation]}
     scope: required
     state: shadow
     parity: full
@@ -2514,6 +2593,7 @@ parity_ledger:
       vocabulary: [CompositionError]
     license: inventory:feature-tagger-training-corpus-and-models
   - capability: stage.reference_segmentation
+    measurement: {state: measured_by_corpus_parity, classes: [source_listbibl_direct_children, CitationFieldRole::doi, CitationFieldRole::arxiv_id, CitationFieldRole::url, CitationFieldRole::article_title]}
     scope: required
     state: shadow
     parity: full
@@ -2526,6 +2606,7 @@ parity_ledger:
       vocabulary: [CompositionError]
     license: inventory:feature-tagger-training-corpus-and-models
   - capability: stage.figure_table_formula
+    measurement: {state: outside_corpus_parity, reason: visual_lane_not_admitted_in_measurement}
     scope: required
     state: shadow
     parity: full
@@ -2540,6 +2621,7 @@ parity_ledger:
       vocabulary: [NativeVisualError]
     license: inventory:pdffigures2
   - capability: stage.bibliographic_consolidation
+    measurement: {state: outside_corpus_parity, reason: java_side_profile_surface}
     scope: required
     state: fallback
     parity: full
@@ -2552,6 +2634,7 @@ parity_ledger:
       vocabulary: [ParseBackendFailure, FailurePhase]
     license: inventory:java-grobid-0.9.0-crf
   - capability: stage.tei_lift
+    measurement: {state: outside_corpus_parity, reason: not_in_measured_runner_path}
     scope: required
     state: candidate
     parity: full
@@ -2564,6 +2647,7 @@ parity_ledger:
       vocabulary: [ParseBackendFailure, FailurePhase]
     license: inventory:project-owned-da-parse
   - capability: parse.component.native_fulltext_composition_shadow
+    measurement: {state: measured_by_corpus_parity, classes: [AdmittedAuthorLine, CitationFieldRole::article_title, CitationFieldRole::arxiv_id, CitationFieldRole::doi, CitationFieldRole::url, SemanticFieldLoss::AuthorAffiliation, SemanticFieldLoss::HeaderEmail, SemanticFieldLoss::HeaderIds, SemanticFieldLoss::HeaderTitle, source_listbibl_direct_children]}
     scope: required
     state: shadow
     parity: full
@@ -2742,6 +2826,15 @@ parity_ledger:
     next: >-
       none in this milestone; internal learning surface, already covered by the
       da-application offline same-n aggregation test
+  named_gap_disposition:
+    required_named_gaps: 0
+    kind_vocabulary: [no_java_donor]
+    gaps:
+    - capability: learning.ruvllm_ablation
+      kind: no_java_donor
+      accepted_as_residual: true
+      decision_ref: D471
+      residual_owner: M513-r7dg4z/S05
   denominators:
     capabilities: 38
     scope:

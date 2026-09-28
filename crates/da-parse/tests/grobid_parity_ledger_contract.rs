@@ -198,6 +198,96 @@ fn locks_are_unchanged() {
     assert!(errors.is_empty(), "{}", report(&errors));
 }
 
+/// Measurement coverage (M513-r7dg4z/S03, D471): every `scope: required` row
+/// carries a typed measurement link and no other row does; the state, class and
+/// reason vocabularies are closed; every declared class is claimed by at least
+/// one measured row; and the single named gap is a typed refusal, never a
+/// required row.
+#[test]
+fn required_rows_carry_a_measurement_link_and_no_other_row_does() {
+    let errors = pl::check_measurement_coverage(&pl::load(&root()));
+    assert!(errors.is_empty(), "{}", report(&errors));
+}
+
+/// Measurement identity: both content-addressed files re-hash to the declared
+/// bytes, the internal frozen-tables -> artifact chain holds, the identity and
+/// declared-release digests match the pinned S02 artifact, the declared class
+/// set equals both class unions, the mirrored class-parity declaration is exact,
+/// and the D442/D469 reconciliation forbids a pooled quality claim.
+#[test]
+fn measurement_identity_is_byte_bound_and_reconciled() {
+    let root = root();
+    let errors = pl::check_measurement_identity(&root, &pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+}
+
+/// Aggregate measurement gate: run every check at once, print the per-row
+/// measurement state with `--nocapture`, and assert the required-row census is
+/// total (15 of 15) with the typed named-gap refusal. This is the human ledger
+/// for the fourth link.
+#[test]
+fn measurement_census_is_total_and_prints_the_human_ledger() {
+    let outcome = pl::evaluate(&root());
+    println!("{}", outcome.report);
+    assert!(outcome.errors.is_empty(), "{}", report(&outcome.errors));
+
+    let doc = pl::load(&root());
+    let rows = &doc.parity_ledger.rows;
+    let required: Vec<&pl::Row> = rows.iter().filter(|row| row.scope == "required").collect();
+    assert_eq!(required.len(), 15, "required row census");
+    assert_eq!(
+        required
+            .iter()
+            .filter(|row| row.measurement.is_some())
+            .count(),
+        15,
+        "every required row must carry a measurement link"
+    );
+    assert_eq!(
+        rows.iter()
+            .filter(|row| row.scope != "required" && row.measurement.is_some())
+            .count(),
+        0,
+        "no non-required row may carry a measurement link"
+    );
+    let measured = required
+        .iter()
+        .filter(|row| {
+            row.measurement
+                .as_ref()
+                .is_some_and(|link| link.state == pl::MEASURED_BY_CORPUS_PARITY)
+        })
+        .count();
+    let outside = required
+        .iter()
+        .filter(|row| {
+            row.measurement
+                .as_ref()
+                .is_some_and(|link| link.state == pl::OUTSIDE_CORPUS_PARITY)
+        })
+        .count();
+    assert_eq!((measured, outside), (3, 12), "measured/outside partition");
+
+    let disposition = doc
+        .parity_ledger
+        .named_gap_disposition
+        .as_ref()
+        .expect("named_gap_disposition declared");
+    assert_eq!(disposition.required_named_gaps, 0, "required named gaps");
+    let gap = disposition
+        .gaps
+        .iter()
+        .find(|refusal| refusal.capability == "learning.ruvllm_ablation")
+        .expect("the single named gap is a typed refusal");
+    assert_eq!(gap.kind, "no_java_donor");
+    assert_eq!(gap.decision_ref, "D471");
+    assert_eq!(gap.residual_owner, "M513-r7dg4z/S05");
+    assert!(
+        outcome.report.contains("measurement="),
+        "report must print the per-row measurement state"
+    );
+}
+
 /// Contract identity and the non-empty revision/prose fields.
 #[test]
 fn contract_identity_is_declared() {

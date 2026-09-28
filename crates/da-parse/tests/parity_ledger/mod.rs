@@ -32,8 +32,18 @@
 //! (f) `not_claimed_absent` rows carry a scope-keyed reason and no links;
 //! (g) no absent row claims parity, and no `required` capability is absent;
 //! (h) the frozen denominators match what the rows actually contain.
+//!
+//! The fourth link (M513-r7dg4z/S03, D471) adds a fail-closed measurement
+//! projection: every `required` row binds a typed reference to the S02
+//! Java-relative corpus parity, and no other row may claim one. The binding is
+//! checked twice: `check_measurement_coverage` is pure DATA -> DATA (vocabularies
+//! plus a closed class cover), and `check_measurement_identity` re-hashes the
+//! pinned artifact and frozen tables and reconciles the mirrored tokens. This is
+//! a coverage inventory, not a correctness proof (MEM1732): correctness stays
+//! with the third link and the S02 oracle.
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::{Component, Path, PathBuf};
@@ -52,6 +62,14 @@ pub const PARITY_FULL: &str = "full";
 pub const PARITY_PARTIAL: &str = "partial";
 pub const PARITY_NOT_APPLICABLE: &str = "not_applicable_no_java_donor";
 pub const PARITY_NOT_CLAIMED: &str = "not_claimed_absent";
+
+/// Measurement states (M513-r7dg4z/S03, D471). A required row either binds the
+/// corpus parity (`measured_by_corpus_parity`) or names a typed reason why the
+/// measured lane does not cover it (`outside_corpus_parity`).
+pub const MEASURED_BY_CORPUS_PARITY: &str = "measured_by_corpus_parity";
+pub const OUTSIDE_CORPUS_PARITY: &str = "outside_corpus_parity";
+pub const AGGREGATE_KIND_DECLARED_POPULATION_COUNT: &str = "declared_population_count";
+pub const POOLED_QUALITY_CLAIM_FORBIDDEN: &str = "forbidden";
 
 // --------------------------------------------------------------------------
 // Data model
@@ -98,6 +116,104 @@ pub struct ParityLedger {
     /// appliers and fails when the applied registry diverges from this list.
     #[serde(default)]
     pub mutations: Vec<Mutation>,
+    /// The fourth link (S03, D471): the pinned S02 measurement every required
+    /// row refers to. `#[serde(default)]` keeps the mutation matrix able to
+    /// deserialize a clone whose sub-block was mutated away.
+    #[serde(default)]
+    pub parity_measurement: Option<ParityMeasurement>,
+    /// Typed refusal for every named gap (S03, D471): a named gap is never a
+    /// required row and always carries a kind, a decision reference and a
+    /// residual owner.
+    #[serde(default)]
+    pub named_gap_disposition: Option<NamedGapDisposition>,
+}
+
+/// The pinned S02 measurement: two content-addressed files, the identity and
+/// release binding, the closed class/state/reason vocabularies, the mirrored
+/// class-parity declaration, and the D442/D469 reconciliation tokens.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ParityMeasurement {
+    pub artifact: MeasurementArtifactRef,
+    pub frozen_tables: FrozenTablesRef,
+    pub identity_digest: String,
+    pub declared_release: DeclaredRelease,
+    pub claim_scope: String,
+    pub aggregation: String,
+    pub aggregate_kind: String,
+    pub pooled_quality_claim: String,
+    pub classes: Vec<String>,
+    pub state_vocabulary: Vec<String>,
+    pub outside_reason_vocabulary: Vec<String>,
+    pub class_parity_declaration: ClassParityDeclaration,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MeasurementArtifactRef {
+    pub path: String,
+    pub sha256: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct FrozenTablesRef {
+    pub path: String,
+    pub sha256: String,
+    /// Internal chain: the artifact bytes these frozen tables were derived from.
+    pub artifact_sha256: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DeclaredRelease {
+    pub label: String,
+    pub image_digest: String,
+    pub rollback_label: String,
+    pub label_divergence_item: String,
+}
+
+/// Mirror of the artifact's `class_parity_declaration`, compared token for
+/// token against the pinned artifact by `check_measurement_identity`.
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct ClassParityDeclaration {
+    pub aggregation: String,
+    pub claim_scope: String,
+    pub denominator: String,
+    pub extra: String,
+    pub f1: String,
+    pub missing: String,
+    pub numerator: String,
+    pub precision: String,
+    pub recall: String,
+    pub schema_version: String,
+    pub source_consumed_classes: Vec<String>,
+    pub source_consumed_rule: String,
+    pub zero_zero_denominator: String,
+}
+
+/// Per-required-row measurement link. `#[serde(default)]` on the parent keeps
+/// the mutation matrix deserializing clones whose row link was removed.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RowMeasurement {
+    pub state: String,
+    #[serde(default)]
+    pub classes: Vec<String>,
+    #[serde(default)]
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct NamedGapDisposition {
+    pub required_named_gaps: u64,
+    pub kind_vocabulary: Vec<String>,
+    #[serde(default)]
+    pub gaps: Vec<NamedGapRefusal>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct NamedGapRefusal {
+    pub capability: String,
+    pub kind: String,
+    pub accepted_as_residual: bool,
+    pub decision_ref: String,
+    pub residual_owner: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -140,6 +256,9 @@ pub struct Row {
     pub test: Option<TestLink>,
     #[serde(default)]
     pub error_semantics: Option<ErrorSemantics>,
+    /// The fourth link (S03, D471), present iff `scope == required`.
+    #[serde(default)]
+    pub measurement: Option<RowMeasurement>,
     pub license: String,
 }
 
@@ -913,6 +1032,407 @@ pub fn check_locks(doc: &CompatibilityDocument) -> Vec<String> {
     errors
 }
 
+fn sha256_hex(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
+}
+
+/// Class-token union of the S02 artifact's `class_profiles[].classes[].class`.
+fn artifact_class_union(value: &serde_json::Value) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for profile in value
+        .get("class_profiles")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        for class in profile
+            .get("classes")
+            .and_then(serde_json::Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(name) = class.get("class").and_then(serde_json::Value::as_str) {
+                out.insert(name.to_string());
+            }
+        }
+    }
+    out
+}
+
+/// Class-token union of the frozen tables' `documents[].profile[].class`.
+fn frozen_class_union(value: &serde_json::Value) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for document in value
+        .get("documents")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        for class in document
+            .get("profile")
+            .and_then(serde_json::Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(name) = class.get("class").and_then(serde_json::Value::as_str) {
+                out.insert(name.to_string());
+            }
+        }
+    }
+    out
+}
+
+/// (measurement coverage, pure DATA -> DATA) every `required` row carries a
+/// typed measurement link, no other row does, the states/classes/reasons come
+/// from closed vocabularies, and every declared class is claimed by at least
+/// one measured row. Named gaps are typed refusals, never required rows.
+pub fn check_measurement_coverage(doc: &CompatibilityDocument) -> Vec<String> {
+    let mut errors = Vec::new();
+    let ledger = &doc.parity_ledger;
+    let Some(measurement) = &ledger.parity_measurement else {
+        errors.push("parity_ledger has no parity_measurement block".to_string());
+        return errors;
+    };
+    let states: BTreeSet<&str> = measurement
+        .state_vocabulary
+        .iter()
+        .map(String::as_str)
+        .collect();
+    let reasons: BTreeSet<&str> = measurement
+        .outside_reason_vocabulary
+        .iter()
+        .map(String::as_str)
+        .collect();
+    let classes: BTreeSet<&str> = measurement.classes.iter().map(String::as_str).collect();
+    let mut claimed_classes: BTreeSet<&str> = BTreeSet::new();
+
+    for row in &ledger.rows {
+        let required = row.scope == "required";
+        match (&row.measurement, required) {
+            (None, true) => errors.push(format!(
+                "required row `{}` has no measurement",
+                row.capability
+            )),
+            (Some(_), false) => errors.push(format!(
+                "non-required row `{}` declares a measurement",
+                row.capability
+            )),
+            _ => {}
+        }
+        let Some(row_measurement) = &row.measurement else {
+            continue;
+        };
+        if !states.contains(row_measurement.state.as_str()) {
+            errors.push(format!(
+                "`{}` measurement state `{}` is outside the declared measurement state vocabulary",
+                row.capability, row_measurement.state
+            ));
+            continue;
+        }
+        match row_measurement.state.as_str() {
+            MEASURED_BY_CORPUS_PARITY => {
+                if row_measurement.classes.is_empty() {
+                    errors.push(format!(
+                        "measured row `{}` declares no classes",
+                        row.capability
+                    ));
+                }
+                for class in &row_measurement.classes {
+                    if classes.contains(class.as_str()) {
+                        claimed_classes.insert(class.as_str());
+                    } else {
+                        errors.push(format!(
+                            "`{}` measurement class `{class}` is not in the declared class set",
+                            row.capability
+                        ));
+                    }
+                }
+            }
+            OUTSIDE_CORPUS_PARITY => match &row_measurement.reason {
+                Some(reason) if reasons.contains(reason.as_str()) => {}
+                Some(reason) => errors.push(format!(
+                    "`{}` measurement reason `{reason}` is not in the declared measurement reason vocabulary",
+                    row.capability
+                )),
+                None => errors.push(format!(
+                    "outside row `{}` has no measurement reason",
+                    row.capability
+                )),
+            },
+            _ => {}
+        }
+    }
+
+    for class in &measurement.classes {
+        if !claimed_classes.contains(class.as_str()) {
+            errors.push(format!(
+                "declared class `{class}` is claimed by no measured row"
+            ));
+        }
+    }
+
+    // Named-gap typed refusal: a required row is never named a gap, and every
+    // gap carries a kind from the closed vocabulary plus its decision reference
+    // and residual owner.
+    let rows: BTreeMap<&str, &Row> = ledger
+        .rows
+        .iter()
+        .map(|row| (row.capability.as_str(), row))
+        .collect();
+    let kinds: BTreeSet<&str> = ledger
+        .named_gap_disposition
+        .as_ref()
+        .map(|disposition| {
+            disposition
+                .kind_vocabulary
+                .iter()
+                .map(String::as_str)
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut required_gaps = 0u64;
+    for gap in &ledger.named_gaps {
+        if rows
+            .get(gap.capability.as_str())
+            .is_some_and(|row| row.scope == "required")
+        {
+            required_gaps += 1;
+            errors.push(format!("named gap `{}` is a required row", gap.capability));
+        }
+        let refusal = ledger
+            .named_gap_disposition
+            .as_ref()
+            .and_then(|disposition| {
+                disposition
+                    .gaps
+                    .iter()
+                    .find(|refusal| refusal.capability == gap.capability)
+            });
+        let typed = refusal.is_some_and(|refusal| {
+            kinds.contains(refusal.kind.as_str())
+                && !refusal.decision_ref.trim().is_empty()
+                && !refusal.residual_owner.trim().is_empty()
+        });
+        if !typed {
+            errors.push(format!(
+                "named gap `{}` has no typed refusal",
+                gap.capability
+            ));
+        }
+    }
+    match &ledger.named_gap_disposition {
+        None => errors.push("parity_ledger has no named_gap_disposition block".to_string()),
+        Some(disposition) if disposition.required_named_gaps != required_gaps => {
+            errors.push(format!(
+                "required named gaps {required_gaps} != declared {}",
+                disposition.required_named_gaps
+            ));
+        }
+        Some(_) => {}
+    }
+    errors
+}
+
+/// (measurement identity) the declared link is measured, not declared: both
+/// content-addressed files re-hash to the declared bytes, the internal chain
+/// holds, the identity/release/class bindings match the pinned artifact, the
+/// mirrored class-parity declaration is exact, and the D442/D469 reconciliation
+/// keeps the corpus-wide micro number from reading as a pooled quality claim.
+///
+/// This reads only repo-relative content-addressed files through
+/// `read_required`, so it preserves the module's environment independence: no
+/// vendor tree, no network, no new dependency.
+pub fn check_measurement_identity(root: &Path, doc: &CompatibilityDocument) -> Vec<String> {
+    let mut errors = Vec::new();
+    let Some(measurement) = &doc.parity_ledger.parity_measurement else {
+        errors.push("parity_ledger has no parity_measurement block".to_string());
+        return errors;
+    };
+
+    let artifact_raw = read_required(root, &measurement.artifact.path, &mut errors);
+    let frozen_raw = read_required(root, &measurement.frozen_tables.path, &mut errors);
+    let artifact = artifact_raw.as_deref().and_then(|raw| {
+        match serde_json::from_str::<serde_json::Value>(raw) {
+            Ok(value) => Some(value),
+            Err(err) => {
+                errors.push(format!(
+                    "parity_measurement artifact {} is not JSON: {err}",
+                    measurement.artifact.path
+                ));
+                None
+            }
+        }
+    });
+    let frozen = frozen_raw.as_deref().and_then(|raw| {
+        match serde_json::from_str::<serde_json::Value>(raw) {
+            Ok(value) => Some(value),
+            Err(err) => {
+                errors.push(format!(
+                    "parity_measurement frozen tables {} is not JSON: {err}",
+                    measurement.frozen_tables.path
+                ));
+                None
+            }
+        }
+    });
+
+    if let Some(raw) = artifact_raw.as_deref() {
+        let actual = sha256_hex(raw.as_bytes());
+        if actual != measurement.artifact.sha256 {
+            errors.push(format!(
+                "parity_measurement artifact sha256 `{}` != artifact bytes `{actual}`",
+                measurement.artifact.sha256
+            ));
+        }
+    }
+    if let Some(raw) = frozen_raw.as_deref() {
+        let actual = sha256_hex(raw.as_bytes());
+        if actual != measurement.frozen_tables.sha256 {
+            errors.push(format!(
+                "parity_measurement frozen_tables sha256 `{}` != frozen bytes `{actual}`",
+                measurement.frozen_tables.sha256
+            ));
+        }
+        if let Some(value) = frozen.as_ref() {
+            match value
+                .get("artifact_sha256")
+                .and_then(serde_json::Value::as_str)
+            {
+                Some(actual) if actual == measurement.artifact.sha256 => {}
+                Some(actual) => errors.push(format!(
+                    "parity_measurement frozen_tables.artifact_sha256 `{actual}` != artifact_sha256 `{}`",
+                    measurement.artifact.sha256
+                )),
+                None => errors.push(
+                    "parity_measurement frozen_tables has no artifact_sha256".to_string(),
+                ),
+            }
+        }
+    }
+
+    if let Some(value) = artifact.as_ref() {
+        match value
+            .pointer("/reference_population/identity_sha256")
+            .and_then(serde_json::Value::as_str)
+        {
+            Some(actual) if actual == measurement.identity_digest => {}
+            Some(actual) => errors.push(format!(
+                "parity_measurement identity_digest `{}` != artifact identity `{actual}`",
+                measurement.identity_digest
+            )),
+            None => errors.push(
+                "parity_measurement artifact has no reference_population.identity_sha256"
+                    .to_string(),
+            ),
+        }
+        match value
+            .pointer("/reference_population/reference_release/image_digest")
+            .and_then(serde_json::Value::as_str)
+        {
+            Some(actual) if actual == measurement.declared_release.image_digest => {}
+            Some(actual) => errors.push(format!(
+                "parity_measurement declared_release.image_digest `{}` != artifact release digest `{actual}`",
+                measurement.declared_release.image_digest
+            )),
+            None => errors.push(
+                "parity_measurement artifact has no reference_release.image_digest".to_string(),
+            ),
+        }
+
+        let artifact_classes = artifact_class_union(value);
+        let declared_classes: BTreeSet<String> = measurement.classes.iter().cloned().collect();
+        if declared_classes != artifact_classes {
+            errors.push(format!(
+                "parity_measurement classes {declared_classes:?} != artifact class set {artifact_classes:?}"
+            ));
+        }
+        if let Some(frozen_value) = frozen.as_ref() {
+            let frozen_classes = frozen_class_union(frozen_value);
+            if declared_classes != frozen_classes {
+                errors.push(format!(
+                    "parity_measurement classes {declared_classes:?} != frozen-tables class set {frozen_classes:?}"
+                ));
+            }
+        }
+
+        match value.get("class_parity_declaration") {
+            Some(artifact_declaration) => {
+                let declared = serde_json::to_value(&measurement.class_parity_declaration)
+                    .unwrap_or(serde_json::Value::Null);
+                if &declared != artifact_declaration {
+                    errors.push(format!(
+                        "parity_measurement class_parity_declaration {declared} != artifact class_parity_declaration {artifact_declaration}"
+                    ));
+                }
+            }
+            None => errors
+                .push("parity_measurement artifact has no class_parity_declaration".to_string()),
+        }
+    }
+
+    // D442/D469 reconciliation: the aggregate is a count over the declared
+    // population, explicitly not a pooled statistical claim.
+    if measurement.aggregate_kind != AGGREGATE_KIND_DECLARED_POPULATION_COUNT {
+        errors.push(format!(
+            "parity_measurement.aggregate_kind `{}` != {AGGREGATE_KIND_DECLARED_POPULATION_COUNT}",
+            measurement.aggregate_kind
+        ));
+    }
+    if measurement.pooled_quality_claim != POOLED_QUALITY_CLAIM_FORBIDDEN {
+        errors.push(format!(
+            "parity_measurement.pooled_quality_claim `{}` must be forbidden",
+            measurement.pooled_quality_claim
+        ));
+    }
+    if let Some(value) = artifact.as_ref() {
+        if value
+            .pointer("/evaluated_population/aggregate/counts_only")
+            .and_then(serde_json::Value::as_bool)
+            != Some(true)
+        {
+            errors.push(
+                "parity_measurement artifact evaluated_population.aggregate.counts_only must be true"
+                    .to_string(),
+            );
+        }
+        match value
+            .pointer("/policy_locks/pooled_claim")
+            .and_then(serde_json::Value::as_str)
+        {
+            Some(actual) if actual == POOLED_QUALITY_CLAIM_FORBIDDEN => {}
+            Some(actual) => errors.push(format!(
+                "parity_measurement artifact policy_locks.pooled_claim `{actual}` must be forbidden"
+            )),
+            None => errors.push(
+                "parity_measurement artifact has no policy_locks.pooled_claim; it must be forbidden"
+                    .to_string(),
+            ),
+        }
+    }
+
+    if measurement.declared_release.label.trim().is_empty() {
+        errors.push("parity_measurement declared_release.label is empty".to_string());
+    }
+    if measurement
+        .declared_release
+        .rollback_label
+        .trim()
+        .is_empty()
+    {
+        errors.push("parity_measurement declared_release.rollback_label is empty".to_string());
+    }
+    if measurement
+        .declared_release
+        .label_divergence_item
+        .trim()
+        .is_empty()
+    {
+        errors
+            .push("parity_measurement declared_release.label_divergence_item is empty".to_string());
+    }
+    errors
+}
+
 // --------------------------------------------------------------------------
 // Aggregate
 // --------------------------------------------------------------------------
@@ -950,6 +1470,10 @@ pub fn evaluate_document(root: &Path, doc: CompatibilityDocument) -> Outcome {
     errors.extend(check_denominators(&doc));
     errors.extend(check_named_gaps(&doc));
     errors.extend(check_locks(&doc));
+    // M513-r7dg4z/S03 (D471): the fourth link. Appended additively so the
+    // existing check order and set are unchanged.
+    errors.extend(check_measurement_coverage(&doc));
+    errors.extend(check_measurement_identity(root, &doc));
     Outcome {
         report: render_report(&doc),
         errors,
@@ -974,21 +1498,53 @@ pub fn render_report(doc: &CompatibilityDocument) -> String {
             Some(link) => format!("{}::{}", link.path, link.name),
             None => "-".to_string(),
         };
+        let measurement = match &row.measurement {
+            Some(link) if link.state == MEASURED_BY_CORPUS_PARITY => {
+                format!("measured[{}]", link.classes.len())
+            }
+            Some(link) => format!("outside[{}]", link.reason.as_deref().unwrap_or("-")),
+            None => "-".to_string(),
+        };
         let _ = writeln!(
             out,
-            "  {:<50} {:<26} {:<8} {:<27} java={:<28} rust={} test={}",
+            "  {:<50} {:<26} {:<8} {:<27} java={:<28} rust={} test={} measurement={}",
             row.capability,
             row.scope,
             row.state,
             row.parity,
             java,
             row.rust.len(),
-            test
+            test,
+            measurement
         );
     }
     let _ = writeln!(out, "  named gaps:");
     for gap in &ledger.named_gaps {
-        let _ = writeln!(out, "    {} -> {}", gap.capability, gap.reason);
+        let refusal = ledger
+            .named_gap_disposition
+            .as_ref()
+            .and_then(|disposition| {
+                disposition
+                    .gaps
+                    .iter()
+                    .find(|refusal| refusal.capability == gap.capability)
+            });
+        match refusal {
+            Some(refusal) => {
+                let _ = writeln!(
+                    out,
+                    "    {} -> {} kind={} decision_ref={} residual_owner={}",
+                    gap.capability,
+                    gap.reason,
+                    refusal.kind,
+                    refusal.decision_ref,
+                    refusal.residual_owner
+                );
+            }
+            None => {
+                let _ = writeln!(out, "    {} -> {}", gap.capability, gap.reason);
+            }
+        }
     }
     let _ = writeln!(out, "  denominators: {:?}", ledger.denominators);
     out
