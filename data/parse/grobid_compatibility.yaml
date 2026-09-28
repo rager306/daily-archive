@@ -2906,3 +2906,25 @@ parity_ledger:
     expected_detection: escapes the repository root
   - id: test_path_absolute
     expected_detection: escapes the repository root
+  # ------------------------------------------------------------------------
+  # Fourth-link measurement negatives (M513-r7dg4z/S03, D471): the coverage
+  # judge (`check_measurement_coverage`) must reject a missing link on a
+  # required row, a link on a row that is not required, an unknown class or
+  # reason, and the identity judge (`check_measurement_identity`) must reject
+  # an artifact-bytes drift, an identity digests drift and a pooled quality
+  # claim. Each token is the exact validator error path.
+  # ------------------------------------------------------------------------
+  - id: measurement_missing_on_required_row
+    expected_detection: has no measurement
+  - id: measurement_on_absent_row
+    expected_detection: declares a measurement
+  - id: measurement_unknown_class
+    expected_detection: not in the declared class set
+  - id: measurement_unknown_reason
+    expected_detection: not in the declared measurement reason vocabulary
+  - id: measurement_artifact_sha_drift
+    expected_detection: "!= artifact bytes"
+  - id: measurement_identity_digest_drift
+    expected_detection: "!= artifact identity"
+  - id: measurement_pooled_claim_allowed
+    expected_detection: must be forbidden

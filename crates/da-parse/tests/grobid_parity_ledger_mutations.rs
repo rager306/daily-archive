@@ -158,6 +158,58 @@ fn apply_mutation(doc: &mut pl::CompatibilityDocument, id: &str) -> Result<(), S
                 .ok_or("row `rest.isalive` has no test link")?
                 .path = "/etc/hosts".to_string();
         }
+        // --- fourth link: measurement coverage / identity (S03, D471) -------
+        "measurement_missing_on_required_row" => {
+            row_mut(doc, "stage.header_composition")?.measurement = None;
+        }
+        "measurement_on_absent_row" => {
+            row_mut(doc, "rest.processFulltextAssetDocument")?.measurement =
+                Some(pl::RowMeasurement {
+                    state: pl::MEASURED_BY_CORPUS_PARITY.to_string(),
+                    classes: vec!["AdmittedAuthorLine".to_string()],
+                    reason: None,
+                });
+        }
+        "measurement_unknown_class" => {
+            let measurement = row_mut(doc, "stage.header_composition")?
+                .measurement
+                .as_mut()
+                .ok_or("row `stage.header_composition` has no measurement")?;
+            measurement.classes[0] = "NotADeclaredClassXYZ".to_string();
+        }
+        "measurement_unknown_reason" => {
+            let measurement = row_mut(doc, "rest.isalive")?
+                .measurement
+                .as_mut()
+                .ok_or("row `rest.isalive` has no measurement")?;
+            measurement.reason = Some("not_a_declared_reason_xyz".to_string());
+        }
+        "measurement_artifact_sha_drift" => {
+            let measurement = doc
+                .parity_ledger
+                .parity_measurement
+                .as_mut()
+                .ok_or("ledger has no parity_measurement block")?;
+            measurement.artifact.sha256 = "0".repeat(64);
+        }
+        "measurement_identity_digest_drift" => {
+            let measurement = doc
+                .parity_ledger
+                .parity_measurement
+                .as_mut()
+                .ok_or("ledger has no parity_measurement block")?;
+            measurement.identity_digest =
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                    .to_string();
+        }
+        "measurement_pooled_claim_allowed" => {
+            let measurement = doc
+                .parity_ledger
+                .parity_measurement
+                .as_mut()
+                .ok_or("ledger has no parity_measurement block")?;
+            measurement.pooled_quality_claim = "allowed".to_string();
+        }
         // --- license identity -------------------------------------------------
         "license_identity_unresolved" => {
             row_mut(doc, "rest.isalive")?.license = "inventory:missing-component-xyz".to_string();
