@@ -1,0 +1,107 @@
+# GSD control-plane health contract — the recurring failure class made executable.
+#
+# The 2026-09-20..27 log review found that every recurring GSD failure lived in
+# the control plane, not in the product: projection-claim contention, liveness
+# wedges, lease conflicts, Technical-Verdict blocks, an always-red doctor with no
+# baseline, and unbounded runtime stores. The trajectory report saw none of it, so
+# the whole class could only be found by reading the journal by hand.
+#
+#   - `thresholds` is DATA. Tightening a limit is an edit here, not a Python change.
+#   - `signals` is the closed vocabulary of signal ids the oracle may emit. An
+#     absent or empty vocabulary means "cannot decide", so the oracle fails closed
+#     with `contract_invalid` instead of reporting a healthy control plane.
+#   - `journal_markers` are matched literally against journal entries inside the
+#     window. These are the exact phrases the engine writes; changing an engine
+#     message is a change to this file, not to the oracle.
+#   - only entries at or after `window_days` before the run are counted, so the
+#     check describes the current operating window rather than all history.
+#
+# Severities are deliberate: a non-zero contention/wedge/lease count means units
+# were destroyed mid-flight, so those are `high`. Store growth and a missing
+# doctor baseline are recoverable without losing work, so they are `medium`.
+
+schema_version: gsd-control-plane.v1
+
+window_days: 7
+
+thresholds:
+  # occurrences of the projection-claim fence expiring under contention
+  projection_contention_max: 0
+  # occurrences of the liveness backstop stopping auto-mode
+  liveness_wedge_max: 0
+  # occurrences of an attempt losing the held lease to another dispatcher
+  lease_conflict_max: 0
+  # occurrences of publication blocked for a missing host Technical Verdict
+  tech_verdict_block_max: 0
+  # Entries past their retention window that have not been pruned yet. Measured as
+  # "unretained", never as total size: an absolute limit on a store that grows every
+  # day is permanently red, and a flag nobody can clear is a flag nobody reads.
+  unretained_exec_captures_max: 0
+  unretained_quarantine_runs_max: 0
+  # Commit actions that failed after the latest commit. A later commit is the boundary
+  # that resolves earlier failures, so this signal clears when the tree moves on; a
+  # failed auto-commit meanwhile cannot be retried by the engine and wedges the unit.
+  commit_hook_failures_max: 0
+  # /tmp governor test scratch. Pure garbage, so any accumulation is a real finding;
+  # the suite now cleans up after itself, so a healthy tree sits at 0.
+  tmp_scratch_dirs_max: 200
+
+# Retention policy, authoritative for both the unretained counts above and the tool
+# that clears them (`governor hygiene`). One file, so the threshold which fires and
+# the command which clears it cannot drift apart.
+retention:
+  days_exec: 30
+  days_quarantine: 30
+  days_activity: 14
+  min_age_hours: 24
+
+signals:
+  - contract_invalid
+  - observations_incomplete
+  - projection_contention
+  - liveness_wedge
+  - lease_conflict
+  - tech_verdict_block
+  - orphan_projection_dir
+  - unretained_exec_captures
+  - unretained_quarantine_runs
+  - commit_hook_failures
+  - tmp_scratch_bloat
+  - doctor_baseline_missing
+  - doctor_new_divergence
+
+journal_markers:
+  projection_contention: "Projection mutation remains fenced"
+  liveness_wedge: "liveness backstop tripped"
+  lease_conflict: "requires the current held lease"
+  tech_verdict_block: "passing host Technical Verdict"
+
+# Divergence entries listed in this baseline are already reviewed historical debt.
+# The engine doctor has no notion of an accepted divergence, which is why it reports
+# the same findings forever and why a run can never be `ok`.
+#
+# Suppression is scoped, not blanket. Each entry is either:
+#   {code: <code>, milestones: [M465, ...]}  -> accepted only for those milestones,
+#                                              so fresh divergence inside current
+#                                              work still surfaces; or
+#   {code: <code>, scope: code}              -> accepted everywhere (documented
+#                                              exception, use sparingly).
+#
+# Caveat kept in the open: the engine persists only a sample of its findings (10 of
+# ~93 observed errors), so the comparison is best-effort over that sample and never
+# a complete reconciliation.
+doctor_baseline_path: scripts/governor/checks/gsd_doctor_baseline.json
+
+# Signals that mean work in progress was destroyed rather than merely leaking
+# disk. They are reported as `high`, the rest as `medium`. This key controls
+# severity only: escalating the control plane to a `blocked` verdict would need an
+# explicit `gsd_control_plane` entry in `assurance_severity.yaml`. It is
+# deliberately absent there — these signals describe the GSD harness, not product
+# correctness, so the project must see them without being unable to proceed on a
+# race it cannot repair from inside the repository.
+high_severity_signals:
+  - projection_contention
+  - lease_conflict
+  - orphan_projection_dir
+  - doctor_new_divergence
+  - commit_hook_failures

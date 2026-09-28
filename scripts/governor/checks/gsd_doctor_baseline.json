@@ -1,0 +1,38 @@
+{
+  "schema_version": "gsd-doctor-baseline.v1",
+  "recorded_at": "2026-09-27T14:20:00Z",
+  "recorded_by": "agent",
+  "review_status": "pending-owner-review",
+  "why": "The engine doctor has no concept of an accepted historical divergence, so every run re-reports the same findings and `ok` can never be true. This baseline records which divergences were already reviewed, so the doctor becomes a 'what is new' signal instead of a permanent red light. Scope is deliberately per-milestone: a code that also fires for live work keeps firing there.",
+  "limitations": [
+    "The engine persists only a sample of its findings (10 issues of ~93 observed errors), so comparison is best-effort over that sample, never a complete reconciliation.",
+    "Entries are keyed by code plus milestone, extracted from recorded message text. A divergence whose message carries no milestone id is never suppressed.",
+    "This file is read by the governor control-plane check only. It does not change the engine doctor's own exit status, which stays `ok=false` until the divergence is repaired or the baseline is made engine-aware."
+  ],
+  "accepted": [
+    {
+      "code": "checkbox_db_status_divergence",
+      "milestones": ["M465"],
+      "evidence": "Task M465-sqt7w0/S01/T01 is closed in the database (status: skipped) but the markdown checkbox is unchecked. Legacy milestone closed before the skipped-task renderer existed; the database is authoritative.",
+      "recorded_at": "2026-09-27"
+    },
+    {
+      "code": "validation_source_revision_mismatch",
+      "milestones": ["M295"],
+      "evidence": "Milestone M295-s8je3g validation pins a tree revision (expected sha256:20565d2f20a2ed13...; tested sha256:4e6f268f05ed4e4b...). Legacy milestone closed months before the current tree, so the pinned revision can never match again.",
+      "recorded_at": "2026-09-27"
+    },
+    {
+      "code": "artifact_user_content_missing",
+      "milestones": ["M500"],
+      "evidence": "Database records phases/500-.../500-02-RESEARCH.md as a user-authored RESEARCH artifact; the file is absent from disk and from the sibling set (500-01/03/04/05 exist). Searched the whole repository, .gsd/quarantine/projections, .gsd/backups and git history on 2026-09-27: no copy exists. Unrecoverable content loss, not a path bug.",
+      "recorded_at": "2026-09-27"
+    },
+    {
+      "code": "artifact_user_content_missing",
+      "milestones": ["M502"],
+      "evidence": "Database records a task-level T01-RESEARCH.md for phases/502-.../; the directory holds only 502-10-RESEARCH.md. Searched the whole repository, .gsd/quarantine/projections, .gsd/backups and git history on 2026-09-27: no copy exists. Unrecoverable content loss, not a path bug.",
+      "recorded_at": "2026-09-27"
+    }
+  ]
+}

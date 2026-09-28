@@ -1989,6 +1989,10 @@ class TrajectoryService:
         # M371: reject false-green GSD evidence created after the last commit.
         drift_flags.extend(self._check_gsd_exec_evidence())
 
+        # Control-plane health: projection contention, liveness wedges, lease
+        # conflicts, an unbaselined doctor, and unbounded runtime stores.
+        drift_flags.extend(self._check_gsd_control_plane())
+
         # Gold evaluation must account for every fixture and every gold entity.
         drift_flags.extend(self._check_gold_completeness())
 
@@ -5156,19 +5160,115 @@ class TrajectoryService:
             findings = GsdExecReader(self.root).false_successes_since(since)
         except OSError:
             return []
-        if not findings:
-            return []
-        ids = [finding.evidence_id for finding in findings]
-        markers = sorted({finding.marker for finding in findings})
+        flags: list[DriftFlag] = []
+        if findings:
+            ids = [finding.evidence_id for finding in findings]
+            markers = sorted({finding.marker for finding in findings})
+            flags.append(
+                DriftFlag(
+                    flag="gsd_exec_false_success_evidence",
+                    severity="high",
+                    evidence=(
+                        f"{len(findings)} exit-0 GSD exec run(s) contain explicit failure "
+                        f"markers after the latest commit: ids={ids}, markers={markers}"
+                    ),
+                )
+            )
+
+        # A timeout is never a success. The 2026-09-20..27 review found captures
+        # that reported `exit_code == 0` while `timed_out` was true, which an
+        # exit-code-only reader counts as clean. Reported separately from false
+        # success because the remedy differs: bound the command, not the wording.
+        try:
+            timeouts = GsdExecReader(self.root).timeouts_since(since)
+        except OSError:
+            timeouts = []
+        if timeouts:
+            zero_exit = [item.evidence_id for item in timeouts if item.exit_code == 0]
+            flags.append(
+                DriftFlag(
+                    flag="gsd_exec_timeout_evidence",
+                    severity="high",
+                    evidence=(
+                        f"{len(timeouts)} GSD exec run(s) hit the timeout cap after the "
+                        f"latest commit; exit-0 among them={zero_exit}, "
+                        f"ids={[item.evidence_id for item in timeouts]}"
+                    ),
+                )
+            )
+        return flags
+
+    def _check_gsd_control_plane(self) -> list[DriftFlag]:
+        """Flag the GSD control-plane failure class discovered by the log review.
+
+        Reads `scripts/governor/checks/gsd_control_plane.yaml` (DATA) for the window
+        and thresholds, collects observations through `GsdControlPlaneReader`, and
+        lets the pure oracle decide. A missing or malformed contract is a `high`
+        flag rather than a silent pass, because an empty finding list must mean
+        "measured and clean", never "could not measure".
+        """
+        contract_path = self.root / "scripts/governor/checks/gsd_control_plane.yaml"
+        try:
+            contract = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as error:
+            return [
+                DriftFlag(
+                    flag="gsd_control_plane_contract_invalid",
+                    severity="high",
+                    evidence=f"cannot read {contract_path}: {error}",
+                    dimension="gsd_control_plane",
+                )
+            ]
+
+        from governor.adapters.gsd_control_plane_reader import GsdControlPlaneReader
+        from governor.checks.gsd_control_plane import evaluate
+        from governor.domain.retention import RetentionPolicy
+
+        window_days = contract.get("window_days") if isinstance(contract, dict) else None
+        markers = contract.get("journal_markers") if isinstance(contract, dict) else None
+        baseline_path = contract.get("doctor_baseline_path") if isinstance(contract, dict) else None
+        policy = (
+            RetentionPolicy.from_mapping(contract.get("retention"))
+            if isinstance(contract, dict)
+            else RetentionPolicy()
+        )
+        # Same commit-boundary rule as the exec-evidence check: a later commit is the
+        # boundary that resolves earlier failures, so both signals self-clear.
+        commit_since = None
+        if self.git_reader and self.git_reader.is_repo():
+            from datetime import datetime
+
+            value = self.git_reader.get_git_info().latest_commit_date
+            try:
+                commit_since = datetime.fromisoformat(value) if value else None
+            except ValueError:
+                commit_since = None
+        try:
+            observations = GsdControlPlaneReader(self.root).observe(
+                window_days if isinstance(window_days, int) else 7,
+                markers if isinstance(markers, dict) else {},
+                baseline_path if isinstance(baseline_path, str) else ".gsd/doctor-baseline.json",
+                policy,
+                commit_since,
+            )
+        except OSError as error:
+            return [
+                DriftFlag(
+                    flag="gsd_control_plane_observations_incomplete",
+                    severity="high",
+                    evidence=f"control-plane stores unreadable: {error}",
+                    dimension="gsd_control_plane",
+                )
+            ]
+
         return [
             DriftFlag(
-                flag="gsd_exec_false_success_evidence",
-                severity="high",
-                evidence=(
-                    f"{len(findings)} exit-0 GSD exec run(s) contain explicit failure "
-                    f"markers after the latest commit: ids={ids}, markers={markers}"
-                ),
+                flag=f"gsd_control_plane_{finding.signal}",
+                severity=finding.severity,
+                evidence=finding.evidence,
+                dimension="gsd_control_plane",
             )
+            for finding in evaluate(contract, observations)
         ]
 
     def _build_drift_flags(self, audit_report, dimensions) -> list[DriftFlag]:
@@ -5304,6 +5404,31 @@ class TrajectoryService:
             if flag.flag == "resource_target_bloat":
                 actions.append(
                     "target/ bloated: prune debug incremental/examples before workspace cargo."
+                )
+            # Control-plane signals each name their own remedy, so the report is
+            # actionable rather than merely descriptive.
+            if flag.flag.startswith("gsd_control_plane_unretained") or flag.flag == "gsd_control_plane_tmp_scratch_bloat":
+                actions.append("Prune GSD runtime stores: python3 -m governor hygiene --apply")
+            if flag.flag == "gsd_control_plane_orphan_projection_dir":
+                actions.append(
+                    "Move artifacts out of the nested .gsd/gsd tree into .gsd/, then remove it."
+                )
+            if flag.flag == "gsd_control_plane_liveness_wedge":
+                actions.append(
+                    "Read the wedge's printed recoveryActionId before restarting auto; a "
+                    "task-recovery-abort is not cleared by a restart (/gsd recover <id>)."
+                )
+            if flag.flag == "gsd_control_plane_doctor_new_divergence":
+                actions.append(
+                    "Review the new doctor divergence; if it is accepted historical debt, "
+                    "record it in scripts/governor/checks/gsd_doctor_baseline.json."
+                )
+            if flag.flag == "gsd_control_plane_commit_hook_failures":
+                actions.append(
+                    "A commit hook refused a commit: run `cargo fmt` (or the named hook's "
+                    "fix), `git add`, then verify with the hook's exact command and commit. "
+                    "Switching the hook to auto-fix does not help: pre-commit still aborts "
+                    "that commit once, and the engine cannot retry it."
                 )
         if not actions:
             actions.append("No drift detected. Continue current milestone.")

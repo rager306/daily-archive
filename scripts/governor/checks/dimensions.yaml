@@ -110,6 +110,26 @@ dimensions:
   - Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)
   - Added after disk pollution incident from excessive cargo build calls
   artifact_ref: scripts/governor/checks/resource_safety.py
+- id: gsd_control_plane
+  description: GSD harness health — contention, wedges, leases, retention (2026-09-27 review)
+  status_logic:
+    measured: always (runtime check in trajectory_service)
+    drift: any control-plane signal above its declared threshold
+    not_started: always (fallback)
+  evidence:
+  - A 2026-09-20..27 log review found that every recurring GSD failure was
+    control-plane rather than product — projection-claim contention, liveness
+    wedges, lease conflicts, Technical-Verdict blocks, an always-red doctor, and
+    unbounded runtime stores
+  - None of it appeared in the trajectory report, so the whole class was only
+    visible by reading the journal by hand
+  - The engine doctor has no notion of an accepted historical divergence, so it
+    re-reports the same ~93 errors forever; the baseline in
+    checks/gsd_doctor_baseline.json separates reviewed debt from new work
+  - Signals and thresholds live in checks/gsd_control_plane.yaml as DATA
+  - Deliberately absent from assurance_severity.yaml so these signals stay visible
+    without blocking the project on a harness race it cannot repair
+  artifact_ref: scripts/governor/checks/gsd_control_plane.py
 - id: mcp_surface_completeness
   description: 'MCP product surface: tools + resources + prompts (ADR-054, D194)'
   status_logic:

@@ -5,6 +5,7 @@ No IO, no filesystem access. Types and verdict logic only.
 
 from governor.domain.artifacts import ArtifactField, ArtifactViolation
 from governor.domain.checks import CheckResult, CheckSeverity, CheckStatus
+from governor.domain.retention import RetentionPolicy
 from governor.domain.trajectory import (
     DimensionStatus,
     DriftFlag,
@@ -20,6 +21,7 @@ __all__ = [
     "CheckStatus",
     "DimensionStatus",
     "DriftFlag",
+    "RetentionPolicy",
     "TrajectoryReport",
     "TrajectoryVerdict",
 ]

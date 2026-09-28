@@ -31,6 +31,22 @@ class FalseSuccessEvidence:
     finished_at: str
 
 
+@dataclass(frozen=True)
+class TimeoutEvidence:
+    """A bounded command whose process was killed at the timeout cap.
+
+    A timeout is never a success. `exit_code` is carried because the 2026-09-20..27
+    review found six captures that reported `exit_code == 0` while `timed_out` was
+    true, which a reader trusting exit codes alone would count as a clean run.
+    """
+
+    evidence_id: str
+    purpose: str
+    exit_code: int | None
+    duration_ms: int
+    finished_at: str
+
+
 class GsdExecReader:
     """Bounded, best-effort reader for `.gsd/exec` evidence files."""
 
@@ -63,6 +79,41 @@ class GsdExecReader:
                         finished_at=str(meta.get("finished_at") or "unknown time"),
                     )
                 )
+        return findings
+
+    def timeouts_since(self, since: datetime | None) -> list[TimeoutEvidence]:
+        """Return captures killed at the timeout cap, newest first.
+
+        Bounded exactly like `false_successes_since`: only the newest
+        `_MAX_META_FILES` captures are examined, so the cost stays flat as the store
+        grows. `since` applies the same commit-boundary rule — older timeouts are
+        historical and were already triaged when the tree moved on.
+        """
+        if not self.exec_dir.is_dir():
+            return []
+        findings: list[TimeoutEvidence] = []
+        meta_paths = sorted(
+            self.exec_dir.glob("*.meta.json"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )[:_MAX_META_FILES]
+        for meta_path in meta_paths:
+            meta = self._load_meta(meta_path)
+            if not meta or not meta.get("timed_out"):
+                continue
+            finished = _parse_timestamp(meta.get("finished_at"))
+            if since is not None and (finished is None or finished <= since):
+                continue
+            exit_code = meta.get("exit_code")
+            findings.append(
+                TimeoutEvidence(
+                    evidence_id=str(meta.get("id") or meta_path.name.removesuffix(".meta.json")),
+                    purpose=str(meta.get("purpose") or "unknown purpose"),
+                    exit_code=exit_code if isinstance(exit_code, int) else None,
+                    duration_ms=int(meta.get("duration_ms") or 0),
+                    finished_at=str(meta.get("finished_at") or "unknown time"),
+                )
+            )
         return findings
 
     @staticmethod
