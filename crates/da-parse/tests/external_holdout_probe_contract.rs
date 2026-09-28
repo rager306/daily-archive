@@ -61,11 +61,12 @@ use std::path::{Component, Path, PathBuf};
 const PREFIX: &str = "[external-holdout-release-probe]";
 const MANIFEST: &str = "data/parse/acceptance_manifest.yaml";
 const SOURCE_MANIFEST: &str = "data/parse/holdout_manifests.yaml";
+const COMPARISON_CONTRACT: &str = "data/parse/comparison_contract.yaml";
 
 /// The closed key set of the `release_probe` lane. A lane that gains an
 /// undeclared key is `probe_lane_unknown_key`: the declaration is closed DATA,
 /// not an extensible bag.
-const RELEASE_PROBE_KEYS: [&str; 27] = [
+const RELEASE_PROBE_KEYS: [&str; 28] = [
     "schema_version",
     "identity_input",
     "digest_is_byte_hash",
@@ -81,6 +82,8 @@ const RELEASE_PROBE_KEYS: [&str; 27] = [
     "metrics",
     "latency",
     "cost",
+    // S02/T01: the additive Java-relative parity declaration.
+    "class_parity",
     "citation_requires_recorded_human_release_decision",
     "citation_without_release_decision",
     // S08/T02 frozen reference binding (plan-named keys).
@@ -142,6 +145,34 @@ const RELEASE_PROBE_METRIC_KEYS: [&str; 7] = [
     "claim_scope",
     "zero_admitted_population_behavior",
     "margin_ref",
+];
+
+/// Closed keys of the S02/T01 Java-relative parity declaration. Definitions
+/// only: no key here carries a threshold, and the class vocabulary is NOT a key
+/// of this block (it is read by reference from `comparison_contract.yaml`).
+const RELEASE_PROBE_CLASS_PARITY_KEYS: [&str; 13] = [
+    "schema_version",
+    "claim_scope",
+    "denominator",
+    "numerator",
+    "missing",
+    "extra",
+    "aggregation",
+    "precision",
+    "recall",
+    "f1",
+    "zero_zero_denominator",
+    "source_consumed_classes",
+    "source_consumed_rule",
+];
+
+/// The Java-relative denominator and aggregation are declared, not configurable:
+/// a parity claim whose denominator collapses to `admitted` would manufacture
+/// recall 1.0 by construction, which is exactly the defect this block names.
+const CLASS_PARITY_SOURCE_CONSUMED_CLASSES: [&str; 3] = [
+    "SemanticFieldLoss::HeaderTitle",
+    "SemanticFieldLoss::HeaderEmail",
+    "SemanticFieldLoss::HeaderIds",
 ];
 
 const RELEASE_PROBE_LATENCY_KEYS: [&str; 3] =
@@ -242,6 +273,16 @@ fn first_unknown_key(node: &Yaml, allowed: &[&str]) -> Option<String> {
         .filter_map(Yaml::as_str)
         .find(|key| !allowed.contains(key))
         .map(ToString::to_string)
+}
+
+/// A Java-relative definition must name a symbolic relation, never a number: a
+/// value (or one of its whitespace tokens) that parses as a number is a fitted
+/// margin wearing a definition's name. Prose/rule fields are exempt because they
+/// may quote an observed value as explanation.
+fn declares_numeric_threshold(value: &str) -> bool {
+    value
+        .split_whitespace()
+        .any(|token| token.parse::<f64>().is_ok())
 }
 
 fn put_str(doc: &mut Yaml, path: &str, value: &str) {
@@ -599,6 +640,56 @@ fn cite_probe_result(doc: &Yaml, claim: ProbeClaim<'_>) -> Result<(), String> {
         return Err("probe_accounting_missing".into());
     }
 
+    // ── Java-relative class parity, declared before measurement ────────────
+    // The two `metrics` are admitted-relative (their recall is 1.0 by
+    // construction); `class_parity` declares the Java-relative denominator. It
+    // is never optional and never silently redefined: an absent block, a
+    // substituted denominator, an injected numeric threshold or a moved
+    // source-consumed set is refused by name.
+    let Some(parity) = at(lane, "class_parity") else {
+        return Err("probe_class_parity_missing".into());
+    };
+    if first_unknown_key(parity, &RELEASE_PROBE_CLASS_PARITY_KEYS).is_some() {
+        return Err("probe_lane_unknown_key".into());
+    }
+    if str_at(parity, "schema_version") != Some("external-holdout-class-parity.v1") {
+        return Err("probe_class_parity_schema_drift".into());
+    }
+    if str_at(parity, "claim_scope") != Some("local_proxy_only") {
+        return Err("probe_class_parity_scope_drift".into());
+    }
+    if str_at(parity, "denominator") != Some("source_population") {
+        return Err("probe_class_parity_denominator_drift".into());
+    }
+    if str_at(parity, "aggregation") != Some("micro_occurrence") {
+        return Err("probe_class_parity_aggregation_drift".into());
+    }
+    if str_at(parity, "zero_zero_denominator")
+        .unwrap_or("")
+        .trim()
+        .is_empty()
+        || str_at(parity, "source_consumed_rule")
+            .unwrap_or("")
+            .trim()
+            .is_empty()
+    {
+        return Err("probe_class_parity_definition_missing".into());
+    }
+    for key in ["numerator", "missing", "extra", "precision", "recall", "f1"] {
+        let Some(value) = str_at(parity, key) else {
+            return Err("probe_class_parity_definition_missing".into());
+        };
+        if value.trim().is_empty() {
+            return Err("probe_class_parity_definition_missing".into());
+        }
+        if declares_numeric_threshold(value) {
+            return Err("probe_class_parity_threshold_injected".into());
+        }
+    }
+    if strings_in_order(parity, "source_consumed_classes") != CLASS_PARITY_SOURCE_CONSUMED_CLASSES {
+        return Err("probe_class_parity_source_consumed_drift".into());
+    }
+
     // ── fail-closed citation ─────────────────────────────────────────────────
     if flag(lane, "citation_requires_recorded_human_release_decision") != Some(true)
         || str_at(lane, "citation_without_release_decision") != Some("forbidden")
@@ -708,6 +799,60 @@ fn release_probe_lane_is_declared_with_a_closed_key_set() {
             .map(ToString::to_string)
             .collect::<BTreeSet<String>>()
     );
+
+    // S02/T01: the Java-relative parity declaration is closed DATA too, and its
+    // class vocabulary is read by reference from the frozen comparison contract
+    // rather than copied into the lane, so the two declarations cannot drift.
+    let parity = at(lane, "class_parity").expect("release_probe.class_parity");
+    assert_eq!(
+        keys_of(parity),
+        RELEASE_PROBE_CLASS_PARITY_KEYS
+            .iter()
+            .map(ToString::to_string)
+            .collect::<BTreeSet<String>>(),
+        "{PREFIX} class_parity must carry exactly the declared key set"
+    );
+    assert_eq!(
+        str_at(parity, "schema_version"),
+        Some("external-holdout-class-parity.v1")
+    );
+    assert_eq!(str_at(parity, "claim_scope"), Some("local_proxy_only"));
+    assert_eq!(str_at(parity, "denominator"), Some("source_population"));
+    assert_eq!(str_at(parity, "aggregation"), Some("micro_occurrence"));
+    assert!(
+        !str_at(parity, "zero_zero_denominator")
+            .unwrap_or("")
+            .trim()
+            .is_empty()
+            && !str_at(parity, "source_consumed_rule")
+                .unwrap_or("")
+                .trim()
+                .is_empty(),
+        "{PREFIX} the parity declaration must keep its empty-denominator and source-consumed rules"
+    );
+    assert_eq!(
+        strings_in_order(parity, "source_consumed_classes"),
+        CLASS_PARITY_SOURCE_CONSUMED_CLASSES,
+        "{PREFIX} the source-consumed class set must be exactly the declared three"
+    );
+    let comparison: Yaml = serde_yaml::from_str(&read(COMPARISON_CONTRACT))
+        .unwrap_or_else(|e| panic!("{PREFIX} `{COMPARISON_CONTRACT}` is not valid YAML: {e}"));
+    let class_order = strings_in_order(
+        at_path(
+            &comparison,
+            "native_fulltext_composition_shadow.corpus_semantic_regression",
+        )
+        .unwrap_or_else(|| {
+            panic!("{PREFIX} `{COMPARISON_CONTRACT}` must declare the class vocabulary")
+        }),
+        "class_order",
+    );
+    for token in strings_in_order(parity, "source_consumed_classes") {
+        assert!(
+            class_order.contains(&token),
+            "{PREFIX} source-consumed class `{token}` is not in the frozen class vocabulary"
+        );
+    }
 
     // S08/T02 frozen reference binding: the declared release, the byte pins and
     // the D204 consolidation declaration are closed DATA too.
@@ -1200,6 +1345,16 @@ fn negative_matrix_catches_every_named_lane_mutation() {
         "crates/da-parse/tests/fixtures/holdout/../../../../etc/passwd",
     );
 
+    // S02/T01: collapsing the Java-relative denominator onto the admitted band
+    // would manufacture recall 1.0 by construction, so the substitution is
+    // refused by name rather than read as a cleaner number.
+    let mut parity_denominator = doc.clone();
+    put_str(
+        &mut parity_denominator,
+        "external_holdout_contract.release_probe.class_parity.denominator",
+        "admitted",
+    );
+
     let cases: Vec<(&str, Yaml, &str)> = vec![
         ("lane removal", no_lane, "probe_lane_missing"),
         ("unknown lane key", unknown_key, "probe_lane_unknown_key"),
@@ -1258,6 +1413,11 @@ fn negative_matrix_catches_every_named_lane_mutation() {
             "escaping reference path",
             reference_path_escape,
             "release_probe_reference_path_escape",
+        ),
+        (
+            "parity denominator substitution",
+            parity_denominator,
+            "probe_class_parity_denominator_drift",
         ),
     ];
     assert!(

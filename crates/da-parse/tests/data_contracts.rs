@@ -719,6 +719,8 @@ struct ExternalHoldoutReleaseProbe {
     metrics: Vec<ExternalHoldoutReleaseProbeMetric>,
     latency: ExternalHoldoutReleaseProbeLatency,
     cost: ExternalHoldoutReleaseProbeCost,
+    // S02/T01 additive Java-relative parity declaration (definitions only).
+    class_parity: ExternalHoldoutClassParity,
     citation_requires_recorded_human_release_decision: bool,
     citation_without_release_decision: String,
     // S08/T02 frozen reference binding (plan-named keys).
@@ -829,6 +831,31 @@ struct ExternalHoldoutReleaseProbeCost {
     cost_status: String,
     unknown_is_not_zero: bool,
     pooled_cost_claim: String,
+}
+
+/// S02/T01 Java-relative class-parity declaration: the numerator/denominator
+/// SEMANTICS for precision/recall/F1 measured against Java's `source_population`,
+/// declared before any measurement. It is ADDITIVE to the admitted-relative
+/// `metrics` above and carries no numeric threshold of its own — only symbolic
+/// definition names — so a margin can never be fitted after seeing a result. The
+/// class vocabulary is not copied here; consumers read it by reference from
+/// `data/parse/comparison_contract.yaml#native_fulltext_composition_shadow.corpus_semantic_regression.class_order`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutClassParity {
+    schema_version: String,
+    claim_scope: String,
+    denominator: String,
+    numerator: String,
+    missing: String,
+    extra: String,
+    aggregation: String,
+    precision: String,
+    recall: String,
+    f1: String,
+    zero_zero_denominator: String,
+    source_consumed_classes: Vec<String>,
+    source_consumed_rule: String,
 }
 
 /// Additive S20 external-holdout contract (advisory-only transferability
@@ -3770,6 +3797,16 @@ fn validate_external_holdout_contract(e: &ExternalHoldoutContract) -> Vec<String
     errs
 }
 
+/// A Java-relative definition field must be a symbolic relation, never a numeric
+/// threshold: a whole value or whitespace-delimited token that parses as a
+/// number is a fitted margin wearing a definition's name. A rule/prose field is
+/// exempt because it may quote an observed value as explanation.
+fn declares_numeric_threshold(value: &str) -> bool {
+    value
+        .split_whitespace()
+        .any(|token| token.parse::<f64>().is_ok())
+}
+
 /// S08/T01 frozen release-probe lane: the lane's identity handles, metric
 /// definitions and transfer accounting are declared before measurement, its
 /// metric vocabulary is the `acceptance_margins` vocabulary (never a second
@@ -3834,6 +3871,61 @@ fn validate_external_holdout_release_probe(
         || p.cost.pooled_cost_claim != "forbidden"
     {
         errs.push("[external-holdout-release-probe-accounting] accounting eroded".into());
+    }
+
+    // S02/T01: the Java-relative parity declaration. The names are symbolic
+    // definitions, never a second numeric dictionary: a value that names a
+    // number is a fitted margin wearing a definition's name and is refused.
+    let parity = &p.class_parity;
+    if parity.schema_version != "external-holdout-class-parity.v1"
+        || parity.claim_scope != "local_proxy_only"
+        || parity.denominator != "source_population"
+        || parity.aggregation != "micro_occurrence"
+    {
+        errs.push("[external-holdout-release-probe-parity] parity declaration drifted".into());
+    }
+    for (field, value) in [
+        ("numerator", parity.numerator.as_str()),
+        ("missing", parity.missing.as_str()),
+        ("extra", parity.extra.as_str()),
+        ("precision", parity.precision.as_str()),
+        ("recall", parity.recall.as_str()),
+        ("f1", parity.f1.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            errs.push(format!(
+                "[external-holdout-release-probe-parity] `{field}` definition missing"
+            ));
+        } else if declares_numeric_threshold(value) {
+            errs.push(format!(
+                "[external-holdout-release-probe-parity] `{field}` carries a numeric threshold instead of a definition"
+            ));
+        }
+    }
+    if parity.zero_zero_denominator.trim().is_empty()
+        || parity.source_consumed_rule.trim().is_empty()
+    {
+        errs.push(
+            "[external-holdout-release-probe-parity] empty-denominator or source-consumed rule missing"
+                .into(),
+        );
+    }
+    let expected_consumed = [
+        "SemanticFieldLoss::HeaderTitle",
+        "SemanticFieldLoss::HeaderEmail",
+        "SemanticFieldLoss::HeaderIds",
+    ];
+    if parity.source_consumed_classes.len() != expected_consumed.len()
+        || !expected_consumed.iter().all(|token| {
+            parity
+                .source_consumed_classes
+                .iter()
+                .any(|class| class == token)
+        })
+    {
+        errs.push(
+            "[external-holdout-release-probe-parity] source-consumed class set drifted".into(),
+        );
     }
     if !p.citation_requires_recorded_human_release_decision
         || p.citation_without_release_decision != "forbidden"

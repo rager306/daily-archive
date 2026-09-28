@@ -265,6 +265,37 @@ external_holdout_contract:
       cost_status: bounded_not_measured
       unknown_is_not_zero: true
       pooled_cost_claim: forbidden
+    # S02/T01: the Java-relative parity declaration. ADDITIVE sibling of
+    # `metrics`, never a replacement: the two `metrics` above are declared
+    # against the admitted band, so their recall is 1.000000 by construction,
+    # while `class_parity` declares the Java-relative denominator
+    # (`source_population`) so precision/recall/F1 answer "relative to Java"
+    # rather than "relative to what we admitted". This block carries metric
+    # DEFINITIONS only (a symbolic name per counter, never a numeric threshold),
+    # so a margin can never be fitted after seeing a result. The class
+    # vocabulary itself is NOT copied here: it is read by reference from
+    # `data/parse/comparison_contract.yaml#native_fulltext_composition_shadow.corpus_semantic_regression.class_order`.
+    class_parity:
+      schema_version: external-holdout-class-parity.v1
+      claim_scope: local_proxy_only
+      denominator: source_population
+      numerator: conserved
+      missing: source_population_minus_conserved
+      extra: fabricated
+      aggregation: micro_occurrence
+      precision: conserved_over_conserved_plus_fabricated
+      recall: conserved_over_source_population
+      f1: harmonic_mean_of_precision_and_recall
+      zero_zero_denominator: recall_is_one_at_empty_source_population
+      # These carriers are also carried by the copied source subtree, so they are
+      # counted as covered rather than lost: a per-class recall below 1.0 for
+      # them is a band-definition choice, not a defect (the 0.5000 HeaderTitle
+      # narrowing is therefore not fabricated loss).
+      source_consumed_classes:
+      - SemanticFieldLoss::HeaderTitle
+      - SemanticFieldLoss::HeaderEmail
+      - SemanticFieldLoss::HeaderIds
+      source_consumed_rule: the source subtree copied into the emission carries these carriers too, so they are covered rather than lost and a per-class recall below 1.0 for them is a band-definition choice, not a defect; the 0.5000 HeaderTitle narrowing is not fabricated loss
     # S08/T02: the frozen reference identity. `reference_tei` carries the byte
     # pins of the committed holdout TEI; it is filled by the same change that
     # commits the fixtures, so a document can never be cited while the bytes it
