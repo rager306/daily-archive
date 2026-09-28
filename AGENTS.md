@@ -168,6 +168,16 @@ stores. The trajectory report now measures that class:
 
 These four come from measured failure, not preference. Each names the cost:
 
+- **The same drift is repairable or terminal depending on who sees it first.** A
+  formatting drift caught by the host verification gate is routed through the canonical
+  recovery machine (`routeHostTechnicalFailure` -> retry/repair/remediate/replan, budget
+  `verification_max_retries`, default 2, with `verification_auto_fix` recording the
+  attempt count). The same drift caught by the `cargo-fmt` hook during the engine's
+  auto-commit has **no retry at all** and kills the attempt with `LEASE_FENCING_LOST`.
+  That asymmetry is why the fmt check belongs in a task's `verify`: it moves the
+  detection from the terminal path to the repairable one. `verification_auto_fix` is
+  not a formatter — it only annotates the evidence with the auto-fix attempt number,
+  so nothing here formats on your behalf.
 - **Run `cargo fmt` as the LAST action of a Rust task.** `cargo-fmt` caused 141 of
   188 recorded commit failures. This is not formatting cleanliness: a failed
   auto-commit cannot be retried by the engine, so the attempt dies with a claim
@@ -219,7 +229,21 @@ These four come from measured failure, not preference. Each names the cost:
         `cargo fmt -p <crate> -- --check` on the next. Do not join commands with `&&` or
         `|`: the host verification gate rejects a verify line that is not shell-safe and
         then reports the task as unverified rather than running anything.
+        This is not a style preference, and the reason is the whole point: a formatting
+        drift that the HOST gate sees is routed through the canonical recovery machine
+        and can be repaired and retried within the verification budget, while the same
+        drift reaching the engine's auto-commit has no retry at all and kills the attempt
+        with LEASE_FENCING_LOST. Verified on M511-j7wz2f/S02/T02 and again on M510. A
+        task whose plan has no verify at all falls back to the project
+        `verification_commands`, which includes fmt but says nothing about that task's
+        actual work -- so a task-specific verify with fmt in it is the only real gate.
   ```
+
+  The same shape applies to the project verification fallback:
+  `.gsd/PREFERENCES.md#verification_commands` leads with `cargo fmt --all --check`
+  because `discoverCommands` never appends that list to a task plan's own verify, so it
+  is the only protection for a task whose plan carries no verify. Probe used to confirm
+  it is a real check: rc=0 clean, rc=1 with one injected formatting drift.
 - **Rejected alternatives (checked, do not re-litigate).** Switching the git hook to
   auto-format: a hook that modifies files makes `pre-commit run` exit 1 with "files
   were modified by this hook", so that commit is still refused once. Adding fmt to
