@@ -420,13 +420,15 @@ fn read_process_peak_rss() -> Option<u64> {
     Some(kilobytes.saturating_mul(1024))
 }
 
-/// Production Java-CPU reader: the GROBID sidecar's cgroup `cpuacct` counter,
-/// declared through `PARSE_BATCH_JAVA_CPUACCT` (a cgroup file path or a
-/// `docker stats`-derived counter file). Absent/unreadable is a typed absence.
+/// Production Java-CPU reader: the GROBID sidecar's cgroup CPU counter,
+/// declared through `PARSE_BATCH_JAVA_CPUACCT` (a cgroup directory, a cgroup
+/// `cpu.stat` file, or a `docker stats`-derived bare counter file).
+/// Absent/unreadable/non-numeric is a typed absence. The host/cgroup convention
+/// lives in [`da_cli::java_cpu_counter`] so probing a cgroup file does not leak
+/// a host dependency into `da-parse`.
 fn read_java_cpu_counter() -> Option<u64> {
     let path = std::env::var("PARSE_BATCH_JAVA_CPUACCT").ok()?;
-    let text = std::fs::read_to_string(path).ok()?;
-    text.trim().parse().ok()
+    da_cli::java_cpu_counter::read_java_cpu_ns(Path::new(&path))
 }
 
 /// An injected `FnMut() -> Option<u64>` reader that counts its own invocations,

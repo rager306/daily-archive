@@ -14,6 +14,10 @@ pub mod gold_graph;
 pub mod graph_query;
 pub mod graph_tasks;
 pub mod health_report;
+// S04/T01 (M513-r7dg4z): host Java-CPU counter reader (bare integer or cgroup v2
+// `cpu.stat` `usage_usec`). Host/cgroup probing is infrastructure, so it lives
+// here rather than in `da-parse` (onion lock); typed absence, never a fake 0.
+pub mod java_cpu_counter;
 // S08/T01: layout_runtime holds the qualified CPU characterization primitive
 // (`characterize_cpu_kernel`, `gate_simd_candidate`) that the native core
 // profile consumes. It is pure std/serde/sha2, so it stays available in the
