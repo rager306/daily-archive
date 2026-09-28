@@ -314,6 +314,28 @@ struct LaneCostBounds {
     release_claim_allowed: bool,
 }
 
+/// The declared Java-relative parity semantics, read from
+/// `external_holdout_contract.release_probe.class_parity`.  This is DATA: the
+/// producer never re-states the denominator, the aggregation, the class
+/// vocabulary or the source-consumed class set — it reads them here and refuses
+/// by name when a declaration is absent or disagrees with what it computes.
+#[derive(Debug, Clone)]
+struct LaneClassParity {
+    schema_version: String,
+    claim_scope: String,
+    denominator: String,
+    numerator: String,
+    missing: String,
+    extra: String,
+    aggregation: String,
+    precision: String,
+    recall: String,
+    f1: String,
+    zero_zero_denominator: String,
+    source_consumed_classes: BTreeSet<String>,
+    source_consumed_rule: String,
+}
+
 /// The validated lane plus the identity surfaces the measurement needs.
 #[derive(Debug, Clone)]
 struct LaneData {
@@ -341,6 +363,9 @@ struct LaneData {
     label_divergence_item: String,
     external_execution_status: String,
     external_bytes: String,
+    /// The declared Java-relative parity semantics (DATA, not a compiled-in
+    /// definition).
+    class_parity: LaneClassParity,
     cost: LaneCostBounds,
 }
 
@@ -803,6 +828,70 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
         return Err("probe_cost_bounds_eroded".into());
     }
 
+    // The declared Java-relative parity semantics.  The producer never
+    // re-states the denominator, the aggregation or the source-consumed class
+    // set: they are read here, so a DATA edit is the only place the definition
+    // can change.  A missing definition is refused by name before any
+    // measurement; a definition that disagrees with what this producer computes
+    // is refused by its own name.
+    let parity = lane
+        .get("class_parity")
+        .ok_or("probe_class_parity_missing")?;
+    let non_empty = |key: &str| {
+        parity
+            .get(key)
+            .and_then(Yaml::as_str)
+            .map(str::trim)
+            .filter(|text| !text.is_empty())
+            .map(str::to_string)
+    };
+    let class_parity = LaneClassParity {
+        schema_version: non_empty("schema_version")
+            .ok_or("probe_class_parity_definition_missing")?,
+        claim_scope: non_empty("claim_scope").ok_or("probe_class_parity_definition_missing")?,
+        denominator: non_empty("denominator").ok_or("probe_class_parity_definition_missing")?,
+        numerator: non_empty("numerator").ok_or("probe_class_parity_definition_missing")?,
+        missing: non_empty("missing").ok_or("probe_class_parity_definition_missing")?,
+        extra: non_empty("extra").ok_or("probe_class_parity_definition_missing")?,
+        aggregation: non_empty("aggregation").ok_or("probe_class_parity_definition_missing")?,
+        precision: non_empty("precision").ok_or("probe_class_parity_definition_missing")?,
+        recall: non_empty("recall").ok_or("probe_class_parity_definition_missing")?,
+        f1: non_empty("f1").ok_or("probe_class_parity_definition_missing")?,
+        zero_zero_denominator: non_empty("zero_zero_denominator")
+            .ok_or("probe_class_parity_definition_missing")?,
+        source_consumed_classes: yaml_strings(parity, "source_consumed_classes")
+            .into_iter()
+            .collect(),
+        source_consumed_rule: non_empty("source_consumed_rule")
+            .ok_or("probe_class_parity_definition_missing")?,
+    };
+    if class_parity.schema_version != "external-holdout-class-parity.v1" {
+        return Err("probe_class_parity_schema_drift".into());
+    }
+    if class_parity.claim_scope != "local_proxy_only" {
+        return Err("probe_class_parity_scope_drift".into());
+    }
+    // The denominator is the Java-relative `source_population`, never the
+    // narrowed `admitted` band: a collapsed denominator would manufacture a
+    // recall of 1.0.
+    if class_parity.denominator != "source_population" {
+        return Err("probe_class_parity_denominator_drift".into());
+    }
+    if class_parity.aggregation != "micro_occurrence" {
+        return Err("probe_class_parity_aggregation_drift".into());
+    }
+    if class_parity.source_consumed_classes.is_empty() {
+        return Err("probe_class_parity_source_consumed_drift".into());
+    }
+    let known_classes: BTreeSet<&str> = CLASS_ORDER.iter().copied().collect();
+    if class_parity
+        .source_consumed_classes
+        .iter()
+        .any(|class| !known_classes.contains(class.as_str()))
+    {
+        return Err("probe_class_parity_source_consumed_drift".into());
+    }
+
     Ok(LaneData {
         reference,
         exceptions,
@@ -836,6 +925,7 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
             .to_string(),
         external_execution_status,
         external_bytes,
+        class_parity,
         cost,
     })
 }
@@ -1827,11 +1917,34 @@ struct ClassProfile {
     conserved: usize,
     lost: usize,
     fabricated: usize,
+    /// Whether the class's carriers are also carried by the copied source
+    /// subtree (read from DATA `class_parity.source_consumed_classes`, never a
+    /// compiled-in list).  Such a class is *covered* by the union even when the
+    /// admitted band is narrower, so its shortfall is a band-definition choice,
+    /// not a fabricated loss.
+    source_is_conserved: bool,
 }
 
 impl ClassProfile {
     fn admission_coverage(&self) -> Option<f64> {
         ratio(self.admitted, self.source_population)
+    }
+
+    /// Java-relative recall: `conserved / source_population`.  `None` (a
+    /// `no_denominator` row) when the frozen reference declares no such carrier;
+    /// never a vacuum `1.0` (MEM1702).
+    fn recall_java(&self) -> Option<f64> {
+        ratio(self.conserved, self.source_population)
+    }
+
+    /// `conserved / (conserved + fabricated)`, or `None` when the emission
+    /// carries nothing at all for the class.
+    fn precision(&self) -> Option<f64> {
+        ratio(self.conserved, self.conserved + self.fabricated)
+    }
+
+    fn f1(&self) -> Option<f64> {
+        harmonic_mean(self.precision(), self.recall_java())
     }
 }
 
@@ -1839,6 +1952,19 @@ impl ClassProfile {
 /// denominator is `no_denominator` (MEM1702): never a vacuum `1.0`.
 fn ratio(numerator: usize, denominator: usize) -> Option<f64> {
     (denominator > 0).then(|| numerator as f64 / denominator as f64)
+}
+
+/// Harmonic mean of two rates, or `None` unless both have a denominator.  A
+/// genuine `0.0/0.0` (both rates exactly zero) is `0.0`, not `NaN`.
+fn harmonic_mean(precision: Option<f64>, recall: Option<f64>) -> Option<f64> {
+    match (precision, recall) {
+        (Some(precision), Some(recall)) => Some(if precision + recall == 0.0 {
+            0.0
+        } else {
+            2.0 * precision * recall / (precision + recall)
+        }),
+        _ => None,
+    }
 }
 
 /// Occurrence-counted conservation of text-valued carriers.
@@ -1886,6 +2012,7 @@ fn class_profile(
         conserved,
         lost: admitted_values.len() - conserved,
         fabricated,
+        source_is_conserved,
     }
 }
 
@@ -1897,6 +2024,7 @@ fn binding_profile(
     admitted_values: &[(String, String)],
     emitted_carriers: &[(String, String)],
     source_carriers: &[(String, String)],
+    source_is_conserved: bool,
 ) -> ClassProfile {
     let emitted_match = emitted_carriers
         .iter()
@@ -1917,6 +2045,7 @@ fn binding_profile(
         conserved,
         lost: admitted_values.len() - conserved,
         fabricated,
+        source_is_conserved,
     }
 }
 
@@ -2007,12 +2136,17 @@ fn emitted_citation_carriers(scan: &XmlScan) -> Vec<(String, String)> {
 }
 
 /// Every class's measured profile for one document, from the emission bytes only.
+/// The source-consumed class set is read from DATA (`lane.class_parity`), never
+/// compiled in: a class the manifest marks as carried by the copied source
+/// subtree is measured as conserved and its shortfall is not a fabricated loss.
 fn oracle_class_profiles(
+    lane: &LaneData,
     source: &ProbeSource,
     source_xml: &str,
     admitted: &AdmittedBand,
     emission_xml: &str,
 ) -> Vec<ClassProfile> {
+    let source_consumed = |class: &str| lane.class_parity.source_consumed_classes.contains(class);
     let scan = scan_xml(emission_xml);
     let header = scan.unique("teiHeader");
     let list = scan.unique("listBibl");
@@ -2046,6 +2180,7 @@ fn oracle_class_profiles(
         &admitted.author_lines,
         &emitted_lines,
         &source_author_carriers,
+        source_consumed(CLASS_AUTHOR_LINE),
     ));
     profiles.push(class_profile(
         CLASS_HEADER_TITLE,
@@ -2053,7 +2188,7 @@ fn oracle_class_profiles(
         &admitted.titles,
         &emitted_titles,
         &source.header_titles,
-        true,
+        source_consumed(CLASS_HEADER_TITLE),
     ));
     profiles.push(class_profile(
         CLASS_HEADER_EMAIL,
@@ -2061,7 +2196,7 @@ fn oracle_class_profiles(
         &admitted.emails,
         &emitted_emails,
         &source.header_emails,
-        true,
+        source_consumed(CLASS_HEADER_EMAIL),
     ));
     profiles.push(class_profile(
         CLASS_HEADER_IDS,
@@ -2069,7 +2204,7 @@ fn oracle_class_profiles(
         &admitted.ids,
         &emitted_ids,
         &source.header_idnos,
-        true,
+        source_consumed(CLASS_HEADER_IDS),
     ));
     profiles.push(binding_profile(
         CLASS_AUTHOR_AFFILIATION,
@@ -2077,6 +2212,7 @@ fn oracle_class_profiles(
         &admitted.affiliation_bindings,
         &emitted_affiliations,
         &source_affiliation_carriers,
+        source_consumed(CLASS_AUTHOR_AFFILIATION),
     ));
     profiles.push(class_profile(
         CLASS_REFERENCE_DOMAIN,
@@ -2084,7 +2220,7 @@ fn oracle_class_profiles(
         &admitted.reference_texts,
         &emitted_reference_texts,
         &source.reference_texts,
-        false,
+        source_consumed(CLASS_REFERENCE_DOMAIN),
     ));
     for (role, class) in PROBE_CITATION_ROLES {
         let token = citation_field_role_token(role);
@@ -2109,7 +2245,7 @@ fn oracle_class_profiles(
             &admitted_values,
             &emitted_values,
             &source_values,
-            false,
+            source_consumed(class),
         ));
     }
     assert_eq!(
@@ -2450,7 +2586,7 @@ fn measure_document(row: &LaneReferenceRow, lane: &LaneData, latency_ms: u64) ->
                 row.article_id
             )
         });
-    let profiles = oracle_class_profiles(&source, &xml, &admitted, &emission);
+    let profiles = oracle_class_profiles(lane, &source, &xml, &admitted, &emission);
     let metrics = document_metrics(&profiles);
     let verdicts = evaluate_margins(lane, &metrics);
 
@@ -2486,8 +2622,122 @@ fn measure_all(lane: &LaneData, provenance: &Provenance) -> Vec<MeasuredDocument
         .collect()
 }
 
-/// Counts over the measured documents.  No rate, no pooled corpus claim: every field
-/// is a count and the document count is printed next to them.
+/// The declared producer/authority wording for the parity block.  The producer
+/// is the runtime compact scan; the authority is the independent dev-only
+/// structural oracle, which is a separate crate root and shares no scan code.
+const CLASS_PARITY_PRODUCER: &str = "da-cli compact non-validating scan over the composed emission";
+const CLASS_PARITY_AUTHORITY: &str = "dev-only structural oracle crates/da-parse/tests/external_holdout_probe_semantics.rs (independent roxmltree judge)";
+
+/// The declared Java-relative parity aggregate: micro counts over every
+/// measured class, with the two honest aggregate recalls.  The denominator is
+/// the Java `source_population`, never the narrowed `admitted` band, so the
+/// aggregate recall cannot be 1.0 by construction.
+///
+/// `native_capability_recall` counts only the classes the native composer
+/// actually produces (the source-consumed classes are excluded from it);
+/// `covered_union_recall` counts a source-consumed class as covered by its full
+/// source population, because the copied source subtree carries those carriers.
+struct ClassParity {
+    denominator: usize,
+    tp: usize,
+    fn_: usize,
+    fp: usize,
+    native_denominator: usize,
+    native_tp: usize,
+    covered_union_numerator: usize,
+}
+
+impl ClassParity {
+    fn of(measured: &[MeasuredDocument]) -> ClassParity {
+        let mut parity = ClassParity {
+            denominator: 0,
+            tp: 0,
+            fn_: 0,
+            fp: 0,
+            native_denominator: 0,
+            native_tp: 0,
+            covered_union_numerator: 0,
+        };
+        for document in measured {
+            for profile in &document.profiles {
+                parity.denominator += profile.source_population;
+                parity.tp += profile.conserved;
+                parity.fn_ += profile.source_population.saturating_sub(profile.conserved);
+                parity.fp += profile.fabricated;
+                if profile.source_is_conserved {
+                    parity.covered_union_numerator += profile.source_population;
+                } else {
+                    parity.native_denominator += profile.source_population;
+                    parity.native_tp += profile.conserved;
+                    parity.covered_union_numerator += profile.conserved;
+                }
+            }
+        }
+        parity
+    }
+
+    fn native_capability_recall(&self) -> Option<f64> {
+        ratio(self.native_tp, self.native_denominator)
+    }
+
+    fn covered_union_recall(&self) -> Option<f64> {
+        ratio(self.covered_union_numerator, self.denominator)
+    }
+
+    fn precision(&self) -> Option<f64> {
+        ratio(self.tp, self.tp + self.fp)
+    }
+
+    fn f1(&self) -> Option<f64> {
+        harmonic_mean(self.precision(), self.native_capability_recall())
+    }
+
+    fn json(&self) -> Json {
+        json!({
+            "aggregate": {
+                "denominator": self.denominator,
+                "tp": self.tp,
+                "fn": self.fn_,
+                "fp": self.fp,
+                "native_capability_recall_micros": micros_of(self.native_capability_recall()),
+                "covered_union_recall_micros": micros_of(self.covered_union_recall()),
+                "precision_micros": micros_of(self.precision()),
+                "f1_micros": micros_of(self.f1()),
+            },
+            "producer": CLASS_PARITY_PRODUCER,
+            "authority": CLASS_PARITY_AUTHORITY,
+            "claim_scope": "local_proxy_only",
+        })
+    }
+}
+
+/// The declared Java-relative parity semantics, emitted at the artifact top
+/// level so the reviewer sees the denominator, the aggregation and the
+/// source-consumed rule beside the numbers.  It is deliberately kept OUT of
+/// `evaluated_population`: the population-binding oracle scans that block for
+/// oversized string values, and the declared rule is a sentence, not a value.
+fn class_parity_declaration(lane: &LaneData) -> Json {
+    let declaration = &lane.class_parity;
+    json!({
+        "schema_version": declaration.schema_version,
+        "claim_scope": declaration.claim_scope,
+        "denominator": declaration.denominator,
+        "numerator": declaration.numerator,
+        "missing": declaration.missing,
+        "extra": declaration.extra,
+        "aggregation": declaration.aggregation,
+        "precision": declaration.precision,
+        "recall": declaration.recall,
+        "f1": declaration.f1,
+        "zero_zero_denominator": declaration.zero_zero_denominator,
+        "source_consumed_classes": declaration
+            .source_consumed_classes
+            .iter()
+            .cloned()
+            .collect::<Vec<String>>(),
+        "source_consumed_rule": declaration.source_consumed_rule,
+    })
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Aggregate {
     documents: usize,
@@ -2695,7 +2945,7 @@ fn catalog_census(lane: &LaneData, source_manifest: &Yaml) -> CatalogCensus {
 /// The declared guard list.  Every label is proven to fire on its own violating
 /// input by `--self-check`, and the committed artifact is audited with the same
 /// predicate before it is written.
-const GUARD_LABELS: [&str; 32] = [
+const GUARD_LABELS: [&str; 36] = [
     "schema_version_drift",
     "reference_population_role",
     "reference_documents",
@@ -2728,6 +2978,10 @@ const GUARD_LABELS: [&str; 32] = [
     "class_narrowings_incomplete",
     "reference_measurable_documents",
     "reference_exceptions_drift",
+    "class_parity_missing",
+    "class_parity_denominator_drift",
+    "class_parity_precision_inconsistent",
+    "class_parity_conservation_mismatch",
 ];
 
 fn collect_strings<'a>(value: &'a Json, out: &mut Vec<&'a str>) {
@@ -2767,6 +3021,43 @@ fn u64_of(value: &Json) -> Option<u64> {
     value.as_u64()
 }
 
+/// Recompute the Java-relative parity aggregate from the artifact's own
+/// per-class rows.  The guard uses this so a reclassified source-consumed class
+/// (which would fabricate false negatives), a drifted per-class counter or a
+/// hand-edited aggregate cannot pass: the block must be exactly the micro
+/// aggregation of the rows it claims to summarize.
+fn class_parity_from_class_rows(profiles: &[Json]) -> ClassParity {
+    let mut parity = ClassParity {
+        denominator: 0,
+        tp: 0,
+        fn_: 0,
+        fp: 0,
+        native_denominator: 0,
+        native_tp: 0,
+        covered_union_numerator: 0,
+    };
+    for document in profiles {
+        for class in document["classes"].as_array().into_iter().flatten() {
+            let source_population = u64_of(&class["source_population"]).unwrap_or(0) as usize;
+            let conserved = u64_of(&class["conserved"]).unwrap_or(0) as usize;
+            let fabricated = u64_of(&class["fabricated"]).unwrap_or(0) as usize;
+            let source_consumed = class["source_consumed"].as_bool().unwrap_or(false);
+            parity.denominator += source_population;
+            parity.tp += conserved;
+            parity.fn_ += source_population.saturating_sub(conserved);
+            parity.fp += fabricated;
+            if source_consumed {
+                parity.covered_union_numerator += source_population;
+            } else {
+                parity.native_denominator += source_population;
+                parity.native_tp += conserved;
+                parity.covered_union_numerator += conserved;
+            }
+        }
+    }
+    parity
+}
+
 /// Whether `evidence` BINDS the executed population, mirroring the governor's
 /// independent oracle (`executed_population_binding.py`).  This is the
 /// value/vocabulary half of GAR-006: the receipt's SHAPE (non-empty string
@@ -2794,7 +3085,7 @@ fn execution_evidence_binding(
             if !EXECUTION_EVIDENCE_KINDS.contains(&kind) {
                 return Some("execution_evidence_unbound:unknown_kind".to_string());
             }
-            if executed_documents.map_or(true, |count| count >= CORPUS_SCALE_DOCUMENTS) {
+            if executed_documents.is_none_or(|count| count >= CORPUS_SCALE_DOCUMENTS) {
                 return Some("execution_evidence_unbound:bare_token".to_string());
             }
             None
@@ -2998,6 +3289,60 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     }
     if aggregate.get("counts_only").and_then(Json::as_bool) != Some(true) {
         errors.insert("aggregate_conservation_mismatch".to_string());
+    }
+
+    // ── Java-relative class parity: declared, and arithmetically consistent ─
+    // The parity block is the Java-relative reading of the same counts.  Its
+    // denominator MUST be the Java `source_population` total, and its micro
+    // aggregate MUST be exactly the aggregation of the per-class rows, so a
+    // collapsed denominator, a reclassified source-consumed class or a
+    // hand-edited block is refused rather than averaged into the artifact.
+    match evaluated.get("class_parity").and_then(Json::as_object) {
+        None => {
+            errors.insert("class_parity_missing".to_string());
+        }
+        Some(block) => {
+            let parity = &block["aggregate"];
+            let declared_fp = u64_of(&parity["fp"]).unwrap_or(0);
+            if u64_of(&parity["denominator"]) != Some(expected.aggregate.source_population as u64) {
+                errors.insert("class_parity_denominator_drift".to_string());
+            }
+            let declared = json!({
+                "denominator": parity["denominator"],
+                "tp": parity["tp"],
+                "fn": parity["fn"],
+                "fp": parity["fp"],
+                "native_capability_recall_micros": parity["native_capability_recall_micros"],
+                "covered_union_recall_micros": parity["covered_union_recall_micros"],
+                "precision_micros": parity["precision_micros"],
+                "f1_micros": parity["f1_micros"],
+            });
+            let recomputed = class_parity_from_class_rows(
+                report["class_profiles"]
+                    .as_array()
+                    .map(Vec::as_slice)
+                    .unwrap_or(&[]),
+            );
+            let observed = json!({
+                "denominator": recomputed.denominator,
+                "tp": recomputed.tp,
+                "fn": recomputed.fn_,
+                "fp": recomputed.fp,
+                "native_capability_recall_micros": micros_of(recomputed.native_capability_recall()),
+                "covered_union_recall_micros": micros_of(recomputed.covered_union_recall()),
+                "precision_micros": micros_of(recomputed.precision()),
+                "f1_micros": micros_of(recomputed.f1()),
+            });
+            if declared != observed {
+                errors.insert("class_parity_conservation_mismatch".to_string());
+            }
+            let precision = u64_of(&parity["precision_micros"]);
+            if (declared_fp == 0 && precision != Some(1_000_000))
+                || (declared_fp > 0 && precision == Some(1_000_000))
+            {
+                errors.insert("class_parity_precision_inconsistent".to_string());
+            }
+        }
     }
 
     // ── outcomes: distinct identities, per-document measurement ────────────
@@ -3298,6 +3643,10 @@ fn build_report(
                     "lost": profile.lost,
                     "fabricated": profile.fabricated,
                     "admission_coverage_micros": micros_of(profile.admission_coverage()),
+                    "recall_java_micros": micros_of(profile.recall_java()),
+                    "precision_micros": micros_of(profile.precision()),
+                    "f1_micros": micros_of(profile.f1()),
+                    "source_consumed": profile.source_is_conserved,
                 })).collect::<Vec<Json>>(),
             })
         })
@@ -3379,6 +3728,7 @@ fn build_report(
             "zero_admitted_population_behavior": definition.zero_admitted_population_behavior,
             "margin_ref": definition.margin_ref,
         })).collect::<Vec<Json>>(),
+        "class_parity_declaration": class_parity_declaration(lane),
         "reference_population": {
             "role": "identity_only",
             "identity": POPULATION_IDENTITY,
@@ -3448,6 +3798,7 @@ fn build_report(
                 "counts_only": true,
                 "claim_scope": "local_proxy_only",
             },
+            "class_parity": ClassParity::of(measured).json(),
         },
         "outcomes": outcomes,
         "class_profiles": profiles,
@@ -3527,6 +3878,7 @@ fn build_report(
             "latency and cost are bounded, not measured; an unknown value is never zero",
             "the probe does not lift the external bytes_absent band and does not authorize release; a named human release decision is still required",
             "the compact scan is not the structural validating oracle; the authoritative oracle is the dev-only da-parse test external_holdout_probe_semantics",
+            "typed route boundary: the native PDF to TEI route is not measured by this probe — no runner connects a PDF input to compose_native_fulltext, and the PDF-route corridor is verified on 3 documents (corpus_n = 3) only; this parity is local_proxy_only over the admitted band, not a native-PDF claim",
         ],
     })
 }
@@ -3610,6 +3962,10 @@ fn build_frozen_tables(report: &Json, artifact_sha256: &str) -> Json {
                     "admitted": class["admitted"],
                     "conserved": class["conserved"],
                     "rejected": class["fabricated"],
+                    "recall_java_micros": class["recall_java_micros"],
+                    "precision_micros": class["precision_micros"],
+                    "f1_micros": class["f1_micros"],
+                    "source_consumed": class["source_consumed"],
                 })).collect::<Vec<Json>>(),
                 "narrowings": document_narrowings,
             })
@@ -3637,6 +3993,11 @@ fn build_frozen_tables(report: &Json, artifact_sha256: &str) -> Json {
             "margin_pass": aggregate["margin_pass"],
             "margin_fail": aggregate["margin_fail"],
             "no_denominator_documents": aggregate["no_denominator_documents"],
+            // The Java-relative parity aggregate is a projection of the
+            // artifact's `evaluated_population.class_parity` block, read back
+            // here (never recomputed): a recorded parity can never be written
+            // beside an artifact it does not describe.
+            "class_parity": report["evaluated_population"]["class_parity"].clone(),
         },
         "documents": documents,
     })
@@ -3703,12 +4064,21 @@ fn synthetic_pair(document_count: usize, exception_count: usize) -> (Json, Expec
         .collect();
     let documents: Vec<(String, String, u64, usize, usize)> = (0..document_count)
         .map(|index| {
+            let source_population = 10 + index;
+            // The first document's admitted band is narrower than its Java
+            // population, so the synthetic report exercises a real narrowing
+            // while the micro aggregate stays internally consistent.
+            let admitted = if index == 0 {
+                source_population - 1
+            } else {
+                source_population
+            };
             (
                 format!("d{}", index + 1),
                 format!("{:064x}", index + 1),
                 1000 + index as u64,
-                10 + index,
-                10 + index,
+                source_population,
+                admitted,
             )
         })
         .collect();
@@ -3871,32 +4241,54 @@ fn synthetic_pair(document_count: usize, exception_count: usize) -> (Json, Expec
                 "no_denominator_documents": expected.aggregate.no_denominator_documents,
                 "counts_only": true,
             },
+            "class_parity": {
+                "aggregate": {
+                    "denominator": expected.aggregate.source_population,
+                    "tp": expected.aggregate.tp,
+                    "fn": expected.aggregate.source_population - expected.aggregate.tp,
+                    "fp": expected.aggregate.fp,
+                    "native_capability_recall_micros": Json::Null,
+                    "covered_union_recall_micros": 1_000_000,
+                    "precision_micros": 1_000_000,
+                    "f1_micros": Json::Null,
+                },
+                "producer": CLASS_PARITY_PRODUCER,
+                "authority": CLASS_PARITY_AUTHORITY,
+                "claim_scope": "local_proxy_only",
+            },
         },
         "outcomes": outcomes,
-        "class_profiles": [
-            {
-                "document_id": "d1",
-                "identity_sha256": "0000000000000000000000000000000000000000000000000000000000000001",
-                "classes": [
-                    {
-                        "class": CLASS_HEADER_TITLE,
-                        "source_population": 2,
-                        "admitted": 1,
-                        "conserved": 1,
-                        "lost": 0,
-                        "fabricated": 0,
-                    }
-                ],
-            }
-        ],
-        "class_narrowings": [
-            {
-                "document_id": "d1",
+        "class_profiles": expected_documents.iter().map(|document| {
+            let recall = ratio(document.conserved, document.source_population);
+            let precision = ratio(document.conserved, document.conserved + document.fabricated);
+            json!({
+                "document_id": document.document_id,
+                "identity_sha256": document.identity_sha256,
+                "classes": [{
+                    "class": CLASS_HEADER_TITLE,
+                    "source_population": document.source_population,
+                    "admitted": document.admitted,
+                    "conserved": document.conserved,
+                    "lost": document.lost,
+                    "fabricated": document.fabricated,
+                    "recall_java_micros": micros_of(recall),
+                    "precision_micros": micros_of(precision),
+                    "f1_micros": micros_of(harmonic_mean(precision, recall)),
+                    // The synthetic class is declared source-consumed, so the
+                    // synthetic parity aggregate exercises the covered-union
+                    // path exactly as the real DATA does.
+                    "source_consumed": true,
+                }],
+            })
+        }).collect::<Vec<Json>>(),
+        "class_narrowings": expected_documents.iter()
+            .filter(|document| document.admitted < document.source_population)
+            .map(|document| json!({
+                "document_id": document.document_id,
                 "class": CLASS_HEADER_TITLE,
-                "source_population": 2,
-                "admitted": 1,
-            }
-        ],
+                "source_population": document.source_population,
+                "admitted": document.admitted,
+            })).collect::<Vec<Json>>(),
         "production_catalog_overlap": {
             "census_kind": CENSUS_KIND,
             "documents": frozen_count,
@@ -4066,6 +4458,28 @@ fn mutants(report: &Json, document_count: usize) -> Vec<(&'static str, Json)> {
     });
     mutate("reference_exceptions_drift", &|clone| {
         clone["reference_population"]["exceptions"][0]["reason"] = json!("unlisted_reason");
+    });
+    mutate("class_parity_missing", &|clone| {
+        clone["evaluated_population"]
+            .as_object_mut()
+            .expect("evaluated_population")
+            .remove("class_parity");
+    });
+    mutate("class_parity_denominator_drift", &|clone| {
+        // Collapsing the Java denominator to the admitted band would
+        // manufacture a recall of 1.0; the guard refuses the drift by name
+        // instead of reading the collapsed value as agreement.
+        clone["evaluated_population"]["class_parity"]["aggregate"]["denominator"] =
+            clone["evaluated_population"]["aggregate"]["admitted"].clone();
+    });
+    mutate("class_parity_precision_inconsistent", &|clone| {
+        clone["evaluated_population"]["class_parity"]["aggregate"]["fp"] = json!(1);
+    });
+    mutate("class_parity_conservation_mismatch", &|clone| {
+        // Reclassify a source-consumed class as native: the admitted band no
+        // longer covers it, so the native and union recalls move (false
+        // negatives) while the declared block does not.
+        clone["class_profiles"][0]["classes"][0]["source_consumed"] = json!(false);
     });
 
     out

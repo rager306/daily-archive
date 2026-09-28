@@ -50,7 +50,7 @@ const FROZEN_TABLES_SCHEMA: &str = "external-holdout-frozen-tables.v1";
 /// sha256 of the committed recorded tables.  A recorded number cannot change
 /// without this literal changing with it: the tables are content-addressed by it.
 const FROZEN_TABLES_SHA256: &str =
-    "560a6e806f50557ce28a40524597e5f47cd0643330c541ffaa7ab5df8eaf953e";
+    "d25a446a2aa1aec8fce09b988c812b95b965e98929147713cd90880fdb734ba2";
 const MANIFEST_REL: &str = "data/parse/acceptance_manifest.yaml";
 const SOURCE_MANIFEST_REL: &str = "data/parse/holdout_manifests.yaml";
 const PROVENANCE_REL: &str = "crates/da-parse/tests/fixtures/holdout/provenance.yaml";
@@ -262,7 +262,7 @@ const FORBIDDEN_KEYS: [&str; 12] = [
 
 /// The guards the runner declares.  The self-check must prove each one rejects
 /// its own violating input, so a guard that silently stops firing is visible.
-const GUARD_LABELS: [&str; 32] = [
+const GUARD_LABELS: [&str; 36] = [
     "schema_version_drift",
     "reference_population_role",
     "reference_documents",
@@ -295,6 +295,10 @@ const GUARD_LABELS: [&str; 32] = [
     "class_narrowings_incomplete",
     "reference_measurable_documents",
     "reference_exceptions_drift",
+    "class_parity_missing",
+    "class_parity_denominator_drift",
+    "class_parity_precision_inconsistent",
+    "class_parity_conservation_mismatch",
 ];
 
 fn repo_root() -> PathBuf {
@@ -727,6 +731,125 @@ fn artifact_errors(
         });
     if aggregated_from_rows != (frozen.0, frozen.1, frozen.2, frozen.3, frozen.4) {
         errors.push("probe:aggregate.row_sum".into());
+    }
+
+    // ── Java-relative class parity: declared, denominator, arithmetic ───────
+    // The parity block is the Java-relative reading of the same counts.  Its
+    // denominator must be the Java `source_population` total (never the narrowed
+    // admitted band), its precision must be exactly 1.0 when it records no
+    // fabricated carrier, and its micro aggregate must be exactly the
+    // aggregation of the per-class rows it summarizes, so a collapsed
+    // denominator or a reclassified source-consumed class is named, not read as
+    // agreement.
+    let class_parity = &evaluated["class_parity"];
+    if !class_parity.is_object() {
+        errors.push("probe:class_parity.missing".into());
+    } else {
+        let parity = &class_parity["aggregate"];
+        if parity["denominator"].as_u64() != aggregate["source_population"].as_u64() {
+            errors.push("probe:class_parity.denominator".into());
+        }
+        if class_parity["claim_scope"].as_str() != Some("local_proxy_only") {
+            errors.push("probe:class_parity.scope".into());
+        }
+        let declared_fp = parity["fp"].as_u64().unwrap_or(0);
+        let declared_precision = parity["precision_micros"].as_u64();
+        if (declared_fp == 0 && declared_precision != Some(1_000_000))
+            || (declared_fp > 0 && declared_precision == Some(1_000_000))
+        {
+            errors.push("probe:class_parity.precision".into());
+        }
+        let ratio = |numerator: u64, denominator: u64| -> Option<f64> {
+            (denominator > 0).then(|| numerator as f64 / denominator as f64)
+        };
+        let micros_of = |value: Option<f64>| -> Value {
+            match value {
+                Some(value) => json!((value * 1_000_000.0).round() as u64),
+                None => Value::Null,
+            }
+        };
+        let mut denominator = 0u64;
+        let mut tp = 0u64;
+        let mut fp = 0u64;
+        let mut native_denominator = 0u64;
+        let mut native_tp = 0u64;
+        let mut covered_numerator = 0u64;
+        for document in report["class_profiles"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+        {
+            for class in document["classes"].as_array().cloned().unwrap_or_default() {
+                let source_population = class["source_population"].as_u64().unwrap_or(0);
+                let conserved = class["conserved"].as_u64().unwrap_or(0);
+                let fabricated = class["fabricated"].as_u64().unwrap_or(0);
+                let source_consumed = class["source_consumed"].as_bool().unwrap_or(false);
+                denominator += source_population;
+                tp += conserved;
+                fp += fabricated;
+                if source_consumed {
+                    covered_numerator += source_population;
+                } else {
+                    native_denominator += source_population;
+                    native_tp += conserved;
+                    covered_numerator += conserved;
+                }
+            }
+        }
+        let precision = ratio(tp, tp + fp);
+        let native = ratio(native_tp, native_denominator);
+        let covered = ratio(covered_numerator, denominator);
+        let f1 = match (precision, native) {
+            (Some(precision), Some(native)) => Some(if precision + native == 0.0 {
+                0.0
+            } else {
+                2.0 * precision * native / (precision + native)
+            }),
+            _ => None,
+        };
+        let observed = json!({
+            "denominator": denominator,
+            "tp": tp,
+            "fn": denominator.saturating_sub(tp),
+            "fp": fp,
+            "native_capability_recall_micros": micros_of(native),
+            "covered_union_recall_micros": micros_of(covered),
+            "precision_micros": micros_of(precision),
+            "f1_micros": micros_of(f1),
+        });
+        let declared = json!({
+            "denominator": parity["denominator"],
+            "tp": parity["tp"],
+            "fn": parity["fn"],
+            "fp": parity["fp"],
+            "native_capability_recall_micros": parity["native_capability_recall_micros"],
+            "covered_union_recall_micros": parity["covered_union_recall_micros"],
+            "precision_micros": parity["precision_micros"],
+            "f1_micros": parity["f1_micros"],
+        });
+        if observed != declared {
+            errors.push("probe:class_parity.aggregate".into());
+        }
+        // Every per-class row must carry the parity fields the aggregate is
+        // derived from; a missing field is a missing measurement, not a zero.
+        for document in report["class_profiles"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+        {
+            for class in document["classes"].as_array().cloned().unwrap_or_default() {
+                for field in [
+                    "recall_java_micros",
+                    "precision_micros",
+                    "f1_micros",
+                    "source_consumed",
+                ] {
+                    if class.get(field).is_none() {
+                        errors.push(format!("probe:class_parity.class_field.{field}"));
+                    }
+                }
+            }
+        }
     }
 
     // ── outcomes: the frozen per-document measurement ──────────────────────
@@ -1325,6 +1448,41 @@ fn artifact_audit_rejects_every_declared_violation() {
     let mut limitations_removed = valid.clone();
     limitations_removed["named_limitations"] = json!([]);
     mutations.push(("named_limitations_removed", limitations_removed));
+
+    let mut parity_removed = valid.clone();
+    parity_removed["evaluated_population"]
+        .as_object_mut()
+        .expect("evaluated_population")
+        .remove("class_parity");
+    mutations.push(("class_parity_removed", parity_removed));
+
+    let mut parity_denominator_collapsed = valid.clone();
+    parity_denominator_collapsed["evaluated_population"]["class_parity"]["aggregate"]["denominator"] =
+        valid["evaluated_population"]["aggregate"]["admitted"].clone();
+    mutations.push((
+        "class_parity_denominator_collapsed",
+        parity_denominator_collapsed,
+    ));
+
+    let mut parity_precision_claimed = valid.clone();
+    parity_precision_claimed["evaluated_population"]["class_parity"]["aggregate"]["fp"] = json!(1);
+    mutations.push(("class_parity_precision_claimed", parity_precision_claimed));
+
+    let mut parity_reclassified = valid.clone();
+    {
+        let classes = parity_reclassified["class_profiles"][0]["classes"]
+            .as_array_mut()
+            .expect("classes");
+        let header_title = classes
+            .iter_mut()
+            .find(|class| class["class"].as_str() == Some("SemanticFieldLoss::HeaderTitle"))
+            .expect("the first document declares a HeaderTitle class row");
+        header_title["source_consumed"] = json!(false);
+    }
+    mutations.push((
+        "class_parity_source_consumed_reclassified",
+        parity_reclassified,
+    ));
 
     for (name, mutant) in mutations {
         let errors = artifact_errors(&mutant, &expected_digest, &margins, declared_population());
