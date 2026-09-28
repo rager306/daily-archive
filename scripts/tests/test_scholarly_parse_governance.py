@@ -3470,7 +3470,7 @@ def _unresolved_pass_violations(registry: dict, review: dict) -> list[str]:
 def test_s09_census_policy_bindings_resolve_and_hash_on_disk():
     policy = _load(POLICY_PATH)
     bindings = _source_bindings(policy)
-    assert len(bindings) == 18, [binding["path"] for binding in bindings]
+    assert len(bindings) == 19, [binding["path"] for binding in bindings]
     paths = [binding["path"] for binding in bindings]
     assert len(set(paths)) == len(paths), "duplicate binding path"
     for binding in bindings:
