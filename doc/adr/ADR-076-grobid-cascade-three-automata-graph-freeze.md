@@ -1060,3 +1060,55 @@ rollback target. Человеческое релизное решение H20/GA
 `open`. Названный остаток Java-CPU H05 (`java_cpu_wall_clock_ns` против
 `grobid_sidecar_cgroup_cpuacct`) не закрыт.
 
+## 25. Корректировка 2026-09-28: ledger паритета закрыт по required-строкам — четвёртое звено (M513-r7dg4z/S03)
+
+Секция не закрывает ни одну стадию H14–H21 и не изменяет ни один замок: она
+добавляет к ledger паритета четвёртое звено — типизированную ссылку на измерение
+среза S02 — и выводит её на reviewer-facing поверхности. История не
+переписывается: §24 остаётся датированной записью среза M512-lxafs8/S05 и его
+литералами (`610`, `531`, `793d551f…`); значения ниже описывают текущее
+состояние байтов артефакта и не отменяют §24.
+
+**Что добавлено (ledger паритета, D471).** Все 15 строк `scope: required`
+`parity_ledger` несут четвёртое звено `measurement`: либо
+`measured_by_corpus_parity` с непустым подмножеством закрытого набора из десяти
+классов паритета, либо `outside_corpus_parity` с причиной из закрытого словаря.
+Измерены ровно три required-строки: `stage.header_composition`,
+`stage.reference_segmentation` и
+`parse.component.native_fulltext_composition_shadow`. Остальные двенадцать —
+`outside_corpus_parity` с типизированными причинами (транспорт REST, диалектные
+флаги, PDF-вход вне TEI-композиции, полосы lane/visual, не допущенные в замер,
+Java-side profile surface, путь, не вызываемый измеренным runner'ом); по
+существу это собственные admission receipts runner'а: Header и References —
+Passed, DocumentSegmentation — InvalidEvidence, Figure/Table/Formula —
+Unsupported/NotObserved, а TeiLifter runner вообще не вызывает. Четвёртое звено
+— инвентарь покрытия, а не доказательство корректности: корректность остаётся
+за третьим звеном строки (java/rust/test) и oracle среза S02. Звено измерено, а
+не объявлено: fail-closed судья DATA→DATA пере-хэширует оба content-addressed
+файла и сверяет каждый объявленный токен с закреплённым артефактом.
+
+**Текущие привязки артефакта.** `artifacts/parse_compat/external_holdout_release_probe.json`
+несёт sha256 `a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275`;
+identity пересчитывается как
+`sha256:eee622ae57286faff567b1793f31ee54c5df3118e544a4bb8edf1c7376955c6d`, а не
+доверяется объявленному значению. Объявленный релиз — `java-grobid-http@0.9.1`
+с image_digest
+`sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd`;
+rollback/authority label остаётся `java-grobid-http@0.9.0-crf`, и это расхождение
+остаётся типизированным пунктом H21. Примирение D442/D469: корпусной агрегат
+объявлен как `aggregate_kind=declared_population_count` при
+`pooled_quality_claim=forbidden`, поэтому corpus-wide micro-число не читается как
+pooled quality claim.
+
+**Единственный named_gap.** `learning.ruvllm_ablation` переведён из named_gap в
+типизированный отказ: `kind=no_java_donor`, `accepted_as_residual=true`,
+`decision_ref` D471, `residual_owner` M513-r7dg4z/S05; `required_named_gaps: 0`.
+
+**Что это НЕ значит.** Ни одна стадия H14–H21 не закрыта; ни один замок не
+изменён: `import_eligible=false`, `deployed=false`,
+`production_route=forbidden`, `graph_write=forbidden`, `auto_promote=forbidden`;
+D127 не снят. Java GROBID остаётся TEI oracle и rollback target. GAR-015
+остаётся единственной открытой записью с человеческим релизным решением
+`pending` (`reviewer=null`). Названные остатки Java-CPU H05 и label-расхождение
+H21 не закрыты.
+

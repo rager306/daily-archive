@@ -26,3 +26,11 @@ package = false
 dev = [
     "pytest>=9.1.1",
 ]
+
+[tool.pytest.ini_options]
+# `scripts/` is the import root of the governor package. Declaring it here keeps
+# `.venv/bin/pytest scripts/tests/...` self-sufficient: without it `import
+# governor` only resolves when the caller adds PYTHONPATH=scripts by hand, so a
+# verification command that omits the prefix dies at collection instead of
+# reporting the governance assertions it was meant to run.
+pythonpath = ["scripts"]

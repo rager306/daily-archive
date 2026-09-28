@@ -29,6 +29,8 @@ This directory contains a compact, source-bound review of the daily-archive Rust
 D127 закрыт. Production promotion и снятие D127 не разрешены. Human release —
 только настоящим ответом владельца; GAR-015 автоматически не закрывается.
 
+**Корректировка 2026-09-28 (M513-r7dg4z/S03).** Assessed again 2026-09-28 under wave M513-r7dg4z/S03: the parity ledger now binds each required row to the S02 Java-relative corpus measurement (artifact sha256 a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275, identity sha256:eee622ae57286faff567b1793f31ee54c5df3118e544a4bb8edf1c7376955c6d; measured = header_composition / reference_segmentation / native_fulltext_composition_shadow, the other 12 required rows typed outside), the single named gap is a typed refusal (D471, residual_owner M513-r7dg4z/S05), GAR-015 stays the single open record with the human release decision still pending (reviewer=null, decision=pending), and no lock changed.
+
 ### M511-j7wz2f/S01/T01 — RED зафиксирован как исполняемая регрессия
 
 > Историческая запись: измеренный здесь RED снят в S01/T02 (гейт больше не
@@ -255,7 +257,7 @@ A revision-aware corpus rebuild and honest ontology acceptance remain operationa
 | `grobid-absorption-review-2026-09-10-summary.md` | Human-readable audit summary, exclusions and ADR correction matrix |
 | `grobid-rust-horizon-review.json` | Long-horizon register (measured 2026-09-25): 12 complete / 1 in_progress (H05), `claim_scope: evidence`; only a stage with `completion_evidence` and a verification PASS claims closure |
 | `grobid-rust-horizon-review.schema.json` | JSON Schema Draft 2020-12 for the horizon registry document |
-| `manifest.yaml` | Dataset identity, standards, policy and Governor integration; `last_assessed_at: 2026-09-27`, `current_state` carries the measured S05 reconciliation (H14..H21 unresolved, census 610 = 531 + 79, GAR-015 open, no lock changed) |
+| `manifest.yaml` | Dataset identity, standards, policy and Governor integration; `last_assessed_at: 2026-09-28`, `current_state` carries the measured S05 reconciliation and the dated S03 parity-ledger correction (H14..H21 unresolved, census 610 = 531 + 79, GAR-015 open, no lock changed) |
 | `grobid-absorption-roadmap-2026-09-21.yaml` | Governor-consumable `horizon-json-v1` wrapper over the H14..H21 follow-up registry: `reviewed_source` equals the audit qualification revision, corrections C01..C13, `measured_state` (locks, parity ledger, tests, horizon) and the typed `revision_label_resolution`; validated by `governor review --registry <this file>` (exit=0, claims=0) |
 | `grobid-absorption-followup.json` | Planning-only H14..H21 follow-up registry (`claim_scope: planning`): all eight stages unresolved, `implementation_pass=false` / `verification_pass=false`, owners `unassigned`; H18 and H21 name their honest remaining residues without citing a cleared RED or a resolved label discrepancy |
 | `HUMAN-REVIEW-TEMPLATE.md` | Evidence-first disposition template for a human reviewer |
