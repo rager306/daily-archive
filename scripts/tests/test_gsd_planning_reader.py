@@ -274,7 +274,14 @@ def test_unplanned_active_slice_is_diagnosed(tmp_path: Path) -> None:
 
 
 def test_repository_projection_tracks_state_active_milestone() -> None:
-    """Live repo smoke: the projection promotes the exact STATE-active row."""
+    """Live repo smoke: the projection promotes the exact STATE-active row.
+
+    The repository is legitimately idle between milestones, where STATE.md renders
+    `**Active Milestone:** None`. Asserting only the active branch made this live
+    check fail as soon as the project finished a milestone, which is a property of
+    the machine, not of the code under test. Both states are now honest: idle means
+    nothing may be promoted, active means exactly that row is promoted.
+    """
     root = Path(__file__).resolve().parents[2]
     state_text = (root / ".gsd" / "STATE.md").read_text(encoding="utf-8")
     match = re.search(
@@ -282,12 +289,21 @@ def test_repository_projection_tracks_state_active_milestone() -> None:
         state_text,
         flags=re.MULTILINE,
     )
-    assert match is not None
-    active_id = match.group(1)
 
     result = FilesystemGsdPlanningReader(root).read()
-    milestones = {item.milestone_id: item for item in result.milestones}
-
     assert result.available is True
+
+    if match is None:
+        # Idle is a real state, so it must be the documented `None`, and nothing may
+        # be reported as current; a silent fallback to a parked row would be wrong.
+        assert re.search(
+            r"^\*\*Active Milestone:\*\*\s+None\s*$", state_text, flags=re.MULTILINE
+        ), "STATE.md names neither an active milestone nor None"
+        assert result.current_milestone_id is None
+        assert not [item for item in result.milestones if item.status == "active"]
+        return
+
+    active_id = match.group(1)
+    milestones = {item.milestone_id: item for item in result.milestones}
     assert active_id in milestones
     assert milestones[active_id].status == "active"
