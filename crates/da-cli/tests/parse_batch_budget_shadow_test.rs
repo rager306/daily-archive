@@ -36,14 +36,19 @@ use tempfile::tempdir;
 /// The committed runtime artifact under test.
 const ARTIFACT: &str = "artifacts/parse_compat/parse_batch_budget_shadow.json";
 const SCHEMA_VERSION: &str = "parse-batch-budget-shadow.v1";
+const LIVE_SCHEMA_VERSION: &str = "parse-batch-budget-live.v1";
+const STUB_SUBSTRATE_KIND: &str = "local_deterministic_loopback_stub";
+const LIVE_SUBSTRATE_KIND: &str = "live_grobid_http";
 const REFERENCE_POPULATION_ROLE: &str = "identity_only";
 const EXECUTION_EVIDENCE_KIND: &str = "offline_loopback_stub_existing_typed_transport";
+const LIVE_EXECUTION_EVIDENCE_KIND: &str = "live_grobid_http_structural";
 const PROCESS_METRICS: [&str; 2] = ["peak_rss_bytes", "java_cpu_wall_clock_ns"];
 const H05_REQUIRED_MEASUREMENTS: [&str; 3] =
     ["peak_rss_bytes", "java_cpu_wall_clock_ns", "latency_tails"];
 const LATENCY_TAIL_METRICS: [&str; 3] = ["latency_p50_ms", "latency_p95_ms", "latency_p99_ms"];
-const FORBIDDEN_REPORT_TOKENS: [&str; 10] = [
+const FORBIDDEN_REPORT_TOKENS: [&str; 15] = [
     "<TEI",
+    "<tei",
     "%PDF-",
     "data/sources",
     "file://",
@@ -53,9 +58,13 @@ const FORBIDDEN_REPORT_TOKENS: [&str; 10] = [
     "target/release",
     "executable",
     "hostname",
+    "/sys/",
+    "docker-",
+    ".scope",
+    "daily-archive-grobid",
 ];
 /// Mutations the example's `--self-check` must prove it rejects.
-const REQUIRED_SELF_CHECK_GUARDS: [&str; 9] = [
+const REQUIRED_SELF_CHECK_GUARDS: [&str; 14] = [
     "zero-rss-published-as-measurement",
     "not-observed-without-reason",
     "not-observed-with-numeric-field",
@@ -65,6 +74,11 @@ const REQUIRED_SELF_CHECK_GUARDS: [&str; 9] = [
     "forbidden-token-in-report",
     "h05-complete-without-java-cpu",
     "policy-lock-lifted",
+    "physical-path-in-report",
+    "live-grobid-participation-without-observed-java-cpu",
+    "java-cpu-remainder-observed-without-numbers",
+    "java-cpu-remainder-ratio-not-positive",
+    "java-cpu-remainder-not-observed-with-numeric-field",
 ];
 
 fn repo_root() -> PathBuf {
@@ -159,10 +173,21 @@ fn host_tokens() -> Vec<String> {
 fn audit(report: &Value) -> Vec<String> {
     let mut findings = Vec::new();
 
-    // ── schema ──────────────────────────────────────────────────────────
-    match report.get("schema_version").and_then(Value::as_str) {
-        Some(SCHEMA_VERSION) => {}
-        other => findings.push(format!("schema_version drift: {other:?}")),
+    // ── substrate + schema, checked before anything substrate-shaped ────
+    let kind = report
+        .get("substrate")
+        .and_then(|substrate| substrate.get("kind"))
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let live = kind.as_deref() == Some(LIVE_SUBSTRATE_KIND);
+    match (&kind, report.get("schema_version").and_then(Value::as_str)) {
+        (Some(kind), Some(schema)) if kind == STUB_SUBSTRATE_KIND && schema == SCHEMA_VERSION => {}
+        (Some(kind), Some(schema))
+            if kind == LIVE_SUBSTRATE_KIND && schema == LIVE_SCHEMA_VERSION => {}
+        (None, _) => findings.push("`substrate.kind` is missing".to_string()),
+        (Some(kind), other) => findings.push(format!(
+            "schema_version {other:?} does not match the `{kind}` substrate"
+        )),
     }
 
     // ── GAR-006 split: present, distinguishable, no legacy blocks ────────
@@ -209,16 +234,21 @@ fn audit(report: &Value) -> Vec<String> {
     );
     push(count(reference, "documents").map(|_| ()), &mut findings);
     match executed.get("corpus_execution").and_then(Value::as_bool) {
-        Some(false) => {}
+        Some(value) if value == live => {}
         other => findings.push(format!(
-            "executed_population.corpus_execution must be `false` for a local stub substrate, got {other:?}"
+            "executed_population.corpus_execution must be `{live}` for this substrate, got {other:?}"
         )),
     }
     match non_empty_string(executed, "execution_evidence") {
         Ok(evidence) => {
-            if !evidence.starts_with(EXECUTION_EVIDENCE_KIND) {
+            let expected_kind = if live {
+                LIVE_EXECUTION_EVIDENCE_KIND
+            } else {
+                EXECUTION_EVIDENCE_KIND
+            };
+            if !evidence.starts_with(expected_kind) {
                 findings.push(format!(
-                    "execution_evidence must name the declared kind `{EXECUTION_EVIDENCE_KIND}`, got `{evidence}`"
+                    "execution_evidence must name the declared kind `{expected_kind}`, got `{evidence}`"
                 ));
             }
         }
@@ -494,25 +524,142 @@ fn audit(report: &Value) -> Vec<String> {
         }
         Err(finding) => findings.push(finding),
     }
+    // ── java_cpu_remainder: one unified typed form for both substrates ──
+    match object(report, "java_cpu_remainder") {
+        Ok(remainder) => {
+            let state = remainder.get("state").and_then(Value::as_str);
+            let java_observed =
+                state_of(report, "java_cpu_wall_clock_ns").as_deref() == Some("observed");
+            match state {
+                Some("observed") if java_observed => {
+                    let field = |name: &str| remainder.get(name).and_then(Value::as_u64);
+                    let java_cpu_ns = field("java_cpu_ns");
+                    let wall_clock_ns = field("wall_clock_ns");
+                    let ratio = field("java_cpu_to_wall_ratio_micros");
+                    for (name, value) in [
+                        ("java_cpu_ns", java_cpu_ns),
+                        ("wall_clock_ns", wall_clock_ns),
+                        ("java_cpu_to_wall_ratio_micros", ratio),
+                    ] {
+                        if value.unwrap_or(0) == 0 {
+                            findings.push(format!(
+                                "java_cpu_remainder.`{name}` must be a positive integer when observed"
+                            ));
+                        }
+                    }
+                    match (java_cpu_ns, wall_clock_ns, ratio) {
+                        (Some(java_cpu_ns), Some(wall_clock_ns), Some(ratio))
+                            if wall_clock_ns > 0 =>
+                        {
+                            let expected = (u128::from(java_cpu_ns) * 1_000_000
+                                / u128::from(wall_clock_ns))
+                                as u64;
+                            if ratio != expected {
+                                findings.push(format!(
+                                    "java_cpu_remainder ratio {ratio} disagrees with java_cpu_ns * 1_000_000 / wall_clock_ns = {expected}"
+                                ));
+                            }
+                        }
+                        _ => {}
+                    }
+                    if remainder.contains_key("reason") {
+                        findings.push(
+                            "java_cpu_remainder is observed and carries a reason".to_string(),
+                        );
+                    }
+                }
+                Some("not_observed") if !java_observed => {
+                    for name in [
+                        "java_cpu_ns",
+                        "wall_clock_ns",
+                        "java_cpu_to_wall_ratio_micros",
+                    ] {
+                        if remainder.contains_key(name) {
+                            findings.push(format!(
+                                "java_cpu_remainder is not_observed and carries a numeric field `{name}`"
+                            ));
+                        }
+                    }
+                    match remainder.get("reason").and_then(Value::as_str) {
+                        Some(reason) if !reason.trim().is_empty() => {}
+                        _ => findings.push(
+                            "java_cpu_remainder is not_observed without a named reason".to_string(),
+                        ),
+                    }
+                }
+                Some(other) => findings.push(format!(
+                    "java_cpu_remainder state `{other}` disagrees with the Java-CPU observation"
+                )),
+                None => findings.push("java_cpu_remainder has no `state`".to_string()),
+            }
+            for key in ["counter_scope", "basis"] {
+                match remainder.get(key).and_then(Value::as_str) {
+                    Some(value) if !value.trim().is_empty() => {}
+                    _ => findings.push(format!(
+                        "java_cpu_remainder.`{key}` must be a non-empty string"
+                    )),
+                }
+            }
+        }
+        Err(finding) => findings.push(finding),
+    }
+
     match object(report, "substrate") {
         Ok(substrate) => {
-            if substrate.get("kind").and_then(Value::as_str)
-                != Some("local_deterministic_loopback_stub")
-            {
-                findings.push("the measured substrate is not named as the local stub".to_string());
-            }
-            if substrate
-                .get("live_grobid_participated")
-                .and_then(Value::as_bool)
-                != Some(false)
-            {
-                findings.push("the artifact must not claim a live GROBID participated".to_string());
+            let java_observed =
+                state_of(report, "java_cpu_wall_clock_ns").as_deref() == Some("observed");
+            match substrate.get("kind").and_then(Value::as_str) {
+                Some(STUB_SUBSTRATE_KIND) => {
+                    if substrate
+                        .get("live_grobid_participated")
+                        .and_then(Value::as_bool)
+                        != Some(false)
+                    {
+                        findings.push(
+                            "the stub substrate must not claim a live GROBID participated"
+                                .to_string(),
+                        );
+                    }
+                    if substrate
+                        .get("deterministic_substrate")
+                        .and_then(Value::as_bool)
+                        != Some(true)
+                    {
+                        findings.push(
+                            "the stub substrate must declare itself deterministic".to_string(),
+                        );
+                    }
+                }
+                Some(LIVE_SUBSTRATE_KIND) => {
+                    let live_claimed = substrate
+                        .get("live_grobid_participated")
+                        .and_then(Value::as_bool);
+                    if live_claimed != Some(java_observed) {
+                        findings.push(
+                            "live_grobid_participated must equal the Java-CPU observation state"
+                                .to_string(),
+                        );
+                    }
+                    match substrate.get("profile").and_then(Value::as_str) {
+                        Some("structural") => {}
+                        other => findings.push(format!(
+                            "the live substrate must declare the `structural` profile, got {other:?}"
+                        )),
+                    }
+                    if substrate
+                        .get("declared_release")
+                        .and_then(Value::as_object)
+                        .is_none()
+                    {
+                        findings
+                            .push("the live substrate must carry its declared_release".to_string());
+                    }
+                }
+                other => findings.push(format!("substrate.kind is unknown: {other:?}")),
             }
             let participation = substrate
                 .get("java_process_participation_observed")
                 .and_then(Value::as_bool);
-            let java_observed =
-                state_of(report, "java_cpu_wall_clock_ns").as_deref() == Some("observed");
             if participation != Some(java_observed) {
                 findings.push(
                     "Java process participation must equal the Java-CPU observation state"

@@ -6,11 +6,32 @@
 //! process-local [`ParseBatchBudget`], and emits
 //! `artifacts/parse_compat/parse_batch_budget_shadow.json`.
 //!
-//! Substrate: a deterministic local HTTP stub over `tokio::net::TcpListener`
-//! (the pattern of `crates/da-cli/tests/parse_batch_test.rs`). A live Java
-//! GROBID is deliberately NOT required, and the artifact says so: no Java
-//! process participated, so the Java-CPU ceiling is a typed `not_observed`
-//! with a named reason — never a fabricated `0` (D430, H19-N1).
+//! Substrate is DECLARED, never assumed (M513-r7dg4z/S04/T02):
+//!
+//! * `--substrate stub` (the default) drives a deterministic local HTTP stub
+//!   over `tokio::net::TcpListener` (the pattern of
+//!   `crates/da-cli/tests/parse_batch_test.rs`). No Java process participates,
+//!   so the Java-CPU ceiling is a typed `not_observed` with a named reason —
+//!   never a fabricated `0` (D430, H19-N1).
+//! * `--substrate live-grobid` measures the REAL Java GROBID sidecar over HTTP
+//!   with the `structural` profile (D204: `consolidateHeader=0`,
+//!   `consolidateCitations=0`, TEI coordinates kept ON) so no Crossref wait can
+//!   enter the measurement window and the Java-CPU share stays attributable.
+//!   The load is the pinned `data/parse/layout_bakeoff.yaml#corpus` set, every
+//!   PDF sha256-verified BEFORE it is sent, and the slow ordinal-0 is the real
+//!   longest document (96 pages) declared honestly as
+//!   `declared_page_count_disparity` — there is no synthetic delay.
+//!
+//! The `--report` default is PER SUBSTRATE (`..._shadow.json` for the stub,
+//! `..._live.json` for the live run), so a live run can never silently
+//! overwrite the byte-pinned stub artifact.
+//!
+//! Both substrates emit the same ADDITIVE top-level `java_cpu_remainder` block
+//! in a unified typed form: `state` ∈ {observed, not_observed}, `counter_scope`,
+//! `basis`, and — when observed — `java_cpu_ns`, `wall_clock_ns` and
+//! `java_cpu_to_wall_ratio_micros`. The numerator is the container-wide sidecar
+//! CPU total over the window (all threads, NOT per-document), so the ratio is a
+//! COUNT OF CORES and may exceed 1_000_000; it is never a share ≤ 1.
 //!
 //! Readers are INJECTED, exactly as in `crates/da-cli/examples/native_core_smp.rs`:
 //!
@@ -30,6 +51,14 @@
 //! * a zero/unavailable RSS or Java-CPU value is never published as a measurement;
 //! * a `not_observed` without a reason is rejected;
 //! * a `not_observed` that carries a numeric field is rejected;
+//! * `java_cpu_remainder` observed without `java_cpu_ns` / `wall_clock_ns` / a
+//!   positive `java_cpu_to_wall_ratio_micros`, or a ratio that disagrees with
+//!   `java_cpu_ns * 1_000_000 / wall_clock_ns`, is rejected;
+//! * `java_cpu_remainder` not_observed that carries a numeric field is rejected;
+//! * `live_grobid_participated` claimed while the Java-CPU ceiling is not
+//!   observed (live substrate), or claimed at all by the stub, is rejected;
+//! * a physical path (`/sys/`, a container-scope id, the sidecar name) in the
+//!   serialized report is rejected;
 //! * non-additive retained-byte accounting (window peak below the sum of the
 //!   known outcome sizes of that batch) is rejected;
 //! * an empty or drifted metric set is rejected;
@@ -54,16 +83,16 @@ use std::net::SocketAddr;
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use da_parse::{
     BATCH_BUDGET_H05_CLOSURE, BATCH_BUDGET_METRICS, BATCH_BUDGET_VERDICTS,
     BATCH_OBSERVATION_STATES, BatchBudgetVerdict, BatchObservation, CacheMode, GrobidHttpBackend,
-    ParseArtifactCache, ParseBackend, ParseBatch, ParseBatchBudget, ParseBatchBudgetObservation,
-    ParseBatchExecutor, ParseBatchLimits, ParseBatchMemoryCheckpoint, ParseBatchResultSink,
-    ParseBatchRunSummary, ParseBatchSinkError, ParseCacheFailure, ParseDocumentFailure,
-    ParseDocumentOutcome, RawStageRead,
+    GrobidProfile, ParseArtifactCache, ParseBackend, ParseBatch, ParseBatchBudget,
+    ParseBatchBudgetObservation, ParseBatchExecutor, ParseBatchLimits, ParseBatchMemoryCheckpoint,
+    ParseBatchResultSink, ParseBatchRunSummary, ParseBatchSinkError, ParseCacheFailure,
+    ParseDocumentFailure, ParseDocumentOutcome, RawStageRead,
 };
 use serde::Serialize;
 use serde_json::{Map, Value, json};
@@ -71,11 +100,59 @@ use sha2::{Digest, Sha256};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{Mutex, Notify};
 
-/// Canonical artifact path (the `--report` default).
-const DEFAULT_REPORT: &str = "artifacts/parse_compat/parse_batch_budget_shadow.json";
+/// Canonical artifact path for the deterministic stub substrate (the default).
+const DEFAULT_REPORT_STUB: &str = "artifacts/parse_compat/parse_batch_budget_shadow.json";
 
-/// Artifact schema version.
-const REPORT_SCHEMA_VERSION: &str = "parse-batch-budget-shadow.v1";
+/// Canonical artifact path for the live Java GROBID substrate. Distinct from the
+/// stub path on purpose: a live run must never overwrite the byte-pinned stub
+/// artifact, which the governor pins by sha256.
+const DEFAULT_REPORT_LIVE: &str = "artifacts/parse_compat/parse_batch_budget_live.json";
+
+/// Artifact schema version, per substrate.
+const STUB_REPORT_SCHEMA_VERSION: &str = "parse-batch-budget-shadow.v1";
+const LIVE_REPORT_SCHEMA_VERSION: &str = "parse-batch-budget-live.v1";
+
+/// Substrate identity literals written into `substrate.kind`.
+const STUB_SUBSTRATE_KIND: &str = "local_deterministic_loopback_stub";
+const LIVE_SUBSTRATE_KIND: &str = "live_grobid_http";
+
+/// Declared live inputs.
+const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:8070";
+const DEFAULT_CORPUS: &str = "data/parse/layout_bakeoff.yaml";
+const DEFAULT_MANIFEST: &str = "data/parse/acceptance_manifest.yaml";
+
+/// Live Java GROBID request timeout. A 96-page structural-profile document costs
+/// roughly 61.9s, and each of the two concurrent batches carries it, so the
+/// bounded interactive default is far too tight.
+const LIVE_REQUEST_TIMEOUT: Duration = Duration::from_secs(900);
+
+/// The live run must use the structural profile (D204), never the rich one: the
+/// rich profile waits on Crossref consolidation, which would land in the
+/// measurement window and make the Java-CPU share unattributable.
+const LIVE_PROFILE_NAME: &str = "structural";
+
+/// Logical (never physical) name of the Java-CPU counter scope.
+const JAVA_CPU_COUNTER_SCOPE: &str = "grobid_sidecar_cgroup_cpuacct";
+
+/// Honest gate name for the live substrate: ordinal-0 is slow because its
+/// DECLARED page count is the largest in the pinned corpus, not because a
+/// synthetic delay was injected.
+const LIVE_SLOW_ORDINAL_ZERO_GATE: &str = "declared_page_count_disparity";
+
+/// The stub gates ordinal-0 on its deterministic sibling-answered barrier.
+const STUB_SLOW_ORDINAL_ZERO_GATE: &str = "sibling_responses_answered";
+
+/// Named reason for `java_cpu_remainder` when the Java-CPU ceiling is not observed.
+const REMAINDER_NOT_OBSERVED_REASON: &str =
+    "the Java-CPU ceiling was not observed in this run, so no Java share can be computed";
+
+/// Mandatory `basis` for `java_cpu_remainder`. It must state (a) the numerator
+/// semantics — container-wide sidecar CPU total across all threads, NOT
+/// per-document, so the ratio can exceed 1_000_000 and means a COUNT OF CORES —
+/// (b) that the wall-clock window is the same window as the counter delta
+/// (measured between the before/after reads), and (c) that no synthetic delay
+/// sits inside that window.
+const JAVA_CPU_REMAINDER_BASIS: &str = "numerator is the GROBID sidecar's container-wide CPU total over the window (cgroup v2 cpu.stat usage_usec delta scaled to ns, all threads, NOT per-document), so the ratio is a count of cores and may exceed 1_000_000; the wall-clock window is measured between the same before/after counter reads that produce the delta, and that window contains no synthetic delay";
 
 /// GAR-006 reference-population role literal.
 const REFERENCE_POPULATION_ROLE: &str = "identity_only";
@@ -100,9 +177,17 @@ const DOCUMENTS_PER_BATCH: usize = 3;
 /// exactly the H05 scenario, by construction rather than by a race.
 const SLOW_ORDINAL_ZERO_SETTLE: Duration = Duration::from_millis(80);
 
-/// Declared retained-byte ceiling (generous: the measurement must OBSERVE a peak
-/// under the ceiling, not trigger refusals).
+/// Declared retained-byte ceiling for the synthetic stub load (generous: the
+/// measurement must OBSERVE a peak under the ceiling, not trigger refusals).
 const RETAINED_BYTE_CEILING: usize = 262_144;
+
+/// Declared retained-byte ceiling for the live corpus load. The pinned corpus
+/// carries a 96-page, a 63-page and a 43-page document per batch, so their real
+/// GROBID TEI is orders of magnitude larger than the synthetic stub bodies. The
+/// ceiling stays generous for the same reason as above: this harness measures a
+/// peak under a declared bound, it does not manufacture a memory-pressure
+/// refusal by declaring a bound the real payload cannot meet.
+const LIVE_RETAINED_BYTE_CEILING: usize = 64 * 1024 * 1024;
 
 /// A zero is not a measurement for these process metrics (H19-N1).
 const PROCESS_METRICS: [&str; 2] = ["peak_rss_bytes", "java_cpu_wall_clock_ns"];
@@ -115,8 +200,10 @@ const H05_REQUIRED_MEASUREMENTS: [&str; 3] =
 const LATENCY_TAIL_METRICS: [&str; 3] = ["latency_p50_ms", "latency_p95_ms", "latency_p99_ms"];
 
 /// Redaction denylist for the SERIALIZED report (defence in depth; the primary
-/// control is that no producer ever writes these).
-const FORBIDDEN_REPORT_TOKENS: [&str; 11] = [
+/// control is that no producer ever writes these). `/sys/`, the container-scope
+/// prefix and the sidecar name are here because the live counter is a physical
+/// cgroup path: only its logical scope name may ever be published.
+const FORBIDDEN_REPORT_TOKENS: [&str; 15] = [
     "<TEI",
     "<tei",
     "%PDF-",
@@ -128,6 +215,10 @@ const FORBIDDEN_REPORT_TOKENS: [&str; 11] = [
     "target/release",
     "executable",
     "hostname",
+    "/sys/",
+    "docker-",
+    ".scope",
+    "daily-archive-grobid",
 ];
 
 /// Named reason for an absent process-RSS measurement.
@@ -177,7 +268,7 @@ fn tei_fixture(title: &str, filler_words: usize) -> String {
 /// One synthetic document the stub can answer for.
 #[derive(Clone)]
 struct StubDocument {
-    marker: &'static str,
+    marker: String,
     /// Batch gate group: slow documents wait for their group's fast siblings.
     group: &'static str,
     slow: bool,
@@ -520,17 +611,29 @@ impl ParseArtifactCache for NoCache {
 
 // ───────────────────────── the measured load ─────────────────────────
 
+/// One document of the declared load, reduced to what the executor consumes:
+/// the identity it is sent under and the exact bytes it is sent as.
+#[derive(Clone)]
+struct LoadDocument {
+    document_id: String,
+    pdf: Vec<u8>,
+    /// Declared page count for a pinned corpus document; `None` for the
+    /// synthetic stub bodies, which have no declared page count.
+    pages: Option<u64>,
+}
+
 /// One batch of the declared concurrent load.
 struct BatchSpec {
     id: &'static str,
     payload_label: &'static str,
-    documents: Vec<StubDocument>,
+    documents: Vec<LoadDocument>,
 }
 
 struct DocumentIdentity {
     ordinal: u32,
     document_id: String,
     input_sha256: String,
+    pages: Option<u64>,
 }
 
 struct BatchRun {
@@ -559,51 +662,148 @@ impl BatchRun {
     }
 }
 
-/// The declared concurrent load: two batches with a deterministic slow
-/// ordinal-0 each and payloads of clearly different sizes.
-fn load_specs() -> Vec<BatchSpec> {
+/// The declared STUB load: two batches with a deterministic slow ordinal-0 each
+/// and payloads of clearly different sizes. The executor-facing specs and the
+/// stub-server documents are built together so they can never diverge.
+fn stub_load() -> (Vec<BatchSpec>, Vec<StubDocument>) {
     let document = |group: &'static str,
                     marker: &'static str,
                     ordinal: usize,
-                    filler_words: usize| StubDocument {
-        marker,
-        group,
-        slow: ordinal == 0,
-        tei: tei_fixture(marker, filler_words),
+                    filler_words: usize|
+     -> (StubDocument, LoadDocument) {
+        let stub = StubDocument {
+            marker: marker.to_string(),
+            group,
+            slow: ordinal == 0,
+            tei: tei_fixture(marker, filler_words),
+        };
+        let load = LoadDocument {
+            document_id: marker.to_string(),
+            pdf: pdf_bytes(marker),
+            pages: None,
+        };
+        (stub, load)
     };
-    vec![
+    let (stub_a0, load_a0) = document("A", "SYNTH-A-0-ZX", 0, 40);
+    let (stub_a1, load_a1) = document("A", "SYNTH-A-1-ZX", 1, 40);
+    let (stub_a2, load_a2) = document("A", "SYNTH-A-2-ZX", 2, 40);
+    let (stub_b0, load_b0) = document("B", "SYNTH-B-0-ZX", 0, 900);
+    let (stub_b1, load_b1) = document("B", "SYNTH-B-1-ZX", 1, 900);
+    let (stub_b2, load_b2) = document("B", "SYNTH-B-2-ZX", 2, 900);
+    let specs = vec![
         BatchSpec {
             id: "A",
             payload_label: "small_synthetic_tei_body",
-            documents: vec![
-                document("A", "SYNTH-A-0-ZX", 0, 40),
-                document("A", "SYNTH-A-1-ZX", 1, 40),
-                document("A", "SYNTH-A-2-ZX", 2, 40),
-            ],
+            documents: vec![load_a0, load_a1, load_a2],
         },
         BatchSpec {
             id: "B",
             payload_label: "large_synthetic_tei_body",
-            documents: vec![
-                document("B", "SYNTH-B-0-ZX", 0, 900),
-                document("B", "SYNTH-B-1-ZX", 1, 900),
-                document("B", "SYNTH-B-2-ZX", 2, 900),
-            ],
+            documents: vec![load_b0, load_b1, load_b2],
         },
-    ]
+    ];
+    let stub_documents = vec![stub_a0, stub_a1, stub_a2, stub_b0, stub_b1, stub_b2];
+    (specs, stub_documents)
+}
+
+/// The declared LIVE load: the pinned `data/parse/layout_bakeoff.yaml#corpus`
+/// set, sha256-verified BEFORE any byte is sent, carried by two concurrent
+/// batches. Ordinal-0 is the DECLARED longest document, so the slow ordinal is
+/// a real page-count disparity rather than an injected delay.
+fn live_load(corpus_path: &Path) -> Result<Vec<BatchSpec>, Box<dyn std::error::Error>> {
+    let text = std::fs::read_to_string(corpus_path).map_err(|error| {
+        format!(
+            "FATAL: the declared corpus {} is unreadable: {error}",
+            corpus_path.display()
+        )
+    })?;
+    let parsed: serde_yaml::Value = serde_yaml::from_str(&text)
+        .map_err(|error| format!("FATAL: the declared corpus is not YAML: {error}"))?;
+    let documents = parsed
+        .get("corpus")
+        .and_then(|corpus| corpus.get("documents"))
+        .and_then(|documents| documents.as_sequence())
+        .ok_or("FATAL: corpus.documents is absent from the declared corpus")?;
+    let mut loaded: Vec<LoadDocument> = Vec::with_capacity(documents.len());
+    let mut declared_pages: Vec<u64> = Vec::with_capacity(documents.len());
+    for document in documents {
+        let id = document
+            .get("id")
+            .and_then(|value| value.as_str())
+            .ok_or("FATAL: a corpus document has no id")?;
+        let source_pdf = document
+            .get("source_pdf")
+            .and_then(|value| value.as_str())
+            .ok_or("FATAL: a corpus document has no source_pdf")?;
+        let declared_sha = document
+            .get("sha256")
+            .and_then(|value| value.as_str())
+            .ok_or("FATAL: a corpus document has no sha256")?;
+        let pages = document
+            .get("pages")
+            .and_then(|value| value.as_u64())
+            .ok_or("FATAL: a corpus document has no declared page count")?;
+        let bytes = std::fs::read(source_pdf)
+            .map_err(|error| format!("FATAL: the corpus PDF for `{id}` is unreadable: {error}"))?;
+        let observed = hex::encode(Sha256::digest(&bytes));
+        if !observed.eq_ignore_ascii_case(declared_sha.trim_start_matches("sha256:")) {
+            return Err(format!(
+                "FATAL: corpus PDF `{id}` sha256 mismatch: declared {declared_sha}, observed sha256:{observed}"
+            )
+            .into());
+        }
+        loaded.push(LoadDocument {
+            document_id: id.to_string(),
+            pdf: bytes,
+            pages: Some(pages),
+        });
+        declared_pages.push(pages);
+    }
+    if loaded.len() != DOCUMENTS_PER_BATCH {
+        return Err(format!(
+            "FATAL: the declared corpus carries {} documents but the load declares {} per batch",
+            loaded.len(),
+            DOCUMENTS_PER_BATCH
+        )
+        .into());
+    }
+    // Ordinal-0 must be the DECLARED longest document, so the page-count
+    // disparity the report names is a fact of the corpus, not an ordering guess.
+    let mut order: Vec<usize> = (0..loaded.len()).collect();
+    order.sort_by_key(|index| std::cmp::Reverse(declared_pages[*index]));
+    let ordered: Vec<LoadDocument> = order.iter().map(|index| loaded[*index].clone()).collect();
+    let batch = |id: &'static str| BatchSpec {
+        id,
+        payload_label: "layout_bakeoff_corpus_three_pdf",
+        documents: ordered.clone(),
+    };
+    Ok(vec![batch("A"), batch("B")])
+}
+
+/// Stub substrate backend: the default rich profile is irrelevant to the stub
+/// (it ignores the profile) and the 30s bound comfortably covers the 80ms gate.
+fn stub_backend(endpoint: &str) -> GrobidHttpBackend {
+    GrobidHttpBackend::new(Some(endpoint)).with_timeout(Duration::from_secs(30))
+}
+
+/// Live substrate backend: the structural profile is MANDATORY (D204) and the
+/// timeout must exceed the real cost of the 96-page document.
+fn live_backend(endpoint: &str) -> GrobidHttpBackend {
+    GrobidHttpBackend::new(Some(endpoint))
+        .with_profile(GrobidProfile::structural())
+        .with_timeout(LIVE_REQUEST_TIMEOUT)
 }
 
 async fn run_batch(
     spec: &BatchSpec,
-    address: SocketAddr,
+    backend: GrobidHttpBackend,
+    retained_byte_ceiling: usize,
     budget: Arc<ParseBatchBudget>,
 ) -> Result<BatchRun, Box<dyn std::error::Error>> {
-    let endpoint = format!("http://{address}");
-    let backend = GrobidHttpBackend::new(Some(&endpoint)).with_timeout(Duration::from_secs(30));
     let requests = spec
         .documents
         .iter()
-        .map(|document| backend.default_request(document.marker, pdf_bytes(document.marker)))
+        .map(|document| backend.default_request(&document.document_id, document.pdf.clone()))
         .collect::<Vec<_>>();
     let identities = spec
         .documents
@@ -611,8 +811,9 @@ async fn run_batch(
         .enumerate()
         .map(|(ordinal, document)| DocumentIdentity {
             ordinal: ordinal as u32,
-            document_id: document.marker.to_string(),
-            input_sha256: sha256_hex(&pdf_bytes(document.marker)),
+            document_id: document.document_id.clone(),
+            input_sha256: sha256_hex(&document.pdf),
+            pages: document.pages,
         })
         .collect();
     let limits = ParseBatchLimits::new(
@@ -621,7 +822,7 @@ async fn run_batch(
         nz(spec.documents.len()),
         nz(spec.documents.len()),
     )
-    .with_max_retained_bytes(nz(RETAINED_BYTE_CEILING));
+    .with_max_retained_bytes(nz(retained_byte_ceiling));
     let batch = ParseBatch::admit(CacheMode::Off, limits, requests, None)
         .map_err(|error| format!("batch {} admission failed: {error:?}", spec.id))?;
     let sink = Arc::new(RecordingSink::default());
@@ -699,15 +900,129 @@ fn measured_batch(run: &BatchRun) -> Result<Value, Box<dyn std::error::Error>> {
     }))
 }
 
+/// Declared substrate. The default is the hermetic stub; the live substrate is
+/// opt-in, uses its own report default, and is never touched by `--self-check`.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Substrate {
+    Stub,
+    LiveGrobid,
+}
+
+impl Substrate {
+    fn schema_version(self) -> &'static str {
+        match self {
+            Substrate::Stub => STUB_REPORT_SCHEMA_VERSION,
+            Substrate::LiveGrobid => LIVE_REPORT_SCHEMA_VERSION,
+        }
+    }
+
+    fn default_report(self) -> &'static str {
+        match self {
+            Substrate::Stub => DEFAULT_REPORT_STUB,
+            Substrate::LiveGrobid => DEFAULT_REPORT_LIVE,
+        }
+    }
+}
+
+/// The declared production release the live service must be attributable to.
+/// Read as DATA so a measured run can never be pinned to a re-pointed tag.
+struct DeclaredRelease {
+    backend: String,
+    version: String,
+    image_digest: String,
+}
+
+/// Read `external_holdout_contract.release_probe.declared_release` from the
+/// acceptance manifest (the same path `grobid_release_identity_test` pins).
+fn load_declared_release(
+    manifest_path: &Path,
+) -> Result<DeclaredRelease, Box<dyn std::error::Error>> {
+    let text = std::fs::read_to_string(manifest_path)
+        .map_err(|error| format!("FATAL: the declared-release manifest is unreadable: {error}"))?;
+    let parsed: serde_yaml::Value = serde_yaml::from_str(&text)
+        .map_err(|error| format!("FATAL: the declared-release manifest is not YAML: {error}"))?;
+    let declared = parsed
+        .get("external_holdout_contract")
+        .and_then(|contract| contract.get("release_probe"))
+        .and_then(|probe| probe.get("declared_release"))
+        .ok_or("FATAL: external_holdout_contract.release_probe.declared_release is absent")?;
+    let field = |name: &str| -> Result<String, Box<dyn std::error::Error>> {
+        declared
+            .get(name)
+            .and_then(|value| value.as_str())
+            .map(str::to_string)
+            .ok_or_else(|| format!("FATAL: declared_release.{name} is absent").into())
+    };
+    Ok(DeclaredRelease {
+        backend: field("backend")?,
+        version: field("version")?,
+        image_digest: field("image_digest")?,
+    })
+}
+
 /// Run the declared load and assemble the artifact. Fails closed on any
 /// additivity or observation violation.
-async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
-    let specs = load_specs();
-    let stub_documents = specs
-        .iter()
-        .flat_map(|spec| spec.documents.iter().cloned())
-        .collect();
-    let address = spawn_stub(stub_documents, SLOW_ORDINAL_ZERO_SETTLE).await;
+async fn measure(
+    substrate: Substrate,
+    endpoint: &str,
+    corpus_path: &Path,
+    manifest_path: &Path,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    // ── declared load, per substrate ────────────────────────────────────
+    let (specs, stub_documents) = match substrate {
+        Substrate::Stub => {
+            let (specs, documents) = stub_load();
+            (specs, Some(documents))
+        }
+        Substrate::LiveGrobid => (live_load(corpus_path)?, None),
+    };
+    let retained_byte_ceiling = match substrate {
+        Substrate::Stub => RETAINED_BYTE_CEILING,
+        Substrate::LiveGrobid => LIVE_RETAINED_BYTE_CEILING,
+    };
+    let slow_ordinal_zero_gate = match substrate {
+        Substrate::Stub => STUB_SLOW_ORDINAL_ZERO_GATE,
+        Substrate::LiveGrobid => LIVE_SLOW_ORDINAL_ZERO_GATE,
+    };
+    let slow_ordinal_zero_settle_ms = match substrate {
+        Substrate::Stub => SLOW_ORDINAL_ZERO_SETTLE.as_millis() as u64,
+        Substrate::LiveGrobid => 0u64,
+    };
+
+    // ── declared release + liveness/version gate (live only) ────────────
+    let declared_release = match substrate {
+        Substrate::Stub => None,
+        Substrate::LiveGrobid => {
+            let declared = load_declared_release(manifest_path)?;
+            let probe = live_backend(endpoint);
+            if !probe.is_alive().await {
+                return Err(
+                    "FATAL: the declared live GROBID sidecar did not answer /api/isalive; refusing to measure"
+                        .into(),
+                );
+            }
+            let version = probe
+                .probe_version()
+                .await
+                .map_err(|error| format!("FATAL: /api/version probe failed: {error:?}"))?;
+            if version.version.trim() != declared.version.trim() {
+                return Err(format!(
+                    "FATAL: live GROBID version `{}` does not match the declared release `{}`",
+                    version.version.trim(),
+                    declared.version.trim()
+                )
+                .into());
+            }
+            Some(declared)
+        }
+    };
+
+    // ── the stub substrate needs its deterministic loopback server ──────
+    let address = match stub_documents {
+        Some(documents) => Some(spawn_stub(documents, SLOW_ORDINAL_ZERO_SETTLE).await),
+        None => None,
+    };
+
     let budget = Arc::new(ParseBatchBudget::new(
         nz(SHARED_PUBLICATION_CAPACITY),
         nz(SHARED_EXECUTION_CAPACITY),
@@ -717,18 +1032,51 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
     // invocations so the artifact reports how often the seam was exercised
     // rather than asserting it. Peak RSS is a high-water mark, so one read
     // after the load suffices; the Java-CPU counter is a monotonic total, so it
-    // needs a before/after delta.
+    // needs a before/after delta. The wall-clock window is opened right after
+    // the before read and closed right before the after read, so the share is
+    // computed over exactly the counter-delta window.
     let mut rss_reader = CountingReader::new(read_process_peak_rss);
     let mut java_cpu_reader = CountingReader::new(read_java_cpu_counter);
     let java_cpu_before = java_cpu_reader.read();
+    let window_start = Instant::now();
 
-    let (left, right) = tokio::join!(
-        run_batch(&specs[0], address, Arc::clone(&budget)),
-        run_batch(&specs[1], address, Arc::clone(&budget)),
-    );
+    let (left, right) = match substrate {
+        Substrate::Stub => {
+            let base = format!("http://{}", address.expect("stub address"));
+            tokio::join!(
+                run_batch(
+                    &specs[0],
+                    stub_backend(&base),
+                    retained_byte_ceiling,
+                    Arc::clone(&budget)
+                ),
+                run_batch(
+                    &specs[1],
+                    stub_backend(&base),
+                    retained_byte_ceiling,
+                    Arc::clone(&budget)
+                ),
+            )
+        }
+        Substrate::LiveGrobid => tokio::join!(
+            run_batch(
+                &specs[0],
+                live_backend(endpoint),
+                retained_byte_ceiling,
+                Arc::clone(&budget)
+            ),
+            run_batch(
+                &specs[1],
+                live_backend(endpoint),
+                retained_byte_ceiling,
+                Arc::clone(&budget)
+            ),
+        ),
+    };
     let left = left?;
     let right = right?;
     let runs = [&left, &right];
+    let wall_clock_ns = window_start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
 
     let rss_after = rss_reader.read();
     let java_cpu_after = java_cpu_reader.read();
@@ -762,6 +1110,37 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
             BatchObservation::not_observed(JAVA_CPU_NO_DELTA_REASON)
         }
         _ => BatchObservation::not_observed(JAVA_CPU_NO_PROCESS_REASON),
+    };
+
+    // ── unified `java_cpu_remainder`: what share of wall-clock stayed on Java ─
+    //
+    // Same typed form for BOTH substrates. The numerator is the sidecar's
+    // container-wide CPU total over the window, so the ratio is a count of
+    // cores (`* 1_000_000` micro-cores), NOT a share ≤ 1 — there is no upper
+    // bound on the ratio. When the ceiling was not observed there is a named
+    // reason and NO numeric field at all.
+    let java_cpu_remainder = match java_cpu_observation.value() {
+        Some(java_cpu_ns) if *java_cpu_ns > 0 && wall_clock_ns > 0 => {
+            let java_cpu_ns = *java_cpu_ns;
+            let ratio_micros =
+                (u128::from(java_cpu_ns) * 1_000_000 / u128::from(wall_clock_ns)) as u64;
+            json!({
+                "state": "observed",
+                "counter_scope": JAVA_CPU_COUNTER_SCOPE,
+                "basis": JAVA_CPU_REMAINDER_BASIS,
+                "java_cpu_ns": java_cpu_ns,
+                "wall_clock_ns": wall_clock_ns,
+                "java_cpu_to_wall_ratio_micros": ratio_micros,
+            })
+        }
+        _ => json!({
+            "state": "not_observed",
+            "counter_scope": JAVA_CPU_COUNTER_SCOPE,
+            "basis": JAVA_CPU_REMAINDER_BASIS,
+            "reason": java_cpu_observation
+                .reason()
+                .unwrap_or(REMAINDER_NOT_OBSERVED_REASON),
+        }),
     };
 
     // ── aggregated observations over the closed DATA metric set ─────────
@@ -921,6 +1300,7 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
                 "ordinal": identity.ordinal,
                 "document_id": identity.document_id,
                 "input_sha256": identity.input_sha256,
+                "declared_pages": identity.pages,
                 "status": match record {
                     Some(record) if record.succeeded => "succeeded",
                     Some(_) => "failed",
@@ -942,18 +1322,33 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
         batches.push(measured_batch(run)?);
     }
 
-    Ok(json!({
-        "schema_version": REPORT_SCHEMA_VERSION,
-        "requirement_ids": ["R085", "R087", "R139"],
-        "adr_ref": "ADR-076",
-        "substrate": {
-            "kind": "local_deterministic_loopback_stub",
+    // ── substrate-aware identity and prose: DATA, not branching in the body ─
+    let (reference_identity, execution_evidence, corpus_execution, evaluated_reason) =
+        match substrate {
+            Substrate::Stub => (
+                "synthetic_two_batch_slow_ordinal_zero_load",
+                "offline_loopback_stub_existing_typed_transport:two_batch_slow_ordinal_zero",
+                false,
+                "local deterministic stub substrate; no corpus execution and therefore no evaluation claim",
+            ),
+            Substrate::LiveGrobid => (
+                "layout_bakeoff_corpus_two_batch_load",
+                "live_grobid_http_structural:two_batch_corpus_load",
+                true,
+                "live GROBID corpus execution with no frozen gold comparison in this harness; no evaluation claim",
+            ),
+        };
+
+    let substrate_block = match substrate {
+        Substrate::Stub => json!({
+            "kind": STUB_SUBSTRATE_KIND,
+            "profile": "deterministic_loopback_stub",
             "live_grobid_participated": false,
             "java_process_participation_observed": java_cpu_observed,
             "deterministic_substrate": true,
             "determinism_note": "deterministic stub, deterministic sibling-answered gate on ordinal-0, deterministic slow-ordinal-0 settle; measured durations are wall-clock and therefore not byte-stable",
             "rss_scope": "process_peak_vmhwm_including_this_harness",
-            "java_cpu_scope": "grobid_sidecar_cgroup_cpuacct",
+            "java_cpu_scope": JAVA_CPU_COUNTER_SCOPE,
             "measurement_note": "Both batches ran concurrently against one shared process-local budget over a loopback stub. Peak RSS is a process high-water mark and includes this harness; the Java CPU counter is not observed because no Java process participated.",
             "reader_invocations": {
                 "peak_rss_bytes": rss_reader.calls(),
@@ -962,8 +1357,8 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
             "load": {
                 "concurrent_batches": runs.len(),
                 "documents_per_batch": DOCUMENTS_PER_BATCH,
-                "slow_ordinal_zero_settle_ms": SLOW_ORDINAL_ZERO_SETTLE.as_millis(),
-                "slow_ordinal_zero_gate": "sibling_responses_answered",
+                "slow_ordinal_zero_settle_ms": slow_ordinal_zero_settle_ms,
+                "slow_ordinal_zero_gate": slow_ordinal_zero_gate,
                 "shared_budget": {
                     "publication_capacity": SHARED_PUBLICATION_CAPACITY,
                     "execution_capacity": SHARED_EXECUTION_CAPACITY,
@@ -973,17 +1368,63 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
                     "batch_b": specs[1].payload_label,
                 },
             },
-        },
+        }),
+        Substrate::LiveGrobid => {
+            let release = declared_release
+                .as_ref()
+                .expect("the live substrate reads its declared release before measuring");
+            json!({
+                "kind": LIVE_SUBSTRATE_KIND,
+                "profile": LIVE_PROFILE_NAME,
+                "live_grobid_participated": java_cpu_observed,
+                "java_process_participation_observed": java_cpu_observed,
+                "deterministic_substrate": false,
+                "determinism_note": "live Java GROBID over HTTP with the structural profile; the sidecar is the real Java process and the corpus is the pinned layout_bakeoff set; measured durations are wall-clock and therefore not byte-stable",
+                "declared_release": {
+                    "backend": release.backend.clone(),
+                    "version": release.version.clone(),
+                    "image_digest": release.image_digest.clone(),
+                },
+                "rss_scope": "process_peak_vmhwm_including_this_harness",
+                "java_cpu_scope": JAVA_CPU_COUNTER_SCOPE,
+                "measurement_note": "Both batches ran concurrently against one shared process-local budget over the live Java GROBID HTTP sidecar with the structural profile. The pinned corpus PDFs were sha256-verified before sending; the slow ordinal-0 is the declared longest document and no synthetic delay sits in the measurement window. Peak RSS is a process high-water mark and includes this harness.",
+                "reader_invocations": {
+                    "peak_rss_bytes": rss_reader.calls(),
+                    "java_cpu_wall_clock_ns": java_cpu_reader.calls(),
+                },
+                "load": {
+                    "concurrent_batches": runs.len(),
+                    "documents_per_batch": DOCUMENTS_PER_BATCH,
+                    "slow_ordinal_zero_settle_ms": slow_ordinal_zero_settle_ms,
+                    "slow_ordinal_zero_gate": slow_ordinal_zero_gate,
+                    "shared_budget": {
+                        "publication_capacity": SHARED_PUBLICATION_CAPACITY,
+                        "execution_capacity": SHARED_EXECUTION_CAPACITY,
+                    },
+                    "payload_profile": {
+                        "batch_a": specs[0].payload_label,
+                        "batch_b": specs[1].payload_label,
+                    },
+                },
+            })
+        }
+    };
+
+    Ok(json!({
+        "schema_version": substrate.schema_version(),
+        "requirement_ids": ["R085", "R087", "R139"],
+        "adr_ref": "ADR-076",
+        "substrate": substrate_block,
         "reference_population": {
             "role": REFERENCE_POPULATION_ROLE,
-            "identity": "synthetic_two_batch_slow_ordinal_zero_load",
+            "identity": reference_identity,
             "documents": documents,
             "batches": runs.len(),
         },
         "executed_population": {
             "documents": documents,
-            "corpus_execution": false,
-            "execution_evidence": "offline_loopback_stub_existing_typed_transport:two_batch_slow_ordinal_zero",
+            "corpus_execution": corpus_execution,
+            "execution_evidence": execution_evidence,
             "batches": runs.len(),
             "terminal_outcomes": terminal,
             "succeeded": succeeded,
@@ -992,7 +1433,7 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
         "evaluated_population": {
             "documents": 0,
             "status": "not_evaluated",
-            "reason": "local deterministic stub substrate; no corpus execution and therefore no evaluation claim",
+            "reason": evaluated_reason,
             "aggregation": "max_across_batches",
             "measurements_observed": observations.values().filter(|observation| observation.get("state").and_then(Value::as_str) == Some("observed")).count(),
             "measurements_not_observed": observations.values().filter(|observation| observation.get("state").and_then(Value::as_str) == Some("not_observed")).count(),
@@ -1000,6 +1441,7 @@ async fn measure() -> Result<Value, Box<dyn std::error::Error>> {
         "batches": batches,
         "outcomes": outcomes,
         "observations": Value::Object(observations),
+        "java_cpu_remainder": java_cpu_remainder,
         "verdict": verdict.as_str(),
         "h05_closure": h05_closure,
         "h05_reason": h05_reason,
@@ -1061,9 +1503,129 @@ fn validate_report(report: &Value) -> Result<(), String> {
     if report.as_object().is_none() {
         return Err("report-not-object".to_string());
     }
+
+    // ── substrate identity decides the schema; checked FIRST ────────────
+    let substrate = require_object(report, "substrate")?;
+    let kind = require_str(substrate, "kind")?;
+    if kind != STUB_SUBSTRATE_KIND && kind != LIVE_SUBSTRATE_KIND {
+        return Err(format!("substrate-kind-unknown:{kind}"));
+    }
     let schema = require_str(report.as_object().expect("checked"), "schema_version")?;
-    if schema != REPORT_SCHEMA_VERSION {
+    let expected_schema = if kind == STUB_SUBSTRATE_KIND {
+        STUB_REPORT_SCHEMA_VERSION
+    } else {
+        LIVE_REPORT_SCHEMA_VERSION
+    };
+    if schema != expected_schema {
         return Err(format!("schema-version-drift:{schema}"));
+    }
+    let profile = require_str(substrate, "profile")?;
+    if kind == LIVE_SUBSTRATE_KIND && profile != LIVE_PROFILE_NAME {
+        return Err(format!("live-substrate-profile-not-structural:{profile}"));
+    }
+
+    // ── the unified `java_cpu_remainder` block ──────────────────────────
+    let remainder = require_object(report, "java_cpu_remainder")?;
+    let remainder_state = require_str(remainder, "state")?;
+    require_str(remainder, "counter_scope")?;
+    require_str(remainder, "basis")?;
+    match remainder_state {
+        "observed" => {
+            let field = |name: &str| -> Result<u64, String> {
+                remainder
+                    .get(name)
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| format!("java-cpu-remainder-observed-missing:{name}"))
+            };
+            let java_cpu_ns = field("java_cpu_ns")?;
+            let wall_clock_ns = field("wall_clock_ns")?;
+            let ratio = field("java_cpu_to_wall_ratio_micros")?;
+            if java_cpu_ns == 0 {
+                return Err("java-cpu-remainder-numerator-zero".to_string());
+            }
+            if wall_clock_ns == 0 {
+                return Err("java-cpu-remainder-wall-clock-zero".to_string());
+            }
+            if ratio == 0 {
+                return Err("java-cpu-remainder-ratio-not-positive".to_string());
+            }
+            // There is deliberately NO 1_000_000 upper bound: the numerator is
+            // the container-wide CPU total, so the ratio counts cores and may
+            // legitimately exceed one.
+            let expected = (u128::from(java_cpu_ns) * 1_000_000 / u128::from(wall_clock_ns)) as u64;
+            if ratio != expected {
+                return Err(format!(
+                    "java-cpu-remainder-ratio-inconsistent: declared={ratio} recomputed={expected}"
+                ));
+            }
+            if remainder.contains_key("reason") {
+                return Err("java-cpu-remainder-observed-carries-reason".to_string());
+            }
+        }
+        "not_observed" => {
+            for name in [
+                "java_cpu_ns",
+                "wall_clock_ns",
+                "java_cpu_to_wall_ratio_micros",
+            ] {
+                if remainder.contains_key(name) {
+                    return Err(format!(
+                        "java-cpu-remainder-not-observed-carries-numeric-field:{name}"
+                    ));
+                }
+            }
+            require_str(remainder, "reason")?;
+        }
+        other => return Err(format!("java-cpu-remainder-state-unknown:{other}")),
+    }
+
+    // ── the observation and the remainder must tell one story ──────────
+    let observations = require_object(report, "observations")?;
+    let java_cpu_observed = observation_state(
+        observations
+            .get("java_cpu_wall_clock_ns")
+            .ok_or_else(|| "java-cpu-observation-absent".to_string())?,
+        "java_cpu_wall_clock_ns",
+    )? == "observed";
+    if (remainder_state == "observed") != java_cpu_observed {
+        return Err(format!(
+            "java-cpu-remainder-disagrees-with-observation: remainder={remainder_state} observation_observed={java_cpu_observed}"
+        ));
+    }
+
+    // ── participation claims are earned, never asserted ────────────────
+    let participation = substrate
+        .get("java_process_participation_observed")
+        .and_then(Value::as_bool)
+        .ok_or_else(|| "substrate-participation-not-boolean".to_string())?;
+    if participation != java_cpu_observed {
+        return Err("java-process-participation-disagrees-with-observation".to_string());
+    }
+    let live_claimed = substrate
+        .get("live_grobid_participated")
+        .and_then(Value::as_bool)
+        .ok_or_else(|| "substrate-live-grobid-participated-not-boolean".to_string())?;
+    if kind == STUB_SUBSTRATE_KIND && live_claimed {
+        return Err("stub-substrate-claims-live-grobid".to_string());
+    }
+    if kind == LIVE_SUBSTRATE_KIND && live_claimed != java_cpu_observed {
+        return Err("live-grobid-participation-without-observed-java-cpu".to_string());
+    }
+    if kind == LIVE_SUBSTRATE_KIND
+        && substrate
+            .get("declared_release")
+            .and_then(Value::as_object)
+            .is_none()
+    {
+        return Err("live-substrate-declared-release-absent".to_string());
+    }
+    if kind == STUB_SUBSTRATE_KIND
+        && substrate
+            .get("deterministic_substrate")
+            .and_then(Value::as_bool)
+            != Some(true)
+    {
+        return Err("stub-substrate-not-declared-deterministic".to_string());
     }
 
     // ── GAR-006: the reference/executed/evaluated split is mandatory ────
@@ -1084,12 +1646,10 @@ fn validate_report(report: &Value) -> Result<(), String> {
     }
     require_str(reference, "identity")?;
     let reference_documents = require_u64(reference, "documents")?;
-    if executed
-        .get("corpus_execution")
-        .and_then(Value::as_bool)
-        .is_none()
-    {
-        return Err("gar006-executed-corpus-execution-not-boolean".to_string());
+    match executed.get("corpus_execution").and_then(Value::as_bool) {
+        Some(value) if value == (kind == LIVE_SUBSTRATE_KIND) => {}
+        Some(_) => return Err("gar006-corpus-execution-does-not-match-substrate".to_string()),
+        None => return Err("gar006-executed-corpus-execution-not-boolean".to_string()),
     }
     require_str(executed, "execution_evidence")?;
     let executed_documents = require_u64(executed, "documents")?;
@@ -1401,6 +1961,67 @@ fn self_check_mutations() -> Vec<Mutation> {
             },
             "policy-lock-drift:import_eligible",
         ),
+        (
+            "physical-path-in-report",
+            |report: &mut Value| {
+                report["substrate"]["measurement_note"] =
+                    json!("/sys/fs/cgroup/system.slice/docker-deadbeef.scope");
+            },
+            "redaction-forbidden-token:/sys/",
+        ),
+        (
+            "live-grobid-participation-without-observed-java-cpu",
+            |report: &mut Value| {
+                report["schema_version"] = json!(LIVE_REPORT_SCHEMA_VERSION);
+                report["substrate"]["kind"] = json!(LIVE_SUBSTRATE_KIND);
+                report["substrate"]["profile"] = json!(LIVE_PROFILE_NAME);
+                report["substrate"]["live_grobid_participated"] = json!(true);
+                report["substrate"]["declared_release"] = json!({
+                    "backend": "java-grobid-http",
+                    "version": "injected",
+                    "image_digest": "sha256:injected",
+                });
+            },
+            "live-grobid-participation-without-observed-java-cpu",
+        ),
+        (
+            "java-cpu-remainder-observed-without-numbers",
+            |report: &mut Value| {
+                report["java_cpu_remainder"] = json!({
+                    "state": "observed",
+                    "counter_scope": "grobid_sidecar_cgroup_cpuacct",
+                    "basis": "injected",
+                });
+            },
+            "java-cpu-remainder-observed-missing",
+        ),
+        (
+            "java-cpu-remainder-ratio-not-positive",
+            |report: &mut Value| {
+                report["java_cpu_remainder"] = json!({
+                    "state": "observed",
+                    "counter_scope": "grobid_sidecar_cgroup_cpuacct",
+                    "basis": "injected",
+                    "java_cpu_ns": 1,
+                    "wall_clock_ns": 2_000_000_000u64,
+                    "java_cpu_to_wall_ratio_micros": 0,
+                });
+            },
+            "java-cpu-remainder-ratio-not-positive",
+        ),
+        (
+            "java-cpu-remainder-not-observed-with-numeric-field",
+            |report: &mut Value| {
+                report["java_cpu_remainder"] = json!({
+                    "state": "not_observed",
+                    "counter_scope": "grobid_sidecar_cgroup_cpuacct",
+                    "basis": "injected",
+                    "reason": "injected",
+                    "java_cpu_ns": 1,
+                });
+            },
+            "java-cpu-remainder-not-observed-carries-numeric-field",
+        ),
     ]
 }
 
@@ -1440,38 +2061,89 @@ fn self_check_guards(report: &Value) -> Result<(), Box<dyn std::error::Error>> {
 // ───────────────────────── CLI ─────────────────────────
 
 struct Args {
+    substrate: Substrate,
     report: PathBuf,
+    endpoint: String,
+    corpus: PathBuf,
+    manifest: PathBuf,
     self_check: bool,
 }
 
+fn parse_substrate(value: &str) -> Result<Substrate, Box<dyn std::error::Error>> {
+    match value {
+        "stub" => Ok(Substrate::Stub),
+        "live-grobid" => Ok(Substrate::LiveGrobid),
+        other => {
+            Err(format!("unknown --substrate `{other}` (expected `stub` or `live-grobid`)").into())
+        }
+    }
+}
+
 fn parse_args() -> Result<Args, Box<dyn std::error::Error>> {
-    let mut report = PathBuf::from(DEFAULT_REPORT);
+    let mut substrate = Substrate::Stub;
+    let mut report: Option<PathBuf> = None;
+    let mut endpoint = DEFAULT_ENDPOINT.to_string();
+    let mut corpus = PathBuf::from(DEFAULT_CORPUS);
+    let mut manifest = PathBuf::from(DEFAULT_MANIFEST);
     let mut self_check = false;
     let mut arguments = std::env::args().skip(1);
     while let Some(argument) = arguments.next() {
         match argument.as_str() {
+            "--substrate" => {
+                substrate =
+                    parse_substrate(&arguments.next().ok_or("--substrate requires a value")?)?;
+            }
             "--report" => {
-                report = arguments
+                report = Some(
+                    arguments
+                        .next()
+                        .map(PathBuf::from)
+                        .ok_or("--report requires a path")?,
+                );
+            }
+            "--endpoint" => {
+                endpoint = arguments.next().ok_or("--endpoint requires a URL")?;
+            }
+            "--corpus" => {
+                corpus = arguments
                     .next()
                     .map(PathBuf::from)
-                    .ok_or("--report requires a path")?;
+                    .ok_or("--corpus requires a path")?;
+            }
+            "--manifest" => {
+                manifest = arguments
+                    .next()
+                    .map(PathBuf::from)
+                    .ok_or("--manifest requires a path")?;
             }
             "--self-check" => self_check = true,
             "--help" => {
                 println!(
-                    "parse_batch_budget_shadow [--report FILE] [--self-check]\n\
+                    "parse_batch_budget_shadow [--substrate stub|live-grobid] [--report FILE]\n\
+                     \x20                        [--endpoint URL] [--corpus FILE] [--manifest FILE] [--self-check]\n\
                      \n\
                      Measures the batch budget under two concurrent batches with a slow\n\
                      ordinal-0 (shared budget, declared max_retained_bytes) and writes the\n\
-                     GAR-006 shadow artifact. --self-check proves the fail-closed guards fire\n\
-                     and writes nothing."
+                     GAR-006 artifact whose --report DEFAULT is per substrate\n\
+                     (stub -> parse_batch_budget_shadow.json, live -> parse_batch_budget_live.json).\n\
+                     The live substrate requires a real GROBID sidecar and verifies it against\n\
+                     the declared release; --self-check always runs the hermetic stub, proves\n\
+                     the fail-closed guards fire, and writes nothing."
                 );
                 std::process::exit(0);
             }
             other => return Err(format!("unknown argument `{other}`").into()),
         }
     }
-    Ok(Args { report, self_check })
+    let report = report.unwrap_or_else(|| PathBuf::from(substrate.default_report()));
+    Ok(Args {
+        substrate,
+        report,
+        endpoint,
+        corpus,
+        manifest,
+        self_check,
+    })
 }
 
 fn write_report(path: &Path, report: &Value) -> Result<(), Box<dyn std::error::Error>> {
@@ -1497,7 +2169,8 @@ fn print_summary(path: &Path, report: &Value) {
             .map_or_else(|| "not_observed".to_string(), Value::to_string)
     };
     println!(
-        "parse_batch_budget_shadow: schema={} batches={} documents={} peak_retained_bytes={} p50/p95/p99={}/{}/{} max_reorder_depth={} max_publication_outstanding={} max_in_flight={} budget_waits={} peak_rss_bytes={} java_cpu_wall_clock_ns={} verdict={} h05_closure={}",
+        "parse_batch_budget_shadow: substrate={} schema={} batches={} documents={} peak_retained_bytes={} p50/p95/p99={}/{}/{} max_reorder_depth={} max_publication_outstanding={} max_in_flight={} budget_waits={} peak_rss_bytes={} java_cpu_wall_clock_ns={} java_cpu_to_wall_ratio_micros={} verdict={} h05_closure={}",
+        report["substrate"]["kind"],
         report["schema_version"],
         report["executed_population"]["batches"],
         report["executed_population"]["documents"],
@@ -1511,6 +2184,9 @@ fn print_summary(path: &Path, report: &Value) {
         value("budget_waits"),
         value("peak_rss_bytes"),
         value("java_cpu_wall_clock_ns"),
+        report["java_cpu_remainder"]
+            .get("java_cpu_to_wall_ratio_micros")
+            .map_or_else(|| "not_observed".to_string(), Value::to_string),
         report["verdict"],
         report["h05_closure"],
     );
@@ -1524,7 +2200,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // lifetime, otherwise file logging silently stops.
     let _log_guard = da_cli::logging::init_pipeline_logging("parse_batch_budget_shadow");
     let args = parse_args()?;
-    let report = measure().await?;
+    // `--self-check` is hermetic by construction: it must never touch the live
+    // sidecar, so it always proves the guards against the stub report.
+    let substrate = if args.self_check {
+        Substrate::Stub
+    } else {
+        args.substrate
+    };
+    let report = measure(substrate, &args.endpoint, &args.corpus, &args.manifest).await?;
     validate_report(&report).map_err(|finding| {
         format!("FATAL: measured report failed its own fail-closed validation: {finding}")
     })?;

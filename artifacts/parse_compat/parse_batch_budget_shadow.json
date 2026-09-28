@@ -83,15 +83,15 @@
         "h05_reason": "H05 stays explicitly unclaimed. Slot limits (workers, queue capacity, in-flight and document counts) are bounded today, but no byte, RSS, Java-CPU or latency-tail ceiling is measured or declared by S06/T01: this block only freezes the ceiling dictionary, the mandatory metric set and the prohibitions as DATA. H05 stays unclaimed until RSS, Java CPU and latency tails are MEASURED under concurrent batches with a slow ordinal-0 document (doc/review/grobid-rust-horizon-review.json#H05). An unmeasured value stays a typed not_observed with a named reason, never a fabricated number.",
         "latency_p50_ms": {
           "state": "observed",
-          "value": 5
+          "value": 9
         },
         "latency_p95_ms": {
           "state": "observed",
-          "value": 93
+          "value": 92
         },
         "latency_p99_ms": {
           "state": "observed",
-          "value": 93
+          "value": 92
         },
         "max_in_flight": {
           "state": "observed",
@@ -171,6 +171,12 @@
     "latency_tails": "observed",
     "peak_rss_bytes": "observed"
   },
+  "java_cpu_remainder": {
+    "basis": "numerator is the GROBID sidecar's container-wide CPU total over the window (cgroup v2 cpu.stat usage_usec delta scaled to ns, all threads, NOT per-document), so the ratio is a count of cores and may exceed 1_000_000; the wall-clock window is measured between the same before/after counter reads that produce the delta, and that window contains no synthetic delay",
+    "counter_scope": "grobid_sidecar_cgroup_cpuacct",
+    "reason": "measured substrate is the local deterministic stub; no Java process participated",
+    "state": "not_observed"
+  },
   "observations": {
     "budget_waits": {
       "state": "observed",
@@ -182,15 +188,15 @@
     },
     "latency_p50_ms": {
       "state": "observed",
-      "value": 5
+      "value": 9
     },
     "latency_p95_ms": {
       "state": "observed",
-      "value": 93
+      "value": 92
     },
     "latency_p99_ms": {
       "state": "observed",
-      "value": 93
+      "value": 92
     },
     "max_in_flight": {
       "state": "observed",
@@ -210,12 +216,13 @@
     },
     "peak_rss_bytes": {
       "state": "observed",
-      "value": 21114880
+      "value": 21712896
     }
   },
   "outcomes": [
     {
       "batch": "A",
+      "declared_pages": null,
       "document_id": "SYNTH-A-0-ZX",
       "failure_code": null,
       "input_sha256": "sha256:ab358387b68c1c0200ca944f721ec46fc3d56df431df30bcc22faae76482dfd8",
@@ -225,6 +232,7 @@
     },
     {
       "batch": "A",
+      "declared_pages": null,
       "document_id": "SYNTH-A-1-ZX",
       "failure_code": null,
       "input_sha256": "sha256:25961c292d1a6e58a07e0a110b25a3e089219384b92572d722bb2a67a2fd8854",
@@ -234,6 +242,7 @@
     },
     {
       "batch": "A",
+      "declared_pages": null,
       "document_id": "SYNTH-A-2-ZX",
       "failure_code": null,
       "input_sha256": "sha256:f736e66110a932b9ba9ab315e15ff7233083508fcca5fe53b058bcd9bc432d3e",
@@ -243,6 +252,7 @@
     },
     {
       "batch": "B",
+      "declared_pages": null,
       "document_id": "SYNTH-B-0-ZX",
       "failure_code": null,
       "input_sha256": "sha256:179ec14e842f21277fb8cad385a19b4935faa951d894dfe5573a0f840471ad05",
@@ -252,6 +262,7 @@
     },
     {
       "batch": "B",
+      "declared_pages": null,
       "document_id": "SYNTH-B-1-ZX",
       "failure_code": null,
       "input_sha256": "sha256:fdb58738dc2224c160373b6e1181344af2a7e8e106b8f91e14043f50fd7d1c9d",
@@ -261,6 +272,7 @@
     },
     {
       "batch": "B",
+      "declared_pages": null,
       "document_id": "SYNTH-B-2-ZX",
       "failure_code": null,
       "input_sha256": "sha256:fdabd0ee0f36b2c30ce90b226d6ec42b8d3f6ff6d6fccea2594074087997c4ac",
@@ -318,6 +330,7 @@
       "slow_ordinal_zero_settle_ms": 80
     },
     "measurement_note": "Both batches ran concurrently against one shared process-local budget over a loopback stub. Peak RSS is a process high-water mark and includes this harness; the Java CPU counter is not observed because no Java process participated.",
+    "profile": "deterministic_loopback_stub",
     "reader_invocations": {
       "java_cpu_wall_clock_ns": 2,
       "peak_rss_bytes": 1
