@@ -59,8 +59,12 @@
 //!   observed (live substrate), or claimed at all by the stub, is rejected;
 //! * a physical path (`/sys/`, a container-scope id, the sidecar name) in the
 //!   serialized report is rejected;
-//! * non-additive retained-byte accounting (window peak below the sum of the
-//!   known outcome sizes of that batch) is rejected;
+//! * non-additive retained-byte accounting is rejected against a
+//!   SUBSTRATE-AWARE reference: the stub's deterministic gate keeps every
+//!   success of a batch in the retention window at once, so its peak must
+//!   cover their sum, while the live substrate releases each reservation as
+//!   the sink consumes it, so its peak must cover at least the largest single
+//!   success;
 //! * an empty or drifted metric set is rejected;
 //! * a missing GAR-006 split is rejected;
 //! * a lifted policy lock is rejected;
@@ -652,13 +656,28 @@ impl BatchRun {
     }
 
     /// Sum of the KNOWN sizes of this batch's successful outcomes — the
-    /// additivity reference the window peak can never fall below.
+    /// additivity reference the STUB window peak can never fall below, because
+    /// its deterministic gate keeps all of them in the window at once.
     fn known_window_success_bytes(&self) -> u64 {
         self.records
             .iter()
             .filter(|record| record.succeeded)
             .map(|record| record.outcome_bytes as u64)
             .sum()
+    }
+
+    /// The largest single successful outcome of this batch. A success is
+    /// reserved by the retention gauge before it is parked and released only
+    /// after the sink consumed it, so the window peak must cover at least this
+    /// much whatever the publish order — the sound reference for the live
+    /// substrate, whose successes need not coexist.
+    fn largest_successful_outcome_bytes(&self) -> u64 {
+        self.records
+            .iter()
+            .filter(|record| record.succeeded)
+            .map(|record| record.outcome_bytes as u64)
+            .max()
+            .unwrap_or(0)
     }
 }
 
@@ -1082,17 +1101,36 @@ async fn measure(
     let java_cpu_after = java_cpu_reader.read();
 
     // ── fail-closed: retained-byte accounting must be additive ──────────
+    //
+    // The reference is SUBSTRATE-AWARE. The stub's deterministic gate keeps
+    // every successful outcome of a batch in the retention window at once, so
+    // its peak must cover their whole sum. The live substrate publishes
+    // strictly by ordinal and releases a reservation as soon as the sink
+    // consumes it, so successes need not coexist and the sound reference is
+    // the largest single successful outcome (every success is reserved before
+    // it is parked and released only after the sink took it). The ceiling
+    // itself is enforced at reservation time in `try_reserve_retained_bytes`,
+    // independent of this reference.
     for run in runs {
-        let known = run.known_window_success_bytes();
         let peak = run.peak_retained_bytes().ok_or_else(|| {
             format!(
                 "FATAL: batch {} did not observe peak_retained_bytes, so no additive accounting can be claimed",
                 run.id
             )
         })?;
-        if peak < known {
+        let (reference, reference_name) = match substrate {
+            Substrate::Stub => (
+                run.known_window_success_bytes(),
+                "known window success bytes",
+            ),
+            Substrate::LiveGrobid => (
+                run.largest_successful_outcome_bytes(),
+                "largest successful outcome bytes",
+            ),
+        };
+        if peak < reference {
             return Err(format!(
-                "FATAL: non-additive retained-byte accounting in batch {}: window peak {peak} < known window success bytes {known}",
+                "FATAL: non-additive retained-byte accounting in batch {}: window peak {peak} < {reference_name} {reference}",
                 run.id
             )
             .into());
@@ -1758,6 +1796,7 @@ fn validate_report(report: &Value) -> Result<(), String> {
             .and_then(Value::as_u64)
             .ok_or_else(|| format!("batch-known-bytes-missing:{id}"))?;
         let mut recomputed = 0u64;
+        let mut largest_single = 0u64;
         for outcome in outcomes {
             let outcome = outcome
                 .as_object()
@@ -1766,10 +1805,12 @@ fn validate_report(report: &Value) -> Result<(), String> {
                 continue;
             }
             if outcome.get("status").and_then(Value::as_str) == Some("succeeded") {
-                recomputed += outcome
+                let bytes = outcome
                     .get("outcome_bytes")
                     .and_then(Value::as_u64)
                     .ok_or_else(|| format!("outcome-bytes-missing:{id}"))?;
+                recomputed += bytes;
+                largest_single = largest_single.max(bytes);
             }
         }
         if recomputed != known {
@@ -1777,9 +1818,21 @@ fn validate_report(report: &Value) -> Result<(), String> {
                 "batch-known-bytes-not-additive:{id}: recorded={known} recomputed={recomputed}"
             ));
         }
-        if peak < recomputed {
+        // Substrate-aware additivity reference, the same reasoning as the
+        // `measure` gate: the stub's deterministic gate keeps every success of
+        // a batch in the retention window at once, so its peak must cover the
+        // sum; the live substrate releases each reservation as the sink
+        // consumes it, so its peak must cover at least the largest single
+        // success. A `non-additive-retained-bytes` mutation of the stub report
+        // still fails closed here.
+        let reference = if kind == STUB_SUBSTRATE_KIND {
+            recomputed
+        } else {
+            largest_single
+        };
+        if peak < reference {
             return Err(format!(
-                "non-additive-retained-bytes:{id}: peak={peak} known={recomputed}"
+                "non-additive-retained-bytes:{id}: peak={peak} reference={reference}"
             ));
         }
         aggregate_peak = Some(aggregate_peak.map_or(peak, |current| current.max(peak)));
