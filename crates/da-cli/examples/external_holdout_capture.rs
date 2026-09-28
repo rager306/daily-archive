@@ -1017,6 +1017,73 @@ fn release_pin_reference(root: &Path, release_pin: &str) -> Option<(String, Stri
     None
 }
 
+/// The surfaces a bring-up reads when it decides which GROBID image to run.
+///
+/// `.env` is gitignored, so a checkout may not have it; when it exists it is what the
+/// local stack actually runs, so it is checked rather than ignored. The committed
+/// defaults are `.env.example` and the compose file.
+const BRING_UP_SURFACES: &[&str] = &[".env", ".env.example", ".docker/docker-compose.yml"];
+
+/// Read the declared GROBID image on one bring-up surface, if the surface exists.
+///
+/// Returns `None` when the file is absent (legal only for the gitignored `.env`) or
+/// when it declares no GROBID image at all; the caller distinguishes those.
+fn bring_up_image_reference(root: &Path, surface: &str) -> Option<String> {
+    let path = root.join(surface);
+    let text = std::fs::read_to_string(&path).ok()?;
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') {
+            continue;
+        }
+        // dotenv surfaces declare `GROBID_IMAGE=<reference>`.
+        if let Some(value) = trimmed.strip_prefix("GROBID_IMAGE=") {
+            let value = value.trim();
+            if !value.is_empty() {
+                return Some(value.to_string());
+            }
+        }
+        // The compose surface may hardcode the image or default it inline.
+        if let Some(rest) = trimmed.strip_prefix("image:") {
+            let rest = rest.trim();
+            let candidate = match rest.find(":-") {
+                Some(index) => rest[index + 2..].trim_end_matches('}').trim(),
+                None => rest,
+            };
+            let candidate = candidate.trim_matches('"').trim_matches('\'');
+            if !candidate.is_empty() {
+                return Some(candidate.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Pure decision for one bring-up surface, so the self-check can exercise the guard
+/// against synthetic references without touching the filesystem.
+///
+/// A tag is refused even when it names the right release: a tag can be re-pointed
+/// upstream, which is the same reason the pin file uses a digest.
+fn admit_bring_up_reference(
+    declared: &DeclaredRelease,
+    surface: &str,
+    reference: Option<&str>,
+) -> Outcome {
+    let Some(reference) = reference else {
+        return Outcome::Blocked(format!("bring_up_reference_missing:{surface}"));
+    };
+    let Some((repository, digest)) = reference.split_once('@') else {
+        return Outcome::Blocked(format!("bring_up_reference_tag_form:{surface}:{reference}"));
+    };
+    if repository == declared.image_repository && digest == declared.image_digest {
+        Outcome::Ok
+    } else {
+        Outcome::Blocked(format!(
+            "bring_up_reference_drift:{surface}:{repository}@{digest}"
+        ))
+    }
+}
+
 /// Count how many declared holdout ids are also materialized production
 /// coverage. Measured, never asserted: the census is printed as
 /// `n/<declared population>`, so growing the population cannot leave a stale
@@ -1126,6 +1193,22 @@ async fn run_preflight(root: &Path, args: &Args) -> Result<Preflight> {
                 .map(|(repository, digest)| (repository.as_str(), digest.as_str())),
         ),
     ));
+    // The pin file is only one of the surfaces that decide which image runs. The
+    // bring-up defaults decide it for anyone who starts the stack without the override
+    // layer, and they lagged the declared release until M513/S01/T01. A surface that is
+    // absent is skipped so a checkout without the gitignored `.env` stays legal; a
+    // surface that exists and disagrees blocks by name, including in tag form.
+    for surface in BRING_UP_SURFACES {
+        if !root.join(surface).exists() {
+            checks.push((format!("java_release_bring_up:{surface}"), Outcome::Ok));
+            continue;
+        }
+        let reference = bring_up_image_reference(root, surface);
+        checks.push((
+            format!("java_release_bring_up:{surface}"),
+            admit_bring_up_reference(&declared, surface, reference.as_deref()),
+        ));
+    }
 
     let external = external_rows(&manifest);
     let guards = admit_external_dataset_bytes(&external, |path: &str| root.join(path).exists());
@@ -1880,6 +1963,51 @@ fn run_self_check() -> bool {
         )
         .label(),
         "endpoint_drift:http://127.0.0.1:9999".to_string(),
+    ));
+
+    // Bring-up surfaces (M513/S01/T02). Positive control first: the guard must accept the
+    // declared reference, otherwise every rejection below would be vacuous.
+    let declared_reference = format!("{}@{}", release.image_repository, release.image_digest);
+    cases.push((
+        "bring_up_reference_declared_is_accepted",
+        admit_bring_up_reference(&release, ".env.example", Some(&declared_reference)).label(),
+        "ok".to_string(),
+    ));
+    cases.push((
+        "bring_up_reference_drift",
+        admit_bring_up_reference(
+            &release,
+            ".env.example",
+            Some(&format!(
+                "{}@sha256:{}",
+                release.image_repository,
+                "0".repeat(64)
+            )),
+        )
+        .label(),
+        format!(
+            "bring_up_reference_drift:.env.example:{}@sha256:{}",
+            release.image_repository,
+            "0".repeat(64)
+        ),
+    ));
+    cases.push((
+        "bring_up_reference_tag_form",
+        admit_bring_up_reference(
+            &release,
+            ".docker/docker-compose.yml",
+            Some(&format!("{}:0.9.0-crf", release.image_repository)),
+        )
+        .label(),
+        format!(
+            "bring_up_reference_tag_form:.docker/docker-compose.yml:{}:0.9.0-crf",
+            release.image_repository
+        ),
+    ));
+    cases.push((
+        "bring_up_reference_missing",
+        admit_bring_up_reference(&release, ".env", None).label(),
+        "bring_up_reference_missing:.env".to_string(),
     ));
 
     let mut ok = true;

@@ -244,7 +244,7 @@ fn self_check_rejects_every_declared_failure_kind_by_name() {
     let cases = labelled_lines(&stdout, "SELFCHECK ");
 
     // Every declared failure kind is rejected by its own label.
-    let expected_failures: [(&str, &str); 14] = [
+    let expected_failures: [(&str, &str); 17] = [
         ("article_absent", "bytes_absent:synthetic-ref"),
         ("article_sha_drift", "bytes_drift:synthetic-ref"),
         ("article_size_drift", "bytes_size_drift:synthetic-ref"),
@@ -265,6 +265,21 @@ fn self_check_rejects_every_declared_failure_kind_by_name() {
         ("data_pin_drift", "data_pin_drift:synthetic-ref"),
         ("live_release_drift", "live_release_drift:0.9.2"),
         ("endpoint_drift", "endpoint_drift:http://127.0.0.1:9999"),
+        // Bring-up surfaces (M513/S01/T02): a default that disagrees with the declared
+        // release must block by name, and a tag pin is refused even when it names the
+        // right release, because a tag can be re-pointed upstream.
+        (
+            "bring_up_reference_drift",
+            "bring_up_reference_drift:.env.example:synthetic/repository@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        ),
+        (
+            "bring_up_reference_tag_form",
+            "bring_up_reference_tag_form:.docker/docker-compose.yml:synthetic/repository:0.9.0-crf",
+        ),
+        (
+            "bring_up_reference_missing",
+            "bring_up_reference_missing:.env",
+        ),
     ];
     for (case, expected) in expected_failures {
         assert_eq!(
@@ -277,13 +292,16 @@ fn self_check_rejects_every_declared_failure_kind_by_name() {
 
     // Positive controls: the guard must admit correct inputs too, otherwise a
     // refusal proves nothing.
-    let expected_admissions: [&str; 6] = [
+    let expected_admissions: [&str; 7] = [
         "article_present",
         "endpoint_reachable",
         "release_match",
         "release_pin_match",
         "external_absent",
         "reference_present",
+        // The bring-up guard must admit the declared reference, otherwise its
+        // refusals above would be vacuous.
+        "bring_up_reference_declared_is_accepted",
     ];
     for case in expected_admissions {
         assert_eq!(
@@ -333,6 +351,34 @@ fn preflight_checks_the_committed_inputs_and_writes_nothing() {
         lines.get("java_release_pin").map(String::as_str),
         Some("ok"),
         "the declared release must still agree with the repo release pin:\n{stdout}"
+    );
+    // The bring-up defaults decide which image runs for anyone who starts the stack
+    // without the override layer, and they lagged the declared release until
+    // M513/S01/T01. A surface that is absent is legal (`.env` is gitignored), so the
+    // assertion is per existing surface rather than on a fixed file list.
+    for surface in [".env", ".env.example", ".docker/docker-compose.yml"] {
+        let key = format!("java_release_bring_up:{surface}");
+        if let Some(observed) = lines.get(&key) {
+            assert_eq!(
+                observed.as_str(),
+                "ok",
+                "bring-up surface `{surface}` must pin the declared release by digest:\n{stdout}"
+            );
+        }
+    }
+    assert_eq!(
+        lines
+            .get("java_release_bring_up:.env.example")
+            .map(String::as_str),
+        Some("ok"),
+        "the committed default in .env.example must pin the declared release:\n{stdout}"
+    );
+    assert_eq!(
+        lines
+            .get("java_release_bring_up:.docker/docker-compose.yml")
+            .map(String::as_str),
+        Some("ok"),
+        "the committed compose default must pin the declared release:\n{stdout}"
     );
     assert_eq!(
         lines.get("external_dataset_bytes").map(String::as_str),
