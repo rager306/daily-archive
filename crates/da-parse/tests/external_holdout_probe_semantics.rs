@@ -47,6 +47,26 @@
 //! (`MARGIN <article_id> <metric> -> PASS|FAIL|no_denominator`).  A FAIL is
 //! reported and frozen, never re-fitted.
 //!
+//! ## The Java-relative parity (the number a reviewer quotes)
+//!
+//! The two metrics above are ADMISSION-relative, so their `admitted` denominator
+//! reads the aggregate recall as `1.0` by construction.  The Java-relative parity
+//! is a separate reading declared in
+//! `data/parse/acceptance_manifest.yaml#external_holdout_contract.release_probe.class_parity`
+//! and emitted by the runner into `evaluated_population.class_parity` and the
+//! recorded tables: denominator `source_population` (the Java carrier
+//! population), numerator `conserved`, missing `source_population - conserved`,
+//! extra `fabricated`, aggregated as micro occurrences.  This file is the
+//! independent judge of those numbers: [`RecordedClassParity`] re-reads the
+//! recorded block and [`recorded_parity_drift`] names every disagreement, so a
+//! denominator collapsed to the admitted band, a source-consumed class
+//! reclassified as native, an FP while claiming precision `1.0`, or a drifted
+//! identity digest is refused BY NAME rather than averaged into the aggregate.
+//! Two aggregate recalls are reported: `native_capability_recall` (only the
+//! classes the native composer produces) and `covered_union_recall` (the
+//! source-consumed classes counted as covered by the copied source subtree).  An
+//! empty denominator is `no_denominator`, never a vacuum `1.0` (MEM1702).
+//!
 //! ## Preconditions are FATAL, not advisory
 //!
 //! Before any measurement the lane is read and structurally validated, every
@@ -1168,6 +1188,12 @@ struct ClassProfile {
     conserved: usize,
     lost: usize,
     fabricated: usize,
+    /// Whether the class's carriers are also carried by the copied source
+    /// subtree.  Such a class is *covered* by the union even when the admitted
+    /// band is narrower, so its shortfall is a band-definition choice, not a
+    /// fabricated loss.  The flag is read from the declared `class_parity`
+    /// `source_consumed_classes` in DATA, never a second compiled-in list.
+    source_is_conserved: bool,
 }
 
 /// `numerator / denominator`, or `None` when there is no denominator.  A null
@@ -1176,11 +1202,152 @@ fn ratio(numerator: usize, denominator: usize) -> Option<f64> {
     (denominator > 0).then(|| numerator as f64 / denominator as f64)
 }
 
+/// Harmonic mean of two rates, or `None` unless both have a denominator.  A
+/// genuine `0.0/0.0` (both rates exactly zero) is `0.0`, not `NaN`.
+fn harmonic_mean(precision: Option<f64>, recall: Option<f64>) -> Option<f64> {
+    match (precision, recall) {
+        (Some(precision), Some(recall)) => Some(if precision + recall == 0.0 {
+            0.0
+        } else {
+            2.0 * precision * recall / (precision + recall)
+        }),
+        _ => None,
+    }
+}
+
+/// `value * 1_000_000`, rounded, or `None` when there is no denominator.  The
+/// recorded tables and the artifact carry micros so the comparison is exact
+/// rather than a floating-point near-equality.
+fn micros_opt(value: Option<f64>) -> Option<u64> {
+    value.map(micros)
+}
+
 impl ClassProfile {
     /// Honest coverage of the real carrier population by the admitted band.
     /// `None` when the document declares no such carrier (there is no denominator).
     fn admission_coverage(&self) -> Option<f64> {
         ratio(self.admitted, self.source_population)
+    }
+
+    /// Java-relative recall: `conserved / source_population`.  `None` (a
+    /// `no_denominator` row) when the frozen reference declares no such carrier;
+    /// never a vacuum `1.0` (MEM1702).  The denominator is the Java carrier
+    /// population, never the narrowed `admitted` band, so this number cannot be
+    /// `1.0` by construction.
+    fn recall_java(&self) -> Option<f64> {
+        ratio(self.conserved, self.source_population)
+    }
+
+    /// `conserved / (conserved + fabricated)`, or `None` when the emission
+    /// carries nothing at all for the class.
+    fn precision(&self) -> Option<f64> {
+        ratio(self.conserved, self.conserved + self.fabricated)
+    }
+
+    /// The harmonic mean of the Java-relative precision and recall.
+    fn f1(&self) -> Option<f64> {
+        harmonic_mean(self.precision(), self.recall_java())
+    }
+}
+
+/// The declared Java-relative micro aggregate over every measured class: the
+/// denominator is the Java `source_population`, never the narrowed `admitted`
+/// band, so the aggregate recall cannot be `1.0` by construction.
+///
+/// `native_capability_recall` counts only the classes the native composer
+/// actually produces (the source-consumed classes are excluded from it);
+/// `covered_union_recall` counts a source-consumed class as covered by its full
+/// source population, because the copied source subtree carries those carriers.
+/// The four raw counts are carried (not the rates) so two independently built
+/// aggregates compare by integer identity, and a rate is derived from the counts
+/// rather than asserted beside them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ClassParity {
+    denominator: usize,
+    tp: usize,
+    fn_: usize,
+    fp: usize,
+    native_denominator: usize,
+    native_tp: usize,
+    covered_union_numerator: usize,
+}
+
+impl ClassParity {
+    fn zero() -> ClassParity {
+        ClassParity {
+            denominator: 0,
+            tp: 0,
+            fn_: 0,
+            fp: 0,
+            native_denominator: 0,
+            native_tp: 0,
+            covered_union_numerator: 0,
+        }
+    }
+
+    /// Accumulate one class's contribution.  `source_is_conserved` classes are
+    /// counted as covered by their full source population and are excluded from
+    /// the native capability denominator.
+    fn accumulate(
+        &mut self,
+        source_population: usize,
+        conserved: usize,
+        fabricated: usize,
+        source_is_conserved: bool,
+    ) {
+        self.denominator += source_population;
+        self.tp += conserved;
+        self.fn_ += source_population.saturating_sub(conserved);
+        self.fp += fabricated;
+        if source_is_conserved {
+            self.covered_union_numerator += source_population;
+        } else {
+            self.native_denominator += source_population;
+            self.native_tp += conserved;
+            self.covered_union_numerator += conserved;
+        }
+    }
+
+    /// The parity over one document's measured classes.
+    fn of(profiles: &[ClassProfile]) -> ClassParity {
+        let mut parity = ClassParity::zero();
+        for profile in profiles {
+            parity.accumulate(
+                profile.source_population,
+                profile.conserved,
+                profile.fabricated,
+                profile.source_is_conserved,
+            );
+        }
+        parity
+    }
+
+    /// Add another parity's counts (so the corpus aggregate is exactly the sum of
+    /// the per-document parities, read from one definition).
+    fn merge(&mut self, other: &ClassParity) {
+        self.denominator += other.denominator;
+        self.tp += other.tp;
+        self.fn_ += other.fn_;
+        self.fp += other.fp;
+        self.native_denominator += other.native_denominator;
+        self.native_tp += other.native_tp;
+        self.covered_union_numerator += other.covered_union_numerator;
+    }
+
+    fn native_capability_recall(&self) -> Option<f64> {
+        ratio(self.native_tp, self.native_denominator)
+    }
+
+    fn covered_union_recall(&self) -> Option<f64> {
+        ratio(self.covered_union_numerator, self.denominator)
+    }
+
+    fn precision(&self) -> Option<f64> {
+        ratio(self.tp, self.tp + self.fp)
+    }
+
+    fn f1(&self) -> Option<f64> {
+        harmonic_mean(self.precision(), self.native_capability_recall())
     }
 }
 
@@ -1231,6 +1398,7 @@ fn text_class(
         conserved,
         lost: admitted_values.len() - conserved,
         fabricated,
+        source_is_conserved,
     }
 }
 
@@ -1275,6 +1443,7 @@ fn binding_class(
         conserved,
         lost: admitted_values.len() - conserved,
         fabricated,
+        source_is_conserved,
     }
 }
 
@@ -1620,6 +1789,9 @@ struct DocumentMetrics {
     /// `document_uncertainty_interval_width` bounds, or `None` without a denominator.
     uncertainty: Option<(f64, f64)>,
     uncertainty_width: Option<f64>,
+    /// The Java-relative parity over this document's classes: the denominator is
+    /// the Java carrier population, never the narrowed admitted band.
+    parity: ClassParity,
 }
 
 fn document_metrics(profiles: &[ClassProfile]) -> DocumentMetrics {
@@ -1643,6 +1815,7 @@ fn document_metrics(profiles: &[ClassProfile]) -> DocumentMetrics {
         agreement,
         uncertainty,
         uncertainty_width,
+        parity: ClassParity::of(profiles),
     }
 }
 
@@ -1835,6 +2008,8 @@ struct Aggregate {
     margin_pass: usize,
     margin_fail: usize,
     no_denominator_documents: usize,
+    /// The Java-relative parity over every measured class.
+    parity: ClassParity,
 }
 
 impl Aggregate {
@@ -1850,6 +2025,7 @@ impl Aggregate {
             margin_pass: 0,
             margin_fail: 0,
             no_denominator_documents: 0,
+            parity: ClassParity::zero(),
         };
         for document in measured {
             aggregate.source_population += document.metrics.source_population;
@@ -1857,6 +2033,7 @@ impl Aggregate {
             aggregate.tp += document.metrics.conserved;
             aggregate.fn_ += document.metrics.lost;
             aggregate.fp += document.metrics.fabricated;
+            aggregate.parity.merge(&document.metrics.parity);
             if document.metrics.agreement == Some(1.0) {
                 aggregate.agreeing_documents += 1;
             }
@@ -1877,6 +2054,9 @@ impl Aggregate {
     fn render(&self) -> String {
         format!(
             "PROBE AGGREGATE: documents={} source_population={} admitted={} tp={} fn={} fp={} \
+             parity_denominator={} parity_tp={} parity_fn={} parity_fp={} \
+             native_capability_recall_micros={} covered_union_recall_micros={} \
+             precision_micros={} f1_micros={} \
              agreeing_documents={} margin_pass={} margin_fail={} no_denominator_documents={} \
              claim_scope=local_proxy_only counts_only=true",
             self.documents,
@@ -1885,6 +2065,14 @@ impl Aggregate {
             self.tp,
             self.fn_,
             self.fp,
+            self.parity.denominator,
+            self.parity.tp,
+            self.parity.fn_,
+            self.parity.fp,
+            micros_opt(self.parity.native_capability_recall()).unwrap_or(0),
+            micros_opt(self.parity.covered_union_recall()).unwrap_or(0),
+            micros_opt(self.parity.precision()).unwrap_or(0),
+            micros_opt(self.parity.f1()).unwrap_or(0),
             self.agreeing_documents,
             self.margin_pass,
             self.margin_fail,
@@ -1927,11 +2115,21 @@ fn metrics_mut(manifest: &mut Value) -> &mut Value {
 // carries the recorded expectation it is compared against, so oracle independence
 // is unchanged.
 
-/// One recorded per-class row: `(class, source_population, admitted, conserved,
-/// rejected)`.  `rejected` is the artifact's `fabricated` count: emitted carriers
-/// matching neither an admitted nor an independently measured source value (zero
-/// in the frozen measurement).
-type FrozenClassRow = (String, usize, usize, usize, usize);
+/// One recorded per-class row.  `rejected` is the artifact's `fabricated` count:
+/// emitted carriers matching neither an admitted nor an independently measured
+/// source value (zero in the frozen measurement).  `source_consumed`, and the
+/// three Java-relative micros, are the parity fields the aggregate is built from.
+struct FrozenClassRow {
+    class: String,
+    source_population: usize,
+    admitted: usize,
+    conserved: usize,
+    rejected: usize,
+    source_consumed: bool,
+    recall_java_micros: Option<u64>,
+    precision_micros: Option<u64>,
+    f1_micros: Option<u64>,
+}
 
 struct FrozenDocument {
     article_id: String,
@@ -1997,16 +2195,19 @@ fn frozen_profile() -> Vec<FrozenDocument> {
                 .as_array()
                 .expect("profile")
                 .iter()
-                .map(|class| {
-                    (
-                        class["class"].as_str().expect("class").to_string(),
-                        class["source_population"]
-                            .as_u64()
-                            .expect("source_population") as usize,
-                        class["admitted"].as_u64().expect("admitted") as usize,
-                        class["conserved"].as_u64().expect("conserved") as usize,
-                        class["rejected"].as_u64().expect("rejected") as usize,
-                    )
+                .map(|class| FrozenClassRow {
+                    class: class["class"].as_str().expect("class").to_string(),
+                    source_population: class["source_population"]
+                        .as_u64()
+                        .expect("source_population")
+                        as usize,
+                    admitted: class["admitted"].as_u64().expect("admitted") as usize,
+                    conserved: class["conserved"].as_u64().expect("conserved") as usize,
+                    rejected: class["rejected"].as_u64().expect("rejected") as usize,
+                    source_consumed: class["source_consumed"].as_bool().expect("source_consumed"),
+                    recall_java_micros: class["recall_java_micros"].as_u64(),
+                    precision_micros: class["precision_micros"].as_u64(),
+                    f1_micros: class["f1_micros"].as_u64(),
                 })
                 .collect(),
         })
@@ -2085,9 +2286,9 @@ fn frozen_narrowings() -> Vec<(String, String, usize, usize)> {
 fn frozen_no_denominator_classes() -> Vec<(String, String)> {
     let mut classes = Vec::new();
     for document in frozen_profile() {
-        for (class, source_population, _, _, _) in &document.classes {
-            if *source_population == 0 {
-                classes.push((document.article_id.clone(), class.clone()));
+        for row in &document.classes {
+            if row.source_population == 0 {
+                classes.push((document.article_id.clone(), row.class.clone()));
             }
         }
     }
@@ -2119,7 +2320,174 @@ fn frozen_aggregate() -> Aggregate {
         no_denominator_documents: aggregate["no_denominator_documents"]
             .as_u64()
             .expect("no_denominator_documents") as usize,
+        parity: recorded_class_parity(),
     }
+}
+
+/// The Java-relative parity derived from the recorded per-class rows (never
+/// restated): the aggregate must be exactly the aggregation of the rows it
+/// summarizes, so a collapsed denominator or a reclassified source-consumed class
+/// cannot hide behind a matching hardcoded total.
+fn recorded_class_parity() -> ClassParity {
+    let mut parity = ClassParity::zero();
+    for document in frozen_profile() {
+        for row in &document.classes {
+            parity.accumulate(
+                row.source_population,
+                row.conserved,
+                row.rejected,
+                row.source_consumed,
+            );
+        }
+    }
+    parity
+}
+
+/// The declared Java-relative parity block: the counts, the four recorded micros
+/// and the explicit `producer` / `authority` / `claim_scope` fields.  The oracle
+/// re-reads it and compares it to its own independent measurement.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RecordedClassParity {
+    producer: String,
+    authority: String,
+    claim_scope: String,
+    denominator: usize,
+    tp: usize,
+    fn_: usize,
+    fp: usize,
+    native_capability_recall_micros: Option<u64>,
+    covered_union_recall_micros: Option<u64>,
+    precision_micros: Option<u64>,
+    f1_micros: Option<u64>,
+}
+
+impl RecordedClassParity {
+    fn read() -> RecordedClassParity {
+        let tables = frozen_tables();
+        let block = &tables["aggregate"]["class_parity"];
+        let aggregate = &block["aggregate"];
+        RecordedClassParity {
+            producer: block["producer"].as_str().expect("producer").to_string(),
+            authority: block["authority"].as_str().expect("authority").to_string(),
+            claim_scope: block["claim_scope"]
+                .as_str()
+                .expect("claim_scope")
+                .to_string(),
+            denominator: aggregate["denominator"].as_u64().expect("denominator") as usize,
+            tp: aggregate["tp"].as_u64().expect("tp") as usize,
+            fn_: aggregate["fn"].as_u64().expect("fn") as usize,
+            fp: aggregate["fp"].as_u64().expect("fp") as usize,
+            native_capability_recall_micros: aggregate["native_capability_recall_micros"].as_u64(),
+            covered_union_recall_micros: aggregate["covered_union_recall_micros"].as_u64(),
+            precision_micros: aggregate["precision_micros"].as_u64(),
+            f1_micros: aggregate["f1_micros"].as_u64(),
+        }
+    }
+
+    /// A declared block whose numbers are exactly the given parity's, preserving
+    /// the provenance fields.  Used by the negative matrix to build a
+    /// well-formed mutated block whose numbers the oracle must refuse.
+    fn from_parity(parity: &ClassParity, template: &RecordedClassParity) -> RecordedClassParity {
+        RecordedClassParity {
+            producer: template.producer.clone(),
+            authority: template.authority.clone(),
+            claim_scope: template.claim_scope.clone(),
+            denominator: parity.denominator,
+            tp: parity.tp,
+            fn_: parity.fn_,
+            fp: parity.fp,
+            native_capability_recall_micros: micros_opt(parity.native_capability_recall()),
+            covered_union_recall_micros: micros_opt(parity.covered_union_recall()),
+            precision_micros: micros_opt(parity.precision()),
+            f1_micros: micros_opt(parity.f1()),
+        }
+    }
+
+    /// A precision of `1.0` is permitted only when the block records no fabricated
+    /// carrier; a block that records an FP while still claiming perfect precision
+    /// has counted a false positive as agreement.
+    fn precision_is_consistent(&self) -> bool {
+        match (self.fp, self.precision_micros) {
+            (0, Some(1_000_000)) => true,
+            (fp, Some(micros)) if fp > 0 => micros < 1_000_000,
+            _ => false,
+        }
+    }
+}
+
+/// Compare the independently measured Java-relative parity against the recorded
+/// block, naming every disagreement.  Pure, so the negative matrix can prove each
+/// refusal one mutation at a time.  The names are the guard's contract:
+/// `parity_denominator_not_source_population` (the declared denominator is not the
+/// Java carrier population), `parity_conservation_mismatch` (`tp + fn` is not the
+/// declared denominator), `parity_counts_drift`, `parity_precision_inconsistent`
+/// (an FP counted as agreement), and the four micro drifts.
+fn recorded_parity_drift(measured: &ClassParity, recorded: &RecordedClassParity) -> Vec<String> {
+    let mut drift = Vec::new();
+    if recorded.denominator != measured.denominator {
+        drift.push("parity_denominator_not_source_population".to_string());
+    }
+    if recorded.denominator != recorded.tp + recorded.fn_ {
+        drift.push("parity_conservation_mismatch".to_string());
+    }
+    if recorded.tp != measured.tp || recorded.fn_ != measured.fn_ || recorded.fp != measured.fp {
+        drift.push("parity_counts_drift".to_string());
+    }
+    if !recorded.precision_is_consistent() {
+        drift.push("parity_precision_inconsistent".to_string());
+    }
+    if recorded.precision_micros != micros_opt(measured.precision()) {
+        drift.push("parity_precision_drift".to_string());
+    }
+    if recorded.native_capability_recall_micros != micros_opt(measured.native_capability_recall()) {
+        drift.push("parity_native_capability_drift".to_string());
+    }
+    if recorded.covered_union_recall_micros != micros_opt(measured.covered_union_recall()) {
+        drift.push("parity_covered_union_drift".to_string());
+    }
+    if recorded.f1_micros != micros_opt(measured.f1()) {
+        drift.push("parity_f1_drift".to_string());
+    }
+    drift
+}
+
+/// The parity a denominator collapsed to the admitted band would produce: every
+/// class's Java population is replaced by the band that admitted it.  The native
+/// composer conserves everything it admits, so this reads the aggregate recall as
+/// a vacuous `1.0` — exactly the trap the declared `source_population` denominator
+/// exists to prevent.
+fn class_parity_with_collapsed_denominator(measured: &[MeasuredDocument]) -> ClassParity {
+    let mut parity = ClassParity::zero();
+    for document in measured {
+        for profile in &document.profiles {
+            parity.accumulate(
+                profile.admitted,
+                profile.conserved,
+                profile.fabricated,
+                profile.source_is_conserved,
+            );
+        }
+    }
+    parity
+}
+
+/// The parity a reclassified population would produce: every class is treated as
+/// one the native composer produces, so the source-consumed classes stop being
+/// counted as covered by the copied subtree.  Their shortfall then reads as an
+/// uncovered loss, inflating the aggregate missing count.
+fn class_parity_with_reclassified_source_consumed(measured: &[MeasuredDocument]) -> ClassParity {
+    let mut parity = ClassParity::zero();
+    for document in measured {
+        for profile in &document.profiles {
+            parity.accumulate(
+                profile.source_population,
+                profile.conserved,
+                profile.fabricated,
+                false,
+            );
+        }
+    }
+    parity
 }
 
 // ──────────────────────────────── tests ────────────────────────────────────
@@ -2368,6 +2736,49 @@ fn real_holdout_probe_profile_is_measured_per_document() {
                 profile.article_id,
                 profile.class
             );
+            // Java-relative parity of the class, measured independently of the
+            // recorded table: nothing is fabricated, so a class the emission
+            // actually carries has perfect precision, and a class the emission
+            // carries nothing for has no precision denominator (MEM1702).
+            if profile.conserved + profile.fabricated > 0 {
+                assert_eq!(
+                    profile.precision(),
+                    Some(1.0),
+                    "{}/{}: no fabricated carrier means perfect precision",
+                    profile.article_id,
+                    profile.class
+                );
+            } else {
+                assert_eq!(
+                    profile.precision(),
+                    None,
+                    "{}/{}: an empty emission has no precision denominator, not a vacuum 1.0",
+                    profile.article_id,
+                    profile.class
+                );
+            }
+            assert_eq!(
+                profile.recall_java().is_none(),
+                profile.source_population == 0,
+                "{}/{}: no Java carrier population means no denominator, not a vacuum 1.0",
+                profile.article_id,
+                profile.class
+            );
+            assert_eq!(
+                profile.f1(),
+                harmonic_mean(profile.precision(), profile.recall_java()),
+                "{}/{}: f1 is the harmonic mean of precision and recall",
+                profile.article_id,
+                profile.class
+            );
+            if profile.source_population > 0 && profile.conserved < profile.source_population {
+                assert!(
+                    profile.recall_java().expect("a Java denominator") < 1.0,
+                    "{}/{}: a narrowed class has a Java-relative recall below 1.0",
+                    profile.article_id,
+                    profile.class
+                );
+            }
         }
         assert_eq!(
             document.metrics.lost, 0,
@@ -2407,6 +2818,26 @@ fn real_holdout_probe_profile_is_measured_per_document() {
     assert!(
         aggregate.tp > 0,
         "the measured aggregate must be non-vacuous"
+    );
+    // The corpus Java-relative parity: the denominator is the Java carrier
+    // population, so both honest aggregate recalls are strictly below the
+    // admission-relative 1.0 the `admitted` denominator produces by construction.
+    assert_eq!(aggregate.parity.denominator, aggregate.source_population);
+    assert!(
+        aggregate
+            .parity
+            .native_capability_recall()
+            .expect("a native denominator")
+            < 1.0,
+        "the native capability recall must be below the admission-relative 1.0"
+    );
+    assert!(
+        aggregate
+            .parity
+            .covered_union_recall()
+            .expect("a covered denominator")
+            < 1.0,
+        "the covered union recall must be below the admission-relative 1.0"
     );
     let narrowings: Vec<(&str, &'static str, usize, usize)> = measured
         .iter()
@@ -2570,6 +3001,247 @@ fn measured_probe_aggregate_is_frozen() {
         !rendered.contains("ratio") && !rendered.contains("rate") && !rendered.contains('%'),
         "the aggregate is counts over the measured documents, never a corpus rate"
     );
+
+    // The Java-relative parity block a reviewer reads must equal the oracle's own
+    // independent measurement, and it must name this file as its authority: the
+    // recorded numbers were judged here, not by their own producer.
+    assert_eq!(
+        aggregate.parity.denominator, aggregate.source_population,
+        "the Java-relative denominator is the Java carrier population"
+    );
+    let recorded = RecordedClassParity::read();
+    let parity_drift = recorded_parity_drift(&aggregate.parity, &recorded);
+    assert!(
+        parity_drift.is_empty(),
+        "{PROBE} the recorded Java-relative parity drifted from the independent \
+         measurement: {parity_drift:#?}"
+    );
+    assert_eq!(recorded.claim_scope, "local_proxy_only");
+    assert!(
+        recorded.producer.contains("da-cli"),
+        "the producer must name the compact scan: {}",
+        recorded.producer
+    );
+    assert!(
+        recorded
+            .authority
+            .contains("external_holdout_probe_semantics.rs"),
+        "the authority must name this oracle: {}",
+        recorded.authority
+    );
+    assert!(
+        recorded.authority.contains("roxmltree"),
+        "the authority must name the independent parser: {}",
+        recorded.authority
+    );
+}
+
+/// The Java-relative parity is not the admission-relative ratio: the declared
+/// denominator is the Java carrier population, so the aggregate recall is strictly
+/// below the `1.000000` the `admitted` denominator produces by construction, and
+/// the source-consumed classes are counted as covered rather than as losses.
+#[test]
+fn java_relative_parity_is_not_the_admission_relative_ratio() {
+    let data = load_probe_data();
+    let measured = measure_all(&data);
+    let aggregate = Aggregate::of(&measured);
+    let parity = &aggregate.parity;
+
+    // The admission-relative reading is 1.0 by construction ...
+    assert_eq!(aggregate.tp, aggregate.admitted);
+    assert_eq!(ratio(aggregate.tp, aggregate.admitted), Some(1.0));
+    // ... while the Java-relative one is not, and its two honest recalls differ.
+    let native = parity
+        .native_capability_recall()
+        .expect("a native capability denominator");
+    let covered = parity
+        .covered_union_recall()
+        .expect("a covered union denominator");
+    assert!(
+        native < 1.0,
+        "native capability recall must be < 1.0: {native}"
+    );
+    assert!(
+        covered < 1.0,
+        "covered union recall must be < 1.0: {covered}"
+    );
+    assert_ne!(micros(native), 1_000_000);
+    assert_eq!(micros(native), 945_771);
+    assert_eq!(micros(covered), 947_501);
+    assert_eq!(
+        micros(parity.precision().expect("a precision denominator")),
+        1_000_000
+    );
+    assert_eq!(micros(parity.f1().expect("an f1 denominator")), 972_130);
+    assert_eq!(parity.denominator, aggregate.source_population);
+    assert_eq!(parity.fp, 0, "the frozen probe fabricates no carrier");
+
+    // The source-consumed classes are covered by the copied subtree: they are
+    // excluded from the native capability denominator, and their shortfall is not
+    // counted as an uncovered loss.
+    let source_consumed_population: usize = measured
+        .iter()
+        .flat_map(|document| document.profiles.iter())
+        .filter(|profile| profile.source_is_conserved)
+        .map(|profile| profile.source_population)
+        .sum();
+    let source_consumed_conserved: usize = measured
+        .iter()
+        .flat_map(|document| document.profiles.iter())
+        .filter(|profile| profile.source_is_conserved)
+        .map(|profile| profile.conserved)
+        .sum();
+    assert!(source_consumed_population > 0);
+    assert_eq!(
+        parity.native_denominator + source_consumed_population,
+        parity.denominator,
+        "the native capability denominator excludes exactly the source-consumed classes"
+    );
+    assert_eq!(
+        parity.native_tp + source_consumed_conserved,
+        parity.tp,
+        "the native true positives exclude exactly the source-consumed carriers"
+    );
+    assert_eq!(
+        parity.covered_union_numerator,
+        parity.native_tp + source_consumed_population,
+        "the covered union counts a source-consumed class as its full source population"
+    );
+    assert!(
+        covered > native,
+        "the covered union must cover more than the native capability (covered {covered} \
+         vs native {native})"
+    );
+    let uncovered = parity.denominator - parity.covered_union_numerator;
+    let source_consumed_shortfall = source_consumed_population - source_consumed_conserved;
+    assert!(source_consumed_shortfall > 0);
+    assert_eq!(
+        parity.fn_,
+        uncovered + source_consumed_shortfall,
+        "the missing count is the uncovered native shortfall plus the covered \
+         source-consumed shortfall"
+    );
+}
+
+/// Anti-drift: every mutation of the recorded Java-relative parity is refused BY
+/// NAME, one at a time.  A denominator collapsed to the admitted band, a
+/// reclassified source-consumed class, a fabricated carrier counted as agreement,
+/// and a drifted identity digest must each be caught by their own token, never
+/// silently averaged into the aggregate.
+#[test]
+fn java_relative_parity_negative_matrix_refuses_every_named_mutation() {
+    let data = load_probe_data();
+    let measured = measure_all(&data);
+    let aggregate = Aggregate::of(&measured);
+    let parity = &aggregate.parity;
+    let recorded = RecordedClassParity::read();
+
+    // Case 0: the untouched block is clean, so the matrix is non-vacuous.
+    assert!(
+        recorded_parity_drift(parity, &recorded).is_empty(),
+        "the untouched recorded parity must agree with the independent measurement"
+    );
+
+    // Mutation 1: collapse the denominator down to the admitted band.  The native
+    // composer conserves everything it admits, so this reads a vacuous 1.0 — the
+    // exact trap; the guard must refuse it by name instead.
+    let collapsed = class_parity_with_collapsed_denominator(&measured);
+    assert_eq!(
+        collapsed.denominator, aggregate.admitted,
+        "the collapsed denominator is the admitted band"
+    );
+    assert_eq!(
+        micros_opt(collapsed.native_capability_recall()),
+        Some(1_000_000),
+        "a collapsed denominator would read native capability recall as 1.0"
+    );
+    assert_eq!(
+        micros_opt(collapsed.covered_union_recall()),
+        Some(1_000_000),
+        "a collapsed denominator would read covered union recall as 1.0"
+    );
+    let collapsed_drift = recorded_parity_drift(
+        parity,
+        &RecordedClassParity::from_parity(&collapsed, &recorded),
+    );
+    assert!(
+        collapsed_drift
+            .iter()
+            .any(|name| name == "parity_denominator_not_source_population"),
+        "a collapsed denominator must be refused by name: {collapsed_drift:#?}"
+    );
+
+    // Mutation 2: reclassify the source-consumed classes as classes the native
+    // composer produces.  Their carriers stop being covered, so the aggregate
+    // fabricates their shortfall as uncovered false negatives.
+    let reclassified = class_parity_with_reclassified_source_consumed(&measured);
+    let fabricated_fn = parity.covered_union_numerator - reclassified.covered_union_numerator;
+    assert_eq!(
+        fabricated_fn, 531,
+        "the source-consumed shortfall must be exactly 531 uncovered carriers"
+    );
+    assert!(
+        reclassified.covered_union_recall().expect("a denominator")
+            < parity.covered_union_recall().expect("a denominator")
+    );
+    let reclassified_drift = recorded_parity_drift(
+        parity,
+        &RecordedClassParity::from_parity(&reclassified, &recorded),
+    );
+    assert!(
+        reclassified_drift
+            .iter()
+            .any(|name| name == "parity_covered_union_drift"),
+        "a reclassified source-consumed class must be refused by name: {reclassified_drift:#?}"
+    );
+    assert!(
+        reclassified_drift
+            .iter()
+            .any(|name| name == "parity_native_capability_drift"),
+        "a reclassification must also move the native denominator: {reclassified_drift:#?}"
+    );
+
+    // Mutation 3: count a fabricated carrier as agreement.  Precision must fall
+    // below 1.0; claiming 1.0 while recording an FP is refused by name.
+    let honest_precision = ratio(parity.tp, parity.tp + 1).expect("a precision denominator");
+    assert!(
+        honest_precision < 1.0,
+        "one fabricated carrier must drop precision below 1.0"
+    );
+    let mut fabricated = recorded.clone();
+    fabricated.fp = 1;
+    fabricated.precision_micros = Some(1_000_000);
+    let fabricated_drift = recorded_parity_drift(parity, &fabricated);
+    assert!(
+        fabricated_drift
+            .iter()
+            .any(|name| name == "parity_precision_inconsistent"),
+        "an FP counted as agreement must be refused by name: {fabricated_drift:#?}"
+    );
+    // ... and an honestly lowered precision is still refused, as a drift.
+    let mut lowered = recorded.clone();
+    lowered.fp = 1;
+    lowered.precision_micros = micros_opt(Some(honest_precision));
+    let lowered_drift = recorded_parity_drift(parity, &lowered);
+    assert!(
+        lowered_drift
+            .iter()
+            .any(|name| name == "parity_precision_drift"),
+        "a fabricated carrier must move the recorded precision: {lowered_drift:#?}"
+    );
+
+    // Mutation 4: an identity digest that does not recompute from the frozen
+    // manifest is refused before any measurement.
+    let mut manifest = manifest_value();
+    *lane_mut(&mut manifest)
+        .get_mut("identity_digest")
+        .expect("the identity digest") = Value::from(format!("sha256:{}", "0".repeat(64)));
+    let refused = read_probe_data(&manifest);
+    assert_eq!(
+        refused.err().as_deref(),
+        Some("probe_identity_digest_drift"),
+        "a drifted identity digest must be refused by name"
+    );
 }
 
 /// The oracle is not fooled by an occurrence the conserved source subtree
@@ -2685,6 +3357,24 @@ fn zero_admitted_population_is_reported_as_no_denominator_not_one() {
     assert_eq!(empty_document.agreement, None);
     assert_eq!(empty_document.uncertainty, None);
     assert_eq!(empty_document.uncertainty_width, None);
+    assert_eq!(empty_document.parity, ClassParity::zero());
+    assert_eq!(empty_document.parity.native_capability_recall(), None);
+    assert_eq!(empty_document.parity.covered_union_recall(), None);
+    assert_eq!(empty_document.parity.precision(), None);
+    assert_eq!(empty_document.parity.f1(), None);
+
+    // A class whose carriers exist but which admits and emits nothing is a real
+    // 0.0 recall, not `no_denominator`; a class the source never declares is
+    // `no_denominator`, never a vacuum 1.0 (MEM1702).
+    let mut nothing_admitted = ClassParity::zero();
+    nothing_admitted.accumulate(2, 0, 0, false);
+    assert_eq!(nothing_admitted.native_capability_recall(), Some(0.0));
+    assert_eq!(nothing_admitted.covered_union_recall(), Some(0.0));
+    assert_eq!(nothing_admitted.precision(), None);
+    let mut absent_class = ClassParity::zero();
+    absent_class.accumulate(0, 0, 0, false);
+    assert_eq!(absent_class.native_capability_recall(), None);
+    assert_eq!(absent_class.covered_union_recall(), None);
 
     let data = load_probe_data();
     let margin = data
@@ -3124,7 +3814,7 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
         let recorded_classes: BTreeMap<&str, &FrozenClassRow> = frozen
             .classes
             .iter()
-            .map(|row| (row.0.as_str(), row))
+            .map(|row| (row.class.as_str(), row))
             .collect();
         let measured_classes: BTreeSet<&str> = document
             .profiles
@@ -3138,38 +3828,70 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
             document.article_id,
         );
         for profile in &document.profiles {
-            let (class, source_population, admitted, conserved, rejected) =
-                recorded_classes.get(profile.class).unwrap_or_else(|| {
-                    panic!(
-                        "{}: the measured class {} is not recorded in the frozen table",
-                        document.article_id, profile.class
-                    )
-                });
+            let row = recorded_classes.get(profile.class).unwrap_or_else(|| {
+                panic!(
+                    "{}: the measured class {} is not recorded in the frozen table",
+                    document.article_id, profile.class
+                )
+            });
+            let class = row.class.as_str();
             assert_eq!(
-                profile.source_population, *source_population,
-                "{}/{class}: source_population drifted (measured {}, frozen {source_population})",
-                document.article_id, profile.source_population,
+                profile.source_population, row.source_population,
+                "{}/{class}: source_population drifted (measured {}, frozen {})",
+                document.article_id, profile.source_population, row.source_population,
             );
             assert_eq!(
-                profile.admitted, *admitted,
-                "{}/{class}: admitted drifted (measured {}, frozen {admitted})",
-                document.article_id, profile.admitted,
+                profile.admitted, row.admitted,
+                "{}/{class}: admitted drifted (measured {}, frozen {})",
+                document.article_id, profile.admitted, row.admitted,
             );
             assert_eq!(
-                profile.conserved, *conserved,
-                "{}/{class}: conserved drifted (measured {}, frozen {conserved})",
-                document.article_id, profile.conserved,
+                profile.conserved, row.conserved,
+                "{}/{class}: conserved drifted (measured {}, frozen {})",
+                document.article_id, profile.conserved, row.conserved,
             );
             assert_eq!(
                 profile.lost,
-                *admitted - *conserved,
+                row.admitted - row.conserved,
                 "{}/{class}: lost must be admitted - conserved",
                 document.article_id,
             );
             assert_eq!(
-                profile.fabricated, *rejected,
-                "{}/{class}: fabricated drifted (measured {}, frozen {rejected})",
-                document.article_id, profile.fabricated,
+                profile.fabricated, row.rejected,
+                "{}/{class}: fabricated drifted (measured {}, frozen {})",
+                document.article_id, profile.fabricated, row.rejected,
+            );
+            // The Java-relative parity is the recorded expectation the oracle
+            // must independently reproduce: a null micro is a `no_denominator`
+            // row, compared as null rather than read as zero (MEM1702).
+            assert_eq!(
+                profile.source_is_conserved, row.source_consumed,
+                "{}/{class}: the source-consumed flag drifted",
+                document.article_id,
+            );
+            assert_eq!(
+                micros_opt(profile.recall_java()),
+                row.recall_java_micros,
+                "{}/{class}: recall_java drifted (measured {:?}, frozen {:?})",
+                document.article_id,
+                profile.recall_java(),
+                row.recall_java_micros,
+            );
+            assert_eq!(
+                micros_opt(profile.precision()),
+                row.precision_micros,
+                "{}/{class}: precision drifted (measured {:?}, frozen {:?})",
+                document.article_id,
+                profile.precision(),
+                row.precision_micros,
+            );
+            assert_eq!(
+                micros_opt(profile.f1()),
+                row.f1_micros,
+                "{}/{class}: f1 drifted (measured {:?}, frozen {:?})",
+                document.article_id,
+                profile.f1(),
+                row.f1_micros,
             );
         }
     }
@@ -3439,6 +4161,13 @@ fn frozen_tables_drift(tables: &Json, artifact: &Json, artifact_bytes: &[u8]) ->
                         || class["admitted"].as_u64() != artifact_class["admitted"].as_u64()
                         || class["conserved"].as_u64() != artifact_class["conserved"].as_u64()
                         || class["rejected"].as_u64() != artifact_class["fabricated"].as_u64()
+                        || class["recall_java_micros"].as_u64()
+                            != artifact_class["recall_java_micros"].as_u64()
+                        || class["precision_micros"].as_u64()
+                            != artifact_class["precision_micros"].as_u64()
+                        || class["f1_micros"].as_u64() != artifact_class["f1_micros"].as_u64()
+                        || class["source_consumed"].as_bool()
+                            != artifact_class["source_consumed"].as_bool()
                     {
                         row_ok = false;
                     }
@@ -3473,6 +4202,15 @@ fn frozen_tables_drift(tables: &Json, artifact: &Json, artifact_bytes: &[u8]) ->
             == aggregate["no_denominator_documents"].as_u64();
     if !aggregate_ok {
         drift.push("frozen_tables_row_drift:aggregate".to_string());
+    }
+
+    // The Java-relative parity block, per class and in aggregate, must be the
+    // artifact's block verbatim: the recorded tables cannot carry a parity the
+    // artifact does not, nor the other way round.
+    let recorded_parity = &tables["aggregate"]["class_parity"];
+    let artifact_parity = &artifact["evaluated_population"]["class_parity"];
+    if recorded_parity != artifact_parity {
+        drift.push("frozen_tables_row_drift:class_parity".to_string());
     }
 
     let mut recorded_narrowings: BTreeSet<(String, String, u64, u64)> = BTreeSet::new();
@@ -3598,5 +4336,45 @@ fn frozen_tables_are_derived_from_the_committed_artifact() {
             .iter()
             .any(|name| name == "frozen_tables_artifact_sha256"),
         "a table that describes another artifact must fail by name: {drift:#?}"
+    );
+
+    // A recorded Java-relative parity micro the artifact does not carry fails by
+    // name, so the parity rows are guarded exactly like the counts.
+    let mut parity_drifted = tables.clone();
+    let bumped_parity =
+        parity_drifted["aggregate"]["class_parity"]["aggregate"]["covered_union_recall_micros"]
+            .as_u64()
+            .unwrap_or(0)
+            + 1;
+    parity_drifted["aggregate"]["class_parity"]["aggregate"]["covered_union_recall_micros"] =
+        json!(bumped_parity);
+    let drift = frozen_tables_drift(&parity_drifted, &artifact, &artifact_bytes);
+    assert!(
+        drift
+            .iter()
+            .any(|name| name == "frozen_tables_row_drift:class_parity"),
+        "a substituted parity micro must fail by name: {drift:#?}"
+    );
+
+    // A recorded per-class parity micro the artifact does not carry fails by
+    // document, so the per-class parity comparison is not dead code.
+    let mut class_parity_drifted = tables.clone();
+    let bumped_class_parity =
+        class_parity_drifted["documents"][0]["profile"][0]["recall_java_micros"]
+            .as_u64()
+            .unwrap_or(0)
+            + 1;
+    class_parity_drifted["documents"][0]["profile"][0]["recall_java_micros"] =
+        json!(bumped_class_parity);
+    let class_parity_id = class_parity_drifted["documents"][0]["article_id"]
+        .as_str()
+        .expect("article_id")
+        .to_string();
+    let drift = frozen_tables_drift(&class_parity_drifted, &artifact, &artifact_bytes);
+    assert!(
+        drift
+            .iter()
+            .any(|name| name == &format!("frozen_tables_row_drift:{class_parity_id}")),
+        "a substituted per-class parity micro must fail by name: {drift:#?}"
     );
 }
