@@ -2835,6 +2835,162 @@ parity_ledger:
       accepted_as_residual: true
       decision_ref: D471
       residual_owner: M513-r7dg4z/S05
+  # ------------------------------------------------------------------------
+  # Absent-capability fate registry (M513-r7dg4z/S05, 2026-09-29, D478/D479).
+  #
+  # `Row.reason` is a scope-derived consequence of `product_scope` (see
+  # absent_reason_vocabulary above), so it is not a decision. This block
+  # records the decision the scope cannot derive: a typed disposition plus a
+  # closed-vocabulary reason and a product rationale. It is total over the 16
+  # `state: absent` rows plus the single named gap, and it is judged
+  # fail-closed by crates/da-parse/tests/parity_ledger/mod.rs (the Rust name
+  # `reason` is free here because the block is separate; `Row.reason` is never
+  # aliased to it).
+  # ------------------------------------------------------------------------
+  absent_disposition_vocabulary:
+    dispositions: [out_of_product_scope, in_horizon_project_native]
+    reasons:
+    - java_training_admin_surface
+    - patent_family_out_of_scope
+    - non_tei_visualisation_or_overlay
+    - asset_zip_not_graph_truth
+    - funding_semantics_carried_natively
+    - project_native_learning_line
+    - project_native_no_grobid_donor
+  absent_dispositions:
+    rest.processCitationPatentTEI:
+      disposition: out_of_product_scope
+      reason: patent_family_out_of_scope
+      rationale: >-
+        The patent-citation family is a separate SCHEMA `patent_rule` product
+        line that this milestone does not admit; the row stays absent and no
+        parity is claimed, so the Java patent endpoint is decided out of
+        product scope rather than left silently unimplemented.
+    rest.processCitationPatentST36:
+      disposition: out_of_product_scope
+      reason: patent_family_out_of_scope
+      rationale: >-
+        ST36 is one of the patent-citation encodings of the separate SCHEMA
+        `patent_rule` product line; the capability stays absent by decision and
+        no parity is claimed, so the Java endpoint is out of product scope.
+    rest.processCitationPatentPDF:
+      disposition: out_of_product_scope
+      reason: patent_family_out_of_scope
+      rationale: >-
+        PDF is one of the patent-citation encodings of the separate SCHEMA
+        `patent_rule` product line; the capability stays absent by decision and
+        no parity is claimed, so the Java endpoint is out of product scope.
+    rest.processCitationPatentTXT:
+      disposition: out_of_product_scope
+      reason: patent_family_out_of_scope
+      rationale: >-
+        TXT is one of the patent-citation encodings of the separate SCHEMA
+        `patent_rule` product line; the capability stays absent by decision and
+        no parity is claimed, so the Java endpoint is out of product scope.
+    rest.createTraining:
+      disposition: out_of_product_scope
+      reason: java_training_admin_surface
+      rationale: >-
+        This is part of the Java model-training administration surface; the
+        project evaluates extraction through `comparison_contract.yaml`, so a
+        compatible training HTTP surface is not a product requirement and the
+        absence is a recorded decision rather than an oversight.
+    rest.trainingResult:
+      disposition: out_of_product_scope
+      reason: java_training_admin_surface
+      rationale: >-
+        This is part of the Java model-training administration surface; the
+        project evaluates extraction through `comparison_contract.yaml`, so a
+        compatible training-result HTTP surface is not a product requirement
+        and the absence is a recorded decision.
+    rest.allTraining:
+      disposition: out_of_product_scope
+      reason: java_training_admin_surface
+      rationale: >-
+        This is part of the Java model-training administration surface; the
+        project evaluates extraction through `comparison_contract.yaml`, so a
+        training-job listing HTTP surface is not a product requirement and the
+        absence is a recorded decision.
+    rest.killTraining:
+      disposition: out_of_product_scope
+      reason: java_training_admin_surface
+      rationale: >-
+        This is part of the Java model-training administration surface; the
+        project evaluates extraction through `comparison_contract.yaml`, so a
+        training-job control HTTP surface is not a product requirement and the
+        absence is a recorded decision.
+    rest.model:
+      disposition: out_of_product_scope
+      reason: java_training_admin_surface
+      rationale: >-
+        This is the Java model-training model-management surface; the project
+        evaluates extraction through `comparison_contract.yaml`, so a
+        compatible model HTTP surface is not a product requirement and the
+        absence is a recorded decision.
+    rest.processFulltextDocumentHTML:
+      disposition: out_of_product_scope
+      reason: non_tei_visualisation_or_overlay
+      rationale: >-
+        This endpoint emits HTML rather than TEI graph truth (D127), so it
+        serves a visualisation surface the product does not require; the
+        absence is recorded rather than carried as an unstated gap.
+    rest.referenceAnnotations:
+      disposition: out_of_product_scope
+      reason: non_tei_visualisation_or_overlay
+      rationale: >-
+        This endpoint emits reference annotations as an overlay rather than TEI
+        graph truth (D127), so it serves a visualisation surface the product
+        does not require; the absence is recorded rather than left silent.
+    rest.annotatePDF:
+      disposition: out_of_product_scope
+      reason: non_tei_visualisation_or_overlay
+      rationale: >-
+        This endpoint annotates the PDF itself rather than producing TEI graph
+        truth (D127), so it serves a visualisation surface the product does not
+        require; the absence is recorded rather than left silent.
+    rest.processFulltextAssetDocument:
+      disposition: out_of_product_scope
+      reason: asset_zip_not_graph_truth
+      rationale: >-
+        This endpoint returns a zip of assets rather than TEI graph content,
+        and asset bytes are not graph truth (D127); the absence is therefore a
+        decision about product scope, not a missing implementation.
+    rest.processHeaderFundingDocument:
+      disposition: out_of_product_scope
+      reason: funding_semantics_carried_natively
+      rationale: >-
+        Funding semantics are carried natively by the native funding family
+        (lane M507/S06), so the Java wire endpoint is not required for the
+        product; the absence is recorded with that reason instead of being left
+        as silent non-coverage.
+    learning.sona_trajectory:
+      disposition: in_horizon_project_native
+      reason: project_native_learning_line
+      rationale: >-
+        This row belongs to the project-native learning line that CONTEXT
+        section 7 excludes from the critical path and it has no Java donor, so
+        Java/Rust parity is not claimed; the capability enters the horizon as a
+        project-native item.
+    learning.microlora_ewc:
+      disposition: in_horizon_project_native
+      reason: project_native_learning_line
+      rationale: >-
+        This row belongs to the project-native learning line that CONTEXT
+        section 7 excludes from the critical path and it has no Java donor, so
+        Java/Rust parity is not claimed; the capability enters the horizon as a
+        project-native item.
+    learning.ruvllm_ablation:
+      disposition: in_horizon_project_native
+      reason: project_native_no_grobid_donor
+      rationale: >-
+        The single named gap has no Java donor at all (no_java_donor) and is
+        already the typed D471 refusal with residual owner M513-r7dg4z/S05; it
+        enters the horizon as a project-native item whose parity is explicitly
+        not claimed.
+  horizon_order:
+  - learning.ruvllm_ablation
+  - learning.sona_trajectory
+  - learning.microlora_ewc
   denominators:
     capabilities: 38
     scope:

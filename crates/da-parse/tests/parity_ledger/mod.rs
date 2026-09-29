@@ -71,6 +71,15 @@ pub const OUTSIDE_CORPUS_PARITY: &str = "outside_corpus_parity";
 pub const AGGREGATE_KIND_DECLARED_POPULATION_COUNT: &str = "declared_population_count";
 pub const POOLED_QUALITY_CLAIM_FORBIDDEN: &str = "forbidden";
 
+/// Absent-capability fate registry (M513-r7dg4z/S05, D478/D479). A recorded
+/// fate is a decision the scope-derived `Row.reason` cannot express, so it
+/// lives in its own block where the Rust name `reason` is free.
+pub const DISPOSITION_OUT_OF_PRODUCT_SCOPE: &str = "out_of_product_scope";
+pub const DISPOSITION_IN_HORIZON_PROJECT_NATIVE: &str = "in_horizon_project_native";
+/// The one reason a named gap may carry: no Java donor exists, so parity is
+/// explicitly not claimed rather than silently unimplemented.
+pub const NAMED_GAP_REASON_NO_DONOR: &str = "project_native_no_grobid_donor";
+
 // --------------------------------------------------------------------------
 // Data model
 // --------------------------------------------------------------------------
@@ -126,6 +135,19 @@ pub struct ParityLedger {
     /// residual owner.
     #[serde(default)]
     pub named_gap_disposition: Option<NamedGapDisposition>,
+    /// Closed vocabulary the absent-disposition registry is judged against
+    /// (S05, D478/D479). `#[serde(default)]` is mandatory: without it the
+    /// mutation matrix cannot deserialize a clone whose sub-block was tampered
+    /// away, and the new DATA would be silently ignored rather than judged.
+    #[serde(default)]
+    pub absent_disposition_vocabulary: Option<AbsentDispositionVocabulary>,
+    /// The recorded fate of every `state: absent` row plus every named gap
+    /// (S05, D478/D479). Keys are capability ids.
+    #[serde(default)]
+    pub absent_dispositions: BTreeMap<String, AbsentDisposition>,
+    /// Ordered subset of the `in_horizon_project_native` keys (S05, D478/D479).
+    #[serde(default)]
+    pub horizon_order: Vec<String>,
 }
 
 /// The pinned S02 measurement: two content-addressed files, the identity and
@@ -214,6 +236,24 @@ pub struct NamedGapRefusal {
     pub accepted_as_residual: bool,
     pub decision_ref: String,
     pub residual_owner: String,
+}
+
+/// Closed vocabulary for [`AbsentDisposition`]: the disposition classes and the
+/// reasons an absent capability may be assigned (S05, D478).
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AbsentDispositionVocabulary {
+    pub dispositions: Vec<String>,
+    pub reasons: Vec<String>,
+}
+
+/// A recorded fate for one absent capability or named gap (S05, D478/D479).
+/// `rationale` states the product fact; it must never be a restatement of the
+/// capability's `product_scope`.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AbsentDisposition {
+    pub disposition: String,
+    pub reason: String,
+    pub rationale: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -1010,6 +1050,155 @@ pub fn check_named_gaps(doc: &CompatibilityDocument) -> Vec<String> {
     errors
 }
 
+/// Fail-closed judge for the absent-capability fate registry (S05, D478/D479).
+///
+/// Pure DATA -> DATA, no file IO. Every violation names the capability (or the
+/// disposition key) and the check never stops at the first error, so one
+/// tampered entry cannot mask the others. The registry is total over the 16
+/// `state: absent` rows plus the single named gap, and no capability may
+/// acquire a fate it is not allowed to hold.
+///
+/// Invariants (exact error tokens in the slice plan):
+///
+/// * the key set equals the absent rows union the named gaps;
+/// * `disposition` and `reason` come from the declared vocabulary;
+/// * a decision always carries a non-empty `rationale`;
+/// * the horizon is exactly the `in_horizon_project_native` set, is unique and
+///   is contiguous with `horizon_order`;
+/// * a named gap's decision is the typed `project_native_no_grobid_donor`
+///   refusal and agrees with the gap's `named_gap_disposition` entry.
+pub fn check_absent_dispositions(doc: &CompatibilityDocument) -> Vec<String> {
+    let mut errors = Vec::new();
+    let ledger = &doc.parity_ledger;
+
+    // (a) totality: the key set equals the absent rows union the named gaps.
+    let mut expected: BTreeSet<&str> = ledger
+        .rows
+        .iter()
+        .filter(|row| row.state == "absent")
+        .map(|row| row.capability.as_str())
+        .collect();
+    expected.extend(ledger.named_gaps.iter().map(|gap| gap.capability.as_str()));
+    let actual: BTreeSet<&str> = ledger
+        .absent_dispositions
+        .keys()
+        .map(String::as_str)
+        .collect();
+    for capability in expected.difference(&actual) {
+        errors.push(format!("`{capability}` has no disposition"));
+    }
+    for key in actual.difference(&expected) {
+        errors.push(format!("`{key}` has no capability"));
+    }
+
+    let vocabulary = ledger.absent_disposition_vocabulary.as_ref();
+    if vocabulary.is_none() {
+        errors.push("absent_disposition_vocabulary is not declared".to_string());
+    }
+    let dispositions: BTreeSet<&str> = vocabulary
+        .map(|vocabulary| vocabulary.dispositions.iter().map(String::as_str).collect())
+        .unwrap_or_default();
+    let reasons: BTreeSet<&str> = vocabulary
+        .map(|vocabulary| vocabulary.reasons.iter().map(String::as_str).collect())
+        .unwrap_or_default();
+
+    let mut in_horizon: BTreeSet<&str> = BTreeSet::new();
+    for (capability, entry) in &ledger.absent_dispositions {
+        // (b) the disposition is drawn from the declared vocabulary.
+        if !dispositions.contains(entry.disposition.as_str()) {
+            errors.push(format!(
+                "`{capability}` disposition `{}` is not in the declared absent disposition vocabulary",
+                entry.disposition
+            ));
+        }
+        // (c) the reason is drawn from the declared vocabulary.
+        if !reasons.contains(entry.reason.as_str()) {
+            errors.push(format!(
+                "`{capability}` reason `{}` is not in the declared absent reason vocabulary",
+                entry.reason
+            ));
+        }
+        // (d) a recorded decision always states a rationale.
+        if entry.rationale.trim().is_empty() {
+            errors.push(format!("`{capability}` has no rationale"));
+        }
+        // (e) the horizon is exactly the in-horizon set, nothing more.
+        if entry.disposition == DISPOSITION_IN_HORIZON_PROJECT_NATIVE {
+            in_horizon.insert(capability.as_str());
+            if !ledger
+                .horizon_order
+                .iter()
+                .any(|ordered| ordered == capability)
+            {
+                errors.push(format!("`{capability}` has no horizon order"));
+            }
+        } else if entry.disposition == DISPOSITION_OUT_OF_PRODUCT_SCOPE
+            && ledger
+                .horizon_order
+                .iter()
+                .any(|ordered| ordered == capability)
+        {
+            errors.push(format!("`{capability}` claims a horizon order"));
+        }
+    }
+
+    // (f) the horizon order is unique, resolvable and contiguous with the set.
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    for ordered in &ledger.horizon_order {
+        if !seen.insert(ordered.as_str()) {
+            errors.push(format!("duplicate horizon order `{ordered}`"));
+        }
+        if !ledger.absent_dispositions.contains_key(ordered) {
+            errors.push(format!(
+                "horizon_order is not contiguous: `{ordered}` is not a disposition key"
+            ));
+        }
+    }
+    let ordered_set: BTreeSet<&str> = ledger.horizon_order.iter().map(String::as_str).collect();
+    if ordered_set != in_horizon {
+        errors.push(format!(
+            "horizon_order is not contiguous: {ordered_set:?} != {in_horizon:?}"
+        ));
+    }
+
+    // (g) a named gap's fate must be the typed refusal it already carries.
+    for gap in &ledger.named_gaps {
+        let Some(entry) = ledger.absent_dispositions.get(&gap.capability) else {
+            // (a) already named the missing key; do not double-report here.
+            continue;
+        };
+        let refusal_agrees = ledger
+            .named_gap_disposition
+            .as_ref()
+            .and_then(|disposition| {
+                disposition
+                    .gaps
+                    .iter()
+                    .find(|refusal| refusal.capability == gap.capability)
+                    .map(|refusal| {
+                        disposition
+                            .kind_vocabulary
+                            .iter()
+                            .any(|kind| kind == &refusal.kind)
+                            && !refusal.residual_owner.trim().is_empty()
+                            && !refusal.decision_ref.trim().is_empty()
+                    })
+            })
+            .unwrap_or(false);
+        if entry.disposition != DISPOSITION_IN_HORIZON_PROJECT_NATIVE
+            || entry.reason != NAMED_GAP_REASON_NO_DONOR
+            || !refusal_agrees
+        {
+            errors.push(format!(
+                "`{}` disagrees with the named gap refusal",
+                gap.capability
+            ));
+        }
+    }
+
+    errors
+}
+
 /// Locks are unchanged (D127 / ADR-076 §14).
 pub fn check_locks(doc: &CompatibilityDocument) -> Vec<String> {
     let mut errors = Vec::new();
@@ -1474,6 +1663,10 @@ pub fn evaluate_document(root: &Path, doc: CompatibilityDocument) -> Outcome {
     // existing check order and set are unchanged.
     errors.extend(check_measurement_coverage(&doc));
     errors.extend(check_measurement_identity(root, &doc));
+    // M513-r7dg4z/S05 (D478/D479): the recorded fate of every absent capability
+    // and the single named gap. Appended last so no existing check is
+    // reordered or weakened.
+    errors.extend(check_absent_dispositions(&doc));
     Outcome {
         report: render_report(&doc),
         errors,
@@ -1505,9 +1698,13 @@ pub fn render_report(doc: &CompatibilityDocument) -> String {
             Some(link) => format!("outside[{}]", link.reason.as_deref().unwrap_or("-")),
             None => "-".to_string(),
         };
+        let disposition = match ledger.absent_dispositions.get(&row.capability) {
+            Some(entry) => format!("{}/{}", entry.disposition, entry.reason),
+            None => "-".to_string(),
+        };
         let _ = writeln!(
             out,
-            "  {:<50} {:<26} {:<8} {:<27} java={:<28} rust={} test={} measurement={}",
+            "  {:<50} {:<26} {:<8} {:<27} java={:<28} rust={} test={} measurement={} disposition={}",
             row.capability,
             row.scope,
             row.state,
@@ -1515,7 +1712,8 @@ pub fn render_report(doc: &CompatibilityDocument) -> String {
             java,
             row.rust.len(),
             test,
-            measurement
+            measurement,
+            disposition
         );
     }
     let _ = writeln!(out, "  named gaps:");

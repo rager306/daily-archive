@@ -323,3 +323,228 @@ fn parity_ledger_is_fail_closed_and_prints_its_report() {
         "carrier must be the sanctioned data/parse/grobid_compatibility.yaml"
     );
 }
+
+// --------------------------------------------------------------------------
+// Absent-capability fate registry (M513-r7dg4z/S05, D478/D479). One test per
+// invariant group: each first proves the clean carrier is silent, then tampers
+// exactly one entry in memory so a regression names the rule that broke.
+// --------------------------------------------------------------------------
+
+/// (a) Totality: the registry covers every `state: absent` row plus the single
+/// named gap and contains nothing else. A single missing key must be refused by
+/// name, so silent non-coverage is impossible.
+#[test]
+fn absent_dispositions_are_total_over_absent_rows_and_named_gaps() {
+    let root = root();
+    let errors = pl::check_absent_dispositions(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .absent_dispositions
+        .remove("rest.annotatePDF");
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("`rest.annotatePDF` has no disposition")),
+        "dropping one key must be refused by name: {tampered:?}"
+    );
+}
+
+/// (b)-(d) The disposition and reason come from the declared closed
+/// vocabularies, and a recorded fate always carries a non-empty rationale.
+#[test]
+fn absent_dispositions_use_the_declared_vocabulary_and_carry_a_rationale() {
+    let root = root();
+    let errors = pl::check_absent_dispositions(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .absent_dispositions
+        .get_mut("rest.annotatePDF")
+        .expect("entry present")
+        .disposition = "invented_disposition".to_string();
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("is not in the declared absent disposition vocabulary")),
+        "{tampered:?}"
+    );
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .absent_dispositions
+        .get_mut("rest.annotatePDF")
+        .expect("entry present")
+        .reason = "invented_reason".to_string();
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("is not in the declared absent reason vocabulary")),
+        "{tampered:?}"
+    );
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .absent_dispositions
+        .get_mut("rest.annotatePDF")
+        .expect("entry present")
+        .rationale = "   ".to_string();
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("`rest.annotatePDF` has no rationale")),
+        "{tampered:?}"
+    );
+}
+
+/// (e)-(f) The horizon is exactly the `in_horizon_project_native` set: an
+/// in-horizon disposition must have a place in `horizon_order`, an
+/// out-of-product-scope fate may not claim one, and the order is unique and
+/// contiguous with the set.
+#[test]
+fn horizon_order_is_unique_contiguous_and_exactly_the_in_horizon_set() {
+    let root = root();
+    let errors = pl::check_absent_dispositions(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    // An in-horizon entry that lost its place in the order is not contiguous.
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .absent_dispositions
+        .get_mut("learning.sona_trajectory")
+        .expect("entry present")
+        .disposition = pl::DISPOSITION_OUT_OF_PRODUCT_SCOPE.to_string();
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("is not contiguous")),
+        "{tampered:?}"
+    );
+
+    // An out-of-product-scope capability may not claim a horizon order.
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .horizon_order
+        .push("rest.annotatePDF".to_string());
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("claims a horizon order")),
+        "{tampered:?}"
+    );
+
+    // A duplicated order entry is named.
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .horizon_order
+        .push("learning.sona_trajectory".to_string());
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("duplicate horizon order")),
+        "{tampered:?}"
+    );
+}
+
+/// (g) The single named gap's recorded fate must be the typed
+/// `project_native_no_grobid_donor` refusal and must agree with the gap's
+/// `named_gap_disposition` entry (kind in the vocabulary, owner and decision
+/// reference non-empty).
+#[test]
+fn the_named_gap_fate_is_the_typed_no_donor_refusal() {
+    let root = root();
+    let errors = pl::check_absent_dispositions(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .absent_dispositions
+        .get_mut("learning.ruvllm_ablation")
+        .expect("entry present")
+        .reason = "project_native_learning_line".to_string();
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("disagrees with the named gap refusal")),
+        "{tampered:?}"
+    );
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .named_gap_disposition
+        .as_mut()
+        .expect("named gap disposition present")
+        .gaps
+        .clear();
+    let tampered = pl::check_absent_dispositions(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("disagrees with the named gap refusal")),
+        "{tampered:?}"
+    );
+}
+
+/// Aggregate fate gate: run every check at once, print the per-row
+/// `disposition=` column and the 17-line fate register with `--nocapture`, and
+/// assert the frozen census: 17 entries total, 14 `out_of_product_scope`, 3
+/// `in_horizon_project_native`, a 3-step horizon order, and the named gap
+/// carrying the typed `project_native_no_grobid_donor` decision.
+#[test]
+fn absent_disposition_census_is_total_and_prints_the_human_register() {
+    let outcome = pl::evaluate(&root());
+    println!("{}", outcome.report);
+    assert!(outcome.errors.is_empty(), "{}", report(&outcome.errors));
+
+    let doc = pl::load(&root());
+    let registry = &doc.parity_ledger.absent_dispositions;
+    println!("absent fate register ({} entries):", registry.len());
+    for (capability, entry) in registry {
+        println!("  {capability} -> {} / {}", entry.disposition, entry.reason);
+    }
+    assert_eq!(
+        registry.len(),
+        17,
+        "the fate register is total over 16 absent rows plus 1 named gap"
+    );
+    assert_eq!(
+        registry
+            .values()
+            .filter(|entry| entry.disposition == pl::DISPOSITION_OUT_OF_PRODUCT_SCOPE)
+            .count(),
+        14,
+        "out_of_product_scope count"
+    );
+    assert_eq!(
+        registry
+            .values()
+            .filter(|entry| entry.disposition == pl::DISPOSITION_IN_HORIZON_PROJECT_NATIVE)
+            .count(),
+        3,
+        "in_horizon_project_native count"
+    );
+    assert_eq!(
+        doc.parity_ledger.horizon_order.len(),
+        3,
+        "horizon order length"
+    );
+    let gap = registry
+        .get("learning.ruvllm_ablation")
+        .expect("the named gap has a recorded fate");
+    assert_eq!(gap.disposition, pl::DISPOSITION_IN_HORIZON_PROJECT_NATIVE);
+    assert_eq!(gap.reason, pl::NAMED_GAP_REASON_NO_DONOR);
+    assert!(
+        outcome.report.contains("disposition="),
+        "report must print the per-row disposition"
+    );
+}

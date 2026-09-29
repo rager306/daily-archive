@@ -1112,3 +1112,77 @@ D127 не снят. Java GROBID остаётся TEI oracle и rollback target. 
 `pending` (`reviewer=null`). Названные остатки Java-CPU H05 и label-расхождение
 H21 не закрыты.
 
+## 26. Корректировка 2026-09-28: остаток Java-CPU измерен числом и H05 закрыт в реестре горизонта (M513-r7dg4z/S04)
+
+Секция закрывает остаток Java-CPU H05 и не снимает ни одного замка. История не
+переписывается: §20 остаётся датированной записью среза M511-j7wz2f/S06
+со своими литералами и с прежним sha stub-артефакта `015a2cca82fc7983…`,
+который был пере-пинен в S04/T02 на `9308a5ac1dd397bd…` (тот же stub-прогон,
+регенерированный после появления ключа `java_cpu_remainder`); §§14–§25 не
+изменяются. Это НЕ релизное решение: корректировка не расширяет допуск, не
+объявляет production-достижимость и не даёт права на промоушен или графовую
+запись.
+
+**Решение (однократный замер, а не релизная авторизация).** Остаток
+`java_cpu_wall_clock_ns` перестаёт быть типизированным `not_observed` и
+становится измеренным числом на живом субстрате. Мерный прогон отделён от
+проверки: байты замера судит герметичный контрактный тест, которому GROBID не
+нужен, поэтому факт не зависит от живости sidecar в момент чтения.
+
+**Замер (2026-09-28, M513-r7dg4z/S04; субстрат — живой Java GROBID).** Два
+конкурентных батча по 3 закреплённых PDF (`layout_bakeoff`, sha256 каждого сверен
+до отправки), общий process-local бюджет `execution_capacity=4` /
+`publication_capacity=6`, медленный ordinal-0 — самый длинный документ
+(объявленный, без синтетической задержки), профиль `structural` (D204), таймаут
+900 с. Измерено: `java_cpu_wall_clock_ns` = **106 630 786 000 нс** CPU сайдкара
+при окне `wall_clock_ns` = **30 119 369 791 нс**, то есть
+`java_cpu_to_wall_ratio_micros` = **3 540 272** (≈3,54 занятых ядра); живой
+`peak_rss_bytes` = 294 473 728 B; хвосты латентности p50 18 201 / p95 22 473 /
+p99 22 473 мс; пик удержанных байт 2 358 615 B внутри потолка 67 108 864 B
+(`verdict: within_ceiling`); bounded reorder 2; 6/6 терминальных исходов
+succeeded, failed=0.
+
+**Семантика числа (важно для читателя).** Числитель — это потребление ВСЕГО
+контейнера `grobid_sidecar_cgroup_cpuacct` за окно (cgroup v2 `cpu.stat`
+`usage_usec` delta, все потоки), а НЕ per-document величина; знаменатель — то же
+окно, между теми же двумя чтениями счётчика, и в нём нет синтетической задержки.
+Поэтому `java_cpu_to_wall_ratio_micros` — число занятых ядер (×1 000 000), которое
+законно может превышать 1 000 000 и никогда не является долей ≤ 1. Потолок
+обеспечен в момент резервации (`try_reserve_retained_bytes`), а не равенством
+замера: живой субстрат публикует строго по ordinal и освобождает резервацию сразу
+после sink, поэтому аддитивность удержанных байтов субстрат-осознанна (D477).
+
+**Удержание артефактов.** `artifacts/parse_compat/parse_batch_budget_live.json`
+(sha256 `fa13b1fb4921177aade374ea002b1a85889ae816f79992083cbf6be371d2461d`,
+identity `parse-batch-budget-live.v1`) несёт замер Java-CPU и объявлен байтово в
+`scripts/governor/checks/scholarly_parse_plane.yaml` и в зеркале
+`governor/fixtures/scholarly_parse_plane/contract.positive.json`;
+`artifacts/parse_compat/parse_batch_budget_shadow.json`
+(sha256 `9308a5ac1dd397bd84f5efb68ea6c59e82cd206bee33097104697412f9a3c5e2`,
+identity `parse-batch-budget-shadow.v1`) несёт детерминированный bounded reorder и
+потолок удержанных байт на stub-субстрате и пере-пинен там же.
+
+**Реестры.** `doc/review/grobid-rust-horizon-review.json` (`claim_scope:
+evidence`) переводит H05 в `complete` с `completion_evidence` (mode `runtime`),
+owner `M513-r7dg4z/S04`, `implementation_pass=true`, `verification_pass=true`,
+каждой строкой `verification_evidence` = `pass`, `tested_source.verified=true`;
+принятый `open_item` удалён, потому что `accepted: true` был легален только для
+unassigned unresolved-стадии. Контракт
+`scripts/governor/checks/grobid_rust_horizon_review.yaml` расширяет `owner_allow`
+этим срезом; `stage_id_range [H01,H13]`, `unresolved_status` и
+`open_item_required_for_unresolved` не меняются, стадий по-прежнему 13, а
+горизонт становится полностью закрытым: `stages=13 unresolved=0 complete=13
+claims=13 unassigned_unresolved=0 open_items=0`.
+`doc/review/grobid-absorption-followup.json` (`claim_scope: planning`) сохраняет
+H19 в unresolved-наборе (`in_progress`) с `implementation_pass=false` и
+`verification_pass=false`; его open item сужен до planning-зеркала, а PASS не
+заявляется ни здесь, ни где-либо ещё в этом реестре.
+
+**Что это НЕ значит.** Ни одна стадия H14–H21 не закрыта в планирующем реестре;
+H20 остаётся `pending` / `unassigned`, а GAR-015 — единственной открытой записью
+с человеческим релизным решением `pending` (`reviewer=null`). Замки не тронуты:
+`import_eligible=false`, `deployed=false`, `production_route=forbidden`,
+`graph_write=forbidden`, `auto_promote=forbidden`,
+`promotion_state=candidate_only`, `observation_mode=shadow`; D127 не снят. Java
+GROBID остаётся TEI oracle и rollback target.
+

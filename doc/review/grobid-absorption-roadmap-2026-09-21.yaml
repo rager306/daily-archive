@@ -28,9 +28,10 @@
 #   нет), владельцы `unassigned`.
 #   `open_item_required_for_unresolved: false` — обёртка НЕ требует принятия
 #   открытого пункта, поэтому `open_item.accepted` нигде не выставлен в true.
-#   Единственный фактически существующий accepted open item — H05 в
-#   `doc/review/grobid-rust-horizon-review.json`; здесь он не дублируется и не
-#   перепринимается.
+#   С 2026-09-28 (M513-r7dg4z/S04) в `doc/review/grobid-rust-horizon-review.json`
+#   не остаётся ни одного принятого open item: H05 закрыт с completion evidence
+#   после измерения Java-CPU. В планирующем реестре ниже принятие не
+#   предполагается и не фабрикуется.
 #   planning-запись не создаёт milestone/slice/task, не является доказательством
 #   реализации и не даёт никакого права на production-маршрут.
 #
@@ -241,10 +242,11 @@ measured_state:
     file_tag_counts_not_remeasured_in_s07: true
   horizon:
     stages_total: 13
-    complete: 12
-    in_progress: 1
-    in_progress_stage: H05
-    h05_is_an_accepted_open_item_with_owner_unassigned: true
+    complete: 13
+    in_progress: 0
+    h05_closed_by: M513-r7dg4z/S04
+    h05_java_cpu_measured: true
+    h05_is_an_accepted_open_item_with_owner_unassigned: false
   locks:
     import_eligible: false
     deployed: false
@@ -579,6 +581,29 @@ corrections:
       pytest — 504 passed; `governor architecture` — ARCHITECTURE GATE: PASS с
       измеренным GATE_RC=0 (16 шагов, 1653 s). Числа только измеренные.
     evidence: artifacts/parse_compat/external_holdout_release_probe.json
+
+  - id: C14
+    previous: >
+      H05 числился `in_progress` с суженным accepted open item, у которого
+      оставался только Java-CPU (артефакт-стаб без Java-процесса), а H19 в
+      planning-реестре нёс open item «Java-CPU не измерен» и ссылался на H05 как
+      на незакрытый этап горизонта.
+    corrected: >
+      S04 (2026-09-28) измерил остаток Java-CPU на живом субстрате:
+      `java_cpu_wall_clock_ns` = 106630786000 нс container-wide CPU сайдкара
+      `grobid_sidecar_cgroup_cpuacct` за окно 30119369791 нс (≈3,54 занятых ядра),
+      живой peak RSS 294473728 B, 6/6 терминальных исходов, артефакт
+      artifacts/parse_compat/parse_batch_budget_live.json (sha256 fa13b1fb…). H05
+      переведён в `complete` с completion evidence (mode runtime) в
+      horizon-реестре, owner M513-r7dg4z/S04, все строки verification_evidence =
+      pass, принятый open_item удалён; горизонт закрыт целиком (stages=13
+      unresolved=0 complete=13 claims=13 unassigned_unresolved=0 open_items=0), а
+      `owner_allow` контракта расширен этим срезом. H19 в этом planning-реестре
+      остаётся `in_progress` с implementation_pass=false и verification_pass=false:
+      его open item сужен до planning-зеркала без PASS-клейма. Ни одна стадия
+      H14–H21 не закрыта (H20 остаётся pending/unassigned), замки не менялись,
+      GAR-015 остаётся единственной открытой записью.
+    evidence: artifacts/parse_compat/parse_batch_budget_live.json
 
 # ---------------------------------------------------------------------------
 # validation_commands — как воспроизвести проверку (read-only).

@@ -935,7 +935,7 @@
     {
       "stage_id": "H19",
       "title": "P1: H05 — глобальные потолки ресурсов и bounded reorder",
-      "scope": "P1. H05 (Global budgets and bounded reorder) — единственный незакрытый этап горизонта; в doc/review/grobid-rust-horizon-review.json он записан как accepted open item с owner unassigned. После S06/T05 измерены RSS и хвосты латентности, введён потолок удержанных байт и типизированная классификация отказа (artifacts/parse_compat/parse_batch_budget_shadow.json); Java-CPU остаётся not_observed. Требуется закрыть именно остаток: Java-CPU при участии реального Java-процесса.",
+      "scope": "P1. H05 (Global budgets and bounded reorder) — этап горизонта, закрытый в doc/review/grobid-rust-horizon-review.json с completion evidence (owner M513-r7dg4z/S04): Java-CPU измерен при участии реального Java GROBID под двумя конкурентными батчами с медленным ordinal-0, а RSS, хвосты латентности, потолок удержанных байт и типизированная классификация отказа остаются измеренными ранее (artifacts/parse_compat/parse_batch_budget_shadow.json, artifacts/parse_compat/parse_batch_budget_live.json). Здесь остаётся только planning-зеркало без PASS-клейма.",
       "status": "in_progress",
       "depends_on": [],
       "owner": "unassigned",
@@ -987,7 +987,7 @@
         },
         {
           "path": "artifacts/parse_compat/parse_batch_budget_shadow.json",
-          "note": "измеренный артефакт (sha256 015a2cca…), пиннится байтово в обеих governor-поверхностях",
+          "note": "измеренный stub-артефакт (sha256 9308a5ac1dd397bd84f5efb68ea6c59e82cd206bee33097104697412f9a3c5e2, пере-пинен после появления ключа java_cpu_remainder), пиннится байтово в обеих governor-поверхностях",
           "state": "present"
         }
       ],
@@ -995,7 +995,7 @@
         {
           "mode": "governor_rule",
           "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H05 остаётся in_progress с суженным accepted open item; PASS-клеймов нет",
+          "expected": "H05 закрыт в horizon-реестре с completion evidence; planning-зеркало PASS не заявляет (status остаётся в unresolved-наборе)",
           "status": "pending"
         },
         {
@@ -1031,7 +1031,7 @@
         {
           "mode": "runtime",
           "ref": "parse_batch_budget_shadow.json#observations.java_cpu_wall_clock_ns",
-          "expected": "Java CPU остаётся типизированным not_observed с названной причиной: детерминированный стаб-субстрат не запускает Java-процесс",
+          "expected": "Java CPU измерен в horizon-реестре как число (106630786000 нс container-wide CPU сайдкара grobid_sidecar_cgroup_cpuacct за 30119369791 нс окна, 3,54 занятых ядра); planning-зеркало PASS не заявляет",
           "status": "pending"
         }
       ],
@@ -1094,10 +1094,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H19 не закрыт: измеренная часть реальна (артефакт parse_batch_budget_shadow.json — RSS 21114880 B, хвосты p50 5 / p95 93 / p99 93 мс, bounded reorder 2, пик удержанных байт 61146 B внутри потолка 262144 B, timeout ≠ закрытый peer по типу), но Java-CPU остаётся типизированным not_observed, потому что субстрат — локальный детерминированный стаб без Java-процесса, и H05 поэтому остаётся in_progress в horizon-реестре.",
+        "reason": "H19 остаётся planning-зеркалом закрытого H05 и не заявляет PASS: остаток Java-CPU измерен при участии реального Java-процесса (106630786000 нс container-wide CPU сайдкара grobid_sidecar_cgroup_cpuacct за 30119369791 нс окна = 3,54 занятых ядра; artifacts/parse_compat/parse_batch_budget_live.json) и зарегистрирован completion evidence в horizon-реестре (H05 = complete, owner M513-r7dg4z/S04). Измеренная ранее часть (RSS 21114880 B, хвосты p50 5 / p95 93 / p99 93 мс, bounded reorder 2, пик удержанных байт 61146 B внутри потолка 262144 B, timeout ≠ закрытый peer по типу) сохраняется в записи. Отдельного закрытия в планирующем реестре не существует: claim_scope=planning не даёт права на implementation_pass или verification_pass.",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "Java CPU (java_cpu_wall_clock_ns против grobid_sidecar_cgroup_cpuacct) измерен при участии реального Java GROBID под той же конкурентной нагрузкой с медленным ordinal-0, и H05 закрывается в horizon-реестре с completion evidence."
+        "closure_condition": "Закрыто в horizon-реестре: java_cpu_wall_clock_ns против grobid_sidecar_cgroup_cpuacct измерен при участии реального Java GROBID под той же конкурентной нагрузкой с медленным ordinal-0, и H05 несёт completion evidence с mode runtime. Эта запись остаётся unresolved-зеркалом планирования (status in_progress, accepted=false, PASS-клеймов нет); её дальнейшее существование — история покрытия, а не открытый технический остаток."
       }
     },
     {
