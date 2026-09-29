@@ -210,6 +210,75 @@ fn apply_mutation(doc: &mut pl::CompatibilityDocument, id: &str) -> Result<(), S
                 .ok_or("ledger has no parity_measurement block")?;
             measurement.pooled_quality_claim = "allowed".to_string();
         }
+        // --- absent-disposition fates (S05, D478/D479) --------------------
+        "absent_disposition_missing_entry" => {
+            doc.parity_ledger
+                .absent_dispositions
+                .remove("rest.processCitationPatentTEI");
+        }
+        "absent_disposition_stray_entry" => {
+            doc.parity_ledger.absent_dispositions.insert(
+                "rest.isalive".to_string(),
+                pl::AbsentDisposition {
+                    disposition: pl::DISPOSITION_OUT_OF_PRODUCT_SCOPE.to_string(),
+                    reason: "patent_family_out_of_scope".to_string(),
+                    rationale: "A stray key that is neither an absent row nor the named gap."
+                        .to_string(),
+                },
+            );
+        }
+        "absent_disposition_unknown_disposition" => {
+            let entry = doc
+                .parity_ledger
+                .absent_dispositions
+                .get_mut("rest.processCitationPatentTEI")
+                .ok_or("absent disposition `rest.processCitationPatentTEI` not found")?;
+            entry.disposition = "not_a_declared_disposition".to_string();
+        }
+        "absent_disposition_unknown_reason" => {
+            let entry = doc
+                .parity_ledger
+                .absent_dispositions
+                .get_mut("rest.processCitationPatentTEI")
+                .ok_or("absent disposition `rest.processCitationPatentTEI` not found")?;
+            entry.reason = "not_a_declared_reason".to_string();
+        }
+        "absent_disposition_empty_rationale" => {
+            let entry = doc
+                .parity_ledger
+                .absent_dispositions
+                .get_mut("rest.processCitationPatentTEI")
+                .ok_or("absent disposition `rest.processCitationPatentTEI` not found")?;
+            entry.rationale = "   ".to_string();
+        }
+        "absent_disposition_in_horizon_without_order" => {
+            doc.parity_ledger
+                .horizon_order
+                .retain(|ordered| ordered != "learning.ruvllm_ablation");
+        }
+        "absent_disposition_out_of_scope_with_order" => {
+            doc.parity_ledger
+                .horizon_order
+                .push("rest.processCitationPatentTEI".to_string());
+        }
+        "absent_disposition_duplicate_horizon_order" => {
+            doc.parity_ledger
+                .horizon_order
+                .push("learning.ruvllm_ablation".to_string());
+        }
+        "absent_disposition_horizon_gap" => {
+            doc.parity_ledger
+                .horizon_order
+                .retain(|ordered| ordered != "learning.sona_trajectory");
+        }
+        "absent_disposition_named_gap_disagreement" => {
+            let entry = doc
+                .parity_ledger
+                .absent_dispositions
+                .get_mut("learning.ruvllm_ablation")
+                .ok_or("absent disposition `learning.ruvllm_ablation` not found")?;
+            entry.reason = "project_native_learning_line".to_string();
+        }
         // --- license identity -------------------------------------------------
         "license_identity_unresolved" => {
             row_mut(doc, "rest.isalive")?.license = "inventory:missing-component-xyz".to_string();

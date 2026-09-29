@@ -3084,3 +3084,34 @@ parity_ledger:
     expected_detection: "!= artifact identity"
   - id: measurement_pooled_claim_allowed
     expected_detection: must be forbidden
+  # ------------------------------------------------------------------------
+  # Absent-disposition fate negatives (M513-r7dg4z/S05, D478/D479): the
+  # fail-closed judge `check_absent_dispositions` is only proven where it
+  # rejects tampering, so each fate invariant gets a DATA-declared mutation
+  # whose `expected_detection` is the exact validator token. Coverage: missing
+  # entry, stray entry, unknown disposition/reason, empty rationale, an
+  # in-horizon capability without order, an out-of-scope capability with
+  # order, a duplicate order, a horizon gap, and a named-gap disagreement with
+  # the typed no-donor refusal. The appliers are real in-memory edits in
+  # crates/da-parse/tests/grobid_parity_ledger_mutations.rs.
+  # ------------------------------------------------------------------------
+  - id: absent_disposition_missing_entry
+    expected_detection: has no disposition
+  - id: absent_disposition_stray_entry
+    expected_detection: has no capability
+  - id: absent_disposition_unknown_disposition
+    expected_detection: not in the declared absent disposition vocabulary
+  - id: absent_disposition_unknown_reason
+    expected_detection: not in the declared absent reason vocabulary
+  - id: absent_disposition_empty_rationale
+    expected_detection: has no rationale
+  - id: absent_disposition_in_horizon_without_order
+    expected_detection: has no horizon order
+  - id: absent_disposition_out_of_scope_with_order
+    expected_detection: claims a horizon order
+  - id: absent_disposition_duplicate_horizon_order
+    expected_detection: duplicate horizon order
+  - id: absent_disposition_horizon_gap
+    expected_detection: is not contiguous
+  - id: absent_disposition_named_gap_disagreement
+    expected_detection: disagrees with the named gap refusal
