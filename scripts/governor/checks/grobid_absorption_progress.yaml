@@ -1,0 +1,140 @@
+# Absorption progress scorecard contract — Governor check DATA (M514-1lss2s/S01/T04).
+#
+# DATA for the Governor `absorption_progress` check. The closed vocabulary stays
+# owned by the T01 schema `data/parse/absorption_progress.schema.yaml`; this file
+# adds only the rule configuration the domain deliberately does not carry, plus
+# the positive/negative fixtures and the enforcement markers.
+#
+# Why it exists (M513 closeout): the recorded progress surface mixed preservation
+# with extraction, published ratios over shrunken denominators, inferred
+# independence from display labels, and read a terminal GSD state as delivered
+# capability. T01 made each of those a typed violation inside one scorecard. T04
+# makes the *measurement system* executable: a scalar must still be bound to the
+# bytes that produced it, two rows may only be compared inside one accepted
+# series, a resource saving must name its paired CPU measurement, and a scorecard
+# may not shrink the pinned census or drop an axis the census already measured.
+#
+# Boundary (stated, not implied — E3, carried from M509/S02 Q3 R2): this is a
+# consistency and fail-closed contract over what a scorecard declares about
+# itself plus a recomputed content hash. It is NOT a tamper-evident attestation:
+# an actor able to rewrite the scorecard, the evidence artifact and this DATA
+# rule can satisfy it. Its value is that absence, drift, scope mixing and
+# self-contradiction stop passing as compliance, and that a coverage number must
+# name the artifact that produced it.
+#
+# Severity (E2): the check is deliberately NOT registered in
+# `scripts/governor/checks/assurance_severity.yaml`. A false-progress scorecard is
+# drift-visible (`drift_risk`), not `blocked`, so it cannot be silently promoted
+# to a hard block — nor silently suppressed — by editing one severity file.
+#
+# Thresholds (E1): S01 freezes no numeric threshold (the T01 contract keeps
+# `threshold_policy.state: not_frozen` until S02). Every regression here is a
+# state or ordering comparison (`<` the pinned census, an axis that was measured
+# going silent), never a tuned margin. Adding a numeric margin is a S02 change to
+# the T01 schema, not a default invented here.
+#
+# Scorecard availability: `scorecard.required: false` in S01 because the governed
+# baseline artifact is T05's deliverable. Absence is `not_measured` — never zero
+# and never compliance — and the check stays silent. Once the artifact exists it
+# is validated on every run; deleting it after T05 is the reason `required` exists
+# as an explicit, reviewable flip rather than an assumption.
+
+schema_version: grobid-absorption-progress.v1
+policy_id: absorption_progress
+# A new dimension on purpose: it is not in dimensions.yaml and not in
+# assurance_severity.yaml, so findings are drift-visible and never blocking.
+dimension: absorption_progress
+severity: high
+anchor: "R133, R141, ADR-075, D127, D491, ADR-051"
+
+# The closed vocabulary is the T01 schema, reused rather than restated.
+scorecard_contract:
+  schema: data/parse/absorption_progress.schema.yaml
+
+# The governed scorecard. T05 commits the source-bound baseline at this path;
+# until then the check validates its contract, fixtures and historical guards
+# and reports nothing (absence is `not_measured`).
+scorecard:
+  path: artifacts/parse_compat/absorption_progress_baseline.json
+  required: false
+
+# The accepted series. `source_revision` is deliberately absent: it moves every
+# run and must match between a row and its own evidence (the domain validator
+# enforces that), while corpus, profile and oracle are what make two scorecards
+# comparable at all.
+comparability_rules:
+  accepted:
+    corpus_id: m513-holdout-610
+    profile: structural
+  oracle_pin: external_holdout_probe_semantics
+
+# Regression direction against the pinned census (`denominator.initial_census` in
+# the T01 schema). Expected states are a floor only where the census already
+# measured an axis: an axis moving from not_measured to measured is progress.
+regression:
+  expected_axis_states:
+    preservation: measured
+    extraction: measured
+
+# A savings claim is a product measurement only when it is paired with the CPU
+# measurement of the same workload. A wall-clock-only saving is the shape this
+# refuses.
+resources_claim:
+  axis: resources
+  savings_flag: savings_claimed
+  paired_cpu_field: paired_cpu_metric_id
+  kind_field: kind
+  cpu_kind: cpu
+
+# Closed vocabulary of the adapter-level labels the oracle can emit on top of the
+# T01 domain labels. A label outside this set (and outside the domain
+# vocabulary) is an implementation bug, not a finding.
+violations:
+  - evidence_path_not_relative
+  - evidence_artifact_missing
+  - evidence_hash_substituted
+  - oracle_changed
+  - scope_not_accepted
+  - scope_mixed_in_scorecard
+  - savings_without_paired_cpu
+  - savings_paired_cpu_not_measured
+  - coverage_regression
+  - denominator_shrink
+
+fixtures:
+  positive:
+    id: scorecard_clean
+    path: governor/fixtures/absorption_progress/scorecard_clean.positive.json
+    expect: clean
+  negative:
+    id: scorecard_broken
+    path: governor/fixtures/absorption_progress/scorecard_broken.negative.json
+    expect:
+      require_violations:
+        - evidence_path_not_relative
+        - evidence_artifact_missing
+        - evidence_hash_substituted
+        - oracle_changed
+        - scope_not_accepted
+        - scope_mixed_in_scorecard
+        - savings_without_paired_cpu
+        - savings_paired_cpu_not_measured
+        - coverage_regression
+        - denominator_shrink
+        # T01 domain labels exercised through the same composed oracle, so a
+        # regression that disconnects the domain half is flagged too.
+        - evidence_revision_mismatch
+        - census_mismatch
+        - unnamed_exclusions
+        - skipped_as_delivered
+        - assigned_ne_total
+
+# Enforcement points that must keep existing. The rule reads these files as text;
+# it never executes them.
+source_markers:
+  domain_validator:
+    path: scripts/governor/domain/absorption_progress.py
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered]
+  scorecard_contract:
+    path: data/parse/absorption_progress.schema.yaml
+    required_patterns: [initial_census, holdout-partition-610-531-79, preservation, threshold_policy]

@@ -2018,6 +2018,14 @@ class TrajectoryService:
         # and evaluated ⊆ executed must hold.
         drift_flags.extend(self._check_executed_population_binding())
 
+        # R133/R141: the product progress scorecard must speak the closed
+        # vocabulary and keep every scalar bound to the artifact that produced
+        # it. T01 owns the vocabulary; this rule adds the identity and direction
+        # checks: a substituted evidence hash, a scope that is not the accepted
+        # series, a savings claim without its paired CPU measurement, and a
+        # denominator that shrank below the pinned census.
+        drift_flags.extend(self._check_absorption_progress())
+
         # ACAP validates multi-layer FSM, metrics, cache/prompt/optimizer and reports.
         drift_flags.extend(self._check_article_context_assurance())
 
@@ -2718,6 +2726,162 @@ class TrajectoryService:
                                       f"{census_report_rel}#{executed_key}.{documents_key}="
                                       f"{observed_executed} != {manifest_path}#{lane_path}."
                                       f"{measurable_key}={expected_executed}")
+        return flags
+
+    def _check_absorption_progress(self) -> list[DriftFlag]:
+        """Evaluate the absorption progress scorecard (R133/R141, M514/S01/T04).
+
+        Reads `scripts/governor/checks/grobid_absorption_progress.yaml` (DATA) and
+        composes two halves against the governed scorecard:
+
+          * the T01 pure domain validator (`data/parse/absorption_progress.schema.yaml`
+            is the vocabulary) refuses a mixed preservation/extraction numerator, a
+            denominator that does not sum, a re-cut census, an unbound or
+            not-comparable value, an invented pre-freeze threshold and a terminal
+            GSD state offered as delivered product;
+          * the T04 adapter oracle re-reads the tree and refuses the identity and
+            direction shapes the domain deliberately leaves out: an evidence path
+            that is not repository-relative, an evidence artifact that no longer
+            resolves, a declared ``sha256`` that no longer matches the artifact
+            bytes (the scorecard is stale — flagged, never rewritten), a row outside
+            the accepted corpus/profile/oracle series or a scorecard that mixes two
+            series, a resource saving with no paired CPU measurement, an axis the
+            pinned census measured going silent, and a denominator smaller than the
+            pinned census.
+
+        The closed vocabulary is read through the `AbsorptionProgressReader` port,
+        so the service does not open the scorecard itself and a fake reader can
+        drive the rule in tests. The vocabulary is validated first, because a
+        contract missing the accepted scope or the savings pairing would make every
+        record clean. The T01 schema is not restated: only the T04 rule keys are
+        merged over it.
+
+        Availability: if the governed scorecard does not exist yet, that is
+        `not_measured` — silence, never zero and never compliance — unless the DATA
+        declares it required. Absence of the DATA contract itself is silent, the
+        same convention the other candidate-contract checks use.
+
+        Boundary (E3): this is a consistency and fail-closed contract over what a
+        scorecard declares plus a recomputed content hash, not a tamper-evident
+        attestation. Severity is `high`, and the dimension is deliberately absent
+        from `assurance_severity.yaml`, so a finding is drift-visible and never a
+        hard block (E2).
+        """
+        from governor.adapters.absorption_progress_reader import (
+            FilesystemAbsorptionProgressReader,
+            absorption_progress_violations,
+            effective_progress_contract,
+            missing_progress_vocabulary,
+        )
+
+        path = self.root / "scripts/governor/checks/grobid_absorption_progress.yaml"
+        if not path.exists():
+            return []
+        try:
+            rule_contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="absorption_progress_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="absorption_progress",
+            )]
+
+        prefix = "absorption_progress"
+        dimension = str(rule_contract.get("dimension") or "absorption_progress")
+        severity = str(rule_contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        def _flag(name: str, evidence: str, flag_severity: str | None = None) -> None:
+            flags.append(DriftFlag(
+                flag=f"{prefix}_{name}",
+                severity=flag_severity or severity,
+                evidence=evidence,
+                dimension=dimension,
+            ))
+
+        scorecard_contract = rule_contract.get("scorecard_contract") or {}
+        scorecard_block = rule_contract.get("scorecard") or {}
+        schema_rel = str(scorecard_contract.get("schema") or "")
+        scorecard_rel = str(scorecard_block.get("path") or "")
+        reader = FilesystemAbsorptionProgressReader(self.root, schema_rel, scorecard_rel)
+
+        schema_contract = reader.read_contract()
+        if not isinstance(schema_contract, dict):
+            _flag("contract_missing",
+                  f"cannot read the scorecard vocabulary {schema_rel or '<missing>'}")
+            return flags
+
+        contract = effective_progress_contract(schema_contract, rule_contract)
+        missing = missing_progress_vocabulary(contract)
+        if missing:
+            # Fail closed: without the accepted scope, the expected axis states or
+            # the savings pairing the oracle would accept every scorecard.
+            _flag("vocabulary_missing",
+                  "progress vocabulary is absent or empty, so the oracle would "
+                  f"fail open: missing {missing}")
+            return flags
+
+        # The fixture records carry their own recomputed observations inline, so
+        # the same composed oracle validates them without a project tree.
+        def _fixture_oracle(record, record_contract):
+            observations = record.get("observations") if isinstance(record, dict) else None
+            return absorption_progress_violations(record, record_contract, observations)
+
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, dimension, prefix,
+            _fixture_oracle,
+            graph_task_suite_required=False,
+        ))
+
+        # M513 historical carriers stay read-only. Deleting one is what this
+        # catches; the domain validator already refuses new evidence that reuses a
+        # carrier's lineage, so the frozen history is never re-labelled.
+        for carrier in (
+            (schema_contract.get("historical_carriers") or {}).get("carriers") or []
+        ):
+            if not isinstance(carrier, dict):
+                continue
+            rel = str(carrier.get("path") or "").split("#", 1)[0]
+            if rel and not reader.path_exists(rel):
+                _flag("historical_guard_missing",
+                      f"historical carrier {carrier.get('id')} is missing at {rel}")
+
+        scorecard = reader.read_scorecard()
+        if scorecard is None:
+            # Absence and corruption are different: a scorecard that exists but
+            # cannot be read as a JSON object must fail closed, otherwise
+            # corrupting the artifact would silence the check the way deleting it
+            # would.
+            if scorecard_rel and reader.path_exists(scorecard_rel):
+                _flag("scorecard_invalid",
+                      f"{scorecard_rel} exists but is not a readable JSON object")
+                return flags
+            if scorecard_block.get("required") is True:
+                _flag("scorecard_not_measured",
+                      f"required scorecard {scorecard_rel or '<missing>'} does not exist",
+                      flag_severity="medium")
+            return flags
+
+        # Recompute the content hash of every artifact a measurement row binds, so
+        # the declared scalar identity is checked against bytes rather than trusted.
+        recomputed: dict[str, str | None] = {}
+        measurements = scorecard.get("measurements")
+        if isinstance(measurements, list):
+            for row in measurements:
+                evidence = row.get("evidence") if isinstance(row, dict) else None
+                if not isinstance(evidence, dict):
+                    continue
+                rel = evidence.get("path")
+                if isinstance(rel, str) and rel and rel not in recomputed:
+                    recomputed[rel] = reader.file_sha256(rel)
+        observations = {"evidence_sha256": recomputed, "scorecard_path": scorecard_rel}
+
+        violations = absorption_progress_violations(scorecard, contract, observations)
+        if violations:
+            _flag("broken",
+                  f"{scorecard_rel}: progress scorecard is not honest: "
+                  f"{sorted(violations)}")
         return flags
 
     def _check_prompt_normative_contract(self) -> list[DriftFlag]:
