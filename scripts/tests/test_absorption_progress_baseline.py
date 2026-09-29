@@ -74,6 +74,11 @@ _DOMAIN_LAYER_LABELS = frozenset(
         "preservation_pooled_with_extraction",
         "threshold_missing_for_required_metric",
         "authorization_used_as_product_evidence",
+        # S02/T05 slice-level mutations: scope and split are domain labels, so the
+        # committed-baseline mutations below raise them without touching the rule
+        # YAML's adapter-level vocabulary.
+        "required_scope_shrunk",
+        "eval_split_reused_for_tuning",
     }
 )
 
@@ -602,6 +607,38 @@ def _move_one_document_across_the_refusal_boundary(scorecard: dict) -> None:
     census["partition"]["refused"] += 1
 
 
+def _shrink_required_scope(scorecard: dict) -> None:
+    """Declare a coverage report that drops the last required family.
+
+    The committed baseline declares no family-level coverage at all, so this adds
+    one that is one family short of the frozen `required_scope`. That is the
+    slice-level shape of "scope shrunk after the contract was frozen": the
+    denominator and the census stay correct while the family the contract requires
+    is simply no longer reported.
+    """
+    families = [f["family_id"] for f in _contract()["required_scope"]["families"]]
+    measured = [
+        f["family_id"]
+        for f in _contract()["required_scope"]["families"]
+        if f["state"] == "required"
+    ]
+    scorecard["scope_coverage"] = {"families": families[:-1], "measured": measured}
+
+
+def _reuse_one_evaluation_identity(scorecard: dict) -> None:
+    """Place one evaluation document identity into the tuning set.
+
+    Disjointness is by document identity (`arxiv_id`), never by prompt hash; a
+    scorecard whose split contract puts the same identity on both sides has
+    already tuned on the evaluation split.
+    """
+    scorecard["document_split"] = {
+        "identity_field": _contract()["split_contract"]["disjointness_identity"],
+        "evaluation_document_ids": ["1203.2295"],
+        "tuning_document_ids": ["1203.2295"],
+    }
+
+
 _MUTATIONS: list[tuple[str, str, object]] = [
     (
         "evidence_hash_substituted",
@@ -724,6 +761,18 @@ _MUTATIONS: list[tuple[str, str, object]] = [
         "refused_set_unbound",
         "move a document across the refusal boundary without binding the set",
         _move_one_document_across_the_refusal_boundary,
+    ),
+    # S02/T05 slice-level matrix: the scope and split boundaries are exercised
+    # against a copy of the *committed* artifact, not only an inline fixture.
+    (
+        "required_scope_shrunk",
+        "drop one required family from the declared scope coverage",
+        _shrink_required_scope,
+    ),
+    (
+        "eval_split_reused_for_tuning",
+        "place one evaluation identity in the tuning set",
+        _reuse_one_evaluation_identity,
     ),
 ]
 
@@ -859,3 +908,40 @@ def test_report_records_the_gate_failure_as_unresolved() -> None:
     # The previous revision's unsupported claim must not return.
     assert "Причина — не регрессия кода" not in section
     assert "а флейк под параллельной нагрузкой" not in section
+
+
+# ── the S02/T05 slice report is the slice's own record ──────────────────────
+
+S02_REPORT_PATH = "doc/review/grobid-absorption-s02-baseline-report.md"
+
+# The five slice-level mutations T05 requires, each exercised against a copy of
+# the committed baseline above. Named as literals so the report and the matrix
+# cannot drift apart without a failure here.
+_S02_SLICE_MUTATION_LABELS = (
+    "threshold_freeze_revision_mismatch",
+    "required_scope_shrunk",
+    "eval_split_reused_for_tuning",
+    "census_document_dropped",
+    "refused_set_unbound",
+)
+
+
+def test_s02_slice_report_records_the_matrix_and_the_unmeasured_axes() -> None:
+    """The S02/T05 report must survive as the slice's own stopping-condition record.
+
+    Deleting the report, dropping one of the five slice mutations, or restating an
+    unmeasured axis is a failure here rather than an unrecorded loss: the report is
+    where the slice separates measured facts from hypotheses, and the matrix is what
+    makes the frozen scope, thresholds and census honest on the live tree.
+    """
+    declared = {label for label, _, _ in _MUTATIONS}
+    assert set(_S02_SLICE_MUTATION_LABELS) <= declared
+    report = (_REPO_ROOT / S02_REPORT_PATH).read_text(encoding="utf-8")
+    for label in _S02_SLICE_MUTATION_LABELS:
+        assert label in report, label
+    for axis in ("java_independence", "resources", "reliability"):
+        assert axis in report, axis
+    assert "not_measured" in report
+    # The report must separate facts from hypotheses, not blend them.
+    assert "**Факты:**" in report
+    assert "**Гипотезы" in report
