@@ -25,23 +25,45 @@
 //! read, or whose declared shape drifted, is a broken checkout and therefore a
 //! hard failure, not a rehearsal refusal — the closed vocabulary of
 //! [`RehearsalRefusal`] keeps exactly the ten policy refusals the plan names.
+//!
+//! S06/T02 adds the DECLARED SUBSTRATE harness on top of that primitive.  The
+//! default substrate is the hermetic stub (the declared dev fixture of T01, no
+//! network, no repository artifact); the opt-in `live-grobid` substrate sends
+//! one `structural`-profile `POST processFulltextDocument` per document of the
+//! pinned `layout_bakeoff.yaml#corpus`, verifies every PDF sha256 BEFORE it is
+//! sent, checks the live sidecar against the manifest's `declared_release`, and
+//! builds the native header band from the real `<teiHeader>` carriers through
+//! the public typed parsers.  A document whose band cannot be admitted is a
+//! typed per-document refusal, never an invented value and never a run error.
+//!
+//! The report is closed (`native-family-promotion-rehearsal.v1`), atomically
+//! written, redaction-checked, and guarded by a fail-closed validator that
+//! `--self-check` proves can fire on corrupted copies.  `--self-check` is
+//! hermetic and writes nothing.
+//!
+//! Scoped claim, stated in the report itself: `claim_scope = rehearsal_only`
+//! and `pooled_quality_claim = forbidden`.  A rehearsal is not a parity
+//! measurement, and the numbers it produces must never be pooled into one.
 
 use da_parse::{
     AdmissionDisposition, AffiliationSpan, FulltextAdmissionReceipt, FulltextComponent,
-    FulltextCompositionIdentity, GROBID_HTTP_BACKEND_ID, HeaderAuthorInput, HeaderCompositionInput,
-    HeaderCompositionOutcome, NATIVE_FULLTEXT_FALLBACK_TARGET,
-    NATIVE_FULLTEXT_LANE_FALLBACK_LANE_CLOSURE, NATIVE_FULLTEXT_LANE_FALLBACK_POOLING,
-    NATIVE_FULLTEXT_LANE_FALLBACK_RUST_RUN_MAY_NOT_CANCEL, NativeAffiliationAuthorEvidence,
-    NativeAffiliationLink, NativeAffiliationLinkOutcome, NativeAffiliationParser, NativeDateParser,
+    FulltextCompositionIdentity, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend, GrobidProfile,
+    HeaderAuthorInput, HeaderCompositionInput, HeaderCompositionOutcome,
+    NATIVE_FULLTEXT_FALLBACK_TARGET, NATIVE_FULLTEXT_LANE_FALLBACK_LANE_CLOSURE,
+    NATIVE_FULLTEXT_LANE_FALLBACK_POOLING, NATIVE_FULLTEXT_LANE_FALLBACK_RUST_RUN_MAY_NOT_CANCEL,
+    NativeAffiliationAuthorEvidence, NativeAffiliationLink, NativeAffiliationLinkOutcome,
+    NativeAffiliationOutcome, NativeAffiliationParser, NativeDateParser,
     NativeFulltextCompositionInput, NativeFulltextCompositionOutcome, NativeHeaderFields,
-    NativePersonalNameParser, PersonalNameContext, ReferenceCompositionOutcome, TeiEnvelope,
-    TeiIdentity, compose_header_with_fields, compose_native_fulltext, tei_element_bytes,
+    NativePersonalNameParser, ParseBackend, PersonalNameContext, ReferenceCompositionOutcome,
+    TeiEnvelope, TeiIdentity, compose_header_with_fields, compose_native_fulltext,
+    tei_element_bytes,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 /// Identity of the report this primitive feeds.  Kept deliberately out of
 /// `population_contract.report_paths` (that rule covers `*_shadow.json` only):
@@ -55,6 +77,74 @@ pub const POOLED_QUALITY_CLAIM: &str = "forbidden";
 /// The two declared route carriers this primitive reads and never writes.
 pub const DATA_COMPARISON: &str = "data/parse/comparison_contract.yaml";
 pub const DATA_COMPOSITION: &str = "data/parse/native_fulltext_composition.yaml";
+
+/// Default report for the hermetic stub substrate.  `target/` is not part of
+/// the committed artifact population, so a stub run can never look like the
+/// committed live artifact.
+pub const DEFAULT_REPORT_STUB: &str = "target/native_family_promotion_rehearsal_stub.json";
+/// Default report for the live Java GROBID substrate (committed in T03).
+pub const DEFAULT_REPORT_LIVE: &str =
+    "artifacts/parse_compat/native_family_promotion_rehearsal.json";
+
+/// Declared live inputs.  The endpoint is a CLI default and is NEVER published:
+/// the report carries the logical [`ENDPOINT_SCOPE`] instead of a host or port.
+pub const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:8070";
+pub const DEFAULT_CORPUS: &str = "data/parse/layout_bakeoff.yaml";
+pub const DEFAULT_MANIFEST: &str = "data/parse/acceptance_manifest.yaml";
+
+/// The 96-page document of the declared corpus costs roughly 62s under the
+/// structural profile, so the bounded interactive default is far too tight.
+pub const LIVE_REQUEST_TIMEOUT_SECS: u64 = 900;
+/// The live profile is `structural` (D204): no Crossref consolidation wait can
+/// land inside the rehearsal window.
+pub const LIVE_PROFILE_NAME: &str = "structural";
+/// The logical (never physical) name of the declared corpus.
+pub const CORPUS_SCOPE: &str = "layout_bakeoff_declared_corpus";
+/// The logical (never host or port) name of the live sidecar.
+pub const ENDPOINT_SCOPE: &str = "declared_local_sidecar";
+/// Why the stub's per-document record carries no PDF digest: nothing was sent.
+pub const STUB_PDF_ABSENT_REASON: &str = "the hermetic stub substrate replays a declared dev fixture, so no corpus PDF was sent and no PDF digest exists";
+
+/// The closed vocabulary of guards `self_check` must prove it can fire.  The
+/// consumer test asserts the fired set EQUALS its own literal copy (S04 shipped
+/// two parallel lists that had drifted 11 vs 10).
+pub const REQUIRED_SELF_CHECK_GUARDS: [&str; 15] = [
+    "rehearsed-lane-not-independently-selectable",
+    "pooling-in-rehearsal",
+    "rust-run-cancelled-fallback",
+    "missing-rollback-target",
+    "returned-emission-differs-from-baseline",
+    "lane-movement-outside-rehearsed-lane",
+    "zero-switched-documents-is-vacuous",
+    "policy-lock-lifted",
+    "carrier-sha256-changed-after-run",
+    "promotion-receipt-present",
+    "explicit-decision-present",
+    "forbidden-token-in-report",
+    "native-side-admitted-without-switched-difference",
+    "native-side-refused-without-reason",
+    "measurement-scope-absent",
+];
+
+/// Redaction denylist for the SERIALIZED report (defence in depth; the primary
+/// control is that no producer ever writes these).  Mirror of the S04 list.
+pub const FORBIDDEN_REPORT_TOKENS: [&str; 15] = [
+    "<TEI",
+    "<tei",
+    "%PDF-",
+    "data/sources",
+    "file://",
+    "/root/",
+    "/home/",
+    "target/debug",
+    "target/release",
+    "executable",
+    "hostname",
+    "/sys/",
+    "docker-",
+    ".scope",
+    "daily-archive-grobid",
+];
 
 /// The single rehearsed lane (S06 research/recommendation): header inside the
 /// declared candidate `da-parse.native_header_reference_composition`.
@@ -154,6 +244,15 @@ pub enum NativeSideRefusal {
     NativeOutcomeRejected,
     /// No typed composition outcome was produced for the lane at all.
     NativeOutcomeAbsent,
+    /// The live Java TEI carries no `<teiHeader>` element at all.
+    LiveTeiHeaderAbsent,
+    /// The live Java TEI is not UTF-8, so no header carrier can be read.
+    LiveTeiNotUtf8,
+    /// The real `<teiHeader>` declares no dated carrier (MEM1786: a structural
+    /// run does not guarantee a header date), so the band has no date atom.
+    HeaderDateAbsent,
+    /// The real `<titleStmt>` admits no personal-name carrier.
+    HeaderAuthorAbsent,
 }
 
 impl NativeSideRefusal {
@@ -161,6 +260,10 @@ impl NativeSideRefusal {
         match self {
             Self::NativeOutcomeRejected => "native_outcome_rejected",
             Self::NativeOutcomeAbsent => "native_outcome_absent",
+            Self::LiveTeiHeaderAbsent => "live_tei_header_absent",
+            Self::LiveTeiNotUtf8 => "live_tei_not_utf8",
+            Self::HeaderDateAbsent => "header_date_absent",
+            Self::HeaderAuthorAbsent => "header_author_absent",
         }
     }
 }
@@ -1026,6 +1129,8 @@ pub struct SubstrateDescriptor {
     pub profile: String,
     /// A logical name, never a host or port.
     pub endpoint_scope: Option<String>,
+    /// A logical name, never a physical corpus path.
+    pub corpus_scope: Option<String>,
     pub sidecar_version: Option<String>,
     pub release_digest: Option<String>,
 }
@@ -1037,6 +1142,7 @@ impl SubstrateDescriptor {
             live_grobid_participated: false,
             profile: profile.to_owned(),
             endpoint_scope: None,
+            corpus_scope: None,
             sidecar_version: None,
             release_digest: None,
         }
@@ -1054,6 +1160,11 @@ pub struct RehearsalIdentity {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RehearsalDocument {
     pub document_id: String,
+    /// The digest of the PDF that was SENT, on the live substrate only.  A PDF
+    /// digest and a TEI digest are never the same value and are never mixed.
+    pub source_pdf_sha256: Option<String>,
+    /// Why `source_pdf_sha256` is absent, when it is (stub substrate only).
+    pub source_pdf_sha256_absent_reason: Option<String>,
     pub java_tei_sha256: String,
     pub native_side: AdmittedLaneOutcome,
     pub triad: TriadOutcome,
@@ -1101,6 +1212,7 @@ fn table_json(table: &DeclaredRouteTable) -> serde_json::Value {
             "independently_selectable": row.independently_selectable,
             "admission_state": row.admission_state,
         })).collect::<Vec<_>>(),
+        "explicit_decision": serde_json::Value::Null,
         "carrier_sha256": table.carrier_sha256.iter()
             .map(|(rel, digest)| (rel.clone(), serde_json::Value::String(digest.clone())))
             .collect::<serde_json::Map<String, serde_json::Value>>(),
@@ -1109,7 +1221,9 @@ fn table_json(table: &DeclaredRouteTable) -> serde_json::Value {
 
 fn native_side_json(side: &AdmittedLaneOutcome) -> serde_json::Value {
     match side {
-        AdmittedLaneOutcome::Admitted(_) => serde_json::json!({ "outcome": "admitted" }),
+        AdmittedLaneOutcome::Admitted(_) => {
+            serde_json::json!({ "outcome": "admitted", "reason": serde_json::Value::Null })
+        }
         AdmittedLaneOutcome::Refused(refusal) => serde_json::json!({
             "outcome": "refused",
             "reason": refusal.token(),
@@ -1121,6 +1235,8 @@ fn document_json(document: &RehearsalDocument) -> serde_json::Value {
     let triad = &document.triad;
     serde_json::json!({
         "document_id": document.document_id,
+        "source_pdf_sha256": document.source_pdf_sha256,
+        "source_pdf_sha256_absent_reason": document.source_pdf_sha256_absent_reason,
         "java_tei_sha256": document.java_tei_sha256,
         "native_side": native_side_json(&document.native_side),
         "baseline": emission_json(&triad.baseline),
@@ -1183,9 +1299,7 @@ pub fn rehearsal_report(run: &RehearsalRun) -> serde_json::Value {
         "substrate": run.substrate,
         "declared_route_table_before": table_json(&run.table_before),
         "declared_route_table_after": table_json(&run.table_after),
-        "rehearsal_table": table_json(&run.documents.first()
-            .map(|document| document.triad.rehearsal_table.clone())
-            .unwrap_or_else(|| run.table_before.clone())),
+        "rehearsal_table": rehearsal_table_json(run),
         "documents": run.documents.iter().map(document_json).collect::<Vec<_>>(),
         "rehearsal": {
             "documents_total": documents_total,
@@ -1218,118 +1332,1263 @@ pub fn rehearsal_report(run: &RehearsalRun) -> serde_json::Value {
             "physical_paths_published": false,
             "raw_tei_published": false,
         },
+        // The closed vocabulary `--self-check` proves it can fire, published in
+        // the artifact so the schema and the self-check cannot drift apart.
+        "guards": {
+            "fail_closed": REQUIRED_SELF_CHECK_GUARDS,
+        },
     })
 }
 
 // ---------------------------------------------------------------------------
-// Entry point
+// Fail-closed validation and self-check
 // ---------------------------------------------------------------------------
 
-#[cfg(not(test))]
-fn main() {
-    let Some(root) = default_root() else {
-        eprintln!("native-family-promotion-rehearsal: declared route carriers not found");
-        std::process::exit(2);
-    };
-    let table_before = match read_declared_route_table(&root) {
-        Ok(table) => table,
-        Err(refusal) => {
-            eprintln!(
-                "native-family-promotion-rehearsal: declared route table refused: {}",
-                refusal.token()
-            );
-            std::process::exit(2);
-        }
-    };
+/// Admissibility of a rehearsal report.  `Err` carries a stable, greppable
+/// finding token; `--self-check` proves every token can fire.
+pub fn validate_report(report: &serde_json::Value) -> Result<(), String> {
+    // ── scope: the report must say what it may NOT be read as ───────────
+    match report
+        .get("schema_version")
+        .and_then(serde_json::Value::as_str)
+    {
+        Some(REHEARSAL_SCHEMA_VERSION) => {}
+        Some(other) => return Err(format!("schema-version-drift:{other}")),
+        None => return Err("schema-version-absent".to_string()),
+    }
+    match report
+        .get("claim_scope")
+        .and_then(serde_json::Value::as_str)
+    {
+        Some(CLAIM_SCOPE) => {}
+        Some(other) => return Err(format!("measurement-scope-drift:{other}")),
+        None => return Err("measurement-scope-absent".to_string()),
+    }
+    match report
+        .get("pooled_quality_claim")
+        .and_then(serde_json::Value::as_str)
+    {
+        Some(POOLED_QUALITY_CLAIM) => {}
+        Some(other) => return Err(format!("pooled-quality-claim-drift:{other}")),
+        None => return Err("pooled-quality-claim-absent".to_string()),
+    }
 
+    let identity = report
+        .get("identity")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("identity-absent")?;
+    if identity
+        .get("rehearsed_lane")
+        .and_then(serde_json::Value::as_str)
+        != Some(REHEARSAL_LANE.token())
+    {
+        return Err("rehearsed-lane-drift".to_string());
+    }
+    if identity.get("episode").and_then(serde_json::Value::as_str) != Some(REHEARSAL_EPISODE) {
+        return Err("episode-drift".to_string());
+    }
+
+    let before = report
+        .get("declared_route_table_before")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("declared-route-table-before-absent")?;
+    let after = report
+        .get("declared_route_table_after")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("declared-route-table-after-absent")?;
+
+    // ── the declared table keeps every policy lock, on BOTH sides ───────
+    for (side, table) in [("before", before), ("after", after)] {
+        let lanes = table
+            .get("lanes")
+            .and_then(serde_json::Value::as_array)
+            .ok_or_else(|| format!("declared-route-table-{side}-lanes-absent"))?;
+        if lanes.len() != 2 {
+            return Err(format!("declared-lane-count-drift:{side}"));
+        }
+        for lane in lanes {
+            let lane = lane
+                .as_object()
+                .ok_or_else(|| format!("declared-lane-not-object:{side}"))?;
+            if lane.get("independently_selectable") != Some(&serde_json::Value::Bool(true)) {
+                return Err("rehearsed-lane-not-independently-selectable".to_string());
+            }
+            match lane
+                .get("rollback_target")
+                .and_then(serde_json::Value::as_str)
+            {
+                Some("") | None => return Err("missing-rollback-target".to_string()),
+                Some(target) if target != NATIVE_FULLTEXT_FALLBACK_TARGET => {
+                    return Err(format!("rollback-target-drift:{target}"));
+                }
+                Some(_) => {}
+            }
+        }
+        if table.get("pooling").and_then(serde_json::Value::as_str)
+            != Some(NATIVE_FULLTEXT_LANE_FALLBACK_POOLING)
+        {
+            return Err("pooling-in-rehearsal".to_string());
+        }
+        if table.get("rust_run_may_not_cancel_fallback") != Some(&serde_json::Value::Bool(true)) {
+            return Err("rust-run-cancelled-fallback".to_string());
+        }
+        if table
+            .get("auto_promote")
+            .and_then(serde_json::Value::as_str)
+            != Some("forbidden")
+        {
+            return Err("auto-promote-in-rehearsal".to_string());
+        }
+        // No explicit promotion decision may ride along inside a declared route
+        // table: the switch stays in-memory and undeclared-to-prod.
+        if !matches!(table.get("explicit_decision"), Some(value) if value.is_null()) {
+            return Err("explicit-decision-present".to_string());
+        }
+    }
+
+    // ── the carriers were not rewritten: an executed, not declared, claim ─
+    let before_carriers = before
+        .get("carrier_sha256")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("carrier-sha256-absent")?;
+    let after_carriers = after
+        .get("carrier_sha256")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("carrier-sha256-absent")?;
+    for digest in after_carriers.values() {
+        let text = digest.as_str().ok_or("carrier-sha256-not-a-string")?;
+        if !(text.starts_with("sha256:") && text.len() == "sha256:".len() + 64) {
+            return Err("carrier-sha256-shape".to_string());
+        }
+    }
+    if before_carriers != after_carriers {
+        return Err("carrier-sha256-changed-after-run".to_string());
+    }
+    if before != after {
+        return Err("declared-route-table-changed-after-run".to_string());
+    }
+
+    // ── the in-memory rehearsal table moved EXACTLY the rehearsed lane ──
+    let rehearsal_table = report
+        .get("rehearsal_table")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("rehearsal-table-absent")?;
+    if rehearsal_table.get("equality_with_declared_after") != Some(&serde_json::Value::Bool(true)) {
+        return Err("rehearsal-table-drift".to_string());
+    }
+    let declared_lanes = after
+        .get("lanes")
+        .and_then(serde_json::Value::as_array)
+        .ok_or("declared-route-table-after-lanes-absent")?;
+    let rehearsal_lanes = rehearsal_table
+        .get("lanes")
+        .and_then(serde_json::Value::as_array)
+        .ok_or("rehearsal-table-lanes-absent")?;
+    if declared_lanes.len() != rehearsal_lanes.len() {
+        return Err("lane-movement-outside-rehearsed-lane".to_string());
+    }
+    for (declared_lane, rehearsal_lane) in declared_lanes.iter().zip(rehearsal_lanes.iter()) {
+        let lane = declared_lane
+            .get("lane")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
+        let expected = if lane == REHEARSAL_LANE.token() {
+            "native"
+        } else {
+            "java"
+        };
+        if rehearsal_lane
+            .get("state")
+            .and_then(serde_json::Value::as_str)
+            != Some(expected)
+        {
+            return Err("lane-movement-outside-rehearsed-lane".to_string());
+        }
+    }
+
+    // ── per document: the band moved where it may, and returned byte-equal ─
+    let documents = report
+        .get("documents")
+        .and_then(serde_json::Value::as_array)
+        .ok_or("documents-absent")?;
+    if documents.is_empty() {
+        return Err("zero-switched-documents-is-vacuous".to_string());
+    }
+    for document in documents {
+        let document = document.as_object().ok_or("document-not-object")?;
+        let movement = document
+            .get("lane_movement")
+            .and_then(serde_json::Value::as_object)
+            .ok_or("document-lane-movement-absent")?;
+        if movement.get("references_changed") != Some(&serde_json::Value::Bool(false)) {
+            return Err("lane-movement-outside-rehearsed-lane".to_string());
+        }
+        let native_side = document
+            .get("native_side")
+            .and_then(serde_json::Value::as_object)
+            .ok_or("native-side-absent")?;
+        match native_side
+            .get("outcome")
+            .and_then(serde_json::Value::as_str)
+        {
+            Some("admitted") => {
+                if movement.get("header_changed") != Some(&serde_json::Value::Bool(true)) {
+                    return Err("native-side-admitted-without-switched-difference".to_string());
+                }
+            }
+            Some("refused") => {
+                let reason = native_side
+                    .get("reason")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("");
+                if reason.is_empty() {
+                    return Err("native-side-refused-without-reason".to_string());
+                }
+            }
+            other => return Err(format!("native-side-outcome-drift:{other:?}")),
+        }
+        let rollback = document
+            .get("rollback")
+            .and_then(serde_json::Value::as_object)
+            .ok_or("document-rollback-absent")?;
+        if rollback.get("byte_identity") != Some(&serde_json::Value::Bool(true)) {
+            return Err("returned-emission-differs-from-baseline".to_string());
+        }
+        if rollback.get("table_returned_to_declared") != Some(&serde_json::Value::Bool(true)) {
+            return Err("rollback-table-not-returned".to_string());
+        }
+        let baseline = document
+            .get("baseline")
+            .and_then(serde_json::Value::as_object)
+            .ok_or("document-baseline-absent")?;
+        let returned = document
+            .get("returned")
+            .and_then(serde_json::Value::as_object)
+            .ok_or("document-returned-absent")?;
+        if baseline.get("sha256") != returned.get("sha256") {
+            return Err("returned-emission-differs-from-baseline".to_string());
+        }
+    }
+
+    // ── the aggregate must be non-vacuous and lane-closed ───────────────
+    let rehearsal = report
+        .get("rehearsal")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("rehearsal-aggregate-absent")?;
+    if rehearsal
+        .get("documents_switched")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0)
+        < 1
+    {
+        return Err("zero-switched-documents-is-vacuous".to_string());
+    }
+    if rehearsal.get("rollback_byte_identical_all") != Some(&serde_json::Value::Bool(true)) {
+        return Err("rollback-not-byte-identical-all".to_string());
+    }
+    if rehearsal.get("references_never_moved") != Some(&serde_json::Value::Bool(true)) {
+        return Err("lane-movement-outside-rehearsed-lane".to_string());
+    }
+    if rehearsal.get("switch_and_return_non_vacuous") != Some(&serde_json::Value::Bool(true)) {
+        return Err("rehearsal-vacuous".to_string());
+    }
+    if rehearsal.get("carriers_unchanged") != Some(&serde_json::Value::Bool(true)) {
+        return Err("carrier-sha256-changed-after-run".to_string());
+    }
+
+    // ── the named gaps stay visible (never pooled away) ─────────────────
+    let gaps = report
+        .get("named_gaps")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("named-gaps-absent")?;
+    if gaps
+        .get("java_header_raw")
+        .and_then(serde_json::Value::as_u64)
+        != Some(NAMED_GAP_JAVA_HEADER_RAW)
+    {
+        return Err("named-gap-drift:java_header_raw".to_string());
+    }
+    if gaps
+        .get("native_accepted_header")
+        .and_then(serde_json::Value::as_u64)
+        != Some(NAMED_GAP_NATIVE_ACCEPTED_HEADER)
+    {
+        return Err("named-gap-drift:native_accepted_header".to_string());
+    }
+
+    // ── every policy lock, and no promotion artefact ────────────────────
+    let locks = report
+        .get("locks")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("locks-absent")?;
+    if locks.get("deployed") != Some(&serde_json::Value::Bool(false)) {
+        return Err("policy-lock-lifted:deployed".to_string());
+    }
+    if locks.get("import_eligible") != Some(&serde_json::Value::Bool(false)) {
+        return Err("policy-lock-lifted:import_eligible".to_string());
+    }
+    for key in ["production_route", "graph_write", "auto_promote"] {
+        if locks.get(key).and_then(serde_json::Value::as_str) != Some("forbidden") {
+            return Err(format!("policy-lock-lifted:{key}"));
+        }
+    }
+    if locks
+        .get("this_wave_promotes")
+        .and_then(serde_json::Value::as_str)
+        != Some("none")
+    {
+        return Err("policy-lock-lifted:this_wave_promotes".to_string());
+    }
+    if !matches!(locks.get("promotion_receipt"), Some(value) if value.is_null()) {
+        return Err("promotion-receipt-present".to_string());
+    }
+    if !matches!(locks.get("explicit_decision"), Some(value) if value.is_null()) {
+        return Err("explicit-decision-present".to_string());
+    }
+
+    // ── redaction markers and the serialized denylist scan ──────────────
+    let redaction = report
+        .get("redaction")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("redaction-absent")?;
+    if redaction.is_empty() {
+        return Err("redaction-empty".to_string());
+    }
+    for (key, value) in redaction {
+        if value != &serde_json::Value::Bool(false) {
+            return Err(format!("redaction-marker-not-false:{key}"));
+        }
+    }
+
+    // ── the report publishes the closed fail-closed guard vocabulary ────
+    // The same vocabulary `--self-check` proves it can fire, so the artifact's
+    // schema and the self-check expectation cannot drift apart unnoticed.
+    let guards = report
+        .get("guards")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("guards-absent")?;
+    let published_guards = guards
+        .get("fail_closed")
+        .and_then(serde_json::Value::as_array)
+        .ok_or("guards-fail-closed-absent")?;
+    let mut published_guards: Vec<&str> = published_guards
+        .iter()
+        .map(|value| value.as_str().ok_or("guards-name-not-a-string"))
+        .collect::<Result<_, _>>()?;
+    published_guards.sort_unstable();
+    let mut required_guards: Vec<&str> = REQUIRED_SELF_CHECK_GUARDS.to_vec();
+    required_guards.sort_unstable();
+    if published_guards != required_guards {
+        return Err("guards-vocabulary-drift".to_string());
+    }
+
+    // ── the substrate block is typed and self-consistent ────────────────
+    let substrate = report
+        .get("substrate")
+        .and_then(serde_json::Value::as_object)
+        .ok_or("substrate-absent")?;
+    match substrate.get("kind").and_then(serde_json::Value::as_str) {
+        Some("local_deterministic_stub") => {
+            if substrate.get("live_grobid_participated") != Some(&serde_json::Value::Bool(false)) {
+                return Err("stub-claims-live-participation".to_string());
+            }
+        }
+        Some("live_grobid_http") => {
+            if substrate.get("live_grobid_participated") != Some(&serde_json::Value::Bool(true)) {
+                return Err("live-substrate-without-participation".to_string());
+            }
+            if substrate.get("profile").and_then(serde_json::Value::as_str)
+                != Some(LIVE_PROFILE_NAME)
+            {
+                return Err("live-substrate-profile-drift".to_string());
+            }
+            if substrate
+                .get("sidecar_version")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("")
+                .is_empty()
+            {
+                return Err("live-substrate-sidecar-version-absent".to_string());
+            }
+        }
+        other => return Err(format!("substrate-kind-drift:{other:?}")),
+    }
+
+    let text = serde_json::to_string(report)
+        .map_err(|error| format!("report-serialize-failed:{error}"))?;
+    for token in FORBIDDEN_REPORT_TOKENS {
+        if text.contains(token) {
+            return Err(format!("forbidden-token-in-report:{token}"));
+        }
+    }
+
+    Ok(())
+}
+
+type Mutation = (&'static str, fn(&mut serde_json::Value), &'static str);
+
+/// Every guard, as a deliberate corruption of the REAL report plus the finding
+/// token the validator must produce.  The list is the executable definition of
+/// [`REQUIRED_SELF_CHECK_GUARDS`], in evaluation order.
+fn self_check_mutations() -> Vec<Mutation> {
+    vec![
+        (
+            "rehearsed-lane-not-independently-selectable",
+            |report: &mut serde_json::Value| {
+                report["declared_route_table_after"]["lanes"][0]["independently_selectable"] =
+                    serde_json::Value::Bool(false);
+            },
+            "rehearsed-lane-not-independently-selectable",
+        ),
+        (
+            "pooling-in-rehearsal",
+            |report: &mut serde_json::Value| {
+                report["declared_route_table_after"]["pooling"] =
+                    serde_json::Value::String("allowed".to_string());
+            },
+            "pooling-in-rehearsal",
+        ),
+        (
+            "rust-run-cancelled-fallback",
+            |report: &mut serde_json::Value| {
+                report["declared_route_table_after"]["rust_run_may_not_cancel_fallback"] =
+                    serde_json::Value::Bool(false);
+            },
+            "rust-run-cancelled-fallback",
+        ),
+        (
+            "missing-rollback-target",
+            |report: &mut serde_json::Value| {
+                report["declared_route_table_after"]["lanes"][0]["rollback_target"] =
+                    serde_json::Value::String(String::new());
+            },
+            "missing-rollback-target",
+        ),
+        (
+            "returned-emission-differs-from-baseline",
+            |report: &mut serde_json::Value| {
+                report["documents"][0]["rollback"]["byte_identity"] =
+                    serde_json::Value::Bool(false);
+            },
+            "returned-emission-differs-from-baseline",
+        ),
+        (
+            "lane-movement-outside-rehearsed-lane",
+            |report: &mut serde_json::Value| {
+                report["documents"][0]["lane_movement"]["references_changed"] =
+                    serde_json::Value::Bool(true);
+            },
+            "lane-movement-outside-rehearsed-lane",
+        ),
+        (
+            "zero-switched-documents-is-vacuous",
+            |report: &mut serde_json::Value| {
+                report["rehearsal"]["documents_switched"] = serde_json::Value::from(0_u64);
+            },
+            "zero-switched-documents-is-vacuous",
+        ),
+        (
+            "policy-lock-lifted",
+            |report: &mut serde_json::Value| {
+                report["locks"]["deployed"] = serde_json::Value::Bool(true);
+            },
+            "policy-lock-lifted",
+        ),
+        (
+            "carrier-sha256-changed-after-run",
+            |report: &mut serde_json::Value| {
+                let changed = format!("sha256:{}", "0".repeat(64));
+                report["declared_route_table_after"]["carrier_sha256"][DATA_COMPOSITION] =
+                    serde_json::Value::String(changed);
+            },
+            "carrier-sha256-changed-after-run",
+        ),
+        (
+            "promotion-receipt-present",
+            |report: &mut serde_json::Value| {
+                report["locks"]["promotion_receipt"] = serde_json::json!({ "receipt": "injected" });
+            },
+            "promotion-receipt-present",
+        ),
+        (
+            "explicit-decision-present",
+            |report: &mut serde_json::Value| {
+                let injected = serde_json::json!({ "decision": "injected" });
+                report["locks"]["explicit_decision"] = injected.clone();
+                report["declared_route_table_after"]["explicit_decision"] = injected;
+            },
+            "explicit-decision-present",
+        ),
+        (
+            "forbidden-token-in-report",
+            |report: &mut serde_json::Value| {
+                report["substrate"]["note"] =
+                    serde_json::Value::String("leaked file:///root/private".to_string());
+            },
+            "forbidden-token-in-report",
+        ),
+        (
+            "native-side-admitted-without-switched-difference",
+            |report: &mut serde_json::Value| {
+                report["documents"][0]["native_side"]["outcome"] =
+                    serde_json::Value::String("admitted".to_string());
+                report["documents"][0]["lane_movement"]["header_changed"] =
+                    serde_json::Value::Bool(false);
+            },
+            "native-side-admitted-without-switched-difference",
+        ),
+        (
+            "native-side-refused-without-reason",
+            |report: &mut serde_json::Value| {
+                report["documents"][0]["native_side"] = serde_json::json!({ "outcome": "refused" });
+            },
+            "native-side-refused-without-reason",
+        ),
+        (
+            "measurement-scope-absent",
+            |report: &mut serde_json::Value| {
+                if let Some(object) = report.as_object_mut() {
+                    object.remove("claim_scope");
+                }
+            },
+            "measurement-scope-absent",
+        ),
+    ]
+}
+
+/// Prove every fail-closed guard fires on a deliberately corrupted copy of the
+/// REAL (hermetic stub) report, and return the guard names that fired.  Nothing
+/// is written: this is the `--self-check` entry point.
+pub fn self_check() -> Result<Vec<&'static str>, String> {
+    let root =
+        default_root().ok_or_else(|| "the declared route carriers were not found".to_string())?;
+    let run = stub_run(&root)?;
+    let report = rehearsal_report(&run);
+    validate_report(&report).map_err(|finding| {
+        format!("the stub report was rejected by its own validator: {finding}")
+    })?;
+
+    let mut fired: Vec<&'static str> = Vec::new();
+    for (name, mutate, expected) in self_check_mutations() {
+        let mut corrupted = report.clone();
+        mutate(&mut corrupted);
+        match validate_report(&corrupted) {
+            Ok(()) => return Err(format!("guard `{name}` did not fire on its corrupted copy")),
+            Err(finding) if finding.contains(expected) => fired.push(name),
+            Err(finding) => {
+                return Err(format!(
+                    "guard `{name}` produced `{finding}`, expected `{expected}`"
+                ));
+            }
+        }
+    }
+
+    let fired_set: std::collections::BTreeSet<&str> = fired.iter().copied().collect();
+    let required: std::collections::BTreeSet<&str> =
+        REQUIRED_SELF_CHECK_GUARDS.iter().copied().collect();
+    if fired_set != required {
+        return Err(format!(
+            "the fired guard set {fired_set:?} does not equal the declared vocabulary {required:?}"
+        ));
+    }
+    Ok(fired)
+}
+
+// ---------------------------------------------------------------------------
+// Declared substrate: corpus, release, and the live header band
+// ---------------------------------------------------------------------------
+
+/// The declared production release the live sidecar must be attributable to.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeclaredRelease {
+    pub version: String,
+    pub image_digest: String,
+    pub data_plane_authority_label: String,
+}
+
+/// Read `external_holdout_contract.release_probe.declared_release` as DATA, so a
+/// live run is pinned to the declared release and never to a re-pointed tag.
+pub fn load_declared_release(root: &Path, manifest: &Path) -> Result<DeclaredRelease, String> {
+    let path = resolve(root, manifest);
+    let text = std::fs::read_to_string(&path)
+        .map_err(|error| format!("FATAL: the declared-release manifest is unreadable: {error}"))?;
+    let parsed: serde_yaml::Value = serde_yaml::from_str(&text)
+        .map_err(|error| format!("FATAL: the declared-release manifest is not YAML: {error}"))?;
+    let declared = parsed
+        .get("external_holdout_contract")
+        .and_then(|contract| contract.get("release_probe"))
+        .and_then(|probe| probe.get("declared_release"))
+        .ok_or("FATAL: external_holdout_contract.release_probe.declared_release is absent")?;
+    let field = |name: &str| -> Result<String, String> {
+        declared
+            .get(name)
+            .and_then(|value| value.as_str())
+            .map(str::to_owned)
+            .ok_or_else(|| format!("FATAL: declared_release.{name} is absent"))
+    };
+    Ok(DeclaredRelease {
+        version: field("version")?,
+        image_digest: field("image_digest")?,
+        data_plane_authority_label: field("data_plane_authority_label")?,
+    })
+}
+
+/// Resolve a declared relative path against the repository root.
+pub fn resolve(root: &Path, path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        root.join(path)
+    }
+}
+
+/// One declared corpus document and the bytes that were sha256-verified.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CorpusDocument {
+    pub document_id: String,
+    pub bytes: Vec<u8>,
+}
+
+/// Read `corpus.documents` and verify every PDF sha256 BEFORE any of them is
+/// sent.  A mismatch is FATAL: a substituted PDF would make the rehearsal
+/// evidence meaningless.
+pub fn read_corpus_documents(root: &Path, corpus: &Path) -> Result<Vec<CorpusDocument>, String> {
+    let path = resolve(root, corpus);
+    let text = std::fs::read_to_string(&path)
+        .map_err(|error| format!("FATAL: the declared corpus is unreadable: {error}"))?;
+    let parsed: serde_yaml::Value = serde_yaml::from_str(&text)
+        .map_err(|error| format!("FATAL: the declared corpus is not YAML: {error}"))?;
+    let documents = parsed
+        .get("corpus")
+        .and_then(|corpus| corpus.get("documents"))
+        .and_then(|documents| documents.as_sequence())
+        .ok_or("FATAL: corpus.documents is absent from the declared corpus")?;
+    if documents.is_empty() {
+        return Err("FATAL: the declared corpus carries no documents".to_string());
+    }
+    let mut loaded = Vec::with_capacity(documents.len());
+    for document in documents {
+        let id = document
+            .get("id")
+            .and_then(|value| value.as_str())
+            .ok_or("FATAL: a corpus document has no id")?;
+        let source_pdf = document
+            .get("source_pdf")
+            .and_then(|value| value.as_str())
+            .ok_or("FATAL: a corpus document has no source_pdf")?;
+        let declared = document
+            .get("sha256")
+            .and_then(|value| value.as_str())
+            .ok_or("FATAL: a corpus document has no sha256")?;
+        let bytes = std::fs::read(root.join(source_pdf))
+            .map_err(|error| format!("FATAL: the corpus PDF for `{id}` is unreadable: {error}"))?;
+        let observed = format!("{:x}", Sha256::digest(&bytes));
+        if !observed.eq_ignore_ascii_case(declared.trim().trim_start_matches("sha256:")) {
+            return Err(format!(
+                "FATAL: corpus PDF `{id}` sha256 mismatch: declared {declared}, observed sha256:{observed}"
+            ));
+        }
+        loaded.push(CorpusDocument {
+            document_id: id.to_owned(),
+            bytes,
+        });
+    }
+    Ok(loaded)
+}
+
+/// The raw `<teiHeader>` carriers of one real document, in the declared frame
+/// (TEI to atoms).  Every value is a carrier string: the typed parsers decide
+/// admission, this scanner only locates and de-escapes.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct HeaderCarriers {
+    pub title_texts: Vec<String>,
+    pub email_texts: Vec<String>,
+    pub pubnum_texts: Vec<String>,
+    pub date_text: Option<String>,
+    pub authors: Vec<AuthorCarriers>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuthorCarriers {
+    pub name: String,
+    pub affiliations: Vec<(String, String)>,
+}
+
+#[derive(Debug, Clone)]
+struct Occurrence {
+    attrs: Vec<(String, String)>,
+    content: String,
+}
+
+/// Every occurrence of a leaf element `name`, with its attributes and its raw
+/// inner XML.  Deliberately not a validating parser: it never claims
+/// well-formedness (the authoritative oracle is a `da-parse` test).
+fn occurrences(xml: &str, name: &str) -> Vec<Occurrence> {
+    let open = format!("<{name}");
+    let close = format!("</{name}>");
+    let mut out = Vec::new();
+    let mut cursor = 0usize;
+    while let Some(relative) = xml[cursor..].find(&open) {
+        let start = cursor + relative;
+        let after_open = start + open.len();
+        let Some(next) = xml.as_bytes().get(after_open) else {
+            break;
+        };
+        if !(next.is_ascii_whitespace() || *next == b'>' || *next == b'/') {
+            cursor = after_open;
+            continue;
+        }
+        let Some(gt) = xml[after_open..].find('>') else {
+            break;
+        };
+        let attrs_text = &xml[after_open..after_open + gt];
+        let content_start = after_open + gt + 1;
+        if attrs_text.trim_end().ends_with('/') {
+            out.push(Occurrence {
+                attrs: parse_attrs(attrs_text),
+                content: String::new(),
+            });
+            cursor = content_start;
+            continue;
+        }
+        let Some(close_relative) = xml[content_start..].find(&close) else {
+            break;
+        };
+        let content_end = content_start + close_relative;
+        out.push(Occurrence {
+            attrs: parse_attrs(attrs_text),
+            content: xml[content_start..content_end].to_owned(),
+        });
+        cursor = content_end + close.len();
+    }
+    out
+}
+
+fn parse_attrs(text: &str) -> Vec<(String, String)> {
+    let bytes = text.as_bytes();
+    let mut out = Vec::new();
+    let mut index = 0usize;
+    while index < bytes.len() {
+        while index < bytes.len()
+            && !(bytes[index].is_ascii_alphabetic() || bytes[index] == b'_' || bytes[index] == b':')
+        {
+            index += 1;
+        }
+        let name_start = index;
+        while index < bytes.len()
+            && (bytes[index].is_ascii_alphanumeric()
+                || matches!(bytes[index], b'_' | b'-' | b'.' | b':'))
+        {
+            index += 1;
+        }
+        if name_start == index {
+            break;
+        }
+        let name = text[name_start..index].to_owned();
+        while index < bytes.len() && bytes[index].is_ascii_whitespace() {
+            index += 1;
+        }
+        if index >= bytes.len() || bytes[index] != b'=' {
+            continue;
+        }
+        index += 1;
+        while index < bytes.len() && bytes[index].is_ascii_whitespace() {
+            index += 1;
+        }
+        if index >= bytes.len() {
+            break;
+        }
+        let quote = bytes[index];
+        if quote != b'"' && quote != b'\'' {
+            continue;
+        }
+        index += 1;
+        let value_start = index;
+        while index < bytes.len() && bytes[index] != quote {
+            index += 1;
+        }
+        let value = text[value_start..index].to_owned();
+        if index < bytes.len() {
+            index += 1;
+        }
+        out.push((name, decode_entities(&value)));
+    }
+    out
+}
+
+fn strip_tags(content: &str) -> String {
+    let mut out = String::with_capacity(content.len());
+    let mut in_tag = false;
+    for character in content.chars() {
+        match character {
+            '<' => in_tag = true,
+            '>' => in_tag = false,
+            other if !in_tag => out.push(other),
+            _ => {}
+        }
+    }
+    decode_entities(&out)
+}
+
+fn decode_entities(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(index) = rest.find('&') {
+        out.push_str(&rest[..index]);
+        let tail = &rest[index..];
+        let Some(end) = tail.find(';') else {
+            out.push_str(tail);
+            return out;
+        };
+        let entity = &tail[1..end];
+        let decoded = match entity {
+            "amp" => Some('&'),
+            "lt" => Some('<'),
+            "gt" => Some('>'),
+            "quot" => Some('"'),
+            "apos" => Some('\''),
+            _ => entity
+                .strip_prefix('#')
+                .and_then(|number| match number.strip_prefix(['x', 'X']) {
+                    Some(hex) => u32::from_str_radix(hex, 16).ok(),
+                    None => number.parse::<u32>().ok(),
+                })
+                .and_then(char::from_u32),
+        };
+        match decoded {
+            Some(character) if end <= 12 => {
+                out.push(character);
+                rest = &tail[end + 1..];
+            }
+            _ => {
+                out.push('&');
+                rest = &tail[1..];
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+fn texts_of(xml: &str, name: &str) -> Vec<String> {
+    occurrences(xml, name)
+        .into_iter()
+        .map(|occurrence| strip_tags(&occurrence.content).trim().to_owned())
+        .filter(|text| !text.is_empty())
+        .collect()
+}
+
+fn attr_value(occurrence: &Occurrence, name: &str) -> Option<String> {
+    occurrence
+        .attrs
+        .iter()
+        .find(|(key, _)| key == name)
+        .map(|(_, value)| value.clone())
+}
+
+/// Locate the real `<teiHeader>` carriers of one live Java TEI.
+pub fn extract_header_carriers(tei: &[u8]) -> Result<HeaderCarriers, NativeSideRefusal> {
+    let header_bytes =
+        tei_element_bytes(tei, "teiHeader").map_err(|_| NativeSideRefusal::LiveTeiHeaderAbsent)?;
+    let header =
+        std::str::from_utf8(header_bytes).map_err(|_| NativeSideRefusal::LiveTeiNotUtf8)?;
+    let mut carriers = HeaderCarriers::default();
+    for statement in occurrences(header, "titleStmt") {
+        for title in occurrences(&statement.content, "title") {
+            let text = strip_tags(&title.content).trim().to_owned();
+            if !text.is_empty() {
+                carriers.title_texts.push(text);
+            }
+        }
+        for author in occurrences(&statement.content, "author") {
+            let Some(name) = texts_of(&author.content, "persName").into_iter().next() else {
+                continue;
+            };
+            let mut affiliations = Vec::new();
+            for affiliation in occurrences(&author.content, "affiliation") {
+                let key = attr_value(&affiliation, "key").unwrap_or_default();
+                let text = strip_tags(&affiliation.content).trim().to_owned();
+                if !key.is_empty() && !text.is_empty() {
+                    affiliations.push((key, text));
+                }
+            }
+            carriers.authors.push(AuthorCarriers { name, affiliations });
+        }
+    }
+    carriers.email_texts = texts_of(header, "email");
+    carriers.pubnum_texts = texts_of(header, "pubnum");
+    for date in occurrences(header, "date") {
+        let text = strip_tags(&date.content).trim().to_owned();
+        if !text.is_empty() {
+            carriers.date_text = Some(text);
+            break;
+        }
+        if let Some(when) = attr_value(&date, "when").filter(|value| !value.is_empty()) {
+            carriers.date_text = Some(when);
+            break;
+        }
+    }
+    Ok(carriers)
+}
+
+/// Build the rehearsed lane's native band from one live document's real header
+/// carriers.  A band that cannot be admitted is a typed refusal, never an
+/// invented value.
+pub fn live_header_outcome(tei: &[u8]) -> AdmittedLaneOutcome {
+    let carriers = match extract_header_carriers(tei) {
+        Ok(carriers) => carriers,
+        Err(refusal) => return AdmittedLaneOutcome::Refused(refusal),
+    };
+    let Some(date_text) = carriers.date_text.clone() else {
+        return AdmittedLaneOutcome::Refused(NativeSideRefusal::HeaderDateAbsent);
+    };
+    if carriers.authors.is_empty() {
+        return AdmittedLaneOutcome::Refused(NativeSideRefusal::HeaderAuthorAbsent);
+    }
+    let name_parser = NativePersonalNameParser::new();
+    let affiliation_parser = NativeAffiliationParser::new();
+    let mut authors = Vec::new();
+    let mut affiliation_components = Vec::new();
+    for (ordinal, author) in carriers.authors.iter().enumerate() {
+        let name = name_parser.parse(PersonalNameContext::Header, &author.name);
+        let mut links = Vec::new();
+        for (key, text) in &author.affiliations {
+            let parsed = affiliation_parser.parse(text);
+            let span = match &parsed {
+                NativeAffiliationOutcome::Recognized { components } => match components.first() {
+                    Some(first) => first.span,
+                    None => continue,
+                },
+                _ => continue,
+            };
+            let affiliation_ordinal = affiliation_components.len();
+            affiliation_components.push(parsed);
+            links.push(NativeAffiliationLink {
+                key: key.clone(),
+                affiliation_ordinal,
+                affiliation_span: span,
+            });
+        }
+        authors.push(HeaderAuthorInput {
+            ordinal,
+            span: da_parse::CompositionSpan {
+                start: ordinal,
+                end: ordinal + 1,
+            },
+            name,
+            affiliations: NativeAffiliationLinkOutcome::Linked {
+                author: NativeAffiliationAuthorEvidence {
+                    ordinal,
+                    span: AffiliationSpan { start: 0, end: 1 },
+                },
+                links,
+            },
+        });
+    }
+    let fields = NativeHeaderFields {
+        title: carriers.title_texts,
+        email: carriers.email_texts,
+        ids: carriers.pubnum_texts,
+    };
+    let outcome = compose_header_with_fields(
+        HeaderCompositionInput {
+            date: NativeDateParser::new().parse(&date_text),
+            authors,
+            affiliation_components,
+        },
+        fields,
+    );
+    match outcome {
+        HeaderCompositionOutcome::Accepted { .. } => {
+            AdmittedLaneOutcome::Admitted(Box::new(outcome))
+        }
+        HeaderCompositionOutcome::Rejected { .. } => {
+            AdmittedLaneOutcome::Refused(NativeSideRefusal::NativeOutcomeRejected)
+        }
+    }
+}
+
+/// The DECLARED substrate of a rehearsal run.  The default is the hermetic stub.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum Substrate {
+    Stub,
+    LiveGrobid,
+}
+
+impl Substrate {
+    pub fn default_report(self) -> &'static str {
+        match self {
+            Self::Stub => DEFAULT_REPORT_STUB,
+            Self::LiveGrobid => DEFAULT_REPORT_LIVE,
+        }
+    }
+}
+
+/// CLI surface.  The report default is PER SUBSTRATE, so a live run can never
+/// silently overwrite the stub report and vice versa.
+#[derive(Debug, clap::Parser)]
+#[command(
+    name = "native_family_promotion_rehearsal",
+    about = "Rehearse one native-family lane promotion with an executed rollback (never promotes)"
+)]
+pub struct RehearsalArgs {
+    #[arg(long, value_enum, default_value = "stub")]
+    pub substrate: Substrate,
+    #[arg(long, default_value = DEFAULT_ENDPOINT)]
+    pub endpoint: String,
+    #[arg(long, default_value = DEFAULT_CORPUS)]
+    pub corpus: PathBuf,
+    #[arg(long, default_value = DEFAULT_MANIFEST)]
+    pub manifest: PathBuf,
+    #[arg(long)]
+    pub report: Option<PathBuf>,
+    #[arg(long)]
+    pub self_check: bool,
+}
+
+/// The hermetic stub run: the declared dev fixture, no network, no artifact path
+/// inside the committed population.
+pub fn stub_run(root: &Path) -> Result<RehearsalRun, String> {
+    let table_before = read_declared_route_table(root)
+        .map_err(|refusal| format!("declared route table refused: {}", refusal.token()))?;
     let declared = fixture();
     let identity = identity_for(&declared);
     let java_tei = fixture_java_tei(&declared);
+    let native_side = AdmittedLaneOutcome::Admitted(Box::new(fixture_header_outcome()));
     let triad = run_rehearsal_triad(
         &java_tei,
         &identity,
         &identity.profile_fingerprint,
         &table_before,
-        AdmittedLaneOutcome::Admitted(Box::new(fixture_header_outcome())),
+        native_side.clone(),
     );
-
-    // The carriers are re-read from disk AFTER the run: an executed statement of
-    // immutability, not a static declaration.
-    let table_after = read_declared_route_table(&root).unwrap_or_else(|refusal| {
-        eprintln!(
-            "native-family-promotion-rehearsal: carriers drifted: {}",
+    let table_after = read_declared_route_table(root).map_err(|refusal| {
+        format!(
+            "declared route table refused after the run: {}",
             refusal.token()
-        );
-        std::process::exit(2);
-    });
-
-    let run = RehearsalRun {
+        )
+    })?;
+    Ok(RehearsalRun {
         identity: RehearsalIdentity {
             candidate_id: table_before.candidate_id.clone(),
             candidate_version: table_before.candidate_version.clone(),
             rehearsed_lane: REHEARSAL_LANE,
             episode: REHEARSAL_EPISODE.to_owned(),
         },
-        substrate: SubstrateDescriptor::fixture_stub(&identity.profile_fingerprint),
-        table_before: table_before.clone(),
-        table_after: table_after.clone(),
+        substrate: SubstrateDescriptor::fixture_stub("fixture"),
+        table_before,
+        table_after,
         documents: vec![RehearsalDocument {
             document_id: declared.case_id.clone(),
+            source_pdf_sha256: None,
+            source_pdf_sha256_absent_reason: Some(STUB_PDF_ABSENT_REASON.to_owned()),
             java_tei_sha256: digest(&java_tei),
-            native_side: AdmittedLaneOutcome::Admitted(Box::new(fixture_header_outcome())),
-            triad: triad.clone(),
+            native_side,
+            triad,
         }],
+    })
+}
+
+/// The live run: pinned corpus in, one structural-profile Java TEI per document
+/// out, the native band built from each real `<teiHeader>`.
+pub async fn live_run(root: &Path, args: &RehearsalArgs) -> Result<RehearsalRun, String> {
+    let table_before = read_declared_route_table(root)
+        .map_err(|refusal| format!("declared route table refused: {}", refusal.token()))?;
+    let declared = load_declared_release(root, &args.manifest)?;
+    if declared.data_plane_authority_label.trim() != table_before.fallback_target.trim() {
+        return Err(format!(
+            "FATAL: java_release_data_plane_drift: declared `{}`, route-table authority `{}`",
+            declared.data_plane_authority_label, table_before.fallback_target
+        ));
+    }
+    let documents = read_corpus_documents(root, &args.corpus)?;
+
+    let backend = GrobidHttpBackend::new(Some(&args.endpoint))
+        .with_profile(GrobidProfile::structural())
+        .with_timeout(Duration::from_secs(LIVE_REQUEST_TIMEOUT_SECS));
+    if !backend.is_alive().await {
+        return Err(
+            "FATAL: the declared live GROBID sidecar did not answer /api/isalive; refusing to rehearse"
+                .to_string(),
+        );
+    }
+    let probe = backend
+        .probe_version()
+        .await
+        .map_err(|error| format!("FATAL: /api/version probe failed: {error:?}"))?;
+    if probe.version.trim() != declared.version.trim() {
+        return Err(format!(
+            "FATAL: java_release_version_drift: live `{}`, declared `{}`",
+            probe.version.trim(),
+            declared.version.trim()
+        ));
+    }
+    let backend = backend.with_backend_version(probe.version.trim().to_owned());
+
+    let profile_fingerprint = format!("profile={LIVE_PROFILE_NAME}");
+    let config_fingerprint = {
+        let profile = GrobidProfile::structural();
+        format!(
+            "consolidateHeader={};consolidateCitations={};teiCoordinates={}",
+            u8::from(profile.consolidate_header()),
+            u8::from(profile.consolidate_citations()),
+            GrobidProfile::TEI_COORDINATES
+        )
     };
 
-    let report = rehearsal_report(&run);
-    let first = serde_json::to_string(&report).expect("report serializes");
-    let second = serde_json::to_string(&rehearsal_report(&run)).expect("report serializes");
-    if first != second {
-        eprintln!("native-family-promotion-rehearsal: report is not deterministic");
-        std::process::exit(2);
+    let mut rehearsal_documents = Vec::with_capacity(documents.len());
+    for document in &documents {
+        let request =
+            backend.default_request(document.document_id.as_str(), document.bytes.clone());
+        let envelope = backend.fetch_tei(request).await.map_err(|error| {
+            format!(
+                "FATAL: live capture failed for `{}`: {error:?}",
+                document.document_id
+            )
+        })?;
+        let raw = envelope.into_raw_tei();
+        let java_tei_sha256 = digest(&raw);
+        let identity = FulltextCompositionIdentity {
+            source_sha256: java_tei_sha256.trim_start_matches("sha256:").to_owned(),
+            profile_fingerprint: profile_fingerprint.clone(),
+            config_fingerprint: config_fingerprint.clone(),
+        };
+        let native_side = live_header_outcome(&raw);
+        let triad = run_rehearsal_triad(
+            &raw,
+            &identity,
+            &profile_fingerprint,
+            &table_before,
+            native_side.clone(),
+        );
+        rehearsal_documents.push(RehearsalDocument {
+            document_id: document.document_id.clone(),
+            source_pdf_sha256: Some(digest(&document.bytes)),
+            source_pdf_sha256_absent_reason: None,
+            java_tei_sha256,
+            native_side,
+            triad,
+        });
     }
 
-    let carriers_unchanged = table_before.carrier_sha256 == table_after.carrier_sha256;
+    let table_after = read_declared_route_table(root).map_err(|refusal| {
+        format!(
+            "declared route table refused after the run: {}",
+            refusal.token()
+        )
+    })?;
+    Ok(RehearsalRun {
+        identity: RehearsalIdentity {
+            candidate_id: table_before.candidate_id.clone(),
+            candidate_version: table_before.candidate_version.clone(),
+            rehearsed_lane: REHEARSAL_LANE,
+            episode: REHEARSAL_EPISODE.to_owned(),
+        },
+        substrate: SubstrateDescriptor {
+            kind: SubstrateKind::LiveGrobidHttp,
+            live_grobid_participated: true,
+            profile: LIVE_PROFILE_NAME.to_owned(),
+            endpoint_scope: Some(ENDPOINT_SCOPE.to_owned()),
+            corpus_scope: Some(CORPUS_SCOPE.to_owned()),
+            sidecar_version: Some(probe.version.trim().to_owned()),
+            release_digest: Some(declared.image_digest.clone()),
+        },
+        table_before,
+        table_after,
+        documents: rehearsal_documents,
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Report helpers and entry point
+// ---------------------------------------------------------------------------
+
+/// The in-memory rehearsed table: the declared table with exactly the rehearsed
+/// lane moved.  `equality_with_declared_after` is computed, never asserted.
+fn rehearsal_table_json(run: &RehearsalRun) -> serde_json::Value {
+    match switch_lane(&run.table_after, REHEARSAL_LANE, LaneTarget::Native) {
+        Ok(table) => {
+            let mut value = table_json(&table);
+            value["equality_with_declared_after"] = serde_json::Value::Bool(true);
+            value
+        }
+        Err(refusal) => {
+            let mut value = table_json(&run.table_after);
+            value["equality_with_declared_after"] = serde_json::Value::Bool(false);
+            value["refusal"] = serde_json::Value::String(refusal.token().to_owned());
+            value
+        }
+    }
+}
+
+/// Atomic report write: temp + rename, mirroring S04.  The bytes the file
+/// carries are exactly the bytes the validator judged.
+pub fn write_report(path: &Path, report: &serde_json::Value) -> Result<(), String> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| format!("cannot create {}: {error}", parent.display()))?;
+    }
+    let text = serde_json::to_string_pretty(report).map_err(|error| error.to_string())?;
+    let temporary = path.with_extension("json.tmp");
+    std::fs::write(&temporary, format!("{text}\n"))
+        .map_err(|error| format!("cannot write the temporary report: {error}"))?;
+    std::fs::rename(&temporary, path)
+        .map_err(|error| format!("cannot finalize the report: {error}"))?;
+    Ok(())
+}
+
+/// One terminal status line per side, plus the aggregate.  No physical path and
+/// no endpoint is ever printed.
+pub fn print_summary(path: &Path, run: &RehearsalRun, report: &serde_json::Value) {
     println!(
         "route-table: candidate={} version={} lane={} observation_mode={} promotion_state={} \
          auto_promote={} pooling={} rust_run_may_not_cancel_fallback={} carriers_unchanged={}",
-        table_before.candidate_id,
-        table_before.candidate_version,
+        run.table_before.candidate_id,
+        run.table_before.candidate_version,
         REHEARSAL_LANE.token(),
-        table_before.observation_mode,
-        table_before.promotion_state,
-        table_before.auto_promote,
-        table_before.pooling,
-        table_before.rust_run_may_not_cancel_fallback,
-        carriers_unchanged,
+        run.table_before.observation_mode,
+        run.table_before.promotion_state,
+        run.table_before.auto_promote,
+        run.table_before.pooling,
+        run.table_before.rust_run_may_not_cancel_fallback,
+        report["rehearsal"]["carriers_unchanged"],
     );
+    for document in &run.documents {
+        let triad = &document.triad;
+        println!(
+            "document {}: native_side={} baseline={}({}, {} bytes) switched={}({}, {} bytes) \
+             returned={}({}, {} bytes) header_changed={} references_changed={} \
+             rollback_byte_identical={} table_returned_to_declared={} refusal={}",
+            document.document_id,
+            native_side_json(&document.native_side)["outcome"],
+            triad.baseline.outcome_token(),
+            triad.baseline.sha256,
+            triad.baseline.byte_len(),
+            triad.switched.outcome_token(),
+            triad.switched.sha256,
+            triad.switched.byte_len(),
+            triad.returned.outcome_token(),
+            triad.returned.sha256,
+            triad.returned.byte_len(),
+            triad.lane_movement.header_changed,
+            triad.lane_movement.references_changed,
+            triad.rollback.byte_identity,
+            triad.rollback.table_returned_to_declared,
+            triad
+                .switch_refusal
+                .map(SwitchRefusal::token)
+                .unwrap_or("none"),
+        );
+    }
     println!(
-        "document {}: baseline={}({}, {} bytes) switched={}({}, {} bytes) \
-         returned={}({}, {} bytes) header_changed={} references_changed={} \
-         rollback_byte_identical={} table_returned_to_declared={} refusal={}",
-        declared.case_id,
-        triad.baseline.outcome_token(),
-        triad.baseline.sha256,
-        triad.baseline.byte_len(),
-        triad.switched.outcome_token(),
-        triad.switched.sha256,
-        triad.switched.byte_len(),
-        triad.returned.outcome_token(),
-        triad.returned.sha256,
-        triad.returned.byte_len(),
-        triad.lane_movement.header_changed,
-        triad.lane_movement.references_changed,
-        triad.rollback.byte_identity,
-        triad.rollback.table_returned_to_declared,
-        triad
-            .switch_refusal
-            .map(SwitchRefusal::token)
-            .unwrap_or("none"),
-    );
-    println!(
-        "rehearsal: documents_total={} documents_switched={} documents_refused={} \
-         rollback_byte_identical_all={} references_never_moved={} \
+        "rehearsal: substrate={} claim_scope={} documents_total={} documents_switched={} \
+         documents_refused={} rollback_byte_identical_all={} references_never_moved={} \
          switch_and_return_non_vacuous={}",
+        report["substrate"]["kind"].as_str().unwrap_or(""),
+        report["claim_scope"].as_str().unwrap_or(""),
         report["rehearsal"]["documents_total"],
         report["rehearsal"]["documents_switched"],
         report["rehearsal"]["documents_refused"],
@@ -1337,15 +2596,66 @@ fn main() {
         report["rehearsal"]["references_never_moved"],
         report["rehearsal"]["switch_and_return_non_vacuous"],
     );
+    println!("wrote {}", path.display());
+}
 
-    // Fail closed: a rehearsal that did not switch, did not return, or that
-    // rewrote a carrier is not evidence of anything.
-    let vacuous = !triad.switched_performed()
-        || !triad.rollback.byte_identity
-        || !triad.rollback.table_returned_to_declared
-        || !carriers_unchanged;
-    if vacuous {
-        eprintln!("native-family-promotion-rehearsal: rehearsal is vacuous or unsafe");
+#[cfg(not(test))]
+#[tokio::main]
+async fn main() {
+    let args = <RehearsalArgs as clap::Parser>::parse();
+    let Some(root) = default_root() else {
+        eprintln!("native-family-promotion-rehearsal: declared route carriers not found");
+        std::process::exit(2);
+    };
+
+    if args.self_check {
+        match self_check() {
+            Ok(fired) => println!(
+                "SELF-CHECK OK: {} fail-closed guards fired on corrupted copies",
+                fired.len()
+            ),
+            Err(finding) => {
+                eprintln!("native-family-promotion-rehearsal: {finding}");
+                std::process::exit(2);
+            }
+        }
+        return;
+    }
+
+    let report_path = args
+        .report
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(args.substrate.default_report()));
+
+    let run = match args.substrate {
+        Substrate::Stub => stub_run(&root),
+        Substrate::LiveGrobid => live_run(&root, &args).await,
+    };
+    let run = match run {
+        Ok(run) => run,
+        Err(finding) => {
+            eprintln!("native-family-promotion-rehearsal: {finding}");
+            std::process::exit(2);
+        }
+    };
+
+    let report = rehearsal_report(&run);
+    if let Err(finding) = validate_report(&report) {
+        eprintln!(
+            "native-family-promotion-rehearsal: the measured report failed its own fail-closed \
+             validation: {finding}"
+        );
         std::process::exit(2);
     }
+    let first = serde_json::to_string(&report).expect("report serializes");
+    let second = serde_json::to_string(&rehearsal_report(&run)).expect("report serializes");
+    if first != second {
+        eprintln!("native-family-promotion-rehearsal: report is not deterministic");
+        std::process::exit(2);
+    }
+    if let Err(finding) = write_report(&report_path, &report) {
+        eprintln!("native-family-promotion-rehearsal: {finding}");
+        std::process::exit(2);
+    }
+    print_summary(&report_path, &run, &report);
 }

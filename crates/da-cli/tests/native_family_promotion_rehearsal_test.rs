@@ -5,16 +5,23 @@
 //! takes a boolean out of the report as proof — the executed-rollback claim is
 //! asserted on the emitted bytes.
 
+// The example compiles its live-substrate path only into `main`, which this
+// module build deliberately excludes (`#[cfg(not(test))]`), so the consumer test
+// links just the hermetic surface.  The unused live-path items are allowed here,
+// in the consumer, instead of weakening the example's own lint surface.
 #[path = "../examples/native_family_promotion_rehearsal.rs"]
+#[allow(dead_code)]
 mod rehearsal;
 
 use rehearsal::{
-    AdmittedLaneOutcome, DATA_COMPARISON, DATA_COMPOSITION, DeclaredRouteTable, EmissionOutcome,
-    LaneState, NativeSideRefusal, REHEARSAL_EPISODE, REHEARSAL_LANE, RehearsalDocument,
-    RehearsalIdentity, RehearsalLane, RehearsalRefusal, RehearsalRun, SubstrateDescriptor,
-    SwitchRefusal, carrier_sha256, default_root, digest, fixture, fixture_header_outcome,
-    fixture_java_tei, identity_for, locate_repo_root, read_declared_route_table, rehearsal_report,
-    run_rehearsal_triad, switch_lane,
+    AdmittedLaneOutcome, DATA_COMPARISON, DATA_COMPOSITION, DEFAULT_REPORT_LIVE,
+    DEFAULT_REPORT_STUB, DeclaredRouteTable, EmissionOutcome,
+    FORBIDDEN_REPORT_TOKENS as EXAMPLE_FORBIDDEN_REPORT_TOKENS, LaneState, NativeSideRefusal,
+    REHEARSAL_EPISODE, REHEARSAL_LANE, RehearsalDocument, RehearsalIdentity, RehearsalLane,
+    RehearsalRefusal, RehearsalRun, SubstrateDescriptor, SwitchRefusal, carrier_sha256,
+    default_root, digest, fixture, fixture_header_outcome, fixture_java_tei, identity_for,
+    locate_repo_root, read_declared_route_table, rehearsal_report, run_rehearsal_triad, self_check,
+    switch_lane,
 };
 use std::path::{Path, PathBuf};
 
@@ -419,6 +426,8 @@ fn rehearsal_run() -> RehearsalRun {
         table_after,
         documents: vec![RehearsalDocument {
             document_id: declared.case_id.clone(),
+            source_pdf_sha256: None,
+            source_pdf_sha256_absent_reason: Some(rehearsal::STUB_PDF_ABSENT_REASON.to_owned()),
             java_tei_sha256: digest(&java_tei),
             native_side: AdmittedLaneOutcome::Admitted(Box::new(fixture_header_outcome())),
             triad,
@@ -537,4 +546,167 @@ fn rehearsal_never_rewrites_a_declared_carrier() {
         run.table_before.carrier_sha256,
         run.table_after.carrier_sha256
     );
+}
+
+// ---------------------------------------------------------------------------
+// S06/T02 — the declared-substrate harness: scope, denylist, guard vocabulary
+// ---------------------------------------------------------------------------
+
+/// Mirror of the example's redaction denylist.  The assertion is on the SET, so
+/// a drift in either list fails (S04 history: two parallel lists, 11 vs 10).
+const FORBIDDEN_REPORT_TOKENS: [&str; 15] = [
+    "<TEI",
+    "<tei",
+    "%PDF-",
+    "data/sources",
+    "file://",
+    "/root/",
+    "/home/",
+    "target/debug",
+    "target/release",
+    "executable",
+    "hostname",
+    "/sys/",
+    "docker-",
+    ".scope",
+    "daily-archive-grobid",
+];
+
+/// The guards `self_check()` must prove it can fire.  Deliberately a LITERAL
+/// copy rather than an import, so the example's behaviour and this expectation
+/// cannot drift together unnoticed.
+const REQUIRED_SELF_CHECK_GUARDS: [&str; 15] = [
+    "rehearsed-lane-not-independently-selectable",
+    "pooling-in-rehearsal",
+    "rust-run-cancelled-fallback",
+    "missing-rollback-target",
+    "returned-emission-differs-from-baseline",
+    "lane-movement-outside-rehearsed-lane",
+    "zero-switched-documents-is-vacuous",
+    "policy-lock-lifted",
+    "carrier-sha256-changed-after-run",
+    "promotion-receipt-present",
+    "explicit-decision-present",
+    "forbidden-token-in-report",
+    "native-side-admitted-without-switched-difference",
+    "native-side-refused-without-reason",
+    "measurement-scope-absent",
+];
+
+fn snapshot(path: &Path) -> Option<String> {
+    std::fs::read(path).ok().map(|bytes| digest(&bytes))
+}
+
+#[test]
+fn denylist_matches_the_example_as_a_set() {
+    let example: std::collections::BTreeSet<&str> =
+        EXAMPLE_FORBIDDEN_REPORT_TOKENS.iter().copied().collect();
+    let mirrored: std::collections::BTreeSet<&str> =
+        FORBIDDEN_REPORT_TOKENS.iter().copied().collect();
+    assert_eq!(
+        example, mirrored,
+        "the example and test denylists must be the same set"
+    );
+    assert_eq!(
+        mirrored.len(),
+        FORBIDDEN_REPORT_TOKENS.len(),
+        "a denylist must not repeat a token"
+    );
+}
+
+#[test]
+fn self_check_fires_exactly_the_declared_guard_set() {
+    let fired = self_check().expect("the fail-closed self-check must pass");
+    let fired: std::collections::BTreeSet<&str> = fired.iter().copied().collect();
+    let required: std::collections::BTreeSet<&str> =
+        REQUIRED_SELF_CHECK_GUARDS.iter().copied().collect();
+    assert_eq!(
+        fired, required,
+        "the fired guard set must EQUAL the declared vocabulary"
+    );
+    assert_eq!(
+        required.len(),
+        REQUIRED_SELF_CHECK_GUARDS.len(),
+        "the guard vocabulary must not repeat a name"
+    );
+}
+
+#[test]
+fn self_check_creates_and_modifies_no_file() {
+    let root = repo_root();
+    let reports = [
+        root.join(DEFAULT_REPORT_STUB),
+        root.join(DEFAULT_REPORT_LIVE),
+    ];
+    let before: Vec<Option<String>> = reports.iter().map(|path| snapshot(path)).collect();
+    let carriers_before: Vec<String> = [DATA_COMPARISON, DATA_COMPOSITION]
+        .iter()
+        .map(|rel| carrier_sha256(&root, rel))
+        .collect();
+
+    let fired = self_check().expect("the fail-closed self-check must pass");
+    assert_eq!(fired.len(), REQUIRED_SELF_CHECK_GUARDS.len());
+
+    let after: Vec<Option<String>> = reports.iter().map(|path| snapshot(path)).collect();
+    let carriers_after: Vec<String> = [DATA_COMPARISON, DATA_COMPOSITION]
+        .iter()
+        .map(|rel| carrier_sha256(&root, rel))
+        .collect();
+    assert_eq!(
+        before, after,
+        "self_check must not create or modify a report"
+    );
+    assert_eq!(
+        carriers_before, carriers_after,
+        "self_check must not touch a declared carrier"
+    );
+}
+
+#[test]
+fn stub_report_declares_the_measurement_scope() {
+    let run = rehearsal_run();
+    let report = rehearsal_report(&run);
+    assert_eq!(report["claim_scope"], "rehearsal_only");
+    assert_eq!(report["pooled_quality_claim"], "forbidden");
+    assert_eq!(report["substrate"]["kind"], "local_deterministic_stub");
+    assert_eq!(report["substrate"]["live_grobid_participated"], false);
+    assert_eq!(
+        report["documents"][0]["source_pdf_sha256"],
+        serde_json::Value::Null,
+        "the stub sends no PDF, so no PDF digest may be published"
+    );
+    assert_eq!(
+        report["documents"][0]["java_tei_sha256"],
+        report["documents"][0]["baseline"]["sha256"]
+    );
+    assert_eq!(report["rehearsal"]["carriers_unchanged"], true);
+    assert_eq!(
+        report["rehearsal_table"]["equality_with_declared_after"],
+        true
+    );
+    assert_eq!(report["rehearsal_table"]["lanes"][0]["state"], "native");
+    assert_eq!(report["rehearsal_table"]["lanes"][1]["state"], "java");
+    // The report publishes the closed fail-closed guard vocabulary, and it must
+    // EQUAL the test's independent literal copy (set equality, not just names).
+    let published: std::collections::BTreeSet<&str> = report["guards"]["fail_closed"]
+        .as_array()
+        .expect("guards.fail_closed is an array")
+        .iter()
+        .map(|value| value.as_str().expect("a guard name is a string"))
+        .collect();
+    let required: std::collections::BTreeSet<&str> =
+        REQUIRED_SELF_CHECK_GUARDS.iter().copied().collect();
+    assert_eq!(
+        published, required,
+        "the report must publish exactly the closed guard vocabulary"
+    );
+
+    // The declared route tables carry no explicit promotion decision, on either
+    // side: the switch is in-memory and undeclared to production.
+    assert!(report["declared_route_table_before"]["explicit_decision"].is_null());
+    assert!(report["declared_route_table_after"]["explicit_decision"].is_null());
+
+    // The scope carries the whole point: these numbers are a rehearsal, and a
+    // pooled quality claim is forbidden rather than merely absent.
+    rehearsal::validate_report(&report).expect("the stub report must be admissible");
 }
