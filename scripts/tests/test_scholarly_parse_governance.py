@@ -3470,7 +3470,10 @@ def _unresolved_pass_violations(registry: dict, review: dict) -> list[str]:
 def test_s09_census_policy_bindings_resolve_and_hash_on_disk():
     policy = _load(POLICY_PATH)
     bindings = _source_bindings(policy)
-    assert len(bindings) == 19, [binding["path"] for binding in bindings]
+    # M513/S06/T05 widened the census to 20: the live one-lane promotion
+    # rehearsal artifact joined `bindings.canonical_artifacts` (10 source_data
+    # + 10 canonical_artifacts) without changing any other invariant.
+    assert len(bindings) == 20, [binding["path"] for binding in bindings]
     paths = [binding["path"] for binding in bindings]
     assert len(set(paths)) == len(paths), "duplicate binding path"
     for binding in bindings:
@@ -4016,3 +4019,77 @@ def test_m512_s05_census_scan_rejects_a_reintroduced_stale_claim():
     assert _superseded_census_hits(
         "610 объявленных = 531 измеримых + 79 типизированных исключений"
     ) == []
+
+
+# --- M513/S06/T05: live one-lane rehearsal is byte-pinned and identity-mapped -
+#
+# The rehearsal artifact is a measured live run (real Java GROBID sidecar,
+# structural profile), not a shadow report. It must therefore be declared on
+# both binding surfaces -- byte-pinned in `bindings.canonical_artifacts` and
+# identity-mapped in `bindings.integration_evidence` -- and mirrored, so a
+# substituted artifact is named by the policy's own evidence check instead of
+# being read silently as the rehearsed bytes. The non-vacuity probe below
+# injects exactly the drift the positive assertions claim to catch.
+
+REHEARSAL_ARTIFACT = "artifacts/parse_compat/native_family_promotion_rehearsal.json"
+REHEARSAL_IDENTITY = "native-family-promotion-rehearsal.v1"
+
+
+def test_m513_s06_rehearsal_artifact_is_pinned_identity_mapped_and_mirrored():
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    disk = _sha256(ROOT / REHEARSAL_ARTIFACT)
+    canonical = {
+        item["path"]: item for item in policy["bindings"]["canonical_artifacts"]
+    }
+    assert canonical[REHEARSAL_ARTIFACT]["sha256"] == disk
+    policy_evidence = {
+        (item["path"], item["identity"])
+        for item in policy["bindings"]["integration_evidence"]
+    }
+    assert (REHEARSAL_ARTIFACT, REHEARSAL_IDENTITY) in policy_evidence
+    mirror_canonical = {
+        item["path"]: item for item in fixture["canonical_artifacts"]
+    }
+    assert mirror_canonical[REHEARSAL_ARTIFACT]["sha256"] == disk
+    assert mirror_canonical[REHEARSAL_ARTIFACT]["identity"] == REHEARSAL_IDENTITY
+    mirror_evidence = {
+        (item["path"], item["identity"])
+        for item in fixture["integration_evidence"]
+    }
+    assert (REHEARSAL_ARTIFACT, REHEARSAL_IDENTITY) in mirror_evidence
+    # The artifact is a rehearsal claim, never a promotion receipt.
+    artifact = json.loads((ROOT / REHEARSAL_ARTIFACT).read_text(encoding="utf-8"))
+    assert artifact["claim_scope"] == "rehearsal_only"
+    assert artifact["schema_version"] == REHEARSAL_IDENTITY
+    assert artifact["locks"]["this_wave_promotes"] == "none"
+    assert artifact["locks"]["deployed"] is False
+    assert artifact["locks"]["import_eligible"] is False
+    assert artifact["locks"]["production_route"] == "forbidden"
+    assert artifact["locks"]["graph_write"] == "forbidden"
+
+
+def test_m513_s06_rehearsal_pin_scan_rejects_a_substituted_or_unmapped_artifact():
+    """A moved pin, a moved mirror or a dropped identity map is named, not read."""
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    moved_pin = copy.deepcopy(policy)
+    for item in moved_pin["bindings"]["canonical_artifacts"]:
+        if item["path"] == REHEARSAL_ARTIFACT:
+            item["sha256"] = "0" * 64
+    errors = _validate_positive(moved_pin, fixture)
+    assert any(REHEARSAL_ARTIFACT in error for error in errors), errors
+    moved_mirror = copy.deepcopy(fixture)
+    for item in moved_mirror["canonical_artifacts"]:
+        if item["path"] == REHEARSAL_ARTIFACT:
+            item["sha256"] = "0" * 64
+    errors = _validate_positive(policy, moved_mirror)
+    assert any(REHEARSAL_ARTIFACT in error for error in errors), errors
+    unmapped = copy.deepcopy(fixture)
+    unmapped["integration_evidence"] = [
+        item
+        for item in unmapped["integration_evidence"]
+        if item.get("identity") != REHEARSAL_IDENTITY
+    ]
+    errors = _validate_positive(policy, unmapped)
+    assert "integration evidence" in errors, errors

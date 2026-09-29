@@ -1274,3 +1274,71 @@ D127 не снят. Java GROBID остаётся TEI oracle и rollback target. 
 единственной открытой записью с человеческим релизным решением `pending`
 (`reviewer=null`); H20 остаётся `pending` / `unassigned`.
 
+## 28. Корректировка 2026-09-29: одна полоса промоушена отрепетирована с исполненным откатом (M513-r7dg4z/S06)
+
+Секция записывает репетицию промоушена одной полосы и не снимает ни одного
+замка. История не переписывается: §24 остаётся датированной записью среза
+M512-lxafs8/S05, §25 — записью S03, §26 — записью S04, §27 — записью S05; ни
+одна из них не отменяется и не редактируется. Это НЕ релизное решение:
+корректировка не расширяет допуск, не объявляет production-достижимость и не
+даёт права на промоушен или графовую запись.
+
+**Что отрепетировано.** Объявленный кандидат
+`da-parse.native_header_reference_composition` (полосы `header` и `references`)
+переключён в репетиционном режиме на нативный маршрут ровно в одной полосе —
+`header`; полоса `references` не двигалась. Репетиция — это прогон harness
+`crates/da-cli/examples/native_family_promotion_rehearsal.rs` против живого Java
+GROBID HTTP (`0.9.1`, профиль `structural`, D204), а не против shadow-субстрата.
+Артефакт — `artifacts/parse_compat/native_family_promotion_rehearsal.json`
+(sha256 `e7407fdf83a95d458e3daee7bd857fdb3f8aa3514996f544964ee266213f48c8`,
+identity `native-family-promotion-rehearsal.v1`, `claim_scope: rehearsal_only`).
+
+**Чем доказан откат.** Возврат на Java решён не булевым полем отчёта, а байтовым
+равенством: для каждого документа `returned.bytes == baseline.bytes` и
+`returned.sha256 == baseline.sha256`, а агрегат несёт
+`rollback_byte_identical_all=true` (`rollback.table_returned_to_declared=true` для
+всех документов). Табличная запись `rehearsal_table` равна объявленной после
+прогона таблице (`equality_with_declared_after=true`), поэтому «вернулись на
+Java» — проверяемое свойство, а не проза.
+
+**Сколько документов.** Три объявленных документа: **2** переключены
+(`documents_switched=2`, суммарная байтовая дельта
+`switched_byte_delta_total=1757`) и **1** отказан типизированно
+(`documents_refused=1`, `switch_refusal=native_outcome_rejected`); не-вакуозность
+подтверждена (`switch_and_return_non_vacuous=true`), полоса `references` не
+двигалась (`references_never_moved=true`).
+
+**Переключатель только в памяти.** Таблица маршрута объявлена в двух
+DATA-носителях (`data/parse/native_fulltext_composition.yaml` и
+`data/parse/comparison_contract.yaml`); после прогона оба носителя прочитаны
+заново с диска, и их sha256 равны снятым до него (`carriers_unchanged=true`,
+guard `carrier-sha256-changed-after-run`). Ни один носитель не перезаписан.
+
+**Удержание артефакта.** Артефакт байтово пинован в
+`scripts/governor/checks/scholarly_parse_plane.yaml`
+(`bindings.canonical_artifacts`) и в зеркале
+`governor/fixtures/scholarly_parse_plane/contract.positive.json`; identity
+`native-family-promotion-rehearsal.v1` объявлена в
+`bindings.integration_evidence` на обеих поверхностях, поэтому подмена артефакта
+называется именованным `evidence_substitution`, а не читается молча как
+отрепетированный. Артефакт **намеренно не** добавлен в
+`data/parse/acceptance_manifest.yaml#population_contract.report_paths`: это
+перечисление покрывает `*_shadow.json` (плюс два явно перечисленных offline
+receipt), а смешивать исполненный живой прогон с shadow-прогонами — ровно та
+конфляция, которую контракт переписи предотвращает.
+
+**Независимые судьи.** Emission судит `roxmltree`-оракул в
+`crates/da-parse/tests/native_family_promotion_rehearsal_oracle.rs`, который не
+импортирует пример и не читает его артефакт; статический сканер в
+`crates/da-parse/tests/architecture_contract.rs` доказывает, что репетиция не
+открывает маршрут, граф или промоушен.
+
+**Что это НЕ значит.** Ни один замок не снят и ни одна возможность не
+промоутирована: `import_eligible=false`, `deployed=false`,
+`production_route=forbidden`, `graph_write=forbidden`, `auto_promote=forbidden`,
+`promotion_receipt` отсутствует, `promotion_state=candidate`,
+`observation_mode=shadow`, `this_wave_promotes=none`; D127 не снят. Java GROBID
+остаётся TEI oracle и rollback target. GAR-015 остаётся единственной открытой
+записью с человеческим релизным решением `pending` (`reviewer=null`), а H20 —
+`pending` / `unassigned`.
+

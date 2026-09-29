@@ -175,6 +175,21 @@ bindings:
     # mutated artifact is named, never silently read as the frozen one.
     - path: artifacts/parse_compat/external_holdout_release_probe.json
       sha256: a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275
+    # M513/S06/T05: the live one-lane promotion rehearsal of the declared
+    # candidate `da-parse.native_header_reference_composition`. It is an
+    # executed live run against the real Java GROBID sidecar (structural
+    # profile), not a shadow report, so it carries its own identity
+    # (`native-family-promotion-rehearsal.v1`, `claim_scope: rehearsal_only`)
+    # and is judged by its own independent oracle/contract tests in da-parse
+    # and da-cli. It is deliberately NOT added to the acceptance manifest's
+    # `population_contract.report_paths`: that enumeration is the shadow-report
+    # set (plus two explicitly enumerated offline receipts), and mixing an
+    # executed live run with shadow runs is exactly the conflation that
+    # contract exists to prevent. Byte-pinned here so a substituted artifact is
+    # named (`evidence_substitution`), never silently read as the rehearsed
+    # bytes.
+    - path: artifacts/parse_compat/native_family_promotion_rehearsal.json
+      sha256: e7407fdf83a95d458e3daee7bd857fdb3f8aa3514996f544964ee266213f48c8
   shared_promotion_contract: scripts/governor/checks/promotion_evidence_contract.yaml
   rollback_target: java-grobid-http@0.9.0-crf
   integration_evidence:
@@ -200,6 +215,8 @@ bindings:
       identity: parse-batch-budget-live.v1
     - path: artifacts/parse_compat/external_holdout_release_probe.json
       identity: external-holdout-release-probe.v1
+    - path: artifacts/parse_compat/native_family_promotion_rehearsal.json
+      identity: native-family-promotion-rehearsal.v1
 release_probe_lane:
   # M511/S08/T05: the frozen external release-probe lane is held in DATA so its
   # three failure modes stay distinct named flags — an absent or unmapped lane
