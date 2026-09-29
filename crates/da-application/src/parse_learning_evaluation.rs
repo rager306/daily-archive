@@ -33,6 +33,29 @@ pub enum ContaminationAssessment {
     NotAssessed,
 }
 
+/// How a report established producer identity.
+///
+/// Only [`ProvenanceBasis::Explicit`] rests on machine-checkable
+/// code/input/method provenance. The pre-lineage bridge inferred identity from
+/// display labels, which any two differently-named critics can satisfy, so a
+/// bridged report is inspectable evidence but never authorizes promotion.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProvenanceBasis {
+    /// Producers carried explicit code/input/method provenance.
+    Explicit,
+    /// Identity was derived from display labels by the compatibility bridge.
+    LegacyLabelBridge,
+}
+
+impl Default for ProvenanceBasis {
+    /// Fail safe: an artifact written before this field existed is treated as
+    /// bridged evidence, never as explicit provenance.
+    fn default() -> Self {
+        Self::LegacyLabelBridge
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FrozenEvalCase {
@@ -107,6 +130,10 @@ pub struct AblationReport {
     pub explicit_decision: Option<String>,
     pub deployed: bool,
     pub import_eligible: bool,
+    /// How producer identity was established. `legacy_label_bridge` reports are
+    /// inspectable but do not authorize promotion.
+    #[serde(default)]
+    pub provenance_basis: ProvenanceBasis,
     pub report_digest: Sha256Digest,
 }
 
@@ -254,7 +281,7 @@ pub fn aggregate_same_n_ablation(
         method: "legacy-label-bridge".into(),
         authority: "legacy-adapter".into(),
     };
-    aggregate_same_n_ablation_with_provenance(
+    aggregate_with_basis(
         candidate,
         cases,
         baseline,
@@ -267,6 +294,7 @@ pub fn aggregate_same_n_ablation(
                 .map_or("", |row| row.producer.as_str()),
         ),
         &producer(trainer_producer),
+        ProvenanceBasis::LegacyLabelBridge,
     )
 }
 
@@ -377,7 +405,9 @@ pub(crate) fn qualify_quality(
 }
 
 /// Aggregate an ablation only when producer code and input lineage are
-/// explicit and machine-checkable.
+/// explicit and machine-checkable. The resulting report carries
+/// [`ProvenanceBasis::Explicit`] and is the only shape a promotion gate may
+/// accept.
 // NOTE: eight parameters today; the three ProducerProvenance refs are a candidate
 // for a triad struct if this grows. Allow is scoped to this fn only.
 #[allow(clippy::too_many_arguments)]
@@ -390,6 +420,35 @@ pub fn aggregate_same_n_ablation_with_provenance(
     baseline_producer: &ProducerProvenance,
     candidate_producer: &ProducerProvenance,
     trainer: &ProducerProvenance,
+) -> Result<AblationReport, EvaluationError> {
+    aggregate_with_basis(
+        candidate,
+        cases,
+        baseline,
+        candidate_rows,
+        conservation_ok,
+        baseline_producer,
+        candidate_producer,
+        trainer,
+        ProvenanceBasis::Explicit,
+    )
+}
+
+/// Single aggregation body shared by both public entry points.
+///
+/// `basis` records which identity path produced the report so a promotion gate
+/// can refuse label-derived independence without re-deriving anything.
+#[allow(clippy::too_many_arguments)]
+fn aggregate_with_basis(
+    candidate: &CandidateManifest,
+    cases: &[FrozenEvalCase],
+    baseline: &[CriticObservation],
+    candidate_rows: &[CriticObservation],
+    conservation_ok: bool,
+    baseline_producer: &ProducerProvenance,
+    candidate_producer: &ProducerProvenance,
+    trainer: &ProducerProvenance,
+    basis: ProvenanceBasis,
 ) -> Result<AblationReport, EvaluationError> {
     candidate
         .validate()
@@ -438,6 +497,7 @@ pub fn aggregate_same_n_ablation_with_provenance(
         explicit_decision: None,
         deployed: false,
         import_eligible: false,
+        provenance_basis: basis,
         report_digest: Sha256Digest::new("0".repeat(64)).expect("zero digest"),
     };
     let mut report = report_base;
@@ -601,6 +661,43 @@ mod tests {
             Err(EvaluationError::ProducerNotIndependent),
             "different observation labels must not establish provenance independence"
         );
+    }
+    #[test]
+    fn explicit_provenance_and_label_bridge_are_reported_distinctly() {
+        let (cases, baseline, candidate_rows) = inputs();
+        let bridged = aggregate_same_n_ablation(
+            &candidate(),
+            &cases,
+            &baseline,
+            &candidate_rows,
+            true,
+            "sona-trainer",
+        )
+        .unwrap();
+        assert_eq!(bridged.provenance_basis, ProvenanceBasis::LegacyLabelBridge);
+
+        let explicit = aggregate_same_n_ablation_with_provenance(
+            &candidate(),
+            &cases,
+            &baseline,
+            &candidate_rows,
+            true,
+            &provenance('1', "critic-a-model", "fixture-authority"),
+            &provenance('2', "critic-b-model", "fixture-authority"),
+            &provenance('3', "sona-trainer", "fixture-authority"),
+        )
+        .unwrap();
+        assert_eq!(explicit.provenance_basis, ProvenanceBasis::Explicit);
+    }
+    #[test]
+    fn omitted_basis_is_read_back_as_the_non_promotable_bridge() {
+        let (cases, b, c) = inputs();
+        let report =
+            aggregate_same_n_ablation(&candidate(), &cases, &b, &c, true, "sona-trainer").unwrap();
+        let mut value = serde_json::to_value(&report).unwrap();
+        value.as_object_mut().unwrap().remove("provenance_basis");
+        let back: AblationReport = serde_json::from_value(value).unwrap();
+        assert_eq!(back.provenance_basis, ProvenanceBasis::LegacyLabelBridge);
     }
     #[test]
     fn rejects_order_mutation() {

@@ -90,7 +90,7 @@ pub use da_ports::CandidateManifest;
 pub use parse_learning_evaluation::{
     ABLATION_SCHEMA_VERSION, AblationReport, CRITIC_SCHEMA_VERSION, ContaminationAssessment,
     CriticObservation, CriticStatus, EvaluationError, FrozenEvalCase, ProducerProvenance,
-    PromotionQualification, PromotionQualityPolicy, aggregate_same_n_ablation,
+    PromotionQualification, PromotionQualityPolicy, ProvenanceBasis, aggregate_same_n_ablation,
     aggregate_same_n_ablation_with_provenance, qualify_candidate_quality,
 };
 pub use parse_policy_ablation::{

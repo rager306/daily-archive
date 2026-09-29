@@ -8,9 +8,10 @@ use da_application::native_family_decision_packages::{
 };
 use da_application::native_family_promotion_gate::PromotionGateBlockReason;
 use da_application::native_family_same_n_adapter::{
-    FamilyIntegrityClaims, FamilySameNInput, InjectedProofRefs, NamedFamilyGap,
+    FamilyIntegrityClaims, FamilyProducerProvenance, FamilySameNInput, InjectedProofRefs,
+    NamedFamilyGap,
 };
-use da_application::{CriticObservation, CriticStatus, FrozenEvalCase};
+use da_application::{CriticObservation, CriticStatus, FrozenEvalCase, ProducerProvenance};
 use da_ports::{
     CandidateManifest, CandidateReceipt, LearningLineage, PromotionState, Sha256Digest,
 };
@@ -99,6 +100,15 @@ fn digest(ch: char) -> Sha256Digest {
     Sha256Digest::new(ch.to_string().repeat(64)).expect("fixed synthetic digest")
 }
 
+fn producer(code: char, method: &str) -> ProducerProvenance {
+    ProducerProvenance {
+        code_digest: digest(code),
+        input_digest: digest('c'),
+        method: method.to_owned(),
+        authority: "fixture-authority".to_owned(),
+    }
+}
+
 fn required_gap(family: FamilyId) -> &'static str {
     match family {
         FamilyId::Segmentation => "segmentation_not_independently_selectable",
@@ -170,7 +180,11 @@ fn family_input(family: FamilyId) -> FamilySameNInput {
         baseline_rows: rows("critic-a"),
         candidate_rows: rows("critic-b"),
         conservation_ok: true,
-        trainer_producer: "sona-trainer".to_owned(),
+        producers: FamilyProducerProvenance {
+            baseline: producer('1', "critic-a-model"),
+            candidate: producer('2', "critic-b-model"),
+            trainer: producer('3', "sona-trainer"),
+        },
         proof_refs: InjectedProofRefs {
             java_rollback_target: JAVA_ROLLBACK.to_owned(),
             java_rollback_proof_ref: format!("java-rollback-{name}"),

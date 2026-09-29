@@ -9,7 +9,8 @@ use crate::native_family_promotion_gate::{
     PromotionProofKind, ProofSlot, derive_promotion_gate,
 };
 use crate::parse_learning_evaluation::{
-    AblationReport, CriticObservation, EvaluationError, FrozenEvalCase, aggregate_same_n_ablation,
+    AblationReport, CriticObservation, EvaluationError, FrozenEvalCase, ProducerProvenance,
+    ProvenanceBasis, aggregate_same_n_ablation_with_provenance,
 };
 use da_ports::CandidateManifest;
 use da_ports::Sha256Digest;
@@ -23,6 +24,17 @@ pub struct InjectedProofRefs {
     pub java_rollback_target: String,
     pub java_rollback_proof_ref: String,
     pub architecture_quarantine_proof_ref: String,
+}
+
+/// Explicit machine identities for the three producers of one family same-n
+/// run. The display label on each row is diagnostic only; independence is
+/// decided from these code/input/method identities.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FamilyProducerProvenance {
+    pub baseline: ProducerProvenance,
+    pub candidate: ProducerProvenance,
+    pub trainer: ProducerProvenance,
 }
 
 /// Authority and integrity claims are copied, never healed, by later binding.
@@ -87,7 +99,8 @@ pub struct FamilySameNInput {
     pub baseline_rows: Vec<CriticObservation>,
     pub candidate_rows: Vec<CriticObservation>,
     pub conservation_ok: bool,
-    pub trainer_producer: String,
+    /// Explicit identities; labels never establish independence here.
+    pub producers: FamilyProducerProvenance,
     pub proof_refs: InjectedProofRefs,
     #[serde(default)]
     pub integrity: FamilyIntegrityClaims,
@@ -180,6 +193,7 @@ fn report_identity_ok(input: &FamilySameNInput, report: &AblationReport) -> bool
         && report.baseline_n == input.frozen_cases.len() as u64
         && report.candidate_n == input.frozen_cases.len() as u64
         && report.producer_independent
+        && report.provenance_basis == ProvenanceBasis::Explicit
         && !report.contamination_detected
         && !report.conservation_veto
         && report.promotion_state == "candidate"
@@ -320,13 +334,15 @@ pub fn bind_family_same_n(input: FamilySameNInput) -> FamilySameNBindingResult {
     if let Some(result) = prevalidate(&input) {
         return result;
     }
-    let report = match aggregate_same_n_ablation(
+    let report = match aggregate_same_n_ablation_with_provenance(
         &input.candidate,
         &input.frozen_cases,
         &input.baseline_rows,
         &input.candidate_rows,
         input.conservation_ok,
-        &input.trainer_producer,
+        &input.producers.baseline,
+        &input.producers.candidate,
+        &input.producers.trainer,
     ) {
         Ok(report) => report,
         Err(error) => return blocked(evaluation_error_reason(&error), "evaluator"),
@@ -533,6 +549,15 @@ mod tests {
         }
     }
 
+    fn producer(code: char, method: &str) -> ProducerProvenance {
+        ProducerProvenance {
+            code_digest: digest(code),
+            input_digest: digest('c'),
+            method: method.into(),
+            authority: "fixture-authority".into(),
+        }
+    }
+
     fn input(family: FamilyId) -> FamilySameNInput {
         let cases = (0..2)
             .map(|order| FrozenEvalCase {
@@ -567,7 +592,11 @@ mod tests {
             baseline_rows: rows("critic-a"),
             candidate_rows: rows("critic-b"),
             conservation_ok: true,
-            trainer_producer: "sona-trainer".into(),
+            producers: FamilyProducerProvenance {
+                baseline: producer('1', "critic-a-model"),
+                candidate: producer('2', "critic-b-model"),
+                trainer: producer('3', "sona-trainer"),
+            },
             proof_refs: InjectedProofRefs {
                 java_rollback_target: JAVA_ROLLBACK_TARGET.into(),
                 java_rollback_proof_ref: "java-rollback-receipt".into(),
@@ -596,6 +625,7 @@ mod tests {
             };
             assert_eq!(binding.report.baseline_n, 2);
             assert_eq!(binding.report.candidate_n, 2);
+            assert_eq!(binding.report.provenance_basis, ProvenanceBasis::Explicit);
             assert_eq!(binding.evidence.family, family);
             assert_eq!(binding.evidence.proofs.len(), PromotionProofKind::ALL.len());
             let refs = match &binding.gate {
@@ -643,6 +673,62 @@ mod tests {
         assert_eq!(binding.report.baseline_n, 2);
         assert_eq!(binding.report.critic_failures, 1);
         assert!(binding.report.baseline_metric_one < 1.0);
+    }
+
+    #[test]
+    fn different_labels_of_the_same_producer_are_not_independent() {
+        let mut value = input(FamilyId::Header);
+        for row in &mut value.baseline_rows {
+            row.producer = "critic-label-one".into();
+        }
+        for row in &mut value.candidate_rows {
+            row.producer = "critic-label-two".into();
+        }
+        // Distinct display labels, identical explicit machine identity: the
+        // label bridge would report these as independent, the explicit path
+        // must not.
+        value.producers.candidate = value.producers.baseline.clone();
+        assert_blocked(
+            value,
+            PromotionGateBlockReason::ProducerNotIndependent,
+            "evaluator",
+        );
+    }
+
+    #[test]
+    fn legacy_label_bridge_report_cannot_authorize_promotion() {
+        let value = input(FamilyId::Header);
+        let FamilySameNBindingResult::Ready { binding } = bind_family_same_n(value.clone()) else {
+            panic!("fixture must bind")
+        };
+        let mut report = binding.report;
+        assert_eq!(report.provenance_basis, ProvenanceBasis::Explicit);
+        // A label-bridged report is structurally identical otherwise; only its
+        // identity basis differs, and that alone must fail the family gate.
+        report.provenance_basis = ProvenanceBasis::LegacyLabelBridge;
+        assert!(
+            !report_identity_ok(&value, &report),
+            "label-bridged independence must never authorize the family gate"
+        );
+    }
+
+    #[test]
+    fn producer_provenance_must_bind_to_the_frozen_corpus() {
+        let mut unbound_input = input(FamilyId::Header);
+        unbound_input.producers.baseline.input_digest = digest('0');
+        assert_blocked(
+            unbound_input,
+            PromotionGateBlockReason::StaleIdentity,
+            "evaluator",
+        );
+
+        let mut unbound_method = input(FamilyId::Header);
+        unbound_method.producers.candidate.method = "  ".into();
+        assert_blocked(
+            unbound_method,
+            PromotionGateBlockReason::StaleIdentity,
+            "evaluator",
+        );
     }
 
     #[test]
@@ -820,14 +906,14 @@ mod tests {
             "evaluator",
         );
         let mut producer_collision = input(FamilyId::Header);
-        producer_collision.candidate_rows[0].producer = "critic-a".into();
+        producer_collision.producers.candidate = producer_collision.producers.baseline.clone();
         assert_blocked(
             producer_collision,
             PromotionGateBlockReason::ProducerNotIndependent,
             "evaluator",
         );
         let mut trainer_collision = input(FamilyId::Header);
-        trainer_collision.baseline_rows[0].producer = "sona-trainer".into();
+        trainer_collision.producers.trainer = trainer_collision.producers.baseline.clone();
         assert_blocked(
             trainer_collision,
             PromotionGateBlockReason::ProducerNotIndependent,

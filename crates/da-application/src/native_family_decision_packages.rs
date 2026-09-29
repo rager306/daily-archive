@@ -282,15 +282,26 @@ pub fn assemble_family_decision_set(input: FamilyDecisionSetInput) -> FamilyDeci
 mod tests {
     use super::*;
     use crate::native_family_same_n_adapter::{
-        FamilyIntegrityClaims, InjectedProofRefs, NamedFamilyGap,
+        FamilyIntegrityClaims, FamilyProducerProvenance, InjectedProofRefs, NamedFamilyGap,
     };
-    use crate::parse_learning_evaluation::{CriticObservation, CriticStatus, FrozenEvalCase};
+    use crate::parse_learning_evaluation::{
+        CriticObservation, CriticStatus, FrozenEvalCase, ProducerProvenance,
+    };
     use da_ports::{
         CandidateManifest, CandidateReceipt, LearningLineage, PromotionState, Sha256Digest,
     };
 
     fn digest(ch: char) -> Sha256Digest {
         Sha256Digest::new(ch.to_string().repeat(64)).unwrap()
+    }
+
+    fn producer(code: char, method: &str) -> ProducerProvenance {
+        ProducerProvenance {
+            code_digest: digest(code),
+            input_digest: digest('c'),
+            method: method.into(),
+            authority: "fixture-authority".into(),
+        }
     }
 
     fn input(family: FamilyId) -> FamilySameNInput {
@@ -354,7 +365,11 @@ mod tests {
             baseline_rows: rows("critic-a"),
             candidate_rows: rows("critic-b"),
             conservation_ok: true,
-            trainer_producer: "sona-trainer".into(),
+            producers: FamilyProducerProvenance {
+                baseline: producer('1', "critic-a-model"),
+                candidate: producer('2', "critic-b-model"),
+                trainer: producer('3', "sona-trainer"),
+            },
             proof_refs: InjectedProofRefs {
                 java_rollback_target: JAVA_ROLLBACK_TARGET.into(),
                 java_rollback_proof_ref: format!("java-rollback-{suffix}"),

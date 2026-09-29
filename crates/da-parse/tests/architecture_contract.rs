@@ -5946,10 +5946,20 @@ fn s02_native_family_same_n_adapter_stays_single_evaluator_and_quarantined() {
     // makes a forbidden coupling fail visibly without self-matching here.
     let code = s10_code_without_comments(&adapter);
     assert_eq!(
-        code.matches(concat!("aggregate_same_n_", "ablation", "("))
-            .count(),
+        code.matches(concat!(
+            "aggregate_same_n_",
+            "ablation",
+            "_with_provenance("
+        ))
+        .count(),
         1,
         "S02: adapter must invoke the canonical same-n evaluator exactly once"
+    );
+    assert_eq!(
+        code.matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        0,
+        "S02: adapter must not route promotion through the label compatibility bridge"
     );
     for token in [
         concat!("da_", "parse"),
@@ -6057,10 +6067,21 @@ fn s03_native_family_adversarial_gate_stays_quarantined() {
     let adapter_code = s02_code_without_comments_and_strings(&adapter);
     assert_eq!(
         adapter_code
-            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .matches(concat!(
+                "aggregate_same_n_",
+                "ablation",
+                "_with_provenance("
+            ))
             .count(),
         1,
         "S03: adapter must retain exactly one canonical evaluator call"
+    );
+    assert_eq!(
+        adapter_code
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        0,
+        "S03: adapter must not authorize promotion through the label bridge"
     );
     let forbidden = [
         concat!("da_", "parse"),
@@ -6209,10 +6230,21 @@ fn s04_native_family_decision_packages_stay_independent_and_quarantined() {
     );
     assert_eq!(
         adapter
-            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .matches(concat!(
+                "aggregate_same_n_",
+                "ablation",
+                "_with_provenance("
+            ))
             .count(),
         1,
         "S04: canonical aggregate evaluator must remain single-owned by the adapter"
+    );
+    assert_eq!(
+        adapter
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        0,
+        "S04: adapter must not authorize promotion through the label bridge"
     );
 
     for (name, source) in [
