@@ -1,0 +1,170 @@
+{
+  "schema_version": "absorption-progress.v1",
+  "scorecard_id": "m514-absorption-progress-baseline",
+  "census_id": "holdout-partition-610-531-79",
+  "denominator": {
+    "assigned": 610,
+    "executed": 531,
+    "refused": 0,
+    "excluded": 79,
+    "exclusion_reasons": {
+      "header_date_absent": 72,
+      "header_title_absent": 5,
+      "header_author_absent": 2
+    },
+    "basis_note": "The full assigned population is 610. 531 documents carry an admitted non-zero evaluated population at the frozen structural profile; the 79 typed exclusions stay inside the denominator. Every ratio below is therefore already band-scoped: document coverage of the assigned population is 531/610 = 0.870492."
+  },
+  "measurements": [
+    {
+      "metric_id": "preservation.occurrence_conservation",
+      "axis": "preservation",
+      "state": "measured",
+      "denominator_basis": "assigned_full",
+      "population_basis": {
+        "assigned_documents": 610,
+        "measurable_documents": 531,
+        "excluded_documents": 79,
+        "score_unit": "occurrence",
+        "occurrences_in_denominator": 79621,
+        "document_coverage": {
+          "numerator": 531,
+          "denominator": 610
+        }
+      },
+      "score": {
+        "numerator": 74910,
+        "denominator": 79621
+      },
+      "strata": {
+        "micro_occurrence": {
+          "numerator": 74910,
+          "denominator": 79621
+        },
+        "per_document": {
+          "numerator": 101,
+          "denominator": 205
+        },
+        "weakest_stratum": {
+          "numerator": 101,
+          "denominator": 205
+        }
+      },
+      "weakest_stratum_id": "per_document",
+      "weakest_document_id": "2501.17399",
+      "comparability": {
+        "corpus_id": "m513-holdout-610",
+        "profile": "structural",
+        "oracle": "external_holdout_probe_semantics",
+        "source_revision": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275"
+      },
+      "evidence": {
+        "path": "artifacts/parse_compat/external_holdout_release_probe.json",
+        "sha256": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
+        "source_revision": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
+        "tested_revision": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
+        "kind": "executed_run",
+        "note": "recomputed from evaluated_population.aggregate (admitted / source_population) and per-document conserved/source_population; the weakest document is recorded so the stratum is reproducible"
+      }
+    },
+    {
+      "metric_id": "extraction.native_capability_recall",
+      "axis": "extraction",
+      "state": "measured",
+      "denominator_basis": "assigned_full",
+      "population_basis": {
+        "assigned_documents": 610,
+        "measurable_documents": 531,
+        "excluded_documents": 79,
+        "score_unit": "occurrence",
+        "occurrences_in_denominator": 79621,
+        "document_coverage": {
+          "numerator": 531,
+          "denominator": 610
+        }
+      },
+      "score": {
+        "numerator": 945771,
+        "denominator": 1000000
+      },
+      "strata": {
+        "micro_occurrence": {
+          "numerator": 945771,
+          "denominator": 1000000
+        },
+        "per_family": {
+          "numerator": 3055,
+          "denominator": 7077
+        },
+        "weakest_stratum": {
+          "numerator": 3055,
+          "denominator": 7077
+        }
+      },
+      "weakest_stratum_id": "per_family",
+      "weakest_family_id": "SemanticFieldLoss::AuthorAffiliation",
+      "comparability": {
+        "corpus_id": "m513-holdout-610",
+        "profile": "structural",
+        "oracle": "external_holdout_probe_semantics",
+        "source_revision": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275"
+      },
+      "evidence": {
+        "path": "artifacts/parse_compat/external_holdout_release_probe.json",
+        "sha256": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
+        "source_revision": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
+        "tested_revision": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
+        "kind": "executed_run",
+        "note": "micro recall is evaluated_population.class_parity.aggregate.native_capability_recall_micros / 1e6; the weakest family is the per-class conserved/source_population minimum across the 531 class profiles"
+      }
+    },
+    {
+      "metric_id": "java_independence.java_free_parse_route",
+      "axis": "java_independence",
+      "state": "not_measured",
+      "reason": "java_production_route_active",
+      "reason_detail": "production parses through java-grobid-http/0.9.1/processFulltextDocument at the structural profile; the native PDF-to-TEI route is not connected to a runner, so no java-free product measurement exists"
+    },
+    {
+      "metric_id": "resources.native_savings",
+      "axis": "resources",
+      "state": "not_measured",
+      "reason": "native_savings_not_measured",
+      "reason_detail": "no paired CPU measurement of the same workload exists; latency_accounting in the probe is bounded, not measured, and a wall-clock-only saving would not be a product measurement"
+    },
+    {
+      "metric_id": "reliability.rollback_rehearsal",
+      "axis": "reliability",
+      "state": "not_measured",
+      "reason": "rehearsal_only_not_a_product_measurement",
+      "reason_detail": "the rollback pin is a rehearsed fallback target, not an executed product reliability measurement"
+    }
+  ],
+  "authorization": {
+    "state": "owner_directive_research",
+    "decision": "D491",
+    "product_coverage_effect": "none",
+    "authority": "data/parse/research_authorization.yaml",
+    "note": "D491 authorizes active non-commercial research only; it grants no release, distribution, graph write or import. The production retirement claim stays unmet until a named human records the release decision."
+  },
+  "lineage": {},
+  "historical_guard_pins": {
+    "mode": "read_only_byte_ledger",
+    "note": "sha256 of the M513 carriers this slice must not touch. Recomputed by scripts/tests/test_absorption_progress_baseline.py; a changed byte here is a finding, never a silent re-pin. Boundary: a writer able to rewrite both this ledger and the carriers can satisfy it.",
+    "pins": {
+      "doc/review/M513-S07-release-decision-package.md": "sha256:e6aa03ccbcafd09d02c48e504e35883891196cba3b27bc261ae8f83da8ec5ad7",
+      "doc/review/HUMAN-REVIEW-TEMPLATE.md": "sha256:05fc2461db2bc8ea0cc0b090ff326646c1ed80b97cc5177290afa2604701ce91",
+      "artifacts/parse_compat/grobid_retirement_release_decision_package.json": "sha256:f4ff294193a41c42988aaa135ec1b728f04603c6a585365c97a2d82869f0aa9a",
+      "data/parse/acceptance_manifest.yaml": "sha256:4d1c55ea9dd873b4aada48aa964609395f59e8a726bdf42c65d2b0f36865ca06",
+      "data/parse/grobid_compatibility.yaml": "sha256:de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03",
+      "data/parse/holdout_manifests.yaml": "sha256:ef91d3c25c7d91dda2654471140fd41fcae8e1ed87e7094ad24c31fef2b64a39",
+      "artifacts/parse_compat/external_holdout_release_probe.json": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275"
+    },
+    "without_path_identity": [
+      {
+        "id": "m513-s03-uat-4",
+        "kind": "uat_check",
+        "note": "M513/S03 UAT-4 pins agree with every surface. Preserved as an identity; never re-run and republished as fresh evidence."
+      }
+    ]
+  }
+}
