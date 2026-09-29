@@ -38,14 +38,29 @@ measured only on the wall clock. Each shape is now a typed label:
   the freeze. Re-tuning a threshold therefore invalidates the freeze instead of
   passing silently;
 * ``threshold_reference_unbound`` (S02) — a frozen threshold could not be
-  resolved from the artifact + pointer it names, so its number does not exist.
+  resolved from the artifact + pointer it names, so its number does not exist;
+* ``census_projection_mismatch`` (S02/T03) — the declared per-document
+  disposition projection, its digest, its partition or its source authority is
+  not what the two frozen census sources derive, so the counts may look right
+  while the population they describe is not the one on disk;
+* ``census_document_dropped`` (S02/T03) — an identity the frozen sources assign
+  to the population is absent from the declared projection;
+* ``census_disposition_untyped`` (S02/T03) — a declared or derived exclusion
+  reason is outside the contract's closed reason vocabulary;
+* ``refused_set_unbound`` (S02/T03) — the declared refusal is not the explicitly
+  enumerated set the frozen sources derive (or names an identity outside the
+  assigned population), so a document silently crossed the refusal boundary.
 
-Frozen thresholds (M514/S02/T02): the contract fixes them before held-out
-scoring and binds them to the carrier revision. This adapter resolves each
-threshold's `reference` (path + pointer) to a number with the domain's own
-``score_number`` rule, publishes the resolved values in observations, annotates
-measured rows that publish no threshold of their own, and recomputes the schema
-sha256 so the freeze is checked against bytes rather than trusted.
+Frozen thresholds (M514/S02/T02): the contract fixes them as a prospective
+regression floor over the frozen corpus (S01 already measured it) and binds them
+to the carrier revision. This adapter resolves each threshold's `reference` (path
++ pointer) to a number with the domain's own ``score_number`` rule; the reference
+is a separately pinned artifact derived from the frozen probe, never the candidate
+scorecard, so resolution does not take the candidate as an input and a restated
+candidate score cannot move its own floor. It publishes the resolved values in
+observations, annotates measured rows that publish no threshold of their own, and
+recomputes the schema sha256 so the freeze is checked against bytes rather than
+trusted.
 
 Boundary (stated, not implied — E3, carried from M509/S02 Q3 R2): this is a
 consistency and fail-closed contract over what a scorecard declares about itself
@@ -80,14 +95,34 @@ from governor.domain.absorption_progress import (
 from governor.ports.absorption_progress_reader import AbsorptionProgressReader
 
 __all__ = [
+    "CENSUS_OBSERVATION_KEY",
     "FilesystemAbsorptionProgressReader",
     "absorption_progress_violations",
     "effective_progress_contract",
     "missing_progress_vocabulary",
+    "projection_digest",
 ]
 
 #: A bound byte hash and a bound revision, as declared by the evidence contract.
 _SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+#: Observation key under which the reader publishes the per-document census it
+#: recomputed from the two frozen sources, and the oracle consumes it.
+CENSUS_OBSERVATION_KEY = "population_census"
+
+#: The disposition strings of the census projection. An exclusion carries its
+#: typed reason as a suffix, so an untyped reason is visible in the digest and
+#: comparable to the contract's closed reason vocabulary.
+_EXECUTED_DISPOSITION = "executed"
+_REFUSED_DISPOSITION = "refused"
+_EXCLUDED_DISPOSITION_PREFIX = "excluded:"
+
+#: The census partition components. The refused and excluded halves stay inside
+#: the denominator, so the four counts are the whole assigned population.
+_CENSUS_COMPONENTS = ("assigned", "executed", "refused", "excluded")
+
+#: Census source keys, in the order the contract names them.
+_CENSUS_SOURCE_KEYS = ("probe", "manifest")
 
 #: Rule keys the T04 DATA check contributes on top of the T01 vocabulary. Only
 #: these are merged; the rest of the schema stays the single source of truth for
@@ -105,6 +140,45 @@ _RULE_KEYS = (
     "resources_claim",
     "comparability_rules",
 )
+
+
+def _census_projection_pairs(value: Any) -> Optional[tuple[tuple[str, str], ...]]:
+    """The sorted ``(document_id, disposition)`` pairs of a census projection.
+
+    ``None`` means the value is not a non-empty list of two-string pairs, so a
+    malformed projection is reported rather than silently read as empty (an empty
+    projection would make every document look dropped).
+    """
+    if not isinstance(value, (list, tuple)) or not value:
+        return None
+    pairs: list[tuple[str, str]] = []
+    for entry in value:
+        if not isinstance(entry, (list, tuple)) or len(entry) != 2:
+            return None
+        document_id = _text(entry[0])
+        disposition = _text(entry[1])
+        if document_id is None or disposition is None:
+            return None
+        pairs.append((document_id, disposition))
+    return tuple(pairs)
+
+
+def projection_digest(projection: Any) -> Optional[str]:
+    """``sha256:<64 hex>`` over the canonical encoding of a census projection.
+
+    Canonical means: the pairs as two-element arrays, in the order given (the
+    projection is already sorted by document id), encoded as compact UTF-8 JSON
+    with ``,``/``:`` separators. A reviewer can reproduce the digest with
+    ``sha256(json.dumps(projection, separators=(",", ":")).encode())``, and the
+    artifact stores the same rule so the two cannot drift silently.
+    """
+    pairs = _census_projection_pairs(projection)
+    if pairs is None:
+        return None
+    blob = json.dumps(
+        [list(pair) for pair in pairs], ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(blob).hexdigest()}"
 
 
 class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
@@ -156,6 +230,17 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
             return None
         return document if isinstance(document, dict) else None
 
+    def read_yaml(self, relative_path: str) -> Optional[dict[str, Any]]:
+        """A repository-relative YAML mapping, or ``None`` when unreadable."""
+        path = self._resolve(relative_path)
+        if path is None or not path.is_file():
+            return None
+        try:
+            document = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError, UnicodeDecodeError):
+            return None
+        return document if isinstance(document, dict) else None
+
     def file_sha256(self, relative_path: str) -> Optional[str]:
         path = self._resolve(relative_path)
         if path is None or not path.is_file():
@@ -165,6 +250,152 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
         except OSError:
             return None
         return f"sha256:{digest}"
+
+    # ── the per-document census (S02/T03) ──────────────────────────────────
+    def _census_source_paths(self, contract: Any) -> tuple[Optional[str], Optional[str]]:
+        """The two frozen census sources, named by the contract.
+
+        Deliberately read from the contract (DATA) and never from the scorecard:
+        a scorecard that could point its own census check at a convenient artifact
+        would make the derivation trust the thing it is supposed to bind.
+        """
+        if not isinstance(contract, dict):
+            return None, None
+        manifest = contract.get("assigned_population")
+        manifest_path = None
+        if isinstance(manifest, dict) and isinstance(manifest.get("manifest"), dict):
+            manifest_path = _text(manifest["manifest"].get("path"))
+        census = contract.get("denominator")
+        probe_path = None
+        if isinstance(census, dict) and isinstance(census.get("initial_census"), dict):
+            probe_path = _text(census["initial_census"].get("authority"))
+        return probe_path, manifest_path
+
+    def recompute_population_census(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Recompute the 610-document disposition projection from the sources.
+
+        The assigned identities come from the holdout manifest, the executed ones
+        from the probe's per-document evaluated population (`outcomes`, matched by
+        ``document_id``), the excluded ones from the probe's typed exceptions, and
+        a refused document is one that is assigned but neither executed nor
+        excluded. The returned mapping is a *derived* observation: nothing here
+        trusts the scorecard, and the caller publishes it for the oracle to compare
+        against what the scorecard declares.
+
+        ``None`` means a source is missing, unparseable, or does not carry the
+        list-shaped identities the derivation needs. An unverified census stays
+        absent rather than becoming a fabricated one; the oracle then leaves the
+        per-document half unverified instead of assuming it.
+        """
+        probe_path, manifest_path = self._census_source_paths(contract)
+        if probe_path is None or manifest_path is None:
+            return None
+        manifest = self.read_yaml(manifest_path)
+        probe = self.read_json(probe_path)
+        if not isinstance(manifest, dict) or not isinstance(probe, dict):
+            return None
+
+        articles = manifest.get("articles")
+        outcomes = probe.get("outcomes")
+        reference = probe.get("reference_population")
+        exceptions = reference.get("exceptions") if isinstance(reference, dict) else None
+        if not isinstance(articles, list) or not isinstance(outcomes, list):
+            return None
+        if not isinstance(exceptions, list):
+            return None
+
+        assigned_ids = [
+            _text(entry.get("article_id"))
+            for entry in articles
+            if isinstance(entry, dict)
+        ]
+        assigned_ids = [value for value in assigned_ids if value is not None]
+        executed_ids = [
+            _text(entry.get("document_id"))
+            for entry in outcomes
+            if isinstance(entry, dict)
+        ]
+        executed_ids = [value for value in executed_ids if value is not None]
+        excluded_pairs: list[tuple[str, str]] = []
+        for entry in exceptions:
+            if not isinstance(entry, dict):
+                continue
+            document_id = _text(entry.get("document_id"))
+            reason = _text(entry.get("reason"))
+            if document_id is not None and reason is not None:
+                excluded_pairs.append((document_id, reason))
+
+        assigned_set = set(assigned_ids)
+        executed_set = set(executed_ids)
+        excluded_map = dict(excluded_pairs)
+        refused_set = assigned_set - executed_set - set(excluded_map)
+
+        projection = (
+            [[document_id, _EXECUTED_DISPOSITION] for document_id in executed_set]
+            + [
+                [document_id, _EXCLUDED_DISPOSITION_PREFIX + excluded_map[document_id]]
+                for document_id in excluded_map
+            ]
+            + [[document_id, _REFUSED_DISPOSITION] for document_id in refused_set]
+        )
+        projection.sort(key=lambda pair: pair[0])
+        digest = projection_digest(projection)
+        if digest is None:  # pragma: no cover - the projection is non-empty by construction
+            return None
+
+        reason_counts: dict[str, int] = {}
+        for reason in excluded_map.values():
+            reason_counts[reason] = reason_counts.get(reason, 0) + 1
+
+        evaluated = probe.get("evaluated_population")
+        executed_population = probe.get("executed_population")
+        return {
+            "available": True,
+            "census_id": _text(
+                (contract.get("denominator") or {}).get("initial_census", {}).get("census_id")
+                if isinstance(contract.get("denominator"), dict)
+                else None
+            ),
+            "match_by": "document_id",
+            "sources": {
+                "probe": {"path": probe_path, "sha256": self.file_sha256(probe_path)},
+                "manifest": {"path": manifest_path, "sha256": self.file_sha256(manifest_path)},
+            },
+            "partition": {
+                "assigned": len(assigned_set),
+                "executed": len(executed_set),
+                "refused": len(refused_set),
+                "excluded": len(excluded_map),
+            },
+            "refused_document_ids": sorted(refused_set),
+            "exclusion_reasons": reason_counts,
+            "projection": projection,
+            "projection_sha256": digest,
+            "list_counts": {
+                "manifest_articles": len(assigned_ids),
+                "probe_outcomes": len(executed_ids),
+                "probe_exceptions": len(excluded_pairs),
+            },
+            "declared_counts": {
+                "evaluated_documents": _count(
+                    evaluated.get("documents") if isinstance(evaluated, dict) else None
+                ),
+                "executed_documents": _count(
+                    executed_population.get("documents")
+                    if isinstance(executed_population, dict)
+                    else None
+                ),
+                "reference_documents": _count(
+                    reference.get("documents") if isinstance(reference, dict) else None
+                ),
+                "reference_measurable": _count(
+                    reference.get("measurable_documents") if isinstance(reference, dict) else None
+                ),
+                "reference_excluded": _count(
+                    reference.get("excluded_documents") if isinstance(reference, dict) else None
+                ),
+            },
+        }
 
     def resolve_threshold_references(
         self, contract: Any
@@ -380,6 +611,13 @@ def _text(value: Any) -> Optional[str]:
     return None
 
 
+def _text_list(value: Any) -> list[str]:
+    """The non-empty strings inside a list-like value (possibly empty)."""
+    if not isinstance(value, (list, tuple, set)):
+        return []
+    return [item for item in value if isinstance(item, str) and item.strip()]
+
+
 def _count(value: Any) -> Optional[int]:
     if isinstance(value, bool):
         return None
@@ -481,9 +719,205 @@ def absorption_progress_violations(
     _evidence_violations(rows, observations, violations)
     _resources_violations(rows, contract, violations)
     _threshold_violations(scorecard, contract, observations, violations)
+    _population_census_violations(scorecard, contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
     return violations
+
+
+def _census_reason_vocabulary(contract: Any) -> set[str]:
+    """The closed exclusion-reason vocabulary the contract pins."""
+    if not isinstance(contract, dict):
+        return set()
+    reasons = (contract.get("denominator") or {}).get("exclusion_reasons") or {}
+    values = reasons.get("values") if isinstance(reasons, dict) else None
+    if not isinstance(values, (list, tuple, set)):
+        return set()
+    return {value for value in values if isinstance(value, str) and value.strip()}
+
+
+def _population_census_violations(
+    scorecard: dict[str, Any],
+    contract: dict[str, Any],
+    observations: dict[str, Any],
+    violations: set[str],
+) -> None:
+    """Per-document census violations the domain cannot see (it cannot read files).
+
+    The reader recomputes the disposition projection from the two frozen sources
+    (the holdout manifest and the release probe) and publishes it under
+    ``observations["population_census"]``. This compares that derivation with what
+    the scorecard declares, so a dropped document or a swapped disposition cannot
+    leave the aggregate counts looking correct:
+
+    * ``census_projection_mismatch`` — no declared block or projection, a digest
+      that is not the recomputed digest, a partition that is not the recomputed
+      partition, an authority that does not name the recomputed source bytes, a
+      declared identity the sources do not assign, a declared census id other than
+      the pinned one, or a probe/manifest whose own aggregate counts disagree with
+      its lists;
+    * ``census_document_dropped`` — an identity the sources assign is absent from
+      the declared projection;
+    * ``census_disposition_untyped`` — an exclusion reason (declared or derived)
+      outside the contract's closed vocabulary;
+    * ``refused_set_unbound`` — the refused set is not explicitly enumerated, is
+      not the set the sources derive, or names an identity outside the assigned
+      population.
+
+    When the reader supplied no observation the half is left unverified rather
+    than assumed: the aggregate partition stays governed by the domain's
+    denominator and census checks.
+    """
+    observed = observations.get(CENSUS_OBSERVATION_KEY)
+    if not isinstance(observed, dict) or observed.get("available") is not True:
+        return
+    declared = scorecard.get("population_census")
+    if not isinstance(declared, dict):
+        violations.add("census_projection_mismatch")
+        return
+
+    projection_mismatch = False
+    derived_projection = _census_projection_pairs(observed.get("projection"))
+    declared_projection = _census_projection_pairs(declared.get("projection"))
+    declared_digest = _text(declared.get("projection_sha256"))
+    derived_digest = _text(observed.get("projection_sha256"))
+    if (
+        derived_projection is None
+        or declared_projection is None
+        or declared_digest is None
+        or derived_digest is None
+        or declared_digest != derived_digest
+    ):
+        projection_mismatch = True
+    if derived_projection is not None and declared_projection is not None:
+        derived_map = dict(derived_projection)
+        declared_map = dict(declared_projection)
+        if derived_map != declared_map:
+            projection_mismatch = True
+        if set(derived_map) - set(declared_map):
+            violations.add("census_document_dropped")
+        if set(declared_map) - set(derived_map):
+            projection_mismatch = True
+
+    derived_partition = observed.get("partition")
+    declared_partition = declared.get("partition")
+    if not isinstance(derived_partition, dict) or not isinstance(declared_partition, dict):
+        projection_mismatch = True
+    else:
+        for component in _CENSUS_COMPONENTS:
+            if _count(declared_partition.get(component)) != _count(
+                derived_partition.get(component)
+            ):
+                projection_mismatch = True
+        if _text(declared.get("identity")) is None:
+            projection_mismatch = True
+
+    # The declared census must be the one the contract pins and the derivation
+    # reports, so a block copied from another census is refused.
+    observed_census_id = _text(observed.get("census_id"))
+    declared_census_id = _text(declared.get("census_id"))
+    if observed_census_id is None or declared_census_id != observed_census_id:
+        projection_mismatch = True
+    scorecard_census_id = _text(scorecard.get("census_id"))
+    if scorecard_census_id is not None and declared_census_id != scorecard_census_id:
+        projection_mismatch = True
+
+    # The authority block must name the bytes the reader actually derived from.
+    authority = declared.get("authority")
+    sources = observed.get("sources")
+    for source_key in _CENSUS_SOURCE_KEYS:
+        declared_source = authority.get(source_key) if isinstance(authority, dict) else None
+        derived_source = sources.get(source_key) if isinstance(sources, dict) else None
+        if not isinstance(declared_source, dict) or not isinstance(derived_source, dict):
+            projection_mismatch = True
+            continue
+        if _text(declared_source.get("path")) != _text(derived_source.get("path")):
+            projection_mismatch = True
+        declared_sha = _text(declared_source.get("sha256"))
+        derived_sha = _text(derived_source.get("sha256"))
+        if declared_sha is None or derived_sha is None or declared_sha != derived_sha:
+            projection_mismatch = True
+
+    # The probe's own aggregate counts must agree with the lists they summarize,
+    # or the derivation would be choosing one of two disagreeing sources.
+    list_counts = observed.get("list_counts")
+    declared_counts = observed.get("declared_counts")
+    if not isinstance(list_counts, dict) or not isinstance(declared_counts, dict):
+        projection_mismatch = True
+    elif isinstance(derived_partition, dict):
+        for key, component in (
+            ("manifest_articles", "assigned"),
+            ("probe_outcomes", "executed"),
+            ("probe_exceptions", "excluded"),
+        ):
+            if _count(list_counts.get(key)) != _count(derived_partition.get(component)):
+                projection_mismatch = True
+        for key in (
+            "evaluated_documents",
+            "executed_documents",
+            "reference_documents",
+            "reference_measurable",
+            "reference_excluded",
+        ):
+            expected = _count(declared_counts.get(key))
+            component = {
+                "evaluated_documents": "executed",
+                "executed_documents": "executed",
+                "reference_documents": "assigned",
+                "reference_measurable": "executed",
+                "reference_excluded": "excluded",
+            }[key]
+            if expected is None or expected != _count(derived_partition.get(component)):
+                projection_mismatch = True
+
+    derivation = declared.get("derivation")
+    if not isinstance(derivation, dict) or _text(derivation.get("match_by")) is None:
+        projection_mismatch = True
+
+    if projection_mismatch:
+        violations.add("census_projection_mismatch")
+
+    # The refusal boundary: an explicitly enumerated set, not a residual count.
+    derived_refused = sorted(_text_list(observed.get("refused_document_ids")))
+    semantics = declared.get("refusal_semantics")
+    if not isinstance(semantics, dict) or semantics.get("closed") is not True:
+        violations.add("refused_set_unbound")
+    else:
+        declared_refused = sorted(_text_list(semantics.get("refused_document_ids")))
+        if declared_refused != derived_refused:
+            violations.add("refused_set_unbound")
+        assigned_ids = set(dict(derived_projection or ()))
+        if assigned_ids and any(
+            document_id not in assigned_ids for document_id in declared_refused
+        ):
+            violations.add("refused_set_unbound")
+        declared_refused_count = (
+            _count(declared_partition.get("refused"))
+            if isinstance(declared_partition, dict)
+            else None
+        )
+        if declared_refused_count != len(derived_refused):
+            violations.add("refused_set_unbound")
+
+    # Typed exclusions: every reason (declared and derived) must be in the closed
+    # vocabulary, and the declared counts must be the derived counts.
+    vocabulary = _census_reason_vocabulary(contract)
+    derived_reasons = observed.get("exclusion_reasons")
+    reason_block = declared.get("exclusion_reasons")
+    declared_reasons = reason_block.get("values") if isinstance(reason_block, dict) else None
+    if (
+        not isinstance(reason_block, dict)
+        or reason_block.get("closed") is not True
+        or not isinstance(declared_reasons, dict)
+        or not isinstance(derived_reasons, dict)
+    ):
+        violations.add("census_projection_mismatch")
+    else:
+        for reason in set(declared_reasons) | set(derived_reasons):
+            if vocabulary and reason not in vocabulary:
+                violations.add("census_disposition_untyped")
+            if _count(declared_reasons.get(reason)) != _count(derived_reasons.get(reason)):
+                violations.add("census_projection_mismatch")
 
 
 def _threshold_violations(

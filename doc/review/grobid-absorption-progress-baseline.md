@@ -20,13 +20,16 @@
 |---|---|---|---|
 | frozen probe (источник чисел) | `artifacts/parse_compat/external_holdout_release_probe.json` | `a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275` | `external-holdout-release-probe.v1` |
 | reference pins (независимый floor, не кандидат) | `artifacts/parse_compat/absorption_progress_reference_pins.json` | `2befd08dd8b095a6e8e6ea17e6b73e92e78e282ab98cbad64c4727218d6fe158` | `absorption-progress-reference-pins.v1` |
-| baseline scorecard (кандидат) | `artifacts/parse_compat/absorption_progress_baseline.json` | `90b280a16b3d94e4a1b5b13e1f41427f6d1110308a8c1aef36cfdeb46a5ecaf6` | `absorption-progress.v1` |
+| baseline scorecard (кандидат) | `artifacts/parse_compat/absorption_progress_baseline.json` | `cc6eb1e9e9524d1df8b9cd02142eee742e61bddc736e40bd75dacbc5f515e29a` | `absorption-progress.v1` |
 | контракт (схема, T01/T02) | `data/parse/absorption_progress.schema.yaml` | `4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a` | — |
-| rule DATA (T04/T02) | `scripts/governor/checks/grobid_absorption_progress.yaml` | `5b54601de32288458fab5a296d4a3b3c9b049cb0f728b754d0045f11102f7a8f` | `grobid-absorption-progress.v1` |
-| доменный валидатор (T01/T02) | `scripts/governor/domain/absorption_progress.py` | `a44ee442da7e0d8436a4806a7c18944f7342c84eb7f425ad37fb8967169f4071` | — |
-| oracle/reader (T04/T02) | `scripts/governor/adapters/absorption_progress_reader.py` | `a26afa049383d4b8a60eba965fa80de9be08297da86131258785525f84891707` | — |
+| rule DATA (T04/T03) | `scripts/governor/checks/grobid_absorption_progress.yaml` | `ddfd918331cac1ec2312b674f2d61751753bd74dbbac53aba2f166d66df9abbe` | `grobid-absorption-progress.v1` |
+| доменный валидатор (T01/T02) | `scripts/governor/domain/absorption_progress.py` | `8c3702bfefa97d893730d60f12c9fac19c2f54e8c1a68efbc19a8bf5d0ab8a19` | — |
+| oracle/reader (T04/T03) | `scripts/governor/adapters/absorption_progress_reader.py` | `9c2eef6f400556564fc47caad6ecc8267824af302251686ff3a3a0bb8f6f4eff` | — |
 
-Хэши зафиксированы на этой ревизии (S02/T02). **Принудительно проверяются** пины из
+Хэши зафиксированы на этой ревизии (S02/T03). При правке §1 в T03 исправлены уже
+разъехавшиеся строки `rule DATA` и `oracle/reader`, а также строка доменного валидатора:
+прошлая редакция объявляла байтами то, чего на диске уже не было, — это и есть дрейф
+проекции, а не «информационная строка». **Принудительно проверяются** пины из
 `historical_guard_pins` в JSON, хэш baseline scorecard (тест
 `test_report_pins_the_baseline_artifact_hash` из
 `scripts/tests/test_absorption_progress_baseline.py`), и **ревизия заморозки порогов**:
@@ -59,6 +62,37 @@ assigned 610 = executed 531 + refused 0 + excluded 79
 Покрытие документами: `531 / 610 = 0.870492`. Пространство счёта —
 `79621` occurrence в знаменателе. Scorecard, который молча выбросит или
 переклассифицирует одно из 79 исключений, не сойдётся к `assigned` и падает fail-closed.
+
+### 2.1 Продокументная проекция census (S02/T03)
+
+Агрегатные `610/531/79` сами по себе не доказывают, что описана именно та популяция:
+потерянный документ или переставленная диспозиция оставили бы счётчики верными. Поэтому
+scorecard публикует `population_census`: раздел `assigned/executed/refused/excluded`,
+закрытую семантику отказа с **явно перечисленным** (сейчас пустым) набором
+`refused_document_ids`, типизированные причины исключений, привязку авторитета (path +
+sha256 для probe и manifest), правило вывода и `projection_sha256` над отсортированной
+продокументной проекцией `(document_id, disposition)`.
+
+Правило вывода (исполняемое, в `derivation`): assigned — из
+`data/parse/holdout_manifests.yaml#articles[*].article_id`; executed — из
+`external_holdout_release_probe.json#outcomes[*].document_id`; excluded — из
+`...#reference_population.exceptions[*]` с типизированной причиной; refused =
+assigned − executed − excluded. Дайджест считается как sha256 по компактной UTF-8
+JSON-записи проекции (`separators=(",", ":")`), и то же правило записано в артефакте.
+
+Оракул пересчитывает проекцию и дайджест из этих двух источников и падает на:
+`census_projection_mismatch` (проекция/дайджест/раздел/авторитет/census_id не те,
+что выведены, или собственные агрегаты probe не сходятся с его списками),
+`census_document_dropped` (выведенная идентичность отсутствует в объявленной проекции),
+`census_disposition_untyped` (причина вне закрытого словаря),
+`refused_set_unbound` (граница отказа не равна явно перечисленному выведенному набору).
+Счётчики `610/531/79` при этом по-прежнему проверяет домен
+(`census_mismatch`/`denominator_shrink`), а `historical_guard_pins` держит байты обоих
+источников: продокументная половина не заменяет агрегатную, а дополняет её.
+
+**Граница:** если блок `population_census` отсутствует, продокументная половина остаётся
+*непроверенной* (агрегатный знаменатель всё ещё проверяется доменом). Это consistency-
+слой, а не tamper-evident attestation (см. §6).
 
 ## 3. Измеренные оси
 
@@ -212,6 +246,10 @@ baseline один раз и обязана дать свою метку; выж�
 | измеренная ось замолчала | `coverage_regression` |
 | экономия без парного CPU | `savings_without_paired_cpu` |
 | авторизация подняла охват | `authorization_used_as_product_evidence` |
+| документ выброшен из продокументной проекции census | `census_document_dropped` |
+| диспозиция census переставлена против выведенной | `census_projection_mismatch` |
+| причина исключения census вне закрытого словаря | `census_disposition_untyped` |
+| документ переведён через границу отказа без привязки набора | `refused_set_unbound` |
 
 **Граница (E3, без изменений):** это consistency/fail-closed контракт поверх того, что
 scorecard заявляет о себе, плюс пересчитанный content hash. Это **не** tamper-evident
@@ -250,7 +288,9 @@ attestation: актор, способный переписать scorecard, evid
 `test_every_committed_label_is_registered_in_a_governed_vocabulary` пиннит разделение:
 каждая adapter-метка объявлена в rule DATA, каждая доменная метка существует литералом в
 валидаторе T01, и множество меток не пересекает оба слоя. Метка, заявленная не в своём
-слое, — провал, а не тихое согласие.
+слое, — провал, а не тихое согласие. S02/T03 добавила в adapter-слой четыре метки census
+(`census_projection_mismatch`, `census_document_dropped`, `census_disposition_untyped`,
+`refused_set_unbound`), поэтому `ADAPTER_LABELS` и `violations` обязаны расти вместе.
 
 ## 9. Воспроизведение
 
@@ -427,6 +467,29 @@ probe) и показывает, что резолвнутый порог не с
 негативный probe самосравнения
 (`test_threshold_reference_does_not_follow_the_candidate_scorecard`).
 
+### 10.6 Продокументный census (S02/T03)
+
+| # | Проверка | Команда | Exit | Верификация | Evidence |
+|---|---|---|---|---|---|
+| 32 | целевые сьюты S02/T03 (baseline + governor) | `pytest scripts/tests/test_absorption_progress_baseline.py scripts/tests/test_absorption_progress_governor.py -q` | 0 | **80 passed** | `gsd_exec 34907671` |
+| 33 | домен-сьют T01 | `pytest scripts/tests/test_absorption_progress.py -q` | 0 | 33 passed | `gsd_exec d80e9d90` |
+| 34 | governor check DATA (новые метки/маркеры/fixtures) | `python3 -m governor --validate-yaml` | 0 | PASS (65 rules, 20 dimensions) | `gsd_exec 9950efd1` |
+| 35 | preflight (реальное дерево) | `python3 -m governor --phase preflight` | 0 | DRIFT_RISK, 9 флагов, **0** `absorption_progress_*` | `gsd_exec bf4bcfea` |
+| 36 | whitespace | `git diff --check` | 0 | clean | `gsd_exec 4fb2409d` |
+
+Что изменилось: baseline публикует `population_census` — продокументную проекцию
+610 назначенных документов (assigned/executed/refused/excluded, явный набор отказа,
+типизированные причины, привязка авторитета к probe+manifest, правило вывода и
+`projection_sha256`). Reader (`recompute_population_census`) пересчитывает проекцию и
+дайджест из этих двух замороженных источников и передаёт их в observations; оракул
+сравнивает с объявленным и падает на `census_projection_mismatch`,
+`census_document_dropped`, `census_disposition_untyped`, `refused_set_unbound`.
+Baseline-сьют пере-выводит проекцию независимо от reader'а, проверяет стабильность
+replay и добавляет четыре негатива (выброшенный документ, переставленная диспозиция,
+не‑типизированная причина, перевод через границу отказа); fixtures получили позитивный
+census-контроль и четыре негативных записи. Rust-исходники этой задачей не менялись,
+поэтому `cargo fmt` не запускался.
+
 ## 11. Известные ограничения
 
 1. `scorecard.required: true` с S02/T02: удаление governed baseline-артефакта — это
@@ -455,3 +518,9 @@ probe) и показывает, что резолвнутый порог не с
 7. Пороги покрывают только reference-измеримые оси (`preservation`, `extraction`).
    `java_independence`, `resources`, `reliability` остаются `not_measured` без порога:
    порог без измеримого знаменателя был бы выдуманным числом.
+8. Продокументная проекция census (S02/T03) проверяется только при наличии блока
+   `population_census`: scorecard, который его удалит, оставит продокументную половину
+   непроверенной (агрегатный знаменатель при этом по-прежнему упадёт на domain-проверках
+   `census_mismatch`/`denominator_shrink`, а байты обоих источников держит
+   `historical_guard_pins`). Это заявленная граница, а не подразумеваемая: чтобы закрыть и
+   её, потребуется отдельная метка «блок отсутствует», которой в закрытом словаре T03 нет.

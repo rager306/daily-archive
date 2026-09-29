@@ -49,6 +49,7 @@ from governor.adapters.absorption_progress_reader import (  # noqa: E402
     absorption_progress_violations,
     effective_progress_contract,
     missing_progress_vocabulary,
+    projection_digest,
 )
 
 SCHEMA_PATH = "data/parse/absorption_progress.schema.yaml"
@@ -56,6 +57,7 @@ RULE_PATH = "scripts/governor/checks/grobid_absorption_progress.yaml"
 BASELINE_PATH = "artifacts/parse_compat/absorption_progress_baseline.json"
 REPORT_PATH = "doc/review/grobid-absorption-progress-baseline.md"
 PROBE_PATH = "artifacts/parse_compat/external_holdout_release_probe.json"
+MANIFEST_PATH = "data/parse/holdout_manifests.yaml"
 REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins.json"
 REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins.json"
 DOMAIN_MODULE_PATH = "scripts/governor/domain/absorption_progress.py"
@@ -122,10 +124,11 @@ def _observations(
 ) -> dict:
     """Recompute what the reader would recompute from the real tree.
 
-    Beyond the evidence hashes this carries the two S02 observations: the schema
-    sha256 the freeze is bound to, and the resolved frozen-threshold values. A
-    scorecard checked without them would be *unverified*, not clean, so the
-    positive control supplies both.
+    Beyond the evidence hashes this carries the three S02 observations: the schema
+    sha256 the freeze is bound to, the resolved frozen-threshold values, and the
+    per-document census the reader derives from the two frozen sources. A scorecard
+    checked without them would be *unverified*, not clean, so the positive control
+    supplies all three.
     """
     hashes: dict[str, str | None] = {}
     for row in scorecard.get("measurements", []):
@@ -143,6 +146,7 @@ def _observations(
         "evidence_sha256": hashes,
         "schema_sha256": reader.file_sha256(SCHEMA_PATH),
         "threshold_values": reader.resolve_threshold_references(_contract()),
+        "population_census": reader.recompute_population_census(_contract()),
     }
     if observation_extra:
         observations.update(observation_extra)
@@ -457,7 +461,146 @@ def test_baseline_declares_full_denominator_and_unmet_axes() -> None:
     assert scorecard["authorization"]["product_coverage_effect"] == "none"
 
 
+# ── the per-document census is derived, not asserted (S02/T03) ─────────────
+
+
+def _census_block() -> dict:
+    return _baseline()["population_census"]
+
+
+def _independent_projection() -> list[list[str]]:
+    """Derive the projection in this test, without the reader, from the sources."""
+    manifest = _load_yaml(MANIFEST_PATH)
+    probe = _probe()
+    assigned = {article["article_id"] for article in manifest["articles"]}
+    executed = {outcome["document_id"] for outcome in probe["outcomes"]}
+    exceptions = {
+        exception["document_id"]: exception["reason"]
+        for exception in probe["reference_population"]["exceptions"]
+    }
+    refused = assigned - executed - set(exceptions)
+    projection = (
+        [[document_id, "executed"] for document_id in executed]
+        + [[document_id, "excluded:" + exceptions[document_id]] for document_id in exceptions]
+        + [[document_id, "refused"] for document_id in refused]
+    )
+    projection.sort(key=lambda pair: pair[0])
+    return projection
+
+
+def _literal_digest(projection) -> str:
+    """The digest rule written into the artifact, implemented literally here."""
+    blob = json.dumps(projection, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return "sha256:" + hashlib.sha256(blob).hexdigest()
+
+
+def test_baseline_census_projection_is_recomputed_from_the_frozen_sources() -> None:
+    """A dropped document or a swapped disposition cannot leave the counts right."""
+    census = _census_block()
+    projection = _independent_projection()
+    assert census["projection"] == projection
+    assert len(census["projection"]) == CENSUS["declared"]
+    assert census["projection_sha256"] == _literal_digest(projection)
+    # The reader's canonicalisation agrees with the literal rule, and with the
+    # document-id ordering the projection must already carry.
+    assert census["projection_sha256"] == projection_digest(census["projection"])
+    assert [pair[0] for pair in census["projection"]] == sorted(
+        pair[0] for pair in census["projection"]
+    )
+
+
+def test_baseline_census_partition_matches_the_frozen_sources_and_the_pin() -> None:
+    census = _census_block()
+    probe = _probe()
+    manifest = _load_yaml(MANIFEST_PATH)
+    assert len(manifest["articles"]) == CENSUS["declared"]
+    assert len(probe["outcomes"]) == CENSUS["measurable"]
+    assert len(probe["reference_population"]["exceptions"]) == CENSUS["excluded"]
+    assert census["partition"] == {
+        "assigned": CENSUS["declared"],
+        "executed": CENSUS["measurable"],
+        "refused": 0,
+        "excluded": CENSUS["excluded"],
+    }
+    partition = census["partition"]
+    assert partition["assigned"] == (
+        partition["executed"] + partition["refused"] + partition["excluded"]
+    )
+    assert census["identity"] == "assigned = executed + refused + excluded"
+    # The refusal boundary is explicitly enumerated, not a residual count.
+    assert census["refusal_semantics"]["closed"] is True
+    assert census["refusal_semantics"]["refused_document_ids"] == []
+    # Every disposition carries a typed exclusion reason from the closed set.
+    assert census["exclusion_reasons"]["closed"] is True
+    assert census["exclusion_reasons"]["values"] == CENSUS["reason_counts"]
+    vocabulary = set(_load_yaml(SCHEMA_PATH)["denominator"]["exclusion_reasons"]["values"])
+    assert set(census["exclusion_reasons"]["values"]) <= vocabulary
+    for pair in census["projection"]:
+        if pair[1].startswith("excluded:"):
+            assert pair[1].removeprefix("excluded:") in vocabulary, pair
+
+
+def test_baseline_census_authority_binds_the_two_frozen_files() -> None:
+    census = _census_block()
+    assert census["authority"]["probe"] == {
+        "path": PROBE_PATH,
+        "sha256": _sha256(PROBE_PATH),
+    }
+    assert census["authority"]["manifest"] == {
+        "path": MANIFEST_PATH,
+        "sha256": _sha256(MANIFEST_PATH),
+    }
+    assert census["derivation"]["match_by"] == "document_id"
+    assert census["derivation"]["assigned"]
+    assert census["derivation"]["executed"]
+    assert census["derivation"]["excluded"]
+    assert census["derivation"]["refused"] == "assigned - executed - excluded"
+
+
+def test_baseline_census_reader_derivation_is_replay_stable() -> None:
+    """A second derivation yields the same projection and digest, byte for byte."""
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, BASELINE_PATH)
+    first = reader.recompute_population_census(_contract())
+    second = reader.recompute_population_census(_contract())
+    assert first == second
+    assert first["available"] is True
+    assert first["projection"] == _census_block()["projection"]
+    assert first["projection_sha256"] == _census_block()["projection_sha256"]
+    assert first["sources"] == _census_block()["authority"]
+
+
 # ── mutation matrix on the real baseline ───────────────────────────────────
+
+
+def _drop_one_census_document(scorecard: dict) -> None:
+    """Remove one document from the declared projection but keep the counts."""
+    scorecard["population_census"]["projection"].pop(0)
+
+
+def _swap_one_census_disposition(scorecard: dict) -> None:
+    """Restate one document's disposition against the derived one."""
+    scorecard["population_census"]["projection"][0][1] = "refused"
+
+
+def _untype_one_census_exclusion_reason(scorecard: dict) -> None:
+    """Rename one declared exclusion reason outside the closed vocabulary."""
+    census = scorecard["population_census"]
+    values = census["exclusion_reasons"]["values"]
+    values["weird_reason"] = values.pop("header_author_absent")
+    for pair in census["projection"]:
+        if pair[1] == "excluded:header_author_absent":
+            pair[1] = "excluded:weird_reason"
+
+
+def _move_one_document_across_the_refusal_boundary(scorecard: dict) -> None:
+    """Declare a document refused without the derived refused set containing it."""
+    census = scorecard["population_census"]
+    pair = next(entry for entry in census["projection"] if entry[1] == "executed")
+    pair[1] = "refused"
+    census["refusal_semantics"]["refused_document_ids"].append(pair[0])
+    census["partition"]["executed"] -= 1
+    census["partition"]["refused"] += 1
+
 
 _MUTATIONS: list[tuple[str, str, object]] = [
     (
@@ -561,6 +704,26 @@ _MUTATIONS: list[tuple[str, str, object]] = [
         "authorization_used_as_product_evidence",
         "let the research authorization raise product coverage",
         lambda s: s["authorization"].__setitem__("product_coverage_effect", "full"),
+    ),
+    (
+        "census_document_dropped",
+        "drop one document from the declared census projection",
+        _drop_one_census_document,
+    ),
+    (
+        "census_projection_mismatch",
+        "swap one declared disposition against the derived one",
+        _swap_one_census_disposition,
+    ),
+    (
+        "census_disposition_untyped",
+        "rename a declared exclusion reason outside the closed vocabulary",
+        _untype_one_census_exclusion_reason,
+    ),
+    (
+        "refused_set_unbound",
+        "move a document across the refusal boundary without binding the set",
+        _move_one_document_across_the_refusal_boundary,
     ),
 ]
 

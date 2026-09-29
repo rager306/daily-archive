@@ -2759,6 +2759,15 @@ class TrajectoryService:
         whose reference does not resolve (`threshold_reference_unbound`). This is
         the half the domain cannot do, because the domain cannot read files.
 
+        S02/T03 adds the per-document census half: the reader recomputes the
+        610-document disposition projection from the two frozen sources (the
+        holdout manifest and the release probe) and publishes it in observations,
+        so a dropped document, a swapped disposition, an untyped exclusion reason
+        or a silently re-cut refusal boundary is a finding rather than a
+        self-consistent set of counts
+        (`census_projection_mismatch` / `census_document_dropped` /
+        `census_disposition_untyped` / `refused_set_unbound`).
+
         The closed vocabulary is read through the `AbsorptionProgressReader` port,
         so the service does not open the scorecard itself and a fake reader can
         drive the rule in tests. The vocabulary is validated first, because a
@@ -2897,6 +2906,10 @@ class TrajectoryService:
             "scorecard_path": scorecard_rel,
             "schema_sha256": reader.file_sha256(schema_rel),
             "threshold_values": resolved,
+            # The two frozen census sources are named by the contract, not by the
+            # scorecard, and the derivation is recomputed here so the oracle can
+            # compare it with the declared per-document projection.
+            "population_census": reader.recompute_population_census(contract),
         }
 
         violations = absorption_progress_violations(scorecard, contract, observations)

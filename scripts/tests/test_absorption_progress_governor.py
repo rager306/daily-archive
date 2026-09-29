@@ -51,6 +51,7 @@ from governor.adapters.absorption_progress_reader import (  # noqa: E402
     absorption_progress_violations,
     effective_progress_contract,
     missing_progress_vocabulary,
+    projection_digest,
     resolve_pointer,
 )
 from governor.application.trajectory_service import TrajectoryService  # noqa: E402
@@ -91,6 +92,10 @@ ADAPTER_LABELS = {
     "denominator_shrink",
     "threshold_freeze_revision_mismatch",
     "threshold_reference_unbound",
+    "census_projection_mismatch",
+    "census_document_dropped",
+    "census_disposition_untyped",
+    "refused_set_unbound",
 }
 
 
@@ -569,6 +574,177 @@ def test_denominator_that_does_not_sum_is_flagged(contract: dict) -> None:
     card = _mutated(lambda c: c["denominator"].__setitem__("assigned", 611))
     assert "assigned_ne_total" in absorption_progress_violations(
         card, contract, _observations(card)
+    )
+
+
+# ── the per-document census (S02/T03) ──────────────────────────────────────
+
+_CENSUS_PROBE = "artifacts/parse_compat/fixture_probe.json"
+_CENSUS_MANIFEST = "data/parse/fixture_manifest.yaml"
+_CENSUS_PROBE_SHA = "sha256:" + "b" * 64
+_CENSUS_MANIFEST_SHA = "sha256:" + "c" * 64
+_CENSUS_PARTITION = {"assigned": 3, "executed": 2, "refused": 0, "excluded": 1}
+_CENSUS_PROJECTION = [
+    ["fixture-a", "executed"],
+    ["fixture-b", "executed"],
+    ["fixture-c", "excluded:header_title_absent"],
+]
+
+
+def _census_sources() -> dict:
+    return {
+        "probe": {"path": _CENSUS_PROBE, "sha256": _CENSUS_PROBE_SHA},
+        "manifest": {"path": _CENSUS_MANIFEST, "sha256": _CENSUS_MANIFEST_SHA},
+    }
+
+
+def _census_declared(projection=None, partition=None, refused=None, reasons=None) -> dict:
+    projection = copy.deepcopy(projection if projection is not None else _CENSUS_PROJECTION)
+    return {
+        "census_id": "fixture-census-3-2-1",
+        "identity": "assigned = executed + refused + excluded",
+        "partition": dict(partition or _CENSUS_PARTITION),
+        "refusal_semantics": {
+            "closed": True,
+            "refused_document_ids": list(refused if refused is not None else []),
+        },
+        "exclusion_reasons": {
+            "closed": True,
+            "values": dict(reasons or {"header_title_absent": 1}),
+        },
+        "authority": _census_sources(),
+        "derivation": {"match_by": "document_id"},
+        "projection": projection,
+        "projection_sha256": projection_digest(projection),
+    }
+
+
+def _census_observation() -> dict:
+    return {
+        "available": True,
+        "census_id": "fixture-census-3-2-1",
+        "match_by": "document_id",
+        "sources": _census_sources(),
+        "partition": dict(_CENSUS_PARTITION),
+        "refused_document_ids": [],
+        "exclusion_reasons": {"header_title_absent": 1},
+        "projection": copy.deepcopy(_CENSUS_PROJECTION),
+        "projection_sha256": projection_digest(_CENSUS_PROJECTION),
+        "list_counts": {
+            "manifest_articles": 3,
+            "probe_outcomes": 2,
+            "probe_exceptions": 1,
+        },
+        "declared_counts": {
+            "evaluated_documents": 2,
+            "executed_documents": 2,
+            "reference_documents": 3,
+            "reference_measurable": 2,
+            "reference_excluded": 1,
+        },
+    }
+
+
+def _census_scorecard(**overrides) -> dict:
+    return {
+        "schema_version": "absorption-progress.v1",
+        "scorecard_id": "m514-absorption-progress-census-fixture",
+        "denominator": {
+            "assigned": 3,
+            "executed": 2,
+            "refused": 0,
+            "excluded": 1,
+            "exclusion_reasons": {"header_title_absent": 1},
+        },
+        "population_census": _census_declared(**overrides),
+        "measurements": [
+            {"metric_id": "java_independence.java_free_parse_route", "axis": "java_independence", "state": "not_measured", "reason": "java_production_route_active"},
+            {"metric_id": "extraction.native_capability_recall", "axis": "extraction", "state": "not_measured", "reason": "not_run"},
+            {"metric_id": "preservation.occurrence_conservation", "axis": "preservation", "state": "not_measured", "reason": "not_run"},
+            {"metric_id": "resources.native_savings", "axis": "resources", "state": "not_measured", "reason": "native_savings_not_measured"},
+            {"metric_id": "reliability.rollback_rehearsal", "axis": "reliability", "state": "not_measured", "reason": "rehearsal_only_not_a_product_measurement"},
+        ],
+        "authorization": {
+            "state": "owner_directive_research",
+            "decision": "D491",
+            "product_coverage_effect": "none",
+        },
+        "lineage": {},
+        "threshold_freeze": {
+            "state": "frozen",
+            "revision": "sha256:" + "d" * 64,
+            "frozen_at": "2026-09-29",
+            "source": SCHEMA_PATH,
+        },
+    }
+
+
+def _census_labels(card: dict, observation: dict, contract: dict) -> set[str]:
+    return absorption_progress_violations(
+        card, contract, {"population_census": observation}
+    )
+
+
+def test_clean_census_projection_is_not_flagged(contract: dict) -> None:
+    assert _census_labels(_census_scorecard(), _census_observation(), contract) == set()
+
+
+def test_dropped_census_document_is_flagged(contract: dict) -> None:
+    dropped = [pair for pair in copy.deepcopy(_CENSUS_PROJECTION) if pair[0] != "fixture-c"]
+    labels = _census_labels(
+        _census_scorecard(projection=dropped), _census_observation(), contract
+    )
+    assert "census_document_dropped" in labels
+
+
+def test_swapped_census_disposition_is_flagged(contract: dict) -> None:
+    swapped = copy.deepcopy(_CENSUS_PROJECTION)
+    swapped[0][1] = "refused"
+    assert "census_projection_mismatch" in _census_labels(
+        _census_scorecard(projection=swapped), _census_observation(), contract
+    )
+
+
+def test_untyped_census_reason_is_flagged(contract: dict) -> None:
+    untyped = copy.deepcopy(_CENSUS_PROJECTION)
+    untyped[2][1] = "excluded:weird_reason"
+    labels = _census_labels(
+        _census_scorecard(projection=untyped, reasons={"weird_reason": 1}),
+        _census_observation(),
+        contract,
+    )
+    assert "census_disposition_untyped" in labels
+
+
+def test_refused_boundary_move_is_flagged(contract: dict) -> None:
+    moved = copy.deepcopy(_CENSUS_PROJECTION)
+    moved[0][1] = "refused"
+    labels = _census_labels(
+        _census_scorecard(
+            projection=moved,
+            partition={"assigned": 3, "executed": 1, "refused": 1, "excluded": 1},
+            refused=["fixture-a"],
+        ),
+        _census_observation(),
+        contract,
+    )
+    assert "refused_set_unbound" in labels
+
+
+def test_census_is_unverified_without_a_recomputed_observation(contract: dict) -> None:
+    """No derived observation → the per-document half is unverified, not assumed."""
+    card = _census_scorecard()
+    assert absorption_progress_violations(card, contract, {"evidence_sha256": {}}) == set()
+
+
+def test_census_authority_must_name_the_recomputed_bytes(contract: dict) -> None:
+    observation = _census_observation()
+    observation["sources"] = {
+        "probe": {"path": _CENSUS_PROBE, "sha256": "sha256:" + "f" * 64},
+        "manifest": {"path": _CENSUS_MANIFEST, "sha256": _CENSUS_MANIFEST_SHA},
+    }
+    assert "census_projection_mismatch" in _census_labels(
+        _census_scorecard(), observation, contract
     )
 
 
