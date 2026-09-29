@@ -1,3 +1,28 @@
+# DATED CORRECTION 2026-09-29 (M513-r7dg4z/S05) — accepts the H21 remainder and
+# pins the fate registry that acceptance rests on:
+#   1. H21 in the H14..H21 planning register is no longer merely unresolved: its
+#      remainder (the 16 `absent` rows and the donor-less `learning.ruvllm_ablation`
+#      named gap) is now explicitly accepted as a residual — `open_item.accepted:
+#      true` while `owner` stays `unassigned`, `status` stays `pending` and both
+#      `implementation_pass` / `verification_pass` stay false, so the register still
+#      claims no PASS (D480). Acceptance is legal only for an unassigned stage, and
+#      the governor enforces exactly that pair.
+#   2. The acceptance evidence is the sanctioned DATA fate registry: the carrier
+#      data/parse/grobid_compatibility.yaml#parity_ledger now carries
+#      `absent_disposition_vocabulary`, `absent_dispositions` (17 entries: 14
+#      `out_of_product_scope` / 3 `in_horizon_project_native`) and `horizon_order`
+#      (`learning.ruvllm_ablation` -> `learning.sona_trajectory` ->
+#      `learning.microlora_ewc`), judged fail-closed by `check_absent_dispositions`
+#      and backed by 37 declared negative mutations with 0 survivors. The carrier was
+#      re-pinned by bytes (sha256
+#      de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03) in both
+#      scholarly_parse_plane sites and the fixture mirror (D478/D479).
+#   3. `registry` is UNCHANGED: `owner_allow` stays `[unassigned]`,
+#      `open_item_required_for_unresolved` stays false, `stage_id_range` stays
+#      `[H14,H21]`, `allow_status` / `unresolved_status` unchanged. No stage gained a
+#      PASS claim and no lock moved: `import_eligible=false`, `deployed=false`,
+#      `production_route` / `graph_write` / `auto_promote` remain forbidden.
+#
 # GROBID absorption — follow-up roadmap. Governor-consumable wrapper (2026-09-21).
 #
 # ЧТО ЭТО
@@ -27,11 +52,14 @@
 #   решением M511-j7wz2f/S06 — изменился только статус, PASS-клеймов по-прежнему
 #   нет), владельцы `unassigned`.
 #   `open_item_required_for_unresolved: false` — обёртка НЕ требует принятия
-#   открытого пункта, поэтому `open_item.accepted` нигде не выставлен в true.
-#   С 2026-09-28 (M513-r7dg4z/S04) в `doc/review/grobid-rust-horizon-review.json`
-#   не остаётся ни одного принятого open item: H05 закрыт с completion evidence
-#   после измерения Java-CPU. В планирующем реестре ниже принятие не
-#   предполагается и не фабрикуется.
+#   открытого пункта. С 2026-09-29 (M513-r7dg4z/S05) ровно один открытый пункт
+#   принят по evidence: H21 принят как остаток (`open_item.accepted: true`, owner
+#   `unassigned`, status `pending`, оба PASS-флага false), см. датированную
+#   корректировку 2026-09-29 в начале файла. Остальные семь стадий остаются
+#   `accepted: false`. С 2026-09-28 (M513-r7dg4z/S04) в
+#   `doc/review/grobid-rust-horizon-review.json` не остаётся ни одного принятого
+#   open item: H05 закрыт с completion evidence после измерения Java-CPU.
+#   Принятие не фабрикуется: оно опирается на DATA-носитель и fail-closed судью.
 #   planning-запись не создаёт milestone/slice/task, не является доказательством
 #   реализации и не даёт никакого права на production-маршрут.
 #
@@ -137,7 +165,14 @@ measured_state:
     named_gaps: 1
     named_gap_ids: [learning.ruvllm_ablation]
     java_sources: 16
-    mutations: {declared: 20, detected: 20, survived: 0}
+    # S05 (2026-09-29): судьба absent-возможностей записана в носителе тремя
+    # аддитивными ключами (`absent_disposition_vocabulary`, `absent_dispositions`,
+    # `horizon_order`), и мутационная матрица выросла 20 -> 37 (10 новых мутаций
+    # бьют по новым инвариантам); носитель пере-пинен по байтам, см. C15.
+    carrier_sha256: de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03
+    absent_dispositions: {total: 17, out_of_product_scope: 14, in_horizon_project_native: 3, horizon_order: 3}
+    absent_disposition_decisions: {D478: split_of_the_17_fates, D479: horizon_order, D480: H21_remainder_accepted_as_residual}
+    mutations: {declared: 37, detected: 37, survived: 0}
     observed_checkout_revision: 523bb8e97f357e93682dc4eaa6d22faa8b5b93de
     capture_declared_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
     revision_label_discrepancy_resolved: true
@@ -604,6 +639,33 @@ corrections:
       H14–H21 не закрыта (H20 остаётся pending/unassigned), замки не менялись,
       GAR-015 остаётся единственной открытой записью.
     evidence: artifacts/parse_compat/parse_batch_budget_live.json
+
+  - id: C15
+    previous: >
+      H21 числился `pending` лишь с именованным open item (16 absent-строк и
+      learning.ruvllm_ablation без GROBID-донора), а судьба этих остатков
+      выводилась из product_scope, а не записывалась решением;
+      measured_state.parity_ledger не нёс среза судеб absent-строк, а mutations
+      держал прошлый замер 20.
+    corrected: >
+      S05 (2026-09-29) превратил выведенную причину отсутствия в записанное
+      решение в санкционированном DATA-носителе
+      data/parse/grobid_compatibility.yaml#parity_ledger: аддитивные ключи
+      absent_disposition_vocabulary, absent_dispositions (тотальная map из 17
+      записей — 16 absent-строк + 1 named_gap; 14 out_of_product_scope /
+      3 in_horizon_project_native) и horizon_order (learning.ruvllm_ablation ->
+      learning.sona_trajectory -> learning.microlora_ewc), судимые fail-closed
+      судьёй check_absent_dispositions (D478/D479). Носитель пере-пинен по байтам
+      sha256 de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03 в
+      обоих сайтах scripts/governor/checks/scholarly_parse_plane.yaml и в зеркале
+      governor/fixtures/scholarly_parse_plane/contract.positive.json; негативная
+      матрица parity_ledger.mutations выросла 20 -> 37 declared / 37 detected /
+      0 survived. H21 в планирующем реестре H14–H21 остаётся pending и unassigned,
+      но его остаток теперь явно принят как residual (open_item.accepted=true) —
+      это D480; ни одна стадия не заявляет PASS, ни один замок не изменён,
+      GAR-015 остаётся единственной открытой записью, H20 остаётся
+      pending/unassigned.
+    evidence: data/parse/grobid_compatibility.yaml
 
 # ---------------------------------------------------------------------------
 # validation_commands — как воспроизвести проверку (read-only).

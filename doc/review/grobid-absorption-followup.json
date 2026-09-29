@@ -4,7 +4,7 @@
   "policy_id": "grobid_horizon_review",
   "created_at": "2026-09-21",
   "claim_scope": "planning",
-  "status_semantics": "planning: реестр планирования follow-up H14..H21. Статусы только из unresolved-набора (pending), implementation_pass и verification_pass всегда false, владельцы unassigned, open_item.accepted нигде не true. Запись не создаёт milestone/slice/task, не является доказательством реализации и не даёт права на production-маршрут, графовую запись или промоушен.",
+  "status_semantics": "planning: реестр планирования follow-up H14..H21. Статусы только из unresolved-набора (pending), implementation_pass и verification_pass всегда false, владельцы unassigned. С 2026-09-29 (M513-r7dg4z/S05) один открытый пункт (H21) явно принят как остаток: open_item.accepted=true при owner=unassigned, status=pending и обоих pass-флагах false, потому что судьба 16 absent-строк и единственного donor-less named_gap записана в DATA-носителе data/parse/grobid_compatibility.yaml#parity_ledger.absent_dispositions (14 out_of_product_scope / 3 in_horizon_project_native, horizon_order ruvllm_ablation -> sona_trajectory -> microlora_ewc; D478/D479); заявление PASS в этом планирующем реестре по-прежнему запрещено. Запись не создаёт milestone/slice/task, не является доказательством реализации и не даёт права на production-маршрут, графовую запись или промоушен.",
   "review_policy": {
     "no_claim_from_adr_only": true,
     "no_pass_without_verified_source": true,
@@ -1477,10 +1477,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H21 не закрыт, хотя ledger ПОСТРОЕН и ИЗМЕРЕН (38 строк == 38 capabilities, три звена у каждой full-строки, 16 пиннутых java_sources, контракт 14 тестов, мутационная матрица 20 обнаружено / 0 выживших, полный набор da-parse на ревизии квалификации S09/T02 — 114 suites / 1508 passed). Этап остаётся pending по двум названным причинам: (1) 16 строк остаются absent по product_scope (7 supporting, 5 not_compatibility_requirement, 4 deferred) и названы, а не выданы за паритет; (2) learning.ruvllm_ablation не имеет GROBID-донора (named_gaps 1), и паритет по нему не заявляется. Ранее названное расхождение revision label разрешено типизированно в S09 (authority java-grobid-http@0.9.0-crf, capture_declared_revision 0b0ab53b…, observed checkout 523bb8e9…; авторитет — content sha256; сверка хэшей с vendor-деревом — S07/T06), поэтому оно больше не числится открытой причиной.",
+        "reason": "Ledger паритета построен и измерен (38 строк == 38 capabilities, три звена на каждой full-строке, 16 пиннутых java_sources, контракт и мутационная матрица зелёные), поэтому остаток - 16 absent-строк и donor-less named_gap - теперь явно принят как residual реестром судеб S05: data/parse/grobid_compatibility.yaml#parity_ledger.absent_dispositions несёт 14 out_of_product_scope и 3 in_horizon_project_native (D478/D479). H21 остаётся pending, owner unassigned, без PASS-клейма; это D480.",
         "since": "2026-09-21",
-        "accepted": false,
-        "closure_condition": "Ledger содержит все три звена для каждой перенесённой поверхности, scope строк явный, отрицательные тесты на неполное звено и подмену scope зелёные, И оставшиеся остатки (16 absent-строк по product_scope и learning.ruvllm_ablation без GROBID-донора) закрыты либо явно приняты как остаток; расхождение revision label уже разрешено типизированно в S09 (content sha256) и условием закрытия больше не является."
+        "accepted": true,
+        "closure_condition": "Остаток либо закрыт, либо явно принят: 16 absent-строк и learning.ruvllm_ablation без GROBID-донора записаны в DATA-носителе как 14 out_of_product_scope / 3 in_horizon_project_native с проверяемой очерёдностью horizon_order (learning.ruvllm_ablation -> learning.sona_trajectory -> learning.microlora_ewc), судья fail-closed check_absent_dispositions и негативная матрица 37 declared / 37 detected / 0 survived зелёные; расхождение revision label разрешено типизированно в S09 (content sha256)."
       }
     }
   ]
