@@ -1,8 +1,9 @@
 # M514-1lss2s/S01/T01 — absorption progress scorecard contract (DATA ONLY).
 #
 # This is the closed vocabulary a product-progress scorecard must speak before
-# the Governor may report on it. It carries no product logic, no thresholds and
-# no graph authority: it names the axes, the denominator partition, the honest
+# the Governor may report on it. It carries no product logic, no numeric
+# threshold literal and no graph authority: it names the axes, the denominator
+# partition, the honest
 # measurement states, the comparability identity, the authorization separation
 # and the lifecycle boundary that the domain validator
 # (`scripts/governor/domain/absorption_progress.py`) enforces, and the T04
@@ -16,11 +17,15 @@
 # the old number readable as product progress.
 #
 # Boundary statements (recorded, not implied):
-#   - threshold tampering (E1): thresholds are NOT frozen here. Their freeze is
-#     owned by S02; a scorecard that carries a numeric threshold/margin, or that
-#     claims a freeze without a bound revision, fails closed. S02 flips
-#     `threshold_policy.state` in a new revision of THIS file, which is a
-#     reviewable DATA change rather than a hidden default.
+#   - threshold tampering (E1): thresholds ARE frozen here, by S02, before any
+#     held-out scoring. The freeze is bound to the revision of THIS file: the
+#     scorecard records this file's sha256 in `threshold_freeze.revision` and the
+#     reader recomputes it, so an edit that re-tunes a threshold invalidates the
+#     freeze (`threshold_freeze_revision_mismatch`) instead of passing silently.
+#     No numeric value is typed into this contract: every threshold names the
+#     artifact + pointer that produced it, and a hand-typed value has no place to
+#     enter. A required family the corpus does not measure carries no threshold
+#     at all and cannot pass (D496).
 #   - severity (E2): this contract does not register a new dimension in
 #     `scripts/governor/checks/assurance_severity.yaml`. The check is expected
 #     to be drift-visible, not blocking, so an unregistered dimension cannot be
@@ -320,14 +325,74 @@ quality_strata:
   weakest_required: true
   micro_alone_forbidden: true
 
-# ── thresholds (frozen in S02, forbidden before) ────────────────────────────
+# ── thresholds (frozen in S02, reference-derived, revision-bound) ───────────
+# S02 freezes the thresholds BEFORE the held-out scoring and binds the freeze to
+# the revision of this carrier, so a later measurement cannot be tuned to its own
+# result: `tuned_after_scoring` is forbidden, and the scorecard's
+# `threshold_freeze.revision` is this file's sha256, recomputed every run.
+#
+# The numeric values are NOT typed here. Each threshold names the artifact and
+# pointer that produced it (`reference`), and the reader resolves the value from
+# the committed baseline. This is why `numeric_thresholds_present: true` can hold
+# without a single literal: the numbers exist and are derived, not asserted.
+#
+# `freeze_revision` is the sha256 of the frozen evidence run whose measured values
+# these thresholds restate. It is deliberately NOT this file's own digest — a file
+# cannot contain its own hash — so the carrier digest is carried by the scorecard
+# (`threshold_freeze.revision`) and recomputed by the reader.
+#
+# `family_id` names the required-scope family the threshold makes measurable. The
+# mapping is `(metric_id, stratum)` -> family, stated here rather than inferred:
+# native fulltext composition is measured by preservation, reference segmentation
+# by extraction micro, and header composition by the weakest extraction family
+# (the header's own failure mode, `SemanticFieldLoss::AuthorAffiliation`).
+# `threshold_pending` families carry no threshold: they cannot be measured, so a
+# threshold on one would be a false pass.
 threshold_policy:
-  state: not_frozen
+  state: frozen
   freeze_owner: S02
   freeze_milestone: M514-1lss2s/S02
-  numeric_thresholds_present: false
+  freeze_revision: sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275
+  frozen_at: '2026-09-29'
+  source: artifacts/parse_compat/absorption_progress_baseline.json
+  numeric_thresholds_present: true
   numeric_before_freeze: forbidden
+  tuned_after_scoring: forbidden
+  pass_requires_frozen_threshold: true
   claim_without_freeze: forbidden
+  direction_vocabulary: [at_least, at_most]
+  basis_vocabulary: [absolute_noninferiority_to_declared_reference]
+  thresholds:
+    - threshold_id: preservation_micro_occurrence
+      family_id: parse.component.native_fulltext_composition_shadow
+      metric_id: preservation.occurrence_conservation
+      stratum: micro_occurrence
+      direction: at_least
+      margin: 0
+      basis: absolute_noninferiority_to_declared_reference
+      reference:
+        path: artifacts/parse_compat/absorption_progress_baseline.json
+        pointer: 'measurements[metric_id=preservation.occurrence_conservation]/score'
+    - threshold_id: extraction_micro_occurrence
+      family_id: stage.reference_segmentation
+      metric_id: extraction.native_capability_recall
+      stratum: micro_occurrence
+      direction: at_least
+      margin: 0
+      basis: absolute_noninferiority_to_declared_reference
+      reference:
+        path: artifacts/parse_compat/absorption_progress_baseline.json
+        pointer: 'measurements[metric_id=extraction.native_capability_recall]/score'
+    - threshold_id: extraction_weakest_family
+      family_id: stage.header_composition
+      metric_id: extraction.native_capability_recall
+      stratum: weakest_stratum
+      direction: at_least
+      margin: 0
+      basis: absolute_noninferiority_to_declared_reference
+      reference:
+        path: artifacts/parse_compat/absorption_progress_baseline.json
+        pointer: 'measurements[metric_id=extraction.native_capability_recall]/strata/weakest_stratum'
 
 # ── authorization (separate axis, never coverage) ───────────────────────────
 authorization:

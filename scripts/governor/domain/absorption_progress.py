@@ -29,7 +29,10 @@ than a convention:
   weakest, is refused (``weakest_stratum_absent``, ``stratum_micro_only``,
   ``weakest_stratum_not_weakest``);
 * a numeric threshold before S02 freezes one is
-  ``threshold_invented_before_freeze``;
+  ``threshold_invented_before_freeze``; once the contract is frozen a required
+  family with no threshold, or a measured row publishing a threshold the frozen
+  contract does not declare, is ``threshold_missing_for_required_metric`` (a
+  threshold the corpus cannot measure is never created, D496);
 * a coverage report that shrinks, extends or silently claims the required
   product scope is ``required_scope_shrunk`` / ``family_outside_required_scope``
   / ``family_claimed_without_required_scope`` (and ``required_scope_missing``
@@ -66,10 +69,13 @@ from typing import Any, Optional
 
 __all__ = [
     "SCOPE_VIOLATION_LABELS",
+    "THRESHOLD_DIRECTIONS",
     "comparability_key",
+    "contract_thresholds",
     "denominator_violations",
     "measurement_violations",
     "missing_contract_vocabulary",
+    "score_number",
     "scorecard_violations",
 ]
 
@@ -109,6 +115,11 @@ _REQUIRED_AXES = frozenset(
 #: required family the frozen corpus does not measure (D496): it must still be
 #: reported, but it can never be marked measured and can never pass.
 _SCOPE_FAMILY_STATES = ("required", "threshold_pending")
+
+#: The directions a frozen threshold may carry. Every frozen threshold is an
+#: absolute noninferiority floor against the declared reference, so ``at_least``
+#: is the expected value; ``at_most`` exists for a bounded-interval metric.
+THRESHOLD_DIRECTIONS = ("at_least", "at_most")
 
 #: The closed labels the scope/corpus/split half contributes. Pinned as a tuple
 #: so the vocabulary is inspectable without parsing the docstring.
@@ -282,6 +293,73 @@ def _split_contract_vocabulary(block: Any) -> list[str]:
     return missing
 
 
+def contract_thresholds(contract: Any) -> list[dict[str, Any]]:
+    """The frozen threshold entries the contract declares (possibly empty)."""
+    block = (contract or {}).get("threshold_policy") if isinstance(contract, dict) else None
+    if not isinstance(block, dict):
+        return []
+    entries = block.get("thresholds")
+    if not isinstance(entries, list):
+        return []
+    return [entry for entry in entries if isinstance(entry, dict)]
+
+
+def _thresholds_vocabulary(block: dict[str, Any]) -> list[str]:
+    """Names of ``threshold_policy`` fields absent or malformed while frozen.
+
+    Frozen is a stronger contract than not-frozen: the carrier revision, the
+    freeze moment, the numeric-source binding and the reference-derived entries
+    all become required, and an entry is only usable when it names a relative
+    artifact plus a pointer. A partial freeze (state flipped, entries missing)
+    would otherwise read as a frozen contract that governs nothing.
+    """
+    missing: list[str] = []
+    if block.get("state") != "frozen":
+        return missing
+    if _text(block.get("tuned_after_scoring")) != "forbidden":
+        missing.append("threshold_policy.tuned_after_scoring")
+    if block.get("pass_requires_frozen_threshold") is not True:
+        missing.append("threshold_policy.pass_requires_frozen_threshold")
+    if block.get("numeric_thresholds_present") is not True:
+        missing.append("threshold_policy.numeric_thresholds_present")
+    if _text(block.get("frozen_at")) is None:
+        missing.append("threshold_policy.frozen_at")
+    revision = block.get("freeze_revision")
+    if _text(revision) is None or not _REVISION_RE.match(str(revision)):
+        missing.append("threshold_policy.freeze_revision")
+    source = block.get("source")
+    if _text(source) is None:
+        missing.append("threshold_policy.source")
+    elif not _is_relative_path(source):
+        missing.append("threshold_policy.source.path")
+    entries = block.get("thresholds")
+    if not isinstance(entries, list) or not entries:
+        missing.append("threshold_policy.thresholds")
+        return missing
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            missing.append(f"threshold_policy.thresholds[{index}]")
+            continue
+        for key in ("threshold_id", "family_id", "metric_id", "stratum", "basis"):
+            if _text(entry.get(key)) is None:
+                missing.append(f"threshold_policy.thresholds[{index}].{key}")
+        if _text(entry.get("direction")) not in THRESHOLD_DIRECTIONS:
+            missing.append(f"threshold_policy.thresholds[{index}].direction")
+        margin = entry.get("margin")
+        if isinstance(margin, bool) or not isinstance(margin, (int, float)) or margin < 0:
+            missing.append(f"threshold_policy.thresholds[{index}].margin")
+        reference = entry.get("reference")
+        if (
+            not isinstance(reference, dict)
+            or _text(reference.get("path")) is None
+            or _text(reference.get("pointer")) is None
+        ):
+            missing.append(f"threshold_policy.thresholds[{index}].reference")
+        elif not _is_relative_path(reference.get("path")):
+            missing.append(f"threshold_policy.thresholds[{index}].reference.path")
+    return missing
+
+
 def missing_contract_vocabulary(contract: Any) -> list[str]:
     """Names of required contract keys that are absent, empty or malformed.
 
@@ -386,6 +464,7 @@ def missing_contract_vocabulary(contract: Any) -> list[str]:
             missing.append("threshold_policy.freeze_owner")
         if thresholds.get("numeric_before_freeze") != "forbidden":
             missing.append("threshold_policy.numeric_before_freeze")
+        missing.extend(_thresholds_vocabulary(thresholds))
 
     authorization = contract.get("authorization")
     if not isinstance(authorization, dict):
@@ -486,11 +565,15 @@ def _historical_carrier_ids(contract: dict) -> set[str]:
     return ids
 
 
-def _score_number(value: Any) -> Optional[float]:
+def score_number(value: Any) -> Optional[float]:
     """A numeric score from either a scalar or a ``{numerator, denominator}`` map.
 
     A fraction is read as a number only when its denominator is positive; a zero
     denominator is "nothing to divide", not a value, so the caller can refuse it.
+
+    Public because the adapter resolves a frozen threshold reference to a number
+    with the same rule the domain uses to read a score; a second arithmetic
+    implementation would let the two disagree.
     """
     if isinstance(value, bool):
         return None
@@ -506,6 +589,11 @@ def _score_number(value: Any) -> Optional[float]:
                 return None
             return float(numerator) / float(denominator)
     return None
+
+
+def _score_number(value: Any) -> Optional[float]:
+    """Backward-compatible private alias for :func:`score_number`."""
+    return score_number(value)
 
 
 def _fraction_denominator(value: Any) -> Optional[int]:
@@ -808,17 +896,90 @@ def _comparison_violations(scorecard: dict, contract: dict) -> set[str]:
     return violations
 
 
-def _threshold_freeze_violations(scorecard: dict, contract: dict) -> set[str]:
-    block = scorecard.get("threshold_freeze")
-    if block is None:
+def _threshold_family_violations(contract: dict, violations: set[str]) -> None:
+    """A frozen threshold may only exist for a required, measurable family.
+
+    Every required family must carry one (otherwise the freeze governs a
+    denominator it does not gate), and a family the corpus does not measure
+    (``threshold_pending``) must carry none: creating a threshold for it would
+    read as a pass the measurement cannot earn (D496).
+    """
+    states = _required_scope_family_states(contract)
+    if not states:
+        return
+    covered: set[str] = set()
+    for entry in contract_thresholds(contract):
+        family_id = _text(entry.get("family_id"))
+        if family_id is None:
+            continue
+        covered.add(family_id)
+        if family_id not in states:
+            violations.add("family_outside_required_scope")
+        elif states[family_id] != "required":
+            violations.add("family_claimed_without_required_scope")
+    for family_id, state in states.items():
+        if state == "required" and family_id not in covered:
+            violations.add("threshold_missing_for_required_metric")
+
+
+def _row_threshold_violations(measurements: Any, contract: dict) -> set[str]:
+    """A published row threshold must be one the frozen contract declares.
+
+    The comparison runs only when the contract is frozen: before the freeze the
+    domain already refuses any threshold at all (``threshold_invented_before_
+    freeze``), so a second label here would blur the two defects.
+    """
+    if not _thresholds_frozen(contract) or not isinstance(measurements, list):
         return set()
+    declared = {
+        _text(entry.get("threshold_id")): entry
+        for entry in contract_thresholds(contract)
+        if _text(entry.get("threshold_id")) is not None
+    }
+    violations: set[str] = set()
+    for record in measurements:
+        if not isinstance(record, dict) or "threshold" not in record:
+            continue
+        block = record.get("threshold")
+        if not isinstance(block, dict):
+            violations.add("threshold_missing_for_required_metric")
+            continue
+        threshold_id = _text(block.get("threshold_id"))
+        entry = declared.get(threshold_id) if threshold_id is not None else None
+        if entry is None:
+            violations.add("threshold_missing_for_required_metric")
+            continue
+        if block.get("state") != "frozen":
+            violations.add("threshold_missing_for_required_metric")
+        if _text(block.get("direction")) != _text(entry.get("direction")):
+            violations.add("threshold_missing_for_required_metric")
+        value = block.get("value")
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            violations.add("threshold_missing_for_required_metric")
+    return violations
+
+
+def _threshold_freeze_violations(scorecard: dict, contract: dict) -> set[str]:
+    """Threshold-freeze violations: the binding, the coverage and the row claim.
+
+    When the contract is frozen the scorecard must declare a bound freeze (state,
+    carrier revision, moment, source) — the freeze is what makes a later score a
+    noninferiority claim rather than a self-chosen target. A threshold block under
+    a not-frozen contract is ``threshold_invented_before_freeze``.
+    """
+    block = scorecard.get("threshold_freeze")
+    frozen = _thresholds_frozen(contract)
+    if block is None:
+        return {"threshold_freeze_unbound"} if frozen else set()
     if not isinstance(block, dict) or block.get("state") != "frozen":
         return {"threshold_freeze_unbound"}
-    if not _thresholds_frozen(contract):
+    if not frozen:
         return {"threshold_invented_before_freeze"}
     if any(_text(block.get(key)) is None for key in ("revision", "frozen_at", "source")):
         return {"threshold_freeze_unbound"}
-    return set()
+    violations: set[str] = set()
+    _threshold_family_violations(contract, violations)
+    return violations
 
 
 def _required_scope_family_states(contract: dict) -> dict[str, str]:
@@ -979,6 +1140,7 @@ def scorecard_violations(scorecard: Any, contract: Any) -> set[str]:
     violations |= _lineage_violations(scorecard, contract)
     violations |= _comparison_violations(scorecard, contract)
     violations |= _threshold_freeze_violations(scorecard, contract)
+    violations |= _row_threshold_violations(measurements, contract)
     violations |= _required_scope_violations(scorecard, contract)
     violations |= _split_violations(scorecard, contract)
     violations |= _external_violations(scorecard, contract)

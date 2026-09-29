@@ -19,6 +19,7 @@ Tests read the tracked DATA contract and use inline fixtures only.
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
 
@@ -38,6 +39,16 @@ CONTRACT_PATH = ROOT / "data/parse/absorption_progress.schema.yaml"
 
 REVISION = "git:" + "52bb08a4a016e69e3224ae79f02c2f3e53897e72"
 SHA = "sha256:" + "a" * 64
+
+#: The frozen freeze declaration the inline scorecards carry by default. S02 made
+#: the declaration mandatory under a frozen contract, so every fixture that is
+#: meant to be otherwise clean must carry a bound one.
+THRESHOLD_FREEZE = {
+    "state": "frozen",
+    "revision": "sha256:" + "d" * 64,
+    "frozen_at": "2026-09-29",
+    "source": "data/parse/absorption_progress.schema.yaml",
+}
 
 
 @pytest.fixture(scope="module")
@@ -118,6 +129,7 @@ def _scorecard(contract: dict, measurements: list, **overrides) -> dict:
             "product_coverage_effect": "none",
         },
         "lineage": {},
+        "threshold_freeze": dict(THRESHOLD_FREEZE),
     }
     card.update(overrides)
     return card
@@ -182,7 +194,7 @@ def test_real_contract_is_closed_and_inventory_paths_exist(contract: dict) -> No
         "header_title_absent": 5,
         "header_author_absent": 2,
     }
-    assert contract["threshold_policy"]["state"] == "not_frozen"
+    assert contract["threshold_policy"]["state"] == "frozen"
     assert contract["product_axes"]["authorization_not_product"] is True
     assert contract["preservation"]["separate_from_extraction"] is True
 
@@ -367,33 +379,121 @@ def test_census_cannot_be_recut(contract: dict) -> None:
     assert scorecard_violations(_baseline(contract), contract) == set()
 
 
-# ── thresholds ──────────────────────────────────────────────────────────────
+# ── thresholds (S02: frozen, reference-derived, revision-bound) ─────────────
 
 
-def test_thresholds_cannot_be_invented_before_s02(contract: dict) -> None:
+def test_real_contract_freezes_thresholds_before_scoring(contract: dict) -> None:
+    policy = contract["threshold_policy"]
+    assert policy["state"] == "frozen"
+    assert policy["tuned_after_scoring"] == "forbidden"
+    assert policy["pass_requires_frozen_threshold"] is True
+    assert policy["numeric_thresholds_present"] is True
+    assert policy["numeric_before_freeze"] == "forbidden"
+    assert policy["source"] == "artifacts/parse_compat/absorption_progress_baseline.json"
+    # `freeze_revision` is the frozen evidence run, recomputed here rather than
+    # trusted: a hand-typed revision would fail this assertion.
+    probe = ROOT / "artifacts/parse_compat/external_holdout_release_probe.json"
+    assert policy["freeze_revision"] == "sha256:" + hashlib.sha256(probe.read_bytes()).hexdigest()
+    # No numeric value is typed into the contract: every threshold is a reference
+    # to the artifact that produced it, so re-tuning requires editing the carrier
+    # (which invalidates the freeze) rather than editing a literal.
+    for entry in policy["thresholds"]:
+        assert "value" not in entry, entry
+        assert entry["margin"] == 0
+        assert entry["direction"] in policy["direction_vocabulary"]
+        assert entry["basis"] in policy["basis_vocabulary"]
+        assert entry["reference"]["path"] == policy["source"]
+        assert not str(entry["reference"]["path"]).startswith("/")
+        assert entry["reference"]["pointer"]
+
+
+def test_frozen_thresholds_cover_exactly_the_required_families(contract: dict) -> None:
+    policy = contract["threshold_policy"]
+    covered = {entry["family_id"] for entry in policy["thresholds"]}
+    required = {f["family_id"] for f in _family_rows(contract) if f["state"] == "required"}
+    pending = {f["family_id"] for f in _family_rows(contract) if f["state"] == "threshold_pending"}
+    assert covered == required
+    assert covered & pending == set()
+
+    # A required family without a threshold means the freeze governs a denominator
+    # it does not gate: a partial freeze, not a cheaper one.
+    partial = copy.deepcopy(contract)
+    partial["threshold_policy"]["thresholds"] = partial["threshold_policy"]["thresholds"][:-1]
+    assert missing_contract_vocabulary(partial) == []
+    assert "threshold_missing_for_required_metric" in scorecard_violations(
+        _baseline(partial), partial
+    )
+
+    # A threshold on a family the corpus cannot measure would read as a pass the
+    # measurement cannot earn (D496).
+    pending_claimed = copy.deepcopy(contract)
+    victim = sorted(pending)[0]
+    pending_claimed["threshold_policy"]["thresholds"][0]["family_id"] = victim
+    violations = scorecard_violations(_baseline(pending_claimed), pending_claimed)
+    assert "family_claimed_without_required_scope" in violations
+    assert "threshold_missing_for_required_metric" in violations
+
+    # A freeze with no entry at all is an incomplete vocabulary, not a valid one.
+    empty = copy.deepcopy(contract)
+    empty["threshold_policy"]["thresholds"] = []
+    assert "threshold_policy.thresholds" in missing_contract_vocabulary(empty)
+
+
+def test_thresholds_are_refused_before_the_freeze_and_bound_after(contract: dict) -> None:
+    # Before the freeze a numeric threshold is invented, not measured.
+    unfrozen = copy.deepcopy(contract)
+    unfrozen["threshold_policy"]["state"] = "not_frozen"
     assert "threshold_invented_before_freeze" in scorecard_violations(
-        _scorecard(contract, [_measured_row(threshold=0.9)]), contract
+        _scorecard(unfrozen, [_measured_row(threshold=0.9)]), unfrozen
     )
     assert "threshold_invented_before_freeze" in scorecard_violations(
-        _scorecard(contract, [_measured_row(margin=0.05)]), contract
+        _scorecard(unfrozen, [_measured_row(margin=0.05)]), unfrozen
     )
+    claimed = _scorecard(unfrozen, [_measured_row()], threshold_freeze=dict(THRESHOLD_FREEZE))
+    assert "threshold_invented_before_freeze" in scorecard_violations(claimed, unfrozen)
 
-    frozen = _scorecard(
-        contract,
-        [_measured_row()],
-        threshold_freeze={
-            "state": "frozen",
-            "revision": REVISION,
-            "frozen_at": "2026-09-29",
-            "source": "data/parse/absorption_progress.schema.yaml",
-        },
-    )
-    assert "threshold_invented_before_freeze" in scorecard_violations(frozen, contract)
-
+    # Frozen: the freeze declaration is mandatory and must be bound.
+    missing = _scorecard(contract, [_measured_row()])
+    missing.pop("threshold_freeze")
+    assert "threshold_freeze_unbound" in scorecard_violations(missing, contract)
     for block in ({"state": "frozen"}, {"state": "pending"}, {"state": "frozen", "revision": "x"}):
         card = _scorecard(contract, [_measured_row()], threshold_freeze=block)
-        violations = scorecard_violations(card, contract)
-        assert {"threshold_freeze_unbound", "threshold_invented_before_freeze"} & violations, block
+        assert "threshold_freeze_unbound" in scorecard_violations(card, contract), block
+
+    # Frozen: a measured row may only publish a threshold the contract declares.
+    published = _measured_row()
+    published["threshold"] = {
+        "threshold_id": "extraction_micro_occurrence",
+        "direction": "at_least",
+        "margin": 0,
+        "value": 0.945771,
+        "state": "frozen",
+    }
+    assert "threshold_missing_for_required_metric" not in scorecard_violations(
+        _scorecard(contract, [published]), contract
+    )
+    invented = _measured_row()
+    invented["threshold"] = {
+        "threshold_id": "not_declared_anywhere",
+        "direction": "at_least",
+        "margin": 0,
+        "value": 0.9,
+        "state": "frozen",
+    }
+    assert "threshold_missing_for_required_metric" in scorecard_violations(
+        _scorecard(contract, [invented]), contract
+    )
+    bounded = _measured_row()
+    bounded["threshold"] = {
+        "threshold_id": "extraction_micro_occurrence",
+        "direction": "at_least",
+        "margin": 0,
+        "value": None,
+        "state": "frozen",
+    }
+    assert "threshold_missing_for_required_metric" in scorecard_violations(
+        _scorecard(contract, [bounded]), contract
+    )
 
 
 # ── preservation is not extraction ──────────────────────────────────────────

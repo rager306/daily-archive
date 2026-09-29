@@ -13,8 +13,10 @@ The matrix proves the measurement system is honest rather than optimistic:
 * series — a changed oracle and a scope outside the accepted series are
   ``not_comparable``, and two series inside one scorecard are refused;
 * direction — a denominator smaller than the pinned census and an axis the
-  census measured going silent are regressions (no numeric threshold: S01
-  freezes none);
+  census measured going silent are regressions;
+* thresholds — S02 froze the thresholds and bound them to the schema revision, so
+  a declared freeze revision that no longer matches the carrier bytes, and a
+  threshold whose reference does not resolve, are both refused;
 * resources — a savings claim without its paired CPU measurement is refused;
 * the T01 domain labels (denominator sum, dropped exclusion, revision mismatch,
   skipped-as-delivered) survive contact with the composed oracle.
@@ -45,9 +47,11 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 from governor.adapters.absorption_progress_reader import (  # noqa: E402
     FilesystemAbsorptionProgressReader,
+    _UNRESOLVED,
     absorption_progress_violations,
     effective_progress_contract,
     missing_progress_vocabulary,
+    resolve_pointer,
 )
 from governor.application.trajectory_service import TrajectoryService  # noqa: E402
 
@@ -57,11 +61,17 @@ POSITIVE_FIXTURE = "governor/fixtures/absorption_progress/scorecard_clean.positi
 NEGATIVE_FIXTURE = "governor/fixtures/absorption_progress/scorecard_broken.negative.json"
 SCORECARD_PATH = "artifacts/parse_compat/absorption_progress_baseline.json"
 DOMAIN_MODULE = "scripts/governor/domain/absorption_progress.py"
+ADAPTER_MODULE = "scripts/governor/adapters/absorption_progress_reader.py"
 
 REV = "git:" + "52bb08a4a016e69e3224ae79f02c2f3e53897e72"
 REV2 = "git:" + "11" * 20
 SHA = "sha256:" + "a" * 64
 EVIDENCE = "artifacts/parse_compat/external_holdout_release_probe.json"
+
+#: The real schema digest, recomputed rather than pinned: the frozen thresholds are
+#: bound to the carrier revision, so a scratch tree that copies the schema must be
+#: checked against the bytes it actually read.
+SCHEMA_REV = "sha256:" + hashlib.sha256((_REPO_ROOT / SCHEMA_PATH).read_bytes()).hexdigest()
 
 #: The adapter-level labels the oracle may emit. Pinned here so a new label that
 #: is not registered in the DATA vocabulary is a test failure, not a silent
@@ -77,6 +87,8 @@ ADAPTER_LABELS = {
     "savings_paired_cpu_not_measured",
     "coverage_regression",
     "denominator_shrink",
+    "threshold_freeze_revision_mismatch",
+    "threshold_reference_unbound",
 }
 
 
@@ -224,6 +236,12 @@ def _baseline_scorecard() -> dict:
             "product_coverage_effect": "none",
         },
         "lineage": {},
+        "threshold_freeze": {
+            "state": "frozen",
+            "revision": SCHEMA_REV,
+            "frozen_at": "2026-09-29",
+            "source": SCHEMA_PATH,
+        },
         "observations": {"evidence_sha256": {EVIDENCE: SHA}},
     }
 
@@ -254,8 +272,97 @@ def test_progress_rule_loads_and_vocabulary_is_complete(contract: dict) -> None:
     }
     assert contract["regression"]["expected_axis_states"]["extraction"] == "measured"
     assert contract["resources_claim"]["cpu_kind"] == "cpu"
-    # No numeric threshold is invented before S02.
-    assert contract["threshold_policy"]["state"] == "not_frozen"
+    # S02 froze the thresholds before scoring and bound them to the carrier.
+    policy = contract["threshold_policy"]
+    assert policy["state"] == "frozen"
+    assert policy["tuned_after_scoring"] == "forbidden"
+    assert policy["pass_requires_frozen_threshold"] is True
+    assert policy["source"] == SCORECARD_PATH
+    assert {entry["threshold_id"] for entry in policy["thresholds"]} == {
+        "preservation_micro_occurrence",
+        "extraction_micro_occurrence",
+        "extraction_weakest_family",
+    }
+
+
+def test_frozen_thresholds_resolve_from_the_committed_baseline(contract: dict) -> None:
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, SCORECARD_PATH)
+    resolved = reader.resolve_threshold_references(contract)
+    policy = contract["threshold_policy"]
+    assert set(resolved) == {entry["threshold_id"] for entry in policy["thresholds"]}
+    assert all(isinstance(value, float) for value in resolved.values()), resolved
+    assert resolved["extraction_micro_occurrence"] == pytest.approx(0.945771)
+    assert resolved["preservation_micro_occurrence"] == pytest.approx(74910 / 79621)
+    assert resolved["extraction_weakest_family"] == pytest.approx(3055 / 7077)
+
+
+def test_pointer_resolution_handles_selectors_and_misses() -> None:
+    document = {
+        "measurements": [
+            {"metric_id": "a", "score": {"numerator": 1, "denominator": 2}},
+            {"metric_id": "b", "score": 0.5},
+        ]
+    }
+    assert resolve_pointer(document, "measurements[metric_id=b]/score") == 0.5
+    assert resolve_pointer(document, "measurements[metric_id=a]/score") == {
+        "numerator": 1,
+        "denominator": 2,
+    }
+    assert resolve_pointer(document, "measurements[metric_id=missing]/score") is _UNRESOLVED
+    assert resolve_pointer(document, "measurements[metric_id=b]/nope") is _UNRESOLVED
+    assert resolve_pointer(document, "nope/x") is _UNRESOLVED
+    assert resolve_pointer(document, "") is _UNRESOLVED
+
+
+def test_reader_annotates_missing_thresholds_but_keeps_declared_ones(contract: dict) -> None:
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, SCORECARD_PATH)
+    resolved = reader.resolve_threshold_references(contract)
+    annotated = reader.annotate_thresholds(_baseline_scorecard(), contract, resolved)
+    for row in annotated["measurements"]:
+        if row.get("state") == "measured":
+            assert row["threshold"]["state"] == "frozen"
+            assert row["threshold"]["threshold_id"] in resolved
+            assert isinstance(row["threshold"]["value"], float)
+
+    declared = _baseline_scorecard()
+    declared["measurements"][0]["threshold"] = {
+        "threshold_id": "preservation_micro_occurrence",
+        "direction": "at_least",
+        "margin": 0,
+        "value": 0.0,
+        "state": "frozen",
+    }
+    kept = reader.annotate_thresholds(declared, contract, resolved)
+    assert kept["measurements"][0]["threshold"]["value"] == 0.0
+
+
+def test_threshold_freeze_revision_mismatch_is_flagged(contract: dict) -> None:
+    card = _mutated(
+        lambda c: c["threshold_freeze"].__setitem__("revision", "sha256:" + "e" * 64)
+    )
+    labels = absorption_progress_violations(
+        card, contract, {"evidence_sha256": {EVIDENCE: SHA}, "schema_sha256": SCHEMA_REV}
+    )
+    assert "threshold_freeze_revision_mismatch" in labels
+    # Without a recomputed schema digest the freeze is unverified, not refuted.
+    assert "threshold_freeze_revision_mismatch" not in absorption_progress_violations(
+        card, contract, _observations(card)
+    )
+    honest = _baseline_scorecard()
+    assert "threshold_freeze_revision_mismatch" not in absorption_progress_violations(
+        honest, contract, {"evidence_sha256": {EVIDENCE: SHA}, "schema_sha256": SCHEMA_REV}
+    )
+
+
+def test_unresolved_threshold_reference_is_flagged(contract: dict) -> None:
+    card = _baseline_scorecard()
+    all_none = {entry["threshold_id"]: None for entry in contract["threshold_policy"]["thresholds"]}
+    assert "threshold_reference_unbound" in absorption_progress_violations(
+        card, contract, {"evidence_sha256": {EVIDENCE: SHA}, "threshold_values": all_none}
+    )
+    assert "threshold_reference_unbound" not in absorption_progress_violations(
+        card, contract, _observations(card)
+    )
 
 
 def test_source_markers_exist_in_the_real_tree(rule_contract: dict) -> None:
@@ -539,7 +646,7 @@ def _scratch_service(scorecard: dict | None = None) -> TrajectoryService:
     """A scratch tree holding exactly what the check reads."""
     root = _make_root()
     (root / "artifacts").mkdir(parents=True, exist_ok=True)
-    for rel in (RULE_PATH, SCHEMA_PATH, POSITIVE_FIXTURE, NEGATIVE_FIXTURE, DOMAIN_MODULE):
+    for rel in (RULE_PATH, SCHEMA_PATH, POSITIVE_FIXTURE, NEGATIVE_FIXTURE, DOMAIN_MODULE, ADAPTER_MODULE):
         _write(root / rel, (_REPO_ROOT / rel).read_text(encoding="utf-8"))
     # Historical carriers are only existence-checked here; placeholders keep the
     # scratch tree small while still exercising the guard.
@@ -555,9 +662,17 @@ def _scratch_service(scorecard: dict | None = None) -> TrajectoryService:
     return service
 
 
-def test_absent_scorecard_is_not_measured_not_a_failure() -> None:
+def test_absent_required_scorecard_is_a_finding() -> None:
+    """`scorecard.required: true` since S02/T02: absence is a finding, not silence.
+
+    Before the freeze, an absent scorecard was `not_measured`. Now that the
+    governed baseline is committed and the freeze is bound to it, deleting the
+    artifact must be drift rather than a way to silence the check.
+    """
     service = _scratch_service(scorecard=None)
-    assert service._check_absorption_progress() == []
+    assert [f.flag for f in service._check_absorption_progress()] == [
+        "absorption_progress_scorecard_not_measured"
+    ]
 
 
 def test_clean_committed_scorecard_is_not_flagged() -> None:
@@ -605,6 +720,31 @@ def test_broken_committed_scorecard_is_flagged() -> None:
     assert "oracle_changed" in broken[0].evidence
 
 
+def test_edited_freeze_revision_in_a_scratch_tree_is_flagged() -> None:
+    root = _make_root()
+    evidence_bytes = b'{"probe": true}\n'
+    rel = EVIDENCE
+    (root / rel).parent.mkdir(parents=True, exist_ok=True)
+    (root / rel).write_bytes(evidence_bytes)
+    digest = "sha256:" + hashlib.sha256(evidence_bytes).hexdigest()
+
+    scorecard = copy.deepcopy(_baseline_scorecard())
+    for row in scorecard["measurements"]:
+        if isinstance(row.get("evidence"), dict):
+            row["evidence"]["sha256"] = digest
+    # Re-tune the carrier: the declared revision no longer matches the schema bytes.
+    scorecard["threshold_freeze"]["revision"] = "sha256:" + "e" * 64
+    scorecard.pop("observations")
+    service = _scratch_service(scorecard=scorecard)
+    (service.root / rel).parent.mkdir(parents=True, exist_ok=True)
+    (service.root / rel).write_bytes(evidence_bytes)
+
+    flags = service._check_absorption_progress()
+    broken = [f for f in flags if f.flag == "absorption_progress_broken"]
+    assert broken, [f.flag for f in flags]
+    assert "threshold_freeze_revision_mismatch" in broken[0].evidence
+
+
 def test_corrupt_committed_scorecard_fails_closed() -> None:
     """A scorecard that exists but cannot be parsed must not read as absent."""
     service = _scratch_service(scorecard=None)
@@ -625,10 +765,10 @@ def test_missing_historical_carrier_is_flagged() -> None:
 
 
 def test_real_tree_has_no_absorption_progress_flag() -> None:
-    """Positive control on the repository: contract and fixtures are honest.
+    """Positive control on the repository: contract, fixtures and scorecard are honest.
 
-    The governed scorecard is a T05 deliverable, so absence is `not_measured`
-    and must not produce a flag.
+    Since S02 the governed scorecard is committed and `required`, so the real tree
+    must validate clean rather than merely be absent.
     """
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _REPO_ROOT

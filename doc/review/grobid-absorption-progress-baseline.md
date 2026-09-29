@@ -1,6 +1,8 @@
 # Baseline прогресса поглощения GROBID (M514-1lss2s/S01)
 
-Статус: **поставлен baseline измерительной системы** (`M514-1lss2s/S01/T05`). Это точка
+Статус: **поставлен baseline измерительной системы** (`M514-1lss2s/S01/T05`),
+**пороги заморожены до оценки и привязаны к ревизии носителя**
+(`M514-1lss2s/S02/T02`). Это точка
 отсчёта для честного измерения продуктового прогресса, а не релизное решение и не
 заявление о качестве продукта. Проза релиз не авторизует; `import_eligible=false`,
 `deployed=false`, `production_route=forbidden`, `graph_write=forbidden`,
@@ -17,19 +19,20 @@
 | Роль | Путь | sha256 | identity |
 |---|---|---|---|
 | frozen probe (источник чисел) | `artifacts/parse_compat/external_holdout_release_probe.json` | `a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275` | `external-holdout-release-probe.v1` |
-| baseline scorecard | `artifacts/parse_compat/absorption_progress_baseline.json` | `c4549c865cbdb1c98f55d2b7e4e924ce56812bf6611013f808af6819ff90338b` | `absorption-progress.v1` |
-| контракт (схема, T01) | `data/parse/absorption_progress.schema.yaml` | `a417f88a40b8ba22ea2f70cffb9bb8cc9e914dbb9e63f17969d6268df2292cc3` | — |
-| rule DATA (T04) | `scripts/governor/checks/grobid_absorption_progress.yaml` | `60b9693acc59fdc3dfb5238b3503ca989fbd6ab40a080400d352d61cc9d323ad` | `grobid-absorption-progress.v1` |
-| доменный валидатор (T01) | `scripts/governor/domain/absorption_progress.py` | `4af8fd0bc67b23b149324ba9b695126dc9463adb26bacb92dcb95df1994b2047` | — |
-| oracle/reader (T04) | `scripts/governor/adapters/absorption_progress_reader.py` | `2e06bf765ecfbe8b4da3d5614c8aa3b07a202bd4257a2a2292ed44c47c2ad277` | — |
+| baseline scorecard | `artifacts/parse_compat/absorption_progress_baseline.json` | `cd101eebb1004f553fdacbf9e072bcd0be6d6148fbb2e486160f9858288fae28` | `absorption-progress.v1` |
+| контракт (схема, T01/T02) | `data/parse/absorption_progress.schema.yaml` | `e69fec3075df64072989d9602ae64ab14a0a16db207bbf5bb052d7ed08e4b311` | — |
+| rule DATA (T04/T02) | `scripts/governor/checks/grobid_absorption_progress.yaml` | `12097b89f379433570dc03630967379de033e57469626ce71f34019326decc3f` | `grobid-absorption-progress.v1` |
+| доменный валидатор (T01/T02) | `scripts/governor/domain/absorption_progress.py` | `e98b94e2230ce48b1cb7e762cc2ae54465114f472fc4c17e76b825aaab671ccd` | — |
+| oracle/reader (T04/T02) | `scripts/governor/adapters/absorption_progress_reader.py` | `63f5e0ad60f03cab06fa16ec1d7e36a65d71fb59486b7fe1af664082fb92ee1a` | — |
 
-Хэши зафиксированы на момент этого baseline. **Принудительно проверяются** пины из
-`historical_guard_pins` в JSON, а также одна строка этой таблицы: хэш baseline scorecard
-сверяется тестом `test_report_pins_the_baseline_artifact_hash` из
-`scripts/tests/test_absorption_progress_baseline.py`, поэтому отчёт не может описывать
-старые байты артефакта после его правки. Остальные строки — информационные (S02
-заморозит пороги правкой схемы, и её хэш здесь станет stale — это ожидаемо, а не
-нарушение).
+Хэши зафиксированы на этой ревизии (S02/T02). **Принудительно проверяются** пины из
+`historical_guard_pins` в JSON, хэш baseline scorecard (тест
+`test_report_pins_the_baseline_artifact_hash` из
+`scripts/tests/test_absorption_progress_baseline.py`), и **ревизия заморозки порогов**:
+`threshold_freeze.revision` в scorecard равен sha256 этой строки таблицы и
+пересчитывается reader'ом на каждом прогоне. Остальные строки — информационные; после
+любой следующей правки схемы её строка и строка baseline станут stale, и это уже будет
+не «ожидаемой устареваемостью», а находкой `threshold_freeze_revision_mismatch`.
 
 ## 2. Замороженная перепись (знаменатель)
 
@@ -84,6 +87,37 @@ external_holdout_probe_semantics}` — сравнивать можно толь�
 строки `source_revision` **равен** хэшу её evidence-артефакта, то есть скаляр привязан к
 байтам, а не заявлен. Другой корпус/профиль/oracle → `scope_not_accepted`, а не ложная
 регрессия; две серии в одном scorecard → `scope_mixed_in_scorecard`.
+
+## 3.1 Замороженные пороги до оценки (S02/T02)
+
+`threshold_policy.state: frozen`, `freeze_owner: S02`, `frozen_at: 2026-09-29`,
+`tuned_after_scoring: forbidden`, `pass_requires_frozen_threshold: true`. Заморозка
+произошла **до** любого held-out скоринга, иначе позднейший замер можно было бы подогнать
+под собственный результат.
+
+| metric_id | stratum | family_id | direction | margin | derivation (из baseline) |
+|---|---|---|---|---|---|
+| `preservation.occurrence_conservation` | `micro_occurrence` | `parse.component.native_fulltext_composition_shadow` | `at_least` | `0` | `74910 / 79621` → `0.940832` |
+| `extraction.native_capability_recall` | `micro_occurrence` | `stage.reference_segmentation` | `at_least` | `0` | `945771 / 1000000` → `0.945771` |
+| `extraction.native_capability_recall` | `weakest_stratum` | `stage.header_composition` | `at_least` | `0` | `3055 / 7077` → `0.431680` |
+
+Числа в контракт **не вписаны**: каждая запись хранит `reference` (path + pointer) на
+baseline-артефакт, reader резолвит значение тем же правилом `score_number`, что и домен, а
+оракул падает на неразрешимой ссылке (`threshold_reference_unbound`). Поэтому «derived, не
+typed» — это проверяемое свойство:
+`test_baseline_threshold_values_are_recomputed_from_its_own_measurements` пере-выводит
+каждое опубликованное значение из замера строки.
+
+Привязка к носителю: `threshold_freeze.revision` в scorecard — sha256 файла схемы,
+reader пересчитывает его на каждом прогоне. Правка схемы после заморозки (то есть
+повторная подгонка порога) даёт `threshold_freeze_revision_mismatch`, а не тихий проход.
+Семейство, которое корпус не измеряет (`threshold_pending`), порога не имеет вовсе: порог
+на нём был бы ложным pass (D496), и домен отвергает такую запись
+(`family_claimed_without_required_scope`).
+
+`freeze_revision` в схеме — это sha256 замороженного probe (та же ревизия, что и у
+evidence baseline-строк): контракт привязывает числа к замороженному прогону, а ревизия
+самого носителя — к scorecard, потому что файл не может содержать собственный хэш.
 
 ## 4. Неизмеренные оси (реальные незакрытые исходы)
 
@@ -149,7 +183,9 @@ baseline один раз и обязана дать свою метку; выж�
 | причина исключения вне словаря | `exclusion_reason_untyped` |
 | терминальное GSD-состояние как «delivered» | `skipped_as_delivered` |
 | preservation пулится с extraction | `preservation_pooled_with_extraction` |
-| изобретён числовой порог до S02 | `threshold_invented_before_freeze` |
+| объявлена чужая ревизия заморозки | `threshold_freeze_revision_mismatch` |
+| ссылка порога не резолвится | `threshold_reference_unbound` |
+| строка публикует порог вне замороженного контракта | `threshold_missing_for_required_metric` |
 | измеренная ось замолчала | `coverage_regression` |
 | экономия без парного CPU | `savings_without_paired_cpu` |
 | авторизация подняла охват | `authorization_used_as_product_evidence` |
@@ -310,12 +346,34 @@ baseline-артефакта; этот раздел — читаемая прое
 ради снятия замечания: зелёный повтор не является `root-cause proof`, а прогон #2 уже
 записан.
 
+### 10.4 Заморозка порогов S02/T02 (после правки §1, §3.1, §6, §11)
+
+Прогоны ниже — на том же дереве, что и §10.3, плюс правки S02/T02. Rust-исходники этой
+задачей не менялись, поэтому `cargo fmt` не запускался.
+
+| # | Проверка | Команда | Exit | Верификация | Evidence |
+|---|---|---|---|---|---|
+| 24 | целевые сьюты S02/T02 (домен + oracle + baseline) | `pytest scripts/tests/test_absorption_progress.py scripts/tests/test_absorption_progress_governor.py scripts/tests/test_absorption_progress_baseline.py -q` | 0 | **94 passed** | `gsd_exec 6eef5b67` |
+| 25 | governor YAML (новые метки, маркеры, fixtures) | `python3 -m governor --validate-yaml` | 0 | PASS (65 rules, 20 dimensions) | `gsd_exec e504fbb7` |
+| 26 | preflight (реальное дерево) | `python3 -m governor --phase preflight` | 0 | DRIFT_RISK, 9 флагов, **0** `absorption_progress_*` | `gsd_exec e52f4def` |
+| 27 | whitespace | `git diff --check` | 0 | clean | `gsd_exec ceff1c95` |
+
+Что изменилось в измерительной системе: пороги заморожены и выведены из baseline по
+`reference` (а не вписаны числом), freeze привязан к sha256 схемы и пересчитывается
+reader'ом, `scorecard.required` стал `true`, а мутационная матрица baseline-сьюта выросла
+на три негатива (`threshold_freeze_revision_mismatch`, `threshold_reference_unbound`,
+`threshold_missing_for_required_metric`) вместо снятого
+`threshold_invented_before_freeze` — тот остаётся достижимым только под
+`not_frozen`-контрактом и проверяется домен-сьютом.
+
 ## 11. Известные ограничения
 
-1. `scorecard.required` остаётся `false` до reviewable DATA-правки (S02 или конец S01):
-   сейчас удаление baseline-артефакта гасит чек вместо находки.
-2. Пороги не заморожены (`threshold_policy.state: not_frozen`, owner S02). Любое
-   числовое значение до freeze — типизированное нарушение.
+1. `scorecard.required: true` с S02/T02: удаление governed baseline-артефакта — это
+   находка (`absorption_progress_scorecard_not_measured`), а не тишина. До флипа
+   отсутствие артефакта гасило чек.
+2. Пороги заморожены (`threshold_policy.state: frozen`, owner S02/T02) и привязаны к
+   ревизии схемы: правка схемы после заморозки инвалидирует freeze
+   (`threshold_freeze_revision_mismatch`), а не тихо перенастраивает порог.
 3. Пины и evidence-digest живут в том же репозитории, что и носители (см. §6, граница E3).
 4. `lineage` в scorecard пуст (`{}`) намеренно: привязка идёт через `evidence.sha256` и
    `source_revision`, а не через отдельный lineage-блок.
@@ -323,3 +381,11 @@ baseline-артефакта; этот раздел — читаемая прое
    гипотеза и её статус), а не измерение продукта: ни одна продуктовая ось его не
    читает, контракт T01 его игнорирует. Он там, чтобы история обоих прогонов была
    машиночитаемой, а не только в прозе.
+6. Остаточный зазор заморозки: governor проверяет **форму** опубликованного порога
+   (id, direction, margin, числовое значение) и его привязку к контракту, но не сверяет
+   само значение с резолвнутым из reference — это делает baseline-тест
+   (`test_baseline_threshold_values_are_recomputed_from_its_own_measurements`). Ручная
+   правка одного числа в артефакте не даст governor-флага; она даст падение теста.
+7. Пороги покрывают только reference-измеримые оси (`preservation`, `extraction`).
+   `java_independence`, `resources`, `reliability` остаются `not_measured` без порога:
+   порог без измеримого знаменателя был бы выдуманным числом.

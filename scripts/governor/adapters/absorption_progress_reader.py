@@ -31,9 +31,21 @@ measured only on the wall clock. Each shape is now a typed label:
   a product measurement;
 * ``coverage_regression`` — an axis the recorded census measured is now silent;
 * ``denominator_shrink`` — the full denominator got smaller than the pinned
-  census. Direction only: S01 freezes no numeric threshold (``threshold_policy``
-  in the T01 contract stays ``not_frozen`` until S02), so a regression is a
-  state or ordering change, never a tuned margin.
+  census. Direction only: S01 freezes no numeric threshold, so a regression is a
+  state or ordering change, never a tuned margin;
+* ``threshold_freeze_revision_mismatch`` (S02) — the scorecard's declared freeze
+  revision no longer matches the schema bytes, i.e. the carrier was edited after
+  the freeze. Re-tuning a threshold therefore invalidates the freeze instead of
+  passing silently;
+* ``threshold_reference_unbound`` (S02) — a frozen threshold could not be
+  resolved from the artifact + pointer it names, so its number does not exist.
+
+Frozen thresholds (M514/S02/T02): the contract fixes them before held-out
+scoring and binds them to the carrier revision. This adapter resolves each
+threshold's `reference` (path + pointer) to a number with the domain's own
+``score_number`` rule, publishes the resolved values in observations, annotates
+measured rows that publish no threshold of their own, and recomputes the schema
+sha256 so the freeze is checked against bytes rather than trusted.
 
 Boundary (stated, not implied — E3, carried from M509/S02 Q3 R2): this is a
 consistency and fail-closed contract over what a scorecard declares about itself
@@ -60,7 +72,9 @@ from typing import Any, Optional
 import yaml
 
 from governor.domain.absorption_progress import (
+    contract_thresholds,
     missing_contract_vocabulary,
+    score_number,
     scorecard_violations,
 )
 from governor.ports.absorption_progress_reader import AbsorptionProgressReader
@@ -152,6 +166,88 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
             return None
         return f"sha256:{digest}"
 
+    def resolve_threshold_references(
+        self, contract: Any
+    ) -> dict[str, Optional[float]]:
+        """Resolve every frozen threshold's declared reference to a number.
+
+        The contract carries no numeric literal; each threshold names an artifact
+        plus a pointer, and this is where that pointer becomes a value. ``None``
+        means the reference did not resolve (missing artifact, escaped path, bad
+        pointer, or a non-numeric target), which the oracle reports as
+        ``threshold_reference_unbound`` rather than guessing.
+        """
+        resolved: dict[str, Optional[float]] = {}
+        for entry in contract_thresholds(contract):
+            threshold_id = _text(entry.get("threshold_id"))
+            if threshold_id is None:
+                continue
+            reference = entry.get("reference")
+            value: Optional[float] = None
+            if isinstance(reference, dict):
+                rel = _text(reference.get("path"))
+                pointer = _text(reference.get("pointer"))
+                if rel is not None and _is_relative_path(rel) and pointer is not None:
+                    document = self.read_json(rel)
+                    if isinstance(document, dict):
+                        value = score_number(resolve_pointer(document, pointer))
+            resolved[threshold_id] = value
+        return resolved
+
+    def annotate_thresholds(
+        self,
+        scorecard: Any,
+        contract: Any,
+        resolved: Optional[dict[str, Optional[float]]] = None,
+    ) -> Any:
+        """Return the scorecard with a frozen `threshold` on every measured row.
+
+        Only rows that publish no threshold of their own are annotated, so the
+        scorecard's own declaration is never silently overwritten by the reader:
+        a wrong published value stays wrong and is caught, rather than repaired.
+        The annotated block names the contract threshold, its direction, margin
+        and resolved value, so the row carries what it is measured against.
+        """
+        if not isinstance(scorecard, dict):
+            return scorecard
+        measurements = scorecard.get("measurements")
+        if not isinstance(measurements, list):
+            return scorecard
+        thresholds = contract_thresholds(contract)
+        if not thresholds:
+            return scorecard
+        resolved = resolved if isinstance(resolved, dict) else {}
+        by_metric: dict[str, dict[str, Any]] = {}
+        for entry in thresholds:
+            metric_id = _text(entry.get("metric_id"))
+            if metric_id is not None and metric_id not in by_metric:
+                by_metric[metric_id] = entry
+        annotated_rows: list[Any] = []
+        for row in measurements:
+            if (
+                isinstance(row, dict)
+                and row.get("state") == "measured"
+                and "threshold" not in row
+            ):
+                entry = by_metric.get(_text(row.get("metric_id")))
+                if entry is not None:
+                    threshold_id = _text(entry.get("threshold_id"))
+                    row = dict(row)
+                    row["threshold"] = {
+                        "threshold_id": threshold_id,
+                        "metric_id": _text(entry.get("metric_id")),
+                        "stratum": _text(entry.get("stratum")),
+                        "direction": _text(entry.get("direction")),
+                        "margin": entry.get("margin"),
+                        "value": resolved.get(threshold_id) if threshold_id else None,
+                        "state": "frozen",
+                        "reference": dict(entry.get("reference") or {}),
+                    }
+            annotated_rows.append(row)
+        annotated = dict(scorecard)
+        annotated["measurements"] = annotated_rows
+        return annotated
+
     def path_exists(self, relative_path: str) -> bool:
         path = self._resolve(relative_path)
         return path is not None and path.exists()
@@ -221,6 +317,61 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
 
 
 # ── shared value helpers ───────────────────────────────────────────────────
+
+
+#: Marker returned by :func:`resolve_pointer` when a pointer cannot be followed.
+_UNRESOLVED = object()
+
+#: One pointer segment: an object key, optionally selecting from a list of
+#: mappings by ``field=value``. Enough to address a measurement by its metric_id
+#: without inventing a JSON-pointer library (and its escape grammar) for it.
+_POINTER_SELECTOR_RE = re.compile(r"^([A-Za-z0-9_]+)\[([A-Za-z0-9_]+)=([^\[\]]+)\]$")
+
+
+def resolve_pointer(document: Any, pointer: Any) -> Any:
+    """Follow a slash-separated ``pointer`` into ``document``.
+
+    Grammar (deliberately small, so it is reviewable):
+
+      * ``key`` addresses an object member;
+      * ``key[field=value]`` selects, from the list at ``key``, the first mapping
+        whose ``field`` equals ``value``.
+
+    Returns :data:`_UNRESOLVED` when any segment does not resolve, so a caller
+    can tell "the answer is None" from "the pointer did not resolve".
+    """
+    text = _text(pointer)
+    if text is None or not isinstance(document, (dict, list)):
+        return _UNRESOLVED
+    node: Any = document
+    for raw in text.split("/"):
+        segment = raw.strip()
+        if not segment:
+            return _UNRESOLVED
+        match = _POINTER_SELECTOR_RE.match(segment)
+        if match is not None:
+            key, field, wanted = match.groups()
+            if not isinstance(node, dict) or key not in node:
+                return _UNRESOLVED
+            candidates = node[key]
+            if not isinstance(candidates, list):
+                return _UNRESOLVED
+            found = next(
+                (
+                    item
+                    for item in candidates
+                    if isinstance(item, dict) and str(item.get(field)) == wanted
+                ),
+                _UNRESOLVED,
+            )
+            if found is _UNRESOLVED:
+                return _UNRESOLVED
+            node = found
+        else:
+            if not isinstance(node, dict) or segment not in node:
+                return _UNRESOLVED
+            node = node[segment]
+    return node
 
 
 def _text(value: Any) -> Optional[str]:
@@ -329,9 +480,41 @@ def absorption_progress_violations(
     _scope_violations(rows, contract, violations)
     _evidence_violations(rows, observations, violations)
     _resources_violations(rows, contract, violations)
+    _threshold_violations(scorecard, contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
     return violations
+
+
+def _threshold_violations(
+    scorecard: dict[str, Any],
+    contract: dict[str, Any],
+    observations: dict[str, Any],
+    violations: set[str],
+) -> None:
+    """Frozen-threshold violations the domain cannot see (it cannot read files).
+
+    ``threshold_freeze_revision_mismatch`` compares the scorecard's declared
+    carrier revision with the schema sha256 the reader recomputed. This is the
+    whole point of the freeze: editing the schema (re-tuning a threshold) changes
+    the digest and invalidates the declaration instead of passing silently.
+
+    ``threshold_reference_unbound`` fires only when resolutions were supplied and
+    one came back unresolved; a scorecard validated without resolutions is left
+    unverified rather than assumed bound.
+    """
+    block = scorecard.get("threshold_freeze")
+    if isinstance(block, dict) and block.get("state") == "frozen":
+        declared = _text(block.get("revision"))
+        observed = _text(observations.get("schema_sha256"))
+        if declared is not None and observed is not None and declared != observed:
+            violations.add("threshold_freeze_revision_mismatch")
+    resolved = observations.get("threshold_values")
+    if isinstance(resolved, dict) and resolved:
+        for entry in contract_thresholds(contract):
+            threshold_id = _text(entry.get("threshold_id"))
+            if threshold_id in resolved and resolved.get(threshold_id) is None:
+                violations.add("threshold_reference_unbound")
 
 
 def _scope_violations(

@@ -27,17 +27,17 @@
 # drift-visible (`drift_risk`), not `blocked`, so it cannot be silently promoted
 # to a hard block — nor silently suppressed — by editing one severity file.
 #
-# Thresholds (E1): S01 freezes no numeric threshold (the T01 contract keeps
-# `threshold_policy.state: not_frozen` until S02). Every regression here is a
-# state or ordering comparison (`<` the pinned census, an axis that was measured
-# going silent), never a tuned margin. Adding a numeric margin is a S02 change to
-# the T01 schema, not a default invented here.
+# Thresholds (E1): S02 froze the thresholds (`threshold_policy.state: frozen`) and
+# bound them to the schema revision. Every regression here is still a state or
+# ordering comparison, but the frozen contract adds the numeric noninferiority
+# floor, and an edit to the schema after the freeze is a finding
+# (`threshold_freeze_revision_mismatch`), not a silent re-tune. The values are
+# reference-derived, never typed into the DATA.
 #
-# Scorecard availability: `scorecard.required: false` in S01 because the governed
-# baseline artifact is T05's deliverable. Absence is `not_measured` — never zero
-# and never compliance — and the check stays silent. Once the artifact exists it
-# is validated on every run; deleting it after T05 is the reason `required` exists
-# as an explicit, reviewable flip rather than an assumption.
+# Scorecard availability: `scorecard.required: true` since S02/T02, because the
+# governed baseline artifact is committed. Absence is no longer silent: a deleted
+# or unreadable baseline is a finding, and the freeze cannot be dropped by deleting
+# the artifact that declares it.
 
 schema_version: grobid-absorption-progress.v1
 policy_id: absorption_progress
@@ -51,12 +51,12 @@ anchor: "R133, R141, ADR-075, D127, D491, ADR-051"
 scorecard_contract:
   schema: data/parse/absorption_progress.schema.yaml
 
-# The governed scorecard. T05 commits the source-bound baseline at this path;
-# until then the check validates its contract, fixtures and historical guards
-# and reports nothing (absence is `not_measured`).
+# The governed scorecard. T05 committed the source-bound baseline at this path;
+# S02/T02 flipped `required` to true now that the artifact exists, so deleting it
+# is a finding rather than silence.
 scorecard:
   path: artifacts/parse_compat/absorption_progress_baseline.json
-  required: false
+  required: true
 
 # The accepted series. `source_revision` is deliberately absent: it moves every
 # run and must match between a row and its own evidence (the domain validator
@@ -100,6 +100,8 @@ violations:
   - savings_paired_cpu_not_measured
   - coverage_regression
   - denominator_shrink
+  - threshold_freeze_revision_mismatch
+  - threshold_reference_unbound
 
 fixtures:
   positive:
@@ -121,6 +123,8 @@ fixtures:
         - savings_paired_cpu_not_measured
         - coverage_regression
         - denominator_shrink
+        - threshold_freeze_revision_mismatch
+        - threshold_reference_unbound
         # T01 domain labels exercised through the same composed oracle, so a
         # regression that disconnects the domain half is flagged too.
         - evidence_revision_mismatch
@@ -128,13 +132,17 @@ fixtures:
         - unnamed_exclusions
         - skipped_as_delivered
         - assigned_ne_total
+        - threshold_missing_for_required_metric
 
 # Enforcement points that must keep existing. The rule reads these files as text;
 # it never executes them.
 source_markers:
   domain_validator:
     path: scripts/governor/domain/absorption_progress.py
-    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered]
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric]
+  adapter_oracle:
+    path: scripts/governor/adapters/absorption_progress_reader.py
+    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer]
   scorecard_contract:
     path: data/parse/absorption_progress.schema.yaml
-    required_patterns: [initial_census, holdout-partition-610-531-79, preservation, threshold_policy]
+    required_patterns: [initial_census, holdout-partition-610-531-79, preservation, threshold_policy, freeze_revision, tuned_after_scoring]

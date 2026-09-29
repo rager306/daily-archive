@@ -45,6 +45,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 from governor.adapters.absorption_progress_reader import (  # noqa: E402
+    FilesystemAbsorptionProgressReader,
     absorption_progress_violations,
     effective_progress_contract,
     missing_progress_vocabulary,
@@ -67,7 +68,7 @@ _DOMAIN_LAYER_LABELS = frozenset(
         "unnamed_exclusions",
         "skipped_as_delivered",
         "preservation_pooled_with_extraction",
-        "threshold_invented_before_freeze",
+        "threshold_missing_for_required_metric",
         "authorization_used_as_product_evidence",
     }
 )
@@ -112,8 +113,18 @@ def _sha256(rel: str) -> str:
     return "sha256:" + hashlib.sha256((_REPO_ROOT / rel).read_bytes()).hexdigest()
 
 
-def _observations(scorecard: dict, extra: dict | None = None) -> dict:
-    """Recompute the content hash of every artifact the scorecard binds."""
+def _observations(
+    scorecard: dict,
+    evidence_extra: dict | None = None,
+    observation_extra: dict | None = None,
+) -> dict:
+    """Recompute what the reader would recompute from the real tree.
+
+    Beyond the evidence hashes this carries the two S02 observations: the schema
+    sha256 the freeze is bound to, and the resolved frozen-threshold values. A
+    scorecard checked without them would be *unverified*, not clean, so the
+    positive control supplies both.
+    """
     hashes: dict[str, str | None] = {}
     for row in scorecard.get("measurements", []):
         evidence = row.get("evidence") if isinstance(row, dict) else None
@@ -123,15 +134,33 @@ def _observations(scorecard: dict, extra: dict | None = None) -> dict:
         if isinstance(rel, str) and rel and rel not in hashes:
             path = _REPO_ROOT / rel
             hashes[rel] = _sha256(rel) if path.is_file() else None
-    if extra:
-        hashes.update(extra)
-    return {"evidence_sha256": hashes}
+    if evidence_extra:
+        hashes.update(evidence_extra)
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, BASELINE_PATH)
+    observations: dict = {
+        "evidence_sha256": hashes,
+        "schema_sha256": reader.file_sha256(SCHEMA_PATH),
+        "threshold_values": reader.resolve_threshold_references(_contract()),
+    }
+    if observation_extra:
+        observations.update(observation_extra)
+    return observations
 
 
-def _violations(scorecard: dict, extra: dict | None = None) -> set[str]:
+def _violations(
+    scorecard: dict,
+    evidence_extra: dict | None = None,
+    observation_extra: dict | None = None,
+) -> set[str]:
     return absorption_progress_violations(
-        scorecard, _contract(), _observations(scorecard, extra)
+        scorecard, _contract(), _observations(scorecard, evidence_extra, observation_extra)
     )
+
+
+def _score_value(value) -> float:
+    if isinstance(value, dict):
+        return value["numerator"] / value["denominator"]
+    return float(value)
 
 
 # ── the contract is complete before anything is measured ───────────────────
@@ -157,6 +186,58 @@ def test_real_tree_has_no_absorption_progress_flag() -> None:
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _REPO_ROOT
     assert service._check_absorption_progress() == []
+
+
+def test_baseline_freezes_thresholds_and_the_freeze_is_carrier_bound() -> None:
+    """The freeze is declared, bound to this schema's bytes, and reference-derived."""
+    scorecard = _baseline()
+    freeze = scorecard["threshold_freeze"]
+    assert freeze["state"] == "frozen"
+    assert freeze["source"] == SCHEMA_PATH
+    assert freeze["frozen_at"]
+    # The declared revision is the schema's own digest: recomputed, not trusted.
+    assert freeze["revision"] == _sha256(SCHEMA_PATH)
+
+    policy = _contract()["threshold_policy"]
+    assert policy["state"] == "frozen"
+    assert policy["tuned_after_scoring"] == "forbidden"
+    assert policy["pass_requires_frozen_threshold"] is True
+    assert policy["numeric_thresholds_present"] is True
+    assert policy["source"] == BASELINE_PATH
+    # No numeric literal is stored: the number comes from the reference, and the
+    # freeze revision is the frozen probe that produced it.
+    assert all("value" not in entry for entry in policy["thresholds"])
+    assert policy["freeze_revision"] == _sha256(PROBE_PATH)
+
+
+def test_baseline_threshold_values_are_recomputed_from_its_own_measurements() -> None:
+    """Every published threshold restates the row's own measured value.
+
+    This is what makes the freeze honest rather than typed: the numbers are derived
+    from the artifact, so a hand-edited threshold value fails here even though the
+    composed oracle only checks its shape.
+    """
+    scorecard = _baseline()
+    policy = _contract()["threshold_policy"]
+    thresholds = {entry["threshold_id"]: entry for entry in policy["thresholds"]}
+    measured = [row for row in scorecard["measurements"] if row.get("state") == "measured"]
+    assert measured
+    for row in measured:
+        block = row["threshold"]
+        entry = thresholds[block["threshold_id"]]
+        assert entry["metric_id"] == row["metric_id"]
+        assert block["direction"] == entry["direction"] == "at_least"
+        assert block["margin"] == entry["margin"] == 0
+        assert block["state"] == "frozen"
+        assert block["value"] == pytest.approx(_score_value(row["score"]))
+        assert block["reference"] == entry["reference"]
+    # The freeze covers exactly the required families; a pending family has none.
+    required = {
+        family["family_id"]
+        for family in _contract()["required_scope"]["families"]
+        if family["state"] == "required"
+    }
+    assert {entry["family_id"] for entry in policy["thresholds"]} == required
 
 
 # ── the numbers are derived from the frozen probe, not asserted ────────────
@@ -331,9 +412,28 @@ _MUTATIONS: list[tuple[str, str, object]] = [
         lambda s: s["measurements"][1].__setitem__("includes_preservation", True),
     ),
     (
-        "threshold_invented_before_freeze",
-        "invent a numeric threshold before S02 freezes one",
-        lambda s: s["measurements"][0].__setitem__("threshold", 0.9),
+        "threshold_freeze_revision_mismatch",
+        "declare a freeze revision other than the schema's own bytes",
+        lambda s: s["threshold_freeze"].__setitem__("revision", "sha256:" + "e" * 64),
+    ),
+    (
+        "threshold_reference_unbound",
+        "leave a frozen threshold reference unresolvable",
+        lambda s: None,
+    ),
+    (
+        "threshold_missing_for_required_metric",
+        "publish a row threshold the frozen contract does not declare",
+        lambda s: s["measurements"][0].__setitem__(
+            "threshold",
+            {
+                "threshold_id": "invented_threshold",
+                "direction": "at_least",
+                "margin": 0,
+                "value": 0.9,
+                "state": "frozen",
+            },
+        ),
     ),
     (
         "coverage_regression",
@@ -361,11 +461,20 @@ _MUTATIONS: list[tuple[str, str, object]] = [
 def test_mutation_matrix(label: str, description: str, mutate) -> None:
     scorecard = copy.deepcopy(_baseline())
     mutate(scorecard)
-    extra = None
+    evidence_extra = None
+    observation_extra = None
     if label == "evidence_artifact_missing":
         # A path the reader resolved but could not read is what the label means.
-        extra = {"artifacts/parse_compat/absent_probe.json": None}
-    violations = _violations(scorecard, extra)
+        evidence_extra = {"artifacts/parse_compat/absent_probe.json": None}
+    if label == "threshold_reference_unbound":
+        # The reader tried to resolve every declared threshold and got nothing back.
+        observation_extra = {
+            "threshold_values": {
+                entry["threshold_id"]: None
+                for entry in _contract()["threshold_policy"]["thresholds"]
+            }
+        }
+    violations = _violations(scorecard, evidence_extra, observation_extra)
     assert label in violations, f"{description}: got {sorted(violations)}"
 
 
@@ -417,10 +526,12 @@ def test_historical_carriers_are_declared_read_only() -> None:
 def test_report_pins_the_baseline_artifact_hash() -> None:
     """The report's baseline pin must match the artifact bytes it describes.
 
-    §1 already warns that the *schema* hash goes stale when S02 freezes
-    thresholds; that staleness is expected. The baseline scorecard row is
-    different: it describes the artifact this file governs, so a byte change
-    without the report following is drift, not an expected staleness.
+    §1 re-pins every carrier row at the S02/T02 revision and states the binding
+    explicitly: `threshold_freeze.revision` in the scorecard is the schema's
+    digest, so a further schema edit is now a finding
+    (`threshold_freeze_revision_mismatch`) rather than an expected staleness. The
+    baseline scorecard row is enforced here: a byte change without the report
+    following is drift, not a re-pin.
     """
     report = (_REPO_ROOT / REPORT_PATH).read_text(encoding="utf-8")
     assert _sha256(BASELINE_PATH).removeprefix("sha256:") in report

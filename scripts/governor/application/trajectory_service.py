@@ -2737,8 +2737,10 @@ class TrajectoryService:
           * the T01 pure domain validator (`data/parse/absorption_progress.schema.yaml`
             is the vocabulary) refuses a mixed preservation/extraction numerator, a
             denominator that does not sum, a re-cut census, an unbound or
-            not-comparable value, an invented pre-freeze threshold and a terminal
-            GSD state offered as delivered product;
+            not-comparable value, an invented pre-freeze threshold, a required
+            family without a frozen threshold (and a measured row publishing one the
+            frozen contract does not declare), and a terminal GSD state offered as
+            delivered product;
           * the T04 adapter oracle re-reads the tree and refuses the identity and
             direction shapes the domain deliberately leaves out: an evidence path
             that is not repository-relative, an evidence artifact that no longer
@@ -2748,6 +2750,14 @@ class TrajectoryService:
             series, a resource saving with no paired CPU measurement, an axis the
             pinned census measured going silent, and a denominator smaller than the
             pinned census.
+
+        S02 froze the thresholds (`threshold_policy.state: frozen`) before any
+        held-out scoring and bound the freeze to the schema revision: the reader
+        recomputes the schema sha256, resolves every declared threshold reference
+        to a number, and the oracle refuses a freeze revision that no longer
+        matches the carrier (`threshold_freeze_revision_mismatch`) and a threshold
+        whose reference does not resolve (`threshold_reference_unbound`). This is
+        the half the domain cannot do, because the domain cannot read files.
 
         The closed vocabulary is read through the `AbsorptionProgressReader` port,
         so the service does not open the scorecard itself and a fake reader can
@@ -2875,7 +2885,19 @@ class TrajectoryService:
                 rel = evidence.get("path")
                 if isinstance(rel, str) and rel and rel not in recomputed:
                     recomputed[rel] = reader.file_sha256(rel)
-        observations = {"evidence_sha256": recomputed, "scorecard_path": scorecard_rel}
+
+        # S02 freezing: the thresholds are reference-derived, so the reader is the
+        # only layer that can turn a `reference` into a number, and the freeze is
+        # bound to the schema bytes. Publishing both in observations is what lets
+        # the pure oracle refuse an unbound threshold and an edited carrier.
+        resolved = reader.resolve_threshold_references(contract)
+        scorecard = reader.annotate_thresholds(scorecard, contract, resolved)
+        observations = {
+            "evidence_sha256": recomputed,
+            "scorecard_path": scorecard_rel,
+            "schema_sha256": reader.file_sha256(schema_rel),
+            "threshold_values": resolved,
+        }
 
         violations = absorption_progress_violations(scorecard, contract, observations)
         if violations:
