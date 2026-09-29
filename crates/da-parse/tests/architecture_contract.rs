@@ -6624,3 +6624,325 @@ fn s20_rest_batch_asset_quarantine_contract() {
         );
     }
 }
+
+// ───── S06/T04: the promotion rehearsal stays rehearsal-scoped (no route) ─────
+//
+// The one-lane promotion rehearsal primitive is an executed experiment, not a
+// route: its switch lives only in the example process's memory. This gate proves
+// that statically, because a rehearsal that quietly opens a production route, a
+// graph write or a promotion is worse than no rehearsal at all — the report it
+// writes would still claim `rehearsal_only`.
+//
+// The scanner strips comments AND string/char literals before matching, so a
+// token that appears only in prose or in a report key (`"auto_promote"`) is not
+// a coupling, while the same token in code is. `std::fs` and `da_parse` are
+// deliberately NOT forbidden (the example must read its carriers, write its
+// report and drive the composer); `da_application` is forbidden because the
+// promotion-gate facade it is not supposed to need was already rehearsed in
+// M500/S05.
+
+/// The rehearsal example whose boundary this gate proves.
+const PROMOTION_REHEARSAL_EXAMPLE: &str =
+    "crates/da-cli/examples/native_family_promotion_rehearsal.rs";
+/// The example's module/file stem. Its presence in a runtime seam is coupling.
+const PROMOTION_REHEARSAL_NAME: &str = "native_family_promotion_rehearsal";
+
+/// Couplings a rehearsal primitive may never acquire.
+const PROMOTION_REHEARSAL_FORBIDDEN: [&str; 22] = [
+    "da_ports",
+    "ParserPort",
+    "source_cli",
+    "GraphStore",
+    "DirectGraphStore",
+    "PromotionService",
+    "parse_pdf",
+    "create_node",
+    "create_edge",
+    "set_node_property",
+    "set_edge_property",
+    "deploy_candidate",
+    "import_candidate",
+    "promote_candidate",
+    "auto_promote_candidate",
+    "Command::new",
+    "spawn(",
+    "Samyama",
+    "redb",
+    "da_application",
+    "File::create",
+    "OpenOptions",
+];
+
+/// The byte position just past a raw-string opener starting at `start`, plus its
+/// hash count, or `None` when `start` does not open a raw string.
+fn raw_string_opener(chars: &[char], start: usize) -> Option<(usize, usize)> {
+    if start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
+        return None;
+    }
+    let mut at = start;
+    if matches!(chars.get(at), Some('b') | Some('c')) {
+        at += 1;
+    }
+    if chars.get(at) != Some(&'r') {
+        return None;
+    }
+    at += 1;
+    let mut hashes = 0usize;
+    while chars.get(at) == Some(&'#') {
+        hashes += 1;
+        at += 1;
+    }
+    if chars.get(at) != Some(&'"') {
+        return None;
+    }
+    Some((at + 1, hashes))
+}
+
+/// Remove Rust comments, string literals and char literals, replacing their
+/// contents with nothing while preserving newlines, so a scan sees identifiers
+/// only. Handles line comments, nested block comments, raw strings (`r#".."#`)
+/// and the char-literal/lifetime ambiguity.
+fn strip_comments_and_literals(source: &str) -> String {
+    let chars: Vec<char> = source.chars().collect();
+    let mut out = String::with_capacity(source.len());
+    let mut i = 0usize;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '/' && chars.get(i + 1) == Some(&'/') {
+            while i < chars.len() && chars[i] != '\n' {
+                i += 1;
+            }
+            continue;
+        }
+        if c == '/' && chars.get(i + 1) == Some(&'*') {
+            let mut depth = 1usize;
+            i += 2;
+            while i < chars.len() && depth > 0 {
+                if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+                    depth += 1;
+                    i += 2;
+                    continue;
+                }
+                if chars[i] == '*' && chars.get(i + 1) == Some(&'/') {
+                    depth -= 1;
+                    i += 2;
+                    continue;
+                }
+                if chars[i] == '\n' {
+                    out.push('\n');
+                }
+                i += 1;
+            }
+            continue;
+        }
+        if let Some((after_opener, hashes)) = raw_string_opener(&chars, i) {
+            i = after_opener;
+            while i < chars.len() {
+                if chars[i] == '"' && (1..=hashes).all(|n| chars.get(i + n) == Some(&'#')) {
+                    i += 1 + hashes;
+                    break;
+                }
+                if chars[i] == '\n' {
+                    out.push('\n');
+                }
+                i += 1;
+            }
+            continue;
+        }
+        if c == '"' {
+            i += 1;
+            while i < chars.len() {
+                match chars[i] {
+                    '\\' => i += 2,
+                    '"' => {
+                        i += 1;
+                        break;
+                    }
+                    '\n' => {
+                        out.push('\n');
+                        i += 1;
+                    }
+                    _ => i += 1,
+                }
+            }
+            continue;
+        }
+        if c == '\'' {
+            let is_char = match chars.get(i + 1) {
+                Some('\\') => true,
+                Some(_) => chars.get(i + 2) == Some(&'\''),
+                None => false,
+            };
+            if is_char {
+                i += 1;
+                while i < chars.len() {
+                    match chars[i] {
+                        '\\' => i += 2,
+                        '\'' => {
+                            i += 1;
+                            break;
+                        }
+                        _ => i += 1,
+                    }
+                }
+                continue;
+            }
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        out.push(c);
+        i += 1;
+    }
+    out
+}
+
+/// Every static finding against the rehearsal example's own source.
+///
+/// One function, so the negative test below can feed it mutated copies and the
+/// positive test can feed it the tracked file: a scanner whose only caller is
+/// the happy path is a scanner nobody has proven can fail.
+fn promotion_rehearsal_source_findings(source: &str) -> Vec<String> {
+    let code = strip_comments_and_literals(source);
+    let mut findings = Vec::new();
+    for marker in PROMOTION_REHEARSAL_FORBIDDEN {
+        let count = code.matches(marker).count();
+        if count > 0 {
+            findings.push(format!(
+                "[rehearsal-forbidden-coupling] `{marker}` appears {count} time(s) in code"
+            ));
+        }
+    }
+    for required in ["DATA_COMPARISON", "DATA_COMPOSITION", "fn write_report"] {
+        if !code.contains(required) {
+            findings.push(format!(
+                "[rehearsal-missing-required] the example no longer carries `{required}`"
+            ));
+        }
+    }
+    let writes = code.matches("fs::write").count();
+    if writes != 1 {
+        findings.push(format!(
+            "[rehearsal-write-surface] expected exactly one `fs::write` (the atomic report), found {writes}"
+        ));
+    }
+    findings
+}
+
+#[test]
+fn native_family_promotion_rehearsal_is_rehearsal_scoped_and_never_routes_or_promotes() {
+    let source = read_text(PROMOTION_REHEARSAL_EXAMPLE);
+    assert!(
+        source.len() > 50_000,
+        "positive control failed: the rehearsal example looks truncated ({} bytes)",
+        source.len()
+    );
+    let findings = promotion_rehearsal_source_findings(&source);
+    assert!(
+        findings.is_empty(),
+        "the one-lane promotion rehearsal acquired a production coupling:\n{}",
+        findings.join("\n")
+    );
+
+    // The example must not be registered as a runtime module or reached from any
+    // parse/application seam: the switch it exercises lives only in that process.
+    for rel in [
+        "crates/da-cli/src/lib.rs",
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src/lib.rs",
+    ] {
+        let text = read_text(rel);
+        assert!(
+            !text.contains(PROMOTION_REHEARSAL_NAME),
+            "{rel} must not reference the promotion rehearsal (a rehearsal is not a route)"
+        );
+    }
+    let lib = read_text("crates/da-cli/src/lib.rs");
+    assert!(
+        !lib.contains(&format!("pub mod {PROMOTION_REHEARSAL_NAME}")),
+        "the promotion rehearsal must not become a da-cli library module"
+    );
+}
+
+#[test]
+fn native_family_promotion_rehearsal_scanner_fails_visible_on_synthetic_violations() {
+    // Positive control: the tracked example passes its own scanner.
+    assert!(
+        promotion_rehearsal_source_findings(&read_text(PROMOTION_REHEARSAL_EXAMPLE)).is_empty(),
+        "the real rehearsal example must pass its own scanner"
+    );
+
+    // A minimal clean body that satisfies every required-presence check.
+    let clean = "const DATA_COMPARISON: &str = \"c\";\n\
+                 const DATA_COMPOSITION: &str = \"d\";\n\
+                 fn write_report() { std::fs::write(\"x\", b\"\"); }\n";
+    assert!(
+        promotion_rehearsal_source_findings(clean).is_empty(),
+        "clean control must not trip the scanner: {:?}",
+        promotion_rehearsal_source_findings(clean)
+    );
+
+    // Non-vacuity: every forbidden coupling must be fail-visible when injected
+    // into CODE.
+    for injection in [
+        "use da_ports::parser::ParserPort;",
+        "let _ = PromotionService::new();",
+        "fn f() { create_node(); }",
+        "fn f() { auto_promote_candidate(); }",
+        "fn f() { let _ = Command::new(\"x\"); }",
+        "fn f() { let _ = Samyama::open(); }",
+        "fn f() { let _ = da_application::run(); }",
+        "fn f() { let _ = File::create(\"x\"); }",
+        "fn f() { let _ = parser.parse_pdf(); }",
+    ] {
+        let mutated = format!("{clean}\n{injection}\n");
+        assert!(
+            !promotion_rehearsal_source_findings(&mutated).is_empty(),
+            "an injected coupling must stay fail-visible: {injection}"
+        );
+    }
+
+    // Comment and string/raw-string mentions are prose, not coupling. This also
+    // proves the literal stripper works on a raw string.
+    let prose = format!(
+        "// ParserPort and PromotionService stay out of the rehearsal\n\
+         /* create_node, auto_promote_candidate */\n\
+         fn f() {{ let a = \"ParserPort\"; let b = r#\"auto_promote_candidate\"#; let c = 'x'; }}\n\
+         {clean}"
+    );
+    assert!(
+        promotion_rehearsal_source_findings(&prose).is_empty(),
+        "prose and literal mentions must not trip the scanner: {:?}",
+        promotion_rehearsal_source_findings(&prose)
+    );
+
+    // The write surface is exact: a second write, or none, is a finding.
+    let two_writes = format!("{clean}fn g() {{ std::fs::write(\"y\", b\"\"); }}\n");
+    assert!(
+        promotion_rehearsal_source_findings(&two_writes)
+            .iter()
+            .any(|finding| finding.contains("fs::write")),
+        "a second report write must be fail-visible"
+    );
+    let no_write = "const DATA_COMPARISON: &str = \"c\";\n\
+                    const DATA_COMPOSITION: &str = \"d\";\n\
+                    fn write_report() {}\n";
+    assert!(
+        promotion_rehearsal_source_findings(no_write)
+            .iter()
+            .any(|finding| finding.contains("fs::write")),
+        "a missing report write must be fail-visible"
+    );
+
+    // A dropped carrier constant must be fail-visible too, or the scanner's
+    // required-presence half is decorative.
+    let missing_carrier = "const DATA_COMPOSITION: &str = \"d\";\n\
+                           fn write_report() { std::fs::write(\"x\", b\"\"); }\n";
+    assert!(
+        promotion_rehearsal_source_findings(missing_carrier)
+            .iter()
+            .any(|finding| finding.contains("DATA_COMPARISON")),
+        "a dropped carrier constant must be fail-visible"
+    );
+}
