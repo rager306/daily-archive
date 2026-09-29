@@ -33,6 +33,12 @@ than a convention:
   family with no threshold, or a measured row publishing a threshold the frozen
   contract does not declare, is ``threshold_missing_for_required_metric`` (a
   threshold the corpus cannot measure is never created, D496);
+* a frozen threshold that resolves against the candidate scorecard instead of a
+  separately pinned reference is ``threshold_reference_not_independently_pinned``:
+  a candidate compared to its own restated score would move its own floor;
+* a frozen threshold that resolves against the candidate scorecard instead of a
+  separately pinned reference is ``threshold_reference_not_independently_pinned``:
+  a candidate compared to its own restated score would move its own floor;
 * a coverage report that shrinks, extends or silently claims the required
   product scope is ``required_scope_shrunk`` / ``family_outside_required_scope``
   / ``family_claimed_without_required_scope`` (and ``required_scope_missing``
@@ -327,11 +333,23 @@ def _thresholds_vocabulary(block: dict[str, Any]) -> list[str]:
     revision = block.get("freeze_revision")
     if _text(revision) is None or not _REVISION_RE.match(str(revision)):
         missing.append("threshold_policy.freeze_revision")
+    if _text(block.get("freeze_scope")) is None:
+        missing.append("threshold_policy.freeze_scope")
     source = block.get("source")
     if _text(source) is None:
         missing.append("threshold_policy.source")
     elif not _is_relative_path(source):
         missing.append("threshold_policy.source.path")
+    pins = block.get("reference_pins")
+    if not isinstance(pins, dict):
+        missing.append("threshold_policy.reference_pins")
+    else:
+        pins_path = _text(pins.get("path"))
+        if pins_path is None or not _is_relative_path(pins_path):
+            missing.append("threshold_policy.reference_pins.path")
+        pins_sha = pins.get("sha256")
+        if _text(pins_sha) is None or not _SHA256_RE.match(str(pins_sha)):
+            missing.append("threshold_policy.reference_pins.sha256")
     entries = block.get("thresholds")
     if not isinstance(entries, list) or not entries:
         missing.append("threshold_policy.thresholds")
@@ -959,6 +977,44 @@ def _row_threshold_violations(measurements: Any, contract: dict) -> set[str]:
     return violations
 
 
+def _threshold_reference_violations(contract: dict, violations: set[str]) -> None:
+    """A frozen threshold may not resolve against the candidate scorecard.
+
+    The floor must be a separately pinned artifact; a threshold whose reference
+    path is not the pinned reference path would compare the candidate to itself,
+    so a restated candidate score would move its own threshold. The domain refuses
+    the shape rather than leaving it to convention.
+    """
+    policy = contract.get("threshold_policy")
+    pins = policy.get("reference_pins") if isinstance(policy, dict) else None
+    pins_path = _text(pins.get("path")) if isinstance(pins, dict) else None
+    for entry in contract_thresholds(contract):
+        reference = entry.get("reference")
+        if not isinstance(reference, dict):
+            continue
+        if pins_path is None or _text(reference.get("path")) != pins_path:
+            violations.add("threshold_reference_not_independently_pinned")
+
+
+def _threshold_reference_violations(contract: dict, violations: set[str]) -> None:
+    """A frozen threshold may not resolve against the candidate scorecard.
+
+    The floor must be a separately pinned artifact; a threshold whose reference
+    path is not the pinned reference path would compare the candidate to itself,
+    so a restated candidate score would move its own threshold. The domain refuses
+    the shape rather than leaving it to convention.
+    """
+    policy = contract.get("threshold_policy")
+    pins = policy.get("reference_pins") if isinstance(policy, dict) else None
+    pins_path = _text(pins.get("path")) if isinstance(pins, dict) else None
+    for entry in contract_thresholds(contract):
+        reference = entry.get("reference")
+        if not isinstance(reference, dict):
+            continue
+        if pins_path is None or _text(reference.get("path")) != pins_path:
+            violations.add("threshold_reference_not_independently_pinned")
+
+
 def _threshold_freeze_violations(scorecard: dict, contract: dict) -> set[str]:
     """Threshold-freeze violations: the binding, the coverage and the row claim.
 
@@ -979,6 +1035,7 @@ def _threshold_freeze_violations(scorecard: dict, contract: dict) -> set[str]:
         return {"threshold_freeze_unbound"}
     violations: set[str] = set()
     _threshold_family_violations(contract, violations)
+    _threshold_reference_violations(contract, violations)
     return violations
 
 

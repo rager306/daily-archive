@@ -36,6 +36,8 @@ from governor.domain.absorption_progress import (
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_PATH = ROOT / "data/parse/absorption_progress.schema.yaml"
+REFERENCE_PINS_PATH = ROOT / "artifacts/parse_compat/absorption_progress_reference_pins.json"
+REFERENCE_PINS_PATH = ROOT / "artifacts/parse_compat/absorption_progress_reference_pins.json"
 
 REVISION = "git:" + "52bb08a4a016e69e3224ae79f02c2f3e53897e72"
 SHA = "sha256:" + "a" * 64
@@ -382,29 +384,74 @@ def test_census_cannot_be_recut(contract: dict) -> None:
 # ── thresholds (S02: frozen, reference-derived, revision-bound) ─────────────
 
 
-def test_real_contract_freezes_thresholds_before_scoring(contract: dict) -> None:
+def test_real_contract_freezes_thresholds_as_a_prospective_regression_floor(
+    contract: dict,
+) -> None:
     policy = contract["threshold_policy"]
     assert policy["state"] == "frozen"
     assert policy["tuned_after_scoring"] == "forbidden"
     assert policy["pass_requires_frozen_threshold"] is True
     assert policy["numeric_thresholds_present"] is True
     assert policy["numeric_before_freeze"] == "forbidden"
-    assert policy["source"] == "artifacts/parse_compat/absorption_progress_baseline.json"
+    # The corpus was already measured in S01, so the freeze is prospective over
+    # later runs; it is not a historical pre-scoring act.
+    assert policy["freeze_scope"] == "prospective_regression_floor"
+    # The floor is derived from its own pinned artifact, not from the candidate
+    # scorecard the check evaluates.
+    assert policy["source"] == "artifacts/parse_compat/absorption_progress_reference_pins.json"
+    assert policy["source"] != "artifacts/parse_compat/absorption_progress_baseline.json"
+    assert policy["reference_pins"]["path"] == policy["source"]
+    pins = ROOT / policy["reference_pins"]["path"]
+    assert policy["reference_pins"]["sha256"] == (
+        "sha256:" + hashlib.sha256(pins.read_bytes()).hexdigest()
+    )
     # `freeze_revision` is the frozen evidence run, recomputed here rather than
     # trusted: a hand-typed revision would fail this assertion.
     probe = ROOT / "artifacts/parse_compat/external_holdout_release_probe.json"
     assert policy["freeze_revision"] == "sha256:" + hashlib.sha256(probe.read_bytes()).hexdigest()
     # No numeric value is typed into the contract: every threshold is a reference
-    # to the artifact that produced it, so re-tuning requires editing the carrier
-    # (which invalidates the freeze) rather than editing a literal.
+    # to the pinned floor artifact, so re-tuning requires editing a carrier (which
+    # invalidates the freeze) rather than editing a literal.
     for entry in policy["thresholds"]:
         assert "value" not in entry, entry
         assert entry["margin"] == 0
         assert entry["direction"] in policy["direction_vocabulary"]
         assert entry["basis"] in policy["basis_vocabulary"]
         assert entry["reference"]["path"] == policy["source"]
+        assert entry["reference"]["path"] != "artifacts/parse_compat/absorption_progress_baseline.json"
         assert not str(entry["reference"]["path"]).startswith("/")
         assert entry["reference"]["pointer"]
+
+
+def test_threshold_reference_cannot_point_back_at_the_candidate_scorecard(
+    contract: dict,
+) -> None:
+    """The floor must live outside the artifact the check evaluates.
+
+    A threshold that resolves against the candidate scorecard compares the
+    candidate to itself, so a restated candidate score would move its own
+    threshold. The domain refuses the shape rather than leaving it to convention.
+    """
+    pinned = contract["threshold_policy"]["reference_pins"]["path"]
+    for entry in contract["threshold_policy"]["thresholds"]:
+        assert entry["reference"]["path"] == pinned
+
+    self_bound = copy.deepcopy(contract)
+    self_bound["threshold_policy"]["thresholds"][0]["reference"]["path"] = (
+        "artifacts/parse_compat/absorption_progress_baseline.json"
+    )
+    assert "threshold_reference_not_independently_pinned" in scorecard_violations(
+        _baseline(self_bound), self_bound
+    )
+    assert "threshold_reference_not_independently_pinned" not in scorecard_violations(
+        _baseline(contract), contract
+    )
+
+
+def test_freeze_scope_must_be_declared(contract: dict) -> None:
+    scope_removed = copy.deepcopy(contract)
+    del scope_removed["threshold_policy"]["freeze_scope"]
+    assert "threshold_policy.freeze_scope" in missing_contract_vocabulary(scope_removed)
 
 
 def test_frozen_thresholds_cover_exactly_the_required_families(contract: dict) -> None:

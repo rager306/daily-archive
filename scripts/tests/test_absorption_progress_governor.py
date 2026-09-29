@@ -60,6 +60,8 @@ SCHEMA_PATH = "data/parse/absorption_progress.schema.yaml"
 POSITIVE_FIXTURE = "governor/fixtures/absorption_progress/scorecard_clean.positive.json"
 NEGATIVE_FIXTURE = "governor/fixtures/absorption_progress/scorecard_broken.negative.json"
 SCORECARD_PATH = "artifacts/parse_compat/absorption_progress_baseline.json"
+REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins.json"
+REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins.json"
 DOMAIN_MODULE = "scripts/governor/domain/absorption_progress.py"
 ADAPTER_MODULE = "scripts/governor/adapters/absorption_progress_reader.py"
 
@@ -272,12 +274,14 @@ def test_progress_rule_loads_and_vocabulary_is_complete(contract: dict) -> None:
     }
     assert contract["regression"]["expected_axis_states"]["extraction"] == "measured"
     assert contract["resources_claim"]["cpu_kind"] == "cpu"
-    # S02 froze the thresholds before scoring and bound them to the carrier.
+    # S02 fixed the thresholds as a prospective regression floor and bound them
+    # to the carrier revision; the floor is not the candidate scorecard.
     policy = contract["threshold_policy"]
     assert policy["state"] == "frozen"
     assert policy["tuned_after_scoring"] == "forbidden"
     assert policy["pass_requires_frozen_threshold"] is True
-    assert policy["source"] == SCORECARD_PATH
+    assert policy["source"] == REFERENCE_PINS_PATH
+    assert policy["reference_pins"]["path"] == REFERENCE_PINS_PATH
     assert {entry["threshold_id"] for entry in policy["thresholds"]} == {
         "preservation_micro_occurrence",
         "extraction_micro_occurrence",
@@ -646,7 +650,7 @@ def _scratch_service(scorecard: dict | None = None) -> TrajectoryService:
     """A scratch tree holding exactly what the check reads."""
     root = _make_root()
     (root / "artifacts").mkdir(parents=True, exist_ok=True)
-    for rel in (RULE_PATH, SCHEMA_PATH, POSITIVE_FIXTURE, NEGATIVE_FIXTURE, DOMAIN_MODULE, ADAPTER_MODULE):
+    for rel in (RULE_PATH, SCHEMA_PATH, POSITIVE_FIXTURE, NEGATIVE_FIXTURE, DOMAIN_MODULE, ADAPTER_MODULE, REFERENCE_PINS_PATH):
         _write(root / rel, (_REPO_ROOT / rel).read_text(encoding="utf-8"))
     # Historical carriers are only existence-checked here; placeholders keep the
     # scratch tree small while still exercising the guard.

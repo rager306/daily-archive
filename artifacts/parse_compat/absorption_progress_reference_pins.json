@@ -1,0 +1,52 @@
+{
+  "schema_version": "absorption-progress-reference-pins.v1",
+  "reference_id": "m514-absorption-progress-reference-pins",
+  "scope": {
+    "kind": "prospective_regression_floor",
+    "measured_in": "M514-1lss2s/S01/T05",
+    "statement": "Prospective regression floor for later runs over the frozen 610-document corpus. The corpus was already measured in S01, so this is not a historical pre-scoring act, not a product-acceptance proof and not an independence proof. Equality between a candidate score and this floor today is a consequence of both deriving from the same frozen probe, never an absolute-quality claim.",
+    "candidate_is_not_an_input": true
+  },
+  "derived_from": {
+    "path": "artifacts/parse_compat/external_holdout_release_probe.json",
+    "sha256": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
+    "kind": "executed_run",
+    "recompute": "scripts/tests/test_absorption_progress_baseline.py::test_reference_pins_are_independently_pinned_and_recomputed_from_the_probe",
+    "note": "Values are integer fraction pairs read from evaluated_population.aggregate, evaluated_population.class_parity.aggregate and the per-class minimum in class_profiles; the baseline test recomputes all three from the frozen probe."
+  },
+  "values": [
+    {
+      "threshold_id": "preservation_micro_occurrence",
+      "metric_id": "preservation.occurrence_conservation",
+      "stratum": "micro_occurrence",
+      "family_id": "parse.component.native_fulltext_composition_shadow",
+      "fraction": {
+        "numerator": 74910,
+        "denominator": 79621
+      },
+      "derivation": "evaluated_population.aggregate.admitted / source_population"
+    },
+    {
+      "threshold_id": "extraction_micro_occurrence",
+      "metric_id": "extraction.native_capability_recall",
+      "stratum": "micro_occurrence",
+      "family_id": "stage.reference_segmentation",
+      "fraction": {
+        "numerator": 945771,
+        "denominator": 1000000
+      },
+      "derivation": "evaluated_population.class_parity.aggregate.native_capability_recall_micros / 1e6"
+    },
+    {
+      "threshold_id": "extraction_weakest_family",
+      "metric_id": "extraction.native_capability_recall",
+      "stratum": "weakest_stratum",
+      "family_id": "stage.header_composition",
+      "fraction": {
+        "numerator": 3055,
+        "denominator": 7077
+      },
+      "derivation": "minimum conserved/source_population across class_profiles classes"
+    }
+  ]
+}

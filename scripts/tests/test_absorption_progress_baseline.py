@@ -56,6 +56,8 @@ RULE_PATH = "scripts/governor/checks/grobid_absorption_progress.yaml"
 BASELINE_PATH = "artifacts/parse_compat/absorption_progress_baseline.json"
 REPORT_PATH = "doc/review/grobid-absorption-progress-baseline.md"
 PROBE_PATH = "artifacts/parse_compat/external_holdout_release_probe.json"
+REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins.json"
+REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins.json"
 DOMAIN_MODULE_PATH = "scripts/governor/domain/absorption_progress.py"
 
 # D492: the closed vocabulary is owned by the T01 domain; the T04 rule YAML
@@ -163,6 +165,37 @@ def _score_value(value) -> float:
     return float(value)
 
 
+def _reference_values_from_probe() -> dict[str, dict[str, int]]:
+    """Recompute the three frozen floor fractions from the probe, not from a file."""
+    probe = _probe()
+    aggregate = probe["evaluated_population"]["aggregate"]
+    parity = probe["evaluated_population"]["class_parity"]["aggregate"]
+    per_family: dict[str, list[int]] = {}
+    for profile in probe["class_profiles"]:
+        for entry in profile["classes"]:
+            bucket = per_family.setdefault(entry["class"], [0, 0])
+            bucket[0] += entry.get("conserved", 0)
+            bucket[1] += entry.get("source_population", 0)
+    weakest_family = min(
+        ((c, s, name) for name, (c, s) in per_family.items() if s > 0),
+        key=lambda item: item[0] / item[1],
+    )
+    return {
+        "preservation_micro_occurrence": {
+            "numerator": aggregate["admitted"],
+            "denominator": aggregate["source_population"],
+        },
+        "extraction_micro_occurrence": {
+            "numerator": parity["native_capability_recall_micros"],
+            "denominator": 1000000,
+        },
+        "extraction_weakest_family": {
+            "numerator": weakest_family[0],
+            "denominator": weakest_family[1],
+        },
+    }
+
+
 # ── the contract is complete before anything is measured ───────────────────
 
 
@@ -203,23 +236,53 @@ def test_baseline_freezes_thresholds_and_the_freeze_is_carrier_bound() -> None:
     assert policy["tuned_after_scoring"] == "forbidden"
     assert policy["pass_requires_frozen_threshold"] is True
     assert policy["numeric_thresholds_present"] is True
-    assert policy["source"] == BASELINE_PATH
-    # No numeric literal is stored: the number comes from the reference, and the
-    # freeze revision is the frozen probe that produced it.
+    # The floor is a separately pinned artifact, not the candidate scorecard.
+    assert policy["freeze_scope"] == "prospective_regression_floor"
+    assert policy["source"] == REFERENCE_PINS_PATH
+    assert policy["source"] != BASELINE_PATH
+    assert policy["reference_pins"]["path"] == REFERENCE_PINS_PATH
+    assert policy["reference_pins"]["sha256"] == _sha256(REFERENCE_PINS_PATH)
+    assert freeze["reference_pins_revision"] == _sha256(REFERENCE_PINS_PATH)
+    # No numeric literal is stored: the number comes from the pinned reference, and
+    # the freeze revision is the frozen probe that produced it.
     assert all("value" not in entry for entry in policy["thresholds"])
     assert policy["freeze_revision"] == _sha256(PROBE_PATH)
 
 
-def test_baseline_threshold_values_are_recomputed_from_its_own_measurements() -> None:
-    """Every published threshold restates the row's own measured value.
+def test_reference_pins_are_independently_pinned_and_recomputed_from_the_probe() -> None:
+    """The floor bytes are pinned by digest and its values re-derived, not asserted."""
+    pins = _load_json(REFERENCE_PINS_PATH)
+    policy = _contract()["threshold_policy"]
+    assert policy["reference_pins"]["path"] == REFERENCE_PINS_PATH
+    assert policy["reference_pins"]["sha256"] == _sha256(REFERENCE_PINS_PATH)
+    assert pins["derived_from"]["path"] == PROBE_PATH
+    assert pins["derived_from"]["sha256"] == _sha256(PROBE_PATH)
+    assert pins["derived_from"]["sha256"] == policy["freeze_revision"]
+    assert pins["scope"]["kind"] == "prospective_regression_floor"
+    recomputed = _reference_values_from_probe()
+    declared = {entry["threshold_id"]: entry["fraction"] for entry in pins["values"]}
+    assert declared == recomputed
+    # The floor is not the candidate scorecard under another name.
+    assert REFERENCE_PINS_PATH != BASELINE_PATH
+    for entry in policy["thresholds"]:
+        assert entry["reference"]["path"] == REFERENCE_PINS_PATH
+        assert entry["reference"]["path"] != BASELINE_PATH
 
-    This is what makes the freeze honest rather than typed: the numbers are derived
-    from the artifact, so a hand-edited threshold value fails here even though the
-    composed oracle only checks its shape.
+
+def test_baseline_threshold_values_come_from_the_independently_pinned_reference() -> None:
+    """A published threshold restates the pinned reference, never the candidate row.
+
+    Equality between a candidate score and the floor today is a consequence of both
+    deriving from the same frozen S01 probe; it is not an absolute-quality claim and
+    it is not the source of the number.
     """
     scorecard = _baseline()
     policy = _contract()["threshold_policy"]
     thresholds = {entry["threshold_id"]: entry for entry in policy["thresholds"]}
+    reference = {
+        entry["threshold_id"]: entry["fraction"]
+        for entry in _load_json(REFERENCE_PINS_PATH)["values"]
+    }
     measured = [row for row in scorecard["measurements"] if row.get("state") == "measured"]
     assert measured
     for row in measured:
@@ -229,8 +292,15 @@ def test_baseline_threshold_values_are_recomputed_from_its_own_measurements() ->
         assert block["direction"] == entry["direction"] == "at_least"
         assert block["margin"] == entry["margin"] == 0
         assert block["state"] == "frozen"
-        assert block["value"] == pytest.approx(_score_value(row["score"]))
+        fraction = reference[block["threshold_id"]]
+        assert block["value"] == pytest.approx(
+            fraction["numerator"] / fraction["denominator"]
+        )
+        # Derived from the reference, not from the candidate row.
         assert block["reference"] == entry["reference"]
+        assert block["reference"]["path"] == REFERENCE_PINS_PATH
+        # A noninferiority fact against the floor, not the floor's source.
+        assert _score_value(row["score"]) >= block["value"]
     # The freeze covers exactly the required families; a pending family has none.
     required = {
         family["family_id"]
@@ -238,6 +308,48 @@ def test_baseline_threshold_values_are_recomputed_from_its_own_measurements() ->
         if family["state"] == "required"
     }
     assert {entry["family_id"] for entry in policy["thresholds"]} == required
+
+
+def test_threshold_reference_does_not_follow_the_candidate_scorecard() -> None:
+    """A restated candidate score must not move the floor.
+
+    The negative probe the rework finding requires. Resolution reads the pinned
+    reference artifact, so the candidate scorecard is not an input at all: a reader
+    pointed at a candidate path that does not even exist resolves the same floor.
+    The mutated candidate is rewritten coherently -- its score is restated while its
+    declared evidence digest still matches the unchanged probe bytes, so this is not
+    a hash substitution -- and the resolved threshold stays the pinned fraction.
+    """
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, BASELINE_PATH)
+    before = reader.resolve_threshold_references(_contract())
+
+    mutated = copy.deepcopy(_baseline())
+    preservation = next(
+        row
+        for row in mutated["measurements"]
+        if row["metric_id"] == "preservation.occurrence_conservation"
+    )
+    preservation["score"] = {"numerator": 1, "denominator": 4}
+    preservation["strata"]["micro_occurrence"] = {"numerator": 1, "denominator": 4}
+    # Evidence stays coherent: the declared digest still matches the probe bytes.
+    assert preservation["evidence"]["sha256"] == _sha256(PROBE_PATH)
+    assert _score_value(preservation["score"]) == pytest.approx(0.25)
+
+    # Resolution does not consult the candidate: it holds with no candidate at all.
+    reader_without_candidate = FilesystemAbsorptionProgressReader(
+        _REPO_ROOT, SCHEMA_PATH, "artifacts/parse_compat/absent_candidate.json"
+    )
+    assert reader_without_candidate.resolve_threshold_references(_contract()) == before
+
+    reference = {
+        entry["threshold_id"]: entry["fraction"]
+        for entry in _load_json(REFERENCE_PINS_PATH)["values"]
+    }
+    fraction = reference["preservation_micro_occurrence"]
+    assert before["preservation_micro_occurrence"] == pytest.approx(
+        fraction["numerator"] / fraction["denominator"]
+    )
+    assert before["preservation_micro_occurrence"] != pytest.approx(0.25)
 
 
 # ── the numbers are derived from the frozen probe, not asserted ────────────
@@ -535,6 +647,9 @@ def test_report_pins_the_baseline_artifact_hash() -> None:
     """
     report = (_REPO_ROOT / REPORT_PATH).read_text(encoding="utf-8")
     assert _sha256(BASELINE_PATH).removeprefix("sha256:") in report
+    # The floor carrier is pinned in the report too, so a re-derived floor without a
+    # re-pin is drift rather than a silent re-baseline.
+    assert _sha256(REFERENCE_PINS_PATH).removeprefix("sha256:") in report
 
 
 def test_gate_run_history_keeps_the_first_failure_unexplained() -> None:
