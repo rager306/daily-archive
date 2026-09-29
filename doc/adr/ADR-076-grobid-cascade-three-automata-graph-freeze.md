@@ -1342,3 +1342,87 @@ receipt), а смешивать исполненный живой прогон �
 записью с человеческим релизным решением `pending` (`reviewer=null`), а H20 —
 `pending` / `unassigned`.
 
+## 29. Корректировка 2026-09-29: пакет человеческого релизного решения предъявлен и ни одного замка не снято (M513-r7dg4z/S07)
+
+Секция фиксирует предъявление пакета релизного решения и не снимает ни одного
+замка. История не переписывается: §24 остаётся датированной записью среза
+M512-lxafs8/S05, §25 — записью S03, §26 — записью S04, §27 — записью S05, §28 —
+записью S06; ни одна из них не отменяется и не редактируется. Это **НЕ релизное
+решение**: корректировка не расширяет допуск, не объявляет
+production-достижимость и не даёт права на промоушен, графовую запись или
+распространение.
+
+**Что предъявлено.** Пакет-индекс
+`artifacts/parse_compat/grobid_retirement_release_decision_package.json`
+(`schema_version` `grobid-retirement-release-decision-package.v1`,
+`package_status: pending_human_review`,
+`claim_scope: release_decision_package_preparation_only`) и его человекочитаемая
+проекция `doc/review/M513-S07-release-decision-package.md` с четырьмя
+содержательными разделами — паритет Rust против Java, остатки списком,
+доказанный откат, потолки ресурсов — плюс раздел PENDING и условия
+авторизации. Паритет назван числами замороженного носителя
+`artifacts/parse_compat/external_holdout_release_probe.json`
+(`evaluated_population.class_parity.aggregate`: `precision_micros=1000000`,
+`covered_union_recall_micros=947501`, `f1_micros=972130`, `native_capability_recall_micros=945771`,
+`tp=74910`, `fn=4711`, `fp=0`, `denominator=79621`) при области `local_proxy_only`
+и запрете pooled-заявления о качестве; развёрнутая версия —
+`doc/review/grobid-parity-report.md`. Население — 610 объявлено, 531 измеримо,
+79 типизированных исключений. Остатки перечислены шестью записями в самом пакете
+(`remainders`) и в реестре
+`data/parse/grobid_compatibility.yaml#parity_ledger` (судьбы
+absent-возможностей, named gap `learning.ruvllm_ablation` по решению D471,
+порядок горизонта, остаток H21). Потолки ресурсов и остаток Java-CPU — в
+`artifacts/parse_compat/parse_batch_budget_live.json`. Пакет — индекс привязок,
+а не второй числовой словарь: он не пере-округляет и не пере-считывает числа, а
+каждый его `source_bindings` пере-хэшируется с диска.
+
+**Чем доказан откат.** Байтовым равенством, а не булевым полем отчёта: на
+каждом переключённом документе вернувшийся emission байт-идентичен базовому
+(`rollback_byte_identical_all=true`), ссылки не сдвигались
+(`references_never_moved=true`), пара switch-and-return непуста
+(`switch_and_return_non_vacuous=true`), а объявленные носители маршрута
+остались неизменны (`carriers_unchanged=true`). Источник — §28 и носитель
+`artifacts/parse_compat/native_family_promotion_rehearsal.json`; готовность
+отката зафиксирована отдельно в `doc/review/grobid-rollback-readiness.md`
+(sha256 `b1ee1387…`).
+
+**Сколько документов.** Три объявленных документа: **2** переключены и **1**
+отказан типизированно (`switch_refusal=native_outcome_rejected`); полоса
+`references` не двигалась.
+
+**Остаток Java-CPU назван числом.**
+`java_cpu_remainder.java_cpu_ns=106630786000` при измеренном
+`wall_clock_ns=30119369791` (отношение `java_cpu_to_wall_ratio_micros=3540272`,
+то есть около 3.54 занятых ядра) с явным
+`counter_scope=grobid_sidecar_cgroup_cpuacct` — это container-wide счётчик
+сайдкара, все потоки, не per-document; неизвестное значение не читается как
+ноль.
+
+**Репетиция цитируется только как `rehearsal_only`.** `claim_scope` носителя
+репетиции — `rehearsal_only`; байтовое равенство отката не является
+promotion-evidence и не читается ни как измерение паритета, ни как промоушен.
+
+**Удержание пакета.** Артефакт байтово пинован в
+`scripts/governor/checks/scholarly_parse_plane.yaml`
+(`bindings.canonical_artifacts`) и в зеркале
+`governor/fixtures/scholarly_parse_plane/contract.positive.json`; identity
+`grobid-retirement-release-decision-package.v1` объявлена в
+`bindings.integration_evidence` на обеих поверхностях, поэтому подмена артефакта
+называется именованным `evidence_substitution`, а не читается молча как
+предъявленные байты. Пин, зеркало и перепись двинулись одним коммитом
+(20 → 21). Артефакт **намеренно не** добавлен в
+`data/parse/acceptance_manifest.yaml#population_contract.report_paths`: это
+перечисление покрывает `*_shadow.json` плюс два явно перечисленных offline
+receipt, а смешивать предъявленный пакет решения с shadow-прогонами — ровно та
+конфляция, которую контракт переписи предотвращает.
+
+**Что это НЕ значит.** Это **НЕ релизное решение**. Ни один замок не снят:
+`import_eligible=false`, `deployed=false`, `production_route=forbidden`,
+`graph_write=forbidden`, `auto_promote=forbidden`,
+`promotion_receipt=forbidden`, `this_wave_promotes=none`, D127 не снят. Живая
+запись человека остаётся пустой: `package_status=pending_human_review`,
+`reviewer=null`, `decision=pending`, `prose_alone_authorizes_release=false`;
+проза, ADR, коммит или зелёный тест релиз не авторизуют. GAR-015 остаётся
+`open`; H20 остаётся `pending` / `unassigned`. Java GROBID остаётся TEI oracle и
+rollback target.
+

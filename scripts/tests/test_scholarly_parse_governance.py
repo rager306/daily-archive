@@ -3470,10 +3470,12 @@ def _unresolved_pass_violations(registry: dict, review: dict) -> list[str]:
 def test_s09_census_policy_bindings_resolve_and_hash_on_disk():
     policy = _load(POLICY_PATH)
     bindings = _source_bindings(policy)
-    # M513/S06/T05 widened the census to 20: the live one-lane promotion
-    # rehearsal artifact joined `bindings.canonical_artifacts` (10 source_data
-    # + 10 canonical_artifacts) without changing any other invariant.
-    assert len(bindings) == 20, [binding["path"] for binding in bindings]
+    # M513/S07/T03 widened the census to 21: the presented human
+    # release-decision package artifact joined `bindings.canonical_artifacts`
+    # (10 source_data + 11 canonical_artifacts) without changing any other
+    # invariant. Later waves: the S06 promotion rehearsal is the entry this one
+    # follows, and the pack/pin/mirror move together in one commit.
+    assert len(bindings) == 21, [binding["path"] for binding in bindings]
     paths = [binding["path"] for binding in bindings]
     assert len(set(paths)) == len(paths), "duplicate binding path"
     for binding in bindings:
@@ -4090,6 +4092,101 @@ def test_m513_s06_rehearsal_pin_scan_rejects_a_substituted_or_unmapped_artifact(
         item
         for item in unmapped["integration_evidence"]
         if item.get("identity") != REHEARSAL_IDENTITY
+    ]
+    errors = _validate_positive(policy, unmapped)
+    assert "integration evidence" in errors, errors
+
+
+# --- M513/S07/T03: presented release-decision package is byte-pinned ----------
+#
+# The presented package prepares a human release decision; it is a preparation
+# artifact (`package_status: pending_human_review`,
+# `claim_scope: release_decision_package_preparation_only`), not a shadow report
+# and not a promotion receipt. It must therefore be declared on both binding
+# surfaces -- byte-pinned in `bindings.canonical_artifacts` and identity-mapped
+# in `bindings.integration_evidence` -- and mirrored, so a substituted artifact
+# is named by the policy's own evidence check instead of being read silently as
+# the presented bytes. The non-vacuity probe below injects exactly the drift the
+# positive assertions claim to catch.
+
+PACKAGE_ARTIFACT = (
+    "artifacts/parse_compat/grobid_retirement_release_decision_package.json"
+)
+PACKAGE_IDENTITY = "grobid-retirement-release-decision-package.v1"
+
+
+def test_m513_s07_release_decision_package_is_pinned_identity_mapped_and_mirrored():
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    disk = _sha256(ROOT / PACKAGE_ARTIFACT)
+    canonical = {
+        item["path"]: item for item in policy["bindings"]["canonical_artifacts"]
+    }
+    assert canonical[PACKAGE_ARTIFACT]["sha256"] == disk
+    policy_evidence = {
+        (item["path"], item["identity"])
+        for item in policy["bindings"]["integration_evidence"]
+    }
+    assert (PACKAGE_ARTIFACT, PACKAGE_IDENTITY) in policy_evidence
+    mirror_canonical = {
+        item["path"]: item for item in fixture["canonical_artifacts"]
+    }
+    assert mirror_canonical[PACKAGE_ARTIFACT]["sha256"] == disk
+    assert mirror_canonical[PACKAGE_ARTIFACT]["identity"] == PACKAGE_IDENTITY
+    mirror_evidence = {
+        (item["path"], item["identity"])
+        for item in fixture["integration_evidence"]
+    }
+    assert (PACKAGE_ARTIFACT, PACKAGE_IDENTITY) in mirror_evidence
+    # The presented package prepares a human decision; it neither takes nor
+    # pre-empts it, and it ships no lock release.
+    artifact = json.loads((ROOT / PACKAGE_ARTIFACT).read_text(encoding="utf-8"))
+    assert artifact["schema_version"] == PACKAGE_IDENTITY
+    assert artifact["package_status"] == "pending_human_review"
+    assert artifact["claim_scope"] == "release_decision_package_preparation_only"
+    assert artifact["explicit_decision"] is None
+    assert artifact["nothing_here_authorizes_a_release"] is True
+    assert artifact["locks"] == {
+        "import_eligible": False,
+        "deployed": False,
+        "production_route": "forbidden",
+        "graph_write": "forbidden",
+        "auto_promote": "forbidden",
+        "promotion_receipt": "forbidden",
+    }
+    # The package is an index of carriers, never a second numeric dictionary:
+    # every declared source binding must resolve byte-exactly on disk.
+    assert artifact["source_bindings"]
+    for binding in artifact["source_bindings"]:
+        assert _sha256(ROOT / binding["path"]) == binding["sha256"], binding["path"]
+    human = artifact["human_record"]["declared"]
+    assert human["package_status"] == "pending_human_review"
+    assert human["reviewer"] is None
+    assert human["decision"] == "pending"
+    assert human["prose_alone_authorizes_release"] is False
+
+
+def test_m513_s07_release_decision_package_pin_scan_rejects_a_substituted_or_unmapped_artifact():
+    """A moved pin, a moved mirror or a dropped identity map is named, not read."""
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    moved_pin = copy.deepcopy(policy)
+    for item in moved_pin["bindings"]["canonical_artifacts"]:
+        if item["path"] == PACKAGE_ARTIFACT:
+            item["sha256"] = "0" * 64
+    errors = _validate_positive(moved_pin, fixture)
+    assert any(PACKAGE_ARTIFACT in error for error in errors), errors
+    moved_mirror = copy.deepcopy(fixture)
+    for item in moved_mirror["canonical_artifacts"]:
+        if item["path"] == PACKAGE_ARTIFACT:
+            item["sha256"] = "0" * 64
+    errors = _validate_positive(policy, moved_mirror)
+    assert any(PACKAGE_ARTIFACT in error for error in errors), errors
+    unmapped = copy.deepcopy(fixture)
+    unmapped["integration_evidence"] = [
+        item
+        for item in unmapped["integration_evidence"]
+        if item.get("identity") != PACKAGE_IDENTITY
     ]
     errors = _validate_positive(policy, unmapped)
     assert "integration evidence" in errors, errors

@@ -190,6 +190,20 @@ bindings:
     # bytes.
     - path: artifacts/parse_compat/native_family_promotion_rehearsal.json
       sha256: e7407fdf83a95d458e3daee7bd857fdb3f8aa3514996f544964ee266213f48c8
+    # M513/S07/T03: the presented human release-decision package. It is a
+    # preparation artifact (`package_status: pending_human_review`,
+    # `claim_scope: release_decision_package_preparation_only`), not a shadow
+    # report and not a promotion receipt: it carries its own identity
+    # (`grobid-retirement-release-decision-package.v1`) and is judged by its own
+    # contract tests in da-parse. It is deliberately NOT added to the acceptance
+    # manifest's `population_contract.report_paths`: that enumeration is the
+    # shadow-report set (plus two explicitly enumerated offline receipts), and
+    # mixing a presented decision package with shadow runs is exactly the
+    # conflation that contract exists to prevent. Byte-pinned here so a
+    # substituted artifact is named (`evidence_substitution`), never silently
+    # read as the presented bytes.
+    - path: artifacts/parse_compat/grobid_retirement_release_decision_package.json
+      sha256: f4ff294193a41c42988aaa135ec1b728f04603c6a585365c97a2d82869f0aa9a
   shared_promotion_contract: scripts/governor/checks/promotion_evidence_contract.yaml
   rollback_target: java-grobid-http@0.9.0-crf
   integration_evidence:
@@ -217,6 +231,8 @@ bindings:
       identity: external-holdout-release-probe.v1
     - path: artifacts/parse_compat/native_family_promotion_rehearsal.json
       identity: native-family-promotion-rehearsal.v1
+    - path: artifacts/parse_compat/grobid_retirement_release_decision_package.json
+      identity: grobid-retirement-release-decision-package.v1
 release_probe_lane:
   # M511/S08/T05: the frozen external release-probe lane is held in DATA so its
   # three failure modes stay distinct named flags — an absent or unmapped lane
