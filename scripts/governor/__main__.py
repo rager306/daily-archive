@@ -222,6 +222,22 @@ def main() -> int:
         ev = flag.get("evidence") if isinstance(flag, dict) else getattr(flag, "evidence", "")
         print(f"  - {name} [{sev}]: {ev}")
 
+    # D491 / R141: expose the effective active-research policy the report ran
+    # under, so the authorization DATA is a consumed policy rather than an
+    # unread file. Absent section = C3/rights-review gates still in force.
+    for policy in getattr(report, "active_policy", None) or []:
+        print(
+            "  active policy: "
+            f"{policy.get('policy_id')} ({policy.get('recorded_decision')}) "
+            f"c3_process_gates={policy.get('c3_process_gates')} "
+            f"independent_rights_review_wait={policy.get('independent_rights_review_wait')} "
+            f"graph_locks={policy.get('graph_locks')} "
+            f"third_party_legal_rights={policy.get('third_party_legal_rights')} "
+            f"quality_pass={policy.get('quality_pass')} "
+            f"historical_c3={policy.get('historical_c3_decision')} "
+            f"active_blocker={policy.get('historical_c3_active_blocker')}"
+        )
+
     # Exit code: 0 = on_track or drift_risk, 1 = blocked.
     # Handle both str and Enum(str) verdict values.
     verdict_value = report.verdict.value if hasattr(report.verdict, "value") else str(report.verdict)

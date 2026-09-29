@@ -42,7 +42,7 @@ class DriftFlag:
     """A drift signal detected by governor."""
 
     flag: str
-    severity: str  # "high" or "medium"
+    severity: str  # "high" (blocking) | "medium" (drift) | "low" (informational)
     evidence: str = ""
     dimension: Optional[str] = None
 
@@ -59,6 +59,12 @@ class TrajectoryReport:
     reverse_adr_audit_details: dict[str, Any] = field(default_factory=dict)
     next_actions: list[str] = field(default_factory=list)
     milestone_context: dict[str, Any] = field(default_factory=dict)
+    # D491 / R141: the effective active-research policy the report actually ran
+    # under. Populated only when the authorization DATA validates (graph/import
+    # locks retained, no third-party rights or quality pass inferred, historical
+    # M513 C3 left pending). An empty list means the C3 process gates are still
+    # in force, which is the fail-closed default.
+    active_policy: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -70,4 +76,5 @@ class TrajectoryReport:
             "reverse_adr_audit_details": self.reverse_adr_audit_details,
             "next_actions": self.next_actions,
             "milestone_context": self.milestone_context,
+            "active_policy": self.active_policy,
         }

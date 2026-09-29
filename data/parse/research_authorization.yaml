@@ -1,0 +1,120 @@
+# Active research authorization — D491 (M514-1lss2s).
+#
+# Owner-recorded separation of ACTIVE NON-COMMERCIAL RESEARCH from the historical
+# M513 C3 release gate. This file is DATA consumed by the Governor
+# `active_research_authorization` check (`TrajectoryService._check_active_research_authorization`
+# + the independent oracle `_research_authorization_violations`); it is not a
+# legal instrument and it is not a quality statement.
+#
+# What it does:
+#   - the C3 process gates (recorded human release decision / independent
+#     rights-review wait) stop being a precondition for research operations:
+#     local development, tests, measurement and candidate parsing;
+#   - only the ABSENCE of a review decision is waived: `release_decision_not_recorded`
+#     and `citation_without_release_decision` become informational;
+#   - rights-paperwork items (missing licence evidence / unresolved artifact
+#     obligation) are informational ONLY on a position that explicitly proves
+#     `redistribution: not_distributed`. A `blocked` position, an unknown entry
+#     and a bare `redistributable: false` flag are not proof of non-distribution,
+#     so they keep the contract severity.
+#
+# What it explicitly does NOT do (enforced fail-closed by the oracle):
+#   - it grants nothing from third parties: rights, licence clearance and
+#     redistribution stay `false`;
+#   - it does not relax a single lock: `graph_write`, `new_distribution`,
+#     `gpl_linking` and `auto_promote` stay `forbidden`, `import_eligible`
+#     stays `false`;
+#   - it never claims a quality pass (`quality_pass: false`), never fabricates
+#     the historical M513 release decision, and never rewrites that record;
+#   - it is not a blanket suppression: false claims (`release_decision_claimed_without_record`,
+#     `release_decision_prose_only`), a claimed execution without a release
+#     (`execution_claimed_without_release`) and missing release evidence
+#     (`release_decision_artifact_missing`) keep their severity;
+#   - it keeps provenance/hash integrity, LICENSE/NOTICE artifacts and the
+#     refusal to make an unlicensed distribution.
+#
+# Distribution of third-party weights, data or binaries, a production switch,
+# downloads and graph import remain outside this authorization and require an
+# explicit separate decision.
+
+schema_version: research-authorization.v1
+policy_id: active_research_authorization
+
+# Authority identity, enforced closed by the oracle: the kind must be the
+# owner-directive kind, the verdict must be `authorized` (`revoked`, `denied` or
+# `expired` is not an authorization), and the recorded decision must be D491 — a
+# different decision is a different change of process this report must not
+# execute on its own.
+authority:
+  kind: owner_directive
+  verdict: authorized
+  recorded_decision: D491
+  recorded_at: "2026-09-29"
+  recorded_in: .gsd/phases/514-1lss2s-grobid-rust/514-ASSESSMENT.md
+  # Verbatim owner instruction this authorization executes. The Governor oracle
+  # requires this marker to be present verbatim, so the waiver cannot be
+  # restated, softened or generalised away from what the owner actually said.
+  verbatim_instruction: >-
+    сними все блоки C3 - кроме графа - и не заморачивайся лицензиями это
+    некоммерческий исследовательский и любительский продукт-хобби и открытый
+    репо я уже писал об этом проверь шум и устрани везде лицензионный шум
+
+# The scope is bounded, and the boundary is the oracle's closed set, not this
+# document's: `operation_scope` may only name operations from the governor's
+# research set, and a wider/empty/malformed set makes the document invalid
+# (leaving the C3 gates in force) rather than silently widening the waiver to
+# production or distribution work.
+scope:
+  product: noncommercial_research_hobby_public_repo
+  operation_scope:
+    - local_development
+    - tests
+    - measurement
+    - candidate_parse
+  c3_process_gates: waived
+  independent_rights_review_wait: waived
+  license_status_semantics: informational_only_for_explicitly_non_distributed_components
+
+# The C3 release-decision class: the ABSENCE of a review decision, nothing
+# wider. These two labels describe a *release* authorization question and remain
+# visible but informational for active research. A claim that a decision exists
+# without a record, prose standing in for a decision, a claimed execution with no
+# release, missing release evidence and every integrity/provenance label are
+# deliberately NOT in this list and keep their contract severity. The oracle's
+# compiled classification is authoritative; this list mirrors it verbatim.
+c3_release_decision_class:
+  - release_decision_not_recorded
+  - citation_without_release_decision
+
+not_granted:
+  third_party_legal_rights: false
+  license_clearance: false
+  redistribution: false
+  graph_write: false
+  import_eligible: false
+  auto_promote: false
+  production_deployment: false
+  quality_pass: false
+
+retained_locks:
+  gpl_linking: forbidden
+  new_distribution: forbidden
+  import_eligible: false
+  graph_write: forbidden
+  auto_promote: forbidden
+
+retained_obligations:
+  - provenance_and_hash_integrity
+  - license_and_notice_artifacts
+  - unlicensed_distribution_refusal
+
+# The historical M513 package is history: it stays truthfully pending and is not
+# an active research blocker. `expected_decision` is cross-checked against the
+# live manifest on every run, so claiming a decision that was never recorded
+# (or rewriting the record) is a hard failure rather than a quiet edit.
+historical_c3:
+  path: data/parse/acceptance_manifest.yaml
+  pointer: release_decision_package.human_release_review
+  expected_decision: pending
+  active_blocker: false
+  truthfulness: preserved_not_rewritten

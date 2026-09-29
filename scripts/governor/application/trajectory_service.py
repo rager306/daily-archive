@@ -1976,6 +1976,11 @@ class TrajectoryService:
         self.milestone_reader = milestone_reader
         self.gsd_planning_reader = gsd_planning_reader
         self.git_reader = git_reader
+        # Per-instance identities of flags this service itself downgraded as
+        # validated D491 informational notes. The verdict exemption reads this
+        # registry (object identity), never the flag name or its evidence text,
+        # so a signal cannot exempt itself by claiming to be a D491 note.
+        self._d491_informational_flags: list[DriftFlag] = []
 
     def build_report(self, phase: str = "preflight") -> TrajectoryReport:
         audit_report = self.audit.run_audit()
@@ -2165,19 +2170,38 @@ class TrajectoryService:
         # probe is claimed here.
         drift_flags.extend(self._check_external_holdout_package())
 
+        # D491 / R141: active research authorization. The owner directive
+        # separates active non-commercial research from the historical M513 C3
+        # release gate, so the C3/rights-review process gates are no longer a
+        # precondition for research operations. The policy is DATA; when it
+        # validates, the report exposes the effective policy it ran under.
+        drift_flags.extend(self._check_active_research_authorization())
+        active_authorization = self._load_research_authorization()
+        active_policy = (
+            [_research_authorization_policy_summary(
+                active_authorization, self._historical_release_decision())]
+            if active_authorization is not None
+            else []
+        )
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
 
+        # Serialized flags publish whether the verdict exemption applies to them,
+        # so a `low` note in the report states its own reason instead of looking
+        # like an unexplained silence.
+        informational_ids = self._authenticated_d491_informational_identities()
         return TrajectoryReport(
             schema_version="m286.hexagonal.governor.v1",
             phase=phase,
             verdict=verdict,
             dimensions={d.id: self._dimension_to_dict(d) for d in dimensions},
-            drift_flags=[self._flag_to_dict(f) for f in drift_flags],
+            drift_flags=[self._flag_to_dict(f, informational_ids) for f in drift_flags],
             reverse_adr_audit_details=audit_report.to_dict(),
             next_actions=next_actions,
             milestone_context=milestone_ctx,
+            active_policy=active_policy,
         )
 
     def _build_dimensions(self) -> list[Dimension]:
@@ -4038,6 +4062,13 @@ class TrajectoryService:
                 flag=name, severity=severity, evidence=evidence, dimension=dimension,
             ))
 
+        # D491: the validated active-research authorization scopes only the
+        # rights-paperwork class (missing evidence / unresolved artifact
+        # obligation) for positions that are not distributed; provenance and
+        # hash integrity, lock relaxation and false redistribution claims keep
+        # the contract severity.
+        research_authorization = self._load_research_authorization()
+
         # 1. Bound canonical artifact: existence plus exact SHA-256.
         for binding in (contract.get("bindings") or {}).get("source_data", []):
             bound_path = self.root / str(binding.get("path", ""))
@@ -4153,7 +4184,21 @@ class TrajectoryService:
                 for violation in sorted(
                     _license_surface_entry_violations(entry, mapped, contract)
                 ):
-                    _flag(f"{prefix}_{violation}", f"{key}#{entry_id}: {violation}")
+                    informational = (
+                        research_authorization is not None
+                        and violation in _RESEARCH_AUTHORIZATION_RIGHTS_WAIT_LABELS
+                        and _license_surface_entry_is_non_distributed(entry, mapped)
+                    )
+                    _flag(
+                        f"{prefix}_{violation}",
+                        f"{key}#{entry_id}: {violation}"
+                        + (" (informational for active non-commercial research, D491)"
+                           if informational else ""),
+                    )
+                    if informational and self._register_d491_informational(
+                        flags[-1], violation
+                    ):
+                        flags[-1].severity = "low"
             surface_ids[key] = ids
 
         # 5. Canonical positions: independent entry-level oracle.
@@ -4172,9 +4217,20 @@ class TrajectoryService:
                 record = {}
             for violation in sorted(_license_provenance_violations(record, oracle_contract)):
                 detail = _license_violation_detail(record, violation)
+                informational = (
+                    research_authorization is not None
+                    and violation in _RESEARCH_AUTHORIZATION_RIGHTS_WAIT_LABELS
+                    and _license_position_is_non_distributed(record)
+                )
                 _flag(f"{prefix}_{violation}",
                       f"canonical inventory {label!r}: {violation}"
-                      + (f" ({detail})" if detail else ""))
+                      + (f" ({detail})" if detail else "")
+                      + (" (informational for active non-commercial research, D491)"
+                         if informational else ""))
+                if informational and self._register_d491_informational(
+                    flags[-1], violation
+                ):
+                    flags[-1].severity = "low"
 
         # 6. Cross-surface relational completeness: every surface identifier is
         #    claimed exactly once by the canonical ledger.
@@ -4237,6 +4293,102 @@ class TrajectoryService:
             graph_task_suite_required=False,
         ))
         return flags
+
+    def _load_research_authorization(self):
+        """Return the validated active-research authorization document, or None.
+
+        D491 / R141. The document is DATA (`data/parse/research_authorization.yaml`)
+        and is only honoured when it passes the independent oracle: a waiver that
+        relaxes a graph/import lock, infers third-party rights or a quality pass,
+        drops a retained integrity obligation, or fabricates the historical M513
+        C3 record is not an authorization at all and yields None — the C3 process
+        gates then stay in force (fail-closed default).
+        """
+        path = self.root / _RESEARCH_AUTHORIZATION_RELATIVE
+        if not path.is_file():
+            return None
+        try:
+            doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            return None
+        if _research_authorization_violations(doc, self._historical_release_decision()):
+            return None
+        return doc if isinstance(doc, dict) else None
+
+    def _historical_release_decision(self):
+        """The live M513 human release decision, read from the canonical manifest.
+
+        Read (never written) so the authorization cannot claim a decision that
+        was never recorded: the historical package stays truthfully pending.
+        """
+        manifest_path = self.root / "data/parse/acceptance_manifest.yaml"
+        if not manifest_path.is_file():
+            return None
+        try:
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            return None
+        package = manifest.get("release_decision_package") if isinstance(manifest, dict) else None
+        review = package.get("human_release_review") if isinstance(package, dict) else None
+        return review.get("decision") if isinstance(review, dict) else None
+
+    def _check_active_research_authorization(self) -> list[DriftFlag]:
+        """Evaluate the D491 active research authorization (`data/parse/research_authorization.yaml`).
+
+        The owner directive separates active non-commercial research from the
+        historical M513 C3 release gate. This check makes the separation
+        machine-checkable instead of leaving the YAML unread:
+
+          1. A missing/invalid document is fail-closed: the C3/rights-review
+             process gates stay in force (`..._missing` / `..._invalid`).
+          2. The independent oracle `_research_authorization_violations` rejects
+             any document that (a) omits the owner's verbatim instruction,
+             (b) relaxes a retained lock (`graph_write`, `import_eligible`,
+             `new_distribution`, `gpl_linking`, `auto_promote`), (c) claims
+             third-party legal rights, licence clearance, redistribution or a
+             quality pass, (d) drops a retained integrity obligation,
+             (e) disagrees with the live historical C3 decision, or (f) is not the
+             owner directive it claims to be — wrong authority kind, a
+             `revoked`/denied verdict, a recorded decision other than D491, or a
+             scope whose product/operations leave the closed research boundary.
+             Such a document is not an authorization, so its waiver is never
+             applied.
+          3. A valid document emits no flag here: the effective policy is
+             published in the report's `active_policy` section, and its effect is
+             the scoped informational treatment of the C3/rights-wait class.
+        """
+        path = self.root / _RESEARCH_AUTHORIZATION_RELATIVE
+        if not path.is_file():
+            return [DriftFlag(
+                flag="active_research_authorization_missing",
+                severity="medium",
+                evidence=(
+                    f"active research authorization not found: {_RESEARCH_AUTHORIZATION_RELATIVE}; "
+                    "C3/rights-review process gates stay in force"
+                ),
+                dimension="scholarly_parse_plane",
+            )]
+        try:
+            doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="active_research_authorization_invalid",
+                severity="high",
+                evidence=f"cannot load {_RESEARCH_AUTHORIZATION_RELATIVE}: {error}",
+                dimension="scholarly_parse_plane",
+            )]
+        violations = _research_authorization_violations(
+            doc, self._historical_release_decision()
+        )
+        return [
+            DriftFlag(
+                flag=f"active_research_authorization_{label}",
+                severity="high",
+                evidence=f"{_RESEARCH_AUTHORIZATION_RELATIVE}: {label}",
+                dimension="scholarly_parse_plane",
+            )
+            for label in sorted(violations)
+        ]
 
     def _check_external_holdout_package(self) -> list[DriftFlag]:
         """Evaluate the bounded external holdout package contract (GAR-015).
@@ -4395,6 +4547,27 @@ class TrajectoryService:
             external_holdout_package_violations,
             graph_task_suite_required=False,
         ))
+        # D491: the C3 release-decision class is a *release* authorization
+        # question, not an active-research blocker. When the owner authorization
+        # validates, those labels stay visible but informational; every other
+        # label (package completeness, citation of unexecuted evidence, byte
+        # policy, integrity) keeps its contract severity. No release decision is
+        # fabricated: the historical record stays pending.
+        if self._load_research_authorization() is not None:
+            for flag in flags:
+                label = (
+                    flag.flag[len(f"{prefix}_"):]
+                    if flag.flag.startswith(f"{prefix}_")
+                    else ""
+                )
+                if label in _RESEARCH_AUTHORIZATION_C3_FLAG_LABELS and (
+                    self._register_d491_informational(flag, label)
+                ):
+                    flag.severity = "low"
+                    flag.evidence += (
+                        " — C3 release gate informational for active non-commercial "
+                        "research (D491); the human release decision remains unrecorded"
+                    )
         return flags
 
     def _check_oracle_digest_recomputation(self) -> list[DriftFlag]:
@@ -5390,9 +5563,61 @@ class TrajectoryService:
                 return TrajectoryVerdict.BLOCKED
         if any(f.severity == "high" for f in drift_flags):
             return TrajectoryVerdict.DRIFT_RISK
-        if drift_flags:
+        # Fail-closed: every remaining flag raises DRIFT_RISK unless the service
+        # itself downgraded that exact object as a validated D491 informational
+        # note. Severity alone never suppresses a signal — an unrelated `low` or
+        # an unknown severity is still drift — and a note that was later raised
+        # above `low` keeps its hard severity. The exemption is earned by
+        # per-instance identity in this service's own downgrade registry AND by
+        # the active-research authorization still validating live; it cannot be
+        # conferred by a flag name or by evidence prose claiming D491.
+        informational = self._authenticated_d491_informational_identities()
+        if any(
+            not (f.severity == "low" and id(f) in informational)
+            for f in drift_flags
+        ):
             return TrajectoryVerdict.DRIFT_RISK
         return TrajectoryVerdict.ON_TRACK
+
+    def _register_d491_informational(self, flag: DriftFlag, label: str) -> bool:
+        """Record per-instance identity of a service-downgraded D491 note.
+
+        Returns False and leaves the flag at its contract severity when `label`
+        is not one of the oracle-defined informational labels, so a genuine
+        integrity or provenance finding can never be laundered into the verdict
+        exemption by routing it through this call.
+        """
+        if label not in _D491_INFORMATIONAL_LABELS:
+            return False
+        # The declared label must also match the flag's own name, so a finding
+        # that names an integrity/provenance failure can never be exempted by
+        # passing a rights-paperwork label alongside it.
+        if _d491_informational_label(flag.flag) != label:
+            return False
+        registry = getattr(self, "_d491_informational_flags", None)
+        if registry is None:
+            self._d491_informational_flags = registry = []
+        registry.append(flag)
+        return True
+
+    def _authenticated_d491_informational_identities(self) -> set[int]:
+        """Identities of service-downgraded D491 notes exempt from the verdict.
+
+        Fail-closed: an absent or revoked authorization yields the empty set, as
+        does a service built without the downgrade registry. A flag that merely
+        carries `d491` in its name or evidence, or that was constructed outside
+        the service's downgrade sites, is never a member.
+        """
+        registry = getattr(self, "_d491_informational_flags", None)
+        if not registry:
+            return set()
+        if self._load_research_authorization() is None:
+            return set()
+        return {
+            id(flag)
+            for flag in registry
+            if _d491_informational_label(flag.flag) in _D491_INFORMATIONAL_LABELS
+        }
 
     def _build_next_actions(self, verdict: str, flags: list[DriftFlag]) -> list[str]:
         actions = []
@@ -5450,9 +5675,340 @@ class TrajectoryService:
             "evidence": dim.evidence,
         }
 
-    def _flag_to_dict(self, flag: DriftFlag) -> dict:
+    def _flag_to_dict(
+        self, flag: DriftFlag, informational_ids: set[int] | None = None
+    ) -> dict:
+        if informational_ids is None:
+            informational_ids = self._authenticated_d491_informational_identities()
         return {
             "flag": flag.flag,
             "severity": flag.severity,
             "evidence": flag.evidence,
+            # True only for a note this service itself downgraded under a
+            # currently-valid D491 authorization (per-instance identity).
+            "informational": flag.severity == "low" and id(flag) in informational_ids,
         }
+
+
+# ── D491 active research authorization (DATA `data/parse/research_authorization.yaml`) ──
+#
+# The owner directive separates ACTIVE NON-COMMERCIAL RESEARCH from the
+# historical M513 C3 release gate. The waiver is owner-controlled process
+# authorization only: it grants nothing from third parties, relaxes no lock and
+# never fabricates a release decision or a quality pass. The oracle below is the
+# independent (ADR-051) reader of that DATA: it recomputes the waiver's
+# boundaries from the document itself, so a document that drifts from the owner
+# instruction stops being an authorization instead of silently widening.
+
+_RESEARCH_AUTHORIZATION_RELATIVE = "data/parse/research_authorization.yaml"
+_RESEARCH_AUTHORIZATION_SCHEMA = "research-authorization.v1"
+_RESEARCH_AUTHORIZATION_POLICY_ID = "active_research_authorization"
+# Marker of the verbatim owner instruction (D491). Required verbatim so the
+# waiver cannot be restated, softened or generalised away from what was said.
+_RESEARCH_AUTHORIZATION_INSTRUCTION_MARKER = "сними все блоки C3"
+
+# Integrity obligations that survive the waiver. Dropping one turns the
+# authorization into a blanket suppression, which the oracle refuses.
+_RESEARCH_AUTHORIZATION_REQUIRED_OBLIGATIONS = (
+    "provenance_and_hash_integrity",
+    "license_and_notice_artifacts",
+    "unlicensed_distribution_refusal",
+)
+
+# The locks the owner explicitly kept ("кроме графа"). A document that relaxes
+# any of them is not an authorization for the work this project does.
+_RESEARCH_AUTHORIZATION_RETAINED_LOCKS = {
+    "gpl_linking": "forbidden",
+    "new_distribution": "forbidden",
+    "import_eligible": False,
+    "graph_write": "forbidden",
+    "auto_promote": "forbidden",
+}
+
+# Authority identity of the owner directive (D491). The document must name the
+# owner-directive kind and an `authorized` verdict: a `revoked`, `denied` or
+# `expired` document is not an authorization, and a different recorded decision
+# is a different change of process that this report must not execute.
+_RESEARCH_AUTHORIZATION_AUTHORIZED_KINDS = frozenset({"owner_directive"})
+_RESEARCH_AUTHORIZATION_AUTHORIZED_VERDICTS = frozenset({"authorized"})
+_RESEARCH_AUTHORIZATION_RECORDED_DECISION = "D491"
+
+# The closed boundary of the waiver's scope. This is the ORACLE's own set, never
+# the document's, so an authorization cannot widen itself into production or
+# distribution work by editing its own `operation_scope`.
+_RESEARCH_AUTHORIZATION_BOUNDED_PRODUCTS = frozenset({
+    "noncommercial_research_hobby_public_repo",
+})
+_RESEARCH_AUTHORIZATION_BOUNDED_OPERATIONS = frozenset({
+    "local_development",
+    "tests",
+    "measurement",
+    "candidate_parse",
+})
+
+# Affirmations that must stay false: the waiver is a process decision, not a
+# rights grant and not a quality statement.
+_RESEARCH_AUTHORIZATION_NOT_GRANTED = (
+    "third_party_legal_rights",
+    "license_clearance",
+    "redistribution",
+    "graph_write",
+    "import_eligible",
+    "auto_promote",
+    "production_deployment",
+    "quality_pass",
+)
+
+# The C3 release-decision class: a *release* authorization question, not an
+# active-research blocker. Only these labels are reclassified (informational)
+# when the authorization is valid; every other label keeps contract severity.
+#
+# The class is the ABSENCE of a review decision, nothing wider. A claim that a
+# decision exists without a record (`release_decision_claimed_without_record`),
+# prose standing in for a decision (`release_decision_prose_only`), a claimed
+# execution with no release (`execution_claimed_without_release`) and a missing
+# release-decision artifact (`release_decision_artifact_missing`) are deception
+# or missing evidence, not absence of review, so they keep their severity even
+# under active non-commercial research.
+_RESEARCH_AUTHORIZATION_C3_FLAG_LABELS = frozenset({
+    "release_decision_not_recorded",
+    "citation_without_release_decision",
+})
+
+# Rights-paperwork labels that stop being active-research blockers for inactive
+# or non-distributed components. Provenance/hash integrity, lock relaxation and
+# false redistribution claims are deliberately NOT here.
+_RESEARCH_AUTHORIZATION_RIGHTS_WAIT_LABELS = frozenset({
+    "missing_license_evidence",
+    "license_evidence_path_missing",
+    "unresolved_artifact_obligation",
+})
+
+# The closed set of labels the service may downgrade to an authenticated D491
+# informational note. Keeping the union here means the verdict exemption can be
+# granted only to a flag this service itself emitted under one of these labels.
+_D491_INFORMATIONAL_LABELS = (
+    _RESEARCH_AUTHORIZATION_C3_FLAG_LABELS
+    | _RESEARCH_AUTHORIZATION_RIGHTS_WAIT_LABELS
+)
+
+# The only flag-name prefixes that may carry a D491 informational note. The
+# verdict exemption recomputes the label from the flag's own name, so the
+# exemption cannot be granted to a differently named finding.
+_D491_INFORMATIONAL_FLAG_PREFIXES = (
+    "component_license_provenance_",
+    "external_holdout_package_",
+)
+
+
+def _d491_informational_label(flag_name: str) -> str:
+    """Strip a known prefix from a flag name, else return the empty string."""
+    for prefix in _D491_INFORMATIONAL_FLAG_PREFIXES:
+        if flag_name.startswith(prefix):
+            return flag_name[len(prefix):]
+    return ""
+
+
+def _research_authorization_violations(doc, manifest_decision) -> set:
+    """Boundary violations of the active research authorization (D491).
+
+    An empty set means the document is a valid owner-controlled waiver of the
+    C3/rights-review *process* gates for active non-commercial research. Any
+    label below means it is NOT, and its waiver must not be applied:
+
+      - schema_drift / identity_mismatch: the
+        document is not the declared policy artifact;
+      - instruction_missing: the owner's verbatim instruction is
+        absent, so there is nothing to execute;
+      - authority_kind_invalid / authority_verdict_not_authorized /
+        authority_identity_mismatch: the document is not the owner directive it
+        claims to execute (wrong kind, a revoked/denied verdict, or a recorded
+        decision other than D491);
+      - scope_unbounded: the declared product or the operation set is empty,
+        malformed or outside the oracle's closed research boundary, so the
+        waiver reaches work the owner did not authorize
+        (production/distribution);
+      - scope_missing: the C3 and independent-rights-review gates
+        are not declared waived, so the separation is not stated;
+      - lock_relaxed: a retained lock (graph_write,
+        import_eligible, new_distribution, gpl_linking, auto_promote) is not
+        kept — "кроме графа" is a hard boundary;
+      - rights_or_quality_claim: third-party legal rights, licence
+        clearance, redistribution, production deployment or a quality pass is
+        asserted. The owner authorization is neither a rights grant nor a
+        quality statement;
+      - obligation_waived: a retained integrity obligation
+        (provenance/hash, LICENSE/NOTICE, refusal of unlicensed distribution) was
+        dropped;
+      - historical_c3_divergence: the historical M513 record is
+        marked an active blocker, its truthfulness is not preserved, or the
+        declared `expected_decision` no longer matches the live manifest. This
+        is what makes a fabricated or rewritten release decision fail closed.
+    """
+    violations: set = set()
+    if not isinstance(doc, dict):
+        return {"identity_mismatch"}
+    if doc.get("schema_version") != _RESEARCH_AUTHORIZATION_SCHEMA:
+        violations.add("schema_drift")
+    if doc.get("policy_id") != _RESEARCH_AUTHORIZATION_POLICY_ID:
+        violations.add("identity_mismatch")
+
+    authority = doc.get("authority") if isinstance(doc.get("authority"), dict) else {}
+    instruction = authority.get("verbatim_instruction")
+    if (
+        not _non_empty_string(instruction)
+        or _RESEARCH_AUTHORIZATION_INSTRUCTION_MARKER not in instruction
+    ):
+        violations.add("instruction_missing")
+
+    # Authority identity: the kind is checked as a string before set membership,
+    # so a malformed (non-string) value is refused rather than raising.
+    kind = authority.get("kind")
+    if (
+        not isinstance(kind, str)
+        or kind not in _RESEARCH_AUTHORIZATION_AUTHORIZED_KINDS
+    ):
+        violations.add("authority_kind_invalid")
+    verdict = authority.get("verdict")
+    if (
+        not isinstance(verdict, str)
+        or verdict not in _RESEARCH_AUTHORIZATION_AUTHORIZED_VERDICTS
+    ):
+        violations.add("authority_verdict_not_authorized")
+    if authority.get("recorded_decision") != _RESEARCH_AUTHORIZATION_RECORDED_DECISION:
+        violations.add("authority_identity_mismatch")
+
+    scope = doc.get("scope") if isinstance(doc.get("scope"), dict) else {}
+    if (
+        scope.get("c3_process_gates") != "waived"
+        or scope.get("independent_rights_review_wait") != "waived"
+    ):
+        violations.add("scope_missing")
+    if not _research_authorization_scope_is_bounded(
+        scope.get("product"), scope.get("operation_scope")
+    ):
+        violations.add("scope_unbounded")
+
+    locks = doc.get("retained_locks") if isinstance(doc.get("retained_locks"), dict) else {}
+    for field, expected in _RESEARCH_AUTHORIZATION_RETAINED_LOCKS.items():
+        value = locks.get(field)
+        kept = (
+            value is expected
+            if isinstance(expected, bool)
+            else str(value).lower() == expected
+        )
+        if not kept:
+            violations.add("lock_relaxed")
+
+    not_granted = doc.get("not_granted") if isinstance(doc.get("not_granted"), dict) else {}
+    for field in _RESEARCH_AUTHORIZATION_NOT_GRANTED:
+        if not_granted.get(field) is not False:
+            violations.add("rights_or_quality_claim")
+
+    # Every member is validated as a non-empty string before it is collected, so
+    # a malformed list (a mapping member, a string, an int) is refused instead of
+    # raising on an unhashable value.
+    obligations = doc.get("retained_obligations")
+    declared: set = set()
+    obligations_malformed = not isinstance(obligations, list)
+    if not obligations_malformed:
+        for obligation in obligations:
+            if not _non_empty_string(obligation):
+                obligations_malformed = True
+                continue
+            declared.add(obligation)
+    if obligations_malformed or not set(
+        _RESEARCH_AUTHORIZATION_REQUIRED_OBLIGATIONS
+    ).issubset(declared):
+        violations.add("obligation_waived")
+
+    historical = doc.get("historical_c3") if isinstance(doc.get("historical_c3"), dict) else {}
+    if (
+        historical.get("active_blocker") is not False
+        or historical.get("truthfulness") != "preserved_not_rewritten"
+    ):
+        violations.add("historical_c3_divergence")
+    expected_decision = historical.get("expected_decision")
+    if expected_decision is not None and str(expected_decision) != str(manifest_decision):
+        violations.add("historical_c3_divergence")
+    return violations
+
+
+def _research_authorization_scope_is_bounded(product, operations) -> bool:
+    """True when the declared product and operations stay inside the owner boundary.
+
+    The boundary is the oracle's own closed set, never the document's: an
+    authorization whose `operation_scope` names production deployment or
+    distribution is unbounded whatever it declares about itself. Every malformed
+    shape is unbounded — a non-string product, a missing/short operation set, and
+    a non-string or unknown member — and each member is proved a string before it
+    is hashed, so a list of mappings cannot raise.
+    """
+    if (
+        not isinstance(product, str)
+        or product not in _RESEARCH_AUTHORIZATION_BOUNDED_PRODUCTS
+    ):
+        return False
+    if not isinstance(operations, list) or not operations:
+        return False
+    for operation in operations:
+        if (
+            not isinstance(operation, str)
+            or operation not in _RESEARCH_AUTHORIZATION_BOUNDED_OPERATIONS
+        ):
+            return False
+    return True
+
+
+def _research_authorization_policy_summary(doc, manifest_decision) -> dict:
+    """The effective policy a validated authorization puts the report under (D491)."""
+    scope = doc.get("scope") if isinstance(doc.get("scope"), dict) else {}
+    authority = doc.get("authority") if isinstance(doc.get("authority"), dict) else {}
+    return {
+        "policy_id": _RESEARCH_AUTHORIZATION_POLICY_ID,
+        "source": _RESEARCH_AUTHORIZATION_RELATIVE,
+        "authority_kind": authority.get("kind"),
+        "recorded_decision": authority.get("recorded_decision"),
+        "product": scope.get("product"),
+        "operation_scope": scope.get("operation_scope"),
+        "c3_process_gates": scope.get("c3_process_gates"),
+        "independent_rights_review_wait": scope.get("independent_rights_review_wait"),
+        "license_status_semantics": scope.get("license_status_semantics"),
+        "graph_locks": "retained",
+        "third_party_legal_rights": "not_granted",
+        "quality_pass": "not_inferred",
+        "historical_c3_decision": manifest_decision,
+        "historical_c3_active_blocker": False,
+    }
+
+
+def _license_position_is_non_distributed(record) -> bool:
+    """True only when a canonical position proves it is not distributed here.
+
+    `redistribution: blocked` states that redistribution is not permitted, which
+    is not the same claim as "this repository does not distribute the artifact",
+    and a missing or unknown token proves nothing at all. Only the explicit
+    `not_distributed` token qualifies a rights-paperwork finding for the D491
+    informational downgrade.
+    """
+    if not isinstance(record, dict):
+        return False
+    return record.get("redistribution") == "not_distributed"
+
+
+def _license_surface_entry_is_non_distributed(entry, surface) -> bool:
+    """True only when a surface entry proves non-distribution in its own dialect.
+
+    The surface's declared `redistribution_field` must carry the explicit
+    `not_distributed` token. An unknown entry and a surface that maps no
+    redistribution field prove nothing, and the boolean `redistributable: false`
+    is not the same claim: it says whether the component MAY be redistributed,
+    not whether this repository distributes it. None of those shapes qualifies a
+    rights-paperwork finding for the D491 informational downgrade.
+    """
+    if not isinstance(entry, dict):
+        return False
+    field = surface.get("redistribution_field") if isinstance(surface, dict) else None
+    if not field:
+        return False
+    return entry.get(field) == "not_distributed"

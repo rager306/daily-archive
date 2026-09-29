@@ -7453,6 +7453,42 @@ def _run_all_tests() -> int:
         test_quarantine_semantic_boundary_every_mutation_is_not_silent,
         test_quarantine_semantic_boundary_is_wired_into_build_report,
         test_quarantine_semantic_boundary_summary_separates_relevance_from_isolation,
+        # D491 / R141 — active research authorization vs historical M513 C3.
+        test_active_research_authorization_is_valid_and_wired_into_build_report,
+        test_active_research_authorization_missing_fails_closed,
+        test_active_research_authorization_graph_lock_relaxation_is_refused,
+        test_active_research_authorization_import_lock_relaxation_is_refused,
+        test_active_research_authorization_third_party_rights_claim_is_refused,
+        test_active_research_authorization_quality_pass_claim_is_refused,
+        test_active_research_authorization_requires_verbatim_instruction,
+        test_active_research_authorization_cannot_waive_integrity_obligations,
+        test_active_research_authorization_cannot_fabricate_historical_c3_decision,
+        test_active_research_authorization_marks_historical_c3_not_an_active_blocker,
+        test_active_research_authorization_revoked_verdict_is_refused,
+        test_active_research_authorization_requires_owner_directive_kind,
+        test_active_research_authorization_requires_d491_identity,
+        test_active_research_authorization_scope_must_stay_bounded,
+        test_research_authorization_oracle_survives_malformed_documents,
+        test_research_authorization_oracle_refuses_a_revoked_document,
+        test_license_rights_paperwork_is_informational_under_active_research,
+        test_license_rights_paperwork_stays_blocking_without_authorization,
+        test_license_blocked_position_is_not_treated_as_non_distributed,
+        test_license_non_distribution_helpers_require_the_explicit_token,
+        test_model_rights_surface_redistributable_false_is_not_non_distribution_evidence,
+        test_license_hash_corruption_is_not_suppressed_by_authorization,
+        test_active_research_authorization_does_not_relax_graph_or_import_locks,
+        test_d491_c3_class_waives_only_the_absence_of_release_review,
+        test_d491_waiver_keeps_missing_release_evidence_blocking,
+        test_d491_waiver_keeps_false_release_claims_blocking,
+        test_d491_waiver_still_downgrades_the_absence_of_release_review,
+        # D491 review fix — the verdict exemption must be earned, not declared.
+        test_derive_verdict_restores_drift_risk_for_unrelated_low_severity,
+        test_derive_verdict_restores_drift_risk_for_unknown_severity,
+        test_derive_verdict_ignores_forged_d491_flag_name_and_text,
+        test_derive_verdict_exempts_only_the_registered_authentic_d491_note,
+        test_derive_verdict_requires_live_authorization_for_the_exemption,
+        test_derive_verdict_registers_the_c3_site_too,
+        test_serialized_report_marks_only_authentic_informational_notes,
     ]
     passed = 0
     failed = 0
@@ -9090,3 +9126,763 @@ def test_prompt_normative_contract_is_wired_into_build_report():
 
     source = inspect.getsource(TrajectoryService.build_report)
     assert "_check_prompt_normative_contract()" in source
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# D491 / R141 — active research authorization vs historical M513 C3.
+#
+# The owner directive separates ACTIVE NON-COMMERCIAL RESEARCH from the historical
+# M513 C3 release gate. These tests pin the two halves of that separation:
+#   - the authorization must be a *narrow* process waiver: graph/import locks and
+#     the integrity obligations survive, no third-party right and no quality pass
+#     is inferred, and the historical pending record is never rewritten;
+#   - its effect is scoped: only the C3 release-decision class and the
+#     rights-paperwork class for non-distributed positions become informational,
+#     while provenance/hash corruption stays blocking.
+# ──────────────────────────────────────────────────────────────────────────────
+
+_RESEARCH_AUTHORIZATION = "data/parse/research_authorization.yaml"
+_ACCEPTANCE_MANIFEST = "data/parse/acceptance_manifest.yaml"
+_RESEARCH_AUTHORIZATION_PREFIX = "active_research_authorization"
+
+
+def _research_authorization_service() -> TrajectoryService:
+    """Scratch TrajectoryService carrying the authorization DATA and live manifest."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    repo = _scripts_dir.parent
+    for rel in (_RESEARCH_AUTHORIZATION, _ACCEPTANCE_MANIFEST):
+        _write(service.root / rel, (repo / rel).read_text(encoding="utf-8"))
+    return service
+
+
+def _mutate_research_authorization(service: TrajectoryService, mutate) -> None:
+    path = service.root / _RESEARCH_AUTHORIZATION
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    mutate(doc)
+    _write(path, yaml.safe_dump(doc, allow_unicode=True, sort_keys=False))
+
+
+def _research_authorization_flags_named(flags, name: str):
+    return [f for f in flags if f.flag == f"{_RESEARCH_AUTHORIZATION_PREFIX}_{name}"]
+
+
+def test_active_research_authorization_is_valid_and_wired_into_build_report():
+    """The committed authorization validates and the rule is actually invoked."""
+    import inspect
+
+    service = _research_authorization_service()
+    assert service._load_research_authorization() is not None
+    assert service._check_active_research_authorization() == []
+    assert "_check_active_research_authorization()" in inspect.getsource(
+        TrajectoryService.build_report
+    )
+    assert "active_policy=active_policy" in inspect.getsource(
+        TrajectoryService.build_report
+    )
+
+
+def test_active_research_authorization_missing_fails_closed():
+    """No authorization means the C3/rights-review process gates stay in force."""
+    service = _research_authorization_service()
+    (service.root / _RESEARCH_AUTHORIZATION).unlink()
+    assert service._load_research_authorization() is None
+    flags = service._check_active_research_authorization()
+    missing = _research_authorization_flags_named(flags, "missing")
+    assert len(missing) == 1
+    assert missing[0].severity == "medium"
+
+
+def test_active_research_authorization_graph_lock_relaxation_is_refused():
+    """`кроме графа` is a hard boundary: a waiver may not open graph writes."""
+    service = _research_authorization_service()
+
+    def relax(doc):
+        doc["retained_locks"]["graph_write"] = "allowed"
+
+    _mutate_research_authorization(service, relax)
+    assert service._load_research_authorization() is None
+    flags = service._check_active_research_authorization()
+    assert _research_authorization_flags_named(flags, "lock_relaxed")
+    assert all(flag.severity == "high" for flag in flags)
+
+
+def test_active_research_authorization_import_lock_relaxation_is_refused():
+    service = _research_authorization_service()
+
+    def relax(doc):
+        doc["retained_locks"]["import_eligible"] = True
+
+    _mutate_research_authorization(service, relax)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(), "lock_relaxed"
+    )
+
+
+def test_active_research_authorization_third_party_rights_claim_is_refused():
+    """The owner waiver is a process decision, never a rights grant."""
+    service = _research_authorization_service()
+
+    def claim(doc):
+        doc["not_granted"]["third_party_legal_rights"] = True
+
+    _mutate_research_authorization(service, claim)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(), "rights_or_quality_claim"
+    )
+
+
+def test_active_research_authorization_quality_pass_claim_is_refused():
+    service = _research_authorization_service()
+
+    def claim(doc):
+        doc["not_granted"]["quality_pass"] = True
+
+    _mutate_research_authorization(service, claim)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(), "rights_or_quality_claim"
+    )
+
+
+def test_active_research_authorization_requires_verbatim_instruction():
+    service = _research_authorization_service()
+
+    def soften(doc):
+        doc["authority"]["verbatim_instruction"] = "stop worrying about licences"
+
+    _mutate_research_authorization(service, soften)
+    assert service._load_research_authorization() is None
+    flags = service._check_active_research_authorization()
+    assert _research_authorization_flags_named(flags, "instruction_missing")
+
+
+def test_active_research_authorization_cannot_waive_integrity_obligations():
+    """A blanket suppression is not the owner's authorization."""
+    service = _research_authorization_service()
+
+    def drop(doc):
+        doc["retained_obligations"] = ["license_and_notice_artifacts"]
+
+    _mutate_research_authorization(service, drop)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(), "obligation_waived"
+    )
+
+
+def test_active_research_authorization_cannot_fabricate_historical_c3_decision():
+    """The live M513 decision stays pending; claiming otherwise fails closed."""
+    service = _research_authorization_service()
+
+    def forge(doc):
+        doc["historical_c3"]["expected_decision"] = "recorded"
+
+    _mutate_research_authorization(service, forge)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(),
+        "historical_c3_divergence",
+    )
+    manifest = yaml.safe_load(
+        (service.root / _ACCEPTANCE_MANIFEST).read_text(encoding="utf-8")
+    )
+    assert (
+        manifest["release_decision_package"]["human_release_review"]["decision"]
+        == "pending"
+    )
+
+
+def test_active_research_authorization_marks_historical_c3_not_an_active_blocker():
+    """Valid authorization exposes C3 pending as history, not as a research gate."""
+    from governor.application.trajectory_service import (
+        _research_authorization_policy_summary,
+    )
+
+    service = _research_authorization_service()
+    doc = service._load_research_authorization()
+    assert doc is not None
+    summary = _research_authorization_policy_summary(doc, "pending")
+    assert summary["c3_process_gates"] == "waived"
+    assert summary["independent_rights_review_wait"] == "waived"
+    assert summary["graph_locks"] == "retained"
+    assert summary["third_party_legal_rights"] == "not_granted"
+    assert summary["quality_pass"] == "not_inferred"
+    assert summary["historical_c3_decision"] == "pending"
+    assert summary["historical_c3_active_blocker"] is False
+
+
+def test_active_research_authorization_revoked_verdict_is_refused():
+    """D491 review fix: a `revoked` authority is not an authorization.
+
+    The oracle previously never read `authority.verdict`, so a document that
+    revoked its own authorization still waived the C3 process gates.
+    """
+    service = _research_authorization_service()
+
+    def revoke(doc):
+        doc["authority"]["verdict"] = "revoked"
+
+    _mutate_research_authorization(service, revoke)
+    assert service._load_research_authorization() is None
+    flags = service._check_active_research_authorization()
+    assert _research_authorization_flags_named(flags, "authority_verdict_not_authorized")
+    assert all(flag.severity == "high" for flag in flags)
+
+
+def test_active_research_authorization_requires_owner_directive_kind():
+    """D491 review fix: only the owner-directive kind authorizes the waiver."""
+    service = _research_authorization_service()
+
+    def wrong_kind(doc):
+        doc["authority"]["kind"] = "model_suggestion"
+
+    _mutate_research_authorization(service, wrong_kind)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(), "authority_kind_invalid"
+    )
+
+
+def test_active_research_authorization_requires_d491_identity():
+    """D491 review fix: another recorded decision is a different process change."""
+    service = _research_authorization_service()
+
+    def other_decision(doc):
+        doc["authority"]["recorded_decision"] = "D492"
+
+    _mutate_research_authorization(service, other_decision)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(), "authority_identity_mismatch"
+    )
+
+
+def test_active_research_authorization_scope_must_stay_bounded():
+    """D491 review fix: the waiver cannot widen itself past research operations."""
+    for operations in (
+        ["local_development", "production_deploy"],
+        ["local_development", "graph_write"],
+        [],
+        "tests",
+        [{"operation": "local_development"}],
+    ):
+        service = _research_authorization_service()
+
+        def widen(doc, chosen=operations):
+            doc["scope"]["operation_scope"] = chosen
+
+        _mutate_research_authorization(service, widen)
+        assert service._load_research_authorization() is None, operations
+        assert _research_authorization_flags_named(
+            service._check_active_research_authorization(), "scope_unbounded"
+        ), operations
+
+    service = _research_authorization_service()
+
+    def widen_product(doc):
+        doc["scope"]["product"] = "commercial_distribution"
+
+    _mutate_research_authorization(service, widen_product)
+    assert service._load_research_authorization() is None
+    assert _research_authorization_flags_named(
+        service._check_active_research_authorization(), "scope_unbounded"
+    )
+
+
+def test_research_authorization_oracle_survives_malformed_documents():
+    """D491 review fix: malformed shapes are refused, never raised on.
+
+    A list member that is a mapping previously reached `set(...)` and raised
+    TypeError, which would crash the whole governor run instead of refusing the
+    waiver; every malformed shape must return violations.
+    """
+    from governor.application.trajectory_service import (
+        _research_authorization_violations,
+    )
+
+    base = yaml.safe_load(
+        (_scripts_dir.parent / _RESEARCH_AUTHORIZATION).read_text(encoding="utf-8")
+    )
+    mapping_obligation = json.loads(json.dumps(base))
+    mapping_obligation["retained_obligations"] = [{"obligation": "x"}]
+    string_obligations = json.loads(json.dumps(base))
+    string_obligations["retained_obligations"] = "provenance_and_hash_integrity"
+    non_string_operations = json.loads(json.dumps(base))
+    non_string_operations["scope"]["operation_scope"] = ["tests", ["measurement"]]
+
+    malformed = (
+        None,
+        [],
+        "authorized",
+        {"authority": "revoked", "scope": []},
+        {
+            "authority": {"kind": [], "verdict": {}, "recorded_decision": ["D491"]},
+            "scope": {"product": [], "operation_scope": {"a": 1}},
+        },
+        mapping_obligation,
+        string_obligations,
+        non_string_operations,
+    )
+    for doc in malformed:
+        violations = _research_authorization_violations(doc, "pending")
+        assert isinstance(violations, set) and violations, doc
+
+
+def test_research_authorization_oracle_refuses_a_revoked_document():
+    """D491 review fix: the refusal is in the oracle, not only in the wiring."""
+    from governor.application.trajectory_service import (
+        _research_authorization_violations,
+    )
+
+    doc = yaml.safe_load(
+        (_scripts_dir.parent / _RESEARCH_AUTHORIZATION).read_text(encoding="utf-8")
+    )
+    assert _research_authorization_violations(doc, "pending") == set()
+    doc["authority"]["verdict"] = "revoked"
+    assert "authority_verdict_not_authorized" in _research_authorization_violations(
+        doc, "pending"
+    )
+
+
+# ── licensed-rights noise: scoped informational, never a blanket suppression ──
+
+
+def _license_service_with_research_authorization() -> TrajectoryService:
+    """Licence scratch root that also carries the D491 authorization and manifest."""
+    service = _component_license_service()
+    repo = _scripts_dir.parent
+    for rel in (_RESEARCH_AUTHORIZATION, _ACCEPTANCE_MANIFEST):
+        _write(service.root / rel, (repo / rel).read_text(encoding="utf-8"))
+    return service
+
+
+def _break_position_evidence(service: TrajectoryService, redistribution: str) -> str:
+    """Drop `license_evidence` from the first position with the given redistribution.
+
+    Returns the component id, and re-pins the contract binding so the mutation is
+    a *semantic* rights-paperwork gap rather than a hash-corruption finding.
+    """
+    inventory_path = service.root / _COMPONENT_LICENSE_INVENTORY
+    inventory = yaml.safe_load(inventory_path.read_text(encoding="utf-8"))
+    target = None
+    for record in inventory["components"]:
+        if record.get("redistribution") == redistribution:
+            record.pop("license_evidence", None)
+            target = record["component_id"]
+            break
+    assert target is not None, redistribution
+    _write(inventory_path, yaml.safe_dump(inventory, allow_unicode=True, sort_keys=False))
+    contract_path = service.root / _COMPONENT_LICENSE_CONTRACT
+    contract = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
+    digest = hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+    for binding in contract["bindings"]["source_data"]:
+        if binding["path"] == _COMPONENT_LICENSE_INVENTORY:
+            binding["sha256"] = digest
+    _write(
+        contract_path, yaml.safe_dump(contract, allow_unicode=True, sort_keys=False)
+    )
+    return target
+
+
+def test_license_rights_paperwork_is_informational_under_active_research():
+    """A position that PROVES `not_distributed` is informational under D491."""
+    service = _license_service_with_research_authorization()
+    assert service._load_research_authorization() is not None
+    _break_position_evidence(service, "not_distributed")
+    flags = service._check_component_license_provenance()
+    evidence_flags = _license_flags_named(flags, "missing_license_evidence")
+    assert evidence_flags, "the rights-paperwork gap must stay visible"
+    assert all(flag.severity == "low" for flag in evidence_flags)
+    assert all("D491" in flag.evidence for flag in evidence_flags)
+
+
+def test_license_rights_paperwork_stays_blocking_without_authorization():
+    """Without the authorization the same gap keeps the contract severity."""
+    service = _component_license_service()
+    _break_position_evidence(service, "not_distributed")
+    flags = service._check_component_license_provenance()
+    evidence_flags = _license_flags_named(flags, "missing_license_evidence")
+    assert evidence_flags
+    assert all(flag.severity == "high" for flag in evidence_flags)
+
+
+def test_license_blocked_position_is_not_treated_as_non_distributed():
+    """D491 review fix: `redistribution: blocked` is not proof of non-distribution.
+
+    Blocked states that redistribution is not permitted, not that the artifact is
+    absent from what this repository distributes, so its rights-paperwork gap
+    keeps the contract severity even under the active-research authorization.
+    """
+    service = _license_service_with_research_authorization()
+    assert service._load_research_authorization() is not None
+    _break_position_evidence(service, "blocked")
+    flags = service._check_component_license_provenance()
+    evidence_flags = _license_flags_named(flags, "missing_license_evidence")
+    assert evidence_flags, "the rights-paperwork gap must stay visible"
+    assert all(flag.severity == "high" for flag in evidence_flags)
+    assert all("D491" not in flag.evidence for flag in evidence_flags)
+
+
+def test_license_non_distribution_helpers_require_the_explicit_token():
+    """Unit pin: unknown, `blocked` and `redistributable: false` prove nothing."""
+    from governor.application.trajectory_service import (
+        _license_position_is_non_distributed,
+        _license_surface_entry_is_non_distributed,
+    )
+
+    assert _license_position_is_non_distributed(
+        {"redistribution": "not_distributed"}
+    ) is True
+    assert _license_position_is_non_distributed({"redistribution": "blocked"}) is False
+    assert _license_position_is_non_distributed({}) is False
+    assert _license_position_is_non_distributed(None) is False
+
+    mapped = {"redistribution_field": "redistribution"}
+    assert _license_surface_entry_is_non_distributed(
+        {"redistribution": "not_distributed"}, mapped
+    ) is True
+    assert _license_surface_entry_is_non_distributed(
+        {"redistribution": "blocked"}, mapped
+    ) is False
+    # A surface that maps no redistribution field (the model-rights surface) and
+    # an unknown entry prove nothing; `redistributable: false` states whether the
+    # component MAY be redistributed, not whether this repo distributes it.
+    assert _license_surface_entry_is_non_distributed({}, {}) is False
+    assert _license_surface_entry_is_non_distributed(
+        {"redistributable": False}, {"redistribution_field": None}
+    ) is False
+    assert _license_surface_entry_is_non_distributed(
+        {"redistributable": True}, {"redistribution_field": None}
+    ) is False
+
+
+def test_model_rights_surface_redistributable_false_is_not_non_distribution_evidence():
+    """D491 review fix: a bare `redistributable: false` does not waive paperwork.
+
+    The model-rights surface maps no redistribution field, so none of its
+    entries can prove non-distribution; dropping an asset's evidence stays
+    blocking even under the active-research authorization.
+    """
+    service = _license_service_with_research_authorization()
+    assert service._load_research_authorization() is not None
+    surface_path = service.root / "data/parse/grobid_model_rights.yaml"
+    surface = yaml.safe_load(surface_path.read_text(encoding="utf-8"))
+    asset = next(
+        entry for entry in surface["assets"] if entry.get("rights_status") == "blocked"
+    )
+    assert asset.get("redistributable") is False
+    asset.pop("evidence", None)
+    _write(surface_path, yaml.safe_dump(surface, allow_unicode=True, sort_keys=False))
+    flags = service._check_component_license_provenance()
+    evidence_flags = _license_flags_named(flags, "missing_license_evidence")
+    assert evidence_flags, "the surface evidence gap must still be reported"
+    assert all(flag.severity == "high" for flag in evidence_flags)
+    assert all("D491" not in flag.evidence for flag in evidence_flags)
+
+
+def test_license_hash_corruption_is_not_suppressed_by_authorization():
+    """Provenance/hash integrity survives the waiver: no broad suppression."""
+    service = _license_service_with_research_authorization()
+    inventory_path = service.root / _COMPONENT_LICENSE_INVENTORY
+    inventory_path.write_text(
+        inventory_path.read_text(encoding="utf-8") + "\n# tampered\n",
+        encoding="utf-8",
+    )
+    flags = service._check_component_license_provenance()
+    mismatch = _license_flags_named(flags, "binding_mismatch")
+    assert mismatch, "a corrupted ledger binding must still be flagged"
+    assert all(flag.severity == "high" for flag in mismatch)
+
+
+def test_active_research_authorization_does_not_relax_graph_or_import_locks():
+    """The authorization never turns a lock into a permission."""
+    service = _research_authorization_service()
+    doc = service._load_research_authorization()
+    assert doc is not None
+    assert doc["retained_locks"]["graph_write"] == "forbidden"
+    assert doc["retained_locks"]["import_eligible"] is False
+    assert doc["retained_locks"]["auto_promote"] == "forbidden"
+    assert doc["retained_locks"]["new_distribution"] == "forbidden"
+    assert doc["not_granted"]["graph_write"] is False
+    assert doc["not_granted"]["import_eligible"] is False
+
+
+# ── D491: the C3 waiver is the ABSENCE of a review decision, nothing wider ──
+
+
+def _external_holdout_service_with_research_authorization() -> TrajectoryService:
+    """Holdout scratch root that also carries the validated D491 authorization."""
+    service = _external_holdout_service()
+    _write(
+        service.root / _RESEARCH_AUTHORIZATION,
+        (_scripts_dir.parent / _RESEARCH_AUTHORIZATION).read_text(encoding="utf-8"),
+    )
+    return service
+
+
+def _mutate_external_holdout_manifest(service: TrajectoryService, mutate) -> None:
+    path = service.root / _EXTERNAL_HOLDOUT_MANIFEST
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    mutate(manifest)
+    _write(path, yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False))
+
+
+def test_d491_c3_class_waives_only_the_absence_of_release_review():
+    """D491 review fix: false claims and missing evidence are not in the class."""
+    from governor.application.trajectory_service import (
+        _RESEARCH_AUTHORIZATION_BOUNDED_OPERATIONS,
+        _RESEARCH_AUTHORIZATION_C3_FLAG_LABELS,
+    )
+
+    assert _RESEARCH_AUTHORIZATION_C3_FLAG_LABELS == {
+        "release_decision_not_recorded",
+        "citation_without_release_decision",
+    }
+    doc = yaml.safe_load(
+        (_scripts_dir.parent / _RESEARCH_AUTHORIZATION).read_text(encoding="utf-8")
+    )
+    assert set(doc["c3_release_decision_class"]) == set(
+        _RESEARCH_AUTHORIZATION_C3_FLAG_LABELS
+    )
+    assert set(doc["scope"]["operation_scope"]) <= set(
+        _RESEARCH_AUTHORIZATION_BOUNDED_OPERATIONS
+    )
+
+
+def test_d491_waiver_keeps_missing_release_evidence_blocking():
+    """D491 review fix: a missing release-decision artifact is not a review gap."""
+    service = _external_holdout_service_with_research_authorization()
+    assert service._load_research_authorization() is not None
+    _mutate_external_holdout_manifest(
+        service,
+        lambda manifest: manifest["release_decision_package"][
+            "human_release_review"
+        ].update({"decision_record": "doc/review/MISSING-DECISION-RECORD.md"}),
+    )
+    flags = _external_holdout_flags_named(
+        service._check_external_holdout_package(), "release_decision_artifact_missing"
+    )
+    assert flags
+    assert all(flag.severity == "high" for flag in flags)
+    assert all("D491" not in flag.evidence for flag in flags)
+
+
+def test_d491_waiver_keeps_false_release_claims_blocking():
+    """D491 review fix: a claimed decision or execution without a record is deception."""
+    cases = (
+        (
+            lambda manifest: manifest["release_decision_package"][
+                "human_release_review"
+            ].update({"decision": "recorded"}),
+            "release_decision_claimed_without_record",
+        ),
+        (
+            lambda manifest: manifest["release_decision_package"][
+                "human_release_review"
+            ].update({"prose_alone_authorizes_release": True}),
+            "release_decision_prose_only",
+        ),
+        (
+            lambda manifest: manifest["external_holdout_contract"].update(
+                {"execution_status": "executed"}
+            ),
+            "execution_claimed_without_release",
+        ),
+    )
+    for mutate, label in cases:
+        service = _external_holdout_service_with_research_authorization()
+        assert service._load_research_authorization() is not None
+        _mutate_external_holdout_manifest(service, mutate)
+        flags = _external_holdout_flags_named(
+            service._check_external_holdout_package(), label
+        )
+        assert flags, label
+        assert all(flag.severity == "high" for flag in flags), label
+        assert all("D491" not in flag.evidence for flag in flags), label
+
+
+def test_d491_waiver_still_downgrades_the_absence_of_release_review():
+    """The narrowed class still does its job: absence of review stays visible.
+
+    The trigger must not touch the live M513 decision itself: changing it makes
+    the authorization diverge from the manifest and fail closed, which is the
+    correct behaviour and a different property from the waiver's scope.
+    """
+    cases = (
+        (
+            lambda manifest: manifest["release_decision_package"][
+                "human_release_review"
+            ].update({"decision_record": ""}),
+            "release_decision_not_recorded",
+        ),
+        (
+            lambda manifest: manifest["external_holdout_contract"][
+                "citation_rule"
+            ].update({"citation_without_release_decision": "allowed"}),
+            "citation_without_release_decision",
+        ),
+    )
+    for mutate, label in cases:
+        service = _external_holdout_service_with_research_authorization()
+        assert service._load_research_authorization() is not None
+        _mutate_external_holdout_manifest(service, mutate)
+        assert service._load_research_authorization() is not None, label
+        flags = _external_holdout_flags_named(
+            service._check_external_holdout_package(), label
+        )
+        assert flags, label
+        assert all(flag.severity == "low" for flag in flags), label
+        assert all("D491" in flag.evidence for flag in flags), label
+
+
+# ── D491 review fix: the verdict exemption is per-instance and live-authenticated ──
+#
+# The previous revision of `_derive_verdict` ignored ANY `low` (and any unknown)
+# severity globally, so an unrelated low signal — or a forged note claiming to be
+# a D491 informational note — silently suppressed drift. These tests pin the two
+# halves of the corrected contract: severity alone never exempts, and only a note
+# this service itself downgraded under a *currently valid* authorization does.
+
+
+def _d491_registered_paperwork_flags(service: TrajectoryService) -> list:
+    """Real service-registered D491 notes emitted by the licence check."""
+    _break_position_evidence(service, "not_distributed")
+    flags = service._check_component_license_provenance()
+    return _license_flags_named(flags, "missing_license_evidence")
+
+
+def _d491_registered_release_review_flags(service: TrajectoryService) -> list:
+    """Real service-registered D491 notes emitted by the external-holdout check."""
+    _mutate_external_holdout_manifest(
+        service,
+        lambda manifest: manifest["release_decision_package"][
+            "human_release_review"
+        ].update({"decision_record": ""}),
+    )
+    return _external_holdout_flags_named(
+        service._check_external_holdout_package(), "release_decision_not_recorded"
+    )
+
+
+def test_derive_verdict_restores_drift_risk_for_unrelated_low_severity():
+    """An unrelated `low` flag is still drift: severity alone must not exempt."""
+    from types import SimpleNamespace
+
+    service = _research_authorization_service()
+    assert service._load_research_authorization() is not None
+    assert service._derive_verdict(
+        SimpleNamespace(has_blocking=False),
+        [DriftFlag("gsd_control_plane_unknown_probe", "low", "unrelated low signal")],
+        "preflight",
+    ) == TrajectoryVerdict.DRIFT_RISK
+
+
+def test_derive_verdict_restores_drift_risk_for_unknown_severity():
+    """Unknown/blank severities must not be treated as an implicit exemption."""
+    from types import SimpleNamespace
+
+    service = _research_authorization_service()
+    for severity in ("info", "warning", "", "LOW"):
+        verdict = service._derive_verdict(
+            SimpleNamespace(has_blocking=False),
+            [DriftFlag("gsd_control_plane_unknown_probe", severity, "non-standard severity")],
+            "preflight",
+        )
+        assert verdict == TrajectoryVerdict.DRIFT_RISK, severity
+
+
+def test_derive_verdict_ignores_forged_d491_flag_name_and_text():
+    """A flag cannot exempt itself by naming/spelling out a D491 note."""
+    from types import SimpleNamespace
+
+    service = _research_authorization_service()
+    forgeable = DriftFlag(
+        "external_holdout_package_citation_without_release_decision",
+        "low",
+        "citation_without_release_decision — informational for active non-commercial "
+        "research, D491; the human release decision remains unrecorded",
+    )
+    assert service._derive_verdict(
+        SimpleNamespace(has_blocking=False), [forgeable], "preflight"
+    ) == TrajectoryVerdict.DRIFT_RISK
+    # The registration gate itself refuses a label outside the oracle class, so
+    # an integrity/provenance finding can never be laundered into the exemption.
+    integrity_flag = DriftFlag(
+        "component_license_provenance_binding_mismatch", "high", "hash drift"
+    )
+    assert service._register_d491_informational(
+        integrity_flag, "binding_mismatch"
+    ) is False
+    assert integrity_flag.severity == "high"
+    # Even a class-valid label cannot launder a differently named finding.
+    assert service._register_d491_informational(
+        integrity_flag, "missing_license_evidence"
+    ) is False
+    assert integrity_flag.severity == "high"
+
+
+def test_derive_verdict_exempts_only_the_registered_authentic_d491_note():
+    """A genuinely downgraded note is exempt; raising it above `low` is not."""
+    from types import SimpleNamespace
+
+    service = _license_service_with_research_authorization()
+    assert service._load_research_authorization() is not None
+    notes = _d491_registered_paperwork_flags(service)
+    assert notes and all(flag.severity == "low" for flag in notes)
+    assert service._derive_verdict(
+        SimpleNamespace(has_blocking=False), notes, "preflight"
+    ) == TrajectoryVerdict.ON_TRACK
+    # Hard severity always applies: a later severity raise re-arms the verdict.
+    notes[0].severity = "high"
+    assert service._derive_verdict(
+        SimpleNamespace(has_blocking=False), notes, "preflight"
+    ) == TrajectoryVerdict.DRIFT_RISK
+
+
+def test_derive_verdict_requires_live_authorization_for_the_exemption():
+    """A registered note stops being exempt the moment the authorization is revoked."""
+    from types import SimpleNamespace
+
+    service = _license_service_with_research_authorization()
+    notes = _d491_registered_paperwork_flags(service)
+    assert notes and all(flag.severity == "low" for flag in notes)
+    assert service._derive_verdict(
+        SimpleNamespace(has_blocking=False), notes, "preflight"
+    ) == TrajectoryVerdict.ON_TRACK
+    _mutate_research_authorization(
+        service, lambda doc: doc["authority"].update({"verdict": "revoked"})
+    )
+    assert service._load_research_authorization() is None
+    assert service._derive_verdict(
+        SimpleNamespace(has_blocking=False), notes, "preflight"
+    ) == TrajectoryVerdict.DRIFT_RISK
+
+
+def test_derive_verdict_registers_the_c3_site_too():
+    """The external-holdout C3 downgrade site also earns the exemption."""
+    from types import SimpleNamespace
+
+    service = _external_holdout_service_with_research_authorization()
+    assert service._load_research_authorization() is not None
+    notes = _d491_registered_release_review_flags(service)
+    assert notes and all(flag.severity == "low" for flag in notes)
+    assert service._derive_verdict(
+        SimpleNamespace(has_blocking=False), notes, "preflight"
+    ) == TrajectoryVerdict.ON_TRACK
+
+
+def test_serialized_report_marks_only_authentic_informational_notes():
+    """A serialized `low` flag states whether the exemption actually applies."""
+    service = _license_service_with_research_authorization()
+    notes = _d491_registered_paperwork_flags(service)
+    assert notes
+    payload = service._flag_to_dict(notes[0])
+    assert payload["severity"] == "low"
+    assert payload["informational"] is True
+    unrelated = service._flag_to_dict(
+        DriftFlag("gsd_control_plane_unknown_probe", "low", "unrelated low signal")
+    )
+    assert unrelated["informational"] is False
