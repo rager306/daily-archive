@@ -710,3 +710,314 @@ fn stub_report_declares_the_measurement_scope() {
     // pooled quality claim is forbidden rather than merely absent.
     rehearsal::validate_report(&report).expect("the stub report must be admissible");
 }
+
+// ---------------------------------------------------------------------------
+// S06/T03 — the live band reads the carriers the document actually publishes
+// ---------------------------------------------------------------------------
+
+/// The real structural-profile shape observed from the live sidecar: the
+/// `<titleStmt>` carries only the title, the authors live under
+/// `<sourceDesc>/<biblStruct>/<analytic>`, and the date is published in both its
+/// display form and its normalized `when` form.  Inline and git-tracked, so this
+/// test never needs GROBID — it is the substrate-independent half of T03.
+const STRUCTURAL_HEADER_TEI: &str = r#"<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader xml:lang="en">
+    <fileDesc>
+      <titleStmt>
+        <title level="a" type="main">Recursive Language Models</title>
+      </titleStmt>
+      <publicationStmt>
+        <publisher/>
+        <date type="published" when="2026-05-11">11 May 2026</date>
+      </publicationStmt>
+      <sourceDesc>
+        <biblStruct status="extracted">
+          <analytic>
+            <author>
+              <persName><forename type="first">Alex</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+              <email>altzhang@mit.edu</email>
+            </author>
+            <author>
+              <persName><forename type="first">Tim</forename><surname>Kraska</surname></persName>
+            </author>
+            <title level="a" type="main">Recursive Language Models</title>
+          </analytic>
+          <monogr>
+            <imprint>
+              <date type="published" when="2026-05-11">11 May 2026</date>
+            </imprint>
+          </monogr>
+        </biblStruct>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text><body><p/></body></text>
+</TEI>"#;
+
+/// The same header with NO author carrier anywhere: the refusal must stay typed.
+const STRUCTURAL_HEADER_NO_AUTHOR_TEI: &str = r#"<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title level="a" type="main">Recursive Language Models</title>
+      </titleStmt>
+      <publicationStmt>
+        <date type="published" when="2026-05-11">11 May 2026</date>
+      </publicationStmt>
+      <sourceDesc>
+        <biblStruct status="extracted">
+          <analytic>
+            <title level="a" type="main">Recursive Language Models</title>
+          </analytic>
+        </biblStruct>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text><body><p/></body></text>
+</TEI>"#;
+
+#[test]
+fn live_band_reads_authors_published_outside_titlestmt() {
+    let admitted = match rehearsal::live_header_outcome(STRUCTURAL_HEADER_TEI.as_bytes()) {
+        AdmittedLaneOutcome::Admitted(composition) => composition,
+        AdmittedLaneOutcome::Refused(refusal) => panic!(
+            "the structural header must be admissible, got {}",
+            refusal.token()
+        ),
+    };
+    match admitted.as_ref() {
+        da_parse::HeaderCompositionOutcome::Accepted { composition } => {
+            assert_eq!(
+                composition.candidate.authors.len(),
+                2,
+                "both authors published under sourceDesc/analytic are read"
+            );
+            assert_eq!(composition.candidate.date.year, 2026);
+            assert_eq!(composition.candidate.date.month, Some(5));
+            assert_eq!(composition.candidate.date.day, Some(11));
+            assert_eq!(
+                composition.candidate.fields.title,
+                vec!["Recursive Language Models".to_owned()]
+            );
+            assert_eq!(
+                composition.candidate.fields.email,
+                vec!["altzhang@mit.edu".to_owned()]
+            );
+        }
+        other => panic!("the structural header must compose, got {other:?}"),
+    }
+}
+
+#[test]
+fn a_header_without_an_author_carrier_still_refuses_typed() {
+    match rehearsal::live_header_outcome(STRUCTURAL_HEADER_NO_AUTHOR_TEI.as_bytes()) {
+        AdmittedLaneOutcome::Refused(NativeSideRefusal::HeaderAuthorAbsent) => {}
+        other => panic!(
+            "a header with no author carrier must refuse header_author_absent, got {other:?}"
+        ),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// S06/T03 — the committed live-run bytes: both sides proven by an executed run
+// ---------------------------------------------------------------------------
+
+/// Read the COMMITTED live rehearsal artifact exactly as the harness wrote it.
+/// No network, no GROBID: the bytes are the evidence and this test judges them.
+fn committed_live_report() -> serde_json::Value {
+    let path = repo_root().join(DEFAULT_REPORT_LIVE);
+    let bytes = std::fs::read(&path).unwrap_or_else(|error| {
+        panic!(
+            "the executed live rehearsal artifact {DEFAULT_REPORT_LIVE} must be committed: {error}"
+        )
+    });
+    let text = String::from_utf8(bytes).expect("the rehearsal report is UTF-8 JSON");
+    // The serialized denylist may not appear in the raw committed bytes.
+    for token in FORBIDDEN_REPORT_TOKENS {
+        assert!(
+            !text.contains(token),
+            "forbidden token {token:?} leaked into the committed report bytes"
+        );
+    }
+    serde_json::from_str(&text).expect("the committed rehearsal report is JSON")
+}
+
+#[test]
+fn committed_live_report_proves_both_sides_by_an_executed_run() {
+    let report = committed_live_report();
+    let root = repo_root();
+
+    // The committed artifact is the live substrate, not the hermetic stub.
+    assert_eq!(
+        report["schema_version"],
+        "native-family-promotion-rehearsal.v1"
+    );
+    assert_eq!(report["substrate"]["kind"], "live_grobid_http");
+    assert_eq!(report["substrate"]["live_grobid_participated"], true);
+    assert_eq!(report["substrate"]["profile"], "structural");
+    assert_eq!(
+        report["substrate"]["endpoint_scope"],
+        "declared_local_sidecar"
+    );
+    assert_eq!(
+        report["substrate"]["corpus_scope"],
+        "layout_bakeoff_declared_corpus"
+    );
+    assert_eq!(report["substrate"]["sidecar_version"], "0.9.1");
+
+    // Scope: these numbers are a rehearsal and may NOT be pooled into a claim.
+    assert_eq!(report["claim_scope"], "rehearsal_only");
+    assert_eq!(report["pooled_quality_claim"], "forbidden");
+    assert_eq!(report["identity"]["rehearsed_lane"], "header");
+    assert_eq!(report["identity"]["episode"], "rehearsal");
+    assert_eq!(
+        report["identity"]["candidate_id"],
+        "da-parse.native_header_reference_composition"
+    );
+
+    // The declared route table is byte-identical before and after, and both
+    // sides carry the sha256 of BOTH carriers as they are on THIS checkout.
+    assert_eq!(
+        report["declared_route_table_before"], report["declared_route_table_after"],
+        "the declared route table must not move during a rehearsal"
+    );
+    let comparison = carrier_sha256(&root, DATA_COMPARISON);
+    let composition = carrier_sha256(&root, DATA_COMPOSITION);
+    for side in ["declared_route_table_before", "declared_route_table_after"] {
+        let carriers = report[side]["carrier_sha256"]
+            .as_object()
+            .unwrap_or_else(|| panic!("{side}.carrier_sha256 must be an object"));
+        assert_eq!(
+            carriers[DATA_COMPARISON].as_str(),
+            Some(comparison.as_str())
+        );
+        assert_eq!(
+            carriers[DATA_COMPOSITION].as_str(),
+            Some(composition.as_str())
+        );
+        assert_eq!(carriers.len(), 2, "exactly the two declared carriers");
+    }
+
+    // Every document: the executed rollback is byte identity, and the
+    // references band never moves during a header rehearsal.
+    let documents = report["documents"]
+        .as_array()
+        .expect("documents must be an array");
+    assert_eq!(documents.len(), 3, "the declared corpus_n");
+    for document in documents {
+        let baseline = &document["baseline"];
+        let returned = &document["returned"];
+        assert_eq!(
+            returned["sha256"], baseline["sha256"],
+            "the returned emission must carry the baseline digest"
+        );
+        assert_eq!(
+            returned["bytes"], baseline["bytes"],
+            "the returned emission must carry the baseline byte count"
+        );
+        assert_eq!(returned["lane_states"], baseline["lane_states"]);
+        assert_eq!(baseline["lane_states"]["header"], "java");
+        assert_eq!(document["rollback"]["returned_equals_baseline"], true);
+        assert_eq!(document["rollback"]["byte_identity"], true);
+        assert_eq!(document["rollback"]["table_returned_to_declared"], true);
+        assert_eq!(
+            document["lane_movement"]["references_changed"], false,
+            "the references lane may never move during a header rehearsal"
+        );
+        match document["native_side"]["outcome"].as_str() {
+            Some("admitted") => assert_eq!(
+                document["lane_movement"]["header_changed"], true,
+                "an admitted native side must really have moved the header band"
+            ),
+            Some("refused") => assert!(
+                !document["native_side"]["reason"]
+                    .as_str()
+                    .unwrap_or("")
+                    .is_empty(),
+                "a refused native side must carry a typed reason"
+            ),
+            other => panic!("native-side outcome drift: {other:?}"),
+        }
+    }
+
+    // The aggregate is non-vacuous: at least one document really switched.
+    assert_eq!(report["rehearsal"]["documents_total"], 3);
+    assert!(
+        report["rehearsal"]["documents_switched"]
+            .as_u64()
+            .expect("documents_switched is a number")
+            >= 1,
+        "a rehearsal with zero switched documents is vacuous"
+    );
+    let switched = report["rehearsal"]["documents_switched"].as_u64().unwrap();
+    let refused = report["rehearsal"]["documents_refused"].as_u64().unwrap();
+    assert_eq!(
+        switched + refused,
+        3,
+        "every document is either switched or refused"
+    );
+    assert_eq!(report["rehearsal"]["references_never_moved"], true);
+    assert_eq!(report["rehearsal"]["rollback_byte_identical_all"], true);
+    assert_eq!(report["rehearsal"]["switch_and_return_non_vacuous"], true);
+    assert_eq!(report["rehearsal"]["carriers_unchanged"], true);
+
+    // The single typed refusal falls on the document the candidate's own DATA
+    // records as a named gap (`hub_gap: java_header_raw 21 /
+    // native_accepted_header 20, pooling forbidden`, declared in BOTH route
+    // carriers): the executed run reproduces the declared gap instead of hiding
+    // or pooling it away.  No causal claim is made beyond that agreement.
+    let refused_documents: Vec<&serde_json::Value> = documents
+        .iter()
+        .filter(|document| document["native_side"]["outcome"] == "refused")
+        .collect();
+    assert_eq!(
+        refused_documents.len(),
+        1,
+        "exactly one document is refused, matching documents_refused"
+    );
+    assert_eq!(
+        refused_documents[0]["document_id"], "hub-2507.19457",
+        "the refusal is the declared hub-gap document"
+    );
+    assert_eq!(
+        refused_documents[0]["native_side"]["reason"], "native_outcome_rejected",
+        "the refusal is typed with the harness's closed vocabulary"
+    );
+
+    // Every policy lock survives the live run.
+    let locks = &report["locks"];
+    assert_eq!(locks["deployed"], false);
+    assert_eq!(locks["import_eligible"], false);
+    assert_eq!(locks["production_route"], "forbidden");
+    assert_eq!(locks["graph_write"], "forbidden");
+    assert_eq!(locks["auto_promote"], "forbidden");
+    assert_eq!(locks["this_wave_promotes"], "none");
+    assert_eq!(locks["observation_mode"], "shadow");
+    assert_eq!(locks["promotion_state"], "candidate");
+    assert!(locks["promotion_receipt"].is_null());
+    assert!(locks["explicit_decision"].is_null());
+
+    // The named gaps stay visible and are never pooled away.
+    assert_eq!(report["named_gaps"]["java_header_raw"], 21);
+    assert_eq!(report["named_gaps"]["native_accepted_header"], 20);
+    assert_eq!(report["named_gaps"]["pooling"], "forbidden");
+
+    // The committed bytes are admissible, and the fail-closed validator is NOT
+    // vacuous: it must reject a corrupted copy of these very bytes.
+    rehearsal::validate_report(&report).expect("the committed live report must be admissible");
+
+    let mut sha_mutant = report.clone();
+    sha_mutant["documents"][0]["returned"]["sha256"] =
+        serde_json::Value::String(format!("sha256:{}", "0".repeat(64)));
+    assert!(
+        rehearsal::validate_report(&sha_mutant).is_err(),
+        "a returned emission that differs from the baseline must be caught"
+    );
+
+    let mut lock_mutant = report.clone();
+    lock_mutant["locks"]["deployed"] = serde_json::Value::Bool(true);
+    assert!(
+        rehearsal::validate_report(&lock_mutant).is_err(),
+        "a lifted policy lock must be caught"
+    );
+}

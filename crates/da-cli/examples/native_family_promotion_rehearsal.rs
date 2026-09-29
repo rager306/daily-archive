@@ -2186,7 +2186,47 @@ fn attr_value(occurrence: &Occurrence, name: &str) -> Option<String> {
         .map(|(_, value)| value.clone())
 }
 
+/// The name a `<persName>` publishes, read faithfully rather than tag-flattened.
+///
+/// GROBID emits the structured form `<forename>Alex</forename>
+/// <forename>L</forename><surname>Zhang</surname>`; rendering tag boundaries as
+/// spaces and collapsing runs reads that as `Alex L Zhang` instead of the
+/// concatenation `AlexLZhang`.  A `<persName>` with no children keeps its plain
+/// text.  Nothing is invented: an empty name yields `None`.
+fn personal_name_text(pers_name_content: &str) -> Option<String> {
+    let mut spaced = String::with_capacity(pers_name_content.len() + 8);
+    let mut in_tag = false;
+    for character in pers_name_content.chars() {
+        match character {
+            '<' => {
+                in_tag = true;
+                spaced.push(' ');
+            }
+            '>' => {
+                in_tag = false;
+                spaced.push(' ');
+            }
+            other if !in_tag => spaced.push(other),
+            _ => {}
+        }
+    }
+    let joined = decode_entities(&spaced)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    if joined.is_empty() {
+        None
+    } else {
+        Some(joined)
+    }
+}
+
 /// Locate the real `<teiHeader>` carriers of one live Java TEI.
+///
+/// Authors are read from the document's own published carriers: `<titleStmt>`
+/// OR, on the structural profile, `<sourceDesc>/<biblStruct>/<analytic>`.  A
+/// name published in both places is read once, so the band never doubles the
+/// author list; nothing is synthesized.
 pub fn extract_header_carriers(tei: &[u8]) -> Result<HeaderCarriers, NativeSideRefusal> {
     let header_bytes =
         tei_element_bytes(tei, "teiHeader").map_err(|_| NativeSideRefusal::LiveTeiHeaderAbsent)?;
@@ -2200,20 +2240,30 @@ pub fn extract_header_carriers(tei: &[u8]) -> Result<HeaderCarriers, NativeSideR
                 carriers.title_texts.push(text);
             }
         }
-        for author in occurrences(&statement.content, "author") {
-            let Some(name) = texts_of(&author.content, "persName").into_iter().next() else {
-                continue;
-            };
-            let mut affiliations = Vec::new();
-            for affiliation in occurrences(&author.content, "affiliation") {
-                let key = attr_value(&affiliation, "key").unwrap_or_default();
-                let text = strip_tags(&affiliation.content).trim().to_owned();
-                if !key.is_empty() && !text.is_empty() {
-                    affiliations.push((key, text));
-                }
-            }
-            carriers.authors.push(AuthorCarriers { name, affiliations });
+    }
+    for author in occurrences(header, "author") {
+        let Some(pers_name) = occurrences(&author.content, "persName").into_iter().next() else {
+            continue;
+        };
+        let Some(name) = personal_name_text(&pers_name.content) else {
+            continue;
+        };
+        if carriers
+            .authors
+            .iter()
+            .any(|existing| existing.name == name)
+        {
+            continue;
         }
+        let mut affiliations = Vec::new();
+        for affiliation in occurrences(&author.content, "affiliation") {
+            let key = attr_value(&affiliation, "key").unwrap_or_default();
+            let text = strip_tags(&affiliation.content).trim().to_owned();
+            if !key.is_empty() && !text.is_empty() {
+                affiliations.push((key, text));
+            }
+        }
+        carriers.authors.push(AuthorCarriers { name, affiliations });
     }
     carriers.email_texts = texts_of(header, "email");
     carriers.pubnum_texts = texts_of(header, "pubnum");
