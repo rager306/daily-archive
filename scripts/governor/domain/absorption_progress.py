@@ -30,6 +30,14 @@ than a convention:
   ``weakest_stratum_not_weakest``);
 * a numeric threshold before S02 freezes one is
   ``threshold_invented_before_freeze``;
+* a coverage report that shrinks, extends or silently claims the required
+  product scope is ``required_scope_shrunk`` / ``family_outside_required_scope``
+  / ``family_claimed_without_required_scope`` (and ``required_scope_missing``
+  when the contract has lost the scope block entirely);
+* a split that reuses the evaluation corpus for tuning, or that declares its
+  disjointness by prompt hash instead of document identity, is
+  ``eval_split_reused_for_tuning`` / ``split_contract_missing``, and external
+  holdout bytes offered as local evidence are ``external_bytes_claimed``;
 * preservation pooled into extraction is
   ``preservation_pooled_with_extraction``;
 * a lifecycle state offered as executed product evidence is
@@ -57,6 +65,7 @@ import re
 from typing import Any, Optional
 
 __all__ = [
+    "SCOPE_VIOLATION_LABELS",
     "comparability_key",
     "denominator_violations",
     "measurement_violations",
@@ -94,6 +103,23 @@ _REQUIRED_AXES = frozenset(
         "resources",
         "authorization",
     }
+)
+
+#: The two states a required scope family may carry. ``threshold_pending`` is a
+#: required family the frozen corpus does not measure (D496): it must still be
+#: reported, but it can never be marked measured and can never pass.
+_SCOPE_FAMILY_STATES = ("required", "threshold_pending")
+
+#: The closed labels the scope/corpus/split half contributes. Pinned as a tuple
+#: so the vocabulary is inspectable without parsing the docstring.
+SCOPE_VIOLATION_LABELS = (
+    "required_scope_missing",
+    "required_scope_shrunk",
+    "family_outside_required_scope",
+    "family_claimed_without_required_scope",
+    "split_contract_missing",
+    "eval_split_reused_for_tuning",
+    "external_bytes_claimed",
 )
 
 
@@ -136,6 +162,126 @@ def _is_relative_path(value: Any) -> bool:
     return True
 
 
+def _required_scope_vocabulary(block: Any) -> list[str]:
+    """Names of ``required_scope`` fields that are absent or malformed."""
+    if not isinstance(block, dict):
+        return ["required_scope"]
+    missing: list[str] = []
+    if block.get("closed") is not True:
+        missing.append("required_scope.closed")
+    source = block.get("source")
+    if (
+        not isinstance(source, dict)
+        or _text(source.get("path")) is None
+        or _text(source.get("pointer")) is None
+    ):
+        missing.append("required_scope.source")
+    elif not _is_relative_path(source.get("path")):
+        missing.append("required_scope.source.path")
+    states = set(_text_list(block.get("family_state_vocabulary")))
+    if not set(_SCOPE_FAMILY_STATES) <= states:
+        missing.append("required_scope.family_state_vocabulary")
+    families = block.get("families")
+    if not isinstance(families, list) or not families:
+        missing.append("required_scope.families")
+    else:
+        reasons = set(_text_list(block.get("pending_reason_vocabulary")))
+        for index, family in enumerate(families):
+            if not isinstance(family, dict) or _text(family.get("family_id")) is None:
+                missing.append(f"required_scope.families[{index}].family_id")
+                continue
+            state = _text(family.get("state"))
+            if state not in states:
+                missing.append(f"required_scope.families[{index}].state")
+            elif state == "threshold_pending":
+                reason = _text(family.get("reason"))
+                if reason is None or (reasons and reason not in reasons):
+                    missing.append(f"required_scope.families[{index}].reason")
+    return missing
+
+
+def _assigned_population_vocabulary(block: Any) -> list[str]:
+    """Names of ``assigned_population`` fields that are absent or malformed."""
+    if not isinstance(block, dict):
+        return ["assigned_population"]
+    missing: list[str] = []
+    if block.get("closed") is not True:
+        missing.append("assigned_population.closed")
+    for key in ("census_id", "identity"):
+        if _text(block.get(key)) is None:
+            missing.append(f"assigned_population.{key}")
+    manifest = block.get("manifest")
+    if (
+        not isinstance(manifest, dict)
+        or _text(manifest.get("path")) is None
+        or _text(manifest.get("pointer")) is None
+        or _text(manifest.get("identity_field")) is None
+    ):
+        missing.append("assigned_population.manifest")
+    elif not _is_relative_path(manifest.get("path")):
+        missing.append("assigned_population.manifest.path")
+    for key in ("declared", "measurable", "excluded", "refused"):
+        if _count(block.get(key)) is None:
+            missing.append(f"assigned_population.{key}")
+    if block.get("bytes_present_required") is not True:
+        missing.append("assigned_population.bytes_present_required")
+    return missing
+
+
+def _independent_corpus_vocabulary(block: Any) -> list[str]:
+    """Names of ``independent_corpus`` fields that are absent or malformed."""
+    if not isinstance(block, dict):
+        return ["independent_corpus"]
+    missing: list[str] = []
+    if block.get("closed") is not True:
+        missing.append("independent_corpus.closed")
+    evaluation = block.get("evaluation")
+    if (
+        not isinstance(evaluation, dict)
+        or _text(evaluation.get("corpus_id")) is None
+        or _text(evaluation.get("bytes_state")) is None
+    ):
+        missing.append("independent_corpus.evaluation")
+    tuning = block.get("tuning")
+    if (
+        not isinstance(tuning, dict)
+        or _text(tuning.get("corpus_id")) is None
+        or _text(tuning.get("glob")) is None
+    ):
+        missing.append("independent_corpus.tuning")
+    disjoint = block.get("disjointness")
+    if not isinstance(disjoint, dict) or _text(disjoint.get("by")) is None:
+        missing.append("independent_corpus.disjointness")
+    elif disjoint.get("prompt_hash_forbidden") is not True:
+        missing.append("independent_corpus.disjointness.prompt_hash_forbidden")
+    external = block.get("external")
+    if not isinstance(external, dict) or _text(external.get("band")) is None:
+        missing.append("independent_corpus.external")
+    elif external.get("download_forbidden") is not True:
+        missing.append("independent_corpus.external.download_forbidden")
+    return missing
+
+
+def _split_contract_vocabulary(block: Any) -> list[str]:
+    """Names of ``split_contract`` fields that are absent or malformed."""
+    if not isinstance(block, dict):
+        return ["split_contract"]
+    missing: list[str] = []
+    if block.get("closed") is not True:
+        missing.append("split_contract.closed")
+    for key in (
+        "evaluation_never_tuning_input",
+        "reuse_forbidden",
+        "prompt_hash_disjointness_forbidden",
+    ):
+        if block.get(key) is not True:
+            missing.append(f"split_contract.{key}")
+    for key in ("disjointness_identity", "evaluation_source", "tuning_source"):
+        if _text(block.get(key)) is None:
+            missing.append(f"split_contract.{key}")
+    return missing
+
+
 def missing_contract_vocabulary(contract: Any) -> list[str]:
     """Names of required contract keys that are absent, empty or malformed.
 
@@ -151,6 +297,11 @@ def missing_contract_vocabulary(contract: Any) -> list[str]:
     for key in ("schema_version", "contract_id", "adr_ref", "boundary"):
         if _text(contract.get(key)) is None:
             missing.append(key)
+
+    missing.extend(_required_scope_vocabulary(contract.get("required_scope")))
+    missing.extend(_assigned_population_vocabulary(contract.get("assigned_population")))
+    missing.extend(_independent_corpus_vocabulary(contract.get("independent_corpus")))
+    missing.extend(_split_contract_vocabulary(contract.get("split_contract")))
 
     axes = contract.get("product_axes")
     if not isinstance(axes, dict):
@@ -670,6 +821,113 @@ def _threshold_freeze_violations(scorecard: dict, contract: dict) -> set[str]:
     return set()
 
 
+def _required_scope_family_states(contract: dict) -> dict[str, str]:
+    """family_id -> family state, from the contract's required scope."""
+    families = (contract.get("required_scope") or {}).get("families") or []
+    states: dict[str, str] = {}
+    for family in families:
+        if not isinstance(family, dict):
+            continue
+        family_id = _text(family.get("family_id"))
+        state = _text(family.get("state"))
+        if family_id is not None and state is not None:
+            states[family_id] = state
+    return states
+
+
+def _contract_external_band(contract: dict) -> Optional[str]:
+    external = (contract.get("independent_corpus") or {}).get("external")
+    if isinstance(external, dict):
+        return _text(external.get("band"))
+    return None
+
+
+def _split_disjointness_identity(contract: dict) -> Optional[str]:
+    return _text((contract.get("split_contract") or {}).get("disjointness_identity"))
+
+
+def _required_scope_violations(scorecard: dict, contract: dict) -> set[str]:
+    """Scope violations, only where a scorecard declares a coverage report.
+
+    Absence of a `scope_coverage` block is not a violation: a scorecard that
+    reports no family-level coverage makes no scope claim. Once it does, every
+    required family must be present (``required_scope_shrunk``), no family
+    outside the required scope may be declared
+    (``family_outside_required_scope``), and a family the frozen corpus does not
+    measure may not be claimed as measured
+    (``family_claimed_without_required_scope``). A malformed block is
+    ``required_scope_missing``.
+    """
+    block = scorecard.get("scope_coverage")
+    if block is None:
+        return set()
+    if not isinstance(block, dict) or not _text_list(block.get("families")):
+        return {"required_scope_missing"}
+    required = _required_scope_family_states(contract)
+    if not required:
+        return {"required_scope_missing"}
+    violations: set[str] = set()
+    declared = list(dict.fromkeys(_text_list(block.get("families"))))
+    for family_id in declared:
+        if family_id not in required:
+            violations.add("family_outside_required_scope")
+    if not set(required) <= set(declared):
+        violations.add("required_scope_shrunk")
+    for family_id in _text_list(block.get("measured")):
+        if family_id not in required:
+            violations.add("family_outside_required_scope")
+        elif required[family_id] != "required":
+            violations.add("family_claimed_without_required_scope")
+    return violations
+
+
+def _split_violations(scorecard: dict, contract: dict) -> set[str]:
+    """Split-discipline violations, only where a scorecard declares a split.
+
+    A `document_split` block must name both sides by the contract's disjointness
+    identity (document identity, never a prompt hash); a missing side or a
+    different identity is ``split_contract_missing``, and an identity appearing
+    on both sides is ``eval_split_reused_for_tuning``.
+    """
+    block = scorecard.get("document_split")
+    if block is None:
+        return set()
+    if not isinstance(block, dict):
+        return {"split_contract_missing"}
+    violations: set[str] = set()
+    evaluation = _text_list(block.get("evaluation_document_ids"))
+    tuning = _text_list(block.get("tuning_document_ids"))
+    if not evaluation or not tuning:
+        violations.add("split_contract_missing")
+    elif set(evaluation) & set(tuning):
+        violations.add("eval_split_reused_for_tuning")
+    identity = _text(block.get("identity_field"))
+    expected = _split_disjointness_identity(contract)
+    if identity is None or expected is None or identity != expected:
+        violations.add("split_contract_missing")
+    return violations
+
+
+def _external_violations(scorecard: dict, contract: dict) -> set[str]:
+    """External-holdout claims, only where a scorecard declares an external band.
+
+    The external band is `bytes_absent`: a scorecard that declares any other
+    band, or any external document identity, is claiming bytes it does not have
+    to hold (``external_bytes_claimed``).
+    """
+    block = scorecard.get("external_holdout")
+    if block is None:
+        return set()
+    if not isinstance(block, dict):
+        return {"external_bytes_claimed"}
+    allowed = _contract_external_band(contract)
+    if allowed is None or _text(block.get("band")) != allowed:
+        return {"external_bytes_claimed"}
+    if block.get("bytes_present") is True or _text_list(block.get("document_ids")):
+        return {"external_bytes_claimed"}
+    return set()
+
+
 def scorecard_violations(scorecard: Any, contract: Any) -> set[str]:
     """Every violation of one scorecard against the closed progress contract.
 
@@ -677,8 +935,20 @@ def scorecard_violations(scorecard: Any, contract: Any) -> set[str]:
     function is pure and total: a missing or malformed contract fails closed
     with ``contract_vocabulary_missing`` rather than accepting everything.
     """
-    if missing_contract_vocabulary(contract):
-        return {"contract_vocabulary_missing"}
+    missing_names = missing_contract_vocabulary(contract)
+    if missing_names:
+        violations = {"contract_vocabulary_missing"}
+        if any(
+            name == "required_scope" or name.startswith("required_scope.")
+            for name in missing_names
+        ):
+            violations.add("required_scope_missing")
+        if any(
+            name == "split_contract" or name.startswith("split_contract.")
+            for name in missing_names
+        ):
+            violations.add("split_contract_missing")
+        return violations
     contract = dict(contract)
     if not isinstance(scorecard, dict):
         return {"scorecard_not_an_object"}
@@ -709,4 +979,7 @@ def scorecard_violations(scorecard: Any, contract: Any) -> set[str]:
     violations |= _lineage_violations(scorecard, contract)
     violations |= _comparison_violations(scorecard, contract)
     violations |= _threshold_freeze_violations(scorecard, contract)
+    violations |= _required_scope_violations(scorecard, contract)
+    violations |= _split_violations(scorecard, contract)
+    violations |= _external_violations(scorecard, contract)
     return violations

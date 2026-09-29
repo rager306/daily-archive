@@ -48,7 +48,7 @@ schema_version: absorption-progress.v1
 adr_ref: ADR-075
 contract_id: absorption-progress-scorecard
 requirement_ids: [R133, R134, R141, R142]
-decisions: [D127, D491]
+decisions: [D127, D491, D496]
 
 # ── axes ────────────────────────────────────────────────────────────────────
 # The recorded five product axes, with preservation split out of per-family
@@ -146,6 +146,169 @@ comparability:
   keys: [corpus_id, profile, oracle, source_revision]
   same_series_required: true
   cross_series_behavior: not_comparable
+
+# ── required product scope (S02) ─────────────────────────────────────────────
+# Which product families the scorecard is required to report, and which of them
+# the frozen local corpus can actually measure. The family list is a projection
+# of the `scope: required` rows of the parity ledger, reused by path+pointer
+# rather than restated as classes there; the test re-derives it from the carrier
+# and fails on drift, so this is a binding to one authority, not a second one.
+#
+# A family the frozen corpus does not measure carries a typed reason and the
+# `threshold_pending` state. It is still required (its absence from a coverage
+# report is a shrink), but it can neither be marked measured nor read as
+# passing: it reports `not_measured` and cannot pass (D496). Without this block
+# a truncated scope would read as a clean, complete product report.
+required_scope:
+  closed: true
+  source:
+    path: data/parse/grobid_compatibility.yaml
+    pointer: parity_ledger.rows
+    selector: scope == required
+    authority: parity_ledger
+  measured_identity: measured_by_corpus_parity
+  family_state_vocabulary: [required, threshold_pending]
+  pending_reason_vocabulary:
+    - rest_transport_surface
+    - dialect_flag_surface
+    - pdf_input_stage_not_in_tei_composition
+    - lane_not_admitted_in_measurement
+    - visual_lane_not_admitted_in_measurement
+    - java_side_profile_surface
+    - not_in_measured_runner_path
+  families:
+    - family_id: rest.isalive
+      measurement_identity: outside_corpus_parity
+      reason: rest_transport_surface
+      state: threshold_pending
+    - family_id: rest.health
+      measurement_identity: outside_corpus_parity
+      reason: rest_transport_surface
+      state: threshold_pending
+    - family_id: rest.version
+      measurement_identity: outside_corpus_parity
+      reason: rest_transport_surface
+      state: threshold_pending
+    - family_id: rest.processFulltextDocument
+      measurement_identity: outside_corpus_parity
+      reason: rest_transport_surface
+      state: threshold_pending
+    - family_id: rest.processHeaderDocument
+      measurement_identity: outside_corpus_parity
+      reason: rest_transport_surface
+      state: threshold_pending
+    - family_id: rest.processReferences
+      measurement_identity: outside_corpus_parity
+      reason: rest_transport_surface
+      state: threshold_pending
+    - family_id: dialect.teiCoordinates
+      measurement_identity: outside_corpus_parity
+      reason: dialect_flag_surface
+      state: threshold_pending
+    - family_id: stage.pdfalto_layout
+      measurement_identity: outside_corpus_parity
+      reason: pdf_input_stage_not_in_tei_composition
+      state: threshold_pending
+    - family_id: stage.document_segmentation
+      measurement_identity: outside_corpus_parity
+      reason: lane_not_admitted_in_measurement
+      state: threshold_pending
+    - family_id: stage.header_composition
+      measurement_identity: measured_by_corpus_parity
+      state: required
+    - family_id: stage.reference_segmentation
+      measurement_identity: measured_by_corpus_parity
+      state: required
+    - family_id: stage.figure_table_formula
+      measurement_identity: outside_corpus_parity
+      reason: visual_lane_not_admitted_in_measurement
+      state: threshold_pending
+    - family_id: stage.bibliographic_consolidation
+      measurement_identity: outside_corpus_parity
+      reason: java_side_profile_surface
+      state: threshold_pending
+    - family_id: stage.tei_lift
+      measurement_identity: outside_corpus_parity
+      reason: not_in_measured_runner_path
+      state: threshold_pending
+    - family_id: parse.component.native_fulltext_composition_shadow
+      measurement_identity: measured_by_corpus_parity
+      state: required
+
+# ── assigned population (S02) ───────────────────────────────────────────────
+# The 610 assigned-document identity, bound to the local holdout manifest and to
+# the pinned census. The partition below is the same identity the denominator
+# declares; this block names WHERE the identity comes from, so a swapped or
+# truncated manifest is detectable rather than self-consistent.
+assigned_population:
+  closed: true
+  census_id: holdout-partition-610-531-79
+  manifest:
+    path: data/parse/holdout_manifests.yaml
+    pointer: articles
+    identity_field: article_id
+    status_field: status
+    present_value: bytes_present
+  declared: 610
+  measurable: 531
+  refused: 0
+  excluded: 79
+  identity: assigned = executed + refused + excluded
+  bytes_present_required: true
+  read_only: true
+  note: >-
+    every assigned identity must be bytes_present in the local corpus; the 79
+    typed exclusions stay inside the denominator and a document that is absent,
+    duplicated or re-classified is a finding, never a silently corrected count
+
+# ── independent corpus + split discipline (S02) ─────────────────────────────
+# The evaluation corpus is the local 610-document holdout whose bytes are
+# present; the tuning corpus is the 200-document gold set. Disjointness is by
+# arXiv document identity, never by prompt hash (a prompt hash is lineage, not
+# independence), and the evaluation split is never a tuning input. External
+# holdout bytes stay `bytes_absent`; downloads and materialisation are forbidden
+# without a separate authorization. The external package rules are owned by
+# `scripts/governor/checks/external_holdout_package.yaml` and are referenced,
+# never restated here.
+independent_corpus:
+  closed: true
+  evaluation:
+    corpus_id: m513-holdout-610
+    kind: local_holdout
+    manifest: data/parse/holdout_manifests.yaml
+    identity_field: article_id
+    bytes_state: bytes_present
+  tuning:
+    corpus_id: gold-standard-200
+    kind: gold_standard
+    glob: data/gold_standard/*.gold.json
+    identity_rule: file name with the trailing .gold.json removed
+  disjointness:
+    by: document_identity
+    identity_field: arxiv_id
+    prompt_hash_forbidden: true
+    production_catalog_overlap: 0
+  external:
+    band: bytes_absent
+    execution_status: not_executed
+    package_check: scripts/governor/checks/external_holdout_package.yaml
+    authorization: separate_authorization
+    download_forbidden: true
+    materialize_forbidden: true
+    not_evidence: true
+
+split_contract:
+  closed: true
+  evaluation_never_tuning_input: true
+  reuse_forbidden: true
+  disjointness_identity: arxiv_id
+  prompt_hash_disjointness_forbidden: true
+  evaluation_source: data/parse/holdout_manifests.yaml
+  tuning_source: data/gold_standard/*.gold.json
+  note: >-
+    a document identity that appears in both the evaluation and the tuning set
+    is `eval_split_reused_for_tuning`; a scorecard that declares the split by
+    prompt hash instead of document identity is `split_contract_missing`
 
 # ── quality strata ──────────────────────────────────────────────────────────
 # Quality is reported per stratum with its own denominator, and the weakest

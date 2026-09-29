@@ -19,6 +19,7 @@ Tests read the tracked DATA contract and use inline fixtures only.
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
 
 import pytest
@@ -569,3 +570,231 @@ def test_scorecard_schema_version_must_match_its_contract(contract: dict) -> Non
     stale = _baseline(contract)
     stale["schema_version"] = "absorption-progress.v0"
     assert "unsupported_scorecard_schema" in scorecard_violations(stale, contract)
+
+
+# ── S02: required scope, assigned population, independent corpus ────────────
+
+
+def _family_rows(contract: dict) -> list[dict]:
+    return contract["required_scope"]["families"]
+
+
+def _family_ids(contract: dict) -> list[str]:
+    return [family["family_id"] for family in _family_rows(contract)]
+
+
+def _required_measured_ids(contract: dict) -> list[str]:
+    return [f["family_id"] for f in _family_rows(contract) if f["state"] == "required"]
+
+
+def _live_parity_required_rows() -> list[dict]:
+    carrier = yaml.safe_load(
+        (ROOT / "data/parse/grobid_compatibility.yaml").read_text(encoding="utf-8")
+    )
+    return [
+        row
+        for row in carrier["parity_ledger"]["rows"]
+        if row.get("scope") == "required"
+    ]
+
+
+def _live_holdout_articles() -> list[dict]:
+    manifest = yaml.safe_load(
+        (ROOT / "data/parse/holdout_manifests.yaml").read_text(encoding="utf-8")
+    )
+    return manifest["articles"]
+
+
+def test_required_scope_reuses_the_parity_ledger_required_rows(contract: dict) -> None:
+    """The family list is a projection of the carrier, not a second authority."""
+    scope = contract["required_scope"]
+    assert scope["source"]["path"] == "data/parse/grobid_compatibility.yaml"
+    assert scope["source"]["pointer"] == "parity_ledger.rows"
+
+    projected = [
+        (
+            family["family_id"],
+            family["measurement_identity"],
+            family["state"],
+            family.get("reason"),
+        )
+        for family in _family_rows(contract)
+    ]
+    derived = [
+        (
+            row["capability"],
+            row["measurement"]["state"],
+            "required"
+            if row["measurement"]["state"] == scope["measured_identity"]
+            else "threshold_pending",
+            row["measurement"].get("reason"),
+        )
+        for row in _live_parity_required_rows()
+    ]
+    assert projected == derived
+    # A family the corpus does not measure is required but cannot pass.
+    pending = [f for f in _family_rows(contract) if f["state"] == "threshold_pending"]
+    assert pending
+    for family in pending:
+        assert family["reason"] in scope["pending_reason_vocabulary"]
+
+
+def test_assigned_population_binds_the_live_manifest(contract: dict) -> None:
+    population = contract["assigned_population"]
+    assert population["census_id"] == contract["denominator"]["initial_census"]["census_id"]
+    assert population["manifest"]["path"] == "data/parse/holdout_manifests.yaml"
+
+    articles = _live_holdout_articles()
+    ids = [article["article_id"] for article in articles]
+    assert len(ids) == population["declared"] == 610
+    assert len(set(ids)) == len(ids)  # a duplicated identity would inflate the census
+    assert all(article["status"] == population["manifest"]["present_value"] for article in articles)
+
+    probe = json.loads(
+        (ROOT / "artifacts/parse_compat/external_holdout_release_probe.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    reference = probe["reference_population"]
+    assert population["measurable"] == reference["measurable_documents"] == 531
+    assert population["excluded"] == reference["excluded_documents"] == 79
+    assert population["refused"] == 0
+
+
+def test_evaluation_and_tuning_corpora_are_disjoint_on_the_live_tree(contract: dict) -> None:
+    corpus = contract["independent_corpus"]
+    split = contract["split_contract"]
+
+    gold_paths = sorted((ROOT / "data/gold_standard").glob("*.gold.json"))
+    gold_ids = set()
+    for path in gold_paths:
+        identity = path.name[: -len(".gold.json")]
+        record = json.loads(path.read_text(encoding="utf-8"))
+        assert record["paper_id"] == identity  # file identity is the document identity
+        gold_ids.add(identity)
+    assert len(gold_ids) == 200
+
+    holdout_ids = {article["article_id"] for article in _live_holdout_articles()}
+    assert gold_ids & holdout_ids == set()
+
+    assert corpus["evaluation"]["manifest"] == split["evaluation_source"]
+    assert corpus["evaluation"]["bytes_state"] == "bytes_present"
+    assert corpus["tuning"]["glob"] == split["tuning_source"]
+    assert corpus["disjointness"]["by"] == "document_identity"
+    assert corpus["disjointness"]["prompt_hash_forbidden"] is True
+    assert split["disjointness_identity"] == corpus["disjointness"]["identity_field"]
+    assert corpus["disjointness"]["production_catalog_overlap"] == 0
+    assert corpus["external"]["band"] == "bytes_absent"
+    assert corpus["external"]["download_forbidden"] is True
+
+
+def test_contract_without_the_scope_or_split_blocks_fails_closed(contract: dict) -> None:
+    no_scope = copy.deepcopy(contract)
+    del no_scope["required_scope"]
+    assert "required_scope" in missing_contract_vocabulary(no_scope)
+    violations = scorecard_violations(_baseline(contract), no_scope)
+    assert {"contract_vocabulary_missing", "required_scope_missing"} <= violations
+
+    no_split = copy.deepcopy(contract)
+    del no_split["split_contract"]
+    assert "split_contract" in missing_contract_vocabulary(no_split)
+    violations = scorecard_violations(_baseline(contract), no_split)
+    assert {"contract_vocabulary_missing", "split_contract_missing"} <= violations
+
+    no_population = copy.deepcopy(contract)
+    del no_population["assigned_population"]
+    assert "assigned_population" in missing_contract_vocabulary(no_population)
+
+    assert missing_contract_vocabulary(contract) == []
+
+
+def test_scope_coverage_must_be_complete_and_inside_the_required_scope(contract: dict) -> None:
+    families = _family_ids(contract)
+    measured = _required_measured_ids(contract)
+
+    clean = _baseline(contract)
+    clean["scope_coverage"] = {"families": families, "measured": measured}
+    assert scorecard_violations(clean, contract) == set()
+
+    shrunk = _baseline(contract)
+    shrunk["scope_coverage"] = {"families": families[:-1], "measured": measured}
+    assert "required_scope_shrunk" in scorecard_violations(shrunk, contract)
+
+    extended = _baseline(contract)
+    extended["scope_coverage"] = {
+        "families": [*families, "stage.invented_family"],
+        "measured": measured,
+    }
+    assert "family_outside_required_scope" in scorecard_violations(extended, contract)
+
+    pending_claimed = _baseline(contract)
+    claimed = next(f for f in _family_rows(contract) if f["state"] == "threshold_pending")
+    pending_claimed["scope_coverage"] = {
+        "families": families,
+        "measured": [*measured, claimed["family_id"]],
+    }
+    assert "family_claimed_without_required_scope" in scorecard_violations(
+        pending_claimed, contract
+    )
+
+    malformed = _baseline(contract)
+    malformed["scope_coverage"] = {"families": []}
+    assert "required_scope_missing" in scorecard_violations(malformed, contract)
+
+    # A scorecard that declares no coverage claims nothing and is not refused.
+    assert "required_scope_missing" not in scorecard_violations(_baseline(contract), contract)
+
+
+def test_split_must_be_disjoint_by_document_identity(contract: dict) -> None:
+    clean = _baseline(contract)
+    clean["document_split"] = {
+        "identity_field": "arxiv_id",
+        "evaluation_document_ids": ["1203.2295"],
+        "tuning_document_ids": ["1412.6980"],
+    }
+    assert scorecard_violations(clean, contract) == set()
+
+    reused = _baseline(contract)
+    reused["document_split"] = {
+        "identity_field": "arxiv_id",
+        "evaluation_document_ids": ["1203.2295"],
+        "tuning_document_ids": ["1203.2295"],
+    }
+    assert "eval_split_reused_for_tuning" in scorecard_violations(reused, contract)
+
+    prompt_hash = _baseline(contract)
+    prompt_hash["document_split"] = {
+        "identity_field": "prompt_sha256",
+        "evaluation_document_ids": ["1203.2295"],
+        "tuning_document_ids": ["1412.6980"],
+    }
+    assert "split_contract_missing" in scorecard_violations(prompt_hash, contract)
+
+    missing_side = _baseline(contract)
+    missing_side["document_split"] = {
+        "identity_field": "arxiv_id",
+        "evaluation_document_ids": ["1203.2295"],
+        "tuning_document_ids": [],
+    }
+    assert "split_contract_missing" in scorecard_violations(missing_side, contract)
+
+
+def test_external_holdout_bytes_cannot_be_claimed(contract: dict) -> None:
+    honest = _baseline(contract)
+    honest["external_holdout"] = {"band": "bytes_absent"}
+    assert scorecard_violations(honest, contract) == set()
+
+    claimed_band = _baseline(contract)
+    claimed_band["external_holdout"] = {"band": "bytes_present"}
+    assert "external_bytes_claimed" in scorecard_violations(claimed_band, contract)
+
+    claimed_bytes = _baseline(contract)
+    claimed_bytes["external_holdout"] = {"band": "bytes_absent", "bytes_present": True}
+    assert "external_bytes_claimed" in scorecard_violations(claimed_bytes, contract)
+
+    claimed_docs = _baseline(contract)
+    claimed_docs["external_holdout"] = {
+        "band": "bytes_absent",
+        "document_ids": ["9999.00001"],
+    }
+    assert "external_bytes_claimed" in scorecard_violations(claimed_docs, contract)
