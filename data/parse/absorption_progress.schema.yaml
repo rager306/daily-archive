@@ -1,0 +1,305 @@
+# M514-1lss2s/S01/T01 — absorption progress scorecard contract (DATA ONLY).
+#
+# This is the closed vocabulary a product-progress scorecard must speak before
+# the Governor may report on it. It carries no product logic, no thresholds and
+# no graph authority: it names the axes, the denominator partition, the honest
+# measurement states, the comparability identity, the authorization separation
+# and the lifecycle boundary that the domain validator
+# (`scripts/governor/domain/absorption_progress.py`) enforces, and the T04
+# Governor check reads through existing ports/adapters.
+#
+# Why it exists (M513 closeout): the recorded progress surface mixed
+# preservation with extraction, published ratios over shrunken denominators,
+# inferred independence from display labels, and treated terminal GSD state as
+# delivered capability. The five product axes were collapsed into one number.
+# This contract separates them by construction and refuses the shapes that made
+# the old number readable as product progress.
+#
+# Boundary statements (recorded, not implied):
+#   - threshold tampering (E1): thresholds are NOT frozen here. Their freeze is
+#     owned by S02; a scorecard that carries a numeric threshold/margin, or that
+#     claims a freeze without a bound revision, fails closed. S02 flips
+#     `threshold_policy.state` in a new revision of THIS file, which is a
+#     reviewable DATA change rather than a hidden default.
+#   - severity (E2): this contract does not register a new dimension in
+#     `scripts/governor/checks/assurance_severity.yaml`. The check is expected
+#     to be drift-visible, not blocking, so an unregistered dimension cannot be
+#     silently promoted to `blocked` — nor silently suppressed — by editing one
+#     severity file.
+#   - replay/tamper (E3): this is a consistency and fail-closed contract over
+#     what a scorecard declares about itself, plus its evidence identity. It is
+#     NOT a tamper-evident attestation: an actor able to rewrite the scorecard,
+#     the evidence artifact and this DATA rule can satisfy it. Its value is that
+#     absence, drift, mixed scope and self-contradiction stop passing as
+#     compliance, and that a coverage number must name the evidence that
+#     produced it.
+#   - data exposure (E5): the artifact this contract governs carries counts,
+#     hashes and repository-relative paths only. No author emails, no host or
+#     absolute paths, and no raw payload or fulltext material.
+#
+# Reuse, do not duplicate: the rules already in force below keep owning their
+# surfaces; this contract defers to them and must not re-implement them.
+#
+# Reviewer note: `existing_rules` is the inventory of the rules this scorecard
+# reuses. It is NOT the GAR register's per-finding `existing_rules` pin in
+# `doc/review/grobid-absorption-review-2026-09-10.jsonl`; that pinned registry
+# is historical and is never entered by this contract.
+schema_version: absorption-progress.v1
+adr_ref: ADR-075
+contract_id: absorption-progress-scorecard
+requirement_ids: [R133, R134, R141, R142]
+decisions: [D127, D491]
+
+# ── axes ────────────────────────────────────────────────────────────────────
+# The recorded five product axes, with preservation split out of per-family
+# semantics into its own identity so the two can never share a numerator or a
+# denominator. `authorization` is a reported axis but is NOT product coverage:
+# a research authorization never raises the delivered product population.
+product_axes:
+  closed: true
+  ids:
+    - java_independence
+    - extraction
+    - preservation
+    - reliability
+    - resources
+    - authorization
+  product_coverage_axes:
+    - java_independence
+    - extraction
+    - preservation
+    - reliability
+    - resources
+  authorization_not_product: true
+
+# ── measurement states ──────────────────────────────────────────────────────
+# The only states a measurement may carry. Each has an honest reading, and the
+# wrong reading is a violation rather than a convention.
+measurement_states:
+  closed: true
+  values: [measured, not_measured, no_denominator, not_comparable]
+  semantics:
+    measured: >-
+      a value bound to a non-empty denominator, an evidence identity and a
+      comparability identity
+    not_measured: >-
+      no value exists yet; it is never read as zero and never read as a failure
+      of the product
+    no_denominator: >-
+      there is nothing to divide; it is never read as one (perfect) and never
+      read as zero (failure)
+    not_comparable: >-
+      a value may exist but the two sides do not share a corpus, profile,
+      oracle and source revision, so it is never compared
+  value_requires_measured: true
+
+# ── denominator ─────────────────────────────────────────────────────────────
+# The full denominator. Excluded and refused documents stay inside it; only a
+# diagnostic may narrow the basis, and it must say so.
+denominator:
+  partition_closed: true
+  components: [assigned, executed, refused, excluded]
+  identity: assigned = executed + refused + excluded
+  excluded_stays_in_denominator: true
+  refused_stays_in_denominator: true
+  product_coverage_basis: assigned_full
+  diagnostic_basis: measured_only
+  basis_guard: >-
+    a product coverage row must use assigned_full; a measured_only row is a
+    diagnostic and must declare claim_scope: diagnostic_only, otherwise the
+    ratio is a false denominator
+  exclusion_reasons:
+    closed: true
+    unknown_label_behavior: fail_closed
+    values:
+      - header_date_absent
+      - header_title_absent
+      - header_author_absent
+  # Initial census (исходная перепись) — the frozen M513/M514 partition this
+  # slice starts from. Read-only: it is the baseline a scorecard is checked
+  # against, never a value to be edited to make a later number agree.
+  initial_census:
+    census_id: holdout-partition-610-531-79
+    authority: artifacts/parse_compat/external_holdout_release_probe.json
+    authority_section: reference_population
+    declared: 610
+    measurable: 531
+    excluded: 79
+    reason_counts:
+      header_date_absent: 72
+      header_title_absent: 5
+      header_author_absent: 2
+    measurable_evidence: >-
+      531 documents carry an admitted non-zero evaluated population at the
+      frozen structural profile
+    read_only: true
+    note: >-
+      the 79 typed exclusions remain in the denominator; a scorecard that
+      drops or re-classifies one without a new census revision does not sum
+      to the assigned population and fails closed
+
+# ── comparability ───────────────────────────────────────────────────────────
+# Two measurements are comparable only inside one series. A new corpus, profile,
+# oracle or source revision starts a new series rather than being subtracted
+# from the old one.
+comparability:
+  keys: [corpus_id, profile, oracle, source_revision]
+  same_series_required: true
+  cross_series_behavior: not_comparable
+
+# ── quality strata ──────────────────────────────────────────────────────────
+# Quality is reported per stratum with its own denominator, and the weakest
+# stratum stands next to the micro number. A micro score alone is not quality.
+quality_strata:
+  closed: true
+  direction: higher_is_better
+  values: [micro_occurrence, per_document, per_family, per_class, weakest_stratum]
+  weakest_required: true
+  micro_alone_forbidden: true
+
+# ── thresholds (frozen in S02, forbidden before) ────────────────────────────
+threshold_policy:
+  state: not_frozen
+  freeze_owner: S02
+  freeze_milestone: M514-1lss2s/S02
+  numeric_thresholds_present: false
+  numeric_before_freeze: forbidden
+  claim_without_freeze: forbidden
+
+# ── authorization (separate axis, never coverage) ───────────────────────────
+authorization:
+  separate_from_product: true
+  states: [owner_directive_research, human_release_recorded, pending_human_review]
+  current_state: owner_directive_research
+  decision: D491
+  authority: data/parse/research_authorization.yaml
+  product_coverage_effect: none
+  evidence_kind: authorization
+  locks_stay_in_force: true
+  note: >-
+    D491 authorizes active non-commercial research operations only. It grants
+    no release, no distribution, no graph write and no import; the production
+    retirement claim stays unmet until a named human records the release
+    decision. Authorization evidence is never product coverage evidence.
+
+# ── lifecycle vs product ────────────────────────────────────────────────────
+# A terminal GSD state (complete, skipped, waiver, owner-accepted remainder) is
+# harness state. It never becomes executed product population.
+lifecycle:
+  linked_to_product: false
+  product_evidence_forbidden: true
+  states: [complete, skipped, waiver, owner_accepted, cancelled]
+  note: >-
+    a skipped slice, a cancellation waiver or an owner-accepted remainder
+    cannot raise product coverage
+
+# ── preservation vs extraction ──────────────────────────────────────────────
+preservation:
+  separate_from_extraction: true
+  own_measurement_identity: true
+  pooling_forbidden: true
+
+# ── evidence binding ────────────────────────────────────────────────────────
+evidence_binding:
+  path_policy: repository_relative
+  required_fields: [path, sha256, source_revision, tested_revision]
+  sha256_format: 'sha256:<64 hex>'
+  revision_formats: ['git:<40 hex>', 'sha256:<64 hex>']
+  stale_evidence_behavior: flag_not_rewrite
+  boundary: >-
+    identity is bound, not attested: a writer able to rewrite both the scorecard
+    and this DATA rule can satisfy the binding. The value is that a scalar
+    without a path, a hash or a revision stops reading as evidence.
+
+# ── historical carriers (read-only) ─────────────────────────────────────────
+# The M513 human record, release package, pins, frozen fixture and UAT check
+# retain their recorded meaning. New evidence is separate; the frozen history is
+# never rewritten, re-labelled or reused as a new claim.
+historical_carriers:
+  mode: read_only
+  rewriting_forbidden: true
+  new_evidence_is_separate: true
+  carriers:
+    - id: m513-release-decision-doc
+      kind: human_record
+      path: doc/review/M513-S07-release-decision-package.md
+    - id: m513-human-review-template
+      kind: human_record
+      path: doc/review/HUMAN-REVIEW-TEMPLATE.md
+    - id: m513-release-decision-package-artifact
+      kind: release_package
+      path: artifacts/parse_compat/grobid_retirement_release_decision_package.json
+    - id: m513-release-decision-package-data
+      kind: release_package
+      path: data/parse/acceptance_manifest.yaml#release_decision_package
+    - id: m513-release-pin
+      kind: pin
+      path: data/parse/grobid_compatibility.yaml#defaults.rollback_target
+    - id: m513-holdout-manifest-pin
+      kind: pin
+      path: data/parse/holdout_manifests.yaml
+    - id: m513-frozen-external-holdout-fixture
+      kind: fixture
+      path: artifacts/parse_compat/external_holdout_release_probe.json
+    - id: m513-s03-uat-4
+      kind: uat_check
+      note: >-
+        M513/S03 UAT-4 — pins agree with every surface. Preserved as an identity;
+        never re-run and republished as fresh evidence.
+
+# ── existing rules inventory ────────────────────────────────────────────────
+# The rules already in force that this scorecard defers to instead of
+# re-implementing. Each path must exist on disk (checked by the T04 adapter) and
+# must be repository-relative.
+existing_rules:
+  - id: executed_population_binding
+    kind: governor_check
+    path: scripts/governor/checks/executed_population_binding.yaml
+    covers: reference/executed/evaluated population separation and execution evidence (GAR-006)
+    reuse: population claims stay bound to the evidence that produced them
+  - id: conservation_verdict_provenance
+    kind: governor_check
+    path: scripts/governor/checks/conservation_verdict_provenance.yaml
+    covers: conservation verdict provenance (GAR-005)
+    reuse: preservation verdicts name their run rather than wearing a current stamp
+  - id: promotion_evidence_contract
+    kind: governor_check
+    path: scripts/governor/checks/promotion_evidence_contract.yaml
+    covers: promotion evidence contract (GAR-008)
+    reuse: no auto-promote and no promotion without evidence
+  - id: external_holdout_package
+    kind: governor_check
+    path: scripts/governor/checks/external_holdout_package.yaml
+    covers: external holdout package elements and citation blocking (GAR-015)
+    reuse: an incomplete package blocks citation rather than downgrading silently
+  - id: scholarly_parse_plane
+    kind: governor_check
+    path: scripts/governor/checks/scholarly_parse_plane.yaml
+    covers: staged scholarly parse plane, hard locks and shadow safeties
+    reuse: parse-plane locks and family safeties stay owned there
+  - id: information_preservation
+    kind: governor_check
+    path: scripts/governor/checks/information_preservation.yaml
+    covers: full-fidelity section/abstract boundaries
+    reuse: preservation contracts stay owned there; this scorecard only measures them
+  - id: grobid_absorption_review
+    kind: governor_check
+    path: scripts/governor/checks/grobid_absorption_review.yaml
+    covers: GAR control registry integrity
+    reuse: the registry keeps its own closure proof
+  - id: active_research_authorization
+    kind: data_authority
+    path: data/parse/research_authorization.yaml
+    covers: D491 active research scope and retained locks
+    reuse: the authorization mechanism is read, never restated as a product claim
+  - id: scholarly_parse_acceptance
+    kind: data_authority
+    path: data/parse/acceptance_manifest.yaml
+    covers: population contract, acceptance locks and release-decision package
+    reuse: the release gate and its human decision stay owned there
+
+# ── boundary ────────────────────────────────────────────────────────────────
+boundary: >-
+  fail-closed consistency over what a scorecard declares about itself and its
+  evidence identity; not a tamper-evident attestation, and not a product
+  authorization.
