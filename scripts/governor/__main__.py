@@ -522,44 +522,66 @@ def _print_artifact_audit(artifact_reader) -> None:
 
 
 
-def _run_architecture_gate(args) -> int:
-    """Absorb scripts/verify_rust_architecture.sh — Rust architecture gate."""
-    import subprocess
-    root = Path(__file__).resolve().parent.parent.parent
-    
-    steps = [
+# Wall-clock ceiling for one architecture-gate step. A hung step must fail,
+# not silently truncate: `subprocess.TimeoutExpired` is caught below and
+# reported as TIMEOUT, so a timed-out capture can never be read as PASS.
+# 3600s is deliberately generous — it catches a genuine hang without
+# false-failing a slow-but-progressing step. The gate as a whole runs longer
+# than one gsd_exec capture (600s), so run it detached and poll; this ceiling
+# is a hang guard, not a time budget.
+_ARCHITECTURE_STEP_TIMEOUT_S = 3600
+
+
+def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], int]]:
+    """Architecture-gate steps as DATA: (name, argv, timeout_seconds).
+
+    Exposed as a function so the test inventory
+    (`scripts/tests/test_absorption_test_inventory.py`) can assert which test
+    targets and feature combinations the gate really executes instead of
+    trusting a comment. `_run_architecture_gate` is the only runner.
+    """
+    t = _ARCHITECTURE_STEP_TIMEOUT_S
+    steps: list[tuple[str, list[str], int]] = [
         ("cargo fmt (check)", ["cargo", "fmt", "-p", "kg-ontology", "-p", "kg-storage",
                                 "-p", "kg-embeddings", "-p", "kg-algorithms", "-p", "kg-pipeline",
                                 "-p", "da-domain", "-p", "da-ports", "-p", "da-application",
                                 "-p", "da-adapters", "-p", "da-parse", "-p", "da-cli", "-p", "da-mcp",
-                                "--", "--check"]),
+                                "--", "--check"], t),
         ("cargo clippy (lib)", ["cargo", "clippy",
                                  "-p", "kg-ontology", "-p", "kg-storage", "-p", "kg-embeddings",
                                  "-p", "kg-algorithms", "-p", "kg-pipeline",
                                  "-p", "da-domain", "-p", "da-ports", "-p", "da-application",
                                  "-p", "da-adapters", "-p", "da-parse", "-p", "da-cli", "-p", "da-mcp",
-                                 "--no-deps", "--", "-D", "warnings"]),
+                                 "--no-deps", "--", "-D", "warnings"], t),
         ("cargo clippy (tests)", ["cargo", "clippy",
                                    "-p", "kg-ontology", "-p", "kg-storage", "-p", "kg-embeddings",
                                    "-p", "kg-algorithms", "-p", "kg-pipeline",
                                    "-p", "da-domain", "-p", "da-ports", "-p", "da-application",
                                    "-p", "da-adapters", "-p", "da-parse", "-p", "da-cli", "-p", "da-mcp",
-                                   "--lib", "--tests", "--no-deps", "--", "-D", "warnings"]),
+                                   "--lib", "--tests", "--no-deps", "--", "-D", "warnings"], t),
         ("feature-matrix build", ["cargo", "check", "-p", "da-cli",
-                                   "--features", "pdf-classifier", "--examples"]),
+                                   "--features", "pdf-classifier", "--examples"], t),
     ]
-    
-    if not getattr(args, "quick", False):
-        steps.extend([
-            ("kg-ontology tests", ["cargo", "test", "-p", "kg-ontology", "--lib"]),
-            ("kg-storage tests", ["cargo", "test", "-p", "kg-storage", "--lib"]),
-            ("kg-embeddings tests", ["cargo", "test", "-p", "kg-embeddings", "--lib"]),
-            ("kg-algorithms tests", ["cargo", "test", "-p", "kg-algorithms", "--lib"]),
-            ("kg-pipeline tests", ["cargo", "test", "-p", "kg-pipeline", "--lib"]),
-            ("da-domain tests", ["cargo", "test", "-p", "da-domain", "--lib"]),
-            ("da-parse tests", ["cargo", "test", "-p", "da-parse", "--lib"]),
-            ("da-application tests", ["cargo", "test", "-p", "da-application", "--tests"]),
-            ("da-adapters tests", ["cargo", "test", "-p", "da-adapters", "--tests"]),
+
+    if quick:
+        return steps
+
+    steps.extend([
+            ("kg-ontology tests", ["cargo", "test", "-p", "kg-ontology", "--lib"], t),
+            ("kg-storage tests", ["cargo", "test", "-p", "kg-storage", "--lib"], t),
+            ("kg-embeddings tests", ["cargo", "test", "-p", "kg-embeddings", "--lib"], t),
+            ("kg-algorithms tests", ["cargo", "test", "-p", "kg-algorithms", "--lib"], t),
+            ("kg-pipeline tests", ["cargo", "test", "-p", "kg-pipeline", "--lib"], t),
+            ("da-domain tests", ["cargo", "test", "-p", "da-domain", "--lib"], t),
+            # `--tests`, not `--lib`: the integration test binaries under
+            # `crates/da-parse/tests/` were never executed by this gate — the
+            # old `--lib` step ran only the unit tests, so every cross-module
+            # contract compiled and never ran (M514/S01 context: "Governor
+            # da-parse --lib пропускает integration tests"). `--tests` includes
+            # the lib target, so the parse-plane article locks still run.
+            ("da-parse tests", ["cargo", "test", "-p", "da-parse", "--tests"], t),
+            ("da-application tests", ["cargo", "test", "-p", "da-application", "--tests"], t),
+            ("da-adapters tests", ["cargo", "test", "-p", "da-adapters", "--tests"], t),
             # The da-cli tests below exec example binaries out of
             # `target/debug/examples/` and `cargo test --tests` does NOT build
             # examples, so they must be provisioned explicitly first. Only these
@@ -575,10 +597,11 @@ def _run_architecture_gate(args) -> int:
             # NOTE: policy_ablation_artifact_test is NOT in this list on purpose -
             # it is `#![cfg(feature = "learning-evaluation")]` and its example
             # `parse_policy_ablation` carries required-features=["learning-evaluation"],
-            # so naming it here fails the whole build command and no gate step
-            # enables that feature (pre-existing coverage gap, out of this change).
-            # A cargo build command fails as a unit, so one unbuildable name
-            # silently drops every other example in the same step.
+            # so naming it here fails the whole build command. A cargo build
+            # command fails as a unit, so one unbuildable name silently drops
+            # every other example in the same step. The learning-evaluation
+            # runner therefore stays OUT of this default-feature step and is
+            # provisioned by the feature-enabled step at the end of this list.
             ("da-cli examples (default)", ["cargo", "build", "-p", "da-cli",
                                             "--example", "acceptance_evidence",
                                             "--example", "cross_stage_semantic_invariants",
@@ -586,8 +609,8 @@ def _run_architecture_gate(args) -> int:
                                             "--example", "external_holdout_capture",
                                             "--example", "native_family_gate_rehearsal",
                                             "--example", "parse_batch_budget_shadow",
-                                            "--example", "rest_batch_asset_shadow"]),
-            ("da-cli tests", ["cargo", "test", "-p", "da-cli", "--tests"]),
+                                            "--example", "rest_batch_asset_shadow"], t),
+            ("da-cli tests", ["cargo", "test", "-p", "da-cli", "--tests"], t),
             # Feature-gated example contracts. Twelve da-cli test files declare
             # `#![cfg(feature = "pdf-layout")]`; a plain
             # `cargo test -p da-cli --tests` compiles them to empty targets, so
@@ -613,15 +636,56 @@ def _run_architecture_gate(args) -> int:
                                                         "--example", "layout_bakeoff",
                                                         "--example", "native_fulltext_composition_shadow",
                                                         "--example", "native_fulltext_corpus_shadow",
-                                                        "--example", "native_visual_heads_shadow"]),
+                                                        "--example", "native_visual_heads_shadow"], t),
             ("da-cli feature-gated example contracts", ["cargo", "test", "-p", "da-cli",
-                                                         "--features", "pdf-layout", "--tests"]),
+                                                         "--features", "pdf-layout", "--tests"], t),
+            # learning-evaluation is the second feature-gated plane. The test
+            # file `policy_ablation_artifact_test.rs` is
+            # `#![cfg(feature = "learning-evaluation")]` and its runner example
+            # `parse_policy_ablation` carries
+            # required-features=["learning-evaluation"], so neither the default
+            # `cargo test -p da-cli --tests` nor a feature-less `--example` build
+            # reaches it: the first compiles an EMPTY test target, the second
+            # fails the whole command. Both examples carrying the feature are
+            # provisioned by NAME — `--examples` would compile all ~86 runners,
+            # which is what the lists above avoid. This closes the gap the
+            # default-examples comment used to record as "out of this change".
+            ("da-cli learning-evaluation example runners", ["cargo", "build", "-p", "da-cli",
+                                                              "--features", "learning-evaluation",
+                                                              "--example", "parse_policy_ablation",
+                                                              "--example", "parse_learning_ablation"], t),
+            ("da-cli learning-evaluation tests", ["cargo", "test", "-p", "da-cli",
+                                                   "--features", "learning-evaluation", "--tests"], t),
         ])
-    
+    return steps
+
+
+def _run_architecture_gate(args) -> int:
+    """Absorb scripts/verify_rust_architecture.sh — Rust architecture gate."""
+    import subprocess
+    root = Path(__file__).resolve().parent.parent.parent
+    steps = architecture_gate_steps(bool(getattr(args, "quick", False)))
+
     failed = 0
-    for name, cmd in steps:
+    timed_out = 0
+    for name, cmd, timeout_s in steps:
         print(f"  {name}...", end=" ", flush=True)
-        result = subprocess.run(cmd, cwd=root, capture_output=True, text=True)
+        try:
+            result = subprocess.run(
+                cmd, cwd=root, capture_output=True, text=True, timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired as exc:
+            # A timeout is a failure whatever a truncated capture would say:
+            # never report a step that never finished as OK.
+            print(f"TIMEOUT (>{timeout_s}s)")
+            tail = exc.stderr or ""
+            if isinstance(tail, bytes):
+                tail = tail.decode("utf-8", "replace")
+            for line in tail.strip().split('\n')[-5:]:
+                print(f"    {line}")
+            failed = 1
+            timed_out += 1
+            continue
         if result.returncode == 0:
             print("OK")
         else:
@@ -630,7 +694,9 @@ def _run_architecture_gate(args) -> int:
             for line in result.stderr.strip().split('\n')[-5:]:
                 print(f"    {line}")
             failed = 1
-    
+
+    print(f"\n  architecture gate steps: {len(steps) - failed}/{len(steps)} passed, "
+          f"{timed_out} timed out")
     if failed:
         print("\n  ARCHITECTURE GATE: FAIL")
     else:

@@ -2652,6 +2652,7 @@ pub fn print_summary(path: &Path, run: &RehearsalRun, report: &serde_json::Value
 #[cfg(not(test))]
 #[tokio::main]
 async fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("native_family_promotion_rehearsal");
     let args = <RehearsalArgs as clap::Parser>::parse();
     let Some(root) = default_root() else {
         eprintln!("native-family-promotion-rehearsal: declared route carriers not found");
