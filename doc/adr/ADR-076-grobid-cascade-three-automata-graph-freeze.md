@@ -1186,3 +1186,91 @@ H20 остаётся `pending` / `unassigned`, а GAR-015 — единствен
 `promotion_state=candidate_only`, `observation_mode=shadow`; D127 не снят. Java
 GROBID остаётся TEI oracle и rollback target.
 
+## 27. Корректировка 2026-09-29: судьба absent-возможностей решена явно (M513-r7dg4z/S05)
+
+Секция записывает решение о судьбе отсутствующих возможностей и не снимает ни
+одного замка. История не переписывается: §24 остаётся датированной записью среза
+M512-lxafs8/S05, §25 — записью S03, §26 — записью S04; ни одна из них не
+отменяется и не редактируется. Это НЕ релизное решение: корректировка не
+расширяет допуск, не объявляет production-достижимость и не даёт права на
+промоушен или графовую запись.
+
+**Решение (записанное, а не выведенное).** До этого среза отсутствие строки было
+следствием `product_scope`: `check_absent_rows` выводил причину из scope
+(`supporting` -> `supporting_not_implemented`, `not_compatibility_requirement` ->
+`out_of_compatibility_scope`, `deferred` -> `patent_family_deferred`). Выведенное
+следствие — не записанное решение. S05 добавляет решение, которое scope вывести не
+может, и делает не-покрытие громким: судьба всех **16 absent-строк** и
+**единственного named_gap** теперь лежит в санкционированном DATA-носителе
+`data/parse/grobid_compatibility.yaml#parity_ledger` тремя аддитивными ключами —
+`absent_disposition_vocabulary` (закрытые списки `dispositions` и `reasons`),
+`absent_dispositions` (`capability -> {disposition, reason, rationale}`, тотальная
+map ровно над множеством 16 absent-строк плюс 1 named_gap) и `horizon_order`
+(упорядоченное подмножество in-horizon ключей); это D478. Носитель пере-пинен по
+байтам: sha256
+`de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03`, значение
+заменено в обоих сайтах `scripts/governor/checks/scholarly_parse_plane.yaml`
+(`rest_batch_asset_quarantine.source_bindings` и `bindings.source_data`) и в
+зеркале `governor/fixtures/scholarly_parse_plane/contract.positive.json`, а
+`artifacts/parse_compat/native_route_recovery.json` регенерирован так, что равен
+закоммиченным входам.
+
+**Расклад судеб.** Из 17 записей **14** объявлены `out_of_product_scope` с
+причиной из закрытого словаря: 4 патентные строки -> `patent_family_out_of_scope`
+(семья остаётся absent по SCHEMA `patent_rule`); 5 строк Java training/admin ->
+`java_training_admin_surface` (оценка проекта идёт через
+`comparison_contract.yaml`, а не через Java-эндпоинты обучения);
+`rest.processFulltextDocumentHTML`, `rest.referenceAnnotations`, `rest.annotatePDF`
+-> `non_tei_visualisation_or_overlay` (визуализация и оверлей, а не TEI-истина
+графа, D127); `rest.processFulltextAssetDocument` -> `asset_zip_not_graph_truth`
+(asset zip не является истиной графа, D127);
+`rest.processHeaderFundingDocument` -> `funding_semantics_carried_natively`
+(funding-семантика несётся нативной семьёй, поэтому Java wire-эндпоинт не
+требуется). Оставшиеся **3** объявлены `in_horizon_project_native`:
+`learning.sona_trajectory` и `learning.microlora_ewc` ->
+`project_native_learning_line`, а единственный named_gap
+`learning.ruvllm_ablation` -> `project_native_no_grobid_donor`. Это отдельная
+линия обучения, которую CONTEXT §7 исключает из критического пути; у неё нет
+Java-донора, поэтому паритет по ней **не заявляется**; это D479. Каждое
+rationale обосновано собственными notes строки и продуктовым фактом, а не
+пересказом `product_scope`.
+
+**Очерёдность горизонта.** Вошедшие в горизонт названы проверяемой
+очерёдностью: `horizon_order` = `learning.ruvllm_ablation` ->
+`learning.sona_trajectory` -> `learning.microlora_ewc`. Судья требует, чтобы
+множество очерёдности точно равнялось множеству ключей `in_horizon_project_native`
+(3 записи), без дублей и без пропусков, поэтому «названы с очерёдностью» —
+машинная проверка, а не проза.
+
+**Судья (fail-closed).** Судья `check_absent_dispositions` живёт в
+`crates/da-parse/tests/parity_ledger/mod.rs` — чистый DATA->DATA без файлового IO.
+Он отклоняет пропущенную запись, лишний ключ, `disposition`/`reason` вне
+объявленного словаря, пустой `rationale`, in-horizon ключ вне очерёдности,
+out-of-scope ключ внутри очерёдности, дубль в очерёдности, непокрывающую
+очерёдность и расхождение с типизированным отказом named_gap; на каждое нарушение
+— одна именованная ошибка, без раннего выхода. Судья подключён в конец
+`evaluate_document`: существующие проверки не переставлены и не ослаблены.
+
+**Негативное доказательство.** На чистом носителе судья неотличим от отсутствия
+судьи, поэтому негативная матрица объявлена в DATA, а её appliers равны
+объявлению: `parity_ledger.mutations` несёт **37** мутаций, и матрица печатает
+`37 declared mutations, 37 detected, 0 survived`. Десять из них добавлены этим
+срезом и бьют ровно по новым инвариантам — пропущенная запись, лишний ключ,
+неизвестные `disposition`/`reason`, пустой `rationale`, in-horizon без
+очерёдности, out-of-scope в очерёдности, дубль, разрыв и расхождение с
+named_gap.
+
+**Планирующий реестр.** H21 в планирующем реестре H14–H21 больше не просто
+unresolved: его остаток (16 absent-строк и donor-less named_gap) теперь явно
+принят как residual — `accepted=true` при `owner=unassigned`, `status=pending` и
+обоих `implementation_pass`/`verification_pass=false`, то есть без заявления
+PASS; это D480. Датированная корректировка wrapper-а и note в `status_semantics`
+фиксируют это в самих реестрах.
+
+**Что это НЕ значит.** Ни одна стадия H14–H21 не получает PASS и ни один замок не
+изменён: `import_eligible=false`, `deployed=false`, `production_route=forbidden`,
+`graph_write=forbidden`, `auto_promote=forbidden`, `promotion_state=candidate`;
+D127 не снят. Java GROBID остаётся TEI oracle и rollback target. GAR-015 остаётся
+единственной открытой записью с человеческим релизным решением `pending`
+(`reviewer=null`); H20 остаётся `pending` / `unassigned`.
+
