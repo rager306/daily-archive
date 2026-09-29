@@ -147,6 +147,55 @@
     "note": "D491 authorizes active non-commercial research only; it grants no release, distribution, graph write or import. The production retirement claim stays unmet until a named human records the release decision."
   },
   "lineage": {},
+  "gate_run_history": {
+    "note": "M514-1lss2s/S01/T05 records the two governor architecture runs behind this baseline. The first run failed and its detailed output was not retained, so the cause is unresolved. A second run passed. A repeat is a fact, not a root cause.",
+    "runs": [
+      {
+        "run": 1,
+        "command": "PYTHONPATH=scripts python3 -m governor architecture",
+        "exit_code": 1,
+        "steps_passed": 18,
+        "steps_total": 19,
+        "failed_step": "da-parse tests",
+        "failed_step_command": "cargo test -p da-parse --tests",
+        "failing_tests": null,
+        "detail_capture": "not_retained",
+        "failure_cause": "unresolved",
+        "root_cause_established": false,
+        "load": "run alongside concurrent work; not a controlled serial run"
+      },
+      {
+        "run": 2,
+        "command": "PYTHONPATH=scripts python3 -m governor architecture",
+        "exit_code": 0,
+        "steps_passed": 19,
+        "steps_total": 19,
+        "failed_step": null,
+        "failing_tests": null,
+        "detail_capture": "not_retained",
+        "failure_cause": "none",
+        "root_cause_established": false,
+        "load": "serial re-run without concurrent cargo or python load",
+        "duration_s": 1903
+      }
+    ],
+    "hypothesis": {
+      "statement": "the first failure may have been an environment-sensitive interaction in the da-parse test binary rather than a source regression; the bind-then-drop shape of http_backend_surfaces_transport_outage_as_unavailable is one candidate",
+      "status": "unverified",
+      "evidence_from_the_failed_run": "none: the gate printed only the last five stderr lines and did not record the failing test or its output",
+      "disconfirming_evidence": "an isolated re-run of the same step and of backend_contract reported zero failures",
+      "cannot_conclude": [
+        "no root cause is established",
+        "no claim that a flake was eliminated",
+        "no claim that no regression occurred"
+      ]
+    },
+    "diagnostics_change": {
+      "task": "M514-1lss2s/S01/T05",
+      "what": "the architecture gate now persists the full stdout and stderr of every failing step and extracts the libtest failing-test names, so the next failure identifies itself",
+      "test": "scripts/tests/test_absorption_test_inventory.py::test_gate_runner_persists_failing_step_capture_and_names_the_test"
+    }
+  },
   "historical_guard_pins": {
     "mode": "read_only_byte_ledger",
     "note": "sha256 of the M513 carriers this slice must not touch. Recomputed by scripts/tests/test_absorption_progress_baseline.py; a changed byte here is a finding, never a silent re-pin. Boundary: a writer able to rewrite both this ledger and the carriers can satisfy it.",

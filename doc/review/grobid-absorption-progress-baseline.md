@@ -17,15 +17,19 @@
 | Роль | Путь | sha256 | identity |
 |---|---|---|---|
 | frozen probe (источник чисел) | `artifacts/parse_compat/external_holdout_release_probe.json` | `a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275` | `external-holdout-release-probe.v1` |
-| baseline scorecard | `artifacts/parse_compat/absorption_progress_baseline.json` | `d5d979443cf2e00546c098f0fb09740acd668acb8c2bab9ec83c89db3a6305b4` | `absorption-progress.v1` |
+| baseline scorecard | `artifacts/parse_compat/absorption_progress_baseline.json` | `c4549c865cbdb1c98f55d2b7e4e924ce56812bf6611013f808af6819ff90338b` | `absorption-progress.v1` |
 | контракт (схема, T01) | `data/parse/absorption_progress.schema.yaml` | `a417f88a40b8ba22ea2f70cffb9bb8cc9e914dbb9e63f17969d6268df2292cc3` | — |
 | rule DATA (T04) | `scripts/governor/checks/grobid_absorption_progress.yaml` | `60b9693acc59fdc3dfb5238b3503ca989fbd6ab40a080400d352d61cc9d323ad` | `grobid-absorption-progress.v1` |
 | доменный валидатор (T01) | `scripts/governor/domain/absorption_progress.py` | `4af8fd0bc67b23b149324ba9b695126dc9463adb26bacb92dcb95df1994b2047` | — |
 | oracle/reader (T04) | `scripts/governor/adapters/absorption_progress_reader.py` | `2e06bf765ecfbe8b4da3d5614c8aa3b07a202bd4257a2a2292ed44c47c2ad277` | — |
 
-Хэши зафиксированы на момент этого baseline. **Принудительно проверяются** пины только из
-`historical_guard_pins` в JSON; таблица выше — информационная (S02 заморозит пороги
-правкой схемы, и её хэш здесь станет stale — это ожидаемо, а не нарушение).
+Хэши зафиксированы на момент этого baseline. **Принудительно проверяются** пины из
+`historical_guard_pins` в JSON, а также одна строка этой таблицы: хэш baseline scorecard
+сверяется тестом `test_report_pins_the_baseline_artifact_hash` из
+`scripts/tests/test_absorption_progress_baseline.py`, поэтому отчёт не может описывать
+старые байты артефакта после его правки. Остальные строки — информационные (S02
+заморозит пороги правкой схемы, и её хэш здесь станет stale — это ожидаемо, а не
+нарушение).
 
 ## 2. Замороженная перепись (знаменатель)
 
@@ -206,9 +210,13 @@ PYTHONPATH=scripts python3 -m governor --phase preflight
 
 ## 10. Свидетельства проверки
 
-Прогоны — на `25743c7c455938113dda9067b767e1074e45c42e` плюс незакоммиченные
-T05-файлы. Rust-исходники не менялись (`git status`: только 3 новых файла; GitNexus
-`detect_changes(scope=all)`: 0 изменённых символов, risk `none`).
+### 10.1 Что и как проверялось (факты)
+
+Все прогоны — на `25743c7c455938113dda9067b767e1074e45c42e` плюс незакоммиченные
+T05-файлы. Rust-исходники этой задачей не менялись; раздел 10.2 объясняет, почему это
+не превращается в утверждение об отсутствии регрессии. Строки 1–14 — запись прогонов, на
+которых baseline был поставлен, **до** правки T05; раздел 10.3 содержит воспроизводимые
+числа с текущей ревизией и не переписывает эти строки.
 
 | # | Проверка | Команда | Exit | Вердикт | Evidence |
 |---|---|---|---|---|---|
@@ -216,26 +224,91 @@ T05-файлы. Rust-исходники не менялись (`git status`: т�
 | 2 | absorption-сьюты T01+T03+T04+T05 | `pytest ... test_absorption_progress{,_governor}.py test_absorption_test_inventory.py -q` | 0 | 84 passed | `gsd_exec a23a18e8` |
 | 3 | governor YAML | `python3 -m governor --validate-yaml` | 0 | PASS (65 rules, 20 dimensions) | `gsd_exec 04dfcce7` |
 | 4 | preflight (реальное дерево) | `python3 -m governor --phase preflight` | 0 | DRIFT_RISK, 9 флагов, **0** `absorption_progress_*` | `gsd_exec f68444fd` |
-| 5 | полный architecture gate (run #2, без параллельной нагрузки) | `python3 -m governor architecture` | 0 | **19/19 шагов, ARCHITECTURE GATE: PASS** (1903 s) | `/tmp/m514-architecture-gate2.log` |
-| 6 | полный governance-сьют | `pytest scripts/tests/ -q` | 0 | **1087 passed** (1393 s) | `/tmp/m514-pytest-full.log` |
-| 7 | UAT-1 baseline чист под композитным oracle | node-selection pytest | 0 | 2 passed | `gsd_exec 3ef7cdd5` |
-| 8 | UAT-2 числа пересчитаны из frozen probe; полный знаменатель и `not_measured` оси | node-selection pytest | 0 | 2 passed | `gsd_exec ead1daf4` |
-| 9 | UAT-3 негативная матрица (14 мутаций + регистрация меток) | node-selection pytest | 0 | 15 passed | `gsd_exec 9a3b15b6` |
-| 10 | UAT-4 исторические пины побайтово; носители read-only | node-selection pytest | 0 | 2 passed | `gsd_exec c00c40fe` |
-| 11 | изоляция провала гейта | `cargo test -p da-parse --test backend_contract` | 0 | 23 passed, 0 failed | `gsd_exec 71a6e424` |
-| 12 | точный шаг гейта в изоляции | `cargo test -p da-parse --tests` | 0 | 0 failed (263 s) | `gsd_exec d51a35ed` |
-| 13 | rustfmt | `cargo fmt --all --check` | 0 | clean | последнее действие задачи |
+| 5 | architecture gate, прогон #1 | `python3 -m governor architecture` | **1** | **18/19 шагов**; упал шаг `da-parse tests` | не сохранён (10.2) |
+| 6 | architecture gate, прогон #2 | `python3 -m governor architecture` | 0 | 19/19 шагов, ARCHITECTURE GATE: PASS (1903 s) | `/tmp/m514-architecture-gate2.log` |
+| 7 | полный governance-сьют | `pytest scripts/tests/ -q` | 0 | **1087 passed** (1393 s) | `/tmp/m514-pytest-full.log` |
+| 8 | UAT-1 baseline чист под композитным oracle | node-selection pytest | 0 | 2 passed | `gsd_exec 3ef7cdd5` |
+| 9 | UAT-2 числа пересчитаны из frozen probe; полный знаменатель и `not_measured` оси | node-selection pytest | 0 | 2 passed | `gsd_exec ead1daf4` |
+| 10 | UAT-3 негативная матрица (14 мутаций + регистрация меток) | node-selection pytest | 0 | 15 passed | `gsd_exec 9a3b15b6` |
+| 11 | UAT-4 исторические пины побайтово; носители read-only | node-selection pytest | 0 | 2 passed | `gsd_exec c00c40fe` |
+| 12 | изоляция провала гейта | `cargo test -p da-parse --test backend_contract` | 0 | 23 passed, 0 failed | `gsd_exec 71a6e424` |
+| 13 | точный шаг гейта в изоляции | `cargo test -p da-parse --tests` | 0 | 0 failed (263 s) | `gsd_exec d51a35ed` |
+| 14 | rustfmt | `cargo fmt --all --check` | 0 | clean | последнее действие задачи |
 
-### Замечание о первом прогоне гейта (честно, без приукрашивания)
+Строки 1–4 и 7–13 — то, что baseline утверждает о **себе**: они воспроизводятся из
+замороженного probe и негативных проб, а не заявляются. Строки 5–6 — история
+**инструмента**, не продукта: прогон #1 упал, прогон #2 прошёл.
 
-Первый прогон `governor architecture` дал **18/19**: шаг `da-parse tests` упал на
-`backend_contract`. Причина — не регрессия кода (Rust не менялся, и изолированный
-прогон того же шага даёт `0 failed`), а флейк под параллельной нагрузкой: в сьюте есть
-`http_backend_surfaces_transport_outage_as_unavailable`, который биндит эфемерный
-порт, немедленно его дропает и ожидает отказ соединения — при чужих сокет-биндингах
-порт может быть переиспользован, и `expect_err` падает. Второй прогон без параллельной
-нагрузки дал 19/19. Оба результата записаны; «зелёный гейт» не приписывается первому
-прогону.
+### 10.2 Провал прогона #1: что известно и что нет
+
+**Наблюдавшиеся факты:**
+
+- прогон #1 дал `exit 1`: 18/19 шагов, упал шаг `da-parse tests`
+  (`cargo test -p da-parse --tests`);
+- детальный capture провала **не сохранён**: гейт печатал только последние пять строк
+  `stderr` и выбрасывал остальное, поэтому лог не содержит ни имени упавшего теста, ни
+  его вывода;
+- следовательно, **конкретный failing test прогона #1 неизвестен**, как неизвестен и
+  его режим отказа;
+- прогон #2, серийный и без параллельной нагрузки, дал `exit 0`: 19/19 шагов.
+
+**Чего из этого не следует:**
+
+- отсутствие регрессии **не установлено** — запись прогона #1 слишком бедна, чтобы это
+  утверждать или опровергать;
+- причина провала #1 **не установлена**; тезис «это флейк под нагрузкой» — гипотеза, а
+  не вывод из записанных данных;
+- зелёный прогон #2 **не является** доказательством причины и не объявляется
+  устранением флейка: это второе наблюдение, а не `root-cause proof`.
+
+**Гипотеза (не подтверждена, записана как гипотеза).** Провал мог быть
+средозависимым взаимодействием внутри тестового бинарника `da-parse`, а не регрессией
+исходников. Один из кандидатов — форма bind-then-drop в
+`http_backend_surfaces_transport_outage_as_unavailable`: тест биндит эфемерный порт,
+немедленно закрывает его и ожидает отказа соединения, поэтому между `drop` и `connect`
+порт теоретически может быть переиспользован. Ни одна запись прогона #1 эту гипотезу
+не подтверждает; изолированные прогоны того же шага и `backend_contract` дали `0 failed`
+— это совместимо с гипотезой, но её не доказывает.
+
+**Что изменено, чтобы следующее падение атрибутировалось** (`M514/S01/T05`,
+`scripts/governor/__main__.py`): гейт сохраняет полный `stdout` и `stderr` каждого
+упавшего шага в gitignored `target/architecture-gate-logs/`, печатает имена упавших
+libtest-тестов (`test <name> ... FAILED`) и обе хвостовые части потоков. Поведение
+закреплено детерминированным негативным тестом с fake subprocess —
+`scripts/tests/test_absorption_test_inventory.py::test_gate_runner_persists_failing_step_capture_and_names_the_test`.
+Машиночитаемая запись обоих прогонов, гипотезы и её статуса живёт в `gate_run_history`
+baseline-артефакта; этот раздел — читаемая проекция.
+
+Гонка не подтверждена, поэтому тест не переписывался: объявить «детерминизм» без
+доказанной причины было бы таким же необоснованным заявлением, как прежнее
+«доказанная гонка».
+
+### 10.3 Повторная проверка исправления T05 (после правки §10 и диагностики гейта)
+
+Числа ниже — фактические на этой ревизии дерева. Они не переписывают 10.1: те строки
+описывают прогоны до правки.
+
+| # | Проверка | Команда | Exit | Верификация | Evidence |
+|---|---|---|---|---|---|
+| 15 | целевые сьюты (verify задачи) | `pytest scripts/tests/test_absorption_test_inventory.py scripts/tests/test_absorption_progress_baseline.py -q` | 0 | 39 passed | `gsd_exec d174e0b4` |
+| 16 | inventory-сьют (обязательная проверка finding) | `pytest scripts/tests/test_absorption_test_inventory.py -q` | 0 | 14 passed | `gsd_exec a5ae8aef` |
+| 17 | baseline-сьют отдельно (+3 новых теста) | `pytest scripts/tests/test_absorption_progress_baseline.py -q` | 0 | 25 passed | `gsd_exec a5ae8aef` |
+| 18 | absorption-сьюты T01+T03+T04 | `pytest scripts/tests/test_absorption_progress.py scripts/tests/test_absorption_progress_governor.py scripts/tests/test_absorption_test_inventory.py -q` | 0 | 64 passed | `gsd_exec a5ae8aef` |
+| 19 | обязательная проверка finding | `cargo test -p da-parse --test backend_contract` | 0 | 23 passed, 0 failed (0.11 s) | `gsd_exec c7636509` |
+| 20 | governor YAML | `python3 -m governor --validate-yaml` | 0 | PASS (65 rules, 20 dimensions) | `gsd_exec f2e6411e` |
+| 21 | preflight (реальное дерево) | `python3 -m governor --phase preflight` | 0 | DRIFT_RISK, 9 флагов, **0** `absorption_progress_*` | `gsd_exec f2e6411e` |
+| 22 | rustfmt | `cargo fmt --all --check` | 0 | clean | `gsd_exec 38da8f6a` |
+| 23 | whitespace | `git diff --check` | 0 | clean | `gsd_exec 38da8f6a` |
+
+Число тестов выросло ровно на пять, по трём новым тестам отчёта
+(`test_report_pins_the_baseline_artifact_hash`,
+`test_gate_run_history_keeps_the_first_failure_unexplained`,
+`test_report_records_the_gate_failure_as_unresolved`) и двум новым тестам диагностики
+(`test_gate_runner_persists_failing_step_capture_and_names_the_test`,
+`test_gate_runner_keeps_no_capture_for_a_passing_step`); прежние негативные матрицы
+проходят без изменений. Полный `governor architecture` намеренно **не** переисполняется
+ради снятия замечания: зелёный повтор не является `root-cause proof`, а прогон #2 уже
+записан.
 
 ## 11. Известные ограничения
 
@@ -246,3 +319,7 @@ T05-файлы. Rust-исходники не менялись (`git status`: т�
 3. Пины и evidence-digest живут в том же репозитории, что и носители (см. §6, граница E3).
 4. `lineage` в scorecard пуст (`{}`) намеренно: привязка идёт через `evidence.sha256` и
    `source_revision`, а не через отдельный lineage-блок.
+5. `gate_run_history` в scorecard — это provenance **инструмента** (два прогона гейта,
+   гипотеза и её статус), а не измерение продукта: ни одна продуктовая ось его не
+   читает, контракт T01 его игнорирует. Он там, чтобы история обоих прогонов была
+   машиночитаемой, а не только в прозе.

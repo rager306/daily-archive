@@ -329,7 +329,7 @@ def test_every_gate_step_declares_a_positive_finite_timeout():
         assert timeout_s > 0, f"{name}: timeout must be positive, got {timeout_s}"
 
 
-def test_gate_runner_reports_a_timed_out_step_as_failure(monkeypatch, capsys):
+def test_gate_runner_reports_a_timed_out_step_as_failure(monkeypatch, capsys, tmp_path):
     """A step that never finishes must never be reported as OK.
 
     This is the behavioural half of the timeout invariant: the runner catches
@@ -342,6 +342,7 @@ def test_gate_runner_reports_a_timed_out_step_as_failure(monkeypatch, capsys):
         return [("sleeper", [sys.executable, "-c", "import time; time.sleep(30)"], 1)]
 
     monkeypatch.setattr(gov, "architecture_gate_steps", fake_steps)
+    monkeypatch.setenv(gov._ARCHITECTURE_GATE_LOG_ENV, str(tmp_path))
 
     class _Args:
         quick = False
@@ -351,6 +352,76 @@ def test_gate_runner_reports_a_timed_out_step_as_failure(monkeypatch, capsys):
     assert rc == 1
     assert "TIMEOUT" in out
     assert "ARCHITECTURE GATE: FAIL" in out
+
+
+def test_gate_runner_persists_failing_step_capture_and_names_the_test(
+    monkeypatch, capsys, tmp_path
+):
+    """A failing step must identify itself: full capture kept, failing test named.
+
+    The gate that produced the M514/S01 first-run failure printed only the last
+    five stderr lines and discarded the capture, so the failing test was never
+    known. This is the deterministic negative half of that fix, driven by a fake
+    subprocess: the full stdout and stderr must be persisted, and the libtest
+    ``test <name> ... FAILED`` name must be printed.
+    """
+    import governor.__main__ as gov
+
+    script = (
+        "import sys\n"
+        "print('running 2 tests')\n"
+        "print('test backend_contract::outage ... FAILED')\n"
+        "print('test backend_contract::healthy ... ok')\n"
+        "print('assertion failed: expected Err', file=sys.stderr)\n"
+        "print('test result: FAILED. 1 passed; 1 failed', file=sys.stderr)\n"
+        "sys.exit(1)\n"
+    )
+
+    def fake_steps(quick=False):  # noqa: ARG001 - mirrors the real signature
+        return [("da-parse tests", [sys.executable, "-c", script], 60)]
+
+    monkeypatch.setattr(gov, "architecture_gate_steps", fake_steps)
+    monkeypatch.setenv(gov._ARCHITECTURE_GATE_LOG_ENV, str(tmp_path))
+
+    class _Args:
+        quick = False
+
+    rc = gov._run_architecture_gate(_Args())
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "ARCHITECTURE GATE: FAIL" in out
+    # The failing test is identified, and only the failing one.
+    failing_lines = [line for line in out.splitlines() if "failing tests:" in line]
+    assert len(failing_lines) == 1
+    assert "backend_contract::outage" in failing_lines[0]
+    assert "backend_contract::healthy" not in failing_lines[0]
+    # The full capture is persisted, one file per stream.
+    stdout_logs = sorted(tmp_path.glob("*.stdout.log"))
+    stderr_logs = sorted(tmp_path.glob("*.stderr.log"))
+    assert len(stdout_logs) == 1 and len(stderr_logs) == 1
+    assert stdout_logs[0].name.startswith("01-")
+    assert "running 2 tests" in stdout_logs[0].read_text(encoding="utf-8")
+    assert "backend_contract::outage ... FAILED" in stdout_logs[0].read_text(
+        encoding="utf-8"
+    )
+    assert "assertion failed: expected Err" in stderr_logs[0].read_text(encoding="utf-8")
+
+
+def test_gate_runner_keeps_no_capture_for_a_passing_step(monkeypatch, tmp_path):
+    """Only a failure's bytes are kept: a green step leaves no log behind."""
+    import governor.__main__ as gov
+
+    def fake_steps(quick=False):  # noqa: ARG001 - mirrors the real signature
+        return [("green", [sys.executable, "-c", "print('ok')"], 60)]
+
+    monkeypatch.setattr(gov, "architecture_gate_steps", fake_steps)
+    monkeypatch.setenv(gov._ARCHITECTURE_GATE_LOG_ENV, str(tmp_path))
+
+    class _Args:
+        quick = False
+
+    assert gov._run_architecture_gate(_Args()) == 0
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_gate_never_mass_builds_examples_or_the_workspace():

@@ -53,6 +53,7 @@ from governor.adapters.absorption_progress_reader import (  # noqa: E402
 SCHEMA_PATH = "data/parse/absorption_progress.schema.yaml"
 RULE_PATH = "scripts/governor/checks/grobid_absorption_progress.yaml"
 BASELINE_PATH = "artifacts/parse_compat/absorption_progress_baseline.json"
+REPORT_PATH = "doc/review/grobid-absorption-progress-baseline.md"
 PROBE_PATH = "artifacts/parse_compat/external_holdout_release_probe.json"
 DOMAIN_MODULE_PATH = "scripts/governor/domain/absorption_progress.py"
 
@@ -408,3 +409,64 @@ def test_historical_carriers_are_declared_read_only() -> None:
     assert carriers["rewriting_forbidden"] is True
     ids = {entry["id"] for entry in carriers["carriers"]}
     assert "m513-s03-uat-4" in ids
+
+
+# ── the deliverable report describes the delivered bytes, honestly ──────────
+
+
+def test_report_pins_the_baseline_artifact_hash() -> None:
+    """The report's baseline pin must match the artifact bytes it describes.
+
+    §1 already warns that the *schema* hash goes stale when S02 freezes
+    thresholds; that staleness is expected. The baseline scorecard row is
+    different: it describes the artifact this file governs, so a byte change
+    without the report following is drift, not an expected staleness.
+    """
+    report = (_REPO_ROOT / REPORT_PATH).read_text(encoding="utf-8")
+    assert _sha256(BASELINE_PATH).removeprefix("sha256:") in report
+
+
+def test_gate_run_history_keeps_the_first_failure_unexplained() -> None:
+    """Both gate runs are recorded, and the first failure keeps an unknown cause.
+
+    A previous revision of the report asserted a proven bind/drop race and the
+    absence of a regression. Neither was established: the first run's capture
+    was discarded, so its failing test is unknown. The machine-readable record
+    must stay unresolved, and a green repeat must not be offered as the reason.
+    """
+    history = _baseline()["gate_run_history"]
+    first, second = history["runs"]
+    assert first["exit_code"] == 1
+    assert first["failed_step"] == "da-parse tests"
+    assert first["failure_cause"] == "unresolved"
+    assert first["root_cause_established"] is False
+    assert first["detail_capture"] == "not_retained"
+    assert first["failing_tests"] is None
+    assert second["exit_code"] == 0
+    assert second["root_cause_established"] is False
+    hypothesis = history["hypothesis"]
+    assert hypothesis["status"] == "unverified"
+    assert hypothesis["disconfirming_evidence"]
+    conclusions = " | ".join(hypothesis["cannot_conclude"]).lower()
+    assert "no root cause is established" in conclusions
+    assert "no claim that a flake was eliminated" in conclusions
+    assert "no claim that no regression occurred" in conclusions
+    # The diagnostics fix is named, so the record points at its own guard.
+    guard = history["diagnostics_change"]["test"]
+    assert guard.endswith("test_gate_runner_persists_failing_step_capture_and_names_the_test")
+
+
+def test_report_records_the_gate_failure_as_unresolved() -> None:
+    """§10 must separate observed facts from the unproven hypothesis."""
+    report = (_REPO_ROOT / REPORT_PATH).read_text(encoding="utf-8")
+    section = report.split("## 10.", 1)[1].split("## 11.", 1)[0]
+    # Both runs survive: the failed run and the later green run.
+    assert "18/19" in section and "19/19" in section
+    assert "exit 1" in section and "exit 0" in section
+    # The lost capture and the unknown cause are stated, not implied.
+    assert "конкретный failing test прогона #1 неизвестен" in section
+    assert "причина провала #1 **не установлена**" in section
+    assert "root-cause proof" in section
+    # The previous revision's unsupported claim must not return.
+    assert "Причина — не регрессия кода" not in section
+    assert "а флейк под параллельной нагрузкой" not in section

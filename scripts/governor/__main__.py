@@ -9,6 +9,8 @@ Usage:
 
 import argparse
 import json
+import os
+import re
 import sys
 from pathlib import Path
 
@@ -660,15 +662,125 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
     return steps
 
 
+#: Environment override for the directory a failing gate step's full capture is
+#: written to. The default is `<root>/target/architecture-gate-logs`, which is
+#: gitignored with `target/`, so a failure leaves durable stdout/stderr beside the
+#: build without ever being added to the tree.
+_ARCHITECTURE_GATE_LOG_ENV = "GOVERNOR_ARCHITECTURE_GATE_LOG_DIR"
+
+#: libtest prints `test <name> ... FAILED` per failing test and repeats the names
+#: under a `failures:` heading. Matching the per-test status line identifies the
+#: test directly and can never mistake a passing `... ok` line for a failure.
+_GATE_FAILING_TEST_RE = re.compile(
+    r"^\s*test\s+(?P<name>\S+)\s+\.\.\.\s+FAILED\s*$", re.MULTILINE
+)
+
+#: A compile failure or a panic. Used only when no libtest status line matched:
+#: a cargo step that never reached the harness prints no test name.
+_GATE_ERROR_RE = re.compile(
+    r"^\s*(?:error(?:\[[A-Za-z0-9]+\])?:\s*\S.*|"
+    r".*panicked at\s+\S.*|process didn't exit successfully.*)$",
+    re.MULTILINE,
+)
+
+
+def _architecture_gate_log_dir(root: Path) -> Path:
+    """Where a failing step's full stdout/stderr is persisted."""
+    override = os.environ.get(_ARCHITECTURE_GATE_LOG_ENV)
+    if override:
+        return Path(override)
+    return root / "target" / "architecture-gate-logs"
+
+
+def _as_text(value: object) -> str:
+    """A subprocess capture as text; ``TimeoutExpired`` may hand back bytes."""
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", "replace")
+    return value if isinstance(value, str) else str(value)
+
+
+def _failing_tests(output: str) -> list[str]:
+    """libtest ``test <name> ... FAILED`` names, in first-seen order."""
+    names: list[str] = []
+    for match in _GATE_FAILING_TEST_RE.finditer(output):
+        name = match.group("name")
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def _first_gate_error(output: str) -> str | None:
+    """The first compile/panic line, when no libtest failing test was printed."""
+    match = _GATE_ERROR_RE.search(output)
+    return match.group(0).strip() if match else None
+
+
+def _slug(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return slug or "step"
+
+
+def _persist_gate_capture(
+    log_dir: Path, index: int, name: str, stdout: str, stderr: str
+) -> tuple[Path, Path]:
+    """Write one failing step's full stdout and stderr; return both paths."""
+    log_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"{index:02d}-{_slug(name)}"
+    stdout_path = log_dir / f"{stem}.stdout.log"
+    stderr_path = log_dir / f"{stem}.stderr.log"
+    stdout_path.write_text(stdout, encoding="utf-8")
+    stderr_path.write_text(stderr, encoding="utf-8")
+    return stdout_path, stderr_path
+
+
+def _report_gate_step_failure(
+    name: str,
+    index: int,
+    stdout: str,
+    stderr: str,
+    *,
+    log_dir: Path,
+    timed_out: bool,
+) -> None:
+    """Print and persist everything needed to identify one failing step.
+
+    The gate previously printed only the last five stderr lines and discarded
+    the capture, which is exactly why the first-run failure recorded in
+    ``doc/review/grobid-absorption-progress-baseline.md`` could not be attributed
+    to a test. The full stdout and stderr of the failing step are now persisted
+    (gitignored), the failing libtest names are extracted, and both stream tails
+    are shown, so the next failure identifies itself instead of its hypothesis.
+    """
+    stdout_path, stderr_path = _persist_gate_capture(log_dir, index, name, stdout, stderr)
+    combined = f"{stdout}\n{stderr}"
+    failing = _failing_tests(combined)
+    if failing:
+        shown = ", ".join(failing[:10])
+        remainder = f" (+{len(failing) - 10} more)" if len(failing) > 10 else ""
+        print(f"    failing tests: {shown}{remainder}")
+    elif not timed_out:
+        first_error = _first_gate_error(combined)
+        if first_error:
+            print(f"    failure: {first_error}")
+    for stream, label in ((stdout, "stdout"), (stderr, "stderr")):
+        for line in [line for line in stream.strip().splitlines() if line.strip()][-5:]:
+            print(f"    [{label}] {line}")
+    print(f"    full capture: {stdout_path} | {stderr_path}")
+
+
 def _run_architecture_gate(args) -> int:
     """Absorb scripts/verify_rust_architecture.sh — Rust architecture gate."""
     import subprocess
+
     root = Path(__file__).resolve().parent.parent.parent
     steps = architecture_gate_steps(bool(getattr(args, "quick", False)))
+    log_dir = _architecture_gate_log_dir(root)
 
     failed = 0
     timed_out = 0
-    for name, cmd, timeout_s in steps:
+    for index, (name, cmd, timeout_s) in enumerate(steps, start=1):
         print(f"  {name}...", end=" ", flush=True)
         try:
             result = subprocess.run(
@@ -678,22 +790,32 @@ def _run_architecture_gate(args) -> int:
             # A timeout is a failure whatever a truncated capture would say:
             # never report a step that never finished as OK.
             print(f"TIMEOUT (>{timeout_s}s)")
-            tail = exc.stderr or ""
-            if isinstance(tail, bytes):
-                tail = tail.decode("utf-8", "replace")
-            for line in tail.strip().split('\n')[-5:]:
-                print(f"    {line}")
+            _report_gate_step_failure(
+                name,
+                index,
+                _as_text(getattr(exc, "stdout", None)),
+                _as_text(getattr(exc, "stderr", None)),
+                log_dir=log_dir,
+                timed_out=True,
+            )
             failed = 1
             timed_out += 1
             continue
         if result.returncode == 0:
             print("OK")
-        else:
-            print("FAIL")
-            # Show last 5 lines of stderr
-            for line in result.stderr.strip().split('\n')[-5:]:
-                print(f"    {line}")
-            failed = 1
+            # A passing step's capture is not evidence for anything and can be
+            # large; only a failing step's bytes are persisted.
+            continue
+        print("FAIL")
+        _report_gate_step_failure(
+            name,
+            index,
+            _as_text(result.stdout),
+            _as_text(result.stderr),
+            log_dir=log_dir,
+            timed_out=False,
+        )
+        failed = 1
 
     print(f"\n  architecture gate steps: {len(steps) - failed}/{len(steps)} passed, "
           f"{timed_out} timed out")
