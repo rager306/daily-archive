@@ -190,6 +190,34 @@ pub enum NativeFamilyReceiptError {
     RedactionViolation { marker: String },
     /// The artifact could not be serialized.
     ArtifactSerialization { reason: String },
+    /// The frozen exclusion denominator omits one of the typed reasons.
+    ExclusionDenominatorAbsent { reason: String },
+    /// The frozen exclusion denominator carries a token outside the vocabulary.
+    ExclusionUnknownReason { reason: String },
+    /// A frozen exclusion denominator drifted from the population it restates.
+    ExclusionDenominatorDrift {
+        reason: String,
+        expected: u64,
+        found: u64,
+    },
+    /// The recovered row count contradicts the declared mode and target.
+    ExclusionPopulationCoverage { expected: u64, found: u64 },
+    /// The same excluded document appears twice.
+    ExclusionDuplicateDocument { document: String },
+    /// A recovery row is missing the canonical field matrix.
+    ExclusionFieldMatrix { document: String, field: String },
+    /// A recovery row's disposition contradicts its reason's field state.
+    ExclusionDispositionMismatch {
+        document: String,
+        expected: String,
+        found: String,
+    },
+    /// A typed refusal row carries no refusal reason.
+    ExclusionRefusalMissing { document: String },
+    /// A non-refusal row carries a refusal reason.
+    ExclusionRefusalInconsistent { document: String },
+    /// The frozen affiliation reference is absent or malformed.
+    AffiliationReferenceMissing,
 }
 
 impl fmt::Display for NativeFamilyReceiptError {
@@ -370,6 +398,60 @@ impl fmt::Display for NativeFamilyReceiptError {
                 f,
                 "native family receipt: artifact serialization failed: {reason}"
             ),
+            Self::ExclusionDenominatorAbsent { reason } => write!(
+                f,
+                "native family receipt: the frozen denominator omits `{reason}`"
+            ),
+            Self::ExclusionUnknownReason { reason } => write!(
+                f,
+                "native family receipt: `{reason}` is not a typed exclusion reason"
+            ),
+            Self::ExclusionDenominatorDrift {
+                reason,
+                expected,
+                found,
+            } => write!(
+                f,
+                "native family receipt: exclusion denominator `{reason}` is `{found}` \
+                 but the frozen population restates `{expected}`"
+            ),
+            Self::ExclusionPopulationCoverage { expected, found } => write!(
+                f,
+                "native family receipt: the run recovered `{found}` rows but `{expected}` \
+                 are required by its mode"
+            ),
+            Self::ExclusionDuplicateDocument { document } => write!(
+                f,
+                "native family receipt: exclusion document `{document}` is observed twice"
+            ),
+            Self::ExclusionFieldMatrix { document, field } => write!(
+                f,
+                "native family receipt: recovery row `{document}` is missing field `{field}` \
+                 exactly once in canonical order"
+            ),
+            Self::ExclusionDispositionMismatch {
+                document,
+                expected,
+                found,
+            } => write!(
+                f,
+                "native family receipt: recovery row `{document}` is `{found}` but its \
+                 reason requires `{expected}`"
+            ),
+            Self::ExclusionRefusalMissing { document } => write!(
+                f,
+                "native family receipt: recovery row `{document}` is a typed refusal with no \
+                 refusal reason"
+            ),
+            Self::ExclusionRefusalInconsistent { document } => write!(
+                f,
+                "native family receipt: recovery row `{document}` is not a refusal but carries \
+                 a refusal reason"
+            ),
+            Self::AffiliationReferenceMissing => write!(
+                f,
+                "native family receipt: the frozen affiliation reference is absent or malformed"
+            ),
         }
     }
 }
@@ -425,8 +507,10 @@ pub fn normalize_document_identity(id: &str) -> String {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiptKind {
-    /// The declared three-document parity slice (this task).
+    /// The declared three-document parity slice (T04).
     ParityThreeDocumentSlice,
+    /// The 79 typed baseline exclusions the sibling runner measures (T05).
+    ExclusionRecoveryBaseline,
 }
 
 impl ReceiptKind {
@@ -434,6 +518,7 @@ impl ReceiptKind {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::ParityThreeDocumentSlice => "parity_three_document_slice",
+            Self::ExclusionRecoveryBaseline => "exclusion_recovery_baseline",
         }
     }
 }
@@ -464,6 +549,16 @@ impl PopulationId {
 pub enum PopulationKind {
     Corpus,
     Exclusion,
+}
+
+impl PopulationKind {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Corpus => "corpus",
+            Self::Exclusion => "exclusion",
+        }
+    }
 }
 
 /// The native families the receipt measures, one per T02/T03 atom.
@@ -565,6 +660,12 @@ pub enum RefusalReason {
     GazetteerRefused,
     AnchorScanNotNative,
     SerializationRefused,
+    /// A native pipeline step before the band (layout, projection, heading,
+    /// carrier) refused, so the band could not run.
+    PipelineRefused,
+    /// The document exceeded its per-document wall-clock budget. A typed
+    /// refusal, never a pass.
+    DocumentTimeout,
 }
 
 impl RefusalReason {
@@ -581,6 +682,8 @@ impl RefusalReason {
             Self::GazetteerRefused => "gazetteer_refused",
             Self::AnchorScanNotNative => "anchor_scan_not_native",
             Self::SerializationRefused => "serialization_refused",
+            Self::PipelineRefused => "pipeline_refused",
+            Self::DocumentTimeout => "document_timeout",
         }
     }
 }
@@ -1447,6 +1550,648 @@ pub fn classify_coverage(
     } else {
         CoverageVerdict::ContentLoss
     }
+}
+
+// ───────────────────── exclusion recovery (S04/T05) ─────────────────────
+
+/// Schema version of the exclusion-recovery artifact.
+pub const NATIVE_EXCLUSION_RECOVERY_SCHEMA_VERSION: &str = "native-exclusion-recovery.v1";
+/// Default artifact path of the exclusion-recovery receipt.
+pub const EXCLUSION_RECOVERY_ARTIFACT_REL: &str =
+    "artifacts/parse_compat/native_exclusion_recovery.json";
+/// Repository-relative carrier of the holdout article manifest (the byte pins).
+pub const HOLDOUT_MANIFEST_REL: &str = "data/parse/holdout_manifests.yaml";
+/// Repository-relative carrier of the external holdout release probe.
+pub const EXCLUSION_PROBE_REL: &str = "artifacts/parse_compat/external_holdout_release_probe.json";
+/// Pointer inside the probe carrier to the typed exception population.
+pub const EXCLUSION_PROBE_POINTER: &str = "reference_population";
+/// Repository-relative carrier of the absorption progress baseline.
+pub const EXCLUSION_BASELINE_REL: &str = "artifacts/parse_compat/absorption_progress_baseline.json";
+/// Pointer inside the baseline carrier to the exclusion denominator.
+pub const EXCLUSION_BASELINE_POINTER: &str = "denominator";
+/// The three typed baseline exclusion reasons, in canonical order.
+pub const EXCLUSION_REASON_ORDER: [ExclusionReason; 3] = [
+    ExclusionReason::HeaderDateAbsent,
+    ExclusionReason::HeaderTitleAbsent,
+    ExclusionReason::HeaderAuthorAbsent,
+];
+/// The three header fields each recovery row reports, in canonical order.
+pub const RECOVERY_FIELD_ORDER: [RecoveryField; 3] = [
+    RecoveryField::Date,
+    RecoveryField::Title,
+    RecoveryField::Author,
+];
+
+/// Whether an exclusion-recovery run covered the whole denominator or a bounded
+/// prefix. The mode is carried so a smoke receipt can never be mistaken for the
+/// corpus-bound full run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecoveryMode {
+    Full,
+    Smoke,
+}
+
+impl RecoveryMode {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Full => "full",
+            Self::Smoke => "smoke",
+        }
+    }
+}
+
+/// The typed baseline exclusion reasons, in canonical order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExclusionReason {
+    HeaderDateAbsent,
+    HeaderTitleAbsent,
+    HeaderAuthorAbsent,
+}
+
+impl ExclusionReason {
+    /// Stable snake_case token; it restates the probe/baseline vocabulary.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::HeaderDateAbsent => "header_date_absent",
+            Self::HeaderTitleAbsent => "header_title_absent",
+            Self::HeaderAuthorAbsent => "header_author_absent",
+        }
+    }
+
+    /// The header field the reason is about.
+    pub const fn field(self) -> RecoveryField {
+        match self {
+            Self::HeaderDateAbsent => RecoveryField::Date,
+            Self::HeaderTitleAbsent => RecoveryField::Title,
+            Self::HeaderAuthorAbsent => RecoveryField::Author,
+        }
+    }
+
+    /// Parse the probe/baseline token, or `None` outside the closed vocabulary.
+    pub fn parse(token: &str) -> Option<Self> {
+        match token {
+            "header_date_absent" => Some(Self::HeaderDateAbsent),
+            "header_title_absent" => Some(Self::HeaderTitleAbsent),
+            "header_author_absent" => Some(Self::HeaderAuthorAbsent),
+            _ => None,
+        }
+    }
+}
+
+/// The three header fields a recovery row reports, in canonical order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecoveryField {
+    Date,
+    Title,
+    Author,
+}
+
+impl RecoveryField {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Date => "date",
+            Self::Title => "title",
+            Self::Author => "author",
+        }
+    }
+}
+
+/// Typed per-field recovery state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FieldDisposition {
+    /// The header band produced at least one value for the field.
+    Recovered,
+    /// The band ran (or the region was an admitted-empty typed absence) and
+    /// produced no value. Never a silent zero.
+    NotRecovered,
+    /// The field has no native input class in this cut; e.g. the T02 header band
+    /// has no Title atom, so a title cannot be produced from it.
+    OutOfScope,
+}
+
+impl FieldDisposition {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Recovered => "recovered",
+            Self::NotRecovered => "not_recovered",
+            Self::OutOfScope => "out_of_scope",
+        }
+    }
+}
+
+/// Typed per-document disposition against the exclusion reason.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecoveryDisposition {
+    Recovered,
+    NotRecovered,
+    OutOfScope,
+    TypedRefusal,
+}
+
+impl RecoveryDisposition {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Recovered => "recovered",
+            Self::NotRecovered => "not_recovered",
+            Self::OutOfScope => "out_of_scope",
+            Self::TypedRefusal => "typed_refusal",
+        }
+    }
+}
+
+/// Typed structural refusal of an exclusion-recovery row. Every variant is a
+/// hard integrity failure: the runner writes the artifact and then exits
+/// non-zero, so a refusal is never a quiet skip.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExclusionRefusalReason {
+    /// The probe names a document the manifest does not pin.
+    IdentityNotInManifest,
+    /// The manifest row is not `bytes_present`.
+    StatusNotBytesPresent,
+    /// The pinned PDF bytes cannot be read.
+    PdfMissing,
+    /// The observed PDF sha256 drifted from the manifest pin.
+    PdfShaDrift,
+    /// The probe restates a manifest revision other than the one on disk.
+    ProbeRevisionMismatch,
+    /// The baseline declares no denominator for a probe reason.
+    BaselineReasonAbsent,
+    /// The baseline denominator disagrees with the probe population.
+    BaselineReasonMismatch,
+    /// The frozen affiliation reference is absent or malformed.
+    AffiliationReferenceMissing,
+}
+
+impl ExclusionRefusalReason {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::IdentityNotInManifest => "identity_not_in_manifest",
+            Self::StatusNotBytesPresent => "status_not_bytes_present",
+            Self::PdfMissing => "pdf_missing",
+            Self::PdfShaDrift => "pdf_sha_drift",
+            Self::ProbeRevisionMismatch => "probe_revision_mismatch",
+            Self::BaselineReasonAbsent => "baseline_reason_absent",
+            Self::BaselineReasonMismatch => "baseline_reason_mismatch",
+            Self::AffiliationReferenceMissing => "affiliation_reference_missing",
+        }
+    }
+}
+
+/// One header field's typed recovery state.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FieldRecovery {
+    pub field: RecoveryField,
+    pub disposition: FieldDisposition,
+}
+
+/// One pinned exclusion and the native header recovery observed for it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExclusionRecoveryRow {
+    /// The probe / manifest identity.
+    pub document_id: String,
+    /// The typed baseline reason the document was excluded for.
+    pub reason: ExclusionReason,
+    /// The probe's own identity digest. It is deliberately **not** the PDF byte
+    /// hash (`identity_digest_is_byte_hash = false`), so it is carried as an
+    /// identity leaf and never compared to the PDF sha256.
+    pub probe_identity_sha256: String,
+    /// The probe's identity artifact size, in bytes.
+    pub probe_size_bytes: u64,
+    /// Repository-relative PDF path, when the manifest pins one.
+    pub source_pdf: Option<String>,
+    /// Observed bare sha256 of the PDF bytes.
+    pub pdf_sha256: Option<String>,
+    /// The manifest's bare sha256 pin for the PDF.
+    pub pdf_sha256_pinned: Option<String>,
+    /// Observed PDF size in bytes.
+    pub pdf_size_bytes: Option<u64>,
+    /// sha256 over the native pipeline digests, when the band ran.
+    pub pipeline_digest: Option<String>,
+    /// The reason-scoped disposition.
+    pub disposition: RecoveryDisposition,
+    /// One entry per recovery field, in canonical order.
+    pub fields: Vec<FieldRecovery>,
+    /// The Header region admitted no tokens: a typed absence, not a zero.
+    pub band_typed_absence: bool,
+    /// The band's typed refusal, when it refused to execute.
+    pub band_refusal: Option<RefusalReason>,
+    /// The structural refusal, when the row could not be measured at all.
+    pub refusal: Option<ExclusionRefusalReason>,
+}
+
+/// Recovered / not-recovered / out-of-scope / refused counts for one reason.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecoveryAggregate {
+    pub reason: ExclusionReason,
+    /// Rows observed for this reason in this run.
+    pub denominator: u64,
+    pub recovered: u64,
+    pub not_recovered: u64,
+    pub out_of_scope: u64,
+    pub typed_refusal: u64,
+}
+
+/// The exclusion population this receipt measures.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecoveryPopulation {
+    pub population_id: PopulationId,
+    pub population_kind: PopulationKind,
+    pub mode: RecoveryMode,
+    /// `true` only for a full run over the frozen denominator.
+    pub assumed_complete: bool,
+    /// The baseline's assigned population (610).
+    pub assigned: u64,
+    /// The frozen exclusion denominator (79).
+    pub excluded: u64,
+    /// The probe's measurable population (531).
+    pub measurable: u64,
+    /// Rows this run targeted (`excluded` for a full run, `N` for a smoke run).
+    pub targeted: u64,
+    /// The frozen baseline denominator per reason token.
+    pub reasons: BTreeMap<String, u64>,
+}
+
+/// The frozen affiliation capability reference, carried verbatim so the
+/// exclusion measurement cannot silently absorb it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AffiliationReference {
+    /// The baseline metric the reference belongs to.
+    pub metric_id: String,
+    /// Frozen numerator (3055).
+    pub recovered: u64,
+    /// Frozen denominator (7077).
+    pub denominator: u64,
+}
+
+/// One hard integrity failure. The runner exits non-zero for each.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct IntegrityFailure {
+    pub code: ExclusionRefusalReason,
+    /// The document the failure is about, when it is document-scoped.
+    pub document: Option<String>,
+}
+
+/// The emitted exclusion-recovery receipt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NativeExclusionRecoveryReceipt {
+    pub schema_version: String,
+    pub receipt_kind: ReceiptKind,
+    pub claim_scope: String,
+    pub product_coverage_effect: String,
+    pub thresholds: String,
+    pub locks: BTreeMap<String, String>,
+    pub declaration: CarrierBinding,
+    pub probe: CarrierBinding,
+    pub baseline: CarrierBinding,
+    pub guard: GuardProvenanceReceipt,
+    pub affiliation_reference: AffiliationReference,
+    pub population: RecoveryPopulation,
+    pub aggregates: Vec<RecoveryAggregate>,
+    pub recoveries: Vec<ExclusionRecoveryRow>,
+    pub integrity_failures: Vec<IntegrityFailure>,
+    pub redaction: Redaction,
+}
+
+impl NativeExclusionRecoveryReceipt {
+    /// Serialize canonically and refuse if any payload marker leaked.
+    pub fn artifact_json_bytes(&self) -> Result<Vec<u8>, NativeFamilyReceiptError> {
+        let bytes = serde_json::to_vec_pretty(self).map_err(|error| {
+            NativeFamilyReceiptError::ArtifactSerialization {
+                reason: error.to_string(),
+            }
+        })?;
+        let text = std::str::from_utf8(&bytes).map_err(|error| {
+            NativeFamilyReceiptError::ArtifactSerialization {
+                reason: error.to_string(),
+            }
+        })?;
+        assert_redacted(text)?;
+        Ok(bytes)
+    }
+
+    /// Parse a receipt from its canonical bytes (hermetic replay).
+    pub fn parse_json_bytes(bytes: &[u8]) -> Result<Self, NativeFamilyReceiptError> {
+        serde_json::from_slice(bytes).map_err(|error| {
+            NativeFamilyReceiptError::ArtifactSerialization {
+                reason: error.to_string(),
+            }
+        })
+    }
+}
+
+fn recompute_aggregates(rows: &[ExclusionRecoveryRow]) -> Vec<RecoveryAggregate> {
+    EXCLUSION_REASON_ORDER
+        .iter()
+        .map(|reason| {
+            let mut aggregate = RecoveryAggregate {
+                reason: *reason,
+                denominator: 0,
+                recovered: 0,
+                not_recovered: 0,
+                out_of_scope: 0,
+                typed_refusal: 0,
+            };
+            for row in rows.iter().filter(|row| row.reason == *reason) {
+                aggregate.denominator += 1;
+                match row.disposition {
+                    RecoveryDisposition::Recovered => aggregate.recovered += 1,
+                    RecoveryDisposition::NotRecovered => aggregate.not_recovered += 1,
+                    RecoveryDisposition::OutOfScope => aggregate.out_of_scope += 1,
+                    RecoveryDisposition::TypedRefusal => aggregate.typed_refusal += 1,
+                }
+            }
+            aggregate
+        })
+        .collect()
+}
+
+/// Build the exclusion-recovery receipt, refusing anything the manifest, the
+/// probe, the baseline, the guard or the rows do not justify.
+///
+/// The builder is the single place the invariants are enforced: the frozen
+/// denominator is exactly the three typed reasons; a full run covers every
+/// excluded document exactly once; every row carries every recovery field in
+/// canonical order; `recovered`/`not_recovered`/`out_of_scope` agrees with the
+/// row's reason field; a typed refusal carries a refusal reason; and the
+/// recomputed aggregates reproduce the frozen denominator per reason.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn build_exclusion_recovery_receipt(
+    declaration_revision_sha256: &str,
+    probe_revision_sha256: &str,
+    baseline_revision_sha256: &str,
+    locks: &BTreeMap<String, String>,
+    claim_scope: &str,
+    product_coverage_effect: &str,
+    guard: GuardProvenance,
+    population: &RecoveryPopulation,
+    affiliation_reference: &AffiliationReference,
+    rows: &[ExclusionRecoveryRow],
+    integrity_failures: &[IntegrityFailure],
+) -> Result<NativeExclusionRecoveryReceipt, NativeFamilyReceiptError> {
+    if claim_scope != CLAIM_SCOPE_DIAGNOSTIC_ONLY {
+        return Err(NativeFamilyReceiptError::ClaimScopeDrift {
+            found: claim_scope.to_owned(),
+        });
+    }
+    if product_coverage_effect != PRODUCT_COVERAGE_EFFECT_NONE {
+        return Err(NativeFamilyReceiptError::ProductCoverageClaimed {
+            found: product_coverage_effect.to_owned(),
+        });
+    }
+
+    let mut checked_locks = BTreeMap::new();
+    for (lock, expected) in REQUIRED_LOCKS {
+        let found = locks
+            .get(lock)
+            .ok_or_else(|| NativeFamilyReceiptError::LockMissing {
+                lock: lock.to_owned(),
+            })?;
+        if found != expected {
+            return Err(NativeFamilyReceiptError::LockDrift {
+                lock: lock.to_owned(),
+                expected: expected.to_owned(),
+                found: found.clone(),
+            });
+        }
+        checked_locks.insert(lock.to_owned(), found.clone());
+    }
+
+    if !guard.installed {
+        return Err(NativeFamilyReceiptError::GuardNotInstalled);
+    }
+    if !guard.identity_isolated {
+        return Err(NativeFamilyReceiptError::GuardIdentityNotIsolated);
+    }
+    if guard.observed_java_calls > 0 {
+        return Err(NativeFamilyReceiptError::ObservedJavaOnSlice {
+            attempts: guard.observed_java_calls,
+        });
+    }
+
+    require_digest("declaration.revision_sha256", declaration_revision_sha256)?;
+    require_digest("probe.revision_sha256", probe_revision_sha256)?;
+    require_digest("baseline.revision_sha256", baseline_revision_sha256)?;
+
+    if population.population_id != PopulationId::ExclusionBaseline {
+        return Err(NativeFamilyReceiptError::PopulationMismatch {
+            population: population.population_id.as_str().to_owned(),
+        });
+    }
+    if population.population_kind != PopulationKind::Exclusion {
+        return Err(NativeFamilyReceiptError::PopulationMismatch {
+            population: population.population_kind.as_str().to_owned(),
+        });
+    }
+
+    for reason in EXCLUSION_REASON_ORDER {
+        if !population.reasons.contains_key(reason.as_str()) {
+            return Err(NativeFamilyReceiptError::ExclusionDenominatorAbsent {
+                reason: reason.as_str().to_owned(),
+            });
+        }
+    }
+    for token in population.reasons.keys() {
+        if ExclusionReason::parse(token).is_none() {
+            return Err(NativeFamilyReceiptError::ExclusionUnknownReason {
+                reason: token.clone(),
+            });
+        }
+    }
+    let reason_sum: u64 = population.reasons.values().sum();
+    if reason_sum != population.excluded {
+        return Err(NativeFamilyReceiptError::ExclusionDenominatorDrift {
+            reason: "sum".to_owned(),
+            expected: population.excluded,
+            found: reason_sum,
+        });
+    }
+    if population.assigned < population.excluded
+        || population.assigned.saturating_sub(population.excluded) != population.measurable
+    {
+        return Err(NativeFamilyReceiptError::ExclusionDenominatorDrift {
+            reason: "measurable".to_owned(),
+            expected: population.assigned.saturating_sub(population.excluded),
+            found: population.measurable,
+        });
+    }
+
+    let covered = rows.len() as u64;
+    match population.mode {
+        RecoveryMode::Full => {
+            if !population.assumed_complete
+                || population.targeted != population.excluded
+                || covered != population.excluded
+            {
+                return Err(NativeFamilyReceiptError::ExclusionPopulationCoverage {
+                    expected: population.excluded,
+                    found: covered,
+                });
+            }
+        }
+        RecoveryMode::Smoke => {
+            if population.assumed_complete || covered != population.targeted {
+                return Err(NativeFamilyReceiptError::ExclusionPopulationCoverage {
+                    expected: population.targeted,
+                    found: covered,
+                });
+            }
+        }
+    }
+
+    let mut seen = std::collections::BTreeSet::new();
+    for row in rows {
+        if !seen.insert(row.document_id.clone()) {
+            return Err(NativeFamilyReceiptError::ExclusionDuplicateDocument {
+                document: row.document_id.clone(),
+            });
+        }
+        if !is_sha256_hex(&row.probe_identity_sha256) {
+            return Err(NativeFamilyReceiptError::InvalidDigest {
+                field: format!("recovery[{}].probe_identity_sha256", row.document_id),
+            });
+        }
+        if let Some(digest) = &row.pipeline_digest {
+            require_digest(
+                &format!("recovery[{}].pipeline_digest", row.document_id),
+                digest,
+            )?;
+        }
+        if let Some(path) = &row.source_pdf {
+            require_path("recovery.source_pdf", path)?;
+        }
+        if row.fields.len() != RECOVERY_FIELD_ORDER.len() {
+            return Err(NativeFamilyReceiptError::ExclusionFieldMatrix {
+                document: row.document_id.clone(),
+                field: "count".to_owned(),
+            });
+        }
+        for field in RECOVERY_FIELD_ORDER {
+            if row
+                .fields
+                .iter()
+                .filter(|entry| entry.field == field)
+                .count()
+                != 1
+            {
+                return Err(NativeFamilyReceiptError::ExclusionFieldMatrix {
+                    document: row.document_id.clone(),
+                    field: field.as_str().to_owned(),
+                });
+            }
+        }
+        match row.disposition {
+            RecoveryDisposition::TypedRefusal => {
+                if row.refusal.is_none() && row.band_refusal.is_none() {
+                    return Err(NativeFamilyReceiptError::ExclusionRefusalMissing {
+                        document: row.document_id.clone(),
+                    });
+                }
+            }
+            _ => {
+                if row.refusal.is_some() || row.band_refusal.is_some() {
+                    return Err(NativeFamilyReceiptError::ExclusionRefusalInconsistent {
+                        document: row.document_id.clone(),
+                    });
+                }
+            }
+        }
+        let reason_field = row.reason.field();
+        let observed = row
+            .fields
+            .iter()
+            .find(|entry| entry.field == reason_field)
+            .map(|entry| entry.disposition)
+            .expect("the field matrix was checked above");
+        let expected = match row.disposition {
+            RecoveryDisposition::Recovered => Some(FieldDisposition::Recovered),
+            RecoveryDisposition::NotRecovered => Some(FieldDisposition::NotRecovered),
+            RecoveryDisposition::OutOfScope => Some(FieldDisposition::OutOfScope),
+            RecoveryDisposition::TypedRefusal => None,
+        };
+        if let Some(expected) = expected
+            && observed != expected
+        {
+            return Err(NativeFamilyReceiptError::ExclusionDispositionMismatch {
+                document: row.document_id.clone(),
+                expected: expected.as_str().to_owned(),
+                found: observed.as_str().to_owned(),
+            });
+        }
+    }
+
+    let aggregates = recompute_aggregates(rows);
+    for aggregate in &aggregates {
+        let frozen = population
+            .reasons
+            .get(aggregate.reason.as_str())
+            .copied()
+            .unwrap_or_default();
+        if population.mode == RecoveryMode::Full && aggregate.denominator != frozen {
+            return Err(NativeFamilyReceiptError::ExclusionDenominatorDrift {
+                reason: aggregate.reason.as_str().to_owned(),
+                expected: frozen,
+                found: aggregate.denominator,
+            });
+        }
+    }
+
+    if affiliation_reference.metric_id.trim().is_empty() || affiliation_reference.denominator == 0 {
+        return Err(NativeFamilyReceiptError::AffiliationReferenceMissing);
+    }
+
+    Ok(NativeExclusionRecoveryReceipt {
+        schema_version: NATIVE_EXCLUSION_RECOVERY_SCHEMA_VERSION.to_owned(),
+        receipt_kind: ReceiptKind::ExclusionRecoveryBaseline,
+        claim_scope: claim_scope.to_owned(),
+        product_coverage_effect: product_coverage_effect.to_owned(),
+        thresholds: THRESHOLDS_NOT_ACCEPTED.to_owned(),
+        locks: checked_locks,
+        declaration: CarrierBinding {
+            manifest: HOLDOUT_MANIFEST_REL.to_owned(),
+            pointer: "articles".to_owned(),
+            revision_sha256: declaration_revision_sha256.to_owned(),
+        },
+        probe: CarrierBinding {
+            manifest: EXCLUSION_PROBE_REL.to_owned(),
+            pointer: EXCLUSION_PROBE_POINTER.to_owned(),
+            revision_sha256: probe_revision_sha256.to_owned(),
+        },
+        baseline: CarrierBinding {
+            manifest: EXCLUSION_BASELINE_REL.to_owned(),
+            pointer: EXCLUSION_BASELINE_POINTER.to_owned(),
+            revision_sha256: baseline_revision_sha256.to_owned(),
+        },
+        guard: GuardProvenanceReceipt {
+            observer: GuardObserver::JavaTransportFetchTei,
+            installed: guard.installed,
+            identity_isolated: guard.identity_isolated,
+            observed_java_calls: guard.observed_java_calls,
+        },
+        affiliation_reference: affiliation_reference.clone(),
+        population: population.clone(),
+        aggregates,
+        recoveries: rows.to_vec(),
+        integrity_failures: integrity_failures.to_vec(),
+        redaction: Redaction::clean(),
+    })
 }
 
 #[cfg(test)]
