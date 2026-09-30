@@ -75,6 +75,7 @@ from typing import Any, Optional
 
 __all__ = [
     "JAVA_FREE_SLICE_VIOLATION_LABELS",
+    "NATIVE_FAMILY_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
     "THRESHOLD_DIRECTIONS",
     "comparability_key",
@@ -157,6 +158,39 @@ JAVA_FREE_SLICE_VIOLATION_LABELS = frozenset(
         "java_free_slice_stage_outside_slice_counted",
         "java_free_slice_receipt_stale",
         "java_free_slice_java_calls_nonzero",
+    }
+)
+
+#: The closed adapter-level vocabulary of the native family receipts half
+#: (M514/S04/T06). Literals on purpose (D492): the closed vocabulary is owned
+#: here, and the rule DATA restates it so a label the oracle can emit but that is
+#: not registered — or a registered label the oracle cannot emit — is a
+#: data/implementation mismatch rather than a silent finding. The adapter is the
+#: only layer that reads the receipts; it emits exactly these labels and nothing
+#: else, and none of them moves the product `java_independence` axis (D499).
+#:
+#: Why this half exists (R141): the S04 native family receipts are the first
+#: source-bound evidence that the real native parsers — not the Java carriers —
+#: produced header and bibliography atoms on the declared 3-document slice, and
+#: that the 79 typed baseline exclusions keep their denominator. A receipt's mere
+#: existence must not read as product success, so every claim shape has a typed
+#: refusal: a claim with no receipt, a receipt whose population does not match the
+#: frozen carriers, a receipt bound to older bytes, a diagnostic slice re-labelled
+#: as product coverage, an observed Java call on a Java-free plane, an observed
+#: zero with no guard provenance, an oracle that is not independent of the thing
+#: it scores, a claimed threshold the freeze does not declare, and a shrunken
+#: exclusion denominator.
+NATIVE_FAMILY_VIOLATION_LABELS = frozenset(
+    {
+        "native_family_claim_without_receipt",
+        "native_family_receipt_population_mismatch",
+        "native_family_receipt_stale",
+        "native_family_product_coverage_claimed",
+        "native_family_java_calls_nonzero",
+        "native_family_guard_not_installed",
+        "native_family_oracle_not_independent",
+        "native_family_threshold_claimed",
+        "native_family_exclusion_denominator_dropped",
     }
 )
 

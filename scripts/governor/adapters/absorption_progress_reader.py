@@ -88,6 +88,7 @@ import yaml
 
 from governor.domain.absorption_progress import (
     JAVA_FREE_SLICE_VIOLATION_LABELS,
+    NATIVE_FAMILY_VIOLATION_LABELS,
     contract_thresholds,
     missing_contract_vocabulary,
     score_number,
@@ -141,6 +142,7 @@ _RULE_KEYS = (
     "resources_claim",
     "comparability_rules",
     "java_free_slice",
+    "native_family_receipt",
 )
 
 
@@ -616,6 +618,155 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    # ── the native family receipts (S04/T06) ───────────────────────────────
+    def read_native_family_receipt(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the native family receipts, their carriers and the corpus pin.
+
+        The half this governs is the S04 evidence that the real native parsers —
+        not the Java carriers — produced header and bibliography atoms on the
+        declared 3-document slice, and that the 79 typed baseline exclusions keep
+        their denominator. The rule names *where* the two receipts live, where
+        each frozen carrier lives and which pointer holds the corpus / denominator
+        / preserved-TEI pins; nothing about the receipt contents is restated in
+        the rule, so the rule cannot drift from the artifacts it governs.
+
+        ``None`` means the rule does not govern a native family half. Otherwise a
+        bundle carrying the two receipt documents with their recomputed
+        ``sha256``, the frozen carriers with their recomputed ``sha256``, and the
+        derived views the oracle compares against (the corpus document pin, the
+        frozen baseline denominator and the preserved-TEI pins). ``available`` is
+        True only when the S03 declaration carrier resolves — the same authority
+        the Java-free slice half reads — so a tree that simply does not carry that
+        authority is *absence*, not a violation. An unreadable *receipt* under a
+        resolvable declaration is not absence — it is a claim with no evidence —
+        and the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("native_family_receipt")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "declaration_sha256": (
+                self.file_sha256(declaration_manifest) if declaration_manifest else None
+            ),
+            "declaration": None,
+            "receipts": {},
+            "carriers": {},
+            "corpus_documents": None,
+            "corpus_page_denominator": None,
+            "baseline_denominator": None,
+            "preserved_tei_pins": {},
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["declaration"] = block
+                bundle["available"] = True
+
+        receipt_rules = rule.get("receipts")
+        if isinstance(receipt_rules, dict):
+            for receipt_id, spec in receipt_rules.items():
+                spec = spec if isinstance(spec, dict) else {}
+                rel = _text(spec.get("path"))
+                document = None
+                if rel is not None:
+                    document = (
+                        self.read_json(rel)
+                        if rel.lower().endswith(".json")
+                        else self.read_yaml(rel)
+                    )
+                bundle["receipts"][receipt_id] = {
+                    "path": rel,
+                    "required": spec.get("required") is True,
+                    "schema_version": _text(spec.get("schema_version")),
+                    "receipt_kind": _text(spec.get("receipt_kind")),
+                    "exists": bool(rel and self.path_exists(rel)),
+                    "sha256": self.file_sha256(rel) if rel else None,
+                    "document": document,
+                }
+
+        carrier_rules = rule.get("carriers")
+        if isinstance(carrier_rules, list):
+            for entry in carrier_rules:
+                if not isinstance(entry, dict):
+                    continue
+                carrier_id = _text(entry.get("id"))
+                if carrier_id is None:
+                    continue
+                rel = _text(entry.get("path"))
+                document = None
+                if rel is not None:
+                    document = (
+                        self.read_json(rel)
+                        if rel.lower().endswith(".json")
+                        else self.read_yaml(rel)
+                    )
+                bundle["carriers"][carrier_id] = {
+                    "id": carrier_id,
+                    "path": rel,
+                    "pointer": _text(entry.get("pointer")),
+                    "kind": _text(entry.get("kind")),
+                    "sha256": self.file_sha256(rel) if rel else None,
+                    "document": document,
+                }
+
+        def _carrier(carrier_id: str) -> dict[str, Any]:
+            entry = bundle["carriers"].get(carrier_id)
+            return entry if isinstance(entry, dict) else {}
+
+        layout = _carrier("layout_bakeoff")
+        if isinstance(layout.get("document"), dict):
+            resolved = _resolve_declared_pointer(layout["document"], layout.get("pointer"))
+            bundle["corpus_documents"] = resolved if isinstance(resolved, list) else None
+            corpus_block = layout["document"].get("corpus")
+            if isinstance(corpus_block, dict):
+                bundle["corpus_page_denominator"] = _count(corpus_block.get("page_denominator"))
+
+        baseline = _carrier("absorption_progress_baseline")
+        if isinstance(baseline.get("document"), dict):
+            resolved = _resolve_declared_pointer(baseline["document"], baseline.get("pointer"))
+            bundle["baseline_denominator"] = resolved if isinstance(resolved, dict) else None
+
+        provenance = _carrier("preserved_tei_provenance")
+        pins: dict[str, dict[str, Any]] = {}
+        if isinstance(provenance.get("document"), dict):
+            resolved = _resolve_declared_pointer(provenance["document"], provenance.get("pointer"))
+            if isinstance(resolved, list):
+                for entry in resolved:
+                    if not isinstance(entry, dict):
+                        continue
+                    path = _text(entry.get("path"))
+                    if path is None:
+                        continue
+                    pins[path] = {
+                        "id": _text(entry.get("id")),
+                        "sha256": _text(entry.get("sha256")),
+                        "recomputed_sha256": self.file_sha256(path),
+                    }
+        bundle["preserved_tei_pins"] = pins
+
+        return bundle
+
 
 # ── contract composition ───────────────────────────────────────────────────
 
@@ -679,6 +830,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
                 missing.append(f"resources_claim.{key}")
 
     missing.extend(_java_free_slice_vocabulary(contract.get("java_free_slice")))
+    missing.extend(_native_family_receipt_vocabulary(contract.get("native_family_receipt")))
     return missing
 
 def _java_free_slice_vocabulary(block: Any) -> list[str]:
@@ -770,6 +922,112 @@ def _java_free_slice_vocabulary(block: Any) -> list[str]:
             spec = fixtures.get(polarity)
             if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
                 missing.append(f"java_free_slice.fixtures.{polarity}.path")
+    return missing
+
+def _native_family_receipt_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``native_family_receipt`` fields absent or unusable.
+
+    Without these the half cannot tell a declared-and-evidenced native family
+    receipt from a claim with no receipt, an untyped population or an
+    unregistered label. The declared label set must be exactly the domain's
+    literal set — a label the oracle can emit must be registered, and a
+    registered label must be one the oracle can emit — so an unregistered
+    emission is a data/implementation mismatch rather than a silent finding. The
+    caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["native_family_receipt"]
+    missing: list[str] = []
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("native_family_receipt.declaration")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"native_family_receipt.declaration.{key}")
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("native_family_receipt.declaration.manifest.path")
+
+    receipts = block.get("receipts")
+    if not isinstance(receipts, dict) or not receipts:
+        missing.append("native_family_receipt.receipts")
+    else:
+        for receipt_id, spec in receipts.items():
+            if not isinstance(spec, dict):
+                missing.append(f"native_family_receipt.receipts.{receipt_id}")
+                continue
+            if not _is_relative_path(spec.get("path")):
+                missing.append(f"native_family_receipt.receipts.{receipt_id}.path")
+            for key in ("schema_version", "receipt_kind"):
+                if _text(spec.get(key)) is None:
+                    missing.append(f"native_family_receipt.receipts.{receipt_id}.{key}")
+            if spec.get("required") is not True:
+                missing.append(f"native_family_receipt.receipts.{receipt_id}.required")
+
+    carriers = block.get("carriers")
+    if not isinstance(carriers, list) or not carriers:
+        missing.append("native_family_receipt.carriers")
+    else:
+        for index, entry in enumerate(carriers):
+            if not isinstance(entry, dict) or _text(entry.get("id")) is None:
+                missing.append(f"native_family_receipt.carriers[{index}]")
+                continue
+            if not _is_relative_path(entry.get("path")):
+                missing.append(f"native_family_receipt.carriers[{index}].path")
+            if _text(entry.get("pointer")) is None:
+                missing.append(f"native_family_receipt.carriers[{index}].pointer")
+            if _text(entry.get("kind")) is None:
+                missing.append(f"native_family_receipt.carriers[{index}].kind")
+
+    populations = block.get("populations")
+    if not isinstance(populations, dict):
+        missing.append("native_family_receipt.populations")
+    else:
+        parity = populations.get("parity")
+        if not isinstance(parity, dict):
+            missing.append("native_family_receipt.populations.parity")
+        else:
+            for key in ("population_kind", "document_count", "page_denominator"):
+                if _count(parity.get(key)) is None and _text(parity.get(key)) is None:
+                    missing.append(f"native_family_receipt.populations.parity.{key}")
+            if not _text_list(parity.get("family_dispositions")):
+                missing.append("native_family_receipt.populations.parity.family_dispositions")
+        exclusion = populations.get("exclusion")
+        if not isinstance(exclusion, dict):
+            missing.append("native_family_receipt.populations.exclusion")
+        else:
+            for key in ("population_kind", "assigned", "excluded", "measurable", "targeted"):
+                if _count(exclusion.get(key)) is None and _text(exclusion.get(key)) is None:
+                    missing.append(f"native_family_receipt.populations.exclusion.{key}")
+            if not isinstance(exclusion.get("reason_counts"), dict) or not exclusion.get("reason_counts"):
+                missing.append("native_family_receipt.populations.exclusion.reason_counts")
+            if not _text_list(exclusion.get("recovery_dispositions")):
+                missing.append("native_family_receipt.populations.exclusion.recovery_dispositions")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("native_family_receipt.expected")
+    else:
+        for key in ("claim_scope", "product_coverage_effect", "thresholds", "guard_observer"):
+            if _text(expected.get(key)) is None:
+                missing.append(f"native_family_receipt.expected.{key}")
+        for key in ("oracle_independent", "same_generator_refused"):
+            if expected.get(key) is not True:
+                missing.append(f"native_family_receipt.expected.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(NATIVE_FAMILY_VIOLATION_LABELS):
+        missing.append("native_family_receipt.violations")
+
+    fixtures = block.get("fixtures")
+    if not isinstance(fixtures, dict):
+        missing.append("native_family_receipt.fixtures")
+    else:
+        for polarity in ("positive", "negative"):
+            spec = fixtures.get(polarity)
+            if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
+                missing.append(f"native_family_receipt.fixtures.{polarity}.path")
     return missing
 
 
@@ -966,6 +1224,7 @@ def absorption_progress_violations(
     _threshold_violations(scorecard, contract, observations, violations)
     _population_census_violations(scorecard, contract, observations, violations)
     _java_free_slice_violations_into(contract, observations, violations)
+    _native_family_receipt_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
     return violations
@@ -1259,6 +1518,471 @@ def _java_free_slice_violations(contract: Any, evidence: Any) -> set[str]:
     if mismatch:
         violations.add("java_free_slice_receipt_slice_mismatch")
     return violations
+
+def _native_family_receipt_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the native family receipt labels carried by the observations."""
+    violations.update(
+        _native_family_receipt_violations(
+            contract,
+            observations.get("native_family_receipt") if isinstance(observations, dict) else None,
+        )
+    )
+
+def _native_family_receipt_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a native family receipt claim the artifacts do not evidence.
+
+    The shape R141 forbids is a *claim* of source-bound native progress — header
+    and bibliography atoms produced by the native parsers, on the declared
+    3-document slice — with no receipt, or with a receipt that is stale, scoped
+    outside the frozen population, guarded by nobody, scored by its own generator,
+    or publishing a product-coverage or threshold claim the diagnostic boundary
+    does not allow. Concretely:
+
+    * ``claim_without_receipt`` — the S03 declaration resolves but a required
+      receipt is absent or unreadable, so there is a claim and no evidence;
+    * ``receipt_population_mismatch`` — a receipt is not the receipt of *this*
+      rule (schema/kind/declaration/carrier pointers differ), its 3-document
+      corpus pin or the frozen 610/531/79/72-5-2 denominator does not match the
+      carrier bytes, or a family/document/recovery row carries no typed
+      disposition;
+    * ``receipt_stale`` — a receipt pins carrier bytes whose recomputed
+      ``sha256`` no longer matches, so it describes an older tree;
+    * ``product_coverage_claimed`` — the claim is not diagnostic-only with no
+      product-coverage effect, or the promotion locks are not all closed, which
+      is the only scope that does not move the product ``java_independence`` axis
+      (D499);
+    * ``java_calls_nonzero`` — the receipt reports Java calls on a plane that
+      claims none;
+    * ``guard_not_installed`` — an observed zero is offered without the guard
+      provenance (installed + identity-isolated observer) that would make the
+      zero mean anything;
+    * ``oracle_not_independent`` — the parity oracle is missing or not declared
+      independent / same-generator-refused / byte-bound to the preserved TEI pins;
+    * ``threshold_claimed`` — a numeric threshold is published although the
+      acquisition declares none (``thresholds != not_accepted``);
+    * ``exclusion_denominator_dropped`` — the 79 typed baseline exclusions no
+      longer partition the denominator, or their per-document rows are not the
+      79 targeted documents.
+
+    ``set()`` (empty) means clean. A missing or absent-evidence bundle is
+    *unverified*, never clean and never refuted: a tree that does not carry the
+    declaration authority is silence, not compliance, so nothing here is inferred
+    from an artifact's mere existence.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("native_family_receipt")
+    if not isinstance(rule, dict):
+        return violations
+    expected = rule.get("expected") if isinstance(rule.get("expected"), dict) else {}
+    populations = rule.get("populations") if isinstance(rule.get("populations"), dict) else {}
+    receipts = evidence.get("receipts") if isinstance(evidence.get("receipts"), dict) else {}
+    carriers = evidence.get("carriers") if isinstance(evidence.get("carriers"), dict) else {}
+
+    rule_carriers: dict[str, dict[str, Any]] = {}
+    for entry in rule.get("carriers") or []:
+        if isinstance(entry, dict) and _text(entry.get("id")) is not None:
+            rule_carriers[str(_text(entry.get("id")))] = entry
+
+    def _carrier_path(carrier_id: str) -> Optional[str]:
+        entry = rule_carriers.get(carrier_id)
+        return _text(entry.get("path")) if isinstance(entry, dict) else None
+
+    def _carrier_pointer(carrier_id: str) -> Optional[str]:
+        entry = rule_carriers.get(carrier_id)
+        return _text(entry.get("pointer")) if isinstance(entry, dict) else None
+
+    def _carrier_sha(carrier_id: str) -> Optional[str]:
+        entry = carriers.get(carrier_id)
+        return _text(entry.get("sha256")) if isinstance(entry, dict) else None
+
+    def mismatch() -> None:
+        violations.add("native_family_receipt_population_mismatch")
+
+    def stale() -> None:
+        violations.add("native_family_receipt_stale")
+
+    def _bare(digest: Any) -> Optional[str]:
+        """A digest with the ``sha256:`` prefix removed, for like-for-like comparison."""
+        text = _text(digest)
+        if text is None:
+            return None
+        return text.split("sha256:", 1)[1] if text.startswith("sha256:") else text
+
+    def _declares_false(value: Any) -> bool:
+        """True when a lock declares false in either JSON representation."""
+        if value is False:
+            return True
+        return isinstance(value, str) and value.strip().lower() == "false"
+
+    # ── a required receipt that does not exist is a claim without evidence ─
+    for receipt_id, spec in (rule.get("receipts") or {}).items():
+        entry = receipts.get(receipt_id)
+        entry = entry if isinstance(entry, dict) else {}
+        if entry.get("document") is None and isinstance(spec, dict) and spec.get("required") is True:
+            violations.add("native_family_claim_without_receipt")
+
+    # ── both receipts: scope, locks, thresholds, guard, redaction ─────────
+    for receipt_id in ("parity", "exclusion"):
+        entry = receipts.get(receipt_id)
+        entry = entry if isinstance(entry, dict) else {}
+        document = entry.get("document")
+        if not isinstance(document, dict):
+            continue
+        if _text(document.get("schema_version")) != _text(entry.get("schema_version")):
+            mismatch()
+        if _text(document.get("receipt_kind")) != _text(entry.get("receipt_kind")):
+            mismatch()
+        if _text(document.get("claim_scope")) != _text(expected.get("claim_scope")):
+            violations.add("native_family_product_coverage_claimed")
+        if _text(document.get("product_coverage_effect")) != _text(
+            expected.get("product_coverage_effect")
+        ):
+            violations.add("native_family_product_coverage_claimed")
+        locks = document.get("locks")
+        if not isinstance(locks, dict):
+            violations.add("native_family_product_coverage_claimed")
+        elif (
+            _text(locks.get("auto_promote")) != "forbidden"
+            or not _declares_false(locks.get("deployed"))
+            or _text(locks.get("graph_write")) != "forbidden"
+            or not _declares_false(locks.get("import_eligible"))
+            or _text(locks.get("production_route")) != "forbidden"
+        ):
+            violations.add("native_family_product_coverage_claimed")
+        if _text(document.get("thresholds")) != _text(expected.get("thresholds")):
+            violations.add("native_family_threshold_claimed")
+        if any(key in document for key in ("threshold", "threshold_value", "numeric_threshold")):
+            violations.add("native_family_threshold_claimed")
+        redaction = document.get("redaction")
+        if isinstance(redaction, dict) and any(value is True for value in redaction.values()):
+            violations.add("native_family_product_coverage_claimed")
+        guard = document.get("guard")
+        if not isinstance(guard, dict):
+            violations.add("native_family_guard_not_installed")
+        else:
+            observed = _count(guard.get("observed_java_calls"))
+            if observed is None or observed != 0:
+                violations.add("native_family_java_calls_nonzero")
+            elif (
+                guard.get("installed") is not True
+                or guard.get("identity_isolated") is not True
+                or _text(guard.get("observer")) != _text(expected.get("guard_observer"))
+            ):
+                violations.add("native_family_guard_not_installed")
+
+    # ── parity: independent oracle + the three-document corpus pin ────────
+    parity_entry = receipts.get("parity")
+    parity_entry = parity_entry if isinstance(parity_entry, dict) else {}
+    parity = parity_entry.get("document")
+    parity_pop = populations.get("parity") if isinstance(populations.get("parity"), dict) else {}
+    if isinstance(parity, dict):
+        declaration = parity.get("declaration")
+        declaration = declaration if isinstance(declaration, dict) else {}
+        if _text(declaration.get("manifest")) != _text(evidence.get("declaration_manifest")):
+            mismatch()
+        if _text(declaration.get("pointer")) != _text(evidence.get("declaration_pointer")):
+            mismatch()
+        if _text(declaration.get("revision_sha256")) != _carrier_sha("layout_bakeoff"):
+            stale()
+
+        oracle = parity.get("oracle")
+        if not isinstance(oracle, dict):
+            violations.add("native_family_oracle_not_independent")
+        else:
+            if (
+                oracle.get("independent") is not True
+                or oracle.get("same_generator_refused") is not True
+                or _text(oracle.get("generator_id")) is None
+                or _text(oracle.get("backend")) is None
+            ):
+                violations.add("native_family_oracle_not_independent")
+            if _text(oracle.get("manifest")) != _carrier_path("preserved_tei_provenance"):
+                violations.add("native_family_oracle_not_independent")
+            if _text(oracle.get("revision_sha256")) != _carrier_sha("preserved_tei_provenance"):
+                stale()
+            pins = evidence.get("preserved_tei_pins")
+            pins = pins if isinstance(pins, dict) else {}
+            documents = oracle.get("documents")
+            if not isinstance(documents, list) or not documents:
+                violations.add("native_family_oracle_not_independent")
+            else:
+                for document in documents:
+                    if not isinstance(document, dict):
+                        violations.add("native_family_oracle_not_independent")
+                        continue
+                    fixture_path = _text(document.get("fixture_path"))
+                    declared_sha = _text(document.get("sha256"))
+                    pin = pins.get(fixture_path) if fixture_path is not None else None
+                    if not isinstance(pin, dict):
+                        violations.add("native_family_oracle_not_independent")
+                        continue
+                    if _bare(pin.get("sha256")) != _bare(declared_sha) or _bare(
+                        pin.get("recomputed_sha256")
+                    ) != _bare(declared_sha):
+                        stale()
+
+        population_blocks = parity.get("populations")
+        first = (
+            population_blocks[0]
+            if isinstance(population_blocks, list) and population_blocks
+            else None
+        )
+        if not isinstance(first, dict):
+            mismatch()
+        else:
+            if _text(first.get("population_kind")) != _text(parity_pop.get("population_kind")):
+                mismatch()
+            if _text(first.get("manifest")) != _carrier_path("layout_bakeoff"):
+                mismatch()
+            if _text(first.get("pointer")) != _carrier_pointer("layout_bakeoff"):
+                mismatch()
+            if _text(first.get("revision_sha256")) != _carrier_sha("layout_bakeoff"):
+                stale()
+            if _count(first.get("document_count")) != _count(parity_pop.get("document_count")):
+                mismatch()
+            if _count(first.get("page_denominator")) != _count(parity_pop.get("page_denominator")):
+                mismatch()
+            if _count(first.get("page_denominator")) != _count(
+                evidence.get("corpus_page_denominator")
+            ):
+                mismatch()
+            corpus_documents = evidence.get("corpus_documents")
+            declared_documents = first.get("documents")
+            if not isinstance(corpus_documents, list) or not isinstance(declared_documents, list):
+                mismatch()
+            else:
+                pinned = {
+                    _text(entry.get("id")): _text(entry.get("sha256"))
+                    for entry in corpus_documents
+                    if isinstance(entry, dict)
+                }
+                declared_map = {
+                    _text(entry.get("id")): _text(entry.get("sha256"))
+                    for entry in declared_documents
+                    if isinstance(entry, dict)
+                }
+                if declared_map != pinned:
+                    mismatch()
+                if len(declared_documents) != _count(parity_pop.get("document_count")):
+                    mismatch()
+            _native_family_matrix_violations(first, parity_pop, mismatch)
+        pooling = parity.get("pooling")
+        if isinstance(pooling, dict) and pooling.get("citation_names_pooled_with_biblstruct") is True:
+            mismatch()
+
+    # ── exclusion: the 79 typed exclusions stay the denominator ─────────
+    exclusion_entry = receipts.get("exclusion")
+    exclusion_entry = exclusion_entry if isinstance(exclusion_entry, dict) else {}
+    exclusion = exclusion_entry.get("document")
+    exclusion_pop = (
+        populations.get("exclusion") if isinstance(populations.get("exclusion"), dict) else {}
+    )
+    if isinstance(exclusion, dict):
+        declaration = exclusion.get("declaration")
+        declaration = declaration if isinstance(declaration, dict) else {}
+        if _text(declaration.get("manifest")) != _carrier_path("holdout_manifests"):
+            mismatch()
+        if _text(declaration.get("pointer")) != _carrier_pointer("holdout_manifests"):
+            mismatch()
+        if _text(declaration.get("revision_sha256")) != _carrier_sha("holdout_manifests"):
+            stale()
+        probe = exclusion.get("probe")
+        probe = probe if isinstance(probe, dict) else {}
+        if _text(probe.get("manifest")) != _carrier_path("external_holdout_release_probe"):
+            mismatch()
+        if _text(probe.get("pointer")) != _carrier_pointer("external_holdout_release_probe"):
+            mismatch()
+        if _text(probe.get("revision_sha256")) != _carrier_sha("external_holdout_release_probe"):
+            stale()
+        baseline = exclusion.get("baseline")
+        baseline = baseline if isinstance(baseline, dict) else {}
+        if _text(baseline.get("manifest")) != _carrier_path("absorption_progress_baseline"):
+            mismatch()
+        if _text(baseline.get("pointer")) != _carrier_pointer("absorption_progress_baseline"):
+            mismatch()
+        if _text(baseline.get("revision_sha256")) != _carrier_sha(
+            "absorption_progress_baseline"
+        ):
+            stale()
+
+        population = exclusion.get("population")
+        frozen = evidence.get("baseline_denominator")
+        frozen = frozen if isinstance(frozen, dict) else {}
+        frozen_reasons = frozen.get("exclusion_reasons")
+        frozen_reasons = frozen_reasons if isinstance(frozen_reasons, dict) else {}
+        excluded_count = (
+            _count(population.get("excluded")) if isinstance(population, dict) else None
+        )
+        targeted_count = (
+            _count(population.get("targeted")) if isinstance(population, dict) else None
+        )
+        if not isinstance(population, dict):
+            mismatch()
+        else:
+            for key in ("assigned", "excluded", "measurable"):
+                frozen_key = {"assigned": "assigned", "excluded": "excluded", "measurable": "executed"}[key]
+                if _count(population.get(key)) != _count(exclusion_pop.get(key)):
+                    mismatch()
+                if _count(population.get(key)) != _count(frozen.get(frozen_key)):
+                    mismatch()
+            if _count(population.get("targeted")) != _count(exclusion_pop.get("targeted")):
+                mismatch()
+            if targeted_count is None or targeted_count != excluded_count:
+                mismatch()
+            reasons = population.get("reasons")
+            expected_reasons = (
+                exclusion_pop.get("reason_counts")
+                if isinstance(exclusion_pop.get("reason_counts"), dict)
+                else {}
+            )
+            if not isinstance(reasons, dict):
+                mismatch()
+            else:
+                for reason, count in expected_reasons.items():
+                    if _count(reasons.get(reason)) != _count(count) or _count(
+                        frozen_reasons.get(reason)
+                    ) != _count(count):
+                        mismatch()
+                for reason in reasons:
+                    if reason not in expected_reasons:
+                        mismatch()
+
+        aggregates = exclusion.get("aggregates")
+        total_denominator = 0
+        aggregates_typed = True
+        if not isinstance(aggregates, list) or not aggregates:
+            aggregates_typed = False
+        else:
+            for row in aggregates:
+                if not isinstance(row, dict):
+                    aggregates_typed = False
+                    continue
+                denominator = _count(row.get("denominator"))
+                parts = [
+                    _count(row.get(key))
+                    for key in ("recovered", "not_recovered", "out_of_scope", "typed_refusal")
+                ]
+                if (
+                    denominator is None
+                    or any(part is None for part in parts)
+                    or sum(parts) != denominator
+                ):
+                    aggregates_typed = False
+                if denominator is not None:
+                    total_denominator += denominator
+        if not aggregates_typed or excluded_count is None or total_denominator != excluded_count:
+            violations.add("native_family_exclusion_denominator_dropped")
+
+        recoveries = exclusion.get("recoveries")
+        if (
+            not isinstance(recoveries, list)
+            or targeted_count is None
+            or len(recoveries) != targeted_count
+        ):
+            violations.add("native_family_exclusion_denominator_dropped")
+        else:
+            disposition_vocabulary = set(_text_list(exclusion_pop.get("recovery_dispositions")))
+            reason_vocabulary = set(expected_reasons)
+            for row in recoveries:
+                if not isinstance(row, dict):
+                    mismatch()
+                    continue
+                reason = _text(row.get("reason"))
+                disposition = _text(row.get("disposition"))
+                if reason is None or (reason_vocabulary and reason not in reason_vocabulary):
+                    mismatch()
+                if disposition is None or (
+                    disposition_vocabulary and disposition not in disposition_vocabulary
+                ):
+                    mismatch()
+                if _text(row.get("document_id")) is None:
+                    mismatch()
+        if exclusion.get("integrity_failures"):
+            mismatch()
+    return violations
+
+def _native_family_matrix_violations(
+    population_block: dict[str, Any],
+    parity_pop: dict[str, Any],
+    mismatch,
+) -> None:
+    """A typed disposition for every family of every document in the matrix.
+
+    The rule does not restate the family or region names (that would let the rule
+    drift from the receipt); it requires that each document carries a non-empty
+    family list whose every entry names a family and a disposition from the closed
+    vocabulary, that every region names a region and a non-empty verdict, and that
+    all documents agree on both name sets. A missing, untyped or inconsistent
+    matrix is a population mismatch: the receipt would be publishing a population
+    whose per-family shape it does not actually declare.
+    """
+    matrix = population_block.get("matrix")
+    if not isinstance(matrix, list) or not matrix:
+        mismatch()
+        return
+    family_dispositions = set(_text_list(parity_pop.get("family_dispositions")))
+    ids: set[str] = set()
+    family_sets: list[frozenset] = []
+    region_sets: list[frozenset] = []
+    for entry in matrix:
+        if not isinstance(entry, dict):
+            mismatch()
+            continue
+        identifier = _text(entry.get("id"))
+        if identifier is None or identifier in ids:
+            mismatch()
+        else:
+            ids.add(identifier)
+        if _text(entry.get("sha256")) is None:
+            mismatch()
+        families = entry.get("families")
+        if not isinstance(families, list) or not families:
+            mismatch()
+        else:
+            names: set[str] = set()
+            for family in families:
+                if not isinstance(family, dict):
+                    mismatch()
+                    continue
+                name = _text(family.get("family"))
+                disposition = _text(family.get("disposition"))
+                if (
+                    name is None
+                    or disposition is None
+                    or (family_dispositions and disposition not in family_dispositions)
+                ):
+                    mismatch()
+                else:
+                    names.add(name)
+            family_sets.append(frozenset(names))
+        regions = entry.get("regions")
+        if not isinstance(regions, list) or not regions:
+            mismatch()
+        else:
+            region_names: set[str] = set()
+            for region in regions:
+                if not isinstance(region, dict):
+                    mismatch()
+                    continue
+                name = _text(region.get("region"))
+                verdict = _text(region.get("verdict"))
+                if name is None or verdict is None:
+                    mismatch()
+                else:
+                    region_names.add(name)
+            region_sets.append(frozenset(region_names))
+    if len(set(family_sets)) > 1:
+        mismatch()
+    if len(set(region_sets)) > 1:
+        mismatch()
 
 
 def _census_reason_vocabulary(contract: Any) -> set[str]:

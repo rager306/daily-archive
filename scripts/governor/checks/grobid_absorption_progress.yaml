@@ -236,15 +236,139 @@ java_free_slice:
           - java_free_slice_receipt_stale
           - java_free_slice_java_calls_nonzero
 
+# ── Native family receipts (M514/S04/T06) ────────────────────────────────
+# The S04 native family receipts are the first source-bound evidence that the
+# real native parsers — not the TEI-derived copies of the Java carrier — produced
+# header and bibliography atoms on the declared 3-document slice, and that the 79
+# typed baseline exclusions keep their denominator. They are *not* this rule: the
+# rule names where each receipt lives, where each frozen carrier lives and what a
+# receipt must declare. Neither the family identities nor the document identities
+# are restated: the corpus pin resolves by pointer from `corpus.documents` in
+# `data/parse/layout_bakeoff.yaml`, the denominator resolves from the frozen
+# baseline, and the oracle pins resolve from the preserved-TEI provenance.
+#
+# Why it exists (R141): the product `java_independence` axis reports
+# `not_measured` while the production route is Java (D499), so a scoped,
+# diagnostic native-family receipt is exactly the progress the Governor could not
+# see — and also exactly the claim that must not pass on the strength of an
+# artifact's mere existence. A claim with no receipt, a receipt bound to older
+# bytes or another population, an observed zero with no guard provenance, a
+# self-scoring oracle, a diagnostic slice re-labelled as product coverage, a
+# claimed threshold and a shrunken 79-exclusion denominator are each a typed,
+# fail-closed violation.
+#
+# Severity: this block registers no dimension and no severity — it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks
+# (D492).
+native_family_receipt:
+  schema_version: native-family-receipt-rule.v1
+  declaration:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: java_free_vertical_slice
+  receipts:
+    parity:
+      path: artifacts/parse_compat/native_family_parity.json
+      schema_version: native-family-parity-receipt.v1
+      receipt_kind: parity_three_document_slice
+      required: true
+    exclusion:
+      path: artifacts/parse_compat/native_exclusion_recovery.json
+      schema_version: native-exclusion-recovery.v1
+      receipt_kind: exclusion_recovery_baseline
+      required: true
+  # The frozen carriers a receipt pin must still match. The reader recomputes each
+  # byte hash; the oracle compares the receipt's declared pin against the
+  # recomputed one, so an edit to a carrier the receipt was derived from is
+  # staleness rather than a silent re-pin.
+  carriers:
+    - id: layout_bakeoff
+      path: data/parse/layout_bakeoff.yaml
+      pointer: corpus.documents
+      kind: corpus
+    - id: absorption_progress_baseline
+      path: artifacts/parse_compat/absorption_progress_baseline.json
+      pointer: denominator
+      kind: denominator
+    - id: preserved_tei_provenance
+      path: crates/da-parse/tests/fixtures/preserved/provenance.yaml
+      pointer: fixtures
+      kind: oracle_pins
+    - id: holdout_manifests
+      path: data/parse/holdout_manifests.yaml
+      pointer: articles
+      kind: exclusion_population
+    - id: external_holdout_release_probe
+      path: artifacts/parse_compat/external_holdout_release_probe.json
+      pointer: reference_population
+      kind: exclusion_probe
+  populations:
+    parity:
+      population_kind: corpus
+      document_count: 3
+      page_denominator: 202
+      family_dispositions: [observed, typed_absence, refused, out_of_scope]
+    exclusion:
+      population_kind: exclusion
+      assigned: 610
+      excluded: 79
+      measurable: 531
+      targeted: 79
+      reason_counts:
+        header_date_absent: 72
+        header_title_absent: 5
+        header_author_absent: 2
+      recovery_dispositions: [recovered, not_recovered, out_of_scope, typed_refusal]
+  expected:
+    claim_scope: diagnostic_only
+    product_coverage_effect: none
+    thresholds: not_accepted
+    guard_observer: java_transport_fetch_tei
+    oracle_independent: true
+    same_generator_refused: true
+  # The closed vocabulary of adapter labels this half may emit. Kept separate from
+  # the scorecard `violations` list above so the exact-set test stays valid and the
+  # halves stay separately governable. The literal set lives in
+  # `scripts/governor/domain/absorption_progress.py`.
+  violations:
+    - native_family_claim_without_receipt
+    - native_family_receipt_population_mismatch
+    - native_family_receipt_stale
+    - native_family_product_coverage_claimed
+    - native_family_java_calls_nonzero
+    - native_family_guard_not_installed
+    - native_family_oracle_not_independent
+    - native_family_threshold_claimed
+    - native_family_exclusion_denominator_dropped
+  fixtures:
+    positive:
+      id: native_family_clean
+      path: governor/fixtures/absorption_progress/native_family.positive.json
+      expect: clean
+    negative:
+      id: native_family_broken
+      path: governor/fixtures/absorption_progress/native_family.negative.json
+      expect:
+        require_violations:
+          - native_family_claim_without_receipt
+          - native_family_receipt_population_mismatch
+          - native_family_receipt_stale
+          - native_family_product_coverage_claimed
+          - native_family_java_calls_nonzero
+          - native_family_guard_not_installed
+          - native_family_oracle_not_independent
+          - native_family_threshold_claimed
+          - native_family_exclusion_denominator_dropped
+
 # Enforcement points that must keep existing. The rule reads these files as text;
 # it never executes them.
 source_markers:
   domain_validator:
     path: scripts/governor/domain/absorption_progress.py
-    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS]
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS]
   adapter_oracle:
     path: scripts/governor/adapters/absorption_progress_reader.py
-    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale]
+    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped]
   scorecard_contract:
     path: data/parse/absorption_progress.schema.yaml
     required_patterns: [initial_census, holdout-partition-610-531-79, preservation, threshold_policy, freeze_revision, tuned_after_scoring, reference_pins, prospective_regression_floor]
