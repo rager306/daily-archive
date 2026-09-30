@@ -631,6 +631,10 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
             # `native_family_parity` (S04/T04) is the sibling receipt emitter for
             # the header/bibliography families and is provisioned by name for the
             # same reason.
+            # `native_exclusion_recovery` (S04/T05) is the third S04 receipt
+            # emitter (the 79 typed exclusions); provisioning it by name keeps
+            # every gated receipt emitter built under the gate feature rather
+            # than compiling to a silently-missing binary.
             # Both steps run LAST: enabling the feature here would otherwise
             # force a rebuild for every step above.
             ("da-cli feature-gated example runners", ["cargo", "build", "-p", "da-cli",
@@ -643,6 +647,7 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
                                                         "--example", "fulltext_block_semantics_shadow",
                                                         "--example", "java_free_vertical_slice",
                                                         "--example", "layout_bakeoff",
+                                                        "--example", "native_exclusion_recovery",
                                                         "--example", "native_family_parity",
                                                         "--example", "native_fulltext_composition_shadow",
                                                         "--example", "native_fulltext_corpus_shadow",

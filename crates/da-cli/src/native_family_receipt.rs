@@ -1577,6 +1577,283 @@ pub fn classify_coverage(
     }
 }
 
+// ─────────────────────────── independent re-read ───────────────────────────
+
+/// The committed inputs a parity receipt must still match.
+///
+/// Every field is recomputed by the caller from the committed carrier bytes —
+/// the declaration, the corpus pin and the preserved-TEI fixtures — and is
+/// never copied from the receipt. [`validate_parity_receipt`] is the independent
+/// re-read an audit drives: a receipt is a self-declaration until something
+/// else rebuilds what it claims from the sources it points at.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParityExpectation {
+    /// The declared corpus, read from the declaration carrier.
+    pub corpus: DeclaredCorpus,
+    /// sha256 of the preserved-TEI oracle carrier, recomputed from its bytes.
+    pub oracle_revision_sha256: String,
+    /// Bare sha256 of each preserved-TEI fixture, keyed by normalized document
+    /// identity and recomputed from the fixture bytes.
+    pub oracle_fixture_sha256: BTreeMap<String, String>,
+}
+
+/// Re-read a parity receipt against the committed sources it claims.
+///
+/// The pins, the corpus and the oracle fixtures come from
+/// [`ParityExpectation`]; the measurement side comes from the receipt. The
+/// receipt's own matrix is re-fed through [`build_parity_receipt`], so every
+/// structural invariant the builder enforces is enforced again on the parsed
+/// bytes, and any drift the builder cannot express — a raised threshold, a
+/// pooled bibliography, a non-clean redaction flag, a stale pin — is refused by
+/// name before the rebuild.
+pub fn validate_parity_receipt(
+    receipt: &NativeFamilyReceipt,
+    expected: &ParityExpectation,
+) -> Result<(), NativeFamilyReceiptError> {
+    if receipt.schema_version != NATIVE_FAMILY_RECEIPT_SCHEMA_VERSION {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "schema_version".to_owned(),
+            expected: NATIVE_FAMILY_RECEIPT_SCHEMA_VERSION.to_owned(),
+            found: receipt.schema_version.clone(),
+        });
+    }
+    if receipt.receipt_kind != ReceiptKind::ParityThreeDocumentSlice {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "receipt_kind".to_owned(),
+            expected: ReceiptKind::ParityThreeDocumentSlice.as_str().to_owned(),
+            found: receipt.receipt_kind.as_str().to_owned(),
+        });
+    }
+    if receipt.claim_scope != CLAIM_SCOPE_DIAGNOSTIC_ONLY {
+        return Err(NativeFamilyReceiptError::ClaimScopeDrift {
+            found: receipt.claim_scope.clone(),
+        });
+    }
+    if receipt.product_coverage_effect != PRODUCT_COVERAGE_EFFECT_NONE {
+        return Err(NativeFamilyReceiptError::ProductCoverageClaimed {
+            found: receipt.product_coverage_effect.clone(),
+        });
+    }
+    if receipt.thresholds != THRESHOLDS_NOT_ACCEPTED {
+        return Err(NativeFamilyReceiptError::ThresholdClaimed {
+            found: receipt.thresholds.clone(),
+        });
+    }
+
+    for (lock, value) in REQUIRED_LOCKS {
+        match receipt.locks.get(lock) {
+            None => {
+                return Err(NativeFamilyReceiptError::LockMissing {
+                    lock: lock.to_owned(),
+                });
+            }
+            Some(found) if found != value => {
+                return Err(NativeFamilyReceiptError::LockDrift {
+                    lock: lock.to_owned(),
+                    expected: value.to_owned(),
+                    found: found.clone(),
+                });
+            }
+            Some(_) => {}
+        }
+    }
+
+    // A counted zero is reachable only under an installed, identity-isolated
+    // guard. This is the receipt-level half of the `Observed(0)` rule; the
+    // per-cell half is re-enforced by the rebuild below.
+    if receipt.guard.observer != GuardObserver::JavaTransportFetchTei {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "guard.observer".to_owned(),
+            expected: GuardObserver::JavaTransportFetchTei.as_str().to_owned(),
+            found: receipt.guard.observer.as_str().to_owned(),
+        });
+    }
+    if !receipt.guard.installed {
+        return Err(NativeFamilyReceiptError::GuardNotInstalled);
+    }
+    if !receipt.guard.identity_isolated {
+        return Err(NativeFamilyReceiptError::GuardIdentityNotIsolated);
+    }
+    if receipt.guard.observed_java_calls > 0 {
+        return Err(NativeFamilyReceiptError::ObservedJavaOnSlice {
+            attempts: receipt.guard.observed_java_calls,
+        });
+    }
+
+    if receipt.pooling.citation_names_pooled_with_biblstruct {
+        return Err(NativeFamilyReceiptError::PoolingClaimed {
+            field: "citation_names_pooled_with_biblstruct".to_owned(),
+        });
+    }
+    if receipt.redaction != Redaction::clean() {
+        return Err(NativeFamilyReceiptError::RedactionViolation {
+            marker: "redaction flag set".to_owned(),
+        });
+    }
+
+    // Carrier bindings against the recomputed pins. A receipt pinned to bytes
+    // that are no longer the committed bytes is stale, not a re-pin.
+    if receipt.declaration.manifest != expected.corpus.manifest {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "declaration.manifest".to_owned(),
+            expected: expected.corpus.manifest.clone(),
+            found: receipt.declaration.manifest.clone(),
+        });
+    }
+    if receipt.declaration.pointer != DECLARATION_POINTER {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "declaration.pointer".to_owned(),
+            expected: DECLARATION_POINTER.to_owned(),
+            found: receipt.declaration.pointer.clone(),
+        });
+    }
+    if receipt.declaration.revision_sha256 != expected.corpus.revision_sha256 {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "declaration.revision_sha256".to_owned(),
+            expected: expected.corpus.revision_sha256.clone(),
+            found: receipt.declaration.revision_sha256.clone(),
+        });
+    }
+    if receipt.oracle.manifest != ORACLE_MANIFEST_REL {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "oracle.manifest".to_owned(),
+            expected: ORACLE_MANIFEST_REL.to_owned(),
+            found: receipt.oracle.manifest.clone(),
+        });
+    }
+    if receipt.oracle.revision_sha256 != expected.oracle_revision_sha256 {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "oracle.revision_sha256".to_owned(),
+            expected: expected.oracle_revision_sha256.clone(),
+            found: receipt.oracle.revision_sha256.clone(),
+        });
+    }
+    if receipt.oracle.generator_id != OracleGenerator::TeiLexicalScanner {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "oracle.generator_id".to_owned(),
+            expected: OracleGenerator::TeiLexicalScanner.as_str().to_owned(),
+            found: receipt.oracle.generator_id.as_str().to_owned(),
+        });
+    }
+    if receipt.oracle.backend != OracleBackend::JavaGrobidCrf {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "oracle.backend".to_owned(),
+            expected: OracleBackend::JavaGrobidCrf.as_str().to_owned(),
+            found: receipt.oracle.backend.as_str().to_owned(),
+        });
+    }
+    if !receipt.oracle.independent {
+        return Err(NativeFamilyReceiptError::OracleNotIndependent);
+    }
+    if !receipt.oracle.same_generator_refused {
+        return Err(NativeFamilyReceiptError::OracleIndependenceUnrefuted);
+    }
+
+    if receipt.populations.len() != 1 {
+        return Err(NativeFamilyReceiptError::PopulationMismatch {
+            population: format!("{} populations", receipt.populations.len()),
+        });
+    }
+    let population = &receipt.populations[0];
+    if population.population_id != PopulationId::ThreeDocumentSlice
+        || population.population_kind != PopulationKind::Corpus
+    {
+        return Err(NativeFamilyReceiptError::PopulationMismatch {
+            population: population.population_id.as_str().to_owned(),
+        });
+    }
+    if population.manifest != expected.corpus.manifest {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "population.manifest".to_owned(),
+            expected: expected.corpus.manifest.clone(),
+            found: population.manifest.clone(),
+        });
+    }
+    if population.pointer != CORPUS_POINTER {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "population.pointer".to_owned(),
+            expected: CORPUS_POINTER.to_owned(),
+            found: population.pointer.clone(),
+        });
+    }
+    if population.revision_sha256 != expected.corpus.revision_sha256 {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "population.revision_sha256".to_owned(),
+            expected: expected.corpus.revision_sha256.clone(),
+            found: population.revision_sha256.clone(),
+        });
+    }
+
+    // The oracle fixtures must be the pinned preserved TEI bytes, joined by the
+    // normalized identity so the two id spellings cannot silently diverge.
+    for fixture in &receipt.oracle.documents {
+        let key = normalize_document_identity(&fixture.document_id);
+        match expected.oracle_fixture_sha256.get(&key) {
+            None => {
+                return Err(NativeFamilyReceiptError::UnknownOracleDocument {
+                    document: fixture.document_id.clone(),
+                });
+            }
+            Some(pin) if pin != &fixture.sha256 => {
+                return Err(NativeFamilyReceiptError::DocumentShaDrift {
+                    document: fixture.document_id.clone(),
+                    expected: pin.clone(),
+                    found: fixture.sha256.clone(),
+                });
+            }
+            Some(_) => {}
+        }
+    }
+
+    // Rebuild the canonical receipt from the expectation and the receipt's own
+    // measurement side. Every structural invariant the builder enforces runs
+    // again on the parsed bytes, and any residual field drift is refused rather
+    // than passed through.
+    let observed: Vec<ObservedDocument> = population
+        .matrix
+        .iter()
+        .map(|document| ObservedDocument {
+            id: document.id.clone(),
+            sha256: document.sha256.clone(),
+            pages: document.pages,
+            observed_pages: document.observed_pages,
+            families: document.families.clone(),
+            regions: document.regions.clone(),
+            pipeline_digest: document.pipeline_digest.clone(),
+            oracle_digest: document.oracle_digest.clone(),
+        })
+        .collect();
+    let oracle = OracleInput {
+        manifest: ORACLE_MANIFEST_REL.to_owned(),
+        revision_sha256: expected.oracle_revision_sha256.clone(),
+        independent: receipt.oracle.independent,
+        same_generator_refused: receipt.oracle.same_generator_refused,
+        documents: receipt.oracle.documents.clone(),
+    };
+    let rebuilt = build_parity_receipt(
+        &expected.corpus.revision_sha256,
+        &expected.corpus,
+        &receipt.locks,
+        &receipt.claim_scope,
+        &receipt.product_coverage_effect,
+        GuardProvenance {
+            installed: receipt.guard.installed,
+            identity_isolated: receipt.guard.identity_isolated,
+            observed_java_calls: receipt.guard.observed_java_calls,
+        },
+        &oracle,
+        &observed,
+    )?;
+    if rebuilt != *receipt {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "receipt".to_owned(),
+            expected: "the canonical rebuild from the committed pins".to_owned(),
+            found: "a drifted receipt".to_owned(),
+        });
+    }
+    Ok(())
+}
+
 // ───────────────────── exclusion recovery (S04/T05) ─────────────────────
 
 /// Schema version of the exclusion-recovery artifact.
@@ -2515,6 +2792,229 @@ pub fn build_exclusion_recovery_receipt(
         integrity_failures: integrity_failures.to_vec(),
         redaction: Redaction::clean(),
     })
+}
+
+/// The committed inputs an exclusion-recovery receipt must still match.
+///
+/// Every pin and the whole census are recomputed by the caller from the
+/// committed carrier bytes (holdout manifest, external holdout release probe,
+/// absorption baseline) and from the probe's exception list; nothing is copied
+/// from the receipt. [`validate_exclusion_recovery_receipt`] is the independent
+/// re-read of the sibling receipt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExclusionExpectation {
+    /// sha256 of the holdout manifest carrier, recomputed from its bytes.
+    pub declaration_revision_sha256: String,
+    /// sha256 of the external holdout release probe, recomputed from its bytes.
+    pub probe_revision_sha256: String,
+    /// sha256 of the absorption baseline, recomputed from its bytes.
+    pub baseline_revision_sha256: String,
+    /// The frozen census, read from the probe and baseline carriers.
+    pub population: RecoveryPopulation,
+    /// The frozen affiliation reference (3055/7077), read from the baseline.
+    pub affiliation_reference: AffiliationReference,
+    /// The typed exception identities the probe pins, by document id.
+    pub documents: std::collections::BTreeSet<String>,
+}
+
+/// Re-read an exclusion-recovery receipt against the committed sources it
+/// claims.
+///
+/// Carrier pins, the frozen census, the affiliation reference and the typed
+/// exception identities come from [`ExclusionExpectation`]; the rows come from
+/// the receipt and are re-fed through [`build_exclusion_recovery_receipt`], so
+/// the denominator, the field matrix and the D502 no-recovery rule are enforced
+/// again. A shrunken denominator, an unknown or lost exception document, a
+/// raised threshold, a stale pin or a product-coverage claim is refused by
+/// name.
+pub fn validate_exclusion_recovery_receipt(
+    receipt: &NativeExclusionRecoveryReceipt,
+    expected: &ExclusionExpectation,
+) -> Result<(), NativeFamilyReceiptError> {
+    if receipt.schema_version != NATIVE_EXCLUSION_RECOVERY_SCHEMA_VERSION {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "schema_version".to_owned(),
+            expected: NATIVE_EXCLUSION_RECOVERY_SCHEMA_VERSION.to_owned(),
+            found: receipt.schema_version.clone(),
+        });
+    }
+    if receipt.receipt_kind != ReceiptKind::ExclusionRecoveryBaseline {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "receipt_kind".to_owned(),
+            expected: ReceiptKind::ExclusionRecoveryBaseline.as_str().to_owned(),
+            found: receipt.receipt_kind.as_str().to_owned(),
+        });
+    }
+    if receipt.claim_scope != CLAIM_SCOPE_DIAGNOSTIC_ONLY {
+        return Err(NativeFamilyReceiptError::ClaimScopeDrift {
+            found: receipt.claim_scope.clone(),
+        });
+    }
+    if receipt.product_coverage_effect != PRODUCT_COVERAGE_EFFECT_NONE {
+        return Err(NativeFamilyReceiptError::ProductCoverageClaimed {
+            found: receipt.product_coverage_effect.clone(),
+        });
+    }
+    if receipt.thresholds != THRESHOLDS_NOT_ACCEPTED {
+        return Err(NativeFamilyReceiptError::ThresholdClaimed {
+            found: receipt.thresholds.clone(),
+        });
+    }
+
+    for (lock, value) in REQUIRED_LOCKS {
+        match receipt.locks.get(lock) {
+            None => {
+                return Err(NativeFamilyReceiptError::LockMissing {
+                    lock: lock.to_owned(),
+                });
+            }
+            Some(found) if found != value => {
+                return Err(NativeFamilyReceiptError::LockDrift {
+                    lock: lock.to_owned(),
+                    expected: value.to_owned(),
+                    found: found.clone(),
+                });
+            }
+            Some(_) => {}
+        }
+    }
+
+    if receipt.guard.observer != GuardObserver::JavaTransportFetchTei {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "guard.observer".to_owned(),
+            expected: GuardObserver::JavaTransportFetchTei.as_str().to_owned(),
+            found: receipt.guard.observer.as_str().to_owned(),
+        });
+    }
+    if !receipt.guard.installed {
+        return Err(NativeFamilyReceiptError::GuardNotInstalled);
+    }
+    if !receipt.guard.identity_isolated {
+        return Err(NativeFamilyReceiptError::GuardIdentityNotIsolated);
+    }
+    if receipt.guard.observed_java_calls > 0 {
+        return Err(NativeFamilyReceiptError::ObservedJavaOnSlice {
+            attempts: receipt.guard.observed_java_calls,
+        });
+    }
+
+    if receipt.redaction != Redaction::clean() {
+        return Err(NativeFamilyReceiptError::RedactionViolation {
+            marker: "redaction flag set".to_owned(),
+        });
+    }
+
+    // Carrier pins against the recomputed hashes.
+    if receipt.declaration.manifest != HOLDOUT_MANIFEST_REL {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "declaration.manifest".to_owned(),
+            expected: HOLDOUT_MANIFEST_REL.to_owned(),
+            found: receipt.declaration.manifest.clone(),
+        });
+    }
+    if receipt.declaration.revision_sha256 != expected.declaration_revision_sha256 {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "declaration.revision_sha256".to_owned(),
+            expected: expected.declaration_revision_sha256.clone(),
+            found: receipt.declaration.revision_sha256.clone(),
+        });
+    }
+    if receipt.probe.manifest != EXCLUSION_PROBE_REL {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "probe.manifest".to_owned(),
+            expected: EXCLUSION_PROBE_REL.to_owned(),
+            found: receipt.probe.manifest.clone(),
+        });
+    }
+    if receipt.probe.pointer != EXCLUSION_PROBE_POINTER {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "probe.pointer".to_owned(),
+            expected: EXCLUSION_PROBE_POINTER.to_owned(),
+            found: receipt.probe.pointer.clone(),
+        });
+    }
+    if receipt.probe.revision_sha256 != expected.probe_revision_sha256 {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "probe.revision_sha256".to_owned(),
+            expected: expected.probe_revision_sha256.clone(),
+            found: receipt.probe.revision_sha256.clone(),
+        });
+    }
+    if receipt.baseline.manifest != EXCLUSION_BASELINE_REL {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "baseline.manifest".to_owned(),
+            expected: EXCLUSION_BASELINE_REL.to_owned(),
+            found: receipt.baseline.manifest.clone(),
+        });
+    }
+    if receipt.baseline.pointer != EXCLUSION_BASELINE_POINTER {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "baseline.pointer".to_owned(),
+            expected: EXCLUSION_BASELINE_POINTER.to_owned(),
+            found: receipt.baseline.pointer.clone(),
+        });
+    }
+    if receipt.baseline.revision_sha256 != expected.baseline_revision_sha256 {
+        return Err(NativeFamilyReceiptError::BindingDrift {
+            field: "baseline.revision_sha256".to_owned(),
+            expected: expected.baseline_revision_sha256.clone(),
+            found: receipt.baseline.revision_sha256.clone(),
+        });
+    }
+
+    // Rebuild from the frozen expectation and the receipt's bands. The builder
+    // re-enforces the denominator partition, the field matrix, the refusal
+    // consistency and the D502 no-recovery rule on the parsed bytes. It runs
+    // before the identity-set check so a shrunken denominator is refused as the
+    // coverage drift it is, not as a side effect of a swapped document.
+    let rebuilt = build_exclusion_recovery_receipt(
+        &expected.declaration_revision_sha256,
+        &expected.probe_revision_sha256,
+        &expected.baseline_revision_sha256,
+        &receipt.locks,
+        &receipt.claim_scope,
+        &receipt.product_coverage_effect,
+        GuardProvenance {
+            installed: receipt.guard.installed,
+            identity_isolated: receipt.guard.identity_isolated,
+            observed_java_calls: receipt.guard.observed_java_calls,
+        },
+        &expected.population,
+        &expected.affiliation_reference,
+        &receipt.recoveries,
+        &receipt.integrity_failures,
+    )?;
+    if rebuilt != *receipt {
+        return Err(NativeFamilyReceiptError::SchemaDrift {
+            field: "receipt".to_owned(),
+            expected: "the canonical rebuild from the frozen census".to_owned(),
+            found: "a drifted receipt".to_owned(),
+        });
+    }
+
+    // No typed exception document may be silently swapped or lost: the receipt's
+    // row set must be exactly the probe's exception identities.
+    let mut seen = std::collections::BTreeSet::new();
+    for row in &receipt.recoveries {
+        if !expected.documents.contains(&row.document_id) {
+            return Err(NativeFamilyReceiptError::UnknownDocument {
+                document: row.document_id.clone(),
+            });
+        }
+        if !seen.insert(row.document_id.clone()) {
+            return Err(NativeFamilyReceiptError::ExclusionDuplicateDocument {
+                document: row.document_id.clone(),
+            });
+        }
+    }
+    for document in &expected.documents {
+        if !seen.contains(document) {
+            return Err(NativeFamilyReceiptError::MissingDocument {
+                document: document.clone(),
+            });
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
