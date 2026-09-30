@@ -44,6 +44,7 @@ mod managed_batch;
 mod native_affiliation;
 mod native_bibliography_features;
 mod native_bibliography_gazetteer;
+mod native_bibliography_native_input;
 mod native_bibliography_nested;
 mod native_bibliography_sequence;
 mod native_body;
@@ -67,6 +68,7 @@ mod native_funding_features;
 mod native_funding_sequence;
 mod native_header_features;
 mod native_header_fields;
+mod native_header_native_input;
 mod native_header_sequence;
 mod native_personal_name;
 mod native_region_input;
@@ -176,6 +178,17 @@ pub use native_bibliography_gazetteer::{
     GAZETTEER_MAX_PHRASE_TOKENS, GAZETTEER_MAX_SPANS, GAZETTEER_MAX_TEXT_BYTES,
     GAZETTEER_MAX_TOKENS, GazetteerSpan, NATIVE_BIBLIOGRAPHY_GAZETTEER_SCHEMA_VERSION,
     gazetteer_spans, is_isbn_shape, is_issn_shape, span_covers,
+};
+pub use native_bibliography_native_input::{
+    BibliographyAtom, BibliographyAtomDisposition, BibliographyCoverageVerdict,
+    BibliographyLineFacts, BibliographyOracleIndependenceError, BibliographyOracleProvenance,
+    NATIVE_BIBLIOGRAPHY_INDENT_EPSILON_PT, NATIVE_BIBLIOGRAPHY_INPUT_GENERATOR_ID,
+    NATIVE_BIBLIOGRAPHY_INPUT_SCHEMA_VERSION, NativeBibliographyAnchorScope,
+    NativeBibliographyAtomOutcome, NativeBibliographyCrfScope, NativeBibliographyFieldCount,
+    NativeBibliographyFromInputOutcome, NativeBibliographyInputError,
+    NativeBibliographyInputIdentity, NativeBibliographyOutOfScope, bibliography_char_set,
+    build_bibliography_line_facts, build_native_bibliography_input, classify_bibliography_coverage,
+    normalize_bibliography_text, require_independent_bibliography_oracle,
 };
 pub use native_bibliography_nested::{
     DATE_PART_BASE_LABELS, DateFeatureRow, DatePartRole, NAME_PART_BASE_LABELS,
@@ -372,6 +385,15 @@ pub use native_header_fields::{
     MAX_NATIVE_HEADER_FIELD_CHARS, MAX_NATIVE_HEADER_FIELD_VALUES,
     MAX_NATIVE_HEADER_PROJECTION_ROWS, NATIVE_HEADER_FIELDS_SCHEMA_VERSION, NativeHeaderFields,
     NativeHeaderFieldsError, project_native_header_fields,
+};
+pub use native_header_native_input::{
+    HeaderAtom, HeaderAtomDisposition, HeaderCoverageVerdict, HeaderOracleIndependenceError,
+    HeaderOracleProvenance, NATIVE_HEADER_INDENT_EPSILON_PT, NATIVE_HEADER_INPUT_GENERATOR_ID,
+    NATIVE_HEADER_INPUT_SCHEMA_VERSION, NativeHeaderAtomOutcome, NativeHeaderCrfScope,
+    NativeHeaderFromInputOutcome, NativeHeaderInputError, NativeHeaderInputIdentity,
+    NativeHeaderOutOfScope, build_header_feature_tokens, build_native_header_input,
+    classify_header_coverage, derive_header_font_statistics, header_char_set,
+    normalize_header_text, require_independent_header_oracle,
 };
 pub use native_header_sequence::{
     HeaderFieldSpan, MAX_NATIVE_HEADER_SEQUENCE_ROWS, NATIVE_HEADER_LABELS,
