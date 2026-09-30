@@ -621,10 +621,13 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
             # `cargo test --example NAME` — that leaves a *libtest harness* which
             # rejects the example's own `--manifest` flag (native_visual_heads
             # documents this), so a plain `cargo build --example X` is the only
-            # correct provisioning. Only these eleven runners are driven by the
-            # gated tests: building `--examples` compiled all ~86 runners for
+            # correct provisioning. Only these runners are driven by the gated
+            # tests: building `--examples` compiled all ~86 runners for
             # ~25G of target/debug/examples, which is what this list avoids. Add
             # a name here when a new gated test starts driving an example.
+            # `java_free_vertical_slice` (S03/T04) is provisioned here by name so
+            # its binary exists for the S03/T05 contract test and for the
+            # receipt emitter itself; it is a layout example like its siblings.
             # Both steps run LAST: enabling the feature here would otherwise
             # force a rebuild for every step above.
             ("da-cli feature-gated example runners", ["cargo", "build", "-p", "da-cli",
@@ -635,6 +638,7 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
                                                         "--example", "external_holdout_release_probe",
                                                         "--example", "feature_tagger_training_shadow",
                                                         "--example", "fulltext_block_semantics_shadow",
+                                                        "--example", "java_free_vertical_slice",
                                                         "--example", "layout_bakeoff",
                                                         "--example", "native_fulltext_composition_shadow",
                                                         "--example", "native_fulltext_corpus_shadow",

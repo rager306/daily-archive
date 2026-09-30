@@ -13,6 +13,9 @@ use std::{
 };
 
 const FALLBACK: &str = "java-grobid-http@0.9.0-crf";
+// Exercised by the `#[cfg(test)]` module in this file, which is not compiled
+// into the example binary clippy lints, so the constant reads as unused there.
+#[allow(dead_code)]
 const PDF_IDS: [&str; 3] = ["hub-2507.19457", "rlm-2512.24601", "reca-2605.26525v1"];
 const RICH_FP: &str = "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula";
 const PROXY_TEI: [(&str, &str, &str); 3] = [
@@ -95,19 +98,29 @@ struct Proxy {
     #[serde(default)]
     document_denominator: Option<u64>,
     #[serde(default)]
+    // Declared by the manifest schema; this emitter does not read it.
+    #[allow(dead_code)]
     oracle_ref: Option<String>,
     rows: Vec<ProxyRow>,
 }
 #[derive(Debug, Deserialize)]
 struct Row {
+    // `id`, `identity`, `dataset_id`, `gold_format` and `filter` are declared by
+    // the manifest schema and decoded here; the emitter reads only the
+    // projection it compares, so the rest stay as schema documentation.
+    #[allow(dead_code)]
     id: String,
     state: String,
+    #[allow(dead_code)]
     identity: String,
+    #[allow(dead_code)]
     dataset_id: String,
     source_url: String,
     expected_n: u64,
+    #[allow(dead_code)]
     #[serde(default)]
     gold_format: Option<String>,
+    #[allow(dead_code)]
     #[serde(default)]
     filter: Option<String>,
 }
@@ -116,6 +129,8 @@ struct ProxyRow {
     id: String,
     state: String,
     #[serde(default)]
+    // Declared by the manifest schema; this emitter does not read it.
+    #[allow(dead_code)]
     identity_ref: Option<String>,
     #[serde(default)]
     pdf_path: Option<String>,

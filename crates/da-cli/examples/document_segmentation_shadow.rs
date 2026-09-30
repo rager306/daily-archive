@@ -460,18 +460,18 @@ fn match_boundaries(
                     // Document, lane, region, and page are the matching scope;
                     // page identity is not a quality denominator. Require both
                     // endpoints to remain on the same page as their reviewed pair.
-                    (predicted_boundary.start.page == reviewed_boundary.start.page
-                        && predicted_boundary.end.page == reviewed_boundary.end.page)
-                        .then(|| {
-                            let distance =
-                                boundary_distance(*predicted_boundary, *reviewed_boundary);
-                            (
-                                distance <= tolerance,
-                                distance,
-                                predicted_index,
-                                reviewed_index,
-                            )
-                        })
+                    if predicted_boundary.start.page != reviewed_boundary.start.page
+                        || predicted_boundary.end.page != reviewed_boundary.end.page
+                    {
+                        return None;
+                    }
+                    let distance = boundary_distance(*predicted_boundary, *reviewed_boundary);
+                    Some((
+                        distance <= tolerance,
+                        distance,
+                        predicted_index,
+                        reviewed_index,
+                    ))
                 })
         })
         .filter(|(within_tolerance, _, _, _)| *within_tolerance)
@@ -547,11 +547,15 @@ mod segmentation_boundary_metrics {
     }
 }
 
-fn empty_region_counts() -> (
+/// Region-indexed denominators: admitted tokens, reviewed boundaries, and the
+/// reviewed boundary coordinates per region.
+type RegionCounts = (
     BTreeMap<String, usize>,
     BTreeMap<String, usize>,
     BTreeMap<String, Vec<BoundaryPair>>,
-) {
+);
+
+fn empty_region_counts() -> RegionCounts {
     let tokens = REGIONS.iter().map(|name| ((*name).into(), 0)).collect();
     let boundaries = REGIONS.iter().map(|name| ((*name).into(), 0)).collect();
     let coordinates = REGIONS
@@ -1024,9 +1028,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     manifest.evaluation.coordinate_binding.tolerance,
                 );
                 let matched = boundary_match.matched as f64;
-                let boundary_precision = (predicted_boundaries.len() > 0)
+                let boundary_precision = (!predicted_boundaries.is_empty())
                     .then_some(matched / predicted_boundaries.len() as f64);
-                let boundary_recall = (reviewed_boundaries.len() > 0)
+                let boundary_recall = (!reviewed_boundaries.is_empty())
                     .then_some(matched / reviewed_boundaries.len() as f64);
                 let boundary_f1 = match (boundary_precision, boundary_recall) {
                     (Some(precision), Some(recall)) if precision + recall > 0.0 => {

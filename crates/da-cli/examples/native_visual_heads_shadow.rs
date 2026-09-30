@@ -387,20 +387,21 @@ fn run_job(
             .saturating_add(job.queued_at.elapsed().as_millis()),
     }
 }
+/// Bounded run report: per-lane receipts, runtime metrics, the job ordinals the
+/// scheduler refused, and how many jobs it admitted.
+type JobReport = (
+    Vec<LaneReceipt>,
+    da_cli::layout_runtime::RuntimeMetrics,
+    Vec<usize>,
+    usize,
+);
+
 fn execute_jobs(
     jobs: Vec<Job>,
     topology: &da_cli::layout_runtime::TopologyReceipt,
     runtime: RuntimeConfig,
     oracle: Arc<BTreeMap<(String, String, String), OracleLookup>>,
-) -> Result<
-    (
-        Vec<LaneReceipt>,
-        da_cli::layout_runtime::RuntimeMetrics,
-        Vec<usize>,
-        usize,
-    ),
-    Box<dyn std::error::Error>,
-> {
+) -> Result<JobReport, Box<dyn std::error::Error>> {
     let fallback = jobs
         .iter()
         .map(|j| {

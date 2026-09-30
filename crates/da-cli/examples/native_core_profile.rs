@@ -161,9 +161,9 @@ fn run(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let second_bytes = second.artifact_json_bytes()?;
     if first_bytes != second_bytes {
         return Err(format!(
-            "independent emitter runs diverged ({} vs {}); refusing to write an unstable artifact",
-            format!("sha256:{:x}", Sha256::digest(&first_bytes)),
-            format!("sha256:{:x}", Sha256::digest(&second_bytes))
+            "independent emitter runs diverged (sha256:{:x} vs sha256:{:x}); refusing to write an unstable artifact",
+            Sha256::digest(&first_bytes),
+            Sha256::digest(&second_bytes)
         )
         .into());
     }
@@ -174,10 +174,11 @@ fn run(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn write_artifact(path: &Path, bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            std::fs::create_dir_all(parent)?;
-        }
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)?;
     }
     std::fs::write(path, bytes)?;
     Ok(())

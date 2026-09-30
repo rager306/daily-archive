@@ -218,10 +218,12 @@ fn write_observations_if_stale(
     fresh: &[u8],
     deterministic_sha256: &str,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    if let Ok(existing) = std::fs::read(path) {
-        if observations_snapshot_is_current(&existing, deterministic_sha256) {
-            return Ok(false);
-        }
+    // One `Result` test, not the nested `if` clippy suggests collapsing into a
+    // let-chain: the workspace MSRV is 1.85 and let-chains need 1.88.
+    if std::fs::read(path)
+        .is_ok_and(|existing| observations_snapshot_is_current(&existing, deterministic_sha256))
+    {
+        return Ok(false);
     }
     write_artifact(path, fresh)?;
     Ok(true)

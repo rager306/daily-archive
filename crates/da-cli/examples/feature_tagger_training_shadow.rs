@@ -62,7 +62,11 @@ struct Outcome {
 struct Annotation {
     positive_reviewed_rows: usize,
     receipt_count: usize,
+    // Declared by the annotation schema and decoded here; this emitter reads
+    // only the counts, so the two columns stay as schema documentation.
+    #[allow(dead_code)]
     columns: Vec<String>,
+    #[allow(dead_code)]
     receipts: Vec<serde_yaml::Value>,
 }
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]

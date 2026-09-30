@@ -640,7 +640,7 @@ fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>
         let expected_keys: BTreeSet<_> = expected_documents
             .iter()
             .flat_map(|(document_id, (_, pages))| {
-                (0..*pages as u32).map(move |page| ((*document_id, page)))
+                (0..*pages as u32).map(move |page| (*document_id, page))
             })
             .collect();
         let actual_keys: BTreeSet<_> = out
