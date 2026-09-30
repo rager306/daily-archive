@@ -87,6 +87,7 @@ from typing import Any, Optional
 import yaml
 
 from governor.domain.absorption_progress import (
+    JAVA_FREE_SLICE_VIOLATION_LABELS,
     contract_thresholds,
     missing_contract_vocabulary,
     score_number,
@@ -139,6 +140,7 @@ _RULE_KEYS = (
     "regression",
     "resources_claim",
     "comparability_rules",
+    "java_free_slice",
 )
 
 
@@ -483,6 +485,137 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
         path = self._resolve(relative_path)
         return path is not None and path.exists()
 
+    # ── the Java-free vertical slice claim (S03/T06) ───────────────────────
+    def read_java_free_slice(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the Java-free slice claim, its receipt and its pinned sources.
+
+        The claim is not this rule: it is the ``java_free_vertical_slice`` block in
+        the layout-bakeoff DATA (ADR-077 §3 makes that block the sole authority),
+        and this rule only names where to find it and what a receipt for it must
+        look like. Nothing here restates the stage ids or the document identities —
+        both are followed by pointer, so the rule cannot drift from the thing it
+        governs.
+
+        ``None`` means the rule does not govern a Java-free slice half. Otherwise a
+        bundle carrying the resolved declaration, the receipt bytes and both
+        recomputed source hashes, the resolved cascade stage ids and the pinned
+        corpus documents. ``available`` is True only when the declaration manifest
+        is readable and the declared pointer resolves to a mapping: a tree that
+        simply does not carry the claim is *absence*, not a violation, so the check
+        stays silent there and the layout-bakeoff contract keeps owning that
+        artifact. An unreadable *receipt* under a resolvable declaration is not
+        absence — it is a claim with no evidence — and the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("java_free_slice")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        receipt_rule = rule.get("receipt")
+        receipt_rule = receipt_rule if isinstance(receipt_rule, dict) else {}
+        receipt_path = _text(receipt_rule.get("path"))
+
+        stage_rule = rule.get("stage_id_source")
+        stage_rule = stage_rule if isinstance(stage_rule, dict) else {}
+        stage_manifest = _text(stage_rule.get("manifest"))
+        stage_pointer = _text(stage_rule.get("pointer"))
+
+        corpus_rule = rule.get("corpus")
+        corpus_rule = corpus_rule if isinstance(corpus_rule, dict) else {}
+        corpus_manifest = _text(corpus_rule.get("manifest"))
+        corpus_pointer = _text(corpus_rule.get("pointer"))
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "declaration_sha256": (
+                self.file_sha256(declaration_manifest) if declaration_manifest else None
+            ),
+            "declaration": None,
+            "receipt_path": receipt_path,
+            "receipt_exists": bool(receipt_path and self.path_exists(receipt_path)),
+            "receipt_sha256": self.file_sha256(receipt_path) if receipt_path else None,
+            "receipt": None,
+            "stage_id_source_manifest": stage_manifest,
+            "stage_id_source_pointer": stage_pointer,
+            "stage_id_source_sha256": (
+                self.file_sha256(stage_manifest) if stage_manifest else None
+            ),
+            "cascade_stage_ids": [],
+            "corpus_manifest": corpus_manifest,
+            "corpus_pointer": corpus_pointer,
+            "corpus_documents": [],
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["declaration"] = block
+                bundle["available"] = True
+
+        bundle["receipt"] = self.read_json(receipt_path) if receipt_path else None
+        if bundle["receipt"] is None and bundle["receipt_exists"]:
+            bundle["errors"].append("receipt_unreadable")
+
+        if stage_manifest:
+            stage_document = self.read_yaml(stage_manifest)
+            if not isinstance(stage_document, dict):
+                bundle["errors"].append("stage_id_source_unreadable")
+            else:
+                stages = _resolve_declared_pointer(stage_document, stage_pointer)
+                if isinstance(stages, dict):
+                    bundle["cascade_stage_ids"] = sorted(
+                        key for key in stages if isinstance(key, str) and key.strip()
+                    )
+                elif isinstance(stages, list):
+                    bundle["cascade_stage_ids"] = sorted(
+                        stage_id
+                        for stage_id in (
+                            _text(entry.get("stage_id"))
+                            for entry in stages
+                            if isinstance(entry, dict)
+                        )
+                        if stage_id is not None
+                    )
+                else:
+                    bundle["errors"].append("stage_id_source_pointer_unresolved")
+
+        if corpus_manifest:
+            corpus_document = self.read_yaml(corpus_manifest)
+            if not isinstance(corpus_document, dict):
+                bundle["errors"].append("corpus_source_unreadable")
+            else:
+                documents = _resolve_declared_pointer(corpus_document, corpus_pointer)
+                if isinstance(documents, list):
+                    bundle["corpus_documents"] = [
+                        {
+                            "id": _text(entry.get("id")),
+                            "sha256": _text(entry.get("sha256")),
+                        }
+                        for entry in documents
+                        if isinstance(entry, dict)
+                    ]
+                else:
+                    bundle["errors"].append("corpus_source_pointer_unresolved")
+
+        return bundle
+
 
 # ── contract composition ───────────────────────────────────────────────────
 
@@ -544,6 +677,99 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
         for key in ("axis", "savings_flag", "paired_cpu_field", "kind_field", "cpu_kind"):
             if not _text(resources.get(key)):
                 missing.append(f"resources_claim.{key}")
+
+    missing.extend(_java_free_slice_vocabulary(contract.get("java_free_slice")))
+    return missing
+
+def _java_free_slice_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``java_free_slice`` fields that are absent or unusable.
+
+    Without these the half cannot tell a declared-and-evidenced Java-free slice
+    from a claim with no receipt: it needs to know where the claim lives, what a
+    receipt must look like, the closed stage dispositions, and the closed label
+    vocabulary. The declared label set must be exactly the domain's literal set —
+    a label the oracle can emit must be registered, and a registered label must be
+    one the oracle can emit — so an unregistered emission is a data/implementation
+    mismatch rather than a silent finding. The caller fails closed on a non-empty
+    result.
+    """
+    if not isinstance(block, dict):
+        return ["java_free_slice"]
+    missing: list[str] = []
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("java_free_slice.declaration")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"java_free_slice.declaration.{key}")
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("java_free_slice.declaration.manifest.path")
+
+    receipt = block.get("receipt")
+    if not isinstance(receipt, dict):
+        missing.append("java_free_slice.receipt")
+    else:
+        if _text(receipt.get("path")) is None:
+            missing.append("java_free_slice.receipt.path")
+        elif not _is_relative_path(receipt.get("path")):
+            missing.append("java_free_slice.receipt.path")
+        if _text(receipt.get("schema_version")) is None:
+            missing.append("java_free_slice.receipt.schema_version")
+        if receipt.get("required") is not True:
+            missing.append("java_free_slice.receipt.required")
+
+    stage_source = block.get("stage_id_source")
+    if not isinstance(stage_source, dict):
+        missing.append("java_free_slice.stage_id_source")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(stage_source.get(key)) is None:
+                missing.append(f"java_free_slice.stage_id_source.{key}")
+
+    corpus = block.get("corpus")
+    if not isinstance(corpus, dict):
+        missing.append("java_free_slice.corpus")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(corpus.get(key)) is None:
+                missing.append(f"java_free_slice.corpus.{key}")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("java_free_slice.expected")
+    else:
+        for key in ("claim_scope", "product_coverage_effect", "guard_observer"):
+            if _text(expected.get(key)) is None:
+                missing.append(f"java_free_slice.expected.{key}")
+        if expected.get("guard_installed") is not True:
+            missing.append("java_free_slice.expected.guard_installed")
+        if expected.get("guard_identity_isolated") is not True:
+            missing.append("java_free_slice.expected.guard_identity_isolated")
+        if _count(expected.get("observed_java_calls")) != 0:
+            missing.append("java_free_slice.expected.observed_java_calls")
+
+    dispositions = block.get("stage_dispositions")
+    if not isinstance(dispositions, dict):
+        missing.append("java_free_slice.stage_dispositions")
+    else:
+        for key in ("in_slice", "out_of_slice", "identity_admission"):
+            if _text(dispositions.get(key)) is None:
+                missing.append(f"java_free_slice.stage_dispositions.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(JAVA_FREE_SLICE_VIOLATION_LABELS):
+        missing.append("java_free_slice.violations")
+
+    fixtures = block.get("fixtures")
+    if not isinstance(fixtures, dict):
+        missing.append("java_free_slice.fixtures")
+    else:
+        for polarity in ("positive", "negative"):
+            spec = fixtures.get(polarity)
+            if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
+                missing.append(f"java_free_slice.fixtures.{polarity}.path")
     return missing
 
 
@@ -604,6 +830,25 @@ def resolve_pointer(document: Any, pointer: Any) -> Any:
             node = node[segment]
     return node
 
+
+def _resolve_declared_pointer(document: Any, pointer: Any) -> Any:
+    """Follow a pointer in either dialect the slice DATA actually uses.
+
+    The Governor's generic :func:`resolve_pointer` grammar is slash-separated. The
+    Java-free slice declaration — the ADR-077 §3 authority in the layout-bakeoff
+    DATA — addresses its sources with dot-separated pointers
+    (``defaults.cascade_stages``, ``corpus.documents``). Rewriting the authority to
+    the governor's dialect would move its ``sha256`` and stale every receipt pin,
+    so the reader accepts the dialect the authority declares: slash first, then
+    dot-as-slash. :data:`_UNRESOLVED` means neither landed, which the caller
+    reports as a typed error rather than as an empty resolution.
+    """
+    resolved = resolve_pointer(document, pointer)
+    if resolved is not _UNRESOLVED:
+        return resolved
+    if isinstance(pointer, str) and "." in pointer:
+        return resolve_pointer(document, pointer.replace(".", "/"))
+    return _UNRESOLVED
 
 def _text(value: Any) -> Optional[str]:
     if isinstance(value, str) and value.strip():
@@ -720,8 +965,299 @@ def absorption_progress_violations(
     _resources_violations(rows, contract, violations)
     _threshold_violations(scorecard, contract, observations, violations)
     _population_census_violations(scorecard, contract, observations, violations)
+    _java_free_slice_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
+    return violations
+
+def _numeric_field(block: Any, keys: tuple[str, ...]) -> Optional[int]:
+    """The first non-negative integer under ``keys``, or ``None``.
+
+    Used to tell a *typed* stage disposition from a *counted* one: an
+    out-of-slice stage that carries any numeric count is claiming a measurement
+    it must not have, and an in-slice stage without one is unmeasured.
+    """
+    if not isinstance(block, dict):
+        return None
+    for key in keys:
+        value = _count(block.get(key))
+        if value is not None:
+            return value
+    return None
+
+def _java_free_slice_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the Java-free vertical slice labels carried by the observations."""
+    violations.update(
+        _java_free_slice_violations(contract, observations.get("java_free_slice"))
+        if isinstance(observations, dict)
+        else set()
+    )
+
+def _java_free_slice_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a Java-free slice claim that its receipt does not actually evidence.
+
+    The half this guards is the shape R141 forbids: a slice that is *declared*
+    Java-free (or, worse, offered as product coverage) while the artifact that would
+    evidence it is absent, stale, scoped to another slice, or reports an untyped or
+    counted stage where the boundary says "outside the slice". Concretely:
+
+    * ``claim_without_receipt`` — the declaration resolves but no usable receipt
+      exists, so there is a claim and no evidence;
+    * ``receipt_slice_mismatch`` — the receipt is not the receipt of *this*
+      declaration (schema, slice, ADR, requirements, binding pointers or the pinned
+      corpus identities differ), or the declaration does not classify every cascade
+      stage;
+    * ``receipt_stale`` — the receipt pins declaration/source bytes whose recomputed
+      ``sha256`` no longer matches, so it describes an older tree;
+    * ``unmeasured_stage`` — a cascade stage has no typed disposition in the receipt
+      (or the receipt names a stage the declaration does not);
+    * ``stage_outside_slice_counted`` — an out-of-slice stage carries a numeric
+      count or an ``observed`` state instead of its typed reason, i.e. the boundary
+      is being reported as a measurement;
+    * ``guard_not_installed`` — an ``observed`` zero is offered without the guard
+      provenance (installed + identity-isolated observer) that would make the zero
+      mean anything;
+    * ``java_calls_nonzero`` — the receipt contradicts itself: Java calls were seen
+      on a slice that claims none;
+    * ``product_coverage_claimed`` — the claim is not scoped diagnostic-only with no
+      product-coverage effect, which is the only scope that does not move the
+      product ``java_independence`` axis (D499).
+
+    ``{""}`` (empty) means clean. A missing or absent-evidence bundle is *unverified*,
+    never clean and never refuted: a tree that does not carry the claim is silence,
+    not compliance, so nothing here is inferred from an artifact's mere existence.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict):
+        return violations
+    rule = contract.get("java_free_slice")
+    if not isinstance(rule, dict):
+        return violations
+    if not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    declaration = evidence.get("declaration")
+    if not isinstance(declaration, dict):
+        return violations
+
+    receipt_rule = rule.get("receipt") if isinstance(rule.get("receipt"), dict) else {}
+    receipt = evidence.get("receipt")
+    if not isinstance(receipt, dict):
+        if receipt_rule.get("required") is True:
+            violations.add("java_free_slice_claim_without_receipt")
+        return violations
+
+    expected = rule.get("expected") if isinstance(rule.get("expected"), dict) else {}
+    dispositions = (
+        rule.get("stage_dispositions")
+        if isinstance(rule.get("stage_dispositions"), dict)
+        else {}
+    )
+
+    # ── claim scope: a diagnostic slice is never product coverage ──────────
+    expected_scope = _text(expected.get("claim_scope"))
+    expected_effect = _text(expected.get("product_coverage_effect"))
+    for block in (receipt, declaration):
+        if _text(block.get("claim_scope")) != expected_scope:
+            violations.add("java_free_slice_product_coverage_claimed")
+        if _text(block.get("product_coverage_effect")) != expected_effect:
+            violations.add("java_free_slice_product_coverage_claimed")
+
+    # ── identity: the receipt must be the receipt of THIS declaration ──────
+    mismatch = False
+    if _text(receipt.get("schema_version")) != _text(receipt_rule.get("schema_version")):
+        mismatch = True
+    if _text(receipt.get("slice_id")) != _text(declaration.get("slice_id")):
+        mismatch = True
+    if _text(receipt.get("adr_ref")) != _text(declaration.get("adr_ref")):
+        mismatch = True
+    if sorted(_text_list(receipt.get("requirement_ids"))) != sorted(
+        _text_list(declaration.get("requirement_ids"))
+    ):
+        mismatch = True
+
+    rule_declaration = rule.get("declaration") if isinstance(rule.get("declaration"), dict) else {}
+    receipt_declaration = (
+        receipt.get("declaration") if isinstance(receipt.get("declaration"), dict) else {}
+    )
+    if _text(receipt_declaration.get("manifest")) != _text(rule_declaration.get("manifest")):
+        mismatch = True
+    if _text(receipt_declaration.get("pointer")) != _text(rule_declaration.get("pointer")):
+        mismatch = True
+
+    rule_stage_source = (
+        rule.get("stage_id_source") if isinstance(rule.get("stage_id_source"), dict) else {}
+    )
+    receipt_stage_source = (
+        receipt.get("stage_id_source") if isinstance(receipt.get("stage_id_source"), dict) else {}
+    )
+    if _text(receipt_stage_source.get("manifest")) != _text(rule_stage_source.get("manifest")):
+        mismatch = True
+    if _text(receipt_stage_source.get("pointer")) != _text(rule_stage_source.get("pointer")):
+        mismatch = True
+
+    # ── staleness: the receipt pins the bytes it was derived from ──────────
+    declaration_pin = _text(receipt_declaration.get("revision_sha256"))
+    if declaration_pin is None or declaration_pin != _text(evidence.get("declaration_sha256")):
+        violations.add("java_free_slice_receipt_stale")
+    stage_pin = _text(receipt_stage_source.get("revision_sha256"))
+    if stage_pin is None or stage_pin != _text(evidence.get("stage_id_source_sha256")):
+        violations.add("java_free_slice_receipt_stale")
+
+    # ── the corpus binding: the pinned identities, not a restated count ────
+    corpus = receipt.get("corpus") if isinstance(receipt.get("corpus"), dict) else None
+    rule_corpus = rule.get("corpus") if isinstance(rule.get("corpus"), dict) else {}
+    pinned_documents = {
+        _text(entry.get("id")): _text(entry.get("sha256"))
+        for entry in (evidence.get("corpus_documents") or [])
+        if isinstance(entry, dict)
+    }
+    if not isinstance(corpus, dict):
+        mismatch = True
+    else:
+        if _text(corpus.get("manifest")) != _text(rule_corpus.get("manifest")):
+            mismatch = True
+        if _text(corpus.get("pointer")) != _text(rule_corpus.get("pointer")):
+            mismatch = True
+        binding = (
+            declaration.get("corpus_binding")
+            if isinstance(declaration.get("corpus_binding"), dict)
+            else {}
+        )
+        declared_count = _count(binding.get("document_count"))
+        receipt_count = _count(corpus.get("document_count"))
+        if receipt_count is None or (
+            declared_count is not None and receipt_count != declared_count
+        ):
+            mismatch = True
+        if receipt_count != len(pinned_documents):
+            mismatch = True
+        identities = corpus.get("identities")
+        if not isinstance(identities, list):
+            mismatch = True
+        else:
+            receipt_documents = {
+                _text(entry.get("id")): _text(entry.get("sha256"))
+                for entry in identities
+                if isinstance(entry, dict)
+            }
+            if receipt_documents != pinned_documents:
+                mismatch = True
+
+    # ── the stage matrix: every cascade stage has a typed disposition ──────
+    scope_by_stage: dict[str, str] = {}
+    admission_reason: Optional[str] = None
+    admission = declaration.get("identity_admission_stage")
+    if isinstance(admission, dict):
+        stage_id = _text(admission.get("stage_id"))
+        if stage_id is not None:
+            scope_by_stage[stage_id] = "identity_admission"
+        admission_reason = _text(admission.get("disposition"))
+    for key, scope in (
+        ("stages_in_slice", "in_slice"),
+        ("stages_out_of_slice", "out_of_slice"),
+    ):
+        entries = declaration.get(key)
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            stage_id = _text(entry.get("stage_id"))
+            if stage_id is not None:
+                scope_by_stage[stage_id] = scope
+
+    cascade_stage_ids = {
+        stage_id
+        for stage_id in (evidence.get("cascade_stage_ids") or [])
+        if isinstance(stage_id, str) and stage_id.strip()
+    }
+    if set(scope_by_stage) != cascade_stage_ids:
+        # The declaration must classify the whole cascade: an unclassified stage
+        # is a hole in the boundary, not a data detail.
+        mismatch = True
+
+    out_of_slice_reasons = set(_text_list(declaration.get("out_of_slice_reason_vocabulary")))
+    guard = receipt.get("guard") if isinstance(receipt.get("guard"), dict) else None
+    guard_provenance = (
+        isinstance(guard, dict)
+        and guard.get("installed") is True
+        and guard.get("identity_isolated") is True
+        and _text(guard.get("observer")) == _text(expected.get("guard_observer"))
+    )
+    if isinstance(guard, dict):
+        observed_calls = _count(guard.get("observed_java_calls"))
+        if observed_calls is None or observed_calls != 0:
+            violations.add("java_free_slice_java_calls_nonzero")
+        elif not guard_provenance:
+            # Zero observed Java calls is only evidence when the observer that
+            # would have seen them was installed and identity-isolated.
+            violations.add("java_free_slice_guard_not_installed")
+    else:
+        violations.add("java_free_slice_guard_not_installed")
+
+    stages = receipt.get("stages")
+    if not isinstance(stages, list):
+        violations.add("java_free_slice_unmeasured_stage")
+    else:
+        receipt_stage_ids: set[str] = set()
+        for entry in stages:
+            if not isinstance(entry, dict):
+                violations.add("java_free_slice_unmeasured_stage")
+                continue
+            stage_id = _text(entry.get("stage_id"))
+            if stage_id is None:
+                violations.add("java_free_slice_unmeasured_stage")
+                continue
+            receipt_stage_ids.add(stage_id)
+            scope = scope_by_stage.get(stage_id)
+            count = entry.get("count") if isinstance(entry.get("count"), dict) else None
+            if scope is None or count is None:
+                violations.add("java_free_slice_unmeasured_stage")
+                continue
+            state = _text(count.get("state"))
+            if scope == "out_of_slice":
+                if (
+                    _numeric_field(count, ("attempts", "count", "java_calls", "invocations"))
+                    is not None
+                ):
+                    violations.add("java_free_slice_stage_outside_slice_counted")
+                if state != _text(dispositions.get("out_of_slice")):
+                    violations.add("java_free_slice_stage_outside_slice_counted")
+                reason = _text(count.get("reason"))
+                if reason is None or (
+                    out_of_slice_reasons and reason not in out_of_slice_reasons
+                ):
+                    violations.add("java_free_slice_unmeasured_stage")
+            elif scope == "identity_admission":
+                if state != _text(dispositions.get("identity_admission")):
+                    violations.add("java_free_slice_unmeasured_stage")
+                reason = _text(count.get("reason"))
+                if reason is None or (
+                    admission_reason is not None and reason != admission_reason
+                ):
+                    violations.add("java_free_slice_unmeasured_stage")
+            else:
+                if state != _text(dispositions.get("in_slice")):
+                    violations.add("java_free_slice_unmeasured_stage")
+                attempts = _numeric_field(count, ("attempts",))
+                if attempts is None:
+                    violations.add("java_free_slice_unmeasured_stage")
+                elif attempts > 0:
+                    violations.add("java_free_slice_java_calls_nonzero")
+                elif not guard_provenance:
+                    # Observed(0) without guard provenance is not a measurement.
+                    violations.add("java_free_slice_guard_not_installed")
+        if receipt_stage_ids != set(scope_by_stage):
+            violations.add("java_free_slice_unmeasured_stage")
+
+    if mismatch:
+        violations.add("java_free_slice_receipt_slice_mismatch")
     return violations
 
 

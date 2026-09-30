@@ -157,15 +157,94 @@ fixtures:
         - assigned_ne_total
         - threshold_missing_for_required_metric
 
+# ── Java-free vertical slice (M514/S03/T06) ─────────────────────────────────
+# The slice claim is NOT this rule: it is `java_free_vertical_slice` in
+# `data/parse/layout_bakeoff.yaml`, which ADR-077 §3 makes the sole authority of
+# the boundary. This DATA block is the rule that reads that authority — it names
+# where the claim lives, where the receipt evidencing it lives, the states the
+# receipt must carry, the closed stage-disposition vocabulary and the closed set
+# of adapter labels. Neither the stage ids nor the document identities are
+# restated: both are followed by pointer, so the rule cannot drift from the thing
+# it governs.
+#
+# Why it exists: the product `java_independence` axis legitimately reports
+# `not_measured` while the production route is Java (D499), so a scoped,
+# diagnostic Java-free receipt is exactly the progress the Governor could not see.
+# What must not pass silently is a *claim* without that evidence, an untyped or
+# counted stage where the boundary says "outside the slice", an observed zero with
+# no guard provenance, a receipt bound to different bytes, or a diagnostic slice
+# re-labelled as product coverage (R141).
+#
+# Severity: this block does not register a dimension or a severity — it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks.
+java_free_slice:
+  schema_version: java-free-slice-rule.v1
+  declaration:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: java_free_vertical_slice
+  receipt:
+    path: artifacts/parse_compat/java_free_vertical_slice.json
+    schema_version: java-free-vertical-slice-receipt.v1
+    required: true
+  stage_id_source:
+    manifest: data/parse/grobid_compatibility.yaml
+    pointer: defaults.cascade_stages
+  corpus:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: corpus.documents
+  expected:
+    claim_scope: diagnostic_only
+    product_coverage_effect: none
+    guard_observer: java_transport_fetch_tei
+    guard_installed: true
+    guard_identity_isolated: true
+    observed_java_calls: 0
+  stage_dispositions:
+    in_slice: observed
+    out_of_slice: out_of_slice
+    identity_admission: not_observed
+  # The closed vocabulary of adapter labels this half may emit. Kept separate from
+  # the scorecard `violations` list above so the T01/T04 exact-set test stays valid
+  # and the two halves stay separately governable. The literal set lives in
+  # `scripts/governor/domain/absorption_progress.py`; the two must match exactly.
+  violations:
+    - java_free_slice_claim_without_receipt
+    - java_free_slice_receipt_slice_mismatch
+    - java_free_slice_unmeasured_stage
+    - java_free_slice_guard_not_installed
+    - java_free_slice_product_coverage_claimed
+    - java_free_slice_stage_outside_slice_counted
+    - java_free_slice_receipt_stale
+    - java_free_slice_java_calls_nonzero
+  fixtures:
+    positive:
+      id: java_free_slice_clean
+      path: governor/fixtures/absorption_progress/java_free_slice.positive.json
+      expect: clean
+    negative:
+      id: java_free_slice_broken
+      path: governor/fixtures/absorption_progress/java_free_slice.negative.json
+      expect:
+        require_violations:
+          - java_free_slice_claim_without_receipt
+          - java_free_slice_receipt_slice_mismatch
+          - java_free_slice_unmeasured_stage
+          - java_free_slice_guard_not_installed
+          - java_free_slice_product_coverage_claimed
+          - java_free_slice_stage_outside_slice_counted
+          - java_free_slice_receipt_stale
+          - java_free_slice_java_calls_nonzero
+
 # Enforcement points that must keep existing. The rule reads these files as text;
 # it never executes them.
 source_markers:
   domain_validator:
     path: scripts/governor/domain/absorption_progress.py
-    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric]
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS]
   adapter_oracle:
     path: scripts/governor/adapters/absorption_progress_reader.py
-    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census]
+    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale]
   scorecard_contract:
     path: data/parse/absorption_progress.schema.yaml
     required_patterns: [initial_census, holdout-partition-610-531-79, preservation, threshold_policy, freeze_revision, tuned_after_scoring, reference_pins, prospective_regression_floor]

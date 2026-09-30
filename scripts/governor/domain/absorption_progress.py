@@ -74,6 +74,7 @@ import re
 from typing import Any, Optional
 
 __all__ = [
+    "JAVA_FREE_SLICE_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
     "THRESHOLD_DIRECTIONS",
     "comparability_key",
@@ -137,6 +138,26 @@ SCOPE_VIOLATION_LABELS = (
     "split_contract_missing",
     "eval_split_reused_for_tuning",
     "external_bytes_claimed",
+)
+
+#: The closed adapter-level vocabulary of the Java-free vertical slice half
+#: (M514/S03/T06). Literals on purpose (D492): the closed vocabulary is owned
+#: here, and the rule DATA restates it so a label the oracle can emit but that is
+#: not registered — or a registered label the oracle cannot emit — is a
+#: data/implementation mismatch rather than a silent finding. The adapter is the
+#: only layer that reads the receipt; it emits exactly these labels and nothing
+#: else, and none of them moves the product `java_independence` axis (D499).
+JAVA_FREE_SLICE_VIOLATION_LABELS = frozenset(
+    {
+        "java_free_slice_claim_without_receipt",
+        "java_free_slice_receipt_slice_mismatch",
+        "java_free_slice_unmeasured_stage",
+        "java_free_slice_guard_not_installed",
+        "java_free_slice_product_coverage_claimed",
+        "java_free_slice_stage_outside_slice_counted",
+        "java_free_slice_receipt_stale",
+        "java_free_slice_java_calls_nonzero",
+    }
 )
 
 

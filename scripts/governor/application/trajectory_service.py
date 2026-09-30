@@ -2775,6 +2775,20 @@ class TrajectoryService:
         record clean. The T01 schema is not restated: only the T04 rule keys are
         merged over it.
 
+        S03/T06 adds the Java-free vertical slice half. The `java_free_slice` rule
+        block names the slice declaration in `data/parse/layout_bakeoff.yaml` (the
+        ADR-077 §3 authority) and the receipt that evidences it, and the reader
+        resolves both by pointer — with the cascade stage ids and the pinned corpus
+        identities — into observations. The oracle then refuses a declared Java-free
+        slice whose receipt is absent, bound to different bytes, scoped to another
+        slice, or reporting an untyped/counted stage where the boundary says
+        "outside the slice", an observed zero with no guard provenance, and a
+        diagnostic slice re-labelled as product coverage (R141). This half does not
+        move the product `java_independence` axis (D499): it rides this check and
+        registers no dimension or severity of its own (D492). An unreadable
+        declaration is silence, not compliance, so a tree without the claim carrier
+        yields no finding here.
+
         Availability: if the governed scorecard does not exist yet, that is
         `not_measured` — silence, never zero and never compliance — unless the DATA
         declares it required. Absence of the DATA contract itself is silent, the
@@ -2910,6 +2924,14 @@ class TrajectoryService:
             # scorecard, and the derivation is recomputed here so the oracle can
             # compare it with the declared per-document projection.
             "population_census": reader.recompute_population_census(contract),
+            # S03/T06: the Java-free slice claim is declared in the layout-bakeoff
+            # DATA and evidenced by a separate receipt. Both are resolved by
+            # pointer here — never restated in the rule — so the pure oracle can
+            # refuse a claim whose receipt is absent, stale, scoped to another
+            # slice, or reports an untyped/counted stage where the boundary says
+            # "outside the slice". Absence of the claim carrier is silence, not
+            # compliance, so an unreadable declaration yields no finding here.
+            "java_free_slice": reader.read_java_free_slice(contract),
         }
 
         violations = absorption_progress_violations(scorecard, contract, observations)
