@@ -69,6 +69,7 @@ mod native_header_features;
 mod native_header_fields;
 mod native_header_sequence;
 mod native_personal_name;
+mod native_region_input;
 mod native_segmentation;
 mod native_table_sequence;
 mod native_visual;
@@ -383,6 +384,11 @@ pub use native_personal_name::{
     NativePersonalNameAmbiguous, NativePersonalNameMalformed, NativePersonalNameOutcome,
     NativePersonalNameParser, NativePersonalNameUnsupported, PersonalNameContext,
     RecognizedPersonalName,
+};
+pub use native_region_input::{
+    MAX_NATIVE_REGION_TOKENS, NATIVE_REGION_INPUT_SCHEMA_VERSION, NativeRegionAbsence,
+    NativeRegionCarrier, NativeRegionError, NativeRegionIdentity, NativeRegionRun,
+    NativeRegionToken, build_native_region_carrier,
 };
 pub use native_segmentation::{
     DocumentRegion, FULL_SEGMENTATION_REGION_COUNT, FULL_SEGMENTATION_SCHEMA_VERSION,

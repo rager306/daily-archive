@@ -2029,6 +2029,180 @@ fn native_segmentation_is_pure_and_quarantined_from_runtime_surfaces() {
     );
 }
 
+// ───── S04/T01: the native region carrier is lattice-bound and TEI-free ─────
+
+/// The S04 native region carrier surface: the additive join that turns the S03
+/// layout plane into ordered header/references token runs. The gate proves the
+/// module is a pure leaf whose only inputs are the provider-neutral layout
+/// types (`LayoutDocument`/`LayoutLattice`/`LexemeRow`/`FullSegmentationOutcome`)
+/// — no TEI envelope or span may be an input — and that it never leaks into the
+/// Java-authoritative parse composition.
+const NATIVE_REGION_INPUT_SURFACE: &str = "crates/da-parse/src/native_region_input.rs";
+
+/// Side-channel and TEI/Java coupling markers banned from the carrier's CODE
+/// (comments may document the prohibitions — the scanner strips line comments
+/// first). The module imports nothing but its typed leaves, `serde`, `sha2`,
+/// and `std`, so every hit is a real violation.
+const NATIVE_REGION_INPUT_FORBIDDEN: [&str; 33] = [
+    "TeiEnvelope",
+    "TeiLifter",
+    "TeiParseIr",
+    "TeiSpan",
+    "ParserPort",
+    "ParsedArticle",
+    "GraphStore",
+    "Samyama",
+    "import_eligible",
+    "promotion_state",
+    "std::env",
+    "std::fs",
+    "std::path",
+    "PathBuf",
+    "std::net",
+    "reqwest",
+    "std::process",
+    "Command::",
+    "std::time",
+    "SystemTime",
+    "Instant",
+    "std::thread",
+    "std::sync",
+    "tokio",
+    "tracing",
+    "log::",
+    "println!",
+    "eprintln!",
+    "rand",
+    "http://",
+    "https://",
+    "File::",
+    "var_os",
+];
+
+/// Parse-plane surfaces that must never reference the carrier: the runtime
+/// composition (`ParserPort` facade, `ScholarlyParser`, `TeiLifter`,
+/// `TeiParseIr`, the `ParsedArticle` projector, envelope/transport/backend) and
+/// the sibling crates. The carrier is a shadow input band, never a splice.
+const NATIVE_REGION_INPUT_COMPOSITION_SURFACES: [&str; 11] = [
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/projector.rs",
+    "crates/da-parse/src/lift.rs",
+    "crates/da-parse/src/ir.rs",
+    "crates/da-parse/src/envelope.rs",
+    "crates/da-parse/src/backend.rs",
+    "crates/da-parse/src/transport.rs",
+    "crates/da-ports/src/parser.rs",
+    "crates/da-application/src/lib.rs",
+    "crates/da-adapters/src/lib.rs",
+    "crates/da-cli/src/main.rs",
+];
+
+#[test]
+fn native_region_input_is_lattice_bound_and_tei_free() {
+    let text = read_text(NATIVE_REGION_INPUT_SURFACE);
+    assert!(
+        text.len() > 5_000,
+        "positive control failed: {NATIVE_REGION_INPUT_SURFACE} looks truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from([
+            "crate".to_string(),
+            "serde".to_string(),
+            "sha2".to_string(),
+            "std".to_string()
+        ]),
+        "region carrier may import only its typed layout leaves, serde, hashing, and formatting"
+    );
+    let hits = native_date_marker_hits(&text, &NATIVE_REGION_INPUT_FORBIDDEN);
+    assert!(
+        hits.is_empty(),
+        "native region carrier acquired TEI/Java coupling or a side effect:\n{}",
+        hits.join("\n")
+    );
+
+    // New symbols registered at the crate root.
+    for symbol in [
+        "pub struct NativeRegionCarrier",
+        "pub struct NativeRegionRun",
+        "pub struct NativeRegionToken",
+        "pub struct NativeRegionIdentity",
+        "pub enum NativeRegionAbsence",
+        "pub enum NativeRegionError",
+        "pub fn build_native_region_carrier",
+    ] {
+        assert!(text.contains(symbol), "region carrier must export {symbol}");
+    }
+    assert!(
+        text.contains("pub fn text("),
+        "the carrier token must expose a text() accessor"
+    );
+    assert!(
+        !text.contains("pub text:"),
+        "the carrier token text must stay private (redaction)"
+    );
+
+    // No carrier input may be a TEI envelope or span: the only inputs are the
+    // provider-neutral layout plane.
+    let signature = text
+        .split("pub fn build_native_region_carrier")
+        .nth(1)
+        .and_then(|rest| rest.split("->").next())
+        .unwrap_or_default();
+    for required in [
+        "&LayoutDocument",
+        "&LayoutLattice",
+        "&[LexemeRow]",
+        "&FullSegmentationOutcome",
+        "&[FullSemanticRegion]",
+    ] {
+        assert!(
+            signature.contains(required),
+            "build_native_region_carrier must accept {required}: {signature}"
+        );
+    }
+    for forbidden_input in ["TeiEnvelope", "TeiSpan"] {
+        assert!(
+            !signature.contains(forbidden_input),
+            "carrier input must not be {forbidden_input}"
+        );
+    }
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    assert!(lib.contains("mod native_region_input;"));
+    assert!(lib.contains("pub use native_region_input::"));
+
+    // Quarantine: the carrier never enters the Java-authoritative composition.
+    let mut leaked = Vec::new();
+    for rel in NATIVE_REGION_INPUT_COMPOSITION_SURFACES {
+        let code = s10_code_without_comments(&read_text(rel));
+        for marker in ["native_region_input", "NativeRegionCarrier"] {
+            if code.contains(marker) {
+                leaked.push(format!("{rel}: {marker}"));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "native region carrier escaped shadow quarantine:\n{}",
+        leaked.join("\n")
+    );
+}
+
+#[test]
+fn native_region_input_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "use samyama::GraphStore;\nfn f() { let _ = TeiEnvelope; }\n";
+    assert!(import_roots_of(synthetic).contains("samyama"));
+    assert!(!native_date_marker_hits(synthetic, &NATIVE_REGION_INPUT_FORBIDDEN).is_empty());
+    assert!(
+        native_date_marker_hits(
+            "// TeiEnvelope, TeiSpan and ParserPort are prose only\n",
+            &NATIVE_REGION_INPUT_FORBIDDEN
+        )
+        .is_empty()
+    );
+}
+
 #[test]
 fn s15_full_segmentation_quarantine_contract() {
     const COMPANION_MARKERS: [&str; 4] = [
