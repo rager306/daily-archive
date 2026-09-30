@@ -206,6 +206,15 @@ pub enum NativeFamilyReceiptError {
     ExclusionDuplicateDocument { document: String },
     /// A recovery row is missing the canonical field matrix.
     ExclusionFieldMatrix { document: String, field: String },
+    /// A row or field claims recovery without an independent attribution proof,
+    /// which this cut cannot produce (D502).
+    ExclusionFieldRecoveryUnattributed { document: String, field: String },
+    /// A `recognition_only` field carries no recognition evidence, or its
+    /// evidence contradicts the disposition.
+    ExclusionFieldRecognitionInconsistent { document: String, field: String },
+    /// A field's disposition requires a typed cause and carries none, or carries
+    /// one it must not.
+    ExclusionFieldCauseInconsistent { document: String, field: String },
     /// A recovery row's disposition contradicts its reason's field state.
     ExclusionDispositionMismatch {
         document: String,
@@ -428,6 +437,22 @@ impl fmt::Display for NativeFamilyReceiptError {
                 f,
                 "native family receipt: recovery row `{document}` is missing field `{field}` \
                  exactly once in canonical order"
+            ),
+            Self::ExclusionFieldRecoveryUnattributed { document, field } => write!(
+                f,
+                "native family receipt: recovery row `{document}` claims field `{field}` \
+                 recovered without an independent attribution proof, which atom recognition \
+                 cannot supply (D502)"
+            ),
+            Self::ExclusionFieldRecognitionInconsistent { document, field } => write!(
+                f,
+                "native family receipt: recovery row `{document}` field `{field}` carries \
+                 recognition evidence inconsistent with its disposition"
+            ),
+            Self::ExclusionFieldCauseInconsistent { document, field } => write!(
+                f,
+                "native family receipt: recovery row `{document}` field `{field}` carries a \
+                 typed cause inconsistent with its disposition"
             ),
             Self::ExclusionDispositionMismatch {
                 document,
@@ -1659,16 +1684,43 @@ impl RecoveryField {
             Self::Author => "author",
         }
     }
+
+    /// The native Header atom this field is measured by in this cut, when one
+    /// exists. `Title` has no native atom (the T02 band declares it out of
+    /// scope), so a title field can never carry recognition evidence.
+    pub const fn native_atom(self) -> Option<RecoveryFieldAtom> {
+        match self {
+            Self::Date => Some(RecoveryFieldAtom::Date),
+            Self::Author => Some(RecoveryFieldAtom::PersonalName),
+            Self::Title => None,
+        }
+    }
 }
 
 /// Typed per-field recovery state.
+///
+/// The vocabulary separates *recognizing a line* from *recovering a field*.
+/// Atom recognition is not field attribution (D502): without the header CRF
+/// decode (out of scope, D358) nothing binds a recognized line to a field, and
+/// every pure atom accepts lines that belong to other fields (a digit-leading
+/// date reads as an affiliation marker; a title reads as a personal name). So
+/// [`FieldDisposition::Recovered`] is **refused by the builder** in this cut —
+/// it stays a wire token so the vocabulary remains closed, but no producer may
+/// emit it — and a field whose atom recognized lines is reported as
+/// [`FieldDisposition::RecognitionOnly`], which is explicitly *not* a recovery.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FieldDisposition {
-    /// The header band produced at least one value for the field.
+    /// The field's value was recovered with an independent field attribution.
+    /// No producer in this cut can justify one (D502), so the builder refuses
+    /// it rather than let atom recognition masquerade as recovery.
     Recovered,
-    /// The band ran (or the region was an admitted-empty typed absence) and
-    /// produced no value. Never a silent zero.
+    /// The field's atom recognized at least one native Header line, but
+    /// recognition is not field attribution, so the field is **not** recovered.
+    /// The recognition is carried as diagnostic evidence only.
+    RecognitionOnly,
+    /// The field's atom recognized nothing, the region was an admitted typed
+    /// absence, or the band/pipeline refused. Always carries a typed cause.
     NotRecovered,
     /// The field has no native input class in this cut; e.g. the T02 header band
     /// has no Title atom, so a title cannot be produced from it.
@@ -1680,6 +1732,7 @@ impl FieldDisposition {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Recovered => "recovered",
+            Self::RecognitionOnly => "recognition_only",
             Self::NotRecovered => "not_recovered",
             Self::OutOfScope => "out_of_scope",
         }
@@ -1748,12 +1801,107 @@ impl ExclusionRefusalReason {
     }
 }
 
+/// The native header atom a recovery field is measured by. The receipt module
+/// carries its own closed vocabulary because it must compile in the default
+/// feature set, without `da-parse` (the band is `pdf-layout`-gated).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecoveryFieldAtom {
+    Date,
+    PersonalName,
+    Affiliation,
+    AffiliationLink,
+}
+
+impl RecoveryFieldAtom {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Date => "date",
+            Self::PersonalName => "personal_name",
+            Self::Affiliation => "affiliation",
+            Self::AffiliationLink => "affiliation_link",
+        }
+    }
+}
+
+/// Typed cause of a field's non-recovery. Every non-`Recovered`, non-`OutOfScope`
+/// field carries one; a `not_recovered` with no cause would be exactly the
+/// silent zero this receipt exists to forbid.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FieldNotRecoveredCause {
+    /// No native atom exists for this field in this cut, so it cannot be
+    /// recovered at all.
+    NoNativeAtom,
+    /// The field's atom recognized no line in the Header run.
+    NoRecognition,
+    /// The field's atom recognized lines, but recognition is not field
+    /// attribution (D502): the CRF decode that would bind a line to a field is
+    /// out of scope (D358), so recovery is not claimed. This is the
+    /// recognition-only state, reported honestly as non-recovery.
+    RecognitionWithoutFieldAttribution,
+    /// The Header region admitted no tokens: a typed absence, not a zero.
+    BandTypedAbsence,
+    /// The header band refused to execute.
+    BandRefused,
+    /// A native pipeline step before the band refused.
+    PipelineRefused,
+    /// The row could not be measured at all (a structural refusal).
+    StructuralRefusal,
+}
+
+impl FieldNotRecoveredCause {
+    /// Stable snake_case token.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::NoNativeAtom => "no_native_atom",
+            Self::NoRecognition => "no_recognition",
+            Self::RecognitionWithoutFieldAttribution => "recognition_without_field_attribution",
+            Self::BandTypedAbsence => "band_typed_absence",
+            Self::BandRefused => "band_refused",
+            Self::PipelineRefused => "pipeline_refused",
+            Self::StructuralRefusal => "structural_refusal",
+        }
+    }
+}
+
+/// Diagnostic, redaction-safe recognition evidence for one field. It records
+/// what the field's atom recognized; it is **never** a recovery claim (D502).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FieldRecognition {
+    /// The atom that ran for this field.
+    pub atom: RecoveryFieldAtom,
+    /// Number of native Header lines the atom recognized.
+    pub recognized_count: u64,
+    /// sha256 of the normalized recognized-line text (redaction-safe). The text
+    /// itself never reaches the artifact.
+    pub evidence_digest: String,
+    /// The other atoms that recognized at least one line in the same Header
+    /// run: the D502 ambiguity (each pure atom accepts other fields' lines) made
+    /// explicit for this field. Never a recovery proof.
+    pub co_firing_atoms: Vec<RecoveryFieldAtom>,
+    /// The co-firing atoms that recognized exactly the same normalized line set
+    /// (equal evidence digest). A non-empty list is *sufficient* evidence that
+    /// the atom's recognition is not field-specific; an empty list is not proof
+    /// of attribution, because digest equality is sufficient, not necessary, for
+    /// line-set overlap.
+    pub same_line_set_atoms: Vec<RecoveryFieldAtom>,
+}
+
 /// One header field's typed recovery state.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FieldRecovery {
     pub field: RecoveryField,
     pub disposition: FieldDisposition,
+    /// The typed cause of a non-recovery. `Some` for `RecognitionOnly` and
+    /// `NotRecovered`; `None` for `Recovered`/`OutOfScope`.
+    pub cause: Option<FieldNotRecoveredCause>,
+    /// Diagnostic recognition evidence, present exactly when the field's atom
+    /// recognized at least one line.
+    pub recognition: Option<FieldRecognition>,
 }
 
 /// One pinned exclusion and the native header recovery observed for it.
@@ -1921,6 +2069,139 @@ fn recompute_aggregates(rows: &[ExclusionRecoveryRow]) -> Vec<RecoveryAggregate>
             aggregate
         })
         .collect()
+}
+
+/// Validate the negative cross-recognition control attached to a field's
+/// recognition evidence.
+///
+/// The control is what makes the diagnostic evidence trustworthy rather than
+/// decorative: the evidence must be about the field's *own* atom, and the two
+/// atom lists must be well-formed (no self-reference, no repeats, and the
+/// same-line-set subset drawn from the co-firing set). A malformed control is
+/// refused, so a hand-edited artifact cannot smuggle a recovery proof in
+/// through the diagnostic channel (D502).
+fn require_recognition_control(
+    row: &ExclusionRecoveryRow,
+    field: RecoveryField,
+    recognition: &FieldRecognition,
+) -> Result<(), NativeFamilyReceiptError> {
+    let inconsistent = || NativeFamilyReceiptError::ExclusionFieldRecognitionInconsistent {
+        document: row.document_id.clone(),
+        field: field.as_str().to_owned(),
+    };
+    if field.native_atom() != Some(recognition.atom) {
+        return Err(inconsistent());
+    }
+    let well_formed = |atoms: &[RecoveryFieldAtom]| {
+        let mut seen = std::collections::BTreeSet::new();
+        atoms
+            .iter()
+            .all(|atom| *atom != recognition.atom && seen.insert(*atom))
+    };
+    if !well_formed(&recognition.co_firing_atoms) || !well_formed(&recognition.same_line_set_atoms)
+    {
+        return Err(inconsistent());
+    }
+    let co_firing: std::collections::BTreeSet<RecoveryFieldAtom> =
+        recognition.co_firing_atoms.iter().copied().collect();
+    if !recognition
+        .same_line_set_atoms
+        .iter()
+        .all(|atom| co_firing.contains(atom))
+    {
+        return Err(inconsistent());
+    }
+    Ok(())
+}
+
+/// Validate one field's disposition against its typed cause and its recognition
+/// evidence.
+///
+/// Recognition is not attribution (D502), so a `recovered` field is refused
+/// outright (no attribution proof exists in this cut), and a
+/// `recognition_only` field must carry real recognition evidence while
+/// remaining an explicit non-recovery. A `not_recovered` field carries a typed
+/// cause, never a silent zero, and an `out_of_scope` field carries no
+/// recognition and names the absent atom as its cause.
+fn require_recovery_field(
+    row: &ExclusionRecoveryRow,
+    entry: &FieldRecovery,
+) -> Result<(), NativeFamilyReceiptError> {
+    let document = row.document_id.clone();
+    let field = entry.field.as_str().to_owned();
+    match entry.disposition {
+        FieldDisposition::Recovered => {
+            Err(NativeFamilyReceiptError::ExclusionFieldRecoveryUnattributed { document, field })
+        }
+        FieldDisposition::RecognitionOnly => {
+            if entry.cause != Some(FieldNotRecoveredCause::RecognitionWithoutFieldAttribution) {
+                return Err(NativeFamilyReceiptError::ExclusionFieldCauseInconsistent {
+                    document,
+                    field,
+                });
+            }
+            match &entry.recognition {
+                Some(recognition) if recognition.recognized_count > 0 => {
+                    require_recognition_control(row, entry.field, recognition)?;
+                    require_digest(
+                        &format!(
+                            "recovery[{}].fields[{}].recognition.evidence_digest",
+                            row.document_id,
+                            entry.field.as_str()
+                        ),
+                        &recognition.evidence_digest,
+                    )
+                }
+                _ => Err(
+                    NativeFamilyReceiptError::ExclusionFieldRecognitionInconsistent {
+                        document,
+                        field,
+                    },
+                ),
+            }
+        }
+        FieldDisposition::NotRecovered => {
+            match entry.cause {
+                Some(FieldNotRecoveredCause::RecognitionWithoutFieldAttribution) | None => {
+                    return Err(NativeFamilyReceiptError::ExclusionFieldCauseInconsistent {
+                        document,
+                        field,
+                    });
+                }
+                Some(_) => {}
+            }
+            if entry
+                .recognition
+                .as_ref()
+                .is_some_and(|recognition| recognition.recognized_count > 0)
+            {
+                return Err(
+                    NativeFamilyReceiptError::ExclusionFieldRecognitionInconsistent {
+                        document,
+                        field,
+                    },
+                );
+            }
+            Ok(())
+        }
+        FieldDisposition::OutOfScope => {
+            if entry.recognition.is_some() {
+                return Err(
+                    NativeFamilyReceiptError::ExclusionFieldRecognitionInconsistent {
+                        document,
+                        field,
+                    },
+                );
+            }
+            if entry.cause != Some(FieldNotRecoveredCause::NoNativeAtom) {
+                return Err(NativeFamilyReceiptError::ExclusionFieldCauseInconsistent {
+                    document,
+                    field,
+                });
+            }
+            Ok(())
+        }
+    }
 }
 
 /// Build the exclusion-recovery receipt, refusing anything the manifest, the
@@ -2096,6 +2377,12 @@ pub fn build_exclusion_recovery_receipt(
                     field: field.as_str().to_owned(),
                 });
             }
+            let entry = row
+                .fields
+                .iter()
+                .find(|entry| entry.field == field)
+                .expect("the field matrix was checked above");
+            require_recovery_field(row, entry)?;
         }
         match row.disposition {
             RecoveryDisposition::TypedRefusal => {
@@ -2120,20 +2407,56 @@ pub fn build_exclusion_recovery_receipt(
             .find(|entry| entry.field == reason_field)
             .map(|entry| entry.disposition)
             .expect("the field matrix was checked above");
-        let expected = match row.disposition {
-            RecoveryDisposition::Recovered => Some(FieldDisposition::Recovered),
-            RecoveryDisposition::NotRecovered => Some(FieldDisposition::NotRecovered),
-            RecoveryDisposition::OutOfScope => Some(FieldDisposition::OutOfScope),
-            RecoveryDisposition::TypedRefusal => None,
-        };
-        if let Some(expected) = expected
-            && observed != expected
-        {
-            return Err(NativeFamilyReceiptError::ExclusionDispositionMismatch {
-                document: row.document_id.clone(),
-                expected: expected.as_str().to_owned(),
-                found: observed.as_str().to_owned(),
-            });
+        match row.disposition {
+            // A row can only be `recovered` if its reason field is attributed,
+            // and no field can be attributed in this cut (D502). Refuse the
+            // claim rather than let atom recognition stand in for attribution.
+            RecoveryDisposition::Recovered => {
+                return Err(
+                    NativeFamilyReceiptError::ExclusionFieldRecoveryUnattributed {
+                        document: row.document_id.clone(),
+                        field: reason_field.as_str().to_owned(),
+                    },
+                );
+            }
+            RecoveryDisposition::NotRecovered => {
+                if !matches!(
+                    observed,
+                    FieldDisposition::NotRecovered | FieldDisposition::RecognitionOnly
+                ) {
+                    return Err(NativeFamilyReceiptError::ExclusionDispositionMismatch {
+                        document: row.document_id.clone(),
+                        expected: FieldDisposition::NotRecovered.as_str().to_owned(),
+                        found: observed.as_str().to_owned(),
+                    });
+                }
+            }
+            RecoveryDisposition::OutOfScope => {
+                if observed != FieldDisposition::OutOfScope {
+                    return Err(NativeFamilyReceiptError::ExclusionDispositionMismatch {
+                        document: row.document_id.clone(),
+                        expected: FieldDisposition::OutOfScope.as_str().to_owned(),
+                        found: observed.as_str().to_owned(),
+                    });
+                }
+            }
+            RecoveryDisposition::TypedRefusal => {
+                // A refused band produced no recognition, so a refusal row
+                // cannot carry a field the band would have had to attribute.
+                if let Some(entry) = row.fields.iter().find(|entry| {
+                    matches!(
+                        entry.disposition,
+                        FieldDisposition::RecognitionOnly | FieldDisposition::Recovered
+                    )
+                }) {
+                    return Err(
+                        NativeFamilyReceiptError::ExclusionFieldRecognitionInconsistent {
+                            document: row.document_id.clone(),
+                            field: entry.field.as_str().to_owned(),
+                        },
+                    );
+                }
+            }
         }
     }
 

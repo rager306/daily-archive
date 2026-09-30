@@ -31,6 +31,21 @@
 //! (its atoms are Date / PersonalName / Affiliation / AffiliationLink), and
 //! inventing a title heuristic would be free invent (D099).
 //!
+//! ## Recognition is not attribution (D502)
+//!
+//! The header band reports, per atom, how many native lines it recognized and a
+//! redaction-safe digest of their normalized text — never a field assignment:
+//! the CRF decode that would bind a line to a field is out of scope (D358), and
+//! every pure atom accepts lines that belong to other fields. So a positive
+//! atom count is **not** a recovered field. A field whose atom recognized lines
+//! is reported as `recognition_only` with the typed cause
+//! `recognition_without_field_attribution` and the diagnostic
+//! `FieldRecognition` evidence, and its row's disposition is `not_recovered`. The
+//! negative cross-recognition control rides on that evidence (`co_firing_atoms`
+//! and `same_line_set_atoms`), but it is diagnostic only: the receipt never
+//! claims a recovered field, so no aggregate `recovered` count can be inflated
+//! by atom recognition.
+//!
 //! A full run over all 79 documents is long, so it is meant to be launched
 //! detached. `--smoke N` runs a bounded, reason-spread prefix and never writes
 //! the repository artifact.
@@ -42,10 +57,11 @@ use da_cli::java_free_slice::{
 use da_cli::native_family_receipt::{
     AffiliationReference, CLAIM_SCOPE_DIAGNOSTIC_ONLY, EXCLUSION_BASELINE_REL, EXCLUSION_PROBE_REL,
     EXCLUSION_REASON_ORDER, EXCLUSION_RECOVERY_ARTIFACT_REL, ExclusionReason, ExclusionRecoveryRow,
-    ExclusionRefusalReason, FieldDisposition, FieldRecovery, GuardProvenance, HOLDOUT_MANIFEST_REL,
-    IntegrityFailure, PopulationId, PopulationKind, RecoveryDisposition, RecoveryField,
-    RecoveryMode, RecoveryPopulation, RefusalReason, assert_redacted,
-    build_exclusion_recovery_receipt, sha256_prefixed,
+    ExclusionRefusalReason, FieldDisposition, FieldNotRecoveredCause, FieldRecognition,
+    FieldRecovery, GuardProvenance, HOLDOUT_MANIFEST_REL, IntegrityFailure, PopulationId,
+    PopulationKind, RecoveryDisposition, RecoveryField, RecoveryFieldAtom, RecoveryMode,
+    RecoveryPopulation, RefusalReason, assert_redacted, build_exclusion_recovery_receipt,
+    sha256_prefixed,
 };
 use da_parse::{
     FullSemanticRegion, GrobidHttpBackend, GrobidProfile, HeaderAtom, HeadingRegionConfig,
@@ -316,21 +332,100 @@ fn header_refusal(error: &NativeHeaderInputError) -> RefusalReason {
     }
 }
 
-fn header_atom_count(outcome: &NativeHeaderFromInputOutcome, atom: HeaderAtom) -> u64 {
-    outcome
-        .atoms
+/// The closed atom order the receipt's diagnostics are reported in.
+const RECOVERY_ATOM_ORDER: [RecoveryFieldAtom; 4] = [
+    RecoveryFieldAtom::Date,
+    RecoveryFieldAtom::PersonalName,
+    RecoveryFieldAtom::Affiliation,
+    RecoveryFieldAtom::AffiliationLink,
+];
+
+fn recovery_field_atom(atom: HeaderAtom) -> RecoveryFieldAtom {
+    match atom {
+        HeaderAtom::Date => RecoveryFieldAtom::Date,
+        HeaderAtom::PersonalName => RecoveryFieldAtom::PersonalName,
+        HeaderAtom::Affiliation => RecoveryFieldAtom::Affiliation,
+        HeaderAtom::AffiliationLink => RecoveryFieldAtom::AffiliationLink,
+    }
+}
+
+/// One atom's recognition facts from a single header run.
+struct HeaderRunFacts {
+    atom: RecoveryFieldAtom,
+    recognized_count: u64,
+    evidence_digest: String,
+}
+
+/// Capture every atom's recognition facts in canonical order. The band reports
+/// a count and a redaction-safe digest per atom and *never* a field
+/// attribution (D502), so these facts can only describe recognition.
+fn header_run_facts(outcome: &NativeHeaderFromInputOutcome) -> Vec<HeaderRunFacts> {
+    RECOVERY_ATOM_ORDER
         .iter()
-        .find(|entry| entry.atom == atom)
-        .map(|entry| entry.recognized_count as u64)
-        .unwrap_or(0)
+        .map(|known| {
+            outcome
+                .atoms
+                .iter()
+                .find(|entry| recovery_field_atom(entry.atom) == *known)
+                .map(|entry| HeaderRunFacts {
+                    atom: *known,
+                    recognized_count: entry.recognized_count as u64,
+                    evidence_digest: entry.evidence_digest.clone(),
+                })
+                .unwrap_or_else(|| HeaderRunFacts {
+                    atom: *known,
+                    recognized_count: 0,
+                    evidence_digest: String::new(),
+                })
+        })
+        .collect()
+}
+
+/// Diagnostic recognition evidence for one field, or `None` when its atom
+/// recognized nothing.
+///
+/// The negative cross-recognition control rides here: `co_firing_atoms` lists
+/// the other atoms that recognized something in the same run, and
+/// `same_line_set_atoms` the co-firing atoms that recognized exactly the same
+/// normalized line set. A non-empty `same_line_set_atoms` is sufficient
+/// evidence that the atom's recognition is not field-specific; it is never a
+/// recovery proof.
+fn recognition_evidence(
+    facts: &[HeaderRunFacts],
+    target: RecoveryFieldAtom,
+) -> Option<FieldRecognition> {
+    let entry = facts.iter().find(|entry| entry.atom == target)?;
+    if entry.recognized_count == 0 {
+        return None;
+    }
+    let co_firing_atoms: Vec<RecoveryFieldAtom> = facts
+        .iter()
+        .filter(|other| other.atom != target && other.recognized_count > 0)
+        .map(|other| other.atom)
+        .collect();
+    let same_line_set_atoms: Vec<RecoveryFieldAtom> = facts
+        .iter()
+        .filter(|other| {
+            other.atom != target
+                && other.recognized_count > 0
+                && other.evidence_digest == entry.evidence_digest
+        })
+        .map(|other| other.atom)
+        .collect();
+    Some(FieldRecognition {
+        atom: target,
+        recognized_count: entry.recognized_count,
+        evidence_digest: entry.evidence_digest.clone(),
+        co_firing_atoms,
+        same_line_set_atoms,
+    })
 }
 
 /// What the native header band did for one document.
 enum BandOutcome {
-    /// The band executed and reported the per-atom counts.
+    /// The band executed and reported the per-atom recognition facts.
     Observed {
-        date_count: u64,
-        author_count: u64,
+        facts: Vec<HeaderRunFacts>,
         pipeline_digest: String,
     },
     /// The Header region admitted no tokens: a typed absence, not a zero.
@@ -407,8 +502,7 @@ fn measure_header(bytes: &[u8], document_id: &str) -> BandOutcome {
 
     match build_native_header_input(&carrier, &lexicon()) {
         Ok(outcome) => BandOutcome::Observed {
-            date_count: header_atom_count(&outcome, HeaderAtom::Date),
-            author_count: header_atom_count(&outcome, HeaderAtom::PersonalName),
+            facts: header_run_facts(&outcome),
             pipeline_digest,
         },
         Err(NativeHeaderInputError::NoAdmittedTokens { .. }) => {
@@ -449,22 +543,71 @@ fn pipeline_digest(
 
 // ───────────────────────────── measurement ─────────────────────────────
 
-/// The header fields a row carries. Title is always `out_of_scope`: the T02
-/// band has no Title atom, so a title cannot be produced from it.
-fn field_matrix(date: FieldDisposition, author: FieldDisposition) -> Vec<FieldRecovery> {
+/// The field matrix for a band that produced a value.
+///
+/// A field whose atom recognized lines is `recognition_only`, never
+/// `recovered`: atom recognition is not field attribution (D502), so the run
+/// reports the recognition honestly and does not claim the field. Title is
+/// always `out_of_scope` because the T02 band has no Title atom.
+fn observed_field_matrix(facts: &[HeaderRunFacts]) -> Vec<FieldRecovery> {
     vec![
-        FieldRecovery {
-            field: RecoveryField::Date,
-            disposition: date,
+        recognition_field(RecoveryField::Date, RecoveryFieldAtom::Date, facts),
+        title_field(),
+        recognition_field(
+            RecoveryField::Author,
+            RecoveryFieldAtom::PersonalName,
+            facts,
+        ),
+    ]
+}
+
+/// A field whose atom ran: `recognition_only` when it recognized lines, and a
+/// typed `not_recovered`/`no_recognition` otherwise. Never `recovered`.
+fn recognition_field(
+    field: RecoveryField,
+    atom: RecoveryFieldAtom,
+    facts: &[HeaderRunFacts],
+) -> FieldRecovery {
+    match recognition_evidence(facts, atom) {
+        Some(recognition) => FieldRecovery {
+            field,
+            disposition: FieldDisposition::RecognitionOnly,
+            cause: Some(FieldNotRecoveredCause::RecognitionWithoutFieldAttribution),
+            recognition: Some(recognition),
         },
-        FieldRecovery {
-            field: RecoveryField::Title,
-            disposition: FieldDisposition::OutOfScope,
+        None => FieldRecovery {
+            field,
+            disposition: FieldDisposition::NotRecovered,
+            cause: Some(FieldNotRecoveredCause::NoRecognition),
+            recognition: None,
         },
-        FieldRecovery {
-            field: RecoveryField::Author,
-            disposition: author,
-        },
+    }
+}
+
+/// Title has no native atom in this cut, so it is `out_of_scope`.
+fn title_field() -> FieldRecovery {
+    FieldRecovery {
+        field: RecoveryField::Title,
+        disposition: FieldDisposition::OutOfScope,
+        cause: Some(FieldNotRecoveredCause::NoNativeAtom),
+        recognition: None,
+    }
+}
+
+/// The field matrix for a row whose band never produced a value: every
+/// attributed field is `not_recovered` with the typed cause, and title stays
+/// `out_of_scope`.
+fn refusal_field_matrix(cause: FieldNotRecoveredCause) -> Vec<FieldRecovery> {
+    let not_recovered = |field: RecoveryField| FieldRecovery {
+        field,
+        disposition: FieldDisposition::NotRecovered,
+        cause: Some(cause),
+        recognition: None,
+    };
+    vec![
+        not_recovered(RecoveryField::Date),
+        title_field(),
+        not_recovered(RecoveryField::Author),
     ]
 }
 
@@ -474,9 +617,14 @@ fn disposition_for(reason: ExclusionReason, fields: &[FieldRecovery]) -> Recover
         .find(|entry| entry.field == reason.field())
         .map(|entry| entry.disposition)
     {
-        Some(FieldDisposition::Recovered) => RecoveryDisposition::Recovered,
-        Some(FieldDisposition::NotRecovered) => RecoveryDisposition::NotRecovered,
+        // `recognition_only` is explicitly not a recovery.
+        Some(FieldDisposition::RecognitionOnly) | Some(FieldDisposition::NotRecovered) => {
+            RecoveryDisposition::NotRecovered
+        }
         Some(FieldDisposition::OutOfScope) => RecoveryDisposition::OutOfScope,
+        // No field can carry `recovered` in this cut, so the builder would
+        // refuse this mapping if it were ever reached.
+        Some(FieldDisposition::Recovered) => RecoveryDisposition::Recovered,
         None => RecoveryDisposition::NotRecovered,
     }
 }
@@ -505,10 +653,7 @@ impl Outcome {
                 pdf_size_bytes: manifest.map(|entry| entry.size_bytes),
                 pipeline_digest: None,
                 disposition: RecoveryDisposition::TypedRefusal,
-                fields: field_matrix(
-                    FieldDisposition::NotRecovered,
-                    FieldDisposition::NotRecovered,
-                ),
+                fields: refusal_field_matrix(FieldNotRecoveredCause::StructuralRefusal),
                 band_typed_absence: false,
                 band_refusal: None,
                 refusal: Some(code),
@@ -535,10 +680,7 @@ impl Outcome {
                 pdf_size_bytes: entry.map(|entry| entry.size_bytes),
                 pipeline_digest: None,
                 disposition: RecoveryDisposition::TypedRefusal,
-                fields: field_matrix(
-                    FieldDisposition::NotRecovered,
-                    FieldDisposition::NotRecovered,
-                ),
+                fields: refusal_field_matrix(FieldNotRecoveredCause::BandRefused),
                 band_typed_absence: false,
                 band_refusal: Some(RefusalReason::DocumentTimeout),
                 refusal: None,
@@ -579,29 +721,15 @@ fn process_target(root: &Path, entry: Option<&ManifestArticle>, spec: &TargetSpe
     let (fields, disposition, band_typed_absence, band_refusal, pipeline_digest) =
         match measure_header(&bytes, &spec.document_id) {
             BandOutcome::Observed {
-                date_count,
-                author_count,
+                facts,
                 pipeline_digest,
             } => {
-                let date = if date_count > 0 {
-                    FieldDisposition::Recovered
-                } else {
-                    FieldDisposition::NotRecovered
-                };
-                let author = if author_count > 0 {
-                    FieldDisposition::Recovered
-                } else {
-                    FieldDisposition::NotRecovered
-                };
-                let fields = field_matrix(date, author);
+                let fields = observed_field_matrix(&facts);
                 let disposition = disposition_for(spec.reason, &fields);
                 (fields, disposition, false, None, Some(pipeline_digest))
             }
             BandOutcome::TypedAbsence { pipeline_digest } => {
-                let fields = field_matrix(
-                    FieldDisposition::NotRecovered,
-                    FieldDisposition::NotRecovered,
-                );
+                let fields = refusal_field_matrix(FieldNotRecoveredCause::BandTypedAbsence);
                 let disposition = disposition_for(spec.reason, &fields);
                 (fields, disposition, true, None, Some(pipeline_digest))
             }
@@ -609,10 +737,12 @@ fn process_target(root: &Path, entry: Option<&ManifestArticle>, spec: &TargetSpe
                 reason,
                 pipeline_digest,
             } => {
-                let fields = field_matrix(
-                    FieldDisposition::NotRecovered,
-                    FieldDisposition::NotRecovered,
-                );
+                let cause = if reason == RefusalReason::PipelineRefused {
+                    FieldNotRecoveredCause::PipelineRefused
+                } else {
+                    FieldNotRecoveredCause::BandRefused
+                };
+                let fields = refusal_field_matrix(cause);
                 (
                     fields,
                     RecoveryDisposition::TypedRefusal,
