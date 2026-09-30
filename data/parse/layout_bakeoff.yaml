@@ -167,3 +167,102 @@ cpu_smp_candidate:
     promoted: forbidden
     auto_promote: forbidden
     rollback_target: java-grobid-http@0.9.0-crf
+
+# S03/T03 (M514-1lss2s): additive declaration of the Java-free vertical slice.
+# ADR-077 §3 binds the slice boundary HERE — this block is the single DATA
+# source of the boundary, not a second contract file. Stage ids are resolved by
+# path + pointer from `data/parse/grobid_compatibility.yaml#defaults.cascade_stages`
+# and document identities are resolved by pointer from `corpus` above, so this
+# block never restates either list.
+java_free_vertical_slice:
+  schema_version: java-free-vertical-slice.v1
+  slice_id: pdf-layout-p1-p2
+  adr_ref: ADR-077
+  requirement_ids: [R140, R123, R124]
+  claim_scope: diagnostic_only
+  product_coverage_effect: none
+  # Corpus identity is read by pointer; the pinned document ids / sha256 stay in
+  # `corpus.documents` only and are never copied into this block.
+  corpus_binding:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: corpus.documents
+    document_count: 3
+    identity_rule: exact_document_id_and_sha256
+  # Stage ids resolve against the existing cascade DATA; names are read by
+  # pointer, never copied here.
+  stage_id_source:
+    manifest: data/parse/grobid_compatibility.yaml
+    pointer: defaults.cascade_stages
+  # P0 is the identity/profile admission point where the cascade is admitted.
+  # It is neither an in-slice lane nor a counted out-of-slice stage, so it is
+  # classified explicitly here (with its own name pointer) rather than silently
+  # dropped from the stage matrix. Without this, no stage may go unclassified.
+  identity_admission_stage:
+    stage_id: P0
+    name_pointer: defaults.cascade_stages.P0.grobid
+    disposition: boundary_admission_not_counted
+  stages_in_slice:
+    - stage_id: P1
+      name_pointer: defaults.cascade_stages.P1.grobid
+      java_required: false
+      disposition: observed_zero_under_guard
+    - stage_id: P2
+      name_pointer: defaults.cascade_stages.P2.grobid
+      java_required: false
+      disposition: observed_zero_under_guard
+  lanes_in_slice:
+    - lane_id: pdf_inspector_positioned
+      java_required: false
+    - lane_id: pdf_inspector_positioned_xy_cut
+      java_required: false
+  # Closed vocabulary: every out-of-slice stage names exactly one reason.
+  out_of_slice_reason_vocabulary:
+    - java_authority
+    - visual_heads_not_measured
+    - java_tei_coordinates
+    - profile_dependent_consolidation
+    - java_tei_lift
+  # P3..P9 are outside the slice and carry a typed reason, never a zero.
+  # The union of these ids, the in-slice ids and `identity_admission_stage`
+  # must equal the whole cascade stage set — no stage is left unclassified.
+  stages_out_of_slice:
+    - stage_id: P3
+      name_pointer: defaults.cascade_stages.P3.grobid
+      reason: java_authority
+      java_required: true
+    - stage_id: P4
+      name_pointer: defaults.cascade_stages.P4.grobid
+      reason: java_authority
+      java_required: true
+    - stage_id: P5
+      name_pointer: defaults.cascade_stages.P5.grobid
+      reason: java_authority
+      java_required: true
+    - stage_id: P6
+      name_pointer: defaults.cascade_stages.P6.grobid
+      reason: visual_heads_not_measured
+      java_required: true
+    - stage_id: P7
+      name_pointer: defaults.cascade_stages.P7.grobid
+      reason: java_tei_coordinates
+      java_required: true
+    - stage_id: P8
+      name_pointer: defaults.cascade_stages.P8.grobid
+      reason: profile_dependent_consolidation
+      java_required: true
+    - stage_id: P9
+      name_pointer: defaults.cascade_stages.P9.grobid
+      reason: java_tei_lift
+      java_required: true
+  # This block is the sole source of the slice boundary.
+  authority:
+    declaration_manifest: data/parse/layout_bakeoff.yaml
+    declaration_pointer: java_free_vertical_slice
+    sole_source: true
+    second_contract_file: forbidden
+  locks:
+    deployed: false
+    import_eligible: false
+    auto_promote: forbidden
+    production_route: forbidden
+    graph_write: forbidden

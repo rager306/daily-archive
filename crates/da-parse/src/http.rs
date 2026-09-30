@@ -35,6 +35,7 @@
 
 use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::envelope::{TeiEnvelope, TeiIdentity};
+use crate::java_invocation::{JavaInvocationCounter, JavaInvocationObservation};
 use crate::profile::GrobidProfile;
 use crate::transport::{FailurePhase, LimitKind, ParseBackendFailure, ParseEndpoint, RetryAfter};
 use async_trait::async_trait;
@@ -176,6 +177,7 @@ pub struct GrobidHttpBackend {
     profile: GrobidProfile,
     limits: ByteLimits,
     backend_version: Option<String>,
+    invocation_observer: Option<JavaInvocationCounter>,
 }
 
 impl GrobidHttpBackend {
@@ -188,6 +190,7 @@ impl GrobidHttpBackend {
             profile: GrobidProfile::rich(),
             limits: ByteLimits::default(),
             backend_version: None,
+            invocation_observer: None,
         }
     }
 
@@ -252,6 +255,35 @@ impl GrobidHttpBackend {
             self.backend_version = Some(trimmed.to_string());
         }
         self
+    }
+
+    /// Install a guard that counts Java consult attempts on this seam (R140).
+    ///
+    /// Exactly one attempt is recorded as the first statement of
+    /// [`ParseBackend::fetch_tei`] — before any wire bytes exist — so an
+    /// unreachable endpoint still reports `Observed(> 0)`. The handle is
+    /// shared with the caller, so the same counter observes the seam and is
+    /// read back after a run.
+    ///
+    /// Transport tuning only: the observer is never an input to
+    /// [`Self::identity`] and never a request field, so installing one cannot
+    /// rotate a cache key. Unset by default, in which case the seam reports
+    /// the typed [`JavaInvocationObservation::NotObserved`] rather than a
+    /// fabricated zero.
+    pub fn with_invocation_observer(mut self, observer: JavaInvocationCounter) -> Self {
+        self.invocation_observer = Some(observer);
+        self
+    }
+
+    /// The seam's Java consult observation: `NotObserved` when no observer was
+    /// installed, otherwise the installed guard's `Observed { attempts }`.
+    ///
+    /// Diagnostics/evidence only — never part of [`Self::identity`].
+    pub fn java_invocation_observation(&self) -> JavaInvocationObservation {
+        match &self.invocation_observer {
+            Some(observer) => observer.observation(),
+            None => JavaInvocationObservation::NotObserved,
+        }
     }
 
     /// Exact backend/profile identity stamped on every envelope. Deliberately
@@ -746,6 +778,13 @@ impl ParseBackend for GrobidHttpBackend {
         &self,
         request: ParseBackendRequest,
     ) -> Result<TeiEnvelope, ParseBackendFailure> {
+        // R140: record exactly one Java consult attempt per `fetch_tei`, BEFORE
+        // any wire bytes exist, so an unreachable endpoint is `Observed(> 0)`
+        // rather than an unobservable zero. Transport tuning only — this never
+        // enters `Self::identity`.
+        if let Some(observer) = &self.invocation_observer {
+            observer.observe_attempt();
+        }
         let paper_id = request.paper_id().to_string();
         // One closed operation per fetch_tei, routed ONLY through the static
         // closed endpoint mapping (no caller-controlled route or URL).

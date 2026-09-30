@@ -36,6 +36,7 @@ mod debug_tape;
 mod envelope;
 mod http;
 mod ir;
+mod java_invocation;
 mod layout;
 mod layout_lattice;
 mod lift;
@@ -137,6 +138,7 @@ pub use http::{
     grobid_model_fingerprint,
 };
 pub use ir::TeiParseIr;
+pub use java_invocation::{JavaInvocationCounter, JavaInvocationObservation};
 pub use layout::{
     LAYOUT_SCHEMA_VERSION, LayoutBBox, LayoutDocument, LayoutError, LayoutPage, LayoutProvider,
     LayoutSpan, LayoutSpanAbsence, LayoutStyleHints, LayoutToken, LayoutTokenKind,

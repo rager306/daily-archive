@@ -543,3 +543,432 @@ fn comparison_ledger_owns_the_same_smp_contract_without_route_promotion() {
         );
     }
 }
+
+// ---------------------------------------------------------------------------
+// S03/T03 (M514-1lss2s): the Java-free vertical slice declaration (ADR-077 §3)
+// ---------------------------------------------------------------------------
+
+/// The existing cascade DATA the slice stage ids resolve against. This carrier
+/// is read only — the declaration must not restate it.
+const COMPATIBILITY: &str = "data/parse/grobid_compatibility.yaml";
+
+/// Resolve a dotted `a.b.c` pointer against a YAML value.
+fn dotted<'a>(value: &'a Value, pointer: &str) -> Option<&'a Value> {
+    let mut current = value;
+    for key in pointer.split('.') {
+        let Value::Mapping(map) = current else {
+            return None;
+        };
+        current = map
+            .iter()
+            .find(|(candidate, _)| candidate.as_str() == Some(key))
+            .map(|(_, child)| child)?;
+    }
+    Some(current)
+}
+
+fn stage_id_set(value: &Value) -> BTreeSet<String> {
+    let mut ids = BTreeSet::new();
+    if let Some(stages) = value.as_sequence() {
+        for stage in stages {
+            if let Some(id) = stage["stage_id"].as_str() {
+                ids.insert(id.to_string());
+            }
+        }
+    }
+    ids
+}
+
+/// Fail-closed validation of the additive `java_free_vertical_slice` block.
+/// Every defect is a named, typed error — nothing is silently skipped.
+fn java_free_slice_errs(manifest: &Value, compatibility: &Value) -> Vec<String> {
+    let mut errs = Vec::new();
+    let slice = &manifest["java_free_vertical_slice"];
+    if slice.is_null() {
+        return vec!["[java-free-slice-missing] declaration block absent".to_string()];
+    }
+
+    for (key, expected) in [
+        ("schema_version", "java-free-vertical-slice.v1"),
+        ("slice_id", "pdf-layout-p1-p2"),
+        ("adr_ref", "ADR-077"),
+        ("claim_scope", "diagnostic_only"),
+        ("product_coverage_effect", "none"),
+    ] {
+        if slice[key].as_str() != Some(expected) {
+            errs.push(format!(
+                "[java-free-slice-schema] {key} must be `{expected}`"
+            ));
+        }
+    }
+
+    // Corpus identity is bound by path + pointer, never copied in.
+    let binding = &slice["corpus_binding"];
+    let documents = manifest["corpus"]["documents"]
+        .as_sequence()
+        .map(Vec::len)
+        .unwrap_or(0);
+    if binding["manifest"].as_str() != Some(MANIFEST)
+        || binding["pointer"].as_str() != Some("corpus.documents")
+        || binding["document_count"].as_u64() != Some(documents as u64)
+        || binding["identity_rule"].as_str() != Some("exact_document_id_and_sha256")
+    {
+        errs.push(
+            "[java-free-slice-corpus-binding] corpus identity must bind by path + pointer"
+                .to_string(),
+        );
+    }
+    if ["documents", "sha256", "ids", "document_ids"]
+        .iter()
+        .any(|key| !binding[*key].is_null())
+    {
+        errs.push(
+            "[java-free-slice-corpus-binding] document identities must not be duplicated"
+                .to_string(),
+        );
+    }
+
+    // Stage ids resolve against the existing cascade DATA.
+    let source = &slice["stage_id_source"];
+    if source["manifest"].as_str() != Some(COMPATIBILITY)
+        || source["pointer"].as_str() != Some("defaults.cascade_stages")
+    {
+        errs.push(
+            "[java-free-slice-stage-source] stage ids must resolve from the cascade DATA"
+                .to_string(),
+        );
+    }
+    let declared: BTreeSet<String> = match &compatibility["defaults"]["cascade_stages"] {
+        Value::Mapping(map) => map
+            .keys()
+            .filter_map(|key| key.as_str().map(str::to_string))
+            .collect(),
+        _ => BTreeSet::new(),
+    };
+    if declared.is_empty() {
+        errs.push(
+            "[java-free-slice-stage-source] cascade stage set is empty or unreadable".to_string(),
+        );
+        return errs;
+    }
+
+    let in_slice = &slice["stages_in_slice"];
+    let out_slice = &slice["stages_out_of_slice"];
+    let in_ids = stage_id_set(in_slice);
+    let out_ids = stage_id_set(out_slice);
+
+    if in_ids != BTreeSet::from(["P1".to_string(), "P2".to_string()]) {
+        errs.push(
+            "[java-free-slice-stage-partition] slice stages must be exactly P1 and P2".to_string(),
+        );
+    }
+    if !in_ids.is_disjoint(&out_ids) {
+        errs.push(
+            "[java-free-slice-stage-partition] a stage is declared both in and out of the slice"
+                .to_string(),
+        );
+    }
+    // P0 is the identity/profile admission point: neither a slice lane nor a
+    // counted out-of-slice stage. It is classified explicitly, so the ONLY
+    // declared cascade stage outside in ∪ out is that one admission stage. A
+    // new, unclassified cascade stage therefore fails loudly (no silent skip).
+    let admission = &slice["identity_admission_stage"];
+    let admission_id = admission["stage_id"].as_str().unwrap_or("");
+    let admission_pointer = admission["name_pointer"].as_str().unwrap_or("");
+    let admission_resolves = dotted(compatibility, admission_pointer)
+        .and_then(Value::as_str)
+        .is_some_and(|name| !name.is_empty());
+    if admission_id.is_empty() || !declared.contains(admission_id) || !admission_resolves {
+        errs.push(
+            "[java-free-slice-identity-admission] the boundary admission stage must resolve from the cascade DATA"
+                .to_string(),
+        );
+    }
+    if in_ids.contains(admission_id) || out_ids.contains(admission_id) {
+        errs.push(
+            "[java-free-slice-identity-admission] the boundary admission stage must not be counted"
+                .to_string(),
+        );
+    }
+    let mut covered: BTreeSet<String> = in_ids.union(&out_ids).cloned().collect();
+    covered.insert(admission_id.to_string());
+    if covered != declared {
+        errs.push(
+            "[java-free-slice-stage-partition] in/out stages plus the boundary admission must cover every cascade stage exactly once"
+                .to_string(),
+        );
+    }
+
+    if let Some(stages) = in_slice.as_sequence() {
+        for stage in stages {
+            let id = stage["stage_id"].as_str().unwrap_or("<unnamed>");
+            if stage["java_required"].as_bool() != Some(false) {
+                errs.push(format!(
+                    "[java-free-slice-stage-partition] {id} is in slice and must not require Java"
+                ));
+            }
+            if stage["disposition"].as_str() != Some("observed_zero_under_guard") {
+                errs.push(format!(
+                    "[java-free-slice-disposition] {id} must carry observed_zero_under_guard"
+                ));
+            }
+            if !stage["name"].is_null() {
+                errs.push(format!(
+                    "[java-free-slice-stage-source] {id} must read its name by pointer, not copy it"
+                ));
+            }
+            match stage["name_pointer"].as_str() {
+                Some(pointer)
+                    if dotted(compatibility, pointer)
+                        .and_then(Value::as_str)
+                        .is_some_and(|name| !name.is_empty()) => {}
+                Some(pointer) => errs.push(format!(
+                    "[java-free-slice-stage-source] {id} name pointer `{pointer}` does not resolve"
+                )),
+                None => errs.push(format!(
+                    "[java-free-slice-stage-source] {id} carries no name pointer"
+                )),
+            }
+        }
+    }
+
+    let vocabulary: BTreeSet<&str> = slice["out_of_slice_reason_vocabulary"]
+        .as_sequence()
+        .map(|items| items.iter().filter_map(|v| v.as_str()).collect())
+        .unwrap_or_default();
+    if vocabulary.is_empty() {
+        errs.push("[java-free-slice-out-of-slice-reason] reason vocabulary is empty".to_string());
+    }
+
+    if let Some(stages) = out_slice.as_sequence() {
+        for stage in stages {
+            let id = stage["stage_id"].as_str().unwrap_or("<unnamed>");
+            if stage["java_required"].as_bool() != Some(true) {
+                errs.push(format!(
+                    "[java-free-slice-stage-partition] {id} is out of slice and must require Java"
+                ));
+            }
+            match stage["reason"].as_str() {
+                Some(reason) if vocabulary.contains(reason) => {}
+                Some(reason) => errs.push(format!(
+                    "[java-free-slice-out-of-slice-reason] {id} reason `{reason}` is outside the closed vocabulary"
+                )),
+                None => errs.push(format!(
+                    "[java-free-slice-out-of-slice-reason] {id} carries no typed reason"
+                )),
+            }
+            if ["count", "attempts", "observed", "value", "java_calls"]
+                .iter()
+                .any(|key| !stage[*key].is_null())
+            {
+                errs.push(format!(
+                    "[java-free-slice-numeric-out-of-slice] {id} must not carry a numeric count"
+                ));
+            }
+        }
+    }
+
+    // Lanes: the existing Rust donor lanes, Java-free.
+    let lanes: BTreeSet<&str> = slice["lanes_in_slice"]
+        .as_sequence()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|lane| lane["lane_id"].as_str())
+                .collect()
+        })
+        .unwrap_or_default();
+    if lanes
+        != BTreeSet::from([
+            "pdf_inspector_positioned",
+            "pdf_inspector_positioned_xy_cut",
+        ])
+    {
+        errs.push(
+            "[java-free-slice-lane] donor lanes must be exactly the two pdf-inspector lanes"
+                .to_string(),
+        );
+    }
+    if let Some(lanes) = slice["lanes_in_slice"].as_sequence() {
+        for lane in lanes {
+            if lane["java_required"].as_bool() != Some(false) {
+                errs.push(format!(
+                    "[java-free-slice-lane] lane `{}` must not require Java",
+                    lane["lane_id"].as_str().unwrap_or("<unnamed>")
+                ));
+            }
+        }
+    }
+
+    // This block is the sole source of the slice boundary.
+    let authority = &slice["authority"];
+    if authority["declaration_manifest"].as_str() != Some(MANIFEST)
+        || authority["declaration_pointer"].as_str() != Some("java_free_vertical_slice")
+        || authority["sole_source"].as_bool() != Some(true)
+        || authority["second_contract_file"].as_str() != Some("forbidden")
+    {
+        errs.push(
+            "[java-free-slice-authority] the declaration must be the sole source of the boundary"
+                .to_string(),
+        );
+    }
+
+    // Locks stay closed.
+    let locks = &slice["locks"];
+    if locks["deployed"].as_bool() != Some(false)
+        || locks["import_eligible"].as_bool() != Some(false)
+    {
+        errs.push("[java-free-slice-lock] deployed/import_eligible must stay false".to_string());
+    }
+    for key in ["auto_promote", "production_route", "graph_write"] {
+        if locks[key].as_str() != Some("forbidden") {
+            errs.push(format!("[java-free-slice-lock] {key} must stay forbidden"));
+        }
+    }
+
+    errs
+}
+
+/// A one-shot mutation of the declaration block, used to prove the gate drops
+/// a bad declaration by name rather than silently accepting it.
+type SliceMutation = Box<dyn FnOnce(&mut Value)>;
+
+fn mutated_slice<F: FnOnce(&mut Value)>(mutate: F) -> Value {
+    let mut manifest = yaml(MANIFEST);
+    let mut slice = manifest["java_free_vertical_slice"].clone();
+    mutate(&mut slice);
+    manifest["java_free_vertical_slice"] = slice;
+    manifest
+}
+
+#[test]
+fn java_free_vertical_slice_declaration_is_bound_to_existing_carriers() {
+    let manifest = yaml(MANIFEST);
+    let compatibility = yaml(COMPATIBILITY);
+    let errs = java_free_slice_errs(&manifest, &compatibility);
+    assert!(errs.is_empty(), "declaration must be clean: {errs:?}");
+
+    // The in-slice stage ids resolve to the REAL cascade names by pointer.
+    let slice = &manifest["java_free_vertical_slice"];
+    let stages = slice["stages_in_slice"]
+        .as_sequence()
+        .expect("slice stages");
+    let p1 = dotted(
+        &compatibility,
+        stages[0]["name_pointer"].as_str().expect("P1 pointer"),
+    )
+    .and_then(Value::as_str);
+    let p2 = dotted(
+        &compatibility,
+        stages[1]["name_pointer"].as_str().expect("P2 pointer"),
+    )
+    .and_then(Value::as_str);
+    assert_eq!(p1, Some("pdfalto_layout_lattice"), "P1 name via pointer");
+    assert_eq!(p2, Some("document_segmentation"), "P2 name via pointer");
+
+    // The corpus binding resolves to the real, pinned three documents.
+    assert_eq!(
+        manifest["corpus"]["documents"].as_sequence().unwrap().len(),
+        3
+    );
+    assert_eq!(slice["corpus_binding"]["document_count"].as_u64(), Some(3));
+}
+
+#[test]
+fn java_free_vertical_slice_mutations_fail_visible() {
+    let compatibility = yaml(COMPATIBILITY);
+    let cases: [(&str, SliceMutation, &str); 10] = [
+        (
+            "invented out-of-slice stage",
+            Box::new(|slice| {
+                slice["stages_out_of_slice"][0]["stage_id"] = Value::String("P99".into());
+            }),
+            "[java-free-slice-stage-partition]",
+        ),
+        (
+            "dropped out-of-slice stage",
+            Box::new(|slice| {
+                slice["stages_out_of_slice"]
+                    .as_sequence_mut()
+                    .expect("out-of-slice stages")
+                    .pop();
+            }),
+            "[java-free-slice-stage-partition]",
+        ),
+        (
+            "stage declared in and out of the slice",
+            Box::new(|slice| {
+                slice["stages_in_slice"][0]["stage_id"] = Value::String("P3".into());
+            }),
+            "[java-free-slice-stage-partition]",
+        ),
+        (
+            "reason outside the closed vocabulary",
+            Box::new(|slice| {
+                slice["stages_out_of_slice"][0]["reason"] = Value::String("because".into());
+            }),
+            "[java-free-slice-out-of-slice-reason]",
+        ),
+        (
+            "numeric count on an out-of-slice stage",
+            Box::new(|slice| {
+                slice["stages_out_of_slice"][0]["count"] = Value::Number(0.into());
+            }),
+            "[java-free-slice-numeric-out-of-slice]",
+        ),
+        (
+            "Java-required donor lane",
+            Box::new(|slice| {
+                slice["lanes_in_slice"][0]["java_required"] = Value::Bool(true);
+            }),
+            "[java-free-slice-lane]",
+        ),
+        (
+            "product claim scope",
+            Box::new(|slice| {
+                slice["claim_scope"] = Value::String("product".into());
+            }),
+            "[java-free-slice-schema]",
+        ),
+        (
+            "opened import lock",
+            Box::new(|slice| {
+                slice["locks"]["import_eligible"] = Value::Bool(true);
+            }),
+            "[java-free-slice-lock]",
+        ),
+        (
+            "duplicated document identities",
+            Box::new(|slice| {
+                slice["corpus_binding"]["documents"] = Value::Sequence(Vec::new());
+            }),
+            "[java-free-slice-corpus-binding]",
+        ),
+        (
+            "unclassified identity admission stage",
+            Box::new(|slice| {
+                slice["identity_admission_stage"]["stage_id"] = Value::Null;
+            }),
+            "[java-free-slice-identity-admission]",
+        ),
+    ];
+
+    for (name, mutate, expected) in cases {
+        let manifest = mutated_slice(mutate);
+        let errs = java_free_slice_errs(&manifest, &compatibility);
+        assert!(
+            errs.iter().any(|err| err.contains(expected)),
+            "mutation `{name}` must fail with {expected}: {errs:?}"
+        );
+    }
+
+    // A missing block and an empty cascade are also typed refusals.
+    let mut absent = yaml(MANIFEST);
+    absent["java_free_vertical_slice"] = Value::Null;
+    assert!(
+        java_free_slice_errs(&absent, &compatibility)
+            .iter()
+            .any(|err| err.contains("[java-free-slice-missing]")),
+        "an absent declaration must be a typed refusal"
+    );
+}
