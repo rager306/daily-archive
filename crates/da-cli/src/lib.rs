@@ -19,6 +19,12 @@ pub mod health_report;
 // module and its tests compile in the default feature set; the gated example
 // `java_free_vertical_slice` drives it against the real donors.
 pub mod java_free_slice;
+// S04/T04 (M514-1lss2s): typed family-parity receipt for the native header and
+// bibliography families on the declared three-document slice. Pure
+// std/serde/sha2 (no da-parse, no pdf-layout), so the module and its tests
+// compile in the default feature set; the gated example `native_family_parity`
+// drives it against the real positioned donor and the preserved-TEI oracle.
+pub mod native_family_receipt;
 // S04/T01 (M513-r7dg4z): host Java-CPU counter reader (bare integer or cgroup v2
 // `cpu.stat` `usage_usec`). Host/cgroup probing is infrastructure, so it lives
 // here rather than in `da-parse` (onion lock); typed absence, never a fake 0.

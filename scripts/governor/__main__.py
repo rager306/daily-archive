@@ -628,6 +628,9 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
             # `java_free_vertical_slice` (S03/T04) is provisioned here by name so
             # its binary exists for the S03/T05 contract test and for the
             # receipt emitter itself; it is a layout example like its siblings.
+            # `native_family_parity` (S04/T04) is the sibling receipt emitter for
+            # the header/bibliography families and is provisioned by name for the
+            # same reason.
             # Both steps run LAST: enabling the feature here would otherwise
             # force a rebuild for every step above.
             ("da-cli feature-gated example runners", ["cargo", "build", "-p", "da-cli",
@@ -640,6 +643,7 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
                                                         "--example", "fulltext_block_semantics_shadow",
                                                         "--example", "java_free_vertical_slice",
                                                         "--example", "layout_bakeoff",
+                                                        "--example", "native_family_parity",
                                                         "--example", "native_fulltext_composition_shadow",
                                                         "--example", "native_fulltext_corpus_shadow",
                                                         "--example", "native_visual_heads_shadow"], t),
