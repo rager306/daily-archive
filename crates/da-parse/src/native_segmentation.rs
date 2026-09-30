@@ -874,7 +874,7 @@ fn full_region_name(r: FullSemanticRegion) -> &'static str {
         FullSemanticRegion::PageFurniture => "page_furniture",
     }
 }
-fn full_marker(text: &str) -> Option<FullSemanticRegion> {
+pub(crate) fn full_marker(text: &str) -> Option<FullSemanticRegion> {
     match text.trim().to_ascii_lowercase().as_str() {
         "acknowledgement" | "acknowledgements" | "acknowledgment" | "acknowledgments" => {
             Some(FullSemanticRegion::Acknowledgement)

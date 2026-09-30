@@ -48,6 +48,12 @@
 //! S03 wire formats (`NativeSegmenter`/v1, `segment_document_full`/v2) are not
 //! touched.
 
+use crate::native_heading_regions::{
+    NATIVE_HEADING_REGIONS_SCHEMA_VERSION, NativeHeadingAssignment, NativeHeadingRegionOutcome,
+};
+use crate::native_word_projection::{
+    NATIVE_WORD_PROJECTION_SCHEMA_VERSION, NativeWordProjection, native_word_reconstruction_digest,
+};
 use crate::{
     FULL_SEGMENTATION_SCHEMA_VERSION, FullLocation, FullSegmentationOutcome, FullSemanticRegion,
     LayoutBBox, LayoutDocument, LayoutLattice, LayoutStyleHints, LayoutToken, LayoutTokenKind,
@@ -231,6 +237,23 @@ pub enum NativeRegionError {
     TooManyTokens { count: usize },
     /// No region was requested; an empty carrier has no meaning.
     EmptyRegionRequest,
+    /// The word projection was built for another document, provider, source or
+    /// schema, or disagrees with itself.
+    WordProjectionMismatch(&'static str),
+    /// The heading-region outcome does not belong to this lattice, this
+    /// projection, or this document.
+    HeadingRegionMismatch(&'static str),
+    /// A parent span's recorded digest disagrees with the layout token it names.
+    ParentDigestMismatch { page: u32, source: u32 },
+    /// A word's digest or its parent's reconstruction digest does not
+    /// recompute.
+    WordLineageMismatch { page: u32, source: u32, word: u32 },
+    /// The projection names the same word identity twice.
+    DuplicateWordKey { page: u32, source: u32, word: u32 },
+    /// The heading-region outcome assigns one word identity twice.
+    DuplicateWordRegion { page: u32, source: u32, word: u32 },
+    /// A projected word carries no region assignment.
+    UncoveredWord { page: u32, source: u32, word: u32 },
     /// Canonical serialization failed.
     Serialization,
 }
@@ -512,4 +535,278 @@ fn region_name(region: FullSemanticRegion) -> &'static str {
         FullSemanticRegion::Availability => "availability",
         FullSemanticRegion::PageFurniture => "page_furniture",
     }
+}
+
+// ───────────── additive word-level carrier (S04/T04 repair) ─────────────
+
+/// Build the additive region carrier from the word projection and its
+/// heading-aware region assignment.
+///
+/// This is the bridge that lets the T02/T03 native bands run on the real
+/// positioned donor: their contract is word-granular, while the donor's lexical
+/// unit is the show-operator span. The parent-token builder above is unchanged;
+/// this entry point keeps the same carrier types so no band has to learn a
+/// second vocabulary.
+///
+/// The same fail-closed discipline applies, with the lineage chain spelled out:
+/// the parent span digest must equal the layout token digest, the reconstruction
+/// digest must recompute from the word digests, every word digest must recompute
+/// from its own bytes, and every word must carry exactly one region assignment.
+/// A word's layout location is derived: the block ordinal comes from the
+/// lattice, the line ordinal is the derived visual line, and the token ordinal
+/// is the word's page-scoped reading order — the lattice carries no line
+/// structure for this donor, and pretending otherwise would be the dishonest
+/// part.
+pub fn build_native_word_region_carrier(
+    document: &LayoutDocument,
+    lattice: &LayoutLattice,
+    projection: &NativeWordProjection,
+    outcome: &NativeHeadingRegionOutcome,
+    regions: &[FullSemanticRegion],
+) -> Result<NativeRegionCarrier, NativeRegionError> {
+    if regions.is_empty() {
+        return Err(NativeRegionError::EmptyRegionRequest);
+    }
+    document
+        .validate()
+        .map_err(|_| NativeRegionError::LayoutInvalid)?;
+    lattice
+        .validate_against(document)
+        .map_err(|_| NativeRegionError::LatticeInvalid)?;
+
+    if projection.schema_version != NATIVE_WORD_PROJECTION_SCHEMA_VERSION {
+        return Err(NativeRegionError::WordProjectionMismatch("schema_version"));
+    }
+    if projection.identity.document_id != document.document_id {
+        return Err(NativeRegionError::WordProjectionMismatch("document_id"));
+    }
+    if projection.identity.source_pdf_sha256 != document.source_pdf_sha256 {
+        return Err(NativeRegionError::WordProjectionMismatch(
+            "source_pdf_sha256",
+        ));
+    }
+    if projection.identity.parent_count as usize != projection.parents.len()
+        || projection.identity.word_count as usize
+            != projection
+                .parents
+                .iter()
+                .map(|parent| parent.words.len())
+                .sum::<usize>()
+    {
+        return Err(NativeRegionError::WordProjectionMismatch("identity_counts"));
+    }
+
+    if outcome.schema_version != NATIVE_HEADING_REGIONS_SCHEMA_VERSION {
+        return Err(NativeRegionError::HeadingRegionMismatch("schema_version"));
+    }
+    if outcome.identity.document_id != document.document_id {
+        return Err(NativeRegionError::HeadingRegionMismatch("document_id"));
+    }
+    if outcome.identity.source_pdf_sha256 != document.source_pdf_sha256 {
+        return Err(NativeRegionError::HeadingRegionMismatch(
+            "source_pdf_sha256",
+        ));
+    }
+    if outcome.identity.word_projection_order_digest != projection.identity.order_digest {
+        return Err(NativeRegionError::HeadingRegionMismatch(
+            "word_projection_order_digest",
+        ));
+    }
+    let lattice_fingerprint = lattice
+        .digest()
+        .map_err(|_| NativeRegionError::Serialization)?;
+    if outcome.identity.lattice_fingerprint != lattice_fingerprint {
+        return Err(NativeRegionError::HeadingRegionMismatch(
+            "lattice_fingerprint",
+        ));
+    }
+
+    let provider_id = document
+        .pages
+        .iter()
+        .flat_map(|page| page.tokens.iter())
+        .next()
+        .map(|token| token.provider.id.as_str())
+        .unwrap_or("");
+    if projection.identity.provider_id != provider_id || outcome.identity.provider_id != provider_id
+    {
+        return Err(NativeRegionError::ProviderMismatch);
+    }
+
+    let mut requested: Vec<FullSemanticRegion> = Vec::with_capacity(regions.len());
+    for region in regions {
+        if !requested.contains(region) {
+            requested.push(*region);
+        }
+    }
+
+    let mut region_index: BTreeMap<(u32, u32, u32), &NativeHeadingAssignment> = BTreeMap::new();
+    for assignment in &outcome.assignments {
+        let key = (
+            assignment.page_ordinal,
+            assignment.source_ordinal,
+            assignment.word_ordinal,
+        );
+        if region_index.insert(key, assignment).is_some() {
+            return Err(NativeRegionError::DuplicateWordRegion {
+                page: key.0,
+                source: key.1,
+                word: key.2,
+            });
+        }
+    }
+
+    let mut document_index: BTreeMap<(u32, u32), &LayoutToken> = BTreeMap::new();
+    for page in &document.pages {
+        for token in &page.tokens {
+            document_index.insert((token.page_ordinal, token.source_ordinal), token);
+        }
+    }
+    let mut lattice_index: BTreeMap<(u32, u32), (&crate::LatticeToken, u32)> = BTreeMap::new();
+    for page in &lattice.pages {
+        for block in &page.blocks {
+            for line in &block.lines {
+                for token in &line.tokens {
+                    lattice_index.insert(
+                        (page.page_ordinal, token.source_ordinal),
+                        (token, block.source_ordinal),
+                    );
+                }
+            }
+        }
+    }
+
+    let mut seen: BTreeSet<(u32, u32, u32)> = BTreeSet::new();
+    let mut grouped: BTreeMap<FullSemanticRegion, Vec<NativeRegionToken>> = BTreeMap::new();
+    for parent in &projection.parents {
+        let key = (parent.page_ordinal, parent.source_ordinal);
+        let token = document_index
+            .get(&key)
+            .ok_or(NativeRegionError::MissingLatticeToken {
+                page: key.0,
+                source: key.1,
+            })?;
+        let (lattice_token, block_ordinal) =
+            lattice_index
+                .get(&key)
+                .ok_or(NativeRegionError::MissingLatticeToken {
+                    page: key.0,
+                    source: key.1,
+                })?;
+        if parent.parent_text_digest != token.text_digest
+            || parent.parent_text_digest != lattice_token.text_digest
+        {
+            return Err(NativeRegionError::ParentDigestMismatch {
+                page: key.0,
+                source: key.1,
+            });
+        }
+        if parent.reconstruction_digest != native_word_reconstruction_digest(&parent.words) {
+            return Err(NativeRegionError::WordLineageMismatch {
+                page: key.0,
+                source: key.1,
+                word: 0,
+            });
+        }
+        for word in &parent.words {
+            let word_key = (word.page_ordinal, word.source_ordinal, word.word_ordinal);
+            if !seen.insert(word_key) {
+                return Err(NativeRegionError::DuplicateWordKey {
+                    page: word_key.0,
+                    source: word_key.1,
+                    word: word_key.2,
+                });
+            }
+            if digest_text(word.text()) != word.text_digest {
+                return Err(NativeRegionError::WordLineageMismatch {
+                    page: word_key.0,
+                    source: word_key.1,
+                    word: word_key.2,
+                });
+            }
+            let assignment =
+                region_index
+                    .get(&word_key)
+                    .ok_or(NativeRegionError::UncoveredWord {
+                        page: word_key.0,
+                        source: word_key.1,
+                        word: word_key.2,
+                    })?;
+            if !requested.contains(&assignment.region) {
+                continue;
+            }
+            grouped
+                .entry(assignment.region)
+                .or_default()
+                .push(NativeRegionToken {
+                    location: FullLocation {
+                        page_ordinal: word.page_ordinal,
+                        block_ordinal: *block_ordinal,
+                        line_ordinal: assignment.line_ordinal,
+                        token_ordinal: word.word_ordinal,
+                    },
+                    source_ordinal: word.source_ordinal,
+                    text_digest: word.text_digest.clone(),
+                    kind: word.kind,
+                    style: word.style,
+                    bbox: word
+                        .geometry
+                        .estimated_bbox
+                        .unwrap_or(word.geometry.parent_bbox),
+                    text: word.text().to_owned(),
+                });
+        }
+    }
+
+    let mut runs: Vec<NativeRegionRun> = grouped
+        .into_iter()
+        .map(|(region, tokens)| {
+            let start = tokens
+                .first()
+                .map(|token| token.location.clone())
+                .expect("a grouped region always has at least one token");
+            let end = tokens
+                .last()
+                .map(|token| token.location.clone())
+                .expect("a grouped region always has at least one token");
+            let boundary_digest = digest_parts(&[
+                region_name(region),
+                &location_text(&start),
+                &location_text(&end),
+            ]);
+            NativeRegionRun {
+                region,
+                start,
+                end,
+                boundary_digest,
+                tokens,
+            }
+        })
+        .collect();
+    runs.sort_by_key(|run| location_key(&run.start));
+
+    let run_regions: BTreeSet<FullSemanticRegion> = runs.iter().map(|run| run.region).collect();
+    let mut absences: Vec<NativeRegionAbsence> = requested
+        .iter()
+        .filter(|region| !run_regions.contains(region))
+        .map(|region| NativeRegionAbsence::NoAdmittedTokens { region: *region })
+        .collect();
+    absences.sort_by_key(|absence| match absence {
+        NativeRegionAbsence::NoAdmittedTokens { region } => *region,
+    });
+
+    Ok(NativeRegionCarrier {
+        schema_version: NATIVE_REGION_INPUT_SCHEMA_VERSION.to_owned(),
+        identity: NativeRegionIdentity {
+            schema_version: NATIVE_REGION_INPUT_SCHEMA_VERSION.to_owned(),
+            document_id: document.document_id.clone(),
+            provider_id: provider_id.to_owned(),
+            source_pdf_sha256: document.source_pdf_sha256.clone(),
+            lattice_fingerprint,
+            config_fingerprint: outcome.identity.config_fingerprint.clone(),
+            order_digest: outcome.order_digest.clone(),
+        },
+        runs,
+        absences,
+    })
 }

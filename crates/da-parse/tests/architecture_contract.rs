@@ -2203,6 +2203,208 @@ fn native_region_input_scanner_fails_visible_on_synthetic_violations() {
     );
 }
 
+// ───── S04/T04 repair: the word projection and the heading walk stay pure shadows ─────
+
+/// The S04/T04 repair surfaces. The positioned donor's lexical unit is the PDF
+/// show-operator span, not a word, so the T02/T03 native bands could not run on
+/// any real document. These two modules are the repair: a partition of a span
+/// into words with honest derived geometry, and a heading-aware region walk.
+const NATIVE_WORD_PROJECTION_SURFACE: &str = "crates/da-parse/src/native_word_projection.rs";
+const NATIVE_HEADING_REGIONS_SURFACE: &str = "crates/da-parse/src/native_heading_regions.rs";
+
+/// Side-channel, TEI/Java coupling and non-determinism markers banned from the
+/// repair's CODE (comments may document the prohibitions — the scanner strips
+/// line comments first). Both modules import only their typed leaves, `serde`,
+/// `sha2` and `std`, so every hit is a real violation.
+const NATIVE_WORD_PLANE_FORBIDDEN: [&str; 30] = [
+    "TeiEnvelope",
+    "TeiLifter",
+    "TeiParseIr",
+    "TeiSpan",
+    "ParserPort",
+    "ParsedArticle",
+    "GraphStore",
+    "Samyama",
+    "import_eligible",
+    "promotion_state",
+    "std::env",
+    "std::fs",
+    "std::path",
+    "PathBuf",
+    "std::net",
+    "reqwest",
+    "std::process",
+    "Command::",
+    "std::time",
+    "SystemTime",
+    "Instant",
+    "std::thread",
+    "std::sync",
+    "tokio",
+    "tracing",
+    "log::",
+    "println!",
+    "eprintln!",
+    "rand",
+    "var_os",
+];
+
+#[test]
+fn native_word_plane_is_pure_and_heading_vocabulary_cannot_drift() {
+    for path in [
+        NATIVE_WORD_PROJECTION_SURFACE,
+        NATIVE_HEADING_REGIONS_SURFACE,
+    ] {
+        let text = read_text(path);
+        assert!(
+            text.len() > 5_000,
+            "positive control failed: {path} looks truncated"
+        );
+        assert_eq!(
+            import_roots_of(&text),
+            BTreeSet::from([
+                "crate".to_string(),
+                "serde".to_string(),
+                "sha2".to_string(),
+                "std".to_string()
+            ]),
+            "{path} may import only its typed leaves, serde, hashing and formatting"
+        );
+        let hits = native_date_marker_hits(&text, &NATIVE_WORD_PLANE_FORBIDDEN);
+        assert!(
+            hits.is_empty(),
+            "{path} acquired TEI/Java coupling, non-determinism or a side effect:\n{}",
+            hits.join("\n")
+        );
+        assert!(
+            !text.contains("pub text:"),
+            "{path} must keep its text private (redaction)"
+        );
+        assert!(
+            text.contains("pub fn text("),
+            "{path} must expose a text() accessor instead of the field"
+        );
+    }
+
+    // The repair must not reopen the S03 wire formats it is bounded by.
+    for path in [
+        NATIVE_WORD_PROJECTION_SURFACE,
+        NATIVE_HEADING_REGIONS_SURFACE,
+    ] {
+        let text = read_text(path);
+        for marker in [
+            "segment_document_full(",
+            "FullLatticeSegmenter",
+            "TokenAssignment",
+        ] {
+            assert!(
+                !text.contains(marker),
+                "{path} must not re-declare or shadow the S03 surface via {marker}"
+            );
+        }
+    }
+
+    // The heading vocabulary resolves through S03's matcher, so the shared
+    // entries cannot drift apart into two spellings.
+    let heading = read_text(NATIVE_HEADING_REGIONS_SURFACE);
+    assert!(
+        heading.contains("crate::native_segmentation::full_marker"),
+        "the heading vocabulary must resolve through the S03 marker matcher"
+    );
+    assert!(
+        read_text("crates/da-parse/src/native_segmentation.rs")
+            .contains("pub(crate) fn full_marker"),
+        "S03's full_marker stays the single definition of the marker set"
+    );
+
+    let word = read_text(NATIVE_WORD_PROJECTION_SURFACE);
+    for symbol in [
+        "pub struct NativeWordProjection",
+        "pub struct NativeWordParent",
+        "pub struct NativeWordToken",
+        "pub struct NativeWordGeometry",
+        "pub enum NativeWordGeometryOrigin",
+        "pub enum NativeWordAbsence",
+        "pub enum NativeWordProjectionError",
+        "pub fn project_native_words",
+    ] {
+        assert!(word.contains(symbol), "the word plane must export {symbol}");
+    }
+    for symbol in [
+        "pub struct NativeHeadingRegionOutcome",
+        "pub struct NativeVisualLine",
+        "pub struct HeadingEvidence",
+        "pub enum HeadingMatch",
+        "pub enum NativeHeadingAbsence",
+        "pub enum NativeHeadingRegionError",
+        "pub fn assign_heading_regions",
+    ] {
+        assert!(
+            heading.contains(symbol),
+            "the heading walk must export {symbol}"
+        );
+    }
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    for marker in [
+        "mod native_word_projection;",
+        "mod native_heading_regions;",
+        "pub use native_word_projection::",
+        "pub use native_heading_regions::",
+        "build_native_word_region_carrier",
+    ] {
+        assert!(lib.contains(marker), "lib.rs must register {marker}");
+    }
+
+    // Quarantine: the repair never enters the Java-authoritative composition.
+    let mut leaked = Vec::new();
+    for rel in NATIVE_REGION_INPUT_COMPOSITION_SURFACES {
+        let code = s10_code_without_comments(&read_text(rel));
+        for marker in [
+            "native_word_projection",
+            "native_heading_regions",
+            "NativeWordProjection",
+            "NativeHeadingRegionOutcome",
+            "build_native_word_region_carrier",
+        ] {
+            if code.contains(marker) {
+                leaked.push(format!("{rel}: {marker}"));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "the word plane escaped shadow quarantine:\n{}",
+        leaked.join("\n")
+    );
+}
+
+#[test]
+fn native_word_plane_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "use samyama::GraphStore;\nfn f() { let _ = TeiSpan; }\n";
+    assert!(import_roots_of(synthetic).contains("samyama"));
+    assert!(!native_date_marker_hits(synthetic, &NATIVE_WORD_PLANE_FORBIDDEN).is_empty());
+    assert!(
+        native_date_marker_hits(
+            "// TeiSpan, TeiEnvelope and ParserPort are prose only\n",
+            &NATIVE_WORD_PLANE_FORBIDDEN
+        )
+        .is_empty()
+    );
+    assert!(
+        !native_date_marker_hits("let p = PathBuf::new();", &NATIVE_WORD_PLANE_FORBIDDEN)
+            .is_empty()
+    );
+    assert!(
+        native_date_marker_hits(
+            "let v: BTreeMap<u32, u32> = BTreeMap::new();",
+            &NATIVE_WORD_PLANE_FORBIDDEN
+        )
+        .is_empty(),
+        "a benign collection declaration is not a violation (positive control)"
+    );
+}
+
 #[test]
 fn s15_full_segmentation_quarantine_contract() {
     const COMPANION_MARKERS: [&str; 4] = [

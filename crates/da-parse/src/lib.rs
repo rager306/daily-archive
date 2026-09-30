@@ -70,12 +70,14 @@ mod native_header_features;
 mod native_header_fields;
 mod native_header_native_input;
 mod native_header_sequence;
+mod native_heading_regions;
 mod native_personal_name;
 mod native_region_input;
 mod native_segmentation;
 mod native_table_sequence;
 mod native_visual;
 mod native_visual_family_cluster;
+mod native_word_projection;
 mod p5_shadow_join;
 mod parser;
 mod profile;
@@ -400,6 +402,12 @@ pub use native_header_sequence::{
     NATIVE_HEADER_SEQUENCE_SCHEMA_VERSION, NativeHeaderDecodeCandidate, NativeHeaderDecodeError,
     NativeHeaderDecodeOutcome, decode_header_sequence,
 };
+pub use native_heading_regions::{
+    HEADING_REGION_ORDER, HeadingEvidence, HeadingMatch, HeadingRegionConfig,
+    MAX_NATIVE_VISUAL_LINES, NATIVE_HEADING_REGIONS_SCHEMA_VERSION, NativeHeadingAbsence,
+    NativeHeadingAssignment, NativeHeadingIdentity, NativeHeadingRegionError,
+    NativeHeadingRegionOutcome, NativeVisualLine, assign_heading_regions,
+};
 pub use native_personal_name::{
     NATIVE_PERSONAL_NAME_INPUT_BYTE_CAP, NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
     NATIVE_PERSONAL_NAME_PARSER_ID, NATIVE_PERSONAL_NAME_PARSER_VERSION,
@@ -410,7 +418,7 @@ pub use native_personal_name::{
 pub use native_region_input::{
     MAX_NATIVE_REGION_TOKENS, NATIVE_REGION_INPUT_SCHEMA_VERSION, NativeRegionAbsence,
     NativeRegionCarrier, NativeRegionError, NativeRegionIdentity, NativeRegionRun,
-    NativeRegionToken, build_native_region_carrier,
+    NativeRegionToken, build_native_region_carrier, build_native_word_region_carrier,
 };
 pub use native_segmentation::{
     DocumentRegion, FULL_SEGMENTATION_REGION_COUNT, FULL_SEGMENTATION_SCHEMA_VERSION,
@@ -455,6 +463,13 @@ pub use native_visual_family_cluster::{
     FamilyLabelCluster, MAX_NATIVE_VISUAL_FAMILY_ROWS, NATIVE_VISUAL_FAMILY_NAME_PREFIX,
     NativeCaptionLinkAbsence, NativeCaptionLinks, NativeCaptionMarker,
     NativeVisualFamilyClusterError, caption_links_from_markers, cluster_family_label_runs,
+};
+pub use native_word_projection::{
+    MAX_NATIVE_WORD_PARENTS, MAX_NATIVE_WORDS, NATIVE_WORD_PROJECTION_SCHEMA_VERSION,
+    NativeWordAbsence, NativeWordGeometry, NativeWordGeometryOrigin, NativeWordIdentity,
+    NativeWordParent, NativeWordProjection, NativeWordProjectionError, NativeWordToken,
+    native_word_keys, native_word_order_key, native_word_reconstruction_digest,
+    project_native_words,
 };
 pub use p5_shadow_join::{
     JavaP2Observation, JavaP5Observation, NativeBodyShadowSummary, P5_SHADOW_JOIN_SCHEMA_VERSION,
