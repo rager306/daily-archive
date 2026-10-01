@@ -75,6 +75,7 @@ mod native_header_sequence;
 mod native_heading_regions;
 mod native_personal_name;
 mod native_region_input;
+mod native_section_reading_order;
 mod native_segmentation;
 mod native_table_sequence;
 mod native_visual;
@@ -444,6 +445,19 @@ pub use native_region_input::{
     MAX_NATIVE_REGION_TOKENS, NATIVE_REGION_INPUT_SCHEMA_VERSION, NativeRegionAbsence,
     NativeRegionCarrier, NativeRegionError, NativeRegionIdentity, NativeRegionRun,
     NativeRegionToken, build_native_region_carrier, build_native_word_region_carrier,
+};
+pub use native_section_reading_order::{
+    JAVA_AUTHORITY_LANE_ID, MAX_NATIVE_SECTION_DEPTH, MAX_NATIVE_SECTION_RUNS,
+    NATIVE_MEASURED_LANE_ID, NATIVE_SECTION_READING_ORDER_SCHEMA_VERSION,
+    NATIVE_SECTION_REGION_COUNT, NATIVE_SECTION_ROW_VERDICT_VOCABULARY,
+    NATIVE_SECTION_SUT_GENERATOR_ID, NativeLaneDisposition, NativeReadingOrderOutcome,
+    NativeSectionAbsence, NativeSectionHeadingEvidence, NativeSectionHeadingMatch,
+    NativeSectionNotAssessable, NativeSectionOracleBoundary, NativeSectionOracleRow,
+    NativeSectionOutcome, NativeSectionPageSpan, NativeSectionReadingOrderConfig,
+    NativeSectionReadingOrderError, NativeSectionRegionRow, NativeSectionRegionVerdict,
+    NativeSectionRowVerdict, NativeSectionRun, SECTION_PARENT_REGIONS, SEGMENTER_REJECTED_LANE_IDS,
+    derive_native_section_reading_order, evaluate_native_section_rows, native_lane_disposition,
+    native_section_regions, require_independent_section_oracle, section_depth,
 };
 pub use native_segmentation::{
     DocumentRegion, FULL_SEGMENTATION_REGION_COUNT, FULL_SEGMENTATION_SCHEMA_VERSION,
