@@ -57,6 +57,12 @@ pub mod native_java_work;
 // example and its contract test compile in the default feature set (no
 // `pdf-layout`), and nothing here is a production route.
 pub mod native_route_recovery;
+// S05/T05 (M514-1lss2s): OCR/scanned vs digital document groups plus the
+// required-family disposition vocabulary that structurally cannot say
+// `out_of_scope`. Pure std/serde over `da_domain::PdfType`, so the module and
+// its contract test compile in the default feature set (no `pdf-layout`, no
+// `pdf-classifier`). It partitions a declared corpus and owns no classifier.
+pub mod native_document_group;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
