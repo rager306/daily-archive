@@ -76,6 +76,7 @@ mod native_header_sequence;
 mod native_heading_regions;
 mod native_personal_name;
 mod native_region_input;
+mod native_route_result;
 mod native_section_reading_order;
 mod native_segmentation;
 mod native_table_sequence;
@@ -463,6 +464,22 @@ pub use native_region_input::{
     NativeRegionCarrier, NativeRegionError, NativeRegionIdentity, NativeRegionRun,
     NativeRegionToken, build_native_region_carrier, build_native_word_region_carrier,
 };
+pub use native_route_result::{
+    NATIVE_ROUTE_FAMILY_DISPOSITION_VOCABULARY, NATIVE_ROUTE_FAMILY_ORDER,
+    NATIVE_ROUTE_OUT_OF_SLICE_REASON_VOCABULARY, NATIVE_ROUTE_REFUSAL_REASON_VOCABULARY,
+    NATIVE_ROUTE_RESULT_SCHEMA_VERSION, NATIVE_ROUTE_STAGE_STANCE_VOCABULARY, NativeRouteBodyAxis,
+    NativeRouteBodyGapReason, NativeRouteBodyOracle, NativeRouteBodyVerdict, NativeRouteBoundary,
+    NativeRouteBoundaryError, NativeRouteDocumentIdentity, NativeRouteFamily,
+    NativeRouteFamilyCell, NativeRouteFamilyDisposition, NativeRouteInput,
+    NativeRouteOutOfSliceReason, NativeRouteOutOfSliceStage, NativeRoutePlaneFailure,
+    NativeRoutePlaneIdentity, NativeRouteRefusalReason, NativeRouteResult, NativeRouteResultError,
+    NativeRouteStage, NativeRouteStageStance, NativeRouteUnmetReason, NativeRouteValidationError,
+    build_native_route_result,
+};
+// The header/bibliography bands take a `da_ports::LexiconBundle`; re-exporting it
+// lets a da-parse consumer build the route aggregate without a second direct
+// dependency on the port crate.
+pub use da_ports::LexiconBundle;
 pub use native_section_reading_order::{
     JAVA_AUTHORITY_LANE_ID, MAX_NATIVE_SECTION_DEPTH, MAX_NATIVE_SECTION_RUNS,
     NATIVE_MEASURED_LANE_ID, NATIVE_SECTION_READING_ORDER_SCHEMA_VERSION,
