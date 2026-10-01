@@ -639,3 +639,41 @@ fn superscript_is_a_derived_signal_not_a_java_flag() {
     );
     assert!(inventory.markers[0].superscript);
 }
+
+#[test]
+fn a_bare_number_before_a_group_is_admitted_in_document_order() {
+    // Extraction emits closed groups before bare numbers so a group's own tokens
+    // shield the numbers inside it, but a bare number that precedes a group on
+    // the same line must still be admitted in document order: the inventory
+    // refuses a non-monotonic stream by name (`NonMonotonic`). Without the
+    // ordering pass in `extract_native_callout_markers` this plane does not
+    // build at all.
+    let (document, lattice, lexemes, segmentation) = plane(
+        "ordering-doc",
+        vec![vec![
+            PWord::word("alpha"),
+            PWord::small("3"),
+            PWord::word("[12]"),
+        ]],
+    );
+    let outcome = run(&document, &lattice, &lexemes, &segmentation);
+    let inventory = outcome.inventory.as_ref().unwrap();
+    assert_eq!(inventory.markers.len(), 2);
+    assert!(
+        inventory
+            .markers
+            .windows(2)
+            .all(|pair| pair[0].position <= pair[1].position),
+        "markers must be admitted in document order: {:?}",
+        inventory
+            .markers
+            .iter()
+            .map(|marker| marker.position)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        inventory.markers[0].marker_type,
+        CalloutMarkerType::SuperscriptNumber,
+        "the superscript bare number precedes the bracket group"
+    );
+}

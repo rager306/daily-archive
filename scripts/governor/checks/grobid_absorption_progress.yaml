@@ -360,15 +360,132 @@ native_family_receipt:
           - native_family_threshold_claimed
           - native_family_exclusion_denominator_dropped
 
+# ── Native content receipt (M514/S05/T07) ─────────────────────────────
+# The S05 receipt is the first source-bound evidence that the native body /
+# section / reading-order / visual / callout bands measured the declared
+# 3-document slice against an *independent* oracle, with an explicit group
+# partition, a per-document typed family matrix and the T01 body-character axis.
+# It is *not* this rule: the rule names where the receipt lives, where the
+# declaration authority and the oracle pins live, and what a receipt must
+# declare. Neither the document identities nor the corpus page denominator are
+# restated as evidence — the corpus pin resolves by pointer from
+# `corpus.documents` in `data/parse/layout_bakeoff.yaml`, and the preserved-TEI
+# fixture pins resolve from `crates/da-parse/tests/fixtures/preserved/provenance.yaml`.
+#
+# Why it exists (R141): the product `java_independence` axis reports
+# `not_measured` while the production route is Java (D499), so a scoped,
+# diagnostic content receipt is exactly the progress the Governor could not see —
+# and also exactly the claim that must not pass on the strength of an artifact's
+# mere existence. A claim with no receipt, a receipt whose population or group
+# partition the frozen carriers do not derive, a receipt bound to older bytes, an
+# observed zero with no guard provenance, an oracle that is not independent or
+# carries only absences, a diagnostic slice re-labelled as product coverage (or
+# publishing a threshold / leaking a redaction flag), a required family silently
+# moved to `out_of_scope`, an untyped group partition and a body gap whose D498
+# obligation is unresolved are each a typed, fail-closed violation.
+#
+# Severity: this block registers no dimension and no severity — it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks
+# (D492).
+native_content_receipt:
+  schema_version: native-content-receipt-rule.v1
+  declaration:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: java_free_vertical_slice
+  receipt:
+    path: artifacts/parse_compat/native_content_receipt.json
+    schema_version: native-content-receipt.v1
+    required: true
+  # The corpus pin resolves by pointer; the count and the page denominator are the
+  # declared requirements the receipt must reproduce (3 documents / 202 pages).
+  corpus:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: corpus.documents
+  # The oracle carrier and the reviewed segmentation oracle. The rule never
+  # restates a fixture identity: the preserved-TEI pins resolve from the carrier
+  # and the reader recomputes every sha256 from the committed bytes.
+  oracle:
+    manifest: crates/da-parse/tests/fixtures/preserved/provenance.yaml
+    pointer: fixtures
+    segmentation_manifest: data/parse/document_segmentation.yaml
+    segmentation_source: artifacts/parse_compat/document_segmentation_oracle_source.json
+  populations:
+    document_count: 3
+    page_denominator: 202
+  expected:
+    claim_scope: diagnostic_only
+    product_coverage_effect: none
+    thresholds: not_accepted
+    guard_observer: java_transport_fetch_tei
+    families: [figure, table, formula, callout_marker, body_section, body_reading_order]
+    required_families: [figure, table, formula, callout_marker]
+    family_dispositions: [measured, unmet, not_observed]
+    unmet_reasons: [no_text_layer, native_lane_unsupported, oracle_absent, oracle_vacuous]
+    forbidden_family_token: out_of_scope
+    body_verdicts: [granularity_only, content_loss, not_assessable]
+    body_reasons:
+      - matched
+      - p1_native_text_absent
+      - p1_localization_uncertain
+      - p2_region_assignment_gap
+      - p2_localization_uncertain
+      - scope_mismatch
+      - scope_join_mismatch
+      - normalization_mismatch
+      - oracle_empty
+      - population_incomplete
+    group_vocabulary: [digital_text, scanned_image, mixed, unknown]
+    group_source_vocabulary: [measured, bytes_absent]
+    partition_states: [partitioned, empty_declared_corpus]
+    bytes_absent_reasons: [pdf_bytes_missing, pdf_read_failed, classifier_unavailable]
+  # The closed vocabulary of adapter labels this half may emit. Kept separate from
+  # the scorecard `violations` list above so the exact-set test stays valid and the
+  # halves stay separately governable. The literal set lives in
+  # `scripts/governor/domain/absorption_progress.py`.
+  violations:
+    - native_content_claim_without_receipt
+    - native_content_receipt_population_mismatch
+    - native_content_receipt_stale
+    - native_content_product_coverage_claimed
+    - native_content_java_calls_nonzero
+    - native_content_guard_not_installed
+    - native_content_oracle_not_independent
+    - native_content_oracle_absence_only
+    - native_content_required_family_out_of_scope
+    - native_content_group_partition_untyped
+    - native_content_body_gap_unresolved
+  fixtures:
+    positive:
+      id: native_content_clean
+      path: governor/fixtures/absorption_progress/native_content.positive.json
+      expect: clean
+    negative:
+      id: native_content_broken
+      path: governor/fixtures/absorption_progress/native_content.negative.json
+      expect:
+        require_violations:
+          - native_content_claim_without_receipt
+          - native_content_receipt_population_mismatch
+          - native_content_receipt_stale
+          - native_content_product_coverage_claimed
+          - native_content_java_calls_nonzero
+          - native_content_guard_not_installed
+          - native_content_oracle_not_independent
+          - native_content_oracle_absence_only
+          - native_content_required_family_out_of_scope
+          - native_content_group_partition_untyped
+          - native_content_body_gap_unresolved
+
 # Enforcement points that must keep existing. The rule reads these files as text;
 # it never executes them.
 source_markers:
   domain_validator:
     path: scripts/governor/domain/absorption_progress.py
-    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS]
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS, NATIVE_CONTENT_VIOLATION_LABELS]
   adapter_oracle:
     path: scripts/governor/adapters/absorption_progress_reader.py
-    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped]
+    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped, _native_content_receipt_violations, read_native_content_receipt, native_content_oracle_absence_only, native_content_group_partition_untyped]
   scorecard_contract:
     path: data/parse/absorption_progress.schema.yaml
     required_patterns: [initial_census, holdout-partition-610-531-79, preservation, threshold_policy, freeze_revision, tuned_after_scoring, reference_pins, prospective_regression_floor]

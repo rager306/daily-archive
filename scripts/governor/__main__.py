@@ -671,6 +671,15 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
                                                               "--example", "parse_learning_ablation"], t),
             ("da-cli learning-evaluation tests", ["cargo", "test", "-p", "da-cli",
                                                    "--features", "learning-evaluation", "--tests"], t),
+            # `native_content_receipt` (S05/T06) is the content receipt emitter and
+            # the only da-cli example that needs the `pdf-classifier` plane in
+            # addition to `pdf-layout` (it partitions the corpus by `PdfType`).
+            # It is provisioned in its own step with both features rather than the
+            # layout-only list above, because a cargo command fails as a unit: a
+            # name whose required feature is off would silently drop the step.
+            ("da-cli content-receipt example runner", ["cargo", "build", "-p", "da-cli",
+                                                         "--features", "pdf-layout,pdf-classifier",
+                                                         "--example", "native_content_receipt"], t),
         ])
     return steps
 

@@ -2789,6 +2789,22 @@ class TrajectoryService:
         declaration is silence, not compliance, so a tree without the claim carrier
         yields no finding here.
 
+        S05/T07 adds the native content receipt half. The `native_content_receipt`
+        rule block names the S05 receipt in
+        `artifacts/parse_compat/native_content_receipt.json`, the same S03
+        declaration authority, the preserved-TEI oracle carrier and the reviewed
+        segmentation oracle, and the reader resolves them — with the corpus pin, the
+        corpus page denominator and every recomputed `sha256` — into observations.
+        The oracle then refuses a content receipt that does not exist, that drifts
+        from its population or group partition, whose pins no longer match the
+        carrier bytes, that is not diagnostic-only (or claims a threshold, leaks a
+        redaction flag, or reports Java calls), whose oracle is not independent or
+        carries only absences, whose required family was moved to `out_of_scope`,
+        whose group partition is untyped, or whose body gap leaves the D498
+        obligation unresolved (R141). Like the Java-free half it registers no
+        dimension or severity and never moves the product `java_independence` axis
+        (D492/D499).
+
         Availability: if the governed scorecard does not exist yet, that is
         `not_measured` — silence, never zero and never compliance — unless the DATA
         declares it required. Absence of the DATA contract itself is silent, the
@@ -2932,6 +2948,19 @@ class TrajectoryService:
             # "outside the slice". Absence of the claim carrier is silence, not
             # compliance, so an unreadable declaration yields no finding here.
             "java_free_slice": reader.read_java_free_slice(contract),
+            # S05/T07: the content receipt is a self-declaration about the native
+            # body/section/visual/callout bands. The reader is the only layer that
+            # can recompute the receipt's own sha256, the declaration/oracle/
+            # segmentation carrier hashes, the corpus pin and the preserved-TEI
+            # fixture pins, so it resolves them into observations exactly as
+            # `population_census` and `java_free_slice` already are. The pure
+            # oracle then refuses a claim with no receipt, a drifted population or
+            # group partition, a stale pin, a non-diagnostic scope, a guard-less
+            # zero, an absent-only or non-independent oracle, a required family
+            # moved to `out_of_scope`, an untyped group and an unresolved body gap
+            # (R141). Absence of the declaration authority stays silence, not
+            # compliance, so a tree without the carrier yields no finding here.
+            "native_content_receipt": reader.read_native_content_receipt(contract),
         }
 
         violations = absorption_progress_violations(scorecard, contract, observations)

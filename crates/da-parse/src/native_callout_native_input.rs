@@ -632,10 +632,18 @@ fn build_marker(
     }
 }
 
-/// Extract callout-shaped markers from the region carrier, in carrier order.
+/// Extract callout-shaped markers from the region carrier, in document order.
 ///
 /// Only the [`NATIVE_CALLOUT_REGIONS`] runs are read; the carrier's own token
 /// text and geometry are the only inputs.
+///
+/// Emission is line-local and runs in two passes — closed groups first (so the
+/// tokens inside one shield a bare number), then bare numbers. That precedence
+/// does **not** preserve document order when a bare number precedes a group on
+/// the same line, so the atoms are ordered by the position of each marker's
+/// first token before they are admitted. The *set* of markers is unchanged; the
+/// inventory refuses a non-monotonic stream by name, so this ordering is what
+/// keeps a real corpus admissible.
 pub fn extract_native_callout_markers(
     carrier: &NativeRegionCarrier,
 ) -> Result<Vec<CalloutMarkerInput>, NativeCalloutInputError> {
@@ -649,6 +657,7 @@ pub fn extract_native_callout_markers(
             markers_in_line(run, run.region, &line, dominant, &mut markers);
         }
     }
+    markers.sort_by(|left, right| left.tokens[0].position.cmp(&right.tokens[0].position));
     for (index, marker) in markers.iter().enumerate() {
         validate_native_callout_marker(index, marker)?;
     }

@@ -75,6 +75,7 @@ from typing import Any, Optional
 
 __all__ = [
     "JAVA_FREE_SLICE_VIOLATION_LABELS",
+    "NATIVE_CONTENT_VIOLATION_LABELS",
     "NATIVE_FAMILY_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
     "THRESHOLD_DIRECTIONS",
@@ -191,6 +192,42 @@ NATIVE_FAMILY_VIOLATION_LABELS = frozenset(
         "native_family_oracle_not_independent",
         "native_family_threshold_claimed",
         "native_family_exclusion_denominator_dropped",
+    }
+)
+
+#: The closed adapter-level vocabulary of the S05 content receipt half
+#: (M514/S05/T07). Literals on purpose (D492): the closed vocabulary is owned
+#: here, and the rule DATA restates it so a label the oracle can emit but that is
+#: not registered — or a registered label the oracle cannot emit — is a
+#: data/implementation mismatch rather than a silent finding. The adapter is the
+#: only layer that reads the receipt; it emits exactly these labels and nothing
+#: else, and none of them moves the product `java_independence` axis (D499).
+#:
+#: Why this half exists (R141): the S05 receipt is the first source-bound evidence
+#: that the native body/section/reading-order/callout/visual bands measured the
+#: declared 3-document slice against an independent oracle, with a total group
+#: partition and a typed per-family matrix. A receipt's mere existence must not
+#: read as product success, so every claim shape has a typed refusal: a claim with
+#: no receipt, a receipt whose population or group partition the frozen carriers
+#: do not derive, a receipt bound to older bytes, a diagnostic slice re-labelled as
+#: product coverage (including a claimed threshold or a leaked redaction flag), an
+#: observed Java call on an otherwise Java-free plane, an observed zero with no
+#: guard provenance, an oracle that is not independent, an oracle that carries
+#: only absences, a required family silently moved to `out_of_scope`, an untyped
+#: group partition, and a body gap whose D498 obligation is unresolved.
+NATIVE_CONTENT_VIOLATION_LABELS = frozenset(
+    {
+        "native_content_claim_without_receipt",
+        "native_content_receipt_population_mismatch",
+        "native_content_receipt_stale",
+        "native_content_product_coverage_claimed",
+        "native_content_java_calls_nonzero",
+        "native_content_guard_not_installed",
+        "native_content_oracle_not_independent",
+        "native_content_oracle_absence_only",
+        "native_content_required_family_out_of_scope",
+        "native_content_group_partition_untyped",
+        "native_content_body_gap_unresolved",
     }
 )
 

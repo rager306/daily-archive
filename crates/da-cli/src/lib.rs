@@ -63,6 +63,13 @@ pub mod native_route_recovery;
 // its contract test compile in the default feature set (no `pdf-layout`, no
 // `pdf-classifier`). It partitions a declared corpus and owns no classifier.
 pub mod native_document_group;
+// S05/T06 (M514-1lss2s): corpus-bound content receipt for the native body,
+// section/reading-order, visual and callout bands. It reuses the S04 envelope
+// (`native_family_receipt`) and the T05 group/disposition vocabularies
+// (`native_document_group`) and is pure std/serde/sha2, so it and its contract
+// test compile in the default feature set (no `pdf-layout`, no
+// `pdf-classifier`).
+pub mod native_content_receipt;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
