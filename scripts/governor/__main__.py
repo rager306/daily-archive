@@ -680,6 +680,16 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
             ("da-cli content-receipt example runner", ["cargo", "build", "-p", "da-cli",
                                                          "--features", "pdf-layout,pdf-classifier",
                                                          "--example", "native_content_receipt"], t),
+            # `native_route_e2e` (S06/T05) is the Java-forbidden end-to-end
+            # native-route runner. Like `native_content_receipt` it declares
+            # `pdf-classifier` on top of `pdf-layout`, so it is provisioned in
+            # its own two-feature step rather than the layout-only list above.
+            # A cargo command fails as a unit, so the name is placed only in a
+            # step whose `--features` cover its manifest `required-features`;
+            # the inventory test asserts that binding.
+            ("da-cli route-e2e example runner", ["cargo", "build", "-p", "da-cli",
+                                                   "--features", "pdf-layout,pdf-classifier",
+                                                   "--example", "native_route_e2e"], t),
         ])
     return steps
 
