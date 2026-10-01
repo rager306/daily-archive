@@ -81,6 +81,7 @@ pub mod navigation_stage;
 pub mod parse_grammar;
 pub mod parse_job_runner;
 pub mod parse_learning_evaluation;
+pub mod parse_learning_split;
 pub mod parse_policy_ablation;
 pub mod parse_policy_training;
 pub use parse_job_runner::{ParseJobRunReport, ParseJobRunner, ParseJobRunnerError};
@@ -92,6 +93,12 @@ pub use parse_learning_evaluation::{
     CriticObservation, CriticStatus, EvaluationError, FrozenEvalCase, ProducerProvenance,
     PromotionQualification, PromotionQualityPolicy, ProvenanceBasis, aggregate_same_n_ablation,
     aggregate_same_n_ablation_with_provenance, qualify_candidate_quality,
+};
+pub use parse_learning_split::{
+    DOCUMENT_IDENTITY_FIELD, DocumentGroup, DocumentGroupSplit, DocumentRecord,
+    FrozenLearningCorpus, GAIN_RULE_STATE_FROZEN, GainRule, LEARNING_CORPUS_SCHEMA_VERSION,
+    LearningCorpusError, PROMPT_IDENTITY_ROLE_LINEAGE, REWARD_VERSION_V1, RewardDefinition,
+    SPLIT_RULE_DOCUMENT_RANK_MODULO,
 };
 pub use parse_policy_ablation::{
     POLICY_ABLATION_AUTO_PROMOTE, POLICY_ABLATION_PROMOTION_STATE, POLICY_ABLATION_SCHEMA_VERSION,
