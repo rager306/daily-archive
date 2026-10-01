@@ -70,6 +70,12 @@ pub mod native_document_group;
 // test compile in the default feature set (no `pdf-layout`, no
 // `pdf-classifier`).
 pub mod native_content_receipt;
+// S06/T03 (M514-1lss2s): route receipt envelope and independent validator for
+// the end-to-end PDF->native route. It reuses the S04 envelope
+// (`native_family_receipt`) and binds the T02 prospective limit freeze, and is
+// pure std/serde/sha2, so it and its contract test compile in the default
+// feature set (no `pdf-layout`, no `pdf-classifier`).
+pub mod native_route_receipt;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
