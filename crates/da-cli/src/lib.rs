@@ -76,6 +76,14 @@ pub mod native_content_receipt;
 // pure std/serde/sha2, so it and its contract test compile in the default
 // feature set (no `pdf-layout`, no `pdf-classifier`).
 pub mod native_route_receipt;
+// S06/T06 (M514-1lss2s): same-n resource comparison receipt. It reuses the S04
+// envelope (`native_family_receipt`) and the T03 freeze binding
+// (`native_route_receipt`), pairs every native metric with a pinned measured
+// reference row only where a same-n source exists, and records a typed
+// `not_observed` otherwise (D510). Pure std/serde/sha2, so it and its contract
+// test compile in the default feature set (no `pdf-layout`, no
+// `pdf-classifier`).
+pub mod native_resource_same_n;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
