@@ -1,0 +1,237 @@
+[package]
+name = "da-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "da"
+path = "src/main.rs"
+
+[[example]]
+name = "layout_bakeoff"
+required-features = ["pdf-layout"]
+
+# S03/T04 (M514-1lss2s): Java-free vertical-slice receipt emitter. It reads the
+# slice declaration from `data/parse/layout_bakeoff.yaml`, runs the existing
+# positioned donors (P1) and native segmentation (P2) under an installed Java
+# observer, and writes `artifacts/parse_compat/java_free_vertical_slice.json`.
+# Same feature as its layout siblings: the donor chain exists only with
+# `pdf-layout`.
+[[example]]
+name = "java_free_vertical_slice"
+required-features = ["pdf-layout"]
+
+# S04/T04 (M514-1lss2s): native family-parity receipt emitter. It reads the
+# S03 slice declaration and the oracle pins by pointer, runs the real
+# positioned donor plus the repaired word projection / heading-aware regions
+# and the T02/T03 native bands, and writes
+# `artifacts/parse_compat/native_family_parity.json`. Same feature as its
+# layout siblings: the donor chain exists only with `pdf-layout`.
+[[example]]
+name = "native_family_parity"
+required-features = ["pdf-layout"]
+
+# S04/T05 (M514-1lss2s): native header-recovery runner over the 79 typed
+# baseline exclusions. It reads the holdout manifest, the external holdout
+# release probe and the absorption baseline by pointer, runs the S03 native
+# plane plus the T02 header band per exception, and writes
+# `artifacts/parse_compat/native_exclusion_recovery.json`. Same feature as its
+# layout siblings: the donor chain exists only with `pdf-layout`.
+[[example]]
+name = "native_exclusion_recovery"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "document_segmentation_shadow"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "native_visual_heads_shadow"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "native_fulltext_composition_shadow"
+required-features = ["pdf-layout"]
+
+# S05/T04: runtime corpus shadow runner (H18). It reads the three preserved TEI
+# and emits the `preserved_three_sha` artifact, so it needs the same feature as
+# its siblings; without this block `autoexamples` would build it without
+# `pdf-layout` and the example would compile to an empty binary.
+[[example]]
+name = "native_fulltext_corpus_shadow"
+required-features = ["pdf-layout"]
+
+# S05/T01 (M514-1lss2s): native body-character probe. Detached adapter/CLI probe
+# because the positioned donor is structurally unreachable from a da-parse test;
+# it measures the real pdf_inspector_positioned body text against the
+# independent preserved-TEI character oracle. Diagnostic only.
+[[example]]
+name = "native_body_character_probe"
+required-features = ["pdf-layout"]
+
+# S05/T01 (M514-1lss2s): additive order-lineage diagnostic. Read-only sibling of
+# the body-character probe: it measures the same pinned PDFs against the same
+# independent preserved oracle under three native order axes, writing a separate
+# report. It promotes nothing and changes no primary-lane value.
+[[example]]
+name = "native_body_order_lineage_probe"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "fulltext_block_semantics_shadow"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "feature_tagger_training_shadow"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "consolidation_specialized_shadow"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "callout_matching_shadow"
+required-features = ["pdf-layout"]
+
+# S02/T03: positive donor-visual fixture runner (GAR-003). It calls
+# `da_cli::visual_adapter`, which only exists under `pdf-layout`, so the
+# example must declare the same required feature; without this block
+# `autoexamples` would try to build it without the feature and fail.
+[[example]]
+name = "visual_positive_fixture_run"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "native_body_accounting_shadow"
+
+# S08/T01: native CRF core profile emitter. No `required-features`: the profiled
+# core, the contract test, and the artifact must build in the default feature
+# set. The counting `#[global_allocator]` lives in this example binary only.
+[[example]]
+name = "native_core_profile"
+
+# S08/T02: bounded SMP qualification emitter for the same native core. No
+# `required-features`: the module, the contract test, and the artifact must
+# build in the default feature set.
+[[example]]
+name = "native_core_smp"
+
+# S08/T03: Java-work measurement emitter over the pinned corpus and the stage
+# tapes captured for it. No `required-features`: the module, the contract test
+# and the offline arm must build in the default feature set.
+[[example]]
+name = "native_java_work"
+
+# S08/T04: route-recovery ledger emitter. No `required-features`: the module,
+# the contract test and the artifact must build in the default feature set.
+[[example]]
+name = "native_route_recovery"
+
+[[example]]
+name = "p5_shadow_join"
+
+[[example]]
+name = "cross_stage_semantic_invariants"
+
+[[example]]
+name = "derived_maturity_rehearsal"
+path = "examples/derived_maturity_rehearsal/main.rs"
+
+[[example]]
+name = "rest_batch_asset_shadow"
+
+# S08/T02: frozen Java reference capture + preflight for the external holdout
+# probe. No `required-features`: the preflight/verify/self-check half must build
+# in the default feature set, and `--self-check` is the hermetic negative proof.
+[[example]]
+name = "external_holdout_capture"
+
+# S08/T04: runtime artifact of the frozen external holdout probe (GAR-006 shape).
+# Same feature as the shadow siblings: the whole example is `#![cfg(feature =
+# "pdf-layout")]`, so without this block `autoexamples` would build it without the
+# feature and the target would be empty rather than fail loudly.
+[[example]]
+name = "external_holdout_release_probe"
+required-features = ["pdf-layout"]
+
+[[example]]
+name = "parse_learning_ablation"
+required-features = ["learning-evaluation"]
+
+[[example]]
+name = "sona_policy_training"
+
+[[example]]
+name = "parse_policy_ablation"
+required-features = ["learning-evaluation"]
+
+[dependencies]
+regex = { workspace = true }
+async-trait = { workspace = true }
+da-domain = { workspace = true }
+da-ports = { workspace = true }
+clap = { workspace = true }
+flate2 = "1.0"
+tokio = { workspace = true }
+da-adapters = { workspace = true }
+da-parse = { workspace = true }
+da-application = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-appender = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+serde_yaml = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+kg-ontology = { workspace = true }
+# algorithms: compose tests (Mock → GraphView → PPR). samyama: serve-graph
+# composes kg-storage ReadOnlyServer over SamyamaGraphStore (M401/S01).
+# tracing: server_trace! structured events from ReadOnlyServer (ADR-052 —
+# kg-storage has zero unconditional tracing dependency).
+kg-storage = { workspace = true, features = ["algorithms", "samyama", "tracing"] }
+kg-pipeline = { workspace = true }
+samyama-graph-algorithms = { workspace = true }
+# Composition-root wiring for personalized PageRank (M302). Feature ppr pulls
+# ForwardPush; only the CLI binary pays this cost, not kg-storage prod.
+kg-algorithms = { workspace = true, features = ["ppr"] }
+anyhow = { workspace = true }
+# Composition root: load project .env so FD_API_KEY reaches from_env (M321).
+dotenvy = "0.15"
+# Opt-in serve-graph (M308): in-memory RespServer only — no RocksDB path.
+samyama = { workspace = true }
+# GEPA hub research example (M318) — MockEmbedder without FD_API
+kg-embeddings = { workspace = true }
+# Catalog filesystem walk for metadata audit (M386 S03)
+walkdir = "2.5"
+
+[features]
+default = []
+# Pre-GROBID PDF OCR triage via pdf-inspector (M346–M348).
+# Not default: keeps CLI free of pdf-inspector unless opted in.
+pdf-classifier = ["da-adapters/pdf-classifier"]
+# Provider-neutral layout bakeoff donors (S13); shadow-only.
+pdf-layout = ["da-adapters/pdf-layout"]
+# Rebuildable parse-batch cursor/manifest-index accelerator (D295, S06/T04).
+# Off by default: the canonical terminal report + FilePipelineCache records
+# are sufficient without it (deleting redb never destroys unique state).
+redb = ["da-adapters/redb"]
+# Explicit offline ruVLLM-boundary evaluation; no serving or promotion capability.
+learning-evaluation = ["da-application/learning-evaluation"]
+
+[dev-dependencies]
+da-domain = { workspace = true }
+da-ports = { workspace = true }
+da-adapters = { workspace = true }
+da-parse = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+proptest = "1"
+tempfile = "3"
+# Tests compile the committed `.wat` policy fixture independently of
+# WasmPolicyHost to bind `policy_hash` to the executed module bytes (S07/T01).
+wat = { workspace = true }

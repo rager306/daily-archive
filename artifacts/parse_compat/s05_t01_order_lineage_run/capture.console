@@ -1,0 +1,26 @@
+[capture] 01_order_lineage_contract rc=0 elapsed_ms=4871
+[capture] 02_architecture_contract rc=0 elapsed_ms=919
+[capture] 03a_clippy_da_parse rc=0 elapsed_ms=1116
+[capture] 03b_clippy_da_cli rc=0 elapsed_ms=919
+[capture] 03c_clippy_probe rc=0 elapsed_ms=751
+[capture] 04_probe rc=0 elapsed_ms=175635
+[capture] 05_preserved_artifacts_check rc=0 elapsed_ms=13
+[capture] 06_preserved_run_dirs_check rc=0 elapsed_ms=27
+[capture] 07_fmt_check rc=0 elapsed_ms=7089
+================ CAPTURE SUMMARY ================
+step	argv	start_utc	start_epoch_ns	end_utc	end_epoch_ns	elapsed_ms	exit_code	stdout_bytes	stderr_bytes
+01_order_lineage_contract	cargo test -p da-parse --test native_body_order_lineage_contract	2026-09-30T22:34:58.609801538Z	1790807698606403134	2026-09-30T22:35:03.480807093Z	1790807703477966194	4871	0	1419	269
+02_architecture_contract	cargo test -p da-parse --test architecture_contract	2026-09-30T22:35:03.522598266Z	1790807703519078768	2026-09-30T22:35:04.444325828Z	1790807704438277371	919	0	7600	176
+03a_clippy_da_parse	cargo clippy -p da-parse --lib --tests --no-deps -- -D warnings	2026-09-30T22:35:04.502446109Z	1790807704493936520	2026-09-30T22:35:05.613297074Z	1790807705609968470	1116	0	0	139
+03b_clippy_da_cli	cargo clippy -p da-cli --lib --tests --no-deps -- -D warnings	2026-09-30T22:35:05.651519178Z	1790807705647483700	2026-09-30T22:35:06.570175564Z	1790807706566876334	919	0	0	15091
+03c_clippy_probe	cargo clippy -p da-cli --features pdf-layout --example native_body_order_lineage_probe --no-deps -- -D warnings	2026-09-30T22:35:06.600649782Z	1790807706597342498	2026-09-30T22:35:07.351761280Z	1790807707348501174	751	0	0	15091
+04_probe	cargo run -p da-cli --features pdf-layout --example native_body_order_lineage_probe	2026-09-30T22:35:07.396731131Z	1790807707389616212	2026-09-30T22:38:03.028145718Z	1790807883024859256	175635	0	2203	15058
+05_preserved_artifacts_check	sha256sum -c artifacts/parse_compat/s05_t01_order_lineage_run/preserved_before.sha256	2026-09-30T22:38:03.173920215Z	1790807883170325681	2026-09-30T22:38:03.188840658Z	1790807883183763137	13	0	760	0
+06_preserved_run_dirs_check	sha256sum -c artifacts/parse_compat/s05_t01_order_lineage_run/preserved_run_dirs.sha256	2026-09-30T22:38:03.239495137Z	1790807883232890295	2026-09-30T22:38:03.264496746Z	1790807883260080584	27	0	12199	0
+07_fmt_check	cargo fmt -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline -p da-domain -p da-ports -p da-application -p da-adapters -p da-parse -p da-cli -p da-mcp -- --check	2026-09-30T22:38:03.307431189Z	1790807883303753059	2026-09-30T22:38:10.397459955Z	1790807890393644279	7089	0	0	0
+------------ hash stability ------------
+SAME  source
+SAME  evidence
+SAME  input
+SAME  artifact
+=============== CAPTURE DONE ====================

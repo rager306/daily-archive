@@ -1,0 +1,10 @@
+step	argv	start_utc	start_epoch_ns	end_utc	end_epoch_ns	elapsed_ms	exit_code	stdout_bytes	stderr_bytes
+01_order_lineage_contract	cargo test -p da-parse --test native_body_order_lineage_contract	2026-09-30T22:25:38.639082357Z	1790807138635442732	2026-09-30T22:26:23.221651281Z	1790807183218409386	44582	101	1881	360
+02_architecture_contract	cargo test -p da-parse --test architecture_contract	2026-09-30T22:26:23.257145521Z	1790807183252904073	2026-09-30T22:26:27.467845038Z	1790807187463834609	4210	0	7600	243
+03a_clippy_da_parse	cargo clippy -p da-parse --lib --tests --no-deps -- -D warnings	2026-09-30T22:26:27.503265589Z	1790807187499537699	2026-09-30T22:27:01.239747069Z	1790807221235983372	33736	0	0	140
+03b_clippy_da_cli	cargo clippy -p da-cli --lib --tests --no-deps -- -D warnings	2026-09-30T22:27:01.274811647Z	1790807221271192729	2026-09-30T22:28:09.034433588Z	1790807289031575318	67760	0	0	15295
+03c_clippy_probe	cargo clippy -p da-cli --features pdf-layout --example native_body_order_lineage_probe --no-deps -- -D warnings	2026-09-30T22:28:09.088860076Z	1790807289084610592	2026-09-30T22:29:07.008860992Z	1790807347005394017	57920	0	0	15295
+04_probe	cargo run -p da-cli --features pdf-layout --example native_body_order_lineage_probe	2026-09-30T22:29:07.046014474Z	1790807347041777734	2026-09-30T22:33:42.027145693Z	1790807622023218430	274981	0	2203	15262
+05_preserved_artifacts_check	sha256sum -c artifacts/parse_compat/s05_t01_order_lineage_run/preserved_before.sha256	2026-09-30T22:33:42.209663960Z	1790807622206170412	2026-09-30T22:33:42.222290667Z	1790807622219247877	13	0	760	0
+06_preserved_run_dirs_check	sha256sum -c artifacts/parse_compat/s05_t01_order_lineage_run/preserved_run_dirs.sha256	2026-09-30T22:33:42.260007457Z	1790807622255776992	2026-09-30T22:33:42.283326711Z	1790807622279277141	23	0	12199	0
+07_fmt_check	cargo fmt -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline -p da-domain -p da-ports -p da-application -p da-adapters -p da-parse -p da-cli -p da-mcp -- --check	2026-09-30T22:33:42.321170357Z	1790807622317965795	2026-09-30T22:33:49.084686392Z	1790807629081493973	6763	0	0	0

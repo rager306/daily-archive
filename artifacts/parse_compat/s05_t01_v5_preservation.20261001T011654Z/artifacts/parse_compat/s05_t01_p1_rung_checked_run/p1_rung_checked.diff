@@ -1,0 +1,281 @@
+### crates/da-parse/src/native_body_text.rs
+--- artifacts/parse_compat/s05_t01_p1_rung_checked_run/preserved_before/crates/da-parse/src/native_body_text.rs	2026-10-01 04:09:30.316733095 +0700
++++ crates/da-parse/src/native_body_text.rs	2026-10-01 04:34:13.583085326 +0700
+@@ -18,8 +18,11 @@
+ //! rung it was built at, and the verdict path refuses an inventory whose rung
+ //! does not match the rung its scope declares. A caller of
+ //! [`classify_body_coverage`] therefore cannot declare one rung and tokenize at
+-//! another. The pure [`align_body_content`] and [`localize_body_plane`] helpers
+-//! carry the same precondition and do not re-check it.
++//! another. The P1 plane path has its own checking entry point,
++//! [`localize_body_plane_checked`]: a plane and an oracle tokenized at different
++//! rungs are refused before any localization is derived. The pure
++//! [`align_body_content`] helper and the private `localize_body_plane_unchecked`
++//! helper carry the same precondition and do not re-check it.
+ //!
+ //! The locator is a **two-phase greedy decomposition, not a joint optimum**. It
+ //! first binds exact occurrences as the optimal earliest-match monotone
+@@ -205,6 +208,9 @@
+     /// An inventory was tokenized at a rung other than the one its scope (or the
+     /// comparison) declares; comparing it would silently apply the wrong rung.
+     InventoryRungMismatch { side: &'static str },
++    /// The native-plane and oracle inventories were tokenized at different
++    /// rungs, so the P1 localization would silently apply the wrong tokenization.
++    PlaneOracleRungMismatch,
+ }
+ 
+ impl fmt::Display for NativeBodyTextError {
+@@ -941,7 +947,8 @@
+ /// caller that never assembled a body cannot record a fabricated assignment gap.
+ /// It is a localization, not a verdict: pair it with [`classify_body_plane`] for
+ /// the typed P1 verdict, reason and D498 trigger. Both inventories must have been
+-/// tokenized at the same rung; [`classify_body_coverage`] is the enforced path.
++/// tokenized at the same rung; [`localize_body_plane_checked`] is the enforced P1
++/// path.
+ #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+ #[serde(deny_unknown_fields)]
+ pub struct BodyPlaneLocalization {
+@@ -996,10 +1003,32 @@
+     }
+ }
+ 
++/// Compute the ordered, occurrence-conserving plane localization (the P1 shape)
++/// after refusing two inventories tokenized at different rungs.
++///
++/// This is the checking P1 entry point. A native plane and an independent oracle
++/// tokenized at different normalization-ladder rungs or case policies are not
++/// comparable; localizing across them would silently apply the wrong
++/// tokenization, so that pair is a typed
++/// [`NativeBodyTextError::PlaneOracleRungMismatch`] refusal instead.
++pub fn localize_body_plane_checked(
++    native_plane_units: &BodyUnitInventory,
++    oracle_units: &BodyUnitInventory,
++) -> Result<BodyPlaneLocalization, NativeBodyTextError> {
++    if native_plane_units.rung() != oracle_units.rung() {
++        return Err(NativeBodyTextError::PlaneOracleRungMismatch);
++    }
++    Ok(localize_body_plane_unchecked(
++        native_plane_units,
++        oracle_units,
++    ))
++}
++
+ /// Compute the ordered, occurrence-conserving plane localization (the P1 shape).
+-/// Both inventories must be tokenized at the same rung; this pure helper does
+-/// not re-check that, so [`classify_body_coverage`] is the checking entry point.
+-pub fn localize_body_plane(
++///
++/// Private and unchecked: both inventories must already be known to sit at the
++/// same rung, and the equality is enforced by [`localize_body_plane_checked`].
++fn localize_body_plane_unchecked(
+     native_plane_units: &BodyUnitInventory,
+     oracle_units: &BodyUnitInventory,
+ ) -> BodyPlaneLocalization {
+### crates/da-parse/src/lib.rs
+--- artifacts/parse_compat/s05_t01_p1_rung_checked_run/preserved_before/crates/da-parse/src/lib.rs	2026-10-01 03:53:06.802327742 +0700
++++ crates/da-parse/src/lib.rs	2026-10-01 04:34:48.780746207 +0700
+@@ -233,8 +233,9 @@
+     BodyUnitInventory, BodyUnitRung, MAX_BOUNDARY_TILE_UNITS, MAX_NATIVE_BODY_TOKENS,
+     NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION, NativeBodyLengths,
+     NativeBodyText, NativeBodyTextError, aggregate_body_coverage, align_body_content,
+-    build_native_body_text, classify_body_coverage, classify_body_plane, localize_body_plane,
+-    plane_verdict_for_population, require_independent_body_oracle, scope_covers,
++    build_native_body_text, classify_body_coverage, classify_body_plane,
++    localize_body_plane_checked, plane_verdict_for_population, require_independent_body_oracle,
++    scope_covers,
+ };
+ pub use native_callout_classification::{
+     CALLOUT_DENOMINATOR_DIGEST_DOMAIN, CALLOUT_OBSERVATION_DIGEST_DOMAIN, CalloutDenominator,
+### crates/da-parse/tests/native_body_character_oracle.rs
+--- artifacts/parse_compat/s05_t01_p1_rung_checked_run/preserved_before/crates/da-parse/tests/native_body_character_oracle.rs	2026-10-01 03:59:25.536481833 +0700
++++ crates/da-parse/tests/native_body_character_oracle.rs	2026-10-01 04:34:49.958734808 +0700
+@@ -38,8 +38,9 @@
+     LayoutLattice, LayoutPage, LayoutProvider, LayoutSpan, LayoutStyleHints, LayoutToken,
+     LayoutTokenKind, LexemeRow, NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION,
+     NativeBodyLengths, NativeBodyText, NativeBodyTextError, ReadingOrder, aggregate_body_coverage,
+-    build_native_body_text, classify_body_coverage, classify_body_plane, localize_body_plane,
+-    plane_verdict_for_population, require_independent_body_oracle, scope_covers,
++    build_native_body_text, classify_body_coverage, classify_body_plane,
++    localize_body_plane_checked, plane_verdict_for_population, require_independent_body_oracle,
++    scope_covers,
+ };
+ use sha2::{Digest, Sha256};
+ use std::path::PathBuf;
+@@ -911,6 +912,45 @@
+ }
+ 
+ #[test]
++fn a_checked_plane_localization_refuses_a_normalization_rung_mismatch() {
++    // The P1 path carries no scope, so the checked entry point compares the two
++    // inventories' own rungs. The same characters at Raw and at the folded rung
++    // tokenize differently; the pair is not comparable and the checked path
++    // refuses instead of localizing across the rungs.
++    let raw = BodyUnitRung::new(BodyNormalization::Raw, BodyCasePolicy::CaseFolded);
++    let plane = BodyUnitInventory::from_text("a\u{200b}b", raw);
++    let oracle = BodyUnitInventory::from_text("ab", rung());
++    assert_ne!(plane.rung(), oracle.rung());
++    assert_eq!(
++        localize_body_plane_checked(&plane, &oracle),
++        Err(NativeBodyTextError::PlaneOracleRungMismatch)
++    );
++}
++
++#[test]
++fn a_checked_plane_localization_refuses_a_case_policy_mismatch() {
++    // Same normalization rung, different case policy: the inventories are still
++    // not comparable, and the checked path refuses the pair rather than
++    // tokenizing one side the other never declared.
++    let folded = BodyUnitRung::new(
++        BodyNormalization::ZeroWidthAndLigatureNormalized,
++        BodyCasePolicy::CaseFolded,
++    );
++    let sensitive = BodyUnitRung::new(
++        BodyNormalization::ZeroWidthAndLigatureNormalized,
++        BodyCasePolicy::CaseSensitive,
++    );
++    let plane = BodyUnitInventory::from_text("alpha beta", folded);
++    let oracle = BodyUnitInventory::from_text("Alpha Beta", sensitive);
++    assert_eq!(plane.rung().normalization, oracle.rung().normalization);
++    assert_ne!(plane.rung().case, oracle.rung().case);
++    assert_eq!(
++        localize_body_plane_checked(&plane, &oracle),
++        Err(NativeBodyTextError::PlaneOracleRungMismatch)
++    );
++}
++
++#[test]
+ fn a_case_policy_mismatch_is_not_assessable() {
+     // Both inventories sit at the rung they were built at; the two scopes declare
+     // different case policies, so the sides are not comparable.
+@@ -1054,7 +1094,8 @@
+     // only as characters. A zero absent count must never read as preservation.
+     let plane = BodyUnitInventory::from_text("the", rung());
+     let oracle = BodyUnitInventory::from_text("he he", rung());
+-    let localization = localize_body_plane(&plane, &oracle);
++    let localization =
++        localize_body_plane_checked(&plane, &oracle).expect("same-rung plane and oracle localize");
+     assert_eq!(localization.absent_from_plane, 0);
+     assert!(localization.uncertain_from_plane() > 0);
+     let verdict = classify_body_plane(&localization);
+@@ -1070,7 +1111,8 @@
+ fn a_proven_plane_material_deficit_is_still_content_loss() {
+     let plane = BodyUnitInventory::from_text("alpha gamma", rung());
+     let oracle = BodyUnitInventory::from_text("alpha beta", rung());
+-    let localization = localize_body_plane(&plane, &oracle);
++    let localization =
++        localize_body_plane_checked(&plane, &oracle).expect("same-rung plane and oracle localize");
+     assert_eq!(localization.absent_from_plane, 1);
+     let verdict = classify_body_plane(&localization);
+     assert_eq!(verdict.verdict, BodyCoverageVerdict::ContentLoss);
+@@ -1085,7 +1127,9 @@
+ fn a_fully_located_plane_is_the_only_plane_preservation() {
+     let plane = BodyUnitInventory::from_text("alpha beta", rung());
+     let oracle = BodyUnitInventory::from_text("alpha beta", rung());
+-    let verdict: BodyPlaneVerdict = classify_body_plane(&localize_body_plane(&plane, &oracle));
++    let localization =
++        localize_body_plane_checked(&plane, &oracle).expect("same-rung plane and oracle localize");
++    let verdict: BodyPlaneVerdict = classify_body_plane(&localization);
+     assert_eq!(verdict.verdict, BodyCoverageVerdict::GranularityOnly);
+     assert_eq!(verdict.reason, BodyGapReason::Matched);
+     assert!(!verdict.d498_reopen_required);
+@@ -1095,7 +1139,8 @@
+ fn an_incomplete_plane_population_withholds_a_clean_reading() {
+     let plane = BodyUnitInventory::from_text("alpha beta", rung());
+     let oracle = BodyUnitInventory::from_text("alpha beta", rung());
+-    let localization = localize_body_plane(&plane, &oracle);
++    let localization =
++        localize_body_plane_checked(&plane, &oracle).expect("same-rung plane and oracle localize");
+     assert_eq!(
+         classify_body_plane(&localization).verdict,
+         BodyCoverageVerdict::GranularityOnly
+@@ -1153,7 +1198,8 @@
+     // body that was never assembled.
+     let plane = BodyUnitInventory::from_text("alpha beta", rung());
+     let oracle = BodyUnitInventory::from_text("alpha beta gamma", rung());
+-    let localization = localize_body_plane(&plane, &oracle);
++    let localization =
++        localize_body_plane_checked(&plane, &oracle).expect("same-rung plane and oracle localize");
+     assert_eq!(localization.oracle_units, 3);
+     assert_eq!(localization.exact_in_plane, 2);
+     assert_eq!(localization.absent_from_plane, 1);
+### crates/da-cli/examples/native_body_character_probe.rs
+--- artifacts/parse_compat/s05_t01_p1_rung_checked_run/preserved_before/crates/da-cli/examples/native_body_character_probe.rs	2026-10-01 03:59:22.189517616 +0700
++++ crates/da-cli/examples/native_body_character_probe.rs	2026-10-01 04:34:46.979763629 +0700
+@@ -70,7 +70,8 @@
+     HeadingRegionConfig, NativeBodyLengths, NativeBodyText, NativeBodyTextError,
+     SegmentationConfig, aggregate_body_coverage, assign_heading_regions, build_native_body_text,
+     build_native_word_region_carrier, classify_body_coverage, classify_body_plane,
+-    localize_body_plane, plane_verdict_for_population, project_native_words, segment_document_full,
++    localize_body_plane_checked, plane_verdict_for_population, project_native_words,
++    segment_document_full,
+ };
+ use serde::{Deserialize, Serialize};
+ use sha2::{Digest, Sha256};
+@@ -469,7 +470,7 @@
+         // is the plane-only localization: no body exists yet, so no P2 field is
+         // invented for it. It carries its own typed verdict so a zero-absent
+         // plane can never be read as preservation on its own.
+-        let p1 = localize_body_plane(&plane_units, &oracle_units);
++        let p1 = localize_body_plane_checked(&plane_units, &oracle_units)?;
+         let p1_verdict = classify_body_plane(&p1);
+         p1_localization.add(&p1);
+         p1_measured += 1;
+### artifacts/parse_compat/native_body_character_scope_bound.evidence.md
+--- artifacts/parse_compat/s05_t01_p1_rung_checked_run/preserved_before/artifacts/parse_compat/native_body_character_scope_bound.evidence.md	2026-10-01 04:14:27.556298103 +0700
++++ artifacts/parse_compat/native_body_character_scope_bound.evidence.md	2026-10-01 04:36:29.860757280 +0700
+@@ -19,6 +19,14 @@
+ stale SUT hash, stale `ContentLoss` counts and log sizes that did not match the
+ produced logs, this file records what the bytes now are.
+ 
++> **Superseded in part (2026-09-30).** A later bounded P1 repair
++> (`artifacts/parse_compat/s05_t01_p1_rung_checked_run/EVIDENCE.md`) added the
++> checked P1 entry point `localize_body_plane_checked`, which refuses a
++> plane/oracle pair tokenized at different rungs, moved the detached probe onto
++> that checked API, and corrected the unsupported "whole-token order mismatch"
++> cause previously asserted in the remaining-blocker section below. The measured
++> P1 numbers and the body-gap blocker are unchanged.
++
+ ## What the final cleanup changed
+ 
+ Focus: make the code obey what it declares, make the plane verdict explicit, and
+@@ -274,11 +282,13 @@
+    typed `NoBodyTokens` in the parent-span band (named in `aggregate.absent`),
+    so the S03 population stays `population_complete = false`. **P2
+    `NoBodyTokens` for HUB/RECA is retained, not cleared.**
+-3. **The ordered token-boundary proof does not hold on this corpus.** The lane's
+-   token stream is not the oracle's document order: 69 400 of 70 323 occurrences
+-   are present as whole native tokens but cannot be bound monotonically. The
+-   measurement proves presence-of-characters and absence-of-material, not
+-   token-boundary coverage.
++3. **The in-token bucket is a combined uncertainty, not a proven cause.** The
++   69 400 `uncertain_present_in_token` occurrences are those whose characters sit
++   inside one side token; the bucket merges occurrences equal to a side token with
++   occurrences that are only a proper substring of one, and the counters do not
++   separate the two. No order-based cause is asserted: the measurement proves
++   presence-of-characters and absence-of-material, not token-boundary coverage,
++   and either sub-class would need its own counter to be attributed.
+ 4. **Regional assignment was deliberately not touched.** This cleanup changes no
+    region-assignment logic; the P2 population gap is out of its scope.
+ 
+### artifacts/parse_compat/native_body_character_scope_bound.repair2_run.evidence.md
+--- artifacts/parse_compat/s05_t01_p1_rung_checked_run/preserved_before/artifacts/parse_compat/native_body_character_scope_bound.repair2_run.evidence.md	2026-10-01 02:58:13.154619086 +0700
++++ artifacts/parse_compat/native_body_character_scope_bound.repair2_run.evidence.md	2026-10-01 04:36:33.334722930 +0700
+@@ -172,11 +172,13 @@
+ 
+ Two distinct facts remain open and are reported as such, not resolved:
+ 
+-1. **The ordered token-boundary proof does not hold on this corpus.** The lane's
+-   token stream is not the oracle's document order: 69 400 of 70 323 occurrences
+-   are present as whole native tokens but cannot be bound monotonically. The
+-   measurement therefore proves presence-of-characters and absence-of-material,
+-   not token-boundary coverage. `GranularityOnly` is correctly withheld.
++1. **The in-token bucket is a combined uncertainty, not a proven cause.** The
++   69 400 `uncertain_present_in_token` occurrences are those whose characters sit
++   inside one side token; the bucket merges occurrences equal to a side token with
++   occurrences that are only a proper substring of one, and the counters do not
++   separate the two. No order-based cause is asserted: the measurement therefore
++   proves presence-of-characters and absence-of-material, not token-boundary
++   coverage, and `GranularityOnly` is correctly withheld.
+ 2. **Two of three documents still yield no S03 body band** (hub, reca are typed
+    `NoBodyTokens` in the parent-span band) and each band reports its absent
+    documents by name; the S03 population stays `population_complete = false`.

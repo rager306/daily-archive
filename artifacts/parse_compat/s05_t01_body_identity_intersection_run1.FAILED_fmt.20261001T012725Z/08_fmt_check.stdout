@@ -1,0 +1,98 @@
+Diff in /root/daily-archive/crates/da-parse/src/native_body_text.rs:952:
+     // adopts only the set intersection, in the heading route's admitted reading
+     // order; a boundary only one route enters is a named refusal, because that
+     // route's own entry evidence is not independent corroboration of itself.
+[31m-    let (verification, adopted_route, adopted_parent_ids) =
+(B[m[31m-        match (segmentation_run, heading_run) {
+(B[m[31m-            (None, None) => (
+(B[m[31m-                BodyBoundaryVerification::NoRouteEnteredBody,
+(B[m[31m-                None,
+(B[m[31m-                BTreeSet::new(),
+(B[m[31m-            ),
+(B[m[31m-            (Some(_), None) | (None, Some(_)) => (
+(B[m[31m-                BodyBoundaryVerification::SingleRouteUncorroborated,
+(B[m[31m-                None,
+(B[m[31m-                BTreeSet::new(),
+(B[m[31m-            ),
+(B[m[31m-            (Some(_), Some(_)) if segmentation_word_body_ids == heading_body_ids => (
+(B[m[31m-                BodyBoundaryVerification::TwoIndependentRoutesAgree,
+(B[m[31m-                Some(BodyAssignmentRoute::HeadingGeometry),
+(B[m[31m-                heading_body_ids.clone(),
+(B[m[31m-            ),
+(B[m[31m-            (Some(_), Some(_)) => {
+(B[m[31m-                let intersection: BTreeSet<(u32, u32)> = segmentation_word_body_ids
+(B[m[31m-                    .intersection(&heading_body_ids)
+(B[m[31m-                    .copied()
+(B[m[31m-                    .collect();
+(B[m[31m-                if intersection.is_empty() {
+(B[m[31m-                    (
+(B[m[31m-                        BodyBoundaryVerification::RoutesDisagree,
+(B[m[31m-                        None,
+(B[m[31m-                        BTreeSet::new(),
+(B[m[31m-                    )
+(B[m[32m+    let (verification, adopted_route, adopted_parent_ids) = match (segmentation_run, heading_run) {
+(B[m[32m+        (None, None) => (
+(B[m[32m+            BodyBoundaryVerification::NoRouteEnteredBody,
+(B[m[32m+            None,
+(B[m[32m+            BTreeSet::new(),
+(B[m[32m+        ),
+(B[m[32m+        (Some(_), None) | (None, Some(_)) => (
+(B[m[32m+            BodyBoundaryVerification::SingleRouteUncorroborated,
+(B[m[32m+            None,
+(B[m[32m+            BTreeSet::new(),
+(B[m[32m+        ),
+(B[m[32m+        (Some(_), Some(_)) if segmentation_word_body_ids == heading_body_ids => (
+(B[m[32m+            BodyBoundaryVerification::TwoIndependentRoutesAgree,
+(B[m[32m+            Some(BodyAssignmentRoute::HeadingGeometry),
+(B[m[32m+            heading_body_ids.clone(),
+(B[m[32m+        ),
+(B[m[32m+        (Some(_), Some(_)) => {
+(B[m[32m+            let intersection: BTreeSet<(u32, u32)> = segmentation_word_body_ids
+(B[m[32m+                .intersection(&heading_body_ids)
+(B[m[32m+                .copied()
+(B[m[32m+                .collect();
+(B[m[32m+            if intersection.is_empty() {
+(B[m[32m+                (
+(B[m[32m+                    BodyBoundaryVerification::RoutesDisagree,
+(B[m[32m+                    None,
+(B[m[32m+                    BTreeSet::new(),
+(B[m[32m+                )
+(B[m[32m+            } else {
+(B[m[32m+                // Name the route whose set the intersection equals, when it
+(B[m[32m+                // equals one of them; otherwise the adopted identities
+(B[m[32m+                // belong to both routes.
+(B[m[32m+                let route = if intersection == segmentation_word_body_ids {
+(B[m[32m+                    BodyAssignmentRoute::SegmentationMarker
+(B[m[32m+                } else if intersection == heading_body_ids {
+(B[m[32m+                    BodyAssignmentRoute::HeadingGeometry
+(B[m                 } else {
+[31m-                    // Name the route whose set the intersection equals, when it
+(B[m[31m-                    // equals one of them; otherwise the adopted identities
+(B[m[31m-                    // belong to both routes.
+(B[m[31m-                    let route = if intersection == segmentation_word_body_ids {
+(B[m[31m-                        BodyAssignmentRoute::SegmentationMarker
+(B[m[31m-                    } else if intersection == heading_body_ids {
+(B[m[31m-                        BodyAssignmentRoute::HeadingGeometry
+(B[m[31m-                    } else {
+(B[m[31m-                        BodyAssignmentRoute::BothRoutesIntersection
+(B[m[31m-                    };
+(B[m[31m-                    (
+(B[m[31m-                        BodyBoundaryVerification::ConservativeExtentIntersection,
+(B[m[31m-                        Some(route),
+(B[m[31m-                        intersection,
+(B[m[31m-                    )
+(B[m[31m-                }
+(B[m[32m+                    BodyAssignmentRoute::BothRoutesIntersection
+(B[m[32m+                };
+(B[m[32m+                (
+(B[m[32m+                    BodyBoundaryVerification::ConservativeExtentIntersection,
+(B[m[32m+                    Some(route),
+(B[m[32m+                    intersection,
+(B[m[32m+                )
+(B[m             }
+[31m-        };
+(B[m[32m+        }
+(B[m[32m+    };
+(B[m 
+     // Every adopted word token is admitted only when its parent identity is
+     // corroborated `Body` by the S03 assignment stream. Checking only the two

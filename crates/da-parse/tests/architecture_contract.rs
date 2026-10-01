@@ -7354,3 +7354,132 @@ fn native_family_promotion_rehearsal_scanner_fails_visible_on_synthetic_violatio
         "a dropped carrier constant must be fail-visible"
     );
 }
+
+// ───── S05/T01: the native body-text assembly stays a pure shadow ─────
+
+/// The S05/T01 character-oracle surface. It joins the S03 layout plane's body
+/// characters and turns a native-vs-oracle comparison into a typed verdict;
+/// like the word plane it must name no TEI or Java type and take no side channel.
+const NATIVE_BODY_TEXT_SURFACE: &str = "crates/da-parse/src/native_body_text.rs";
+
+/// TEI/Java coupling markers banned from the assembly's CODE in addition to the
+/// S04 word-plane list. The scanner blanks full-line comments, so the module may
+/// document the prohibition while the code stays clean.
+const NATIVE_BODY_TEXT_EXTRA_FORBIDDEN: [&str; 6] =
+    ["Tei", "Grobid", "Java", "java_", "TeiEnvelope", "tei_xml"];
+
+#[test]
+fn native_body_text_is_pure_and_names_no_tei_or_java_type() {
+    let text = read_text(NATIVE_BODY_TEXT_SURFACE);
+    assert!(
+        text.len() > 5_000,
+        "positive control failed: {NATIVE_BODY_TEXT_SURFACE} looks truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from([
+            "crate".to_string(),
+            "serde".to_string(),
+            "sha2".to_string(),
+            "std".to_string()
+        ]),
+        "{NATIVE_BODY_TEXT_SURFACE} may import only its typed leaves, serde, hashing and formatting"
+    );
+    let mut hits = native_date_marker_hits(&text, &NATIVE_WORD_PLANE_FORBIDDEN);
+    hits.extend(native_date_marker_hits(
+        &text,
+        &NATIVE_BODY_TEXT_EXTRA_FORBIDDEN,
+    ));
+    assert!(
+        hits.is_empty(),
+        "{NATIVE_BODY_TEXT_SURFACE} acquired TEI/Java coupling or a side effect:\n{}",
+        hits.join("\n")
+    );
+    assert!(
+        !text.contains("pub text:"),
+        "the body text must stay private (redaction)"
+    );
+    assert!(
+        text.contains("pub fn text("),
+        "the body text must be reachable only through text()"
+    );
+    assert!(
+        text.contains("d498_reopen_required"),
+        "the D498 reopen flag must be part of the verdict"
+    );
+    // S05/T01 additive Body extraction/assignment: the boundary verification and
+    // the additive entry point must live on the same pure, TEI-free surface.
+    assert!(
+        text.contains("pub fn build_native_body_assignment"),
+        "the additive Body assignment entry point must be registered"
+    );
+    assert!(
+        text.contains("BodyBoundaryVerification"),
+        "the additive boundary verification must be part of the surface"
+    );
+    // S05/T01 third-route candidate: the v1 `segment_document` evaluation must
+    // stay on the same pure, TEI-free surface, declared by name.
+    assert!(
+        text.contains("pub fn evaluate_body_third_route_candidate"),
+        "the additive third-route candidate entry point must be registered"
+    );
+    assert!(
+        text.contains("BodyThirdRouteVerdict"),
+        "the third-route corroboration verdict must be part of the surface"
+    );
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    for marker in ["mod native_body_text;", "pub use native_body_text::"] {
+        assert!(lib.contains(marker), "lib.rs must register {marker}");
+    }
+}
+
+/// The additive S05/T01 order-lineage surface. It states the order of the native
+/// token stream as explicit document token identities plus digests; like the word
+/// plane and the body-text assembly it must name no TEI or Java type and take no
+/// side channel.
+const NATIVE_BODY_ORDER_LINEAGE_SURFACE: &str = "crates/da-parse/src/native_body_order_lineage.rs";
+
+#[test]
+fn native_body_order_lineage_is_pure_and_names_no_tei_or_java_type() {
+    let text = read_text(NATIVE_BODY_ORDER_LINEAGE_SURFACE);
+    assert!(
+        text.len() > 5_000,
+        "positive control failed: {NATIVE_BODY_ORDER_LINEAGE_SURFACE} looks truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from(["serde".to_string(), "sha2".to_string(), "std".to_string()]),
+        "{NATIVE_BODY_ORDER_LINEAGE_SURFACE} may import only serde, hashing and formatting"
+    );
+    let mut hits = native_date_marker_hits(&text, &NATIVE_WORD_PLANE_FORBIDDEN);
+    hits.extend(native_date_marker_hits(
+        &text,
+        &NATIVE_BODY_TEXT_EXTRA_FORBIDDEN,
+    ));
+    assert!(
+        hits.is_empty(),
+        "{NATIVE_BODY_ORDER_LINEAGE_SURFACE} acquired TEI/Java coupling or a side effect:\n{}",
+        hits.join("\n")
+    );
+    for marker in [
+        "pub fn audit_body_order_lineage",
+        "pub fn ordered_fragments",
+        "pub entries: Vec<BodyOrderEntry>",
+        "LexemeDigestMismatch",
+        "SEGMENTER_REJECTED_LATTICE",
+    ] {
+        assert!(
+            text.contains(marker),
+            "{NATIVE_BODY_ORDER_LINEAGE_SURFACE} must keep {marker}"
+        );
+    }
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    for marker in [
+        "mod native_body_order_lineage;",
+        "pub use native_body_order_lineage::",
+    ] {
+        assert!(lib.contains(marker), "lib.rs must register {marker}");
+    }
+}

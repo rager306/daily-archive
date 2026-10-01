@@ -1,0 +1,120 @@
+Diff in /root/daily-archive/crates/da-cli/examples/native_body_character_probe.rs:611:
+                         );
+                         match coverage {
+                             Ok(gap) => {
+[31m-                                additive_outcomes
+(B[m[31m-                                    .push(BodyDocumentOutcome::Measured(gap.clone()));
+(B[m[32m+                                additive_outcomes.push(BodyDocumentOutcome::Measured(gap.clone()));
+(B[m                                 AdditiveBandRow {
+                                     status: "assigned".to_owned(),
+                                     absence: None,
+Diff in /root/daily-archive/crates/da-cli/examples/native_body_character_probe.rs:851:
+         println!(
+             "native-body-additive {id}: status {} verification {:?} adopted {:?} seg_tokens {} heading_tokens {} gap {:?}",
+             additive_row.status,
+[31m-            additive_row.assignment.as_ref().map(|entry| entry.verification),
+(B[m[31m-            additive_row.assignment.as_ref().and_then(|entry| entry.adopted_route),
+(B[m[32m+            additive_row
+(B[m[32m+                .assignment
+(B[m[32m+                .as_ref()
+(B[m[32m+                .map(|entry| entry.verification),
+(B[m[32m+            additive_row
+(B[m[32m+                .assignment
+(B[m[32m+                .as_ref()
+(B[m[32m+                .and_then(|entry| entry.adopted_route),
+(B[m             additive_row
+                 .assignment
+                 .as_ref()
+Diff in /root/daily-archive/crates/da-parse/src/lib.rs:234:
+ pub use native_body_text::{
+     BODY_ABSENCE_POLICY, BODY_ALIGNMENT_METHOD, BODY_GAP_THRESHOLDS, BodyAbsentDocument,
+     BodyAggregateInput, BodyAssignmentRoute, BodyBoundaryVerification, BodyCasePolicy,
+[31m-    BodyContentAlignment, BodyCoverageAggregate,
+(B[m[31m-    BodyCoverageGap, BodyCoverageVerdict, BodyDocumentOutcome, BodyGapReason, BodyJoinPolicy,
+(B[m[31m-    BodyNormalization, BodyOracleCounts, BodyOracleIndependence, BodyOracleProvenance,
+(B[m[31m-    BodyPlaneLocalization, BodyPlaneVerdict, BodyScope, BodyScopeClass, BodyScopeSide,
+(B[m[31m-    BodyUncertaintySplit, BodyUnitInventory, BodyUnitRung, MAX_BOUNDARY_TILE_UNITS,
+(B[m[31m-    MAX_NATIVE_BODY_TOKENS, NATIVE_BODY_ASSIGNMENT_SCHEMA_VERSION,
+(B[m[31m-    NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION,
+(B[m[31m-    NativeBodyAssignment, NativeBodyLengths, NativeBodyText, NativeBodyTextError,
+(B[m[31m-    aggregate_body_coverage,
+(B[m[31m-    align_body_content, build_native_body_assignment, build_native_body_text, classify_body_coverage,
+(B[m[31m-    classify_body_plane,
+(B[m[32m+    BodyContentAlignment, BodyCoverageAggregate, BodyCoverageGap, BodyCoverageVerdict,
+(B[m[32m+    BodyDocumentOutcome, BodyGapReason, BodyJoinPolicy, BodyNormalization, BodyOracleCounts,
+(B[m[32m+    BodyOracleIndependence, BodyOracleProvenance, BodyPlaneLocalization, BodyPlaneVerdict,
+(B[m[32m+    BodyScope, BodyScopeClass, BodyScopeSide, BodyUncertaintySplit, BodyUnitInventory,
+(B[m[32m+    BodyUnitRung, MAX_BOUNDARY_TILE_UNITS, MAX_NATIVE_BODY_TOKENS,
+(B[m[32m+    NATIVE_BODY_ASSIGNMENT_SCHEMA_VERSION, NATIVE_BODY_TEXT_GENERATOR_ID,
+(B[m[32m+    NATIVE_BODY_TEXT_SCHEMA_VERSION, NativeBodyAssignment, NativeBodyLengths, NativeBodyText,
+(B[m[32m+    NativeBodyTextError, aggregate_body_coverage, align_body_content, build_native_body_assignment,
+(B[m[32m+    build_native_body_text, classify_body_coverage, classify_body_plane,
+(B[m     localize_body_plane_checked, plane_verdict_for_population, require_independent_body_oracle,
+     scope_covers, split_body_uncertainty, split_plane_uncertainty,
+ };
+Diff in /root/daily-archive/crates/da-parse/src/native_body_text.rs:894:
+         verification,
+         BodyBoundaryVerification::SegmentationBodyAbsentHeadingGrounded
+     ) {
+[31m-        let (page, source) =
+(B[m[31m-            heading_start.ok_or(NativeBodyTextError::BodyBoundaryUngrounded)?;
+(B[m[32m+        let (page, source) = heading_start.ok_or(NativeBodyTextError::BodyBoundaryUngrounded)?;
+(B[m         let assignment = segmentation
+             .assignments
+             .iter()
+Diff in /root/daily-archive/crates/da-parse/src/native_body_text.rs:920:
+                 .tokens
+                 .first()
+                 .zip(run.tokens.last())
+[31m-                .map(|(first, last)| {
+(B[m[31m-                    (first.location.page_ordinal, last.location.page_ordinal)
+(B[m[31m-                });
+(B[m[32m+                .map(|(first, last)| (first.location.page_ordinal, last.location.page_ordinal));
+(B[m             Some(NativeBodyText::from_fragments(
+                 document.document_id.clone(),
+                 document.source_pdf_sha256.clone(),
+Diff in /root/daily-archive/crates/da-parse/tests/native_body_character_oracle.rs:29:
+ 
+ use da_parse::{
+     BODY_ABSENCE_POLICY, BodyAggregateInput, BodyAssignmentRoute, BodyBoundaryVerification,
+[31m-    BodyCasePolicy, BodyCoverageGap, BodyCoverageVerdict,
+(B[m[31m-    BodyDocumentOutcome, BodyGapReason, BodyJoinPolicy, BodyNormalization, BodyOracleCounts,
+(B[m[31m-    BodyOracleIndependence, BodyOracleProvenance, BodyPlaneVerdict, BodyScope, BodyScopeClass,
+(B[m[31m-    BodyScopeSide, BodyUnitInventory, BodyUnitRung, CoordinateDialect,
+(B[m[31m-    FULL_SEGMENTATION_SCHEMA_VERSION, FullLocation, FullSegmentationIdentity,
+(B[m[31m-    FullSegmentationOutcome, FullSemanticRegion, FullTokenAssignment, FurnitureEvidence,
+(B[m[31m-    HeadingMatch, LatticeBlock, LatticeLine, LatticePage, LatticeToken, LayoutBBox, LayoutDocument,
+(B[m[31m-    LayoutLattice, LayoutPage, LayoutProvider, LayoutSpan, LayoutStyleHints, LayoutToken,
+(B[m[31m-    LayoutTokenKind, LexemeRow, NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION,
+(B[m[31m-    NativeBodyLengths, NativeBodyText, NativeBodyTextError, ReadingOrder, aggregate_body_coverage,
+(B[m[31m-    build_native_body_assignment, build_native_body_text, classify_body_coverage, classify_body_plane,
+(B[m[31m-    localize_body_plane_checked, plane_verdict_for_population, require_independent_body_oracle,
+(B[m[31m-    scope_covers,
+(B[m[32m+    BodyCasePolicy, BodyCoverageGap, BodyCoverageVerdict, BodyDocumentOutcome, BodyGapReason,
+(B[m[32m+    BodyJoinPolicy, BodyNormalization, BodyOracleCounts, BodyOracleIndependence,
+(B[m[32m+    BodyOracleProvenance, BodyPlaneVerdict, BodyScope, BodyScopeClass, BodyScopeSide,
+(B[m[32m+    BodyUnitInventory, BodyUnitRung, CoordinateDialect, FULL_SEGMENTATION_SCHEMA_VERSION,
+(B[m[32m+    FullLocation, FullSegmentationIdentity, FullSegmentationOutcome, FullSemanticRegion,
+(B[m[32m+    FullTokenAssignment, FurnitureEvidence, HeadingMatch, LatticeBlock, LatticeLine, LatticePage,
+(B[m[32m+    LatticeToken, LayoutBBox, LayoutDocument, LayoutLattice, LayoutPage, LayoutProvider,
+(B[m[32m+    LayoutSpan, LayoutStyleHints, LayoutToken, LayoutTokenKind, LexemeRow,
+(B[m[32m+    NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION, NativeBodyLengths,
+(B[m[32m+    NativeBodyText, NativeBodyTextError, ReadingOrder, aggregate_body_coverage,
+(B[m[32m+    build_native_body_assignment, build_native_body_text, classify_body_coverage,
+(B[m[32m+    classify_body_plane, localize_body_plane_checked, plane_verdict_for_population,
+(B[m[32m+    require_independent_body_oracle, scope_covers,
+(B[m };
+ use sha2::{Digest, Sha256};
+ use std::path::PathBuf;
+Diff in /root/daily-archive/crates/da-parse/tests/native_body_character_oracle.rs:1437:
+     let segmentation = segmentation_for(&plane, FullSemanticRegion::Body);
+     let assignment = additive_assignment(&plane, &segmentation);
+ 
+[31m-    assert_eq!(assignment.verification, BodyBoundaryVerification::RoutesDisagree);
+(B[m[32m+    assert_eq!(
+(B[m[32m+        assignment.verification,
+(B[m[32m+        BodyBoundaryVerification::RoutesDisagree
+(B[m[32m+    );
+(B[m     assert_eq!(assignment.adopted_route, None);
+     assert_eq!(assignment.segmentation_start, Some((0, 0)));
+     assert_eq!(assignment.heading_start, Some((0, 2)));

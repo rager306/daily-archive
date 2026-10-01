@@ -1,0 +1,94 @@
+# Preserved GROBID TEI fixtures for da-parse characterization (M464-z84in2 / S01 / T02).
+#
+# Bytes are copied from archive/data-legacy/article_corpora/m033-grobid-probe-v1
+# (canonical research TEI of the M033 GROBID CRF probe). The live
+# data/article_corpora/m033-grobid-probe-v1 path is ENOENT — these copies are
+# the tracked runtime fixtures. Sidecar TEI remains candidate evidence, not
+# graph truth (D127 import_eligible=false).
+schema_version: da-parse.preserved-tei-provenance.v1
+policy_locks:
+  import_eligible: false
+  dspy_enabled: false
+  graph_mutation: forbidden
+  llm_promotion: forbidden
+  free_label_invention: forbidden
+  sidecar_status: candidate_evidence_only
+origin_corpus: archive/data-legacy/article_corpora/m033-grobid-probe-v1
+origin_probe: m033-grobid-probe-v1
+backend: java-grobid-crf
+# Capture-time consolidation flags are not recorded in TEI headers.
+# Reproduction / cache identity for these bytes is the rich profile (D204).
+assumed_grobid_profile: rich
+configuration_fingerprint: 'profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula'
+license: >-
+  Derived scholarly TEI of public arXiv PDFs. Source papers remain under their
+  arXiv licenses (typically CC BY / CC BY-SA / CC BY-NC-SA 4.0 as declared on
+  each abstract page). GROBID TEI is candidate parse evidence, not a
+  republication of the PDF. Do not treat these files as graph-importable.
+fixtures:
+  - id: hub_2507.19457
+    paper_id: '2507.19457'
+    arxiv_id: '2507.19457'
+    title: 'GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning'
+    path: crates/da-parse/tests/fixtures/preserved/hub_2507.19457.tei.xml
+    origin_path: archive/data-legacy/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml
+    sha256: 985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4
+    bytes: 404197
+    covers:
+      - sections
+      - references
+      - tables
+      - formulas
+      - authors
+      - idno
+      - figures
+      - restarted_numbering
+    notes:
+      - Primary hub pin. Bibliography ~80 biblStruct; 3 tables; 24 formulas; 22 non-table figures; 21 header authors.
+      - Section n attributes restart (repeated 3./4./5.) — walker must uniquify path_id.
+  - id: rlm_2512.24601
+    paper_id: '2512.24601'
+    arxiv_id: '2512.24601'
+    title: Recursive Language Models
+    path: crates/da-parse/tests/fixtures/preserved/rlm_2512.24601.tei.xml
+    origin_path: archive/data-legacy/article_corpora/m033-grobid-probe-v1/per-paper/2512.24601/grobid.tei.xml
+    sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
+    bytes: 288029
+    covers:
+      - sections
+      - references
+      - tables
+      - authors
+      - idno
+      - figures
+      - coordinates
+    notes:
+      - 4 header authors; 29 non-table figures; 2 tables; 25 coords attributes.
+  - id: reca_2605.26525v1
+    paper_id: 2605.26525v1
+    arxiv_id: 2605.26525
+    title: 'ReCA: Multi-Shot Long Video Extrapolation via Recursive Context Allocation'
+    path: crates/da-parse/tests/fixtures/preserved/reca_2605.26525v1.tei.xml
+    origin_path: archive/data-legacy/article_corpora/m033-grobid-probe-v1/per-paper/2605.26525v1/grobid.tei.xml
+    sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
+    bytes: 304349
+    covers:
+      - sections
+      - references
+      - tables
+      - authors
+      - idno
+      - figures
+      - coordinates
+    notes:
+      - Large bibliography pin (~78 biblStruct). 11 header authors; 55 non-table figures; 34 coords attributes.
+unbound:
+  - id: hub_2507.19457.structural
+    path: crates/da-parse/tests/fixtures/preserved/hub_2507.19457.structural.tei.xml
+    reason: >-
+      No preserved structural-profile TEI exists in the working tree. Inventing
+      one by copying rich bytes would violate D204 cache-key separation.
+      Binding owner remains S01/T03 (Java/direct TEI baseline) which can mint
+      structural bytes against a live GROBID or record a typed absence.
+    binding_status: pending
+    binding_owner_task: S01/T03

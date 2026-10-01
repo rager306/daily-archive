@@ -1,0 +1,268 @@
+schema_version: layout-bakeoff.v1
+adr_ref: ADR-075
+contract_id: layout-token-donor-bakeoff
+requirement_ids: [R085, R106, R108, R113, R117]
+policy_locks:
+  import_eligible: false
+  auto_promote: forbidden
+  promotion_state: candidate_only
+  graph_mutation: forbidden
+  raw_payloads: forbidden
+corpus:
+  id: s13-same-input-pdf-corpus
+  corpus_n: 3
+  page_denominator: 202
+  source_root: data/sources
+  source_identity_rule: >-
+    arXiv versionless identity is canonical; versioned assets are retained as
+    provenance only when their checksum or declared revision is distinct.
+  documents:
+    - id: hub-2507.19457
+      arxiv_id: 2507.19457
+      revision: v2
+      source_pdf: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
+      sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
+      pages: 96
+      page_classes: [two_column, full_width_title, figure_heavy, table_formula, callout, rotation_crop, ocr_risk]
+      supporting_s07_case: reg.tei.hub-bibliography-2507.19457
+    - id: rlm-2512.24601
+      arxiv_id: 2512.24601
+      revision: v3
+      source_pdf: data/sources/arxiv/cs-ai/2512.24601/source/original.pdf
+      sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
+      pages: 43
+      page_classes: [two_column, full_width_title, figure_heavy, table_formula, callout, rotation_crop, ocr_risk]
+      supporting_s07_case: reg.tei.rlm-2512.24601
+    - id: reca-2605.26525v1
+      arxiv_id: 2605.26525
+      revision: v1
+      source_pdf: data/sources/arxiv/cs-cv/2605.26525v1/source/2605.26525v1.pdf
+      sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
+      pages: 63
+      page_classes: [two_column, full_width_title, figure_heavy, table_formula, callout, rotation_crop, ocr_risk]
+      supporting_s07_case: reg.tei.reca-bibliography-2605.26525
+lanes:
+  required: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+  same_input: true
+  all_lanes_required: true
+  donor_identity_rule: >-
+    Each lane receives the exact source_pdf and source_sha256 above; ordering
+    is separate from extraction and every token remains conserved.
+  unavailable_outcomes: [missing, checksum_mismatch, malformed, unsupported, timeout, nonzero, oversize, encrypted, truncated]
+oracle:
+  fixture: crates/da-parse/tests/fixtures/layout_lattice_oracle.yaml
+  independent: true
+  no_donor_helpers: true
+  no_tei_lifter: true
+  fields: [document_id, page_ordinal, token_ordinal, bbox_72dpi_top_left, role, token_digest]
+  forbidden_fields: [raw_text, pdf_bytes, tei_xml, page_image, physical_path]
+  denominator_rule: exactly_one_receipt_per_document_page_lane
+  hard_failures: [same_n_mismatch, missing_receipt, duplicate_ordinal, invalid_bbox, origin_drift, silent_skip]
+supporting_conservation:
+  source: data/parse/regression_cases.yaml
+  cases: [reg.tei.hub-bibliography-2507.19457, reg.tei.rlm-2512.24601, reg.tei.reca-bibliography-2605.26525]
+  not_pdf_truth: true
+  fields: [figures, graphic_coordinates, callouts, tables, formulas]
+acceptance:
+  no_winner_encoded: true
+  promotion_state: candidate
+  selected_state: forbidden
+  promoted_state: forbidden
+  no_silent_skips: true
+  checksum_and_denominator_drift: fail_visible
+
+# S14: bounded CPU/SMP is additive candidate evidence. This block is the
+# single DATA authority for topology, admission, memory, measurements and
+# optimization verdicts; it never changes the production layout stage.
+cpu_smp_candidate:
+  schema_version: cpu-smp-candidate.v1
+  candidate_id: da-cli.layout_cpu_smp
+  observation_mode: benchmark_only
+  production_route: stage.pdfalto_layout
+  production_route_state: fallback
+  topology:
+    source: linux_allowed_cpu_set_intersected_with_sysfs_package_core
+    allowed_cpu_set: '/proc/self/status: Cpus_allowed_list'
+    sysfs_identity: '/sys/devices/system/cpu/cpuN/topology/{physical_package_id,core_id}'
+    identity_key: physical_package_id_and_core_id
+    unsupported_outcome: topology_unavailable
+    logical_cpu_fallback: forbidden
+    numa_claim: forbidden
+    hostname_or_physical_paths_in_report: forbidden
+  execution:
+    scope: invocation_private
+    workers: positive_integer
+    worker_matrix: 1..=physical_core_cap
+    requested_above_cap: fail_before_spawn
+    silent_clamp: forbidden
+    max_in_flight: positive_integer
+    input_queue_capacity: positive_integer_bounded
+    result_queue_capacity: positive_integer_bounded
+    full_queue_behavior: backpressure
+    drop_on_full: forbidden
+    global_pool: forbidden
+    immutable_shared_source: required
+    per_worker_scratch: bounded_private_reusable
+    scratch_reset_accounting: required
+    unsafe_project_code: forbidden
+  terminal_receipts:
+    admitted_equals_terminal: required
+    exactly_one_per_admitted_unit: required
+    duplicate_or_missing: hard_failure
+    worker_panic: typed_coordinator_failure
+    channel_closure: typed_coordinator_failure
+    interruption: typed_coordinator_failure
+    failure_vocabulary: [topology_unavailable, invalid_config, over_core_cap, worker_panic, channel_closed, interrupted, semantic_mismatch]
+  donor_composition:
+    scope: representative_counts_only
+    representative_worker_counts: [1, physical_core_cap]
+    cpu_matrix_excludes_subprocess_io: required
+    acceptance_denominator_separate: required
+  evidence_binding:
+    tested_source_revision: required_sha256
+    clean_tree_assertion: required
+    command_digest: required_sha256
+    runtime_config_fingerprint: required_sha256
+    configuration_fingerprint: required_sha256
+    topology_fingerprint: required_sha256
+    durable_evidence_ref: required
+    plaintext_command: forbidden
+    physical_paths: forbidden
+  denominators:
+    acceptance:
+      corpus_n: 3
+      lanes_n: 3
+      pages_per_lane: 202
+      total_lane_pages: 606
+      fixed: true
+    benchmark:
+      repetitions: positive_integer
+      separate_from_acceptance: true
+      pooled_with_acceptance: forbidden
+  metrics:
+    required: [p50_ms, p95_ms, p99_ms, throughput_units_per_second, process_rss_bytes, allocation_or_private_capacity_bytes, queue_wait_ms, in_flight, input_queue_high_water, result_queue_high_water]
+    cpu_only_separate_from_subprocess_io: required
+    per_worker_terminal_counts: required
+    per_lane_metrics: required
+  breakpoints:
+    verdicts: [not_observed, saturation, first_regression, queue_pressure, memory_pressure, inconclusive]
+    closed: true
+    data_defined: true
+    production_default: forbidden
+  optimization:
+    arena_pattern_evaluation: safe_offset_bounded_reuse_only
+    evaluated_patterns: [safe_offset_bounded_reuse, successful_admission_accounting]
+    rejected_patterns: [unsafe_bump_arena, fake_numa_binding, global_pool, drop_on_full_queue, pending_before_push_accounting]
+    simd_state: [not_applicable, measured_rejected, measured_retained]
+    simd_selection: forbidden
+    safe_rust_only: true
+    scalar_oracle: required
+    retained_requires_data_thresholds: true
+  redaction:
+    allowed: [digests, counters, timings, bounded_status, topology_digest]
+    forbidden: [raw_pdf, raw_text, raw_tei, images, token_text, executable, physical_path, hostname, topology_path]
+  promotion:
+    state: candidate
+    selected: forbidden
+    promoted: forbidden
+    auto_promote: forbidden
+    rollback_target: java-grobid-http@0.9.0-crf
+
+# S03/T03 (M514-1lss2s): additive declaration of the Java-free vertical slice.
+# ADR-077 §3 binds the slice boundary HERE — this block is the single DATA
+# source of the boundary, not a second contract file. Stage ids are resolved by
+# path + pointer from `data/parse/grobid_compatibility.yaml#defaults.cascade_stages`
+# and document identities are resolved by pointer from `corpus` above, so this
+# block never restates either list.
+java_free_vertical_slice:
+  schema_version: java-free-vertical-slice.v1
+  slice_id: pdf-layout-p1-p2
+  adr_ref: ADR-077
+  requirement_ids: [R140, R123, R124]
+  claim_scope: diagnostic_only
+  product_coverage_effect: none
+  # Corpus identity is read by pointer; the pinned document ids / sha256 stay in
+  # `corpus.documents` only and are never copied into this block.
+  corpus_binding:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: corpus.documents
+    document_count: 3
+    identity_rule: exact_document_id_and_sha256
+  # Stage ids resolve against the existing cascade DATA; names are read by
+  # pointer, never copied here.
+  stage_id_source:
+    manifest: data/parse/grobid_compatibility.yaml
+    pointer: defaults.cascade_stages
+  # P0 is the identity/profile admission point where the cascade is admitted.
+  # It is neither an in-slice lane nor a counted out-of-slice stage, so it is
+  # classified explicitly here (with its own name pointer) rather than silently
+  # dropped from the stage matrix. Without this, no stage may go unclassified.
+  identity_admission_stage:
+    stage_id: P0
+    name_pointer: defaults.cascade_stages.P0.grobid
+    disposition: boundary_admission_not_counted
+  stages_in_slice:
+    - stage_id: P1
+      name_pointer: defaults.cascade_stages.P1.grobid
+      java_required: false
+      disposition: observed_zero_under_guard
+    - stage_id: P2
+      name_pointer: defaults.cascade_stages.P2.grobid
+      java_required: false
+      disposition: observed_zero_under_guard
+  lanes_in_slice:
+    - lane_id: pdf_inspector_positioned
+      java_required: false
+    - lane_id: pdf_inspector_positioned_xy_cut
+      java_required: false
+  # Closed vocabulary: every out-of-slice stage names exactly one reason.
+  out_of_slice_reason_vocabulary:
+    - java_authority
+    - visual_heads_not_measured
+    - java_tei_coordinates
+    - profile_dependent_consolidation
+    - java_tei_lift
+  # P3..P9 are outside the slice and carry a typed reason, never a zero.
+  # The union of these ids, the in-slice ids and `identity_admission_stage`
+  # must equal the whole cascade stage set — no stage is left unclassified.
+  stages_out_of_slice:
+    - stage_id: P3
+      name_pointer: defaults.cascade_stages.P3.grobid
+      reason: java_authority
+      java_required: true
+    - stage_id: P4
+      name_pointer: defaults.cascade_stages.P4.grobid
+      reason: java_authority
+      java_required: true
+    - stage_id: P5
+      name_pointer: defaults.cascade_stages.P5.grobid
+      reason: java_authority
+      java_required: true
+    - stage_id: P6
+      name_pointer: defaults.cascade_stages.P6.grobid
+      reason: visual_heads_not_measured
+      java_required: true
+    - stage_id: P7
+      name_pointer: defaults.cascade_stages.P7.grobid
+      reason: java_tei_coordinates
+      java_required: true
+    - stage_id: P8
+      name_pointer: defaults.cascade_stages.P8.grobid
+      reason: profile_dependent_consolidation
+      java_required: true
+    - stage_id: P9
+      name_pointer: defaults.cascade_stages.P9.grobid
+      reason: java_tei_lift
+      java_required: true
+  # This block is the sole source of the slice boundary.
+  authority:
+    declaration_manifest: data/parse/layout_bakeoff.yaml
+    declaration_pointer: java_free_vertical_slice
+    sole_source: true
+    second_contract_file: forbidden
+  locks:
+    deployed: false
+    import_eligible: false
+    auto_promote: forbidden
+    production_route: forbidden
+    graph_write: forbidden

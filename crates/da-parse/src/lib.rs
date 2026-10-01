@@ -48,6 +48,8 @@ mod native_bibliography_native_input;
 mod native_bibliography_nested;
 mod native_bibliography_sequence;
 mod native_body;
+mod native_body_order_lineage;
+mod native_body_text;
 mod native_callout_classification;
 mod native_callout_matching;
 mod native_citation;
@@ -222,6 +224,29 @@ pub use native_body::{
     NativeBodyAccountant, NativeBodyAccounting, NativeBodyError, NativeBodyLimits,
     NativeBodySequenceCounts, NativeBodySequenceIdentity, NativeBodySequenceInput,
     NativeBodySequenceReceipt, NativeBodySequenceStep, run_native_body_sequence, source_digest,
+};
+pub use native_body_order_lineage::{
+    BodyOrderEntry, BodyOrderLane, BodyOrderLaneAudit, BodyOrderLaneDisposition, BodyOrderLineage,
+    BodyOrderLineageAudit, BodyOrderLineageError, BodyOrderPairAudit, DocumentTokenId,
+    MAX_ORDER_LINEAGE_ENTRIES, NATIVE_BODY_ORDER_LINEAGE_SCHEMA_VERSION,
+    SEGMENTER_REJECTED_LATTICE, audit_body_order_lineage, ordered_fragments,
+};
+pub use native_body_text::{
+    BODY_ABSENCE_POLICY, BODY_ALIGNMENT_METHOD, BODY_GAP_THRESHOLDS, BodyAbsentDocument,
+    BodyAggregateInput, BodyAssignmentRoute, BodyBoundaryVerification, BodyCasePolicy,
+    BodyContentAlignment, BodyCoverageAggregate, BodyCoverageGap, BodyCoverageVerdict,
+    BodyDocumentOutcome, BodyGapReason, BodyJoinPolicy, BodyNormalization, BodyOracleCounts,
+    BodyOracleIndependence, BodyOracleProvenance, BodyPlaneLocalization, BodyPlaneVerdict,
+    BodyRegionVerdict, BodyScope, BodyScopeClass, BodyScopeSide, BodyThirdRouteProvenance,
+    BodyThirdRouteVerdict, BodyUncertaintySplit, BodyUnitInventory, BodyUnitRung,
+    MAX_BOUNDARY_TILE_UNITS, MAX_NATIVE_BODY_TOKENS, NATIVE_BODY_ASSIGNMENT_SCHEMA_VERSION,
+    NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION,
+    NATIVE_BODY_THIRD_ROUTE_SCHEMA_VERSION, NativeBodyAssignment, NativeBodyLengths,
+    NativeBodyText, NativeBodyTextError, NativeBodyThirdRouteCandidate, aggregate_body_coverage,
+    align_body_content, build_native_body_assignment, build_native_body_text,
+    classify_body_coverage, classify_body_plane, classify_body_region,
+    evaluate_body_third_route_candidate, localize_body_plane_checked, plane_verdict_for_population,
+    require_independent_body_oracle, scope_covers, split_body_uncertainty, split_plane_uncertainty,
 };
 pub use native_callout_classification::{
     CALLOUT_DENOMINATOR_DIGEST_DOMAIN, CALLOUT_OBSERVATION_DIGEST_DOMAIN, CalloutDenominator,

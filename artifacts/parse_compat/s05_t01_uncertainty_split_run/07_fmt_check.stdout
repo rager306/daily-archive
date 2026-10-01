@@ -1,0 +1,69 @@
+Diff in /root/daily-archive/crates/da-cli/examples/native_body_uncertainty_split_probe.rs:562:
+         let accepted_p1_bucket = accepted_bucket(&document.id)
+             .ok_or_else(|| format!("unknown accepted P1 bucket binding: {}", document.id))?;
+         let p1_conservation_ok = p1_split.total() == p1.uncertain_present_in_token_from_plane;
+[31m-        let p1_accepted_reproduced =
+(B[m[31m-            p1.uncertain_present_in_token_from_plane == accepted_p1_bucket;
+(B[m[32m+        let p1_accepted_reproduced = p1.uncertain_present_in_token_from_plane == accepted_p1_bucket;
+(B[m         p1_localization.add(&p1);
+         p1_measured += 1;
+ 
+Diff in /root/daily-archive/crates/da-cli/examples/native_body_uncertainty_split_probe.rs:692:
+                                         p2_bucket = Some(
+                                             gap.alignment.uncertain_present_in_token_from_body,
+                                         );
+[31m-                                        p2_split = split_body_uncertainty(
+(B[m[31m-                                            native.units(),
+(B[m[31m-                                            &oracle_units,
+(B[m[31m-                                        )
+(B[m[31m-                                        .ok();
+(B[m[32m+                                        p2_split =
+(B[m[32m+                                            split_body_uncertainty(native.units(), &oracle_units)
+(B[m[32m+                                                .ok();
+(B[m                                         word_outcomes
+                                             .push(BodyDocumentOutcome::Measured(gap.clone()));
+                                         BandRow {
+Diff in /root/daily-archive/crates/da-cli/examples/native_body_uncertainty_split_probe.rs:901:
+     let p1_population_complete = !declared.is_empty() && p1_measured == declared.len();
+     let p1_aggregate_verdict =
+         plane_verdict_for_population(&p1_localization, declared.len(), p1_measured);
+[31m-    let accepted_bucket_reproduced =
+(B[m[31m-        accepted_bucket_reproduced_all && p1_split_bucket_total == ACCEPTED_P1_IN_TOKEN_BUCKET_TOTAL;
+(B[m[32m+    let accepted_bucket_reproduced = accepted_bucket_reproduced_all
+(B[m[32m+        && p1_split_bucket_total == ACCEPTED_P1_IN_TOKEN_BUCKET_TOTAL;
+(B[m     let split_aggregate = SplitAggregate {
+         documents_declared: declared.len(),
+         documents_measured: p1_measured,
+Diff in /root/daily-archive/crates/da-parse/src/lib.rs:238:
+     BodyNormalization, BodyOracleCounts, BodyOracleIndependence, BodyOracleProvenance,
+     BodyPlaneLocalization, BodyPlaneVerdict, BodyScope, BodyScopeClass, BodyScopeSide,
+     BodyUncertaintySplit, BodyUnitInventory, BodyUnitRung, MAX_BOUNDARY_TILE_UNITS,
+[31m-    MAX_NATIVE_BODY_TOKENS,
+(B[m[31m-    NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION, NativeBodyLengths,
+(B[m[31m-    NativeBodyText, NativeBodyTextError, aggregate_body_coverage, align_body_content,
+(B[m[31m-    build_native_body_text, classify_body_coverage, classify_body_plane,
+(B[m[32m+    MAX_NATIVE_BODY_TOKENS, NATIVE_BODY_TEXT_GENERATOR_ID, NATIVE_BODY_TEXT_SCHEMA_VERSION,
+(B[m[32m+    NativeBodyLengths, NativeBodyText, NativeBodyTextError, aggregate_body_coverage,
+(B[m[32m+    align_body_content, build_native_body_text, classify_body_coverage, classify_body_plane,
+(B[m     localize_body_plane_checked, plane_verdict_for_population, require_independent_body_oracle,
+     scope_covers, split_body_uncertainty, split_plane_uncertainty,
+ };
+Diff in /root/daily-archive/crates/da-parse/tests/native_body_uncertainty_split_contract.rs:126:
+         localization.uncertain_present_in_token_from_plane,
+         "equal + proper must equal the uncertain_present_in_token bucket"
+     );
+[31m-    assert_eq!(split.equal_in_token, 2, "the second `the` and the second `ab`");
+(B[m[32m+    assert_eq!(
+(B[m[32m+        split.equal_in_token, 2,
+(B[m[32m+        "the second `the` and the second `ab`"
+(B[m[32m+    );
+(B[m     assert_eq!(split.proper_substring_in_token, 1, "`he` inside `the`");
+     assert_eq!(localization.exact_in_plane, 3, "the, the first `ab`, gamma");
+[31m-    assert_eq!(localization.uncertain_character_material_from_plane, 1, "cat");
+(B[m[32m+    assert_eq!(
+(B[m[32m+        localization.uncertain_character_material_from_plane, 1,
+(B[m[32m+        "cat"
+(B[m[32m+    );
+(B[m }
+ 
+ #[test]
