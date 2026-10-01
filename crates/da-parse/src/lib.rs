@@ -76,6 +76,7 @@ mod native_header_sequence;
 mod native_heading_regions;
 mod native_personal_name;
 mod native_region_input;
+mod native_route_failure;
 mod native_route_result;
 mod native_section_reading_order;
 mod native_segmentation;
@@ -112,7 +113,7 @@ pub use batch_budget::{
     BATCH_BUDGET_NO_RETENTION_CEILING_REASON, BATCH_BUDGET_RETENTION_CEILING_COMPOSES_WITH,
     BATCH_BUDGET_SILENT_CLAMP, BATCH_BUDGET_VERDICTS, BATCH_BUDGET_ZERO_IS_NOT_A_MEASUREMENT,
     BATCH_OBSERVATION_STATES, BackendTerminationClass, BatchBudgetVerdict, BatchObservation,
-    ParseBatchBudgetObservation, classify_backend_termination,
+    ParseBatchBudgetObservation, classify_backend_termination, classify_termination,
 };
 pub use cache::{
     CacheIntegrityCode, CacheMode, CacheStageDisposition, MEMORY_TIER_DEFAULT_CAPACITY,
@@ -463,6 +464,15 @@ pub use native_region_input::{
     MAX_NATIVE_REGION_TOKENS, NATIVE_REGION_INPUT_SCHEMA_VERSION, NativeRegionAbsence,
     NativeRegionCarrier, NativeRegionError, NativeRegionIdentity, NativeRegionRun,
     NativeRegionToken, build_native_region_carrier, build_native_word_region_carrier,
+};
+pub use native_route_failure::{
+    NATIVE_ROUTE_FAILURE_SCHEMA_VERSION, ROUTE_FAILURE_REASON_PREFIX_VOCABULARY,
+    ROUTE_FAILURE_RETRY, ROUTE_RECOVERY_DISPOSITION_VOCABULARY, ROUTE_SCOPE_BIBLIOGRAPHY_BAND,
+    ROUTE_SCOPE_BODY_AXIS, ROUTE_SCOPE_CASCADE, ROUTE_SCOPE_DOCUMENT, ROUTE_SCOPE_HEADER_BAND,
+    RouteAttemptReport, RouteFailure, RouteFailureReason, RouteInputSpec, RouteJavaObservation,
+    RouteRecoveryDisposition, attempt_native_route, classify_route_input, is_well_formed_pdf,
+    route_failure_from_aggregate_error, route_failure_from_bibliography_band,
+    route_failure_from_ceiling, route_failure_from_header_band, route_failures_from_result,
 };
 pub use native_route_result::{
     NATIVE_ROUTE_FAMILY_DISPOSITION_VOCABULARY, NATIVE_ROUTE_FAMILY_ORDER,

@@ -392,12 +392,12 @@ impl fmt::Display for BackendTerminationClass {
     }
 }
 
-/// Classify a closed transport failure by termination class (S06/T04, H19-N2).
+/// Classify a closed failure *shape* by termination class (S06/T04, H19-N2).
 ///
-/// Pure and deterministic: the result is a function of [`FailureCode`] and
-/// [`FailurePhase`] alone — never of a status, a payload, an order of calls or
-/// any external state. It cannot and does not claim that a Java process was
-/// killed.
+/// The pure mapping behind [`classify_backend_termination`], exposed so a
+/// caller that holds only a code/phase pair — for example a native route
+/// refusal, which is not a [`ParseBackendFailure`] — reuses this classification
+/// instead of restating it.
 ///
 /// Mapping (the closed vocabulary is documented in [`crate::transport`]):
 ///
@@ -409,14 +409,11 @@ impl fmt::Display for BackendTerminationClass {
 ///   read/framed, i.e. the peer ended mid-body) →
 ///   [`BackendTerminationClass::PeerClosedConnection`];
 /// - everything else → [`BackendTerminationClass::Unattributable`].
-///
-/// The timeout/peer-close split here is exactly the H19-N2 distinction: a
-/// transport timeout must never be recorded as a killed process, and a closed
-/// connection must never be recorded as a timeout.
-pub const fn classify_backend_termination(
-    failure: &ParseBackendFailure,
+pub const fn classify_termination(
+    code: FailureCode,
+    phase: FailurePhase,
 ) -> BackendTerminationClass {
-    match (failure.code(), failure.phase()) {
+    match (code, phase) {
         (FailureCode::Timeout, _) => BackendTerminationClass::TransportTimeout,
         (FailureCode::Transport, FailurePhase::Connect) => {
             BackendTerminationClass::ConnectionRefused
@@ -431,4 +428,20 @@ pub const fn classify_backend_termination(
         }
         _ => BackendTerminationClass::Unattributable,
     }
+}
+
+/// Classify a closed transport failure by termination class (S06/T04, H19-N2).
+///
+/// Pure and deterministic: the result is a function of [`FailureCode`] and
+/// [`FailurePhase`] alone — never of a status, a payload, an order of calls or
+/// any external state. It cannot and does not claim that a Java process was
+/// killed (see [`classify_termination`] for the mapping).
+///
+/// The timeout/peer-close split is exactly the H19-N2 distinction: a transport
+/// timeout must never be recorded as a killed process, and a closed connection
+/// must never be recorded as a timeout.
+pub const fn classify_backend_termination(
+    failure: &ParseBackendFailure,
+) -> BackendTerminationClass {
+    classify_termination(failure.code(), failure.phase())
 }
