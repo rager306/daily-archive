@@ -52,6 +52,7 @@ mod native_body_order_lineage;
 mod native_body_text;
 mod native_callout_classification;
 mod native_callout_matching;
+mod native_callout_native_input;
 mod native_citation;
 mod native_composition;
 mod native_consolidation_specialized;
@@ -271,6 +272,21 @@ pub use native_callout_matching::{
     NATIVE_CALLOUT_MATCHING_SCHEMA_VERSION, NativeCalloutMatchingError,
     NativeCalloutMatchingOutcome, NativeCalloutUpstreamStatus, ObservedCalloutStyle,
     inventory_digest, match_native_callouts,
+};
+pub use native_callout_native_input::{
+    NATIVE_CALLOUT_FAMILIES, NATIVE_CALLOUT_FAMILY_DISPOSITION_VOCABULARY,
+    NATIVE_CALLOUT_FAMILY_VOCABULARY, NATIVE_CALLOUT_NATIVE_INPUT_GENERATOR_ID,
+    NATIVE_CALLOUT_NATIVE_INPUT_SCHEMA_VERSION, NATIVE_CALLOUT_ORACLE_SCHEMA_VERSION,
+    NATIVE_CALLOUT_REGIONS, NativeCalloutFamilyDisposition, NativeCalloutFamilyEvaluation,
+    NativeCalloutFromInputOutcome, NativeCalloutInputAbsence, NativeCalloutInputError,
+    NativeCalloutInputIdentity, NativeCalloutInventoryProjection, NativeCalloutMarkerRow,
+    NativeCalloutMatchingDisposition, NativeCalloutMatchingRow, NativeCalloutOracle,
+    NativeCalloutOracleError, NativeCalloutOracleIndependenceError, NativeCalloutOraclePin,
+    NativeCalloutOracleProvenance, NativeCalloutOracleRow, NativeCalloutTargetInventoryStatus,
+    NativeCalloutUnmetReason, build_native_callout_input, callout_oracle_positive_rows,
+    evaluate_callout_family_rows, extract_native_callout_markers, oracle_content_digest,
+    require_independent_callout_oracle, require_non_vacuous_callout_oracle,
+    validate_native_callout_marker,
 };
 pub use native_citation::{
     CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_ANCHOR_SCANNER_ID,
