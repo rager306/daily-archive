@@ -108,15 +108,18 @@ fn deterministic_candidate_and_rvf_lineage_survive_restart() {
 fn insufficient_or_duplicate_corpus_is_not_trainable() {
     let dir = tempfile::tempdir().unwrap();
     let mut store = RvfFileStore::open(dir.path().join("experience.rvf"), lineage()).unwrap();
-    let only = vec![
+    // The split key is the DOCUMENT (`paper_id`), so the same document on the
+    // train side twice is refused even when the prompt identities differ. This
+    // is the explicit proof that the old prompt-identity duplicate rule is gone.
+    let duplicate_document = vec![
         record("paper-a", &"a".repeat(64), 0.8),
-        record("paper-b", &"a".repeat(64), 0.7),
+        record("paper-a", &"b".repeat(64), 0.7),
     ];
-    let validation = vec![record("paper-v", &"b".repeat(64), 0.7)];
+    let validation = vec![record("paper-v", &"c".repeat(64), 0.7)];
     assert!(matches!(
         train_microlora_candidate(
             &mut store,
-            &only,
+            &duplicate_document,
             &validation,
             lineage(),
             None,
@@ -124,6 +127,23 @@ fn insufficient_or_duplicate_corpus_is_not_trainable() {
             None
         ),
         Err(da_application::TrainingError::DuplicateIdentity)
+    ));
+    // A document with a blank identity cannot anchor a disjoint split.
+    let missing_document = vec![
+        record("", &"a".repeat(64), 0.8),
+        record("paper-b", &"b".repeat(64), 0.7),
+    ];
+    assert!(matches!(
+        train_microlora_candidate(
+            &mut store,
+            &missing_document,
+            &validation,
+            lineage(),
+            None,
+            TrainingConfig::default(),
+            None
+        ),
+        Err(da_application::TrainingError::MissingDocumentIdentity)
     ));
     assert!(matches!(
         train_microlora_candidate(
@@ -142,4 +162,33 @@ fn insufficient_or_duplicate_corpus_is_not_trainable() {
         0,
         "validation fails before RVF I/O"
     );
+}
+
+#[test]
+fn duplicate_prompt_identities_across_documents_are_trainable() {
+    // Duplicate `prompt_sha256` values are lineage, not split keys. Two distinct
+    // documents sharing one prompt identity must train, which the old
+    // prompt-identity rule refused.
+    let dir = tempfile::tempdir().unwrap();
+    let mut store = RvfFileStore::open(dir.path().join("experience.rvf"), lineage()).unwrap();
+    let shared = "f".repeat(64);
+    let train = vec![
+        record("paper-a", &shared, 0.8),
+        record("paper-b", &shared, 0.9),
+    ];
+    let validation = vec![record("paper-v", &shared, 0.75)];
+    let outcome = train_microlora_candidate(
+        &mut store,
+        &train,
+        &validation,
+        lineage(),
+        None,
+        TrainingConfig::default(),
+        None,
+    )
+    .expect("prompt duplicates across distinct documents must train");
+    assert_eq!(outcome.manifest.train_count, 2);
+    assert_eq!(outcome.manifest.validation_count, 1);
+    assert!(!outcome.manifest.receipt.deployed);
+    assert!(!outcome.manifest.receipt.import_eligible);
 }

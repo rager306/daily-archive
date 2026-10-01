@@ -106,7 +106,8 @@ pub use parse_policy_ablation::{
     PolicyVariantManifest, aggregate_policy_variant_ablation,
 };
 pub use parse_policy_training::{
-    PersistedCandidate, TrainingConfig, TrainingError, TrainingOutcome, train_microlora_candidate,
+    PersistedCandidate, TrainingConfig, TrainingError, TrainingOutcome, candidate_embedding,
+    candidate_forward, reload_persisted_candidate, train_microlora_candidate,
 };
 pub mod structural_elements_stage;
 pub mod summaries_agent_stage;

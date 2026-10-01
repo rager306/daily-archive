@@ -28,8 +28,10 @@ pub enum TrainingError {
     NotTrainable(&'static str),
     #[error("training split is invalid")]
     InvalidSplit,
-    #[error("training input contains duplicate identity")]
+    #[error("training input contains duplicate document identity")]
     DuplicateIdentity,
+    #[error("training input is missing a document identity")]
+    MissingDocumentIdentity,
     #[error("training input exceeds the bounded cap")]
     TooManySamples,
     #[error("vendor training failed: {0}")]
@@ -38,6 +40,10 @@ pub enum TrainingError {
     Store(String),
     #[error("candidate artifact failed: {0}")]
     Artifact(String),
+    #[error("candidate artifact is unreadable: {0}")]
+    CandidateArtifactUnreadable(String),
+    #[error("persisted candidate weights do not match the manifest digest")]
+    WeightsDigestMismatch,
     #[error("learning contract failed: {0}")]
     Contract(#[from] LearningContractError),
 }
@@ -69,6 +75,62 @@ pub struct PersistedCandidate {
     pub up_projection: Vec<f32>,
 }
 
+impl PersistedCandidate {
+    /// Recompute the weights digest from the persisted projections exactly the
+    /// way the trainer did, and compare it with the manifest's recorded digest.
+    /// A truncated, corrupted, or hand-edited artifact fails here.
+    pub fn verify_weights(&self) -> Result<(), TrainingError> {
+        let recomputed = digest_json(&(&self.down_projection, &self.up_projection))?;
+        if recomputed != self.manifest.weights_digest {
+            return Err(TrainingError::WeightsDigestMismatch);
+        }
+        Ok(())
+    }
+}
+
+/// Read a persisted candidate back from disk, enforce the candidate-only locks
+/// carried by its manifest, and verify that its weights still match the
+/// manifest digest. The artifact is never rewritten: reload is observation, not
+/// repair.
+pub fn reload_persisted_candidate(path: &Path) -> Result<PersistedCandidate, TrainingError> {
+    let bytes = std::fs::read(path)
+        .map_err(|e| TrainingError::CandidateArtifactUnreadable(e.to_string()))?;
+    let candidate: PersistedCandidate = serde_json::from_slice(&bytes)
+        .map_err(|e| TrainingError::CandidateArtifactUnreadable(e.to_string()))?;
+    candidate.manifest.validate()?;
+    candidate.verify_weights()?;
+    Ok(candidate)
+}
+
+/// Apply a reloaded candidate's weights through the real vendor forward pass.
+///
+/// This is the read path R142 requires: the stored down/up projections are fed
+/// back into a fresh [`MicroLoRA`] via the public `set_weights` API and the
+/// result is produced by the vendor `forward` implementation, not a re-telling.
+pub fn candidate_forward(
+    candidate: &PersistedCandidate,
+    input: &[f32],
+) -> Result<Vec<f32>, TrainingError> {
+    let hidden_dim = candidate.manifest.hidden_dim as usize;
+    let rank = candidate.manifest.rank as usize;
+    if input.len() != hidden_dim {
+        return Err(TrainingError::Artifact(format!(
+            "candidate_forward input length {} does not match hidden_dim {hidden_dim}",
+            input.len()
+        )));
+    }
+    let mut adapter = MicroLoRA::new(hidden_dim, rank);
+    adapter
+        .set_weights(
+            candidate.down_projection.clone(),
+            candidate.up_projection.clone(),
+        )
+        .map_err(TrainingError::Vendor)?;
+    let mut output = vec![0.0f32; hidden_dim];
+    adapter.forward(input, &mut output);
+    Ok(output)
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrainingOutcome {
     pub bank: ReasoningBankReceipt,
@@ -88,7 +150,11 @@ fn identity(value: &str) -> Sha256Digest {
     digest_bytes(value.as_bytes())
 }
 
-fn embedding(record: &TrajectoryRecord, dim: usize) -> Vec<f32> {
+/// Deterministic, side-effect-free embedding of one trajectory record.
+///
+/// Exposed to the crate so the persisted-candidate reload path can reuse the
+/// exact projection the trainer used instead of re-implementing it.
+pub fn candidate_embedding(record: &TrajectoryRecord, dim: usize) -> Vec<f32> {
     let mut out = vec![0.0; dim];
     let quality = record
         .grounding_hint
@@ -128,9 +194,16 @@ fn validate_inputs(
     if train.len() + validation.len() > MAX_TRAINING_SAMPLES {
         return Err(TrainingError::TooManySamples);
     }
+    // The split key is the DOCUMENT identity (`paper_id`), never the prompt.
+    // Duplicate `prompt_sha256` values are permitted: the prompt is lineage
+    // only. A document may appear at most once across train ∪ validation, and
+    // it must carry an identity at all.
     let mut seen = std::collections::BTreeSet::new();
     for record in train.iter().chain(validation) {
-        if record.prompt_sha256.is_empty() || !seen.insert(record.prompt_sha256.clone()) {
+        if record.paper_id.trim().is_empty() {
+            return Err(TrainingError::MissingDocumentIdentity);
+        }
+        if !seen.insert(record.paper_id.as_str()) {
             return Err(TrainingError::DuplicateIdentity);
         }
     }
@@ -151,11 +224,8 @@ pub fn train_microlora_candidate<S: RvfExperienceStore>(
 ) -> Result<TrainingOutcome, TrainingError> {
     validate_inputs(train, validation, &config)?;
     let split = SplitIdentity {
-        train: train.iter().map(|r| identity(&r.prompt_sha256)).collect(),
-        validation: validation
-            .iter()
-            .map(|r| identity(&r.prompt_sha256))
-            .collect(),
+        train: train.iter().map(|r| identity(&r.paper_id)).collect(),
+        validation: validation.iter().map(|r| identity(&r.paper_id)).collect(),
     };
     split.validate()?;
     let config_digest = digest_json(&config)?;
@@ -175,7 +245,7 @@ pub fn train_microlora_candidate<S: RvfExperienceStore>(
     for (index, record) in train.iter().enumerate() {
         let mut trajectory = ruvector_sona::QueryTrajectory::new(
             index as u64 + 1,
-            embedding(record, config.hidden_dim),
+            candidate_embedding(record, config.hidden_dim),
         );
         trajectory.finalize(
             record
@@ -208,7 +278,7 @@ pub fn train_microlora_candidate<S: RvfExperienceStore>(
 
     let mut adapter = MicroLoRA::new(config.hidden_dim, config.rank);
     for record in train {
-        let vector = embedding(record, config.hidden_dim);
+        let vector = candidate_embedding(record, config.hidden_dim);
         let signal = LearningSignal::with_gradient(
             vector.clone(),
             vector,

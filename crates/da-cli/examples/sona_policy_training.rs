@@ -11,12 +11,11 @@
 //! (`deployed=false`, `import_eligible=false`, `promotion_state=candidate`).
 //!
 //! WHY IT CAN REFUSE: the training contract requires a train/validation split whose
-//! identities are disjoint and both non-empty, and identity IS `prompt_sha256`
-//! (`parse_policy_training::train_microlora_candidate` builds `SplitIdentity` from it).
-//! The canonical experience in `data/agent_memory/<namespace>` currently records ONE
-//! prompt identity per namespace (summarizer: 55 records / 1 identity), so no disjoint
-//! split exists and the run reports `not_trainable` with the measured counts instead of
-//! fabricating a split. That refusal is the finding, not a failure of this driver.
+//! DOCUMENT identities (`paper_id`) are disjoint, non-empty, and cover both sides.
+//! A namespace whose canonical experience covers fewer than two documents, or that
+//! carries a blank `paper_id`, cannot satisfy that contract, and the run reports
+//! `not_trainable` with the measured counts instead of fabricating a split. Duplicate
+//! `prompt_sha256` values are permitted: the prompt is lineage only, never the split key.
 
 use clap::Parser;
 use da_adapters::RvfFileStore;
@@ -57,7 +56,7 @@ struct Report {
     namespace: String,
     memory_root: String,
     records_read: usize,
-    distinct_prompt_identities: usize,
+    distinct_document_identities: usize,
     /// Deterministic reason when the contract cannot be satisfied.
     not_trainable: Option<String>,
     train_count: usize,
@@ -98,18 +97,20 @@ fn lineage(namespace: &str) -> LearningLineage {
     }
 }
 
-/// Split by identity: first identity in sorted order becomes validation, the rest
-/// train. Deterministic, and it keeps `SplitIdentity` disjoint by construction.
-fn split_by_identity(
+/// Split by DOCUMENT identity (`paper_id`): one record per document, first document in
+/// sorted order becomes validation, the rest train. Deterministic, and it keeps
+/// `SplitIdentity` disjoint by construction. Duplicate `prompt_sha256` values are
+/// collapsed here, not used as a key.
+fn split_by_document(
     records: &[TrajectoryRecord],
 ) -> (Vec<TrajectoryRecord>, Vec<TrajectoryRecord>) {
-    let mut by_identity: BTreeMap<&str, &TrajectoryRecord> = BTreeMap::new();
+    let mut by_document: BTreeMap<&str, &TrajectoryRecord> = BTreeMap::new();
     for record in records {
-        by_identity
-            .entry(record.prompt_sha256.as_str())
+        by_document
+            .entry(record.paper_id.as_str())
             .or_insert(record);
     }
-    let mut identities: Vec<&str> = by_identity.keys().copied().collect();
+    let mut identities: Vec<&str> = by_document.keys().copied().collect();
     identities.sort_unstable();
     // Sorted-first identity is held out; the field split is deterministic and reported.
     let (validation_ids, train_ids) = identities
@@ -117,7 +118,7 @@ fn split_by_identity(
         .map_or((&[][..], &[][..]), |(v, t)| (std::slice::from_ref(v), t));
     let pick = |ids: &[&str]| -> Vec<TrajectoryRecord> {
         ids.iter()
-            .filter_map(|id| by_identity.get(id).copied().cloned())
+            .filter_map(|id| by_document.get(id).copied().cloned())
             .collect()
     };
     (pick(train_ids), pick(validation_ids))
@@ -135,15 +136,15 @@ fn main() -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("RVF read: {e}"))?;
 
     let identities: std::collections::BTreeSet<&str> =
-        records.iter().map(|r| r.prompt_sha256.as_str()).collect();
-    let (train, validation) = split_by_identity(&records);
+        records.iter().map(|r| r.paper_id.as_str()).collect();
+    let (train, validation) = split_by_document(&records);
 
     let mut report = Report {
         schema_version: "sona-policy-training-run.v1",
         namespace: args.namespace.clone(),
         memory_root: args.memory_root.display().to_string(),
         records_read: records.len(),
-        distinct_prompt_identities: identities.len(),
+        distinct_document_identities: identities.len(),
         not_trainable: None,
         train_count: train.len(),
         validation_count: validation.len(),
@@ -165,17 +166,14 @@ fn main() -> anyhow::Result<()> {
 
     if records.is_empty() {
         report.not_trainable = Some("no canonical RVF trajectories for this namespace".into());
-    } else if identities.len() < 2 {
-        // Measured refusal: the split contract needs >= 2 disjoint identities and
-        // identity IS prompt_sha256, so a single-identity namespace cannot train.
+    } else if train.is_empty() || validation.is_empty() {
+        // Measured refusal: the document-identity split needs at least two documents
+        // so both sides are non-empty; duplicates inside a side are collapsed above.
         report.not_trainable = Some(format!(
-            "identity diversity is {} but the split contract needs >= 2 disjoint \
-             prompt_sha256 identities (train and validation must both be non-empty and \
-             disjoint); the recorder currently writes one identity per namespace",
+            "document split produced an empty side from {} distinct paper_id values; the \
+             split contract needs >= 2 documents and a non-empty train and validation",
             identities.len()
         ));
-    } else if train.is_empty() || validation.is_empty() {
-        report.not_trainable = Some("split produced an empty side".into());
     } else if train.len() + validation.len() > MAX_TRAINING_SAMPLES {
         report.not_trainable = Some(format!(
             "{} samples exceed the training cap {MAX_TRAINING_SAMPLES}",
@@ -232,7 +230,7 @@ fn main() -> anyhow::Result<()> {
         "== sona-policy-training: {} ==\nrecords={} identities={} train={} validation={}",
         report.namespace,
         report.records_read,
-        report.distinct_prompt_identities,
+        report.distinct_document_identities,
         report.train_count,
         report.validation_count
     );
