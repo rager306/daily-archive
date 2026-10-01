@@ -7544,4 +7544,49 @@ fn native_visual_native_input_is_pure_and_free_of_out_of_scope() {
     ] {
         assert!(lib.contains(marker), "lib.rs must register {marker}");
     }
+    // The band is additive: it must not be spliced into the Java-authoritative
+    // parse route or the projection that feeds it.
+    for boundary in [
+        "crates/da-parse/src/parser.rs",
+        "crates/da-parse/src/projector.rs",
+    ] {
+        let boundary_text = strip_line_comments(&read_text(boundary));
+        for marker in [
+            "native_visual_native_input",
+            "build_native_visual_input",
+            "build_native_visual_observation",
+            "run_native_visual_heads",
+        ] {
+            assert!(
+                !boundary_text.contains(marker),
+                "{boundary} must not wire the additive native visual band ({marker})"
+            );
+        }
+    }
+}
+
+/// Positive control for the S05/T03 scanner: the forbidden-marker scan is live
+/// and the boundary scan sees a synthetic wiring, so the assertion above cannot
+/// pass vacuously.
+#[test]
+fn native_visual_native_input_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "use std::fs::File;\nfn run() { println!(\"x\"); }\nParserPort::new();\n";
+    let hits = native_date_marker_hits(synthetic, &NATIVE_WORD_PLANE_FORBIDDEN);
+    assert!(
+        hits.len() >= 3,
+        "the forbidden-marker scanner must be live, got {hits:?}"
+    );
+    assert!(
+        native_date_marker_hits(
+            "// std::fs and ParserPort are prose\n",
+            &NATIVE_WORD_PLANE_FORBIDDEN
+        )
+        .is_empty(),
+        "comment prose must not flag"
+    );
+    let wired = strip_line_comments("pub fn parse() { build_native_visual_input(x); }");
+    assert!(
+        wired.contains("build_native_visual_input"),
+        "a wired call-site must be visible to the boundary scanner"
+    );
 }

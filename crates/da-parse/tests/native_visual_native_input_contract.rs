@@ -456,6 +456,217 @@ fn plane_identity_drift_is_refused() {
     ));
 }
 
+/// Executable pin of the structural limit the replacement plan records: the S03
+/// donor plane cannot carry a positive visual kind, so the honest outcome for
+/// figure/formula is a typed `unmet`, never a fabricated head.
+///
+/// Three facts are asserted together:
+/// 1. the donor's only kind producer `LayoutTokenKind::from_lexical_text`
+///    yields lexical kinds only (`Image`/`Formula`/`Other` are unreachable);
+/// 2. the lexical lattice refuses a block that lists a visual token, so no
+///    lattice can carry one even if a crafted document did;
+/// 3. the segmentation sidecar excludes `Formula`/`Image` from the document
+///    token set, so a visual token requires no lexeme row.
+#[test]
+fn lexical_donor_plane_cannot_produce_a_visual_kind() {
+    // (1) Reachable kinds from text are exactly the four lexical kinds.
+    let mut produced: Vec<LayoutTokenKind> = Vec::new();
+    for text in [
+        "",
+        "   ",
+        "word",
+        "two words",
+        "!?,.;:",
+        "()[]{}",
+        "±→∈",
+        "12345",
+        "a1b2",
+    ] {
+        let kind = LayoutTokenKind::from_lexical_text(text);
+        if !produced.contains(&kind) {
+            produced.push(kind);
+        }
+    }
+    let lexical = [
+        LayoutTokenKind::Word,
+        LayoutTokenKind::Whitespace,
+        LayoutTokenKind::Punctuation,
+        LayoutTokenKind::Symbol,
+    ];
+    for kind in &produced {
+        assert!(
+            lexical.contains(kind),
+            "a lexical donor produced a non-lexical kind: {kind:?}"
+        );
+    }
+    for reachable in [
+        LayoutTokenKind::Word,
+        LayoutTokenKind::Whitespace,
+        LayoutTokenKind::Punctuation,
+        LayoutTokenKind::Symbol,
+    ] {
+        assert!(
+            produced.contains(&reachable),
+            "positive control: {reachable:?} must be reachable from text"
+        );
+    }
+    for unreachable in [
+        LayoutTokenKind::Image,
+        LayoutTokenKind::Formula,
+        LayoutTokenKind::Other,
+    ] {
+        assert!(
+            !produced.contains(&unreachable),
+            "text fabricated the unreachable kind {unreachable:?}"
+        );
+    }
+
+    // (2)/(3) A crafted document may carry a visual token, but neither the
+    // lexical lattice nor the segmentation sidecar will admit it.
+    let provider = LayoutProvider::new(PROVIDER_ID, "1", "a".repeat(64)).unwrap();
+    let style = LayoutStyleHints {
+        font_size_milli_pt: Some(11_000),
+        ..LayoutStyleHints::default()
+    };
+    let lexical_token = LayoutToken::new(
+        0,
+        0,
+        0,
+        LayoutBBox::new(10.0, 10.0, 40.0, 20.0).unwrap(),
+        digest("word"),
+        LayoutSpan::present(0, 1).unwrap(),
+        LayoutTokenKind::Word,
+        style,
+        provider.clone(),
+    )
+    .unwrap();
+    let visual_token = LayoutToken::new(
+        0,
+        1,
+        1,
+        LayoutBBox::new(10.0, 30.0, 40.0, 40.0).unwrap(),
+        digest("img"),
+        LayoutSpan::present(1, 2).unwrap(),
+        LayoutTokenKind::Image,
+        style,
+        provider,
+    )
+    .unwrap();
+    let document = LayoutDocument::new(
+        "visual-kind-doc",
+        "b".repeat(64),
+        vec![
+            LayoutPage::new(
+                0,
+                300.0,
+                2000.0,
+                0,
+                None,
+                vec![lexical_token.clone(), visual_token.clone()],
+            )
+            .unwrap(),
+        ],
+    )
+    .unwrap();
+
+    let lattice_token = |token: &LayoutToken| LatticeToken {
+        source_ordinal: token.source_ordinal,
+        token_ordinal: token.token_ordinal,
+        bbox: token.bbox,
+        text_digest: token.text_digest.clone(),
+        source_span: token.source_span.clone(),
+        kind: token.kind,
+    };
+    let line_block = |tokens: Vec<LatticeToken>| LatticeBlock {
+        source_ordinal: 0,
+        source_span: LayoutSpan::present(0, 2).unwrap(),
+        bbox: LayoutBBox::new(0.0, 10.0, 300.0, 40.0).unwrap(),
+        source_order: 0,
+        derived_order: Some(0),
+        furniture: FurnitureEvidence::Absent,
+        lines: vec![LatticeLine {
+            source_ordinal: 0,
+            source_span: LayoutSpan::present(0, 2).unwrap(),
+            bbox: LayoutBBox::new(0.0, 10.0, 300.0, 40.0).unwrap(),
+            newline_boundary_count: 1,
+            tokens,
+        }],
+    };
+    let lattice_over = |tokens: Vec<LatticeToken>| {
+        vec![LatticePage {
+            page_ordinal: 0,
+            java_page_number: 1,
+            width: 300.0,
+            height: 2000.0,
+            rotation: 0,
+            crop_box: None,
+            blocks: vec![line_block(tokens)],
+        }]
+    };
+
+    let lexical_lattice = LayoutLattice::new(
+        &document,
+        CoordinateDialect::AltoTopLeft72Dpi,
+        ReadingOrder::XmlSource,
+        Some(ReadingOrder::XyCutDerived),
+        lattice_over(vec![lattice_token(&lexical_token)]),
+    )
+    .expect("a lexical-only lattice is admissible");
+    let admitted: Vec<LayoutTokenKind> = lexical_lattice
+        .pages
+        .iter()
+        .flat_map(|page| page.blocks.iter())
+        .flat_map(|block| block.lines.iter())
+        .flat_map(|line| line.tokens.iter())
+        .map(|token| token.kind)
+        .collect();
+    assert!(
+        admitted.iter().all(|kind| kind.is_lexical()),
+        "the lattice admitted a non-lexical token: {admitted:?}"
+    );
+    assert!(
+        !admitted.iter().any(|kind| kind.is_visual()),
+        "the lexical lattice admitted a visual token"
+    );
+
+    let refusing = LayoutLattice::new(
+        &document,
+        CoordinateDialect::AltoTopLeft72Dpi,
+        ReadingOrder::XmlSource,
+        Some(ReadingOrder::XyCutDerived),
+        lattice_over(vec![
+            lattice_token(&lexical_token),
+            lattice_token(&visual_token),
+        ]),
+    );
+    assert_eq!(
+        refusing.unwrap_err(),
+        LayoutLatticeError::VisualTokenInLexicalLattice { page: 0, source: 1 },
+        "a lattice that lists a visual token must be refused by construction"
+    );
+
+    // (3) The sidecar excludes `Formula`/`Image`: the visual token needs no
+    // lexeme row, so segmentation succeeds with a row only for the word.
+    let lexemes = vec![LexemeRow::new(
+        "visual-kind-doc",
+        PROVIDER_ID,
+        0,
+        0,
+        digest("word"),
+        "word",
+    )];
+    let segmented = segment_document_full(
+        &document,
+        &lexical_lattice,
+        &lexemes,
+        SegmentationConfig::default(),
+    );
+    assert!(
+        segmented.is_ok(),
+        "a visual token must not require a lexeme row: {segmented:?}"
+    );
+}
+
 #[test]
 fn a_same_generator_oracle_is_refused() {
     let provenance = NativeVisualOracleProvenance {
