@@ -61,9 +61,12 @@ const NO_CLEARANCE: &str = "Comparison, not a quality proof: a zero uncertain co
      prioritised over another.";
 
 /// Artifacts that predate this diagnostic. Their bytes are recorded, never
-/// rewritten, so a later reader can see that this run preserved them.
+/// rewritten, so a later reader can see that this run preserved them. The
+/// superseded `native_body_character_shadow.json` lives in the archive
+/// subdirectory, so the archive is a namespace move only and its digest is
+/// unchanged.
 const PRIOR_ARTIFACTS: [&str; 4] = [
-    "artifacts/parse_compat/native_body_character_shadow.json",
+    "artifacts/parse_compat/historical/native_body_character_shadow.json",
     "artifacts/parse_compat/native_body_character_scope_bound.prior_repair.json",
     "artifacts/parse_compat/native_body_character_scope_bound.repair2_artifact.json",
     "artifacts/parse_compat/native_body_character_scope_bound.json",
@@ -412,6 +415,7 @@ fn order_axes() -> Vec<OrderAxis> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("native_body_order_lineage_probe");
     let manifest_bytes = std::fs::read(root().join("data/parse/layout_bakeoff.yaml"))?;
     let manifest: Manifest = serde_yaml::from_slice(&manifest_bytes)?;
     let provenance_bytes = std::fs::read(root().join(PROVENANCE_PATH))?;

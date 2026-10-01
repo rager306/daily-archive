@@ -22,8 +22,11 @@
 //!   assignment gap), never from a total, ratio, or ceiling;
 //! * the aggregate carries the **complete declared population** and names every
 //!   contributing and absent document, so a partial band cannot look clean;
-//! * the historical `native_body_character_shadow.json` is **not overwritten** —
-//!   the repaired diagnostic is written to a separate artifact.
+//! * the historical superseded diagnostic `native_body_character_shadow.json` is
+//!   **not overwritten** — it is archived byte-identical under
+//!   `artifacts/parse_compat/historical/` (it carries no population split and no
+//!   live example produces it), and the repaired diagnostic is written to a
+//!   separate artifact.
 //!
 //! Second bounded repair (finding `S05-T01-BOUNDARY-LOCATOR-NOT-GROUNDED`):
 //!
@@ -81,7 +84,8 @@ use std::path::PathBuf;
 
 const REPORT_SCHEMA: &str = "native-body-character-scope-bound.v6";
 const DEFAULT_REPORT: &str = "artifacts/parse_compat/native_body_character_scope_bound.json";
-const HISTORICAL_REPORT: &str = "artifacts/parse_compat/native_body_character_shadow.json";
+const HISTORICAL_REPORT: &str =
+    "artifacts/parse_compat/historical/native_body_character_shadow.json";
 const HISTORICAL_NOTE: &str = "Historical diagnostic produced before the scope-bound repair; \
      its HUB surplus was labelled granularity_only from a one-sided 980-per-mille length rule and \
      its S03 aggregate folded only the contributing documents. Superseded by this artifact.";
@@ -414,6 +418,7 @@ fn oracle_scope() -> BodyScope {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("native_body_character_probe");
     let manifest_bytes = std::fs::read(root().join("data/parse/layout_bakeoff.yaml"))?;
     let manifest: Manifest = serde_yaml::from_slice(&manifest_bytes)?;
     let provenance_bytes = std::fs::read(root().join(PROVENANCE_PATH))?;
