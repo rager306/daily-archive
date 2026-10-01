@@ -80,6 +80,7 @@ mod native_segmentation;
 mod native_table_sequence;
 mod native_visual;
 mod native_visual_family_cluster;
+mod native_visual_native_input;
 mod native_word_projection;
 mod p5_shadow_join;
 mod parser;
@@ -502,6 +503,20 @@ pub use native_visual_family_cluster::{
     FamilyLabelCluster, MAX_NATIVE_VISUAL_FAMILY_ROWS, NATIVE_VISUAL_FAMILY_NAME_PREFIX,
     NativeCaptionLinkAbsence, NativeCaptionLinks, NativeCaptionMarker,
     NativeVisualFamilyClusterError, caption_links_from_markers, cluster_family_label_runs,
+};
+pub use native_visual_native_input::{
+    NATIVE_VISUAL_FAMILY_DISPOSITION_VOCABULARY, NATIVE_VISUAL_FAMILY_VOCABULARY,
+    NATIVE_VISUAL_NATIVE_INPUT_GENERATOR_ID, NATIVE_VISUAL_NATIVE_INPUT_SCHEMA_VERSION,
+    NATIVE_VISUAL_ORACLE_SCHEMA_VERSION, NATIVE_VISUAL_TABLE_ANCHOR_TOLERANCE_PT,
+    NATIVE_VISUAL_TABLE_CELL_GAP_PT, NATIVE_VISUAL_TABLE_MIN_COLUMNS, NATIVE_VISUAL_TABLE_MIN_ROWS,
+    NativeVisualFamily, NativeVisualFamilyDisposition, NativeVisualFamilyEvaluation,
+    NativeVisualFromInputConfig, NativeVisualFromInputOutcome, NativeVisualHeadObservation,
+    NativeVisualInputError, NativeVisualInputIdentity, NativeVisualOracle, NativeVisualOracleError,
+    NativeVisualOracleIndependenceError, NativeVisualOraclePin, NativeVisualOracleProvenance,
+    NativeVisualOracleRow, NativeVisualUnmetReason, build_native_visual_input,
+    build_native_visual_observation, evaluate_visual_family_rows,
+    require_independent_visual_oracle, require_non_vacuous_visual_oracle, run_native_visual_heads,
+    visual_oracle_positive_rows,
 };
 pub use native_word_projection::{
     MAX_NATIVE_WORD_PARENTS, MAX_NATIVE_WORDS, NATIVE_WORD_PROJECTION_SCHEMA_VERSION,

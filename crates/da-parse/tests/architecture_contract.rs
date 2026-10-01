@@ -7483,3 +7483,65 @@ fn native_body_order_lineage_is_pure_and_names_no_tei_or_java_type() {
         assert!(lib.contains(marker), "lib.rs must register {marker}");
     }
 }
+
+/// The additive S05/T03 native visual-input surface. It builds the visual
+/// observation from the S03 plane and compares it against an independent
+/// positive oracle; like the other additive bands it must stay pure, TEI-free,
+/// and its required-family vocabulary must carry no scope reduction.
+const NATIVE_VISUAL_NATIVE_INPUT_SURFACE: &str =
+    "crates/da-parse/src/native_visual_native_input.rs";
+
+#[test]
+fn native_visual_native_input_is_pure_and_free_of_out_of_scope() {
+    let text = read_text(NATIVE_VISUAL_NATIVE_INPUT_SURFACE);
+    assert!(
+        text.len() > 10_000,
+        "positive control failed: {NATIVE_VISUAL_NATIVE_INPUT_SURFACE} looks truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from([
+            "crate".to_string(),
+            "serde".to_string(),
+            "sha2".to_string(),
+            "std".to_string()
+        ]),
+        "{NATIVE_VISUAL_NATIVE_INPUT_SURFACE} may import only its typed leaves, serde, hashing and formatting"
+    );
+    let mut hits = native_date_marker_hits(&text, &NATIVE_WORD_PLANE_FORBIDDEN);
+    hits.extend(native_date_marker_hits(
+        &text,
+        &NATIVE_BODY_TEXT_EXTRA_FORBIDDEN,
+    ));
+    assert!(
+        hits.is_empty(),
+        "{NATIVE_VISUAL_NATIVE_INPUT_SURFACE} acquired TEI/Java coupling or a side effect:\n{}",
+        hits.join("\n")
+    );
+    for marker in [
+        "NATIVE_VISUAL_FAMILY_DISPOSITION_VOCABULARY",
+        "build_native_visual_input",
+        "evaluate_visual_family_rows",
+        "require_non_vacuous_visual_oracle",
+        "NativeVisualUnmetReason",
+    ] {
+        assert!(
+            text.contains(marker),
+            "{NATIVE_VISUAL_NATIVE_INPUT_SURFACE} must keep {marker}"
+        );
+    }
+    // The required-family vocabulary is closed and carries no scope reduction:
+    // an unsupported required family is a typed `unmet`, never `out_of_scope`.
+    assert!(text.contains("[\"measured\", \"unmet\", \"not_observed\"]"));
+    assert!(
+        !strip_line_comments(&text).contains("out_of_scope"),
+        "the code half of the surface must not name out_of_scope"
+    );
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    for marker in [
+        "mod native_visual_native_input;",
+        "pub use native_visual_native_input::",
+    ] {
+        assert!(lib.contains(marker), "lib.rs must register {marker}");
+    }
+}
