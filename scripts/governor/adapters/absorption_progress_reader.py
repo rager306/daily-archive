@@ -90,6 +90,7 @@ from governor.domain.absorption_progress import (
     JAVA_FREE_SLICE_VIOLATION_LABELS,
     NATIVE_CONTENT_VIOLATION_LABELS,
     NATIVE_FAMILY_VIOLATION_LABELS,
+    NATIVE_ROUTE_VIOLATION_LABELS,
     contract_thresholds,
     missing_contract_vocabulary,
     score_number,
@@ -145,6 +146,7 @@ _RULE_KEYS = (
     "java_free_slice",
     "native_family_receipt",
     "native_content_receipt",
+    "native_route_e2e",
 )
 
 
@@ -926,6 +928,274 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
                     bundle["errors"].append("oracle_source_pointer_unresolved")
 
         return bundle
+    # ── the native route + same-n resource receipts (S06/T07) ──────────
+    def _composite_freeze_revision(self, revision: Any) -> Optional[str]:
+        """Recompute the T02 composite freeze revision from the pinned carriers.
+
+        The rule declares the carriers (paths, in order) and a single
+        ``line_format``; this recomputes ``sha256(join("<path>:<sha256-hex>",
+        "\\n"))`` over their *committed bytes*. That is what makes the freeze a
+        binding rather than a mention: a receipt that carries the revision is
+        refused as stale the moment a carrier is edited, and no later reader has
+        to trust the number it declared.
+
+        ``None`` means the declaration is not shaped for that recomputation, so
+        the caller leaves the revision unresolvable rather than fabricating one.
+        """
+        if not isinstance(revision, dict):
+            return None
+        carriers = revision.get("carriers")
+        if not isinstance(carriers, list) or not carriers:
+            return None
+        lines: list[str] = []
+        for carrier in carriers:
+            if not isinstance(carrier, dict):
+                return None
+            relative = _text(carrier.get("path"))
+            if relative is None or not _is_relative_path(relative):
+                return None
+            digest = self.file_sha256(relative)
+            if digest is None:
+                return None
+            lines.append(f"{relative}:{digest.split('sha256:', 1)[-1]}")
+        blob = "\n".join(lines).encode("utf-8")
+        return f"sha256:{hashlib.sha256(blob).hexdigest()}"
+
+    def _resolve_reference_pins(self, receipt: Any) -> dict[str, Any]:
+        """Recompute every measured carrier an observed reference row names.
+
+        The T06 receipt binds each observed reference number to a repository-
+        relative carrier plus its ``sha256``. That pin is only a binding if it is
+        checked against the committed bytes, so every distinct *measured* source
+        named by the receipt is re-hashed here and published beside the number the
+        receipt declared. A receipt that names a carrier it drifted from -- or a
+        carrier that does not exist -- is then refused by the oracle rather than
+        trusted because the row is shaped correctly.
+
+        Only sources of *observed* rows are resolved: an absent row is a typed
+        absence and names no carrier.
+        """
+        pins: dict[str, Any] = {}
+        if not isinstance(receipt, dict):
+            return pins
+
+        rows: list[Any] = []
+        populations = receipt.get("populations")
+        if isinstance(populations, list):
+            for population in populations:
+                if not isinstance(population, dict):
+                    continue
+                metrics = population.get("metrics")
+                if isinstance(metrics, list):
+                    rows.extend(metrics)
+        documents = receipt.get("documents")
+        if isinstance(documents, list):
+            for document in documents:
+                if not isinstance(document, dict):
+                    continue
+                reference = document.get("reference")
+                if isinstance(reference, list):
+                    rows.extend(reference)
+
+        for row in rows:
+            if not isinstance(row, dict) or _text(row.get("state")) != "observed":
+                continue
+            source = row.get("source")
+            if not isinstance(source, dict):
+                continue
+            manifest = _text(source.get("manifest"))
+            if manifest is None or not _is_relative_path(manifest):
+                continue
+            pins[manifest] = {
+                "declared_sha256": _text(source.get("sha256")),
+                "declared_kind": _text(source.get("kind")),
+                "recomputed_sha256": self.file_sha256(manifest),
+            }
+        return pins
+
+    def read_native_route_e2e(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the S06 route receipt, the same-n resource receipt and the boundary.
+
+        The half this governs is the S06 evidence that one PDF->native path ends in
+        a typed document result on the declared 3-document slice with no Java and no
+        prior TEI, measured against a limit freeze declared *before* any benchmark,
+        plus the T06 same-n resource receipt that pairs that measurement with a
+        pinned reference on the same documents. The rule names only *where* the two
+        receipts live, where the declaration / cascade / corpus carriers live and
+        which frozen limit dictionary the receipts must mirror; nothing about the
+        receipt contents is restated in the rule, so the rule cannot drift from the
+        artifacts it governs.
+
+        ``None`` means the rule does not govern a native-route half. Otherwise a
+        bundle carrying both receipt documents with their recomputed ``sha256``,
+        the recomputed declaration / stage-carrier / corpus hashes, the derived
+        corpus pin and page denominator, the declaration's own slice boundary
+        (in-slice stages, out-of-slice stages, admission stage and the out-of-slice
+        reason vocabulary) and the composite freeze revision recomputed from the
+        T02 carriers. ``available`` is True only when the S03 declaration carrier
+        resolves -- the same authority the Java-free, native-family and
+        native-content halves read -- so a tree that simply does not carry that
+        authority is *absence*, not a violation. An unreadable *receipt* under a
+        resolvable declaration is not absence -- it is a claim with no evidence --
+        and the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("native_route_e2e")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        stage_source_rule = rule.get("stage_id_source")
+        stage_source_rule = stage_source_rule if isinstance(stage_source_rule, dict) else {}
+        stage_source_manifest = _text(stage_source_rule.get("manifest"))
+        stage_source_pointer = _text(stage_source_rule.get("pointer"))
+
+        receipt_rule = rule.get("receipt")
+        receipt_rule = receipt_rule if isinstance(receipt_rule, dict) else {}
+        receipt_path = _text(receipt_rule.get("path"))
+
+        resource_rule = rule.get("resource_receipt")
+        resource_rule = resource_rule if isinstance(resource_rule, dict) else {}
+        resource_path = _text(resource_rule.get("path"))
+
+        corpus_rule = rule.get("corpus")
+        corpus_rule = corpus_rule if isinstance(corpus_rule, dict) else {}
+        corpus_manifest = _text(corpus_rule.get("manifest"))
+        corpus_pointer = _text(corpus_rule.get("pointer"))
+
+        limit_policy = rule.get("limit_policy")
+        limit_policy = limit_policy if isinstance(limit_policy, dict) else {}
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "declaration_sha256": (
+                self.file_sha256(declaration_manifest) if declaration_manifest else None
+            ),
+            "declaration": None,
+            "stages_in_slice": [],
+            "stages_out_of_slice": [],
+            "admission_stage": None,
+            "out_of_slice_reasons": [],
+            "receipt_path": receipt_path,
+            "receipt_exists": bool(receipt_path and self.path_exists(receipt_path)),
+            "receipt_sha256": self.file_sha256(receipt_path) if receipt_path else None,
+            "receipt": None,
+            "resource_receipt_path": resource_path,
+            "resource_receipt_exists": bool(
+                resource_path and self.path_exists(resource_path)
+            ),
+            "resource_receipt_sha256": (
+                self.file_sha256(resource_path) if resource_path else None
+            ),
+            "resource_receipt": None,
+            "resource_reference_pins": {},
+            "stage_source_manifest": stage_source_manifest,
+            "stage_source_pointer": stage_source_pointer,
+            "stage_source_sha256": (
+                self.file_sha256(stage_source_manifest) if stage_source_manifest else None
+            ),
+            "stage_ids": [],
+            "corpus_manifest": corpus_manifest,
+            "corpus_pointer": corpus_pointer,
+            "corpus_sha256": (
+                self.file_sha256(corpus_manifest) if corpus_manifest else None
+            ),
+            "corpus_documents": None,
+            "corpus_document_count": None,
+            "corpus_page_denominator": None,
+            "freeze_revision_recomputed": self._composite_freeze_revision(
+                limit_policy.get("freeze_revision")
+            ),
+            "freeze_metric_ids": _text_list(limit_policy.get("metrics")),
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["declaration"] = block
+                bundle["available"] = True
+                bundle["stages_in_slice"] = [
+                    _text(entry.get("stage_id"))
+                    for entry in block.get("stages_in_slice") or []
+                    if isinstance(entry, dict) and _text(entry.get("stage_id"))
+                ]
+                bundle["stages_out_of_slice"] = [
+                    _text(entry.get("stage_id"))
+                    for entry in block.get("stages_out_of_slice") or []
+                    if isinstance(entry, dict) and _text(entry.get("stage_id"))
+                ]
+                admission = block.get("identity_admission_stage")
+                if isinstance(admission, dict):
+                    bundle["admission_stage"] = _text(admission.get("stage_id"))
+                bundle["out_of_slice_reasons"] = _text_list(
+                    block.get("out_of_slice_reason_vocabulary")
+                )
+
+        bundle["receipt"] = self.read_json(receipt_path) if receipt_path else None
+        if bundle["receipt"] is None and bundle["receipt_exists"]:
+            bundle["errors"].append("receipt_unreadable")
+        bundle["resource_receipt"] = (
+            self.read_json(resource_path) if resource_path else None
+        )
+        if bundle["resource_receipt"] is None and bundle["resource_receipt_exists"]:
+            bundle["errors"].append("resource_receipt_unreadable")
+        bundle["resource_reference_pins"] = self._resolve_reference_pins(
+            bundle["resource_receipt"]
+        )
+
+        if stage_source_manifest:
+            compatibility = self.read_yaml(stage_source_manifest)
+            if not isinstance(compatibility, dict):
+                bundle["errors"].append("stage_source_unreadable")
+            else:
+                cascade = _resolve_declared_pointer(compatibility, stage_source_pointer)
+                if isinstance(cascade, dict):
+                    bundle["stage_ids"] = [str(key) for key in cascade]
+                else:
+                    bundle["errors"].append("stage_source_pointer_unresolved")
+
+        if corpus_manifest:
+            corpus_document = self.read_yaml(corpus_manifest)
+            if not isinstance(corpus_document, dict):
+                bundle["errors"].append("corpus_source_unreadable")
+            else:
+                documents = _resolve_declared_pointer(corpus_document, corpus_pointer)
+                if isinstance(documents, list):
+                    bundle["corpus_documents"] = [
+                        {
+                            "id": _text(entry.get("id")),
+                            "sha256": _text(entry.get("sha256")),
+                            "pages": _count(entry.get("pages")),
+                        }
+                        for entry in documents
+                        if isinstance(entry, dict)
+                    ]
+                    bundle["corpus_document_count"] = len(bundle["corpus_documents"])
+                else:
+                    bundle["errors"].append("corpus_source_pointer_unresolved")
+                corpus_block = corpus_document.get("corpus")
+                if isinstance(corpus_block, dict):
+                    bundle["corpus_page_denominator"] = _count(
+                        corpus_block.get("page_denominator")
+                    )
+
+        return bundle
 
 
 # ── contract composition ───────────────────────────────────────────────────
@@ -992,6 +1262,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
     missing.extend(_java_free_slice_vocabulary(contract.get("java_free_slice")))
     missing.extend(_native_family_receipt_vocabulary(contract.get("native_family_receipt")))
     missing.extend(_native_content_receipt_vocabulary(contract.get("native_content_receipt")))
+    missing.extend(_native_route_vocabulary(contract.get("native_route_e2e")))
     return missing
 
 def _java_free_slice_vocabulary(block: Any) -> list[str]:
@@ -1292,6 +1563,155 @@ def _native_content_receipt_vocabulary(block: Any) -> list[str]:
             if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
                 missing.append(f"native_content_receipt.fixtures.{polarity}.path")
     return missing
+def _native_route_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``native_route_e2e`` fields absent or unusable.
+
+    Without these the receipt-claim half cannot tell a declared-and-evidenced
+    route from a claim with no receipt, an untyped stage/family/body cell or an
+    unregistered label. The declared label set must be exactly the domain's
+    literal set -- a label the oracle can emit must be registered, and a
+    registered label must be one the oracle can emit -- so an unregistered
+    emission is a data/implementation mismatch rather than a silent finding. The
+    caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["native_route_e2e"]
+    missing: list[str] = []
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("native_route_e2e.declaration")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"native_route_e2e.declaration.{key}")
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("native_route_e2e.declaration.manifest.path")
+
+    stage_source = block.get("stage_id_source")
+    if not isinstance(stage_source, dict):
+        missing.append("native_route_e2e.stage_id_source")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(stage_source.get(key)) is None:
+                missing.append(f"native_route_e2e.stage_id_source.{key}")
+
+    for key in ("receipt", "resource_receipt"):
+        receipt = block.get(key)
+        if not isinstance(receipt, dict):
+            missing.append(f"native_route_e2e.{key}")
+            continue
+        if not _is_relative_path(receipt.get("path")):
+            missing.append(f"native_route_e2e.{key}.path")
+        if _text(receipt.get("schema_version")) is None:
+            missing.append(f"native_route_e2e.{key}.schema_version")
+        if receipt.get("required") is not True:
+            missing.append(f"native_route_e2e.{key}.required")
+
+    corpus = block.get("corpus")
+    if not isinstance(corpus, dict):
+        missing.append("native_route_e2e.corpus")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(corpus.get(key)) is None:
+                missing.append(f"native_route_e2e.corpus.{key}")
+        for key in ("document_count", "page_denominator"):
+            if _count(corpus.get(key)) is None:
+                missing.append(f"native_route_e2e.corpus.{key}")
+
+    limit_policy = block.get("limit_policy")
+    if not isinstance(limit_policy, dict):
+        missing.append("native_route_e2e.limit_policy")
+    else:
+        for key in ("state", "freeze_scope", "claim_scope", "product_coverage_effect", "thresholds"):
+            if _text(limit_policy.get(key)) is None:
+                missing.append(f"native_route_e2e.limit_policy.{key}")
+        if not _text_list(limit_policy.get("metrics")):
+            missing.append("native_route_e2e.limit_policy.metrics")
+        if not _text_list(limit_policy.get("direction_vocabulary")):
+            missing.append("native_route_e2e.limit_policy.direction_vocabulary")
+        if not isinstance(limit_policy.get("freeze_revision"), dict):
+            missing.append("native_route_e2e.limit_policy.freeze_revision")
+
+    limit_vocabulary = block.get("limit_vocabulary")
+    if not isinstance(limit_vocabulary, dict):
+        missing.append("native_route_e2e.limit_vocabulary")
+    else:
+        for key in ("source", "metric_source"):
+            if _text(limit_vocabulary.get(key)) is None:
+                missing.append(f"native_route_e2e.limit_vocabulary.{key}")
+        for key in ("fields", "direction_vocabulary"):
+            if not _text_list(limit_vocabulary.get(key)):
+                missing.append(f"native_route_e2e.limit_vocabulary.{key}")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("native_route_e2e.expected")
+    else:
+        for key in (
+            "claim_scope",
+            "product_coverage_effect",
+            "thresholds",
+            "guard_observer",
+            "native_population",
+            "out_of_slice_stance",
+            "admission_stance",
+            "forbidden_family_token",
+            "reference_source_kind",
+        ):
+            if _text(expected.get(key)) is None:
+                missing.append(f"native_route_e2e.expected.{key}")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict):
+            missing.append("native_route_e2e.expected.locks")
+        else:
+            for key in (
+                "deployed",
+                "import_eligible",
+                "auto_promote",
+                "production_route",
+                "graph_write",
+            ):
+                if key not in locks:
+                    missing.append(f"native_route_e2e.expected.locks.{key}")
+        for key in (
+            "population_vocabulary",
+            "resource_population_vocabulary",
+            "observation_state_vocabulary",
+            "absence_reason_vocabulary",
+            "native_metric_vocabulary",
+            "reference_metric_vocabulary",
+            "body_verdict_vocabulary",
+            "body_reason_vocabulary",
+            "stage_stance_vocabulary",
+            "family_disposition_vocabulary",
+            "family_unmet_reason_vocabulary",
+            "family_refusal_reason_vocabulary",
+            "residual_fields",
+        ):
+            if not _text_list(expected.get(key)):
+                missing.append(f"native_route_e2e.expected.{key}")
+        pairing = expected.get("pairing_vocabulary")
+        if not isinstance(pairing, dict):
+            missing.append("native_route_e2e.expected.pairing_vocabulary")
+        else:
+            for key in ("rule", "pooled", "saving_claim", "mismatch_disposition"):
+                if _text(pairing.get(key)) is None:
+                    missing.append(f"native_route_e2e.expected.pairing_vocabulary.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(NATIVE_ROUTE_VIOLATION_LABELS):
+        missing.append("native_route_e2e.violations")
+
+    fixtures = block.get("fixtures")
+    if not isinstance(fixtures, dict):
+        missing.append("native_route_e2e.fixtures")
+    else:
+        for polarity in ("positive", "negative"):
+            spec = fixtures.get(polarity)
+            if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
+                missing.append(f"native_route_e2e.fixtures.{polarity}.path")
+    return missing
 
 
 # ── shared value helpers ───────────────────────────────────────────────────
@@ -1489,6 +1909,7 @@ def absorption_progress_violations(
     _java_free_slice_violations_into(contract, observations, violations)
     _native_family_receipt_violations_into(contract, observations, violations)
     _native_content_receipt_violations_into(contract, observations, violations)
+    _native_route_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
     return violations
@@ -1806,6 +2227,21 @@ def _native_content_receipt_violations_into(
         _native_content_receipt_violations(
             contract,
             observations.get("native_content_receipt")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+def _native_route_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the native route + same-n resource labels carried by the observations."""
+    violations.update(
+        _native_route_violations(
+            contract,
+            observations.get("native_route_e2e")
             if isinstance(observations, dict)
             else None,
         )
@@ -2729,6 +3165,662 @@ def _native_content_receipt_violations(contract: Any, evidence: Any) -> set[str]
                 untyped_group()
         else:
             untyped_group()
+
+    return violations
+
+
+def _native_route_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a native-route claim the two S06 receipts do not evidence.
+
+    The shape R141 forbids is a *claim* of native-route progress — one PDF→native
+    result on the declared 3-document / 202-page slice, with no Java and no prior
+    TEI, measured against a ceiling frozen *before* the benchmark and paired with a
+    same-n reference — that is backed by no receipt, by a receipt that drifted from
+    the corpus/boundary it claims, by a pin that no longer matches the carrier
+    bytes, or by a population, stage, family, body or metric cell the rule left
+    untyped. Concretely:
+
+    * ``claim_without_receipt`` — the S03 declaration resolves but the required
+      route receipt is absent or unreadable, so there is a claim and no evidence;
+    * ``receipt_population_mismatch`` — the receipt is not the receipt of *this*
+      rule, its document pins do not reproduce the corpus carrier (identity or
+      page count), its population documents do not partition that corpus, its
+      per-document document/page counts are internally inconsistent, or its
+      residual closure counters do not re-derive from its own stage/family cells;
+    * ``receipt_stale`` — a declared pin (the declaration revision on either
+      receipt, or the frozen limit revision) no longer matches the recomputed
+      carrier bytes, so it describes an older tree;
+    * ``product_coverage_claimed`` — the claim is not diagnostic-only with no
+      product-coverage effect and every promotion lock closed, publishes a
+      threshold the acquisition does not accept, or leaks a redaction flag;
+    * ``java_calls_nonzero`` — either receipt reports Java calls on a plane that
+      claims none;
+    * ``guard_not_installed`` — an observed zero is offered without the installed,
+      identity-isolated transport observer that would make the zero mean anything,
+      or by an observer other than the declared one;
+    * ``limit_not_frozen`` — the ceiling is not declared frozen/prospective, the
+      claim-without-freeze or pass-requires-frozen invariant is missing, the
+      direction vocabulary drifted, or the frozen metric set is not mirrored;
+    * ``limit_tuned_after_scoring`` — a post-hoc tuning/clamp affordance is open,
+      or the zero-is-not-a-measurement invariant is dropped;
+    * ``stage_outside_slice_counted`` — a document's stage cells do not cover the
+      cascade, a stage outside the slice is counted as measured, the admission
+      stage is not the boundary, or a stance leaves the closed vocabulary;
+    * ``family_out_of_scope`` — a family cell carries the token the closed
+      vocabulary deliberately has no member for, carries a disposition/reason
+      outside its vocabulary, or an unclassified cell appears;
+    * ``body_gap_untyped`` — the body axis is absent, carries a token outside the
+      closed verdict/reason vocabulary, is missing a numeric field, or records
+      content loss (or absent character material) without the matching D498
+      obligation;
+    * ``resource_pair_unbound`` — the required same-n resource receipt is absent,
+      its pairing is not the declared same-documents/hard-failure contract, its
+      corpus is not the route corpus, or a measured reference row names no
+      repository-relative carrier whose bytes still match the pin;
+    * ``metric_untyped`` — a route or resource metric row names an id outside the
+      declared vocabulary, an observation state outside the closed pair, or an
+      absent row without a reason from the closed absence vocabulary.
+
+    ``set()`` (empty) means clean. A missing or absent-evidence bundle is
+    *unverified*, never clean and never refuted: a tree that does not carry the
+    declaration authority is silence, not compliance, so nothing here is inferred
+    from an artifact's mere existence.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("native_route_e2e")
+    if not isinstance(rule, dict):
+        return violations
+
+    def _mapping(value: Any) -> dict[str, Any]:
+        return value if isinstance(value, dict) else {}
+
+    expected = _mapping(rule.get("expected"))
+    limit_policy = _mapping(rule.get("limit_policy"))
+    receipt_rule = _mapping(rule.get("receipt"))
+    resource_rule = _mapping(rule.get("resource_receipt"))
+    declaration_rule = _mapping(rule.get("declaration"))
+    corpus_rule = _mapping(rule.get("corpus"))
+
+    claim_scope = _text(expected.get("claim_scope"))
+    product_coverage = _text(expected.get("product_coverage_effect"))
+    thresholds = _text(expected.get("thresholds"))
+    guard_observer = _text(expected.get("guard_observer"))
+    locks_rule = _mapping(expected.get("locks"))
+    population_vocabulary = set(_text_list(expected.get("population_vocabulary")))
+    resource_population_vocabulary = set(
+        _text_list(expected.get("resource_population_vocabulary"))
+    )
+    observation_states = set(_text_list(expected.get("observation_state_vocabulary")))
+    absence_reasons = set(_text_list(expected.get("absence_reason_vocabulary")))
+    native_metrics = set(_text_list(expected.get("native_metric_vocabulary")))
+    reference_metrics = set(_text_list(expected.get("reference_metric_vocabulary")))
+    reference_source_kind = _text(expected.get("reference_source_kind"))
+    pairing_rule = _mapping(expected.get("pairing_vocabulary"))
+    body_verdicts = set(_text_list(expected.get("body_verdict_vocabulary")))
+    body_reasons = set(_text_list(expected.get("body_reason_vocabulary")))
+    stage_stances = set(_text_list(expected.get("stage_stance_vocabulary")))
+    out_of_slice_stance = _text(expected.get("out_of_slice_stance"))
+    admission_stance = _text(expected.get("admission_stance"))
+    family_dispositions = set(_text_list(expected.get("family_disposition_vocabulary")))
+    family_unmet_reasons = set(_text_list(expected.get("family_unmet_reason_vocabulary")))
+    family_refusal_reasons = set(_text_list(expected.get("family_refusal_reason_vocabulary")))
+    forbidden_family_token = _text(expected.get("forbidden_family_token"))
+
+    freeze_state = _text(limit_policy.get("state"))
+    freeze_scope = _text(limit_policy.get("freeze_scope"))
+    direction_vocabulary = set(_text_list(limit_policy.get("direction_vocabulary")))
+    tuned_forbidden = _text(limit_policy.get("tuned_after_scoring"))
+    silent_clamp_forbidden = _text(limit_policy.get("silent_clamp"))
+    claim_without_freeze_forbidden = _text(limit_policy.get("claim_without_freeze"))
+
+    freeze_metric_ids = set(_text_list(evidence.get("freeze_metric_ids")))
+    recomputed_declaration = _text(evidence.get("declaration_sha256"))
+    recomputed_freeze = _text(evidence.get("freeze_revision_recomputed"))
+    cascade_stages = set(_text_list(evidence.get("stage_ids")))
+    out_of_slice_stages = set(_text_list(evidence.get("stages_out_of_slice")))
+    admission_stage = _text(evidence.get("admission_stage"))
+
+    corpus_pins: dict[str, tuple[Optional[str], Optional[int]]] = {}
+    corpus_documents = evidence.get("corpus_documents")
+    if isinstance(corpus_documents, list):
+        for entry in corpus_documents:
+            if not isinstance(entry, dict):
+                continue
+            doc_id = _text(entry.get("id"))
+            if doc_id is not None:
+                corpus_pins[doc_id] = (_text(entry.get("sha256")), _count(entry.get("pages")))
+    corpus_count = _count(evidence.get("corpus_document_count"))
+    corpus_pages = _count(evidence.get("corpus_page_denominator"))
+
+    def claim_without_receipt() -> None:
+        violations.add("native_route_claim_without_receipt")
+
+    def mismatch() -> None:
+        violations.add("native_route_receipt_population_mismatch")
+
+    def stale() -> None:
+        violations.add("native_route_receipt_stale")
+
+    def coverage() -> None:
+        violations.add("native_route_product_coverage_claimed")
+
+    def java_nonzero() -> None:
+        violations.add("native_route_java_calls_nonzero")
+
+    def guard_missing() -> None:
+        violations.add("native_route_guard_not_installed")
+
+    def not_frozen() -> None:
+        violations.add("native_route_limit_not_frozen")
+
+    def tuned() -> None:
+        violations.add("native_route_limit_tuned_after_scoring")
+
+    def stage_counted() -> None:
+        violations.add("native_route_stage_outside_slice_counted")
+
+    def family_out_of_scope() -> None:
+        violations.add("native_route_family_out_of_scope")
+
+    def body_untyped() -> None:
+        violations.add("native_route_body_gap_untyped")
+
+    def pair_unbound() -> None:
+        violations.add("native_route_resource_pair_unbound")
+
+    def metric_untyped() -> None:
+        violations.add("native_route_metric_untyped")
+
+    def declares_false(value: Any) -> bool:
+        """True when a lock declares false in either JSON representation."""
+        if value is False:
+            return True
+        return isinstance(value, str) and value.strip().lower() == "false"
+
+    def bare_digest(value: Any) -> Optional[str]:
+        """A sha256 with any ``sha256:`` prefix removed, for like-for-like compare."""
+        text = _text(value)
+        if text is None:
+            return None
+        return text.split("sha256:", 1)[1] if text.startswith("sha256:") else text
+
+    def check_limits(limits: Any) -> None:
+        """The frozen-ceiling declaration both receipts must mirror."""
+        if not isinstance(limits, dict):
+            not_frozen()
+            return
+        revision = _text(limits.get("freeze_revision"))
+        if revision is None:
+            not_frozen()
+        elif recomputed_freeze is not None and revision != recomputed_freeze:
+            stale()
+        if _text(limits.get("freeze_state")) != freeze_state:
+            not_frozen()
+        if _text(limits.get("freeze_scope")) != freeze_scope:
+            not_frozen()
+        if _text(limits.get("claim_without_freeze")) != claim_without_freeze_forbidden:
+            not_frozen()
+        if limits.get("pass_requires_frozen_threshold") is not True:
+            not_frozen()
+        if set(_text_list(limits.get("direction_vocabulary"))) != direction_vocabulary:
+            not_frozen()
+        metrics = limits.get("metrics")
+        if not isinstance(metrics, list) or not metrics:
+            not_frozen()
+        else:
+            ids = {_text(entry.get("id")) for entry in metrics if isinstance(entry, dict)}
+            if ids != freeze_metric_ids:
+                not_frozen()
+        if _text(limits.get("tuned_after_scoring")) != tuned_forbidden:
+            tuned()
+        if _text(limits.get("silent_clamp")) != silent_clamp_forbidden:
+            tuned()
+        if limits.get("zero_is_not_a_measurement") is not True:
+            tuned()
+
+    def check_envelope(document: Any, schema_version: Optional[str]) -> None:
+        """The claim/locks/redaction/guard/limits envelope both receipts share."""
+        if _text(document.get("schema_version")) != schema_version:
+            mismatch()
+        if _text(document.get("claim_scope")) != claim_scope:
+            coverage()
+        if _text(document.get("product_coverage_effect")) != product_coverage:
+            coverage()
+        if _text(document.get("thresholds")) != thresholds:
+            coverage()
+        locks = document.get("locks")
+        if not isinstance(locks, dict):
+            coverage()
+        else:
+            for lock, want in locks_rule.items():
+                found = locks.get(lock)
+                if isinstance(want, bool):
+                    if want is False and not declares_false(found):
+                        coverage()
+                    elif want is True and found is not True:
+                        coverage()
+                elif _text(want) is None or _text(found) != _text(want):
+                    coverage()
+        redaction = document.get("redaction")
+        if not isinstance(redaction, dict):
+            coverage()
+        else:
+            for flag in (
+                "raw_text",
+                "raw_pdf",
+                "tei_xml",
+                "images",
+                "physical_paths",
+                "hostname",
+                "executable",
+            ):
+                if redaction.get(flag) is True:
+                    coverage()
+        guard = document.get("guard")
+        if not isinstance(guard, dict):
+            guard_missing()
+        else:
+            calls = _count(guard.get("observed_java_calls"))
+            if calls is None:
+                guard_missing()
+            elif calls > 0:
+                java_nonzero()
+            if _text(guard.get("observer")) != guard_observer:
+                guard_missing()
+            if guard.get("installed") is not True or guard.get("identity_isolated") is not True:
+                guard_missing()
+        declaration = document.get("declaration")
+        if isinstance(declaration, dict):
+            declared_revision = _text(declaration.get("revision_sha256"))
+            if (
+                declared_revision is not None
+                and recomputed_declaration is not None
+                and declared_revision != recomputed_declaration
+            ):
+                stale()
+        check_limits(document.get("limits"))
+
+    def check_body(body: Any) -> None:
+        """One typed body axis, including the D498 obligation for content loss."""
+        if not isinstance(body, dict):
+            body_untyped()
+            return
+        verdict = _text(body.get("plane_preservation"))
+        reason = _text(body.get("plane_gap_reason"))
+        if verdict is None or verdict not in body_verdicts:
+            body_untyped()
+        if reason is not None and reason not in body_reasons:
+            body_untyped()
+        for key in (
+            "plane_character_material_units",
+            "plane_absent_units",
+            "plane_present_in_token_units",
+            "plane_spanning_token_units",
+        ):
+            if _count(body.get(key)) is None:
+                body_untyped()
+        absent = _count(body.get("plane_absent_units"))
+        reopen = body.get("plane_d498_reopen_required")
+        if verdict == "content_loss" and reopen is not True:
+            body_untyped()
+        if absent is not None and absent > 0 and reopen is not True:
+            body_untyped()
+
+    def check_metric(metric: Any, vocabulary: set[str]) -> None:
+        """One observed/absent metric row, typed on both axes."""
+        if not isinstance(metric, dict):
+            metric_untyped()
+            return
+        metric_id = _text(metric.get("id"))
+        if metric_id is None or metric_id not in vocabulary:
+            metric_untyped()
+        state = _text(metric.get("state"))
+        if state not in observation_states:
+            metric_untyped()
+            return
+        if state == "observed":
+            if _count(metric.get("value")) is None or metric.get("reason") is not None:
+                metric_untyped()
+        else:
+            reason = _text(metric.get("reason"))
+            if reason is None or reason not in absence_reasons:
+                metric_untyped()
+
+    def check_reference_row(row: Any) -> None:
+        """A same-n reference row: a closed id/state plus a pinned measured source."""
+        if not isinstance(row, dict):
+            metric_untyped()
+            return
+        metric_id = _text(row.get("id"))
+        if metric_id is None or metric_id not in reference_metrics:
+            metric_untyped()
+        state = _text(row.get("state"))
+        if state not in observation_states:
+            metric_untyped()
+            return
+        if state == "observed":
+            source = row.get("source")
+            if not isinstance(source, dict):
+                pair_unbound()
+                return
+            if _text(source.get("kind")) != reference_source_kind:
+                pair_unbound()
+            if not _is_relative_path(source.get("manifest")):
+                pair_unbound()
+            if _text(source.get("sha256")) is None:
+                pair_unbound()
+        else:
+            reason = _text(row.get("reason"))
+            if reason is None or reason not in absence_reasons:
+                metric_untyped()
+
+    # ── the route receipt: identity, scope and the typed 3-document result ──
+    receipt = evidence.get("receipt")
+    if not isinstance(receipt, dict):
+        if receipt_rule.get("required") is True:
+            claim_without_receipt()
+    else:
+        check_envelope(receipt, _text(receipt_rule.get("schema_version")))
+        declaration = _mapping(receipt.get("declaration"))
+        if _text(declaration.get("manifest")) != _text(declaration_rule.get("manifest")):
+            mismatch()
+        if _text(declaration.get("pointer")) != _text(declaration_rule.get("pointer")):
+            mismatch()
+        if _count(corpus_rule.get("document_count")) is not None and (
+            corpus_count != _count(corpus_rule.get("document_count"))
+        ):
+            mismatch()
+        if _count(corpus_rule.get("page_denominator")) is not None and (
+            corpus_pages != _count(corpus_rule.get("page_denominator"))
+        ):
+            mismatch()
+
+        seen_documents: set[str] = set()
+        unmeasured_stages = 0
+        unclassified_families = 0
+        documents = receipt.get("documents")
+        if not isinstance(documents, list) or not documents:
+            mismatch()
+        else:
+            for document in documents:
+                if not isinstance(document, dict):
+                    mismatch()
+                    continue
+                doc_id = _text(document.get("id"))
+                if doc_id is None or doc_id in seen_documents:
+                    mismatch()
+                    continue
+                seen_documents.add(doc_id)
+                pin = corpus_pins.get(doc_id)
+                if pin is None:
+                    mismatch()
+                elif (
+                    _text(document.get("sha256")) != pin[0]
+                    or _count(document.get("pages")) != pin[1]
+                ):
+                    mismatch()
+
+                stages = document.get("stages")
+                if not isinstance(stages, list) or not stages:
+                    stage_counted()
+                else:
+                    stage_ids: set[str] = set()
+                    for cell in stages:
+                        if not isinstance(cell, dict):
+                            stage_counted()
+                            continue
+                        stage_id = _text(cell.get("stage"))
+                        stance = _text(cell.get("stance"))
+                        if stage_id is None or stance is None or stance not in stage_stances:
+                            stage_counted()
+                        else:
+                            stage_ids.add(stage_id)
+                            if stance != "native_measured":
+                                unmeasured_stages += 1
+                            if stage_id in out_of_slice_stages and stance != out_of_slice_stance:
+                                stage_counted()
+                            if stage_id == admission_stage and stance != admission_stance:
+                                stage_counted()
+                    if cascade_stages and stage_ids != cascade_stages:
+                        stage_counted()
+
+                families = document.get("families")
+                if not isinstance(families, list) or not families:
+                    family_out_of_scope()
+                else:
+                    for cell in families:
+                        if not isinstance(cell, dict):
+                            family_out_of_scope()
+                            continue
+                        family = _text(cell.get("family"))
+                        disposition = _text(cell.get("disposition"))
+                        if family is None or disposition is None:
+                            family_out_of_scope()
+                            continue
+                        if disposition == forbidden_family_token:
+                            family_out_of_scope()
+                            continue
+                        if disposition not in family_dispositions:
+                            unclassified_families += 1
+                            family_out_of_scope()
+                            continue
+                        if disposition == "measured":
+                            if _count(cell.get("observed_count")) is None:
+                                family_out_of_scope()
+                        elif disposition == "unmet":
+                            reason = _text(cell.get("reason"))
+                            if reason is None or reason not in family_unmet_reasons:
+                                family_out_of_scope()
+                            if _count(cell.get("observed_count")) is not None:
+                                family_out_of_scope()
+                        elif disposition == "refused":
+                            reason = _text(cell.get("reason"))
+                            if reason is None or reason not in family_refusal_reasons:
+                                family_out_of_scope()
+
+                check_body(document.get("body"))
+
+        if corpus_pins and set(corpus_pins) - seen_documents:
+            mismatch()
+
+        populations = receipt.get("populations")
+        if not isinstance(populations, list) or not populations:
+            mismatch()
+        else:
+            population_seen: set[str] = set()
+            for population in populations:
+                if not isinstance(population, dict):
+                    mismatch()
+                    continue
+                token = _text(population.get("population"))
+                if token not in population_vocabulary:
+                    mismatch()
+                    continue
+                population_documents = population.get("documents")
+                if not isinstance(population_documents, list) or not population_documents:
+                    mismatch()
+                    continue
+                if _count(population.get("document_count")) != len(population_documents):
+                    mismatch()
+                page_sum = 0
+                for entry in population_documents:
+                    if not isinstance(entry, dict):
+                        mismatch()
+                        continue
+                    entry_id = _text(entry.get("id"))
+                    entry_pin = corpus_pins.get(entry_id)
+                    if entry_pin is None or (
+                        _text(entry.get("sha256")) != entry_pin[0]
+                        or _count(entry.get("pages")) != entry_pin[1]
+                    ):
+                        mismatch()
+                    pages = _count(entry.get("pages"))
+                    if pages is not None:
+                        page_sum += pages
+                    if entry_id is not None:
+                        if entry_id in population_seen:
+                            mismatch()
+                        population_seen.add(entry_id)
+                if _count(population.get("page_denominator")) != page_sum:
+                    mismatch()
+                metrics = population.get("metrics")
+                if not isinstance(metrics, list) or not metrics:
+                    metric_untyped()
+                else:
+                    for metric in metrics:
+                        if not isinstance(metric, dict):
+                            metric_untyped()
+                            continue
+                        metric_id = _text(metric.get("id"))
+                        if metric_id is None or metric_id not in freeze_metric_ids:
+                            metric_untyped()
+                        if _text(metric.get("direction")) not in direction_vocabulary:
+                            metric_untyped()
+                        if metric_id == "native_route_java_calls":
+                            value = _count(metric.get("value"))
+                            if value is not None and value > 0:
+                                java_nonzero()
+            if corpus_pins and set(corpus_pins) - population_seen:
+                mismatch()
+
+        residuals = receipt.get("residuals")
+        if not isinstance(residuals, dict):
+            stage_counted()
+            family_out_of_scope()
+        else:
+            if _count(residuals.get("unmeasured_stages")) != unmeasured_stages:
+                stage_counted()
+            if _count(residuals.get("unclassified_families")) != unclassified_families:
+                family_out_of_scope()
+            check_body(residuals.get("body"))
+
+    # ── the same-n resource receipt: pairing + typed reference rows ───────
+    resource = evidence.get("resource_receipt")
+    if not isinstance(resource, dict):
+        if resource_rule.get("required") is True:
+            pair_unbound()
+    else:
+        check_envelope(resource, _text(resource_rule.get("schema_version")))
+        r_declaration = _mapping(resource.get("declaration"))
+        if _text(r_declaration.get("manifest")) != _text(declaration_rule.get("manifest")):
+            pair_unbound()
+        if _text(r_declaration.get("pointer")) != _text(declaration_rule.get("pointer")):
+            pair_unbound()
+
+        pairing = resource.get("pairing")
+        if not isinstance(pairing, dict):
+            pair_unbound()
+        else:
+            for key in ("rule", "pooled", "saving_claim", "mismatch_disposition"):
+                want = _text(pairing_rule.get(key))
+                if want is None or _text(pairing.get(key)) != want:
+                    pair_unbound()
+
+        r_corpus = resource.get("corpus")
+        if not isinstance(r_corpus, dict):
+            pair_unbound()
+        else:
+            if _count(r_corpus.get("document_count")) != len(corpus_pins):
+                pair_unbound()
+            if _count(r_corpus.get("page_denominator")) != corpus_pages:
+                pair_unbound()
+            r_pins: dict[str, tuple[Optional[str], Optional[int]]] = {}
+            r_corpus_documents = r_corpus.get("documents")
+            if isinstance(r_corpus_documents, list):
+                for entry in r_corpus_documents:
+                    if not isinstance(entry, dict):
+                        continue
+                    entry_id = _text(entry.get("id"))
+                    if entry_id is not None:
+                        r_pins[entry_id] = (
+                            _text(entry.get("sha256")),
+                            _count(entry.get("pages")),
+                        )
+            if r_pins != corpus_pins:
+                pair_unbound()
+
+        r_populations = resource.get("populations")
+        if not isinstance(r_populations, list) or not r_populations:
+            pair_unbound()
+        else:
+            for population in r_populations:
+                if not isinstance(population, dict):
+                    pair_unbound()
+                    continue
+                token = _text(population.get("population"))
+                if token not in resource_population_vocabulary:
+                    pair_unbound()
+                    continue
+                if _count(population.get("document_count")) != corpus_count:
+                    pair_unbound()
+                if _count(population.get("page_denominator")) != corpus_pages:
+                    pair_unbound()
+                population_documents = population.get("documents")
+                if isinstance(population_documents, list):
+                    r_pop_pins = {}
+                    for entry in population_documents:
+                        if not isinstance(entry, dict):
+                            continue
+                        entry_id = _text(entry.get("id"))
+                        if entry_id is not None:
+                            r_pop_pins[entry_id] = (
+                                _text(entry.get("sha256")),
+                                _count(entry.get("pages")),
+                            )
+                    if r_pop_pins != corpus_pins:
+                        pair_unbound()
+                else:
+                    pair_unbound()
+                vocabulary = native_metrics if token == "native" else reference_metrics
+                metrics = population.get("metrics")
+                if not isinstance(metrics, list) or not metrics:
+                    metric_untyped()
+                else:
+                    for metric in metrics:
+                        check_metric(metric, vocabulary)
+
+        r_documents = resource.get("documents")
+        if not isinstance(r_documents, list) or not r_documents:
+            pair_unbound()
+        else:
+            for document in r_documents:
+                if not isinstance(document, dict):
+                    pair_unbound()
+                    continue
+                doc_id = _text(document.get("id"))
+                pin = corpus_pins.get(doc_id)
+                if pin is None or (
+                    _text(document.get("sha256")) != pin[0]
+                    or _count(document.get("pages")) != pin[1]
+                ):
+                    pair_unbound()
+                rows = document.get("reference")
+                if not isinstance(rows, list) or not rows:
+                    metric_untyped()
+                else:
+                    for row in rows:
+                        check_reference_row(row)
+
+        pins = evidence.get("resource_reference_pins")
+        if not isinstance(pins, dict) or not pins:
+            pair_unbound()
+        else:
+            for pin in pins.values():
+                if not isinstance(pin, dict):
+                    pair_unbound()
+                    continue
+                declared_sha = bare_digest(pin.get("declared_sha256"))
+                recomputed_sha = bare_digest(pin.get("recomputed_sha256"))
+                if declared_sha is None or recomputed_sha is None or declared_sha != recomputed_sha:
+                    pair_unbound()
+
+        r_residuals = resource.get("residuals")
+        if not isinstance(r_residuals, dict) or _count(r_residuals.get("untyped_metrics")) != 0:
+            metric_untyped()
 
     return violations
 

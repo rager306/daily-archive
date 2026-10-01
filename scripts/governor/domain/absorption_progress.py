@@ -77,6 +77,7 @@ __all__ = [
     "JAVA_FREE_SLICE_VIOLATION_LABELS",
     "NATIVE_CONTENT_VIOLATION_LABELS",
     "NATIVE_FAMILY_VIOLATION_LABELS",
+    "NATIVE_ROUTE_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
     "THRESHOLD_DIRECTIONS",
     "comparability_key",
@@ -228,6 +229,48 @@ NATIVE_CONTENT_VIOLATION_LABELS = frozenset(
         "native_content_required_family_out_of_scope",
         "native_content_group_partition_untyped",
         "native_content_body_gap_unresolved",
+    }
+)
+
+#: The closed adapter-level vocabulary of the S06 route receipt-claim half
+#: (M514/S06/T07). Literals on purpose (D492): the closed vocabulary is owned
+#: here, and the rule DATA restates it so a label the oracle can emit but that is
+#: not registered — or a registered label the oracle cannot emit — is a
+#: data/implementation mismatch rather than a silent finding. The adapter is the
+#: only layer that reads the two S06 receipts; it emits exactly these labels and
+#: nothing else, and none of them moves the product `java_independence` axis
+#: (D499).
+#:
+#: Why this half exists (R141): the S06 route is the first PDF->native path that
+#: ends in one typed document result on the declared 3-document slice with no Java
+#: and no prior TEI, and the S06/T06 same-n receipt pairs that route's resource
+#: measurement with a pinned reference on the same documents. A receipt's mere
+#: existence must not read as product success, so every claim shape has a typed
+#: refusal: a claim with no receipt, a receipt whose population or document set
+#: the frozen carriers do not derive, a receipt bound to older bytes or to a
+#: freeze revision that no longer recomputes, a diagnostic slice re-labelled as
+#: product coverage (including a claimed threshold or a leaked redaction flag), an
+#: observed Java call on an otherwise Java-free plane, an observed zero with no
+#: guard provenance, an unfrozen or post-scoring limit dictionary, a stage counted
+#: where the boundary declares it out of slice, a required family moved to the
+#: forbidden `out_of_scope` token, an untyped body/P1 residual, a same-n reference
+#: row with no pinned measured source, and a metric row that cannot be read as a
+#: typed observation.
+NATIVE_ROUTE_VIOLATION_LABELS = frozenset(
+    {
+        "native_route_claim_without_receipt",
+        "native_route_receipt_population_mismatch",
+        "native_route_receipt_stale",
+        "native_route_product_coverage_claimed",
+        "native_route_java_calls_nonzero",
+        "native_route_guard_not_installed",
+        "native_route_limit_not_frozen",
+        "native_route_limit_tuned_after_scoring",
+        "native_route_stage_outside_slice_counted",
+        "native_route_family_out_of_scope",
+        "native_route_body_gap_untyped",
+        "native_route_resource_pair_unbound",
+        "native_route_metric_untyped",
     }
 )
 

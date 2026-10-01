@@ -2961,6 +2961,28 @@ class TrajectoryService:
             # (R141). Absence of the declaration authority stays silence, not
             # compliance, so a tree without the carrier yields no finding here.
             "native_content_receipt": reader.read_native_content_receipt(contract),
+            # S04/T07 (repaired here by S06/T07): the native family receipt half was
+            # written but never wired into this observation map, so the half was
+            # inert -- it read as clean on every tree and could regress or be
+            # deleted with nothing noticing (MEM1948). Publishing it here is what
+            # makes the S04 oracle non-vacuously silent: a claim with no receipt, a
+            # drifted population, or an open promotion lock now reaches the
+            # composed finding.
+            "native_family_receipt": reader.read_native_family_receipt(contract),
+            # S06/T07: the route receipt and the same-n resource receipt are two
+            # separate evidence carriers. The reader is the only layer that can
+            # recompute both receipts' own sha256, the declaration/cascade/corpus
+            # carrier hashes, the composite freeze revision and each measured
+            # reference pin, so it resolves them into observations exactly as the
+            # Java-free, native-family and native-content halves already are. The
+            # pure oracle then refuses a claim with no receipt, a drifted corpus or
+            # population, a stale pin, an open lock or a non-diagnostic scope,
+            # observed Java, a guard-less zero, an unfrozen or post-hoc-tuned
+            # ceiling, a stage counted outside the slice, an out-of-scope family, an
+            # untyped body gap, an unbound resource pair and an untyped metric
+            # (R141). Absence of the declaration authority stays silence, not
+            # compliance, so a tree without the carrier yields no finding here.
+            "native_route_e2e": reader.read_native_route_e2e(contract),
         }
 
         violations = absorption_progress_violations(scorecard, contract, observations)
