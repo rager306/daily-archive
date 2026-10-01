@@ -80,6 +80,7 @@ pub mod html_parsed_stage;
 pub mod navigation_stage;
 pub mod parse_grammar;
 pub mod parse_job_runner;
+pub mod parse_learning_cycle;
 pub mod parse_learning_evaluation;
 pub mod parse_learning_split;
 pub mod parse_policy_ablation;
@@ -88,6 +89,11 @@ pub use parse_job_runner::{ParseJobRunReport, ParseJobRunner, ParseJobRunnerErro
 pub mod pdf_toc_stage;
 pub mod sona_bridge;
 pub use da_ports::CandidateManifest;
+pub use parse_learning_cycle::{
+    CYCLE_AUTO_PROMOTE, CYCLE_PROMOTION_STATE, DOCUMENT_MODEL, LEARNING_CYCLE_SCHEMA_VERSION,
+    LearningConservation, LearningCycleError, LearningCycleReport, LearningOutcome,
+    learning_lineage_for_corpus, run_learning_cycle, validate_learning_cycle_report,
+};
 pub use parse_learning_evaluation::{
     ABLATION_SCHEMA_VERSION, AblationReport, CRITIC_SCHEMA_VERSION, ContaminationAssessment,
     CriticObservation, CriticStatus, EvaluationError, FrozenEvalCase, ProducerProvenance,
