@@ -477,6 +477,156 @@ native_content_receipt:
           - native_content_group_partition_untyped
           - native_content_body_gap_unresolved
 
+# ── Native route E2E boundary, endpoints/consolidation scope and limit freeze
+#    (M514/S06/T02) ─────────────────────────────────────────────────────────
+# The S06 native route is the first PDF->native path that ends in one typed
+# document result on the frozen 3-document slice with no Java and no prior TEI.
+# This block *declares the boundary of that route, the scholarly endpoints it
+# must stay compatible with, the consolidation scope it runs and the operational
+# ceilings it will be measured against* — BEFORE the benchmark runs (D509).
+#
+# It is NOT the boundary itself: `data/parse/layout_bakeoff.yaml#java_free_vertical_slice`
+# stays the sole source of the slice (ADR-077 §3) and
+# `data/parse/grobid_compatibility.yaml#defaults.cascade_stages` the sole source
+# of the stage ids. Neither the stage ids, the document ids nor the endpoint
+# URLs are restated here: every one is followed by pointer, so the rule cannot
+# drift from the thing it governs (D377/D506 also forbid a new `data/parse/*`
+# carrier, so this lives in the S04/S05 sibling home).
+#
+# Why it exists: today the slice boundary is pinned by S03/S04/S05 receipts, the
+# consolidation scope lives implicitly in `crates/da-parse/src/profile.rs`, and
+# `batch_budget_ceilings` (data/parse/comparison_contract.yaml) is not applied to
+# the native route at all. Without this block nothing tells S06 which endpoints
+# are required, whether structural consolidation is the scope, or what the
+# freeze is — so a benchmark could score before any limit exists and a later
+# receipt could tune its own ceiling after seeing the numbers. The freeze is
+# prospective and diagnostic (`freeze_scope: prospective_diagnostic_ceiling`):
+# it declares the metric vocabulary and the invariants, it measures nothing.
+#
+# The receipt-claim half (receipt paths, `expected` envelope, `violations`
+# dictionary) is deliberately absent: T07 adds it once the two S06 receipts
+# exist, so the live tree carries zero `native_route_*` claims today.
+#
+# Severity: this block registers no dimension and no severity — it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks
+# (D492).
+native_route_e2e:
+  schema_version: native-route-e2e-rule.v1
+  # Boundary binding by pointer (sole source: the S03 declaration block).
+  declaration:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: java_free_vertical_slice
+  stage_id_source:
+    manifest: data/parse/grobid_compatibility.yaml
+    pointer: defaults.cascade_stages
+  # Required / not-required / deferred scholarly endpoints. Each entry names the
+  # existing declaration by pointer and its own reason; the URL is never copied.
+  scholarly_endpoints:
+    state_vocabulary: [required, not_required, deferred]
+    declarations:
+      - endpoint_id: parse.endpoint.process_fulltext_document
+        state: required
+        reason: native_route_reproduces_the_fulltext_request_dialect_and_structural_consolidation_scope
+        manifest: data/parse/api_compatibility_ledger.yaml
+        pointer: entries[id=parse.endpoint.process_fulltext_document]
+      - endpoint_id: parse.endpoint.process_header_document
+        state: deferred
+        reason: header_band_compares_against_preserved_fulltext_tei_not_the_header_proxy
+        manifest: data/parse/api_compatibility_ledger.yaml
+        pointer: entries[id=parse.endpoint.process_header_document]
+      - endpoint_id: parse.endpoint.process_references_document
+        state: deferred
+        reason: references_band_compares_against_preserved_fulltext_tei_not_the_references_proxy
+        manifest: data/parse/api_compatibility_ledger.yaml
+        pointer: entries[id=parse.endpoint.process_references_document]
+      - endpoint_id: parse.probe.is_alive
+        state: not_required
+        reason: native_route_is_java_free_and_never_probes_the_java_service
+        manifest: data/parse/api_compatibility_ledger.yaml
+        pointer: entries[id=parse.probe.is_alive]
+  # Consolidation scope: the structural profile, both consolidation flags off.
+  # The declared values are the requirement; the pointer is the authority, and
+  # the two must agree (rich's 1/1 is the forbidden neighbour).
+  consolidation:
+    manifest: data/parse/grobid_compatibility.yaml
+    pointer: defaults.profiles.structural
+    profile: structural
+    consolidateHeader: 0
+    consolidateCitations: 0
+    fingerprint_fields: [profile, consolidateHeader, consolidateCitations, teiCoordinates]
+    forbidden_profile: rich
+  # Corpus identity by pointer; the counts are the declared requirement and are
+  # recomputed from the pinned documents (3 documents / 202 pages).
+  corpus:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: corpus.documents
+    count_pointer: corpus.corpus_n
+    page_denominator_pointer: corpus.page_denominator
+    document_count: 3
+    page_denominator: 202
+  # Prospective operational ceiling, frozen before any S06 measurement (D509).
+  limit_policy:
+    state: frozen
+    freeze_owner: S06
+    freeze_scope: prospective_diagnostic_ceiling
+    frozen_at: "2026-10-01"
+    # The claim scope is the slice's own: diagnostic only, no product coverage
+    # effect and no accepted threshold. The three locks are declared here so the
+    # freeze is checkable rather than implied — a metric may not claim a
+    # threshold while `thresholds` is `not_accepted`, and a receipt may not claim
+    # while the limits are unfrozen (`claim_without_freeze: forbidden`).
+    claim_scope: diagnostic_only
+    product_coverage_effect: none
+    thresholds: not_accepted
+    freeze_revision:
+      kind: composite_sha256
+      rule: sha256_over_ordered_carrier_lines
+      line_format: "<path>:<sha256-hex>"
+      carriers:
+        - path: data/parse/layout_bakeoff.yaml
+          kind: declaration
+        - path: data/parse/comparison_contract.yaml
+          kind: ceiling_dictionary
+        - path: data/parse/native_fulltext_composition.yaml
+          kind: content_carrier
+        - path: crates/da-parse/tests/fixtures/preserved/provenance.yaml
+          kind: oracle_pins
+      value: "sha256:d26473aac960fd8cd4df40c457c35192836ea8d5ef76fb3558088a17bfa3f17b"
+    ceiling_metric_source:
+      manifest: data/parse/comparison_contract.yaml
+      pointer: batch_budget_ceilings.metrics
+    # The frozen measured vocabulary: the batch ceiling names (resolved by
+    # pointer) plus the route-only counters whose direction is declared below.
+    metrics:
+      - latency_p50_ms
+      - latency_p95_ms
+      - latency_p99_ms
+      - peak_retained_bytes
+      - peak_rss_bytes
+      - java_cpu_wall_clock_ns
+      - max_reorder_depth
+      - max_publication_outstanding
+      - max_in_flight
+      - budget_waits
+      - native_route_documents
+      - native_route_pages
+      - native_route_java_calls
+      - native_route_unmeasured_stages
+      - native_route_unclassified_families
+    route_metrics:
+      - {id: native_route_documents, direction: floor}
+      - {id: native_route_pages, direction: floor}
+      - {id: native_route_java_calls, direction: ceiling}
+      - {id: native_route_unmeasured_stages, direction: ceiling}
+      - {id: native_route_unclassified_families, direction: ceiling}
+    direction_vocabulary: [floor, ceiling]
+    tuned_after_scoring: forbidden
+    zero_is_not_a_measurement: true
+    silent_clamp: forbidden
+    pass_requires_frozen_threshold: true
+    claim_without_freeze: forbidden
+
 # Enforcement points that must keep existing. The rule reads these files as text;
 # it never executes them.
 source_markers:
