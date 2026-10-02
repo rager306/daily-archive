@@ -2983,6 +2983,23 @@ class TrajectoryService:
             # (R141). Absence of the declaration authority stays silence, not
             # compliance, so a tree without the carrier yields no finding here.
             "native_route_e2e": reader.read_native_route_e2e(contract),
+            # S08/T06: the acceptance package is the artifact that binds every S08
+            # carrier and names every mandatory gate with a computed
+            # `s09_authorized`. Publishing it without a sibling governor half would
+            # let the artifact's mere existence read as progress (R141), so the
+            # package is resolved here exactly as the Java-free, native-family,
+            # native-content and native-route halves already are: the reader is the
+            # only layer that can recompute each carrier's sha256, the frozen
+            # reference pins, and the rollback / same-n resource views. The pure
+            # oracle then refuses a required-but-absent package, a drifted carrier,
+            # a threshold verdict detached from the frozen reference, a silently
+            # dropped mandatory gate, an S09 authorization while a gate blocks, a
+            # renamed body residual, an authorization read from GSD lifecycle
+            # state, a pooled/saving resource claim and a rollback claim with no
+            # byte-identity evidence. Absence of the declaration authority stays
+            # silence, not compliance, so a tree without the carrier yields no
+            # finding here.
+            "acceptance_package": reader.read_acceptance_package(contract),
         }
 
         violations = absorption_progress_violations(scorecard, contract, observations)

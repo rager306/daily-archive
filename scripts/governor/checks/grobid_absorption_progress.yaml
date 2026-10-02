@@ -788,15 +788,189 @@ native_route_e2e:
           - native_route_resource_pair_unbound
           - native_route_metric_untyped
 
+# ── Acceptance package gate ledger (M514/S08/T06) ─────────────────────────
+# T05 published `artifacts/parse_compat/grobid_retirement_acceptance_package.json`:
+# it binds all fourteen S08 evidence carriers by repository-relative path +
+# pointer + sha256, carries the T02 frozen-threshold evaluation verbatim, and
+# enumerates all 21 mandatory gates (20 blocking) with `s09_authorized=false`.
+# This block is the sibling governor half that makes the package auditable
+# rather than merely present.
+#
+# Why it exists (R141): a published artifact is not progress, and the Governor
+# may never read an artifact's existence or a terminal GSD state as delivered
+# capability. Without this half the package's presence would be the whole signal,
+# so a deleted package, a drifted carrier pin, a threshold verdict detached from
+# the frozen reference, a silently dropped mandatory gate, an S09 authorization
+# while a gate still blocks, a renamed body residual, an authorization read from
+# GSD lifecycle state, a pooled/saving resource claim and a rollback claim with
+# no byte-identity evidence would every one pass unseen.
+#
+# Nothing about the package contents is restated as evidence: every carrier
+# resolves by repository-relative path and the reader recomputes each sha256 from
+# the committed bytes; the frozen reference, the rollback carrier and the same-n
+# resource carrier resolve by pointer. The declaration authority is the same S03
+# slice declaration the Java-free, native-family, native-content and native-route
+# halves read, so a tree without it is silence, not a finding.
+#
+# Severity: this block registers no dimension and no severity — it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks
+# (D492).
+acceptance_package:
+  schema_version: acceptance-package-rule.v1
+  declaration:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: java_free_vertical_slice
+  package:
+    path: artifacts/parse_compat/grobid_retirement_acceptance_package.json
+    schema_version: grobid-retirement-acceptance-package.v1
+    required: true
+  # The fourteen evidence carriers the package must bind, as `(manifest, pointer)`.
+  # The list is the requirement, not the evidence: the reader recomputes each
+  # sha256 from the committed bytes, so a dropped, unbound or duplicate binding
+  # fails closed while the rule never restates a digest.
+  evidence_carriers:
+    - {manifest: artifacts/parse_compat/native_corpus_acceptance.json, pointer: documents}
+    - {manifest: artifacts/parse_compat/native_corpus_resource_same_n.json, pointer: reference_metrics}
+    - {manifest: artifacts/parse_compat/native_corpus_rollback_rehearsal.json, pointer: corpus_claim}
+    - {manifest: artifacts/parse_compat/absorption_progress_reference_pins.json, pointer: values}
+    - {manifest: artifacts/parse_compat/external_holdout_release_probe.json, pointer: evaluated_population}
+    - {manifest: data/parse/absorption_progress.schema.yaml, pointer: required_scope.families}
+    - {manifest: data/parse/absorption_progress.schema.yaml, pointer: requirement_ids}
+    - {manifest: crates/da-parse/src/native_acceptance.rs, pointer: evaluate_native_acceptance}
+    - {manifest: artifacts/parse_compat/grobid_retirement_release_decision_package.json, pointer: remainders}
+    - {manifest: data/parse/grobid_compatibility.yaml, pointer: parity_ledger.named_gaps}
+    - {manifest: doc/review/grobid-absorption-followup.json, pointer: stages}
+    - {manifest: artifacts/parse_learning/candidate_cycle.json, pointer: outcome}
+    - {manifest: artifacts/parse_compat/native_body_uncertainty_split.json, pointer: aggregate}
+    - {manifest: artifacts/parse_compat/parse_batch_budget_live.json, pointer: executed_population}
+  # The frozen reference the threshold verdicts must stay bound to, the candidate
+  # carrier the evaluation names, and the body residual that may never be renamed
+  # (D499). The reference pointer resolves the pins; the token is the wording.
+  evaluation:
+    frozen_reference_path: artifacts/parse_compat/absorption_progress_reference_pins.json
+    reference_pointer: values
+    candidate_source_path: artifacts/parse_compat/native_corpus_acceptance.json
+    threshold_policy_state: frozen
+    body_verdict: not_assessable
+    body_residual_token: p1_localization_uncertain
+  # The real-corpus rollback rehearsal (T04). A rollback claim is refused unless
+  # the corpus claim carries byte identity and zero residual violations.
+  rollback_carrier:
+    path: artifacts/parse_compat/native_corpus_rollback_rehearsal.json
+    pointer: corpus_claim
+    claim_scope: rehearsal_only
+    byte_identity_field: byte_identity_holds
+    fragment_leak_field: native_fragment_leak_free
+    residuals_pointer: residuals
+    populations_pointer: populations
+  # The same-n resource receipt (T03). No same-n reference exists, so every
+  # reference metric must be a typed absence: a pooled row or a saving claim is
+  # refused by name.
+  resource_carrier:
+    path: artifacts/parse_compat/native_corpus_resource_same_n.json
+    pointer: reference_metrics
+    absence_state: not_observed
+    pairing_pointer: pairing
+    pairing_rule: same_documents_only
+    forbidden_pooling: forbidden
+    forbidden_saving: forbidden
+    residuals_pointer: residuals
+  # The envelope the package must carry and the closed gate vocabulary the ledger
+  # is checked against. `required_gate_ids` is the exact mandatory set, so a
+  # silently dropped gate is a finding rather than a smaller-but-consistent list.
+  expected:
+    claim_scope: diagnostic_only
+    product_coverage_effect: none
+    thresholds: not_accepted
+    authorization_basis: human_release_decision_required
+    gate_state_vocabulary: [met, unmet, not_comparable, threshold_pending, not_assessable, not_observed, typed_refusal, pending, accepted_residual]
+    non_blocking_states: [met, accepted_residual]
+    gate_kind_vocabulary: [threshold, body_axis, threshold_pending_family, named_gap, learning_disposition, resource_absence, human_release]
+    required_gate_ids:
+      - threshold.preservation_micro_occurrence
+      - threshold.extraction_micro_occurrence
+      - threshold.extraction_weakest_family
+      - body_axis.body_not_assessable
+      - required_scope.rest.isalive
+      - required_scope.rest.health
+      - required_scope.rest.version
+      - required_scope.rest.processFulltextDocument
+      - required_scope.rest.processHeaderDocument
+      - required_scope.rest.processReferences
+      - required_scope.dialect.teiCoordinates
+      - required_scope.stage.pdfalto_layout
+      - required_scope.stage.document_segmentation
+      - required_scope.stage.figure_table_formula
+      - required_scope.stage.bibliographic_consolidation
+      - required_scope.stage.tei_lift
+      - named_gap_learning_ruvllm_ablation
+      - h20_frozen_external_holdout_decision
+      - h21_revision_label_residual
+      - learning.s07_measured_no_gain
+      - resource.container_java_cpu
+    minimum_mandatory_gates: 21
+    locks:
+      deployed: "false"
+      import_eligible: "false"
+      auto_promote: forbidden
+      production_route: forbidden
+      graph_write: forbidden
+    redaction_flags: [raw_text, raw_pdf, tei_xml, images, physical_paths, hostname, executable]
+  # The closed vocabulary of adapter labels this half may emit. Kept separate from
+  # the scorecard `violations` list above so the exact-set test stays valid and the
+  # halves stay separately governable. The literal set lives in
+  # `scripts/governor/domain/absorption_progress.py`.
+  violations:
+    - acceptance_package_claim_without_package
+    - acceptance_package_schema_drift
+    - acceptance_package_evidence_drift
+    - acceptance_package_carrier_stale
+    - acceptance_package_coverage_claimed
+    - acceptance_package_threshold_unbound
+    - acceptance_package_mandatory_gate_dropped
+    - acceptance_package_body_residual_renamed
+    - acceptance_package_unmet_gate_authorized
+    - acceptance_package_authorization_drift
+    - acceptance_package_lifecycle_authorization
+    - acceptance_package_pooled_resource_claim
+    - acceptance_package_rollback_without_byte_identity
+  fixtures:
+    positive:
+      id: native_acceptance_clean
+      path: governor/fixtures/absorption_progress/native_acceptance.positive.json
+      expect: clean
+    negative:
+      id: native_acceptance_broken
+      path: governor/fixtures/absorption_progress/native_acceptance.negative.json
+      expect:
+        require_violations:
+          - acceptance_package_claim_without_package
+          - acceptance_package_schema_drift
+          - acceptance_package_evidence_drift
+          - acceptance_package_carrier_stale
+          - acceptance_package_coverage_claimed
+          - acceptance_package_threshold_unbound
+          - acceptance_package_mandatory_gate_dropped
+          - acceptance_package_body_residual_renamed
+          - acceptance_package_unmet_gate_authorized
+          - acceptance_package_authorization_drift
+          - acceptance_package_lifecycle_authorization
+          - acceptance_package_pooled_resource_claim
+          - acceptance_package_rollback_without_byte_identity
+
 # Enforcement points that must keep existing. The rule reads these files as text;
 # it never executes them.
 source_markers:
   domain_validator:
     path: scripts/governor/domain/absorption_progress.py
-    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS, NATIVE_CONTENT_VIOLATION_LABELS, NATIVE_ROUTE_VIOLATION_LABELS]
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS, NATIVE_CONTENT_VIOLATION_LABELS, NATIVE_ROUTE_VIOLATION_LABELS, ACCEPTANCE_PACKAGE_VIOLATION_LABELS]
   adapter_oracle:
     path: scripts/governor/adapters/absorption_progress_reader.py
-    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped, _native_content_receipt_violations, read_native_content_receipt, native_content_oracle_absence_only, native_content_group_partition_untyped, _native_route_violations, read_native_route_e2e, native_route_receipt_stale, native_route_limit_tuned_after_scoring, native_route_resource_pair_unbound, native_route_stage_outside_slice_counted]
+    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped, _native_content_receipt_violations, read_native_content_receipt, native_content_oracle_absence_only, native_content_group_partition_untyped, _native_route_violations, read_native_route_e2e, native_route_receipt_stale, native_route_limit_tuned_after_scoring, native_route_resource_pair_unbound, native_route_stage_outside_slice_counted, _acceptance_package_violations, read_acceptance_package, acceptance_package_carrier_stale, acceptance_package_threshold_unbound, acceptance_package_mandatory_gate_dropped, acceptance_package_rollback_without_byte_identity, acceptance_package_pooled_resource_claim]
+  acceptance_audit:
+    path: crates/da-cli/tests/native_acceptance_package_test.rs
+    required_patterns: [native_acceptance_package_audit, committed_carrier_pins, acceptance_package_gate_ledger, acceptance_package_refuses, p1_localization_uncertain, s09_authorized]
   scorecard_contract:
     path: data/parse/absorption_progress.schema.yaml
     required_patterns: [initial_census, holdout-partition-610-531-79, preservation, threshold_policy, freeze_revision, tuned_after_scoring, reference_pins, prospective_regression_floor]

@@ -87,6 +87,7 @@ from typing import Any, Optional
 import yaml
 
 from governor.domain.absorption_progress import (
+    ACCEPTANCE_PACKAGE_VIOLATION_LABELS,
     JAVA_FREE_SLICE_VIOLATION_LABELS,
     NATIVE_CONTENT_VIOLATION_LABELS,
     NATIVE_FAMILY_VIOLATION_LABELS,
@@ -147,6 +148,7 @@ _RULE_KEYS = (
     "native_family_receipt",
     "native_content_receipt",
     "native_route_e2e",
+    "acceptance_package",
 )
 
 
@@ -1197,6 +1199,217 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    def read_acceptance_package(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the S08 acceptance package and every carrier it binds.
+
+        The half this governs is the T05 acceptance package: one artifact that
+        binds all fourteen S08 evidence carriers by repository-relative path +
+        pointer + sha256, carries the T02 frozen-threshold evaluation, and
+        enumerates every mandatory gate with a typed state and a computed
+        ``s09_authorized``. The rule names only *where* the package lives, which
+        carriers it must bind, what envelope it must carry and which frozen
+        reference the threshold verdicts must stay bound to; nothing about the
+        package contents is restated, so the rule cannot drift from the artifact
+        it governs.
+
+        ``None`` means the rule does not govern an acceptance-package half.
+        Otherwise a bundle carrying the parsed package, the recomputed ``sha256``
+        of every declared carrier, the resolved frozen-reference pins, and the
+        rollback and same-n resource views the oracle refuses against.
+        ``available`` is True only when the S03 declaration carrier resolves --
+        the same authority the Java-free, native-family, native-content and
+        native-route halves read -- so a tree that does not carry that authority
+        is *absence*, not a violation. An unreadable *package* under a resolvable
+        declaration is a claim with no evidence, and the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("acceptance_package")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        package_rule = rule.get("package")
+        package_rule = package_rule if isinstance(package_rule, dict) else {}
+        package_path = _text(package_rule.get("path"))
+        package_schema = _text(package_rule.get("schema_version"))
+
+        evaluation_rule = rule.get("evaluation")
+        evaluation_rule = evaluation_rule if isinstance(evaluation_rule, dict) else {}
+        reference_path = _text(evaluation_rule.get("frozen_reference_path"))
+        reference_pointer = _text(evaluation_rule.get("reference_pointer"))
+
+        rollback_rule = rule.get("rollback_carrier")
+        rollback_rule = rollback_rule if isinstance(rollback_rule, dict) else {}
+        rollback_path = _text(rollback_rule.get("path"))
+
+        resource_rule = rule.get("resource_carrier")
+        resource_rule = resource_rule if isinstance(resource_rule, dict) else {}
+        resource_path = _text(resource_rule.get("path"))
+
+        declared_carriers: list[dict[str, str]] = []
+        carrier_rule = rule.get("evidence_carriers")
+        if isinstance(carrier_rule, list):
+            for entry in carrier_rule:
+                if not isinstance(entry, dict):
+                    continue
+                manifest = _text(entry.get("manifest"))
+                pointer = _text(entry.get("pointer"))
+                if manifest and pointer:
+                    declared_carriers.append({"manifest": manifest, "pointer": pointer})
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "package_schema_version": package_schema,
+            "package_path": package_path,
+            "package_exists": bool(package_path and self.path_exists(package_path)),
+            "package_sha256": self.file_sha256(package_path) if package_path else None,
+            "package": None,
+            "declared_carriers": declared_carriers,
+            "carrier_sha256": {},
+            "reference_path": reference_path,
+            "reference_pointer": reference_pointer,
+            "reference_pins": None,
+            "reference_pins_sha256": (
+                self.file_sha256(reference_path) if reference_path else None
+            ),
+            "rollback_path": rollback_path,
+            "rollback": None,
+            "rollback_sha256": (
+                self.file_sha256(rollback_path) if rollback_path else None
+            ),
+            "resource_path": resource_path,
+            "resource": None,
+            "resource_sha256": (
+                self.file_sha256(resource_path) if resource_path else None
+            ),
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["available"] = True
+
+        bundle["package"] = self.read_json(package_path) if package_path else None
+        if bundle["package"] is None and bundle["package_exists"]:
+            bundle["errors"].append("package_unreadable")
+
+        # Recompute every declared carrier's bytes so the package's own pins are
+        # checked against content rather than trusted from a label.
+        for entry in declared_carriers:
+            rel = entry["manifest"]
+            if rel not in bundle["carrier_sha256"]:
+                bundle["carrier_sha256"][rel] = self.file_sha256(rel)
+
+        reference_doc = self.read_json(reference_path) if reference_path else None
+        if reference_doc is None and reference_path and self.path_exists(reference_path):
+            bundle["errors"].append("reference_unreadable")
+        if isinstance(reference_doc, dict):
+            resolved = _resolve_declared_pointer(reference_doc, reference_pointer)
+            bundle["reference_pins"] = resolved if isinstance(resolved, list) else []
+
+        rollback_doc = self.read_json(rollback_path) if rollback_path else None
+        if rollback_doc is None and rollback_path and self.path_exists(rollback_path):
+            bundle["errors"].append("rollback_unreadable")
+        bundle["rollback"] = self._acceptance_rollback_view(rollback_doc, rollback_rule)
+
+        resource_doc = self.read_json(resource_path) if resource_path else None
+        if resource_doc is None and resource_path and self.path_exists(resource_path):
+            bundle["errors"].append("resource_unreadable")
+        bundle["resource"] = self._acceptance_resource_view(resource_doc, resource_rule)
+
+        return bundle
+
+    @staticmethod
+    def _acceptance_rollback_view(
+        document: Any, rule: dict[str, Any]
+    ) -> Optional[dict[str, Any]]:
+        """The rollback fields the oracle refuses against, plus a byte-identity count.
+
+        The rehearsal carrier is a per-document byte-identity proof; the summary
+        counters alone could stay correct while the per-document evidence was
+        dropped, so the view recomputes how many rows actually hold
+        ``byte_identity`` and how many were rehearsed, and keeps the refused rows
+        (a typed refusal is evidence, a silent skip is not).
+        """
+        if not isinstance(document, dict):
+            return None
+        residuals_pointer = _text(rule.get("residuals_pointer")) or "residuals"
+        documents = document.get("documents")
+        byte_identical = 0
+        rehearsed = 0
+        refusals: list[dict[str, Any]] = []
+        if isinstance(documents, list):
+            for entry in documents:
+                if not isinstance(entry, dict):
+                    continue
+                if _text(entry.get("state")) == "refused":
+                    refusals.append({
+                        "id": _text(entry.get("id")),
+                        "state": _text(entry.get("state")),
+                        "refusal_reason": _text(entry.get("refusal_reason")),
+                    })
+                    continue
+                rehearsed += 1
+                if entry.get("byte_identity") is True:
+                    byte_identical += 1
+        return {
+            "schema_version": _text(document.get("schema_version")),
+            "claim_scope": _text(document.get("claim_scope")),
+            "product_coverage_effect": _text(document.get("product_coverage_effect")),
+            "thresholds": _text(document.get("thresholds")),
+            "locks": document.get("locks"),
+            "corpus_claim": document.get("corpus_claim"),
+            "residuals": document.get(residuals_pointer)
+            if isinstance(document.get(residuals_pointer), dict)
+            else document.get("residuals"),
+            "populations": document.get("populations"),
+            "documents_rehearsed": rehearsed,
+            "documents_byte_identical": byte_identical,
+            "refusals": refusals,
+        }
+
+    @staticmethod
+    def _acceptance_resource_view(
+        document: Any, rule: dict[str, Any]
+    ) -> Optional[dict[str, Any]]:
+        """The same-n resource fields the oracle refuses against.
+
+        The reference rows, the pairing contract and the residual bound-row count
+        are kept; the per-document route rows are not, because the oracle refuses
+        a pooled or saving claim from those three alone and the view must stay
+        small enough to carry in a fixture.
+        """
+        if not isinstance(document, dict):
+            return None
+        residuals_pointer = _text(rule.get("residuals_pointer")) or "residuals"
+        reference_rows = document.get("reference_metrics")
+        return {
+            "schema_version": _text(document.get("schema_version")),
+            "claim_scope": _text(document.get("claim_scope")),
+            "product_coverage_effect": _text(document.get("product_coverage_effect")),
+            "thresholds": _text(document.get("thresholds")),
+            "reference_metrics": reference_rows if isinstance(reference_rows, list) else [],
+            "pairing": document.get("pairing"),
+            "residuals": document.get(residuals_pointer)
+            if isinstance(document.get(residuals_pointer), dict)
+            else document.get("residuals"),
+        }
 
 # ── contract composition ───────────────────────────────────────────────────
 
@@ -1263,6 +1476,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
     missing.extend(_native_family_receipt_vocabulary(contract.get("native_family_receipt")))
     missing.extend(_native_content_receipt_vocabulary(contract.get("native_content_receipt")))
     missing.extend(_native_route_vocabulary(contract.get("native_route_e2e")))
+    missing.extend(_acceptance_package_vocabulary(contract.get("acceptance_package")))
     return missing
 
 def _java_free_slice_vocabulary(block: Any) -> list[str]:
@@ -1726,6 +1940,149 @@ _UNRESOLVED = object()
 _POINTER_SELECTOR_RE = re.compile(r"^([A-Za-z0-9_]+)\[([A-Za-z0-9_]+)=([^\[\]]+)\]$")
 
 
+def _acceptance_package_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``acceptance_package`` fields absent or unusable.
+
+    Without these the gate-ledger half cannot tell a declared-and-evidenced
+    package from a claim with no package, an untyped gate ledger or an
+    unregistered label. The declared label set must be exactly the domain's
+    literal set -- a label the oracle can emit must be registered, and a
+    registered label must be one the oracle can emit -- so an unregistered
+    emission is a data/implementation mismatch rather than a silent finding. The
+    caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["acceptance_package"]
+    missing: list[str] = []
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("acceptance_package.declaration")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"acceptance_package.declaration.{key}")
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("acceptance_package.declaration.manifest.path")
+
+    package = block.get("package")
+    if not isinstance(package, dict):
+        missing.append("acceptance_package.package")
+    else:
+        if not _is_relative_path(package.get("path")):
+            missing.append("acceptance_package.package.path")
+        if _text(package.get("schema_version")) is None:
+            missing.append("acceptance_package.package.schema_version")
+        if package.get("required") is not True:
+            missing.append("acceptance_package.package.required")
+
+    carriers = block.get("evidence_carriers")
+    if not isinstance(carriers, list) or not carriers:
+        missing.append("acceptance_package.evidence_carriers")
+    else:
+        for entry in carriers:
+            if (
+                not isinstance(entry, dict)
+                or _text(entry.get("manifest")) is None
+                or _text(entry.get("pointer")) is None
+            ):
+                missing.append("acceptance_package.evidence_carriers.entry")
+
+    evaluation = block.get("evaluation")
+    if not isinstance(evaluation, dict):
+        missing.append("acceptance_package.evaluation")
+    else:
+        for key in (
+            "frozen_reference_path",
+            "reference_pointer",
+            "candidate_source_path",
+            "threshold_policy_state",
+            "body_verdict",
+            "body_residual_token",
+        ):
+            if _text(evaluation.get(key)) is None:
+                missing.append(f"acceptance_package.evaluation.{key}")
+
+    rollback = block.get("rollback_carrier")
+    if not isinstance(rollback, dict):
+        missing.append("acceptance_package.rollback_carrier")
+    else:
+        for key in (
+            "path",
+            "pointer",
+            "claim_scope",
+            "byte_identity_field",
+            "fragment_leak_field",
+        ):
+            if _text(rollback.get(key)) is None:
+                missing.append(f"acceptance_package.rollback_carrier.{key}")
+
+    resource = block.get("resource_carrier")
+    if not isinstance(resource, dict):
+        missing.append("acceptance_package.resource_carrier")
+    else:
+        for key in (
+            "path",
+            "pointer",
+            "absence_state",
+            "pairing_rule",
+            "forbidden_pooling",
+            "forbidden_saving",
+        ):
+            if _text(resource.get(key)) is None:
+                missing.append(f"acceptance_package.resource_carrier.{key}")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("acceptance_package.expected")
+    else:
+        for key in (
+            "claim_scope",
+            "product_coverage_effect",
+            "thresholds",
+            "authorization_basis",
+        ):
+            if _text(expected.get(key)) is None:
+                missing.append(f"acceptance_package.expected.{key}")
+        if _count(expected.get("minimum_mandatory_gates")) is None:
+            missing.append("acceptance_package.expected.minimum_mandatory_gates")
+        for key in (
+            "gate_state_vocabulary",
+            "non_blocking_states",
+            "gate_kind_vocabulary",
+            "required_gate_ids",
+            "redaction_flags",
+        ):
+            if not _text_list(expected.get(key)):
+                missing.append(f"acceptance_package.expected.{key}")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict):
+            missing.append("acceptance_package.expected.locks")
+        else:
+            for key in (
+                "deployed",
+                "import_eligible",
+                "auto_promote",
+                "production_route",
+                "graph_write",
+            ):
+                if key not in locks:
+                    missing.append(f"acceptance_package.expected.locks.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(ACCEPTANCE_PACKAGE_VIOLATION_LABELS):
+        missing.append("acceptance_package.violations")
+
+    fixtures = block.get("fixtures")
+    if not isinstance(fixtures, dict):
+        missing.append("acceptance_package.fixtures")
+    else:
+        for polarity in ("positive", "negative"):
+            spec = fixtures.get(polarity)
+            if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
+                missing.append(f"acceptance_package.fixtures.{polarity}.path")
+    return missing
+
 def resolve_pointer(document: Any, pointer: Any) -> Any:
     """Follow a slash-separated ``pointer`` into ``document``.
 
@@ -1910,6 +2267,7 @@ def absorption_progress_violations(
     _native_family_receipt_violations_into(contract, observations, violations)
     _native_content_receipt_violations_into(contract, observations, violations)
     _native_route_violations_into(contract, observations, violations)
+    _acceptance_package_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
     return violations
@@ -2242,6 +2600,21 @@ def _native_route_violations_into(
         _native_route_violations(
             contract,
             observations.get("native_route_e2e")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+def _acceptance_package_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the acceptance-package gate-ledger labels carried by the observations."""
+    violations.update(
+        _acceptance_package_violations(
+            contract,
+            observations.get("acceptance_package")
             if isinstance(observations, dict)
             else None,
         )
@@ -3824,6 +4197,407 @@ def _native_route_violations(contract: Any, evidence: Any) -> set[str]:
 
     return violations
 
+
+def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse an acceptance-package claim the package does not evidence.
+
+    The shape R141 forbids is a *claim* of delivery progress — an acceptance
+    package that says the S08 gates are closed and S09 may proceed — that is
+    backed by no package, by a package whose carrier pins no longer match the
+    committed bytes, by a threshold verdict detached from the frozen reference,
+    by a silently dropped mandatory gate, by an S09 authorization while a gate
+    still blocks, by a renamed body residual, by an authorization read from a GSD
+    lifecycle state, by a pooled or saving resource claim, or by a rollback claim
+    with no byte-identity evidence. Concretely:
+
+    * ``claim_without_package`` — the S03 declaration resolves but the required
+      package is absent or unreadable, so there is a claim and no evidence;
+    * ``schema_drift`` — the package names a schema version other than this
+      rule's;
+    * ``evidence_drift`` — a binding is not a repo-relative path + pointer +
+      sha256, a binding repeats, or the bound carrier set is not the declared
+      one;
+    * ``carrier_stale`` — a declared carrier pin no longer matches the recomputed
+      bytes, so the package describes an older tree;
+    * ``coverage_claimed`` — the claim is not diagnostic-only with no
+      product-coverage effect and every lock closed, or it publishes a threshold
+      the acquisition does not accept, or it leaks a redaction flag;
+    * ``threshold_unbound`` — the evaluation is not frozen, names another
+      reference or candidate, or a verdict's id/family/metric/stratum/value no
+      longer re-derives from the pinned reference fraction;
+    * ``mandatory_gate_dropped`` — a gate is untyped, its ``blocks_s09`` disagrees
+      with its own state, a required gate id is missing, a gate repeats, or the
+      ledger is smaller than the declared minimum;
+    * ``body_residual_renamed`` — the body-axis gate is absent, its state is not
+      the declared verdict, or the residual wording no longer appears verbatim;
+    * ``unmet_gate_authorized`` — the package authorizes S09 while a gate still
+      blocks;
+    * ``authorization_drift`` — the declared blocking set disagrees with the
+      recomputed one, the basis drifted, or S09 is refused while nothing blocks;
+    * ``lifecycle_authorization`` — the package derives authorization from a GSD
+      lifecycle state;
+    * ``pooled_resource_claim`` — the same-n resource pairing is not the declared
+      same-documents contract, or a reference metric is not the typed absence it
+      must be;
+    * ``rollback_without_byte_identity`` — the rollback rehearsal does not carry
+      byte identity, leaks a native fragment, or has a refused row with no typed
+      reason.
+
+    ``set()`` (empty) means clean. A missing or absent-evidence bundle is
+    *unverified*, never clean and never refuted: a tree that does not carry the
+    declaration authority is silence, not compliance.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("acceptance_package")
+    if not isinstance(rule, dict):
+        return violations
+
+    def _mapping(value: Any) -> dict[str, Any]:
+        return value if isinstance(value, dict) else {}
+
+    def _add(label: str) -> None:
+        violations.add(label)
+
+    package_rule = _mapping(rule.get("package"))
+    expected = _mapping(rule.get("expected"))
+    evaluation_rule = _mapping(rule.get("evaluation"))
+    rollback_rule = _mapping(rule.get("rollback_carrier"))
+    resource_rule = _mapping(rule.get("resource_carrier"))
+
+    claim_scope = _text(expected.get("claim_scope"))
+    product_coverage = _text(expected.get("product_coverage_effect"))
+    thresholds = _text(expected.get("thresholds"))
+    authorization_basis = _text(expected.get("authorization_basis"))
+    gate_states = set(_text_list(expected.get("gate_state_vocabulary")))
+    gate_kinds = set(_text_list(expected.get("gate_kind_vocabulary")))
+    non_blocking = set(_text_list(expected.get("non_blocking_states")))
+    required_gate_ids = set(_text_list(expected.get("required_gate_ids")))
+    minimum_gates = _count(expected.get("minimum_mandatory_gates"))
+    locks_rule = _mapping(expected.get("locks"))
+    redaction_flags = _text_list(expected.get("redaction_flags"))
+
+    frozen_reference_path = _text(evaluation_rule.get("frozen_reference_path"))
+    candidate_source_path = _text(evaluation_rule.get("candidate_source_path"))
+    threshold_policy_state = _text(evaluation_rule.get("threshold_policy_state"))
+    body_verdict = _text(evaluation_rule.get("body_verdict"))
+    body_token = _text(evaluation_rule.get("body_residual_token"))
+
+    rollback_claim_scope = _text(rollback_rule.get("claim_scope"))
+    byte_identity_field = _text(rollback_rule.get("byte_identity_field"))
+    fragment_leak_field = _text(rollback_rule.get("fragment_leak_field"))
+
+    absence_state = _text(resource_rule.get("absence_state"))
+    pairing_rule = _text(resource_rule.get("pairing_rule"))
+    forbidden_pooling = _text(resource_rule.get("forbidden_pooling"))
+    forbidden_saving = _text(resource_rule.get("forbidden_saving"))
+
+    declared_set: set[tuple[Optional[str], Optional[str]]] = set()
+    declared_carriers = evidence.get("declared_carriers")
+    if isinstance(declared_carriers, list):
+        for entry in declared_carriers:
+            if isinstance(entry, dict):
+                declared_set.add(
+                    (_text(entry.get("manifest")), _text(entry.get("pointer")))
+                )
+
+    def declares_false(value: Any) -> bool:
+        """True when a lock declares false in either JSON representation."""
+        if value is False:
+            return True
+        return isinstance(value, str) and value.strip().lower() == "false"
+
+    package = evidence.get("package")
+    required = package_rule.get("required") is True
+    if not isinstance(package, dict):
+        if evidence.get("package_exists") is True or required:
+            _add("acceptance_package_claim_without_package")
+        return violations
+
+    if _text(package.get("schema_version")) != _text(package_rule.get("schema_version")):
+        _add("acceptance_package_schema_drift")
+
+    if _text(package.get("claim_scope")) != claim_scope:
+        _add("acceptance_package_coverage_claimed")
+    if _text(package.get("product_coverage_effect")) != product_coverage:
+        _add("acceptance_package_coverage_claimed")
+    if _text(package.get("thresholds")) != thresholds:
+        _add("acceptance_package_coverage_claimed")
+    locks = package.get("locks")
+    if not isinstance(locks, dict):
+        _add("acceptance_package_coverage_claimed")
+    else:
+        for lock, want in locks_rule.items():
+            found = locks.get(lock)
+            if isinstance(want, bool):
+                if want is False and not declares_false(found):
+                    _add("acceptance_package_coverage_claimed")
+                elif want is True and found is not True:
+                    _add("acceptance_package_coverage_claimed")
+            elif _text(want) is None or _text(found) != _text(want):
+                _add("acceptance_package_coverage_claimed")
+    redaction = package.get("redaction")
+    if not isinstance(redaction, dict):
+        _add("acceptance_package_coverage_claimed")
+    else:
+        for flag in redaction_flags:
+            if redaction.get(flag) is True:
+                _add("acceptance_package_coverage_claimed")
+
+    # ── evidence carriers: a pin must still match the committed bytes ──
+    entries = package.get("evidence")
+    carrier_sha = evidence.get("carrier_sha256")
+    carrier_sha = carrier_sha if isinstance(carrier_sha, dict) else {}
+    if not isinstance(entries, list) or not entries:
+        _add("acceptance_package_evidence_drift")
+    else:
+        seen: set[tuple[Optional[str], Optional[str]]] = set()
+        for entry in entries:
+            if not isinstance(entry, dict):
+                _add("acceptance_package_evidence_drift")
+                continue
+            manifest = _text(entry.get("manifest"))
+            pointer = _text(entry.get("pointer"))
+            digest = _text(entry.get("revision_sha256"))
+            if (
+                manifest is None
+                or pointer is None
+                or not _is_relative_path(manifest)
+                or digest is None
+                or _SHA256_RE.match(digest) is None
+            ):
+                _add("acceptance_package_evidence_drift")
+                continue
+            key = (manifest, pointer)
+            if key in seen:
+                _add("acceptance_package_evidence_drift")
+            seen.add(key)
+            recomputed = carrier_sha.get(manifest)
+            if _text(recomputed) is None or _text(recomputed) != digest:
+                _add("acceptance_package_carrier_stale")
+        if declared_set and seen != declared_set:
+            _add("acceptance_package_evidence_drift")
+
+    # ── frozen-threshold binding: verdicts must re-derive from the pins ──
+    evaluation = package.get("evaluation")
+    pins = evidence.get("reference_pins")
+    pin_index: dict[str, dict[str, Any]] = {}
+    if isinstance(pins, list):
+        for pin in pins:
+            if isinstance(pin, dict):
+                threshold_id = _text(pin.get("threshold_id"))
+                if threshold_id is not None:
+                    pin_index[threshold_id] = pin
+    if not isinstance(evaluation, dict):
+        _add("acceptance_package_threshold_unbound")
+    else:
+        if _text(evaluation.get("threshold_policy_state")) != threshold_policy_state:
+            _add("acceptance_package_threshold_unbound")
+        if _text(evaluation.get("frozen_reference_path")) != frozen_reference_path:
+            _add("acceptance_package_threshold_unbound")
+        if _text(evaluation.get("candidate_source_path")) != candidate_source_path:
+            _add("acceptance_package_threshold_unbound")
+        verdicts = evaluation.get("thresholds")
+        if not isinstance(verdicts, list) or not verdicts:
+            _add("acceptance_package_threshold_unbound")
+        else:
+            seen_thresholds: set[Optional[str]] = set()
+            for verdict in verdicts:
+                if not isinstance(verdict, dict):
+                    _add("acceptance_package_threshold_unbound")
+                    continue
+                threshold_id = _text(verdict.get("threshold_id"))
+                if threshold_id is None or threshold_id in seen_thresholds:
+                    _add("acceptance_package_threshold_unbound")
+                    continue
+                seen_thresholds.add(threshold_id)
+                pin = pin_index.get(threshold_id)
+                if pin is None:
+                    _add("acceptance_package_threshold_unbound")
+                    continue
+                if _text(verdict.get("family_id")) != _text(pin.get("family_id")):
+                    _add("acceptance_package_threshold_unbound")
+                if _text(verdict.get("metric_id")) != _text(pin.get("metric_id")):
+                    _add("acceptance_package_threshold_unbound")
+                if _text(verdict.get("stratum")) != _text(pin.get("stratum")):
+                    _add("acceptance_package_threshold_unbound")
+                if _text(verdict.get("verdict")) is None:
+                    _add("acceptance_package_threshold_unbound")
+                fraction = pin.get("fraction") if isinstance(pin.get("fraction"), dict) else {}
+                numerator = _count(fraction.get("numerator"))
+                denominator = _count(fraction.get("denominator"))
+                reference_value = verdict.get("frozen_reference_value")
+                if (
+                    numerator is None
+                    or denominator in (None, 0)
+                    or not isinstance(reference_value, (int, float))
+                    or isinstance(reference_value, bool)
+                ):
+                    _add("acceptance_package_threshold_unbound")
+                elif abs(float(reference_value) - (numerator / denominator)) > 1e-9:
+                    _add("acceptance_package_threshold_unbound")
+            if pin_index and seen_thresholds != set(pin_index):
+                _add("acceptance_package_threshold_unbound")
+
+    # ── mandatory gate ledger: every required gate, typed ──
+    gates = package.get("mandatory_gates")
+    gate_ids: list[Optional[str]] = []
+    if not isinstance(gates, list) or not gates:
+        _add("acceptance_package_mandatory_gate_dropped")
+        gates = []
+    else:
+        if minimum_gates is not None and len(gates) < minimum_gates:
+            _add("acceptance_package_mandatory_gate_dropped")
+        for gate in gates:
+            if not isinstance(gate, dict):
+                _add("acceptance_package_mandatory_gate_dropped")
+                continue
+            gate_id = _text(gate.get("gate_id"))
+            gate_ids.append(gate_id)
+            kind = _text(gate.get("kind"))
+            state = _text(gate.get("state"))
+            if kind is None or kind not in gate_kinds:
+                _add("acceptance_package_mandatory_gate_dropped")
+            if state is None or state not in gate_states:
+                _add("acceptance_package_mandatory_gate_dropped")
+            if not isinstance(gate.get("evidence"), dict):
+                _add("acceptance_package_mandatory_gate_dropped")
+            if _text(gate.get("detail")) is None:
+                _add("acceptance_package_mandatory_gate_dropped")
+            if _text(gate.get("evidence_needed")) is None:
+                _add("acceptance_package_mandatory_gate_dropped")
+            if not isinstance(gate.get("required"), bool):
+                _add("acceptance_package_mandatory_gate_dropped")
+            if not isinstance(gate.get("blocks_s09"), bool):
+                _add("acceptance_package_mandatory_gate_dropped")
+            else:
+                want_blocks = gate.get("required") is True and state not in non_blocking
+                if gate.get("blocks_s09") is not want_blocks:
+                    _add("acceptance_package_mandatory_gate_dropped")
+        if required_gate_ids - set(gate_ids):
+            _add("acceptance_package_mandatory_gate_dropped")
+        if len(gate_ids) != len(set(gate_ids)):
+            _add("acceptance_package_mandatory_gate_dropped")
+
+    recomputed_blocking = [
+        (_text(gate.get("gate_id")), _text(gate.get("state")))
+        for gate in gates
+        if isinstance(gate, dict) and gate.get("blocks_s09") is True
+    ]
+    blocking_declared = package.get("blocking_gates")
+    if not isinstance(blocking_declared, list):
+        _add("acceptance_package_authorization_drift")
+    else:
+        declared_pairs = [
+            (_text(entry.get("gate_id")), _text(entry.get("state")))
+            for entry in blocking_declared
+            if isinstance(entry, dict)
+        ]
+        if declared_pairs != recomputed_blocking:
+            _add("acceptance_package_authorization_drift")
+
+    authorization = package.get("authorization")
+    if not isinstance(authorization, dict):
+        _add("acceptance_package_authorization_drift")
+        _add("acceptance_package_lifecycle_authorization")
+    else:
+        if authorization.get("gsd_lifecycle_authorizes") is not False:
+            _add("acceptance_package_lifecycle_authorization")
+        if _text(authorization.get("basis")) != authorization_basis:
+            _add("acceptance_package_authorization_drift")
+        s09 = authorization.get("s09_authorized")
+        if s09 is True:
+            if recomputed_blocking:
+                _add("acceptance_package_unmet_gate_authorized")
+        elif s09 is False:
+            if not recomputed_blocking:
+                _add("acceptance_package_authorization_drift")
+        else:
+            _add("acceptance_package_authorization_drift")
+
+    # ── the body residual must survive verbatim (D499) ──
+    body_gates = [
+        gate
+        for gate in gates
+        if isinstance(gate, dict) and _text(gate.get("kind")) == "body_axis"
+    ]
+    if not body_gates:
+        _add("acceptance_package_body_residual_renamed")
+    else:
+        if body_verdict is not None and not any(
+            _text(gate.get("state")) == body_verdict for gate in body_gates
+        ):
+            _add("acceptance_package_body_residual_renamed")
+        if body_token is not None and not any(
+            body_token in f"{gate.get('detail') or ''} {gate.get('reason') or ''}"
+            for gate in body_gates
+        ):
+            _add("acceptance_package_body_residual_renamed")
+
+    # ── the same-n resource receipt: no pooled or saving claim ──
+    resource = evidence.get("resource")
+    if isinstance(resource, dict):
+        pairing = _mapping(resource.get("pairing"))
+        if _text(pairing.get("rule")) != pairing_rule:
+            _add("acceptance_package_pooled_resource_claim")
+        if _text(pairing.get("pooled")) != forbidden_pooling:
+            _add("acceptance_package_pooled_resource_claim")
+        if _text(pairing.get("saving_claim")) != forbidden_saving:
+            _add("acceptance_package_pooled_resource_claim")
+        rows = resource.get("reference_metrics")
+        if not isinstance(rows, list) or not rows:
+            _add("acceptance_package_pooled_resource_claim")
+        else:
+            bound = 0
+            for row in rows:
+                if not isinstance(row, dict):
+                    _add("acceptance_package_pooled_resource_claim")
+                    continue
+                if _text(row.get("state")) != absence_state:
+                    _add("acceptance_package_pooled_resource_claim")
+                if row.get("source") is not None:
+                    bound += 1
+            residuals = _mapping(resource.get("residuals"))
+            declared_bound = _count(residuals.get("reference_rows_bound"))
+            if declared_bound is not None and declared_bound != bound:
+                _add("acceptance_package_pooled_resource_claim")
+
+    # ── the rollback rehearsal: byte-identity evidence or refusal ──
+    rollback = evidence.get("rollback")
+    if not isinstance(rollback, dict):
+        _add("acceptance_package_rollback_without_byte_identity")
+    else:
+        if _text(rollback.get("claim_scope")) != rollback_claim_scope:
+            _add("acceptance_package_rollback_without_byte_identity")
+        claim = _mapping(rollback.get("corpus_claim"))
+        if byte_identity_field is None or claim.get(byte_identity_field) is not True:
+            _add("acceptance_package_rollback_without_byte_identity")
+        if fragment_leak_field is not None and claim.get(fragment_leak_field) is not True:
+            _add("acceptance_package_rollback_without_byte_identity")
+        residuals = _mapping(rollback.get("residuals"))
+        if _count(residuals.get("byte_identity_violations")) != 0:
+            _add("acceptance_package_rollback_without_byte_identity")
+        if _count(residuals.get("native_fragment_leaks")) != 0:
+            _add("acceptance_package_rollback_without_byte_identity")
+        declared_rehearsed = _count(claim.get("rehearsed_documents"))
+        declared_total = _count(claim.get("declared_documents"))
+        if _count(rollback.get("documents_byte_identical")) != declared_rehearsed:
+            _add("acceptance_package_rollback_without_byte_identity")
+        if _count(rollback.get("documents_rehearsed")) != declared_total:
+            _add("acceptance_package_rollback_without_byte_identity")
+        refusals = rollback.get("refusals")
+        if isinstance(refusals, list):
+            for refusal in refusals:
+                if (
+                    not isinstance(refusal, dict)
+                    or _text(refusal.get("refusal_reason")) is None
+                ):
+                    _add("acceptance_package_rollback_without_byte_identity")
+
+    return violations
 
 def _census_reason_vocabulary(contract: Any) -> set[str]:
     """The closed exclusion-reason vocabulary the contract pins."""

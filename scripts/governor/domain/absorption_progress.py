@@ -74,6 +74,7 @@ import re
 from typing import Any, Optional
 
 __all__ = [
+    "ACCEPTANCE_PACKAGE_VIOLATION_LABELS",
     "JAVA_FREE_SLICE_VIOLATION_LABELS",
     "NATIVE_CONTENT_VIOLATION_LABELS",
     "NATIVE_FAMILY_VIOLATION_LABELS",
@@ -271,6 +272,43 @@ NATIVE_ROUTE_VIOLATION_LABELS = frozenset(
         "native_route_body_gap_untyped",
         "native_route_resource_pair_unbound",
         "native_route_metric_untyped",
+    }
+)
+
+#: The closed adapter-level vocabulary of the S08 acceptance-package gate ledger
+#: (M514/S08/T06). Literals on purpose (D492): the closed vocabulary is owned
+#: here, and the rule DATA restates it so a label the oracle can emit but that is
+#: not registered — or a registered label the oracle cannot emit — is a
+#: data/implementation mismatch rather than a silent finding. The adapter is the
+#: only layer that reads the package; it emits exactly these labels and nothing
+#: else, and none of them moves the product `java_independence` axis (D499).
+#:
+#: Why this half exists (R141): T05 published the S08 acceptance package, which
+#: binds all fourteen S08 carriers by sha256 and names every mandatory gate with
+#: `s09_authorized=false`. A package's mere existence must not read as progress,
+#: so publishing it *without* the sibling governor half would let an artifact's
+#: presence stand in for capability. This half makes the package auditable:
+#: a required-but-absent package, a drifted carrier pin, a threshold verdict no
+#: longer bound to the frozen reference, a silently dropped mandatory gate, an
+#: S09 authorization while a gate still blocks, a renamed body residual, an
+#: authorization derived from a GSD lifecycle state, a pooled or saving resource
+#: claim, and a rollback claim with no byte-identity evidence are each a typed,
+#: fail-closed refusal.
+ACCEPTANCE_PACKAGE_VIOLATION_LABELS = frozenset(
+    {
+        "acceptance_package_claim_without_package",
+        "acceptance_package_schema_drift",
+        "acceptance_package_evidence_drift",
+        "acceptance_package_carrier_stale",
+        "acceptance_package_coverage_claimed",
+        "acceptance_package_threshold_unbound",
+        "acceptance_package_mandatory_gate_dropped",
+        "acceptance_package_body_residual_renamed",
+        "acceptance_package_unmet_gate_authorized",
+        "acceptance_package_authorization_drift",
+        "acceptance_package_lifecycle_authorization",
+        "acceptance_package_pooled_resource_claim",
+        "acceptance_package_rollback_without_byte_identity",
     }
 )
 
