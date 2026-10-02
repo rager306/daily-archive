@@ -65,6 +65,11 @@ REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins
 REFERENCE_PINS_PATH = "artifacts/parse_compat/absorption_progress_reference_pins.json"
 DOMAIN_MODULE = "scripts/governor/domain/absorption_progress.py"
 ADAPTER_MODULE = "scripts/governor/adapters/absorption_progress_reader.py"
+#: The S08 acceptance-audit source marker. The `acceptance_audit` source_markers
+#: entry (added with the acceptance-package half) reads this Rust test file as
+#: text, so the scratch tree the service reads must carry it or every
+#: scratch-tree assertion gains a spurious `source_marker_missing` flag.
+ACCEPTANCE_AUDIT = "crates/da-cli/tests/native_acceptance_package_test.rs"
 
 REV = "git:" + "52bb08a4a016e69e3224ae79f02c2f3e53897e72"
 REV2 = "git:" + "11" * 20
@@ -826,7 +831,7 @@ def _scratch_service(scorecard: dict | None = None) -> TrajectoryService:
     """A scratch tree holding exactly what the check reads."""
     root = _make_root()
     (root / "artifacts").mkdir(parents=True, exist_ok=True)
-    for rel in (RULE_PATH, SCHEMA_PATH, POSITIVE_FIXTURE, NEGATIVE_FIXTURE, DOMAIN_MODULE, ADAPTER_MODULE, REFERENCE_PINS_PATH):
+    for rel in (RULE_PATH, SCHEMA_PATH, POSITIVE_FIXTURE, NEGATIVE_FIXTURE, DOMAIN_MODULE, ADAPTER_MODULE, REFERENCE_PINS_PATH, ACCEPTANCE_AUDIT):
         _write(root / rel, (_REPO_ROOT / rel).read_text(encoding="utf-8"))
     # Historical carriers are only existence-checked here; placeholders keep the
     # scratch tree small while still exercising the guard.
