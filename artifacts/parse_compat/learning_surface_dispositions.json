@@ -1,0 +1,66 @@
+{
+  "schema_version": "learning-surface-dispositions.v1",
+  "authority": {
+    "frozen_ledger": {
+      "path": "data/parse/grobid_compatibility.yaml",
+      "sha256": "sha256:de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03"
+    },
+    "frozen_release_package": {
+      "path": "artifacts/parse_compat/grobid_retirement_release_decision_package.json",
+      "sha256": "sha256:f4ff294193a41c42988aaa135ec1b728f04603c6a585365c97a2d82869f0aa9a"
+    },
+    "historical_state": {
+      "learning.sona_trajectory": "absent",
+      "learning.microlora_ewc": "absent"
+    }
+  },
+  "locks": {
+    "deployed": false,
+    "import_eligible": false,
+    "promotion_state": "candidate",
+    "auto_promote": "forbidden",
+    "production_route": "forbidden",
+    "graph_write": "forbidden"
+  },
+  "surfaces": [
+    {
+      "id": "learning.sona_trajectory",
+      "state": "candidate",
+      "parity": "not_applicable_no_java_donor",
+      "reason": "no_java_donor",
+      "java": null,
+      "implementation": {
+        "crate": "da-application",
+        "surface": "sona_trajectory_reasoning_bank",
+        "rust": {
+          "path": "crates/da-application/src/sona_bridge.rs",
+          "symbol": "build_reasoning_bank"
+        },
+        "test": {
+          "path": "crates/da-application/tests/sona_restart_equivalence.rs",
+          "name": "deterministic_candidate_and_rvf_lineage_survive_restart"
+        }
+      }
+    },
+    {
+      "id": "learning.microlora_ewc",
+      "state": "candidate",
+      "parity": "not_applicable_no_java_donor",
+      "reason": "no_java_donor",
+      "java": null,
+      "implementation": {
+        "crate": "da-application",
+        "surface": "microlora_ewc_parse_policy",
+        "rust": {
+          "path": "crates/da-application/src/parse_policy_training.rs",
+          "symbol": "reload_persisted_candidate"
+        },
+        "test": {
+          "path": "crates/da-application/tests/parse_policy_training_reload.rs",
+          "name": "reload_recomputes_weights_digest_and_rejects_tamper"
+        }
+      }
+    }
+  ],
+  "note": "The historical M513 carrier data/parse/grobid_compatibility.yaml (its parity_ledger rows, absent_dispositions and horizon_order) is a read-only point-in-time record and is NOT rewritten: both learning surfaces still carry state=absent / parity=not_claimed_absent there. This file is the separate, additive evidence carrier that records the honest current disposition (state=candidate, parity=not_applicable_no_java_donor, reason=no_java_donor) for the two project-native learning surfaces, sourced from the frozen ledger bytes above. No promotion, no deploy, no import and no graph write is authorized; every lock stays closed."
+}
