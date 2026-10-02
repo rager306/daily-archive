@@ -3000,6 +3000,19 @@ class TrajectoryService:
             # silence, not compliance, so a tree without the carrier yields no
             # finding here.
             "acceptance_package": reader.read_acceptance_package(contract),
+            # S09/T03: the retirement-readiness receipt is the authorization-axis
+            # sibling of the S08 acceptance package. The package reports the gate
+            # ledger; this half reports, separately, whether a recorded human
+            # decision authorizes a switch, and fails closed on a claim the
+            # committed human record does not support. Publishing it here keeps
+            # the half non-vacuous: a claim with no receipt, a stale carrier pin,
+            # a claimed human decision with no record, a lifecycle-derived
+            # authorization, a family switched while its gate blocks, a renamed
+            # body residual, a product-coverage claim and a met goal while the
+            # authorization still refuses each reach the composed finding (R141).
+            # Absence of the declaration authority stays silence, not compliance,
+            # so a tree without the carrier yields no finding here.
+            "retirement_readiness": reader.read_retirement_readiness(contract),
         }
 
         violations = absorption_progress_violations(scorecard, contract, observations)

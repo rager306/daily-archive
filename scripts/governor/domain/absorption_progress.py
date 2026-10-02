@@ -79,6 +79,7 @@ __all__ = [
     "NATIVE_CONTENT_VIOLATION_LABELS",
     "NATIVE_FAMILY_VIOLATION_LABELS",
     "NATIVE_ROUTE_VIOLATION_LABELS",
+    "RETIREMENT_READINESS_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
     "THRESHOLD_DIRECTIONS",
     "comparability_key",
@@ -309,6 +310,56 @@ ACCEPTANCE_PACKAGE_VIOLATION_LABELS = frozenset(
         "acceptance_package_lifecycle_authorization",
         "acceptance_package_pooled_resource_claim",
         "acceptance_package_rollback_without_byte_identity",
+    }
+)
+
+#: The closed adapter-level vocabulary of the S09 retirement-readiness half
+#: (M514/S09/T03). Literals on purpose (D492): the closed vocabulary is owned
+#: here, and the rule DATA restates it so a label the oracle can emit but that is
+#: not registered -- or a registered label the oracle cannot emit -- is a
+#: data/implementation mismatch rather than a silent finding. The adapter is the
+#: only layer that reads the receipt; it emits exactly these labels and nothing
+#: else, and none of them moves the product `java_independence` axis (D499).
+#:
+#: Why this half exists (R141): S08 published the acceptance package with
+#: `s09_authorized=false` and the M513 human release record is still
+#: `reviewer=null` / `decision=pending`, but no governor half reported the
+#: *authorization axis* separately from product coverage. A retirement-readiness
+#: receipt nothing checks could silently claim a recorded human decision, mark a
+#: blocked family switched, rename the one body residual, or mark the retirement
+#: goal met. Each of those is a typed, fail-closed refusal:
+#:
+#: * ``claim_without_receipt`` -- a resolvable declaration with no receipt, or a
+#:   receipt for another schema version;
+#: * ``carrier_stale`` -- a declared carrier pin no longer matches the recomputed
+#:   bytes, a binding is malformed or duplicated, or the bound carrier set is not
+#:   the declared one;
+#: * ``human_decision_claimed_without_record`` -- the receipt claims a named
+#:   reviewer, a recorded authorizing decision or a released state that the
+#:   committed human release record does not contain;
+#: * ``lifecycle_authorization`` -- authorization derived from a GSD lifecycle
+#:   state rather than from a recorded human decision;
+#: * ``family_switched_with_blocking_gate`` -- a family is marked switched (or
+#:   listed in ``families_switched``) while it is unauthorized or still carries a
+#:   blocking gate;
+#: * ``body_residual_renamed`` -- the ``p1_localization_uncertain`` residual
+#:   wording no longer appears verbatim;
+#: * ``product_coverage_claimed`` -- the claim is not the declared blocked scope
+#:   (another claim scope, a product-coverage effect, an open lock, a leaked
+#:   redaction flag, a dropped required family or blocking gate, a missing
+#:   required refusal code, or another human-gate package status);
+#: * ``goal_marked_met`` -- the retirement goal is marked met while the
+#:   authorization still refuses.
+RETIREMENT_READINESS_VIOLATION_LABELS = frozenset(
+    {
+        "retirement_readiness_claim_without_receipt",
+        "retirement_readiness_carrier_stale",
+        "retirement_readiness_human_decision_claimed_without_record",
+        "retirement_readiness_lifecycle_authorization",
+        "retirement_readiness_family_switched_with_blocking_gate",
+        "retirement_readiness_body_residual_renamed",
+        "retirement_readiness_product_coverage_claimed",
+        "retirement_readiness_goal_marked_met",
     }
 )
 

@@ -92,6 +92,7 @@ from governor.domain.absorption_progress import (
     NATIVE_CONTENT_VIOLATION_LABELS,
     NATIVE_FAMILY_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
+    RETIREMENT_READINESS_VIOLATION_LABELS,
     contract_thresholds,
     missing_contract_vocabulary,
     score_number,
@@ -149,6 +150,7 @@ _RULE_KEYS = (
     "native_content_receipt",
     "native_route_e2e",
     "acceptance_package",
+    "retirement_readiness",
 )
 
 
@@ -1335,6 +1337,145 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    def read_retirement_readiness(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the S09 retirement-readiness receipt and every carrier it binds.
+
+        The half this governs is the S09 authorization axis: one receipt that
+        binds the S08 acceptance package, the committed human release record, the
+        S02 required-scope / authorization declarations and the M513
+        release-decision package remainder by repository-relative path + pointer +
+        sha256, and carries the T01 authorization verdict verbatim with
+        ``families_switched: []``, ``goal_unmet: true`` and every required family
+        naming its blocking gate. The rule names only *where* the receipt and the
+        authorities live and *what blocked state* it must describe; nothing about
+        the receipt contents is restated, so the rule cannot drift from the
+        artifact it governs.
+
+        ``None`` means the rule does not govern a retirement-readiness half.
+        Otherwise a bundle carrying the parsed receipt, the recomputed ``sha256``
+        of every declared carrier, the resolved committed human release record and
+        the resolved S08 gate ledger. ``available`` is True only when the S03
+        declaration carrier resolves -- the same authority the Java-free,
+        native-family, native-content, native-route and acceptance-package halves
+        read -- so a tree that does not carry that authority is *absence*, not a
+        violation. An unreadable *receipt* under a resolvable declaration is a
+        claim with no evidence, and the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("retirement_readiness")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        receipt_rule = rule.get("receipt")
+        receipt_rule = receipt_rule if isinstance(receipt_rule, dict) else {}
+        receipt_path = _text(receipt_rule.get("path"))
+        receipt_schema = _text(receipt_rule.get("schema_version"))
+
+        human_rule = rule.get("human_record")
+        human_rule = human_rule if isinstance(human_rule, dict) else {}
+        human_manifest = _text(human_rule.get("manifest"))
+        human_pointer = _text(human_rule.get("pointer"))
+
+        gate_rule = rule.get("gate_ledger")
+        gate_rule = gate_rule if isinstance(gate_rule, dict) else {}
+        gate_manifest = _text(gate_rule.get("manifest"))
+        gate_pointer = _text(gate_rule.get("pointer"))
+
+        declared_carriers: list[dict[str, str]] = []
+        carrier_rule = rule.get("evidence_carriers")
+        if isinstance(carrier_rule, list):
+            for entry in carrier_rule:
+                if not isinstance(entry, dict):
+                    continue
+                manifest = _text(entry.get("manifest"))
+                pointer = _text(entry.get("pointer"))
+                if manifest and pointer:
+                    declared_carriers.append({"manifest": manifest, "pointer": pointer})
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "receipt_schema_version": receipt_schema,
+            "receipt_path": receipt_path,
+            "receipt_exists": bool(receipt_path and self.path_exists(receipt_path)),
+            "receipt_sha256": self.file_sha256(receipt_path) if receipt_path else None,
+            "receipt": None,
+            "declared_carriers": declared_carriers,
+            "carrier_sha256": {},
+            "human_record_manifest": human_manifest,
+            "human_record_pointer": human_pointer,
+            "human_record_exists": bool(
+                human_manifest and self.path_exists(human_manifest)
+            ),
+            "human_record_sha256": (
+                self.file_sha256(human_manifest) if human_manifest else None
+            ),
+            "human_record": None,
+            "gate_ledger_manifest": gate_manifest,
+            "gate_ledger_pointer": gate_pointer,
+            "gate_ledger_exists": bool(
+                gate_manifest and self.path_exists(gate_manifest)
+            ),
+            "gate_ledger_sha256": (
+                self.file_sha256(gate_manifest) if gate_manifest else None
+            ),
+            "gate_ledger": None,
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["available"] = True
+
+        bundle["receipt"] = self.read_json(receipt_path) if receipt_path else None
+        if bundle["receipt"] is None and bundle["receipt_exists"]:
+            bundle["errors"].append("receipt_unreadable")
+
+        # Recompute every declared carrier's bytes so the receipt's own pins are
+        # checked against content rather than trusted from a label.
+        for entry in declared_carriers:
+            rel = entry["manifest"]
+            if rel not in bundle["carrier_sha256"]:
+                bundle["carrier_sha256"][rel] = self.file_sha256(rel)
+
+        # The committed human release record is the authority the receipt's
+        # human-gate claims are checked against, so it is resolved rather than
+        # restated in the rule.
+        human_doc = self.read_yaml(human_manifest) if human_manifest else None
+        if human_doc is None and human_manifest and self.path_exists(human_manifest):
+            bundle["errors"].append("human_record_unreadable")
+        if isinstance(human_doc, dict):
+            resolved = _resolve_declared_pointer(human_doc, human_pointer)
+            bundle["human_record"] = resolved if isinstance(resolved, dict) else None
+
+        # The S08 gate ledger is the authority a switched-family claim is checked
+        # against, so a receipt cannot hide a still-blocking gate behind its own
+        # wording.
+        gate_doc = self.read_json(gate_manifest) if gate_manifest else None
+        if gate_doc is None and gate_manifest and self.path_exists(gate_manifest):
+            bundle["errors"].append("gate_ledger_unreadable")
+        if isinstance(gate_doc, dict):
+            resolved = _resolve_declared_pointer(gate_doc, gate_pointer)
+            bundle["gate_ledger"] = resolved if isinstance(resolved, list) else None
+
+        return bundle
+
     @staticmethod
     def _acceptance_rollback_view(
         document: Any, rule: dict[str, Any]
@@ -1477,6 +1618,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
     missing.extend(_native_content_receipt_vocabulary(contract.get("native_content_receipt")))
     missing.extend(_native_route_vocabulary(contract.get("native_route_e2e")))
     missing.extend(_acceptance_package_vocabulary(contract.get("acceptance_package")))
+    missing.extend(_retirement_readiness_vocabulary(contract.get("retirement_readiness")))
     return missing
 
 def _java_free_slice_vocabulary(block: Any) -> list[str]:
@@ -2083,6 +2225,153 @@ def _acceptance_package_vocabulary(block: Any) -> list[str]:
                 missing.append(f"acceptance_package.fixtures.{polarity}.path")
     return missing
 
+def _retirement_readiness_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``retirement_readiness`` fields absent or unusable.
+
+    Without these the half cannot tell a declared-and-evidenced blocked receipt
+    from a claim with no receipt, an untyped authorization or a missing required
+    scope. The declared label set must be exactly the domain's literal set -- a
+    label the oracle can emit must be registered, and a registered label must be
+    one the oracle can emit -- so an unregistered emission is a data/implementation
+    mismatch rather than a silent finding. The caller fails closed on a non-empty
+    result.
+    """
+    if not isinstance(block, dict):
+        return ["retirement_readiness"]
+    missing: list[str] = []
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("retirement_readiness.declaration")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"retirement_readiness.declaration.{key}")
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("retirement_readiness.declaration.manifest.path")
+
+    receipt = block.get("receipt")
+    if not isinstance(receipt, dict):
+        missing.append("retirement_readiness.receipt")
+    else:
+        if not _is_relative_path(receipt.get("path")):
+            missing.append("retirement_readiness.receipt.path")
+        if _text(receipt.get("schema_version")) is None:
+            missing.append("retirement_readiness.receipt.schema_version")
+        if receipt.get("required") is not True:
+            missing.append("retirement_readiness.receipt.required")
+
+    human = block.get("human_record")
+    if not isinstance(human, dict):
+        missing.append("retirement_readiness.human_record")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(human.get(key)) is None:
+                missing.append(f"retirement_readiness.human_record.{key}")
+        if not _is_relative_path(human.get("manifest")):
+            missing.append("retirement_readiness.human_record.manifest.path")
+        if not _text_list(human.get("authorizing_decision_tokens")):
+            missing.append(
+                "retirement_readiness.human_record.authorizing_decision_tokens"
+            )
+
+    gate = block.get("gate_ledger")
+    if not isinstance(gate, dict):
+        missing.append("retirement_readiness.gate_ledger")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(gate.get(key)) is None:
+                missing.append(f"retirement_readiness.gate_ledger.{key}")
+        if not _is_relative_path(gate.get("manifest")):
+            missing.append("retirement_readiness.gate_ledger.manifest.path")
+        if not _text_list(gate.get("non_blocking_states")):
+            missing.append("retirement_readiness.gate_ledger.non_blocking_states")
+
+    carriers = block.get("evidence_carriers")
+    if not isinstance(carriers, list) or not carriers:
+        missing.append("retirement_readiness.evidence_carriers")
+    else:
+        for entry in carriers:
+            if (
+                not isinstance(entry, dict)
+                or _text(entry.get("manifest")) is None
+                or _text(entry.get("pointer")) is None
+            ):
+                missing.append("retirement_readiness.evidence_carriers.entry")
+
+    body = block.get("body_residual")
+    if not isinstance(body, dict):
+        missing.append("retirement_readiness.body_residual")
+    else:
+        for key in ("token", "gate_id"):
+            if _text(body.get(key)) is None:
+                missing.append(f"retirement_readiness.body_residual.{key}")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("retirement_readiness.expected")
+    else:
+        for key in (
+            "claim_scope",
+            "product_coverage_effect",
+            "authorization_verdict",
+            "authorization_basis",
+            "goal_state",
+        ):
+            if _text(expected.get(key)) is None:
+                missing.append(f"retirement_readiness.expected.{key}")
+        for key in (
+            "required_family_ids",
+            "required_blocking_gate_ids",
+            "required_refusal_codes",
+            "redaction_flags",
+        ):
+            if not _text_list(expected.get(key)):
+                missing.append(f"retirement_readiness.expected.{key}")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict):
+            missing.append("retirement_readiness.expected.locks")
+        else:
+            for key in (
+                "deployed",
+                "import_eligible",
+                "auto_promote",
+                "production_route",
+                "graph_write",
+            ):
+                if key not in locks:
+                    missing.append(f"retirement_readiness.expected.locks.{key}")
+        human_gate = expected.get("human_gate")
+        if not isinstance(human_gate, dict):
+            missing.append("retirement_readiness.expected.human_gate")
+        else:
+            for key in (
+                "reviewer_named",
+                "decision",
+                "release_recorded",
+                "package_status",
+                "m513_package_status",
+            ):
+                if key not in human_gate:
+                    missing.append(
+                        f"retirement_readiness.expected.human_gate.{key}"
+                    )
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(RETIREMENT_READINESS_VIOLATION_LABELS):
+        missing.append("retirement_readiness.violations")
+
+    fixtures = block.get("fixtures")
+    if not isinstance(fixtures, dict):
+        missing.append("retirement_readiness.fixtures")
+    else:
+        for polarity in ("positive", "negative"):
+            spec = fixtures.get(polarity)
+            if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
+                missing.append(f"retirement_readiness.fixtures.{polarity}.path")
+    return missing
+
+
 def resolve_pointer(document: Any, pointer: Any) -> Any:
     """Follow a slash-separated ``pointer`` into ``document``.
 
@@ -2268,6 +2557,7 @@ def absorption_progress_violations(
     _native_content_receipt_violations_into(contract, observations, violations)
     _native_route_violations_into(contract, observations, violations)
     _acceptance_package_violations_into(contract, observations, violations)
+    _retirement_readiness_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
     return violations
@@ -2619,6 +2909,274 @@ def _acceptance_package_violations_into(
             else None,
         )
     )
+
+def _retirement_readiness_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the retirement-readiness labels carried by the observations."""
+    violations.update(
+        _retirement_readiness_violations(
+            contract,
+            observations.get("retirement_readiness")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+
+def _retirement_readiness_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a retirement-readiness claim the receipt does not evidence.
+
+    The shape R141 forbids is a *claim of authorization* -- a blocked receipt
+    that silently reads as a released state, or that claims a recorded human
+    decision, a switched family, a renamed body residual or a met goal that the
+    committed carriers do not support. Concretely:
+
+    * ``claim_without_receipt`` -- the S03 declaration resolves but the required
+      receipt is absent or unreadable, or it names another schema version, so
+      there is a claim and no matching evidence;
+    * ``carrier_stale`` -- a declared carrier pin no longer matches the recomputed
+      bytes, a binding is not a repo-relative path + pointer + sha256, a binding
+      repeats, or the bound carrier set is not the declared one;
+    * ``human_decision_claimed_without_record`` -- the receipt claims a named
+      reviewer, a recorded authorizing decision, a released state or an S09
+      authorization that the committed human release record does not contain;
+    * ``lifecycle_authorization`` -- the receipt derives authorization from a GSD
+      lifecycle state;
+    * ``family_switched_with_blocking_gate`` -- a family is marked switched (or
+      listed in ``families_switched``) while it is unauthorized or still carries a
+      blocking gate;
+    * ``body_residual_renamed`` -- the declared ``p1_localization_uncertain``
+      wording no longer appears verbatim;
+    * ``product_coverage_claimed`` -- the claim is not the declared blocked scope
+      (another claim scope, product-coverage effect, authorization verdict or
+      basis, an open lock, a leaked redaction flag, a dropped required family or
+      blocking gate, a missing required refusal code, or another human-gate
+      package status);
+    * ``goal_marked_met`` -- the retirement goal is marked met while the
+      authorization still refuses.
+
+    ``set()`` (empty) means clean. A missing or absent-evidence bundle is
+    *unverified*, never clean and never refuted: a tree that does not carry the
+    declaration authority is silence, not compliance. The S08 acceptance-package
+    half owns ``unmet_gate_authorized``; this half owns the human-record and
+    authorization-scope axes and deliberately does not restate the gate ledger
+    verdicts (the ``gate_ledger`` carrier is bound by sha256 instead).
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("retirement_readiness")
+    if not isinstance(rule, dict):
+        return violations
+
+    def _mapping(value: Any) -> dict[str, Any]:
+        return value if isinstance(value, dict) else {}
+
+    def _add(label: str) -> None:
+        violations.add(label)
+
+    receipt_rule = _mapping(rule.get("receipt"))
+    expected = _mapping(rule.get("expected"))
+    human_rule = _mapping(rule.get("human_record"))
+    body_rule = _mapping(rule.get("body_residual"))
+
+    receipt = evidence.get("receipt")
+    required = receipt_rule.get("required") is True
+    if not isinstance(receipt, dict):
+        if evidence.get("receipt_exists") is True or required:
+            _add("retirement_readiness_claim_without_receipt")
+        return violations
+    if _text(receipt.get("schema_version")) != _text(receipt_rule.get("schema_version")):
+        # A receipt for another schema is not the receipt this rule governs, so it
+        # is a claim with no matching receipt rather than a partial read.
+        _add("retirement_readiness_claim_without_receipt")
+        return violations
+
+    declared_set: set[tuple[Optional[str], Optional[str]]] = set()
+    declared_carriers = evidence.get("declared_carriers")
+    if isinstance(declared_carriers, list):
+        for entry in declared_carriers:
+            if isinstance(entry, dict):
+                declared_set.add(
+                    (_text(entry.get("manifest")), _text(entry.get("pointer")))
+                )
+
+    # ── evidence carriers: a pin must still match the committed bytes ──
+    entries = receipt.get("evidence")
+    carrier_sha = evidence.get("carrier_sha256")
+    carrier_sha = carrier_sha if isinstance(carrier_sha, dict) else {}
+    if not isinstance(entries, list) or not entries:
+        _add("retirement_readiness_carrier_stale")
+    else:
+        seen: set[tuple[Optional[str], Optional[str]]] = set()
+        for entry in entries:
+            if not isinstance(entry, dict):
+                _add("retirement_readiness_carrier_stale")
+                continue
+            manifest = _text(entry.get("manifest"))
+            pointer = _text(entry.get("pointer"))
+            digest = _text(entry.get("revision_sha256"))
+            if (
+                manifest is None
+                or pointer is None
+                or not _is_relative_path(manifest)
+                or digest is None
+                or _SHA256_RE.match(digest) is None
+            ):
+                _add("retirement_readiness_carrier_stale")
+                continue
+            key = (manifest, pointer)
+            if key in seen:
+                _add("retirement_readiness_carrier_stale")
+            seen.add(key)
+            recomputed = carrier_sha.get(manifest)
+            if _text(recomputed) is None or _text(recomputed) != digest:
+                _add("retirement_readiness_carrier_stale")
+        if declared_set and seen != declared_set:
+            _add("retirement_readiness_carrier_stale")
+
+    authorization = _mapping(receipt.get("authorization"))
+    human_gate = _mapping(receipt.get("human_gate"))
+
+    # ── human decision: a claim may not exceed the committed record ──
+    human_record = evidence.get("human_record")
+    human_record = human_record if isinstance(human_record, dict) else {}
+    authorizing = set(_text_list(human_rule.get("authorizing_decision_tokens")))
+    actual_reviewer = _text(human_record.get("reviewer"))
+    actual_decision = _text(human_record.get("decision"))
+    actual_recorded = actual_decision is not None and actual_decision in authorizing
+    claimed_recorded = (
+        human_gate.get("release_recorded") is True
+        or authorization.get("human_decision_recorded") is True
+        or authorization.get("s09_authorized") is True
+        or _text(human_gate.get("decision")) in authorizing
+        or _text(authorization.get("verdict")) in authorizing
+    )
+    claimed_reviewer = (
+        human_gate.get("reviewer_named") is True
+        or authorization.get("human_reviewer_named") is True
+    )
+    if not actual_recorded and (
+        claimed_recorded or (claimed_reviewer and actual_reviewer is None)
+    ):
+        _add("retirement_readiness_human_decision_claimed_without_record")
+
+    # ── lifecycle authorization: a terminal GSD state is not a human decision ──
+    if authorization.get("lifecycle_state_authorizes") is True:
+        _add("retirement_readiness_lifecycle_authorization")
+
+    # ── body residual: the one wording may never be renamed (D499) ──
+    body = receipt.get("body_residual")
+    declared_token = _text(body_rule.get("token"))
+    if not isinstance(body, dict) or _text(body.get("token")) != declared_token:
+        _add("retirement_readiness_body_residual_renamed")
+
+    # ── switched families: a switch may not precede authorization ──
+    family_plan = receipt.get("family_plan")
+    family_plan = family_plan if isinstance(family_plan, list) else []
+    authorization_families: dict[Optional[str], dict[str, Any]] = {}
+    for entry in authorization.get("families") or []:
+        if isinstance(entry, dict):
+            authorization_families[_text(entry.get("family_id"))] = entry
+    switched = set(_text_list(receipt.get("families_switched")))
+    for entry in family_plan:
+        if isinstance(entry, dict) and entry.get("switched") is True:
+            switched.add(_text(entry.get("family_id")))
+    for family_id in switched:
+        if family_id is None:
+            continue
+        authorized_entry = authorization_families.get(family_id)
+        if (
+            authorized_entry is None
+            or authorized_entry.get("authorized") is not True
+            or _text_list(authorized_entry.get("blocking_gates"))
+        ):
+            _add("retirement_readiness_family_switched_with_blocking_gate")
+
+    # ── the envelope must be the declared blocked scope ──
+    def _declares_false(value: Any) -> bool:
+        if value is False:
+            return True
+        return isinstance(value, str) and value.strip().lower() == "false"
+
+    scope_ok = True
+    if _text(receipt.get("claim_scope")) != _text(expected.get("claim_scope")):
+        scope_ok = False
+    if _text(receipt.get("product_coverage_effect")) != _text(
+        expected.get("product_coverage_effect")
+    ):
+        scope_ok = False
+    if _text(authorization.get("verdict")) != _text(
+        expected.get("authorization_verdict")
+    ):
+        scope_ok = False
+    if _text(authorization.get("basis")) != _text(
+        expected.get("authorization_basis")
+    ):
+        scope_ok = False
+    locks = receipt.get("locks")
+    locks_rule = _mapping(expected.get("locks"))
+    if not isinstance(locks, dict):
+        scope_ok = False
+    else:
+        for lock, want in locks_rule.items():
+            found = locks.get(lock)
+            if isinstance(want, bool):
+                if want is False and not _declares_false(found):
+                    scope_ok = False
+                elif want is True and found is not True:
+                    scope_ok = False
+            elif _text(want) is None or _text(found) != _text(want):
+                scope_ok = False
+    redaction = receipt.get("redaction")
+    if not isinstance(redaction, dict):
+        scope_ok = False
+    else:
+        for flag in _text_list(expected.get("redaction_flags")):
+            if redaction.get(flag) is True:
+                scope_ok = False
+    expected_human_gate = _mapping(expected.get("human_gate"))
+    for key in ("package_status", "m513_package_status"):
+        if _text(human_gate.get(key)) != _text(expected_human_gate.get(key)):
+            scope_ok = False
+    required_families = set(_text_list(expected.get("required_family_ids")))
+    plan_ids = {
+        _text(entry.get("family_id"))
+        for entry in family_plan
+        if isinstance(entry, dict)
+    }
+    plan_ids.discard(None)
+    if required_families and plan_ids != required_families:
+        scope_ok = False
+    required_gates = set(_text_list(expected.get("required_blocking_gate_ids")))
+    declared_gates = set(_text_list(authorization.get("blocking_gates")))
+    if required_gates and declared_gates != required_gates:
+        scope_ok = False
+    required_refusals = set(_text_list(expected.get("required_refusal_codes")))
+    refusal_codes = {
+        _text(entry.get("code"))
+        for entry in (authorization.get("refusals") or [])
+        if isinstance(entry, dict)
+    }
+    refusal_codes.discard(None)
+    if required_refusals and not required_refusals <= refusal_codes:
+        scope_ok = False
+    if not scope_ok:
+        _add("retirement_readiness_product_coverage_claimed")
+
+    # ── the retirement goal may not be marked met while the gate refuses ──
+    goal_state = _text(expected.get("goal_state"))
+    goal_met = receipt.get("goal_unmet") is not True
+    if goal_state == "unmet" and goal_met and authorization.get("s09_authorized") is not True:
+        _add("retirement_readiness_goal_marked_met")
+
+    return violations
+
 
 def _native_family_receipt_violations(contract: Any, evidence: Any) -> set[str]:
     """Refuse a native family receipt claim the artifacts do not evidence.
