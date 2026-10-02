@@ -117,6 +117,17 @@ pub mod native_corpus_rollback_rehearsal;
 // T02 value types (`da_parse`), and is pure std/serde/serde_yaml/serde_json/sha2,
 // so it and its contract test compile in the default feature set.
 pub mod native_acceptance_package;
+// S09/T02 (M514-1lss2s): canonical blocked retirement-readiness receipt. It
+// binds the S08 acceptance package, the manifest human release record, the S02
+// required-scope/authorization contract and the frozen M513 release package by
+// path + pointer + sha256, carries the T01 authorization verdict verbatim with
+// `families_switched = []` and `goal_unmet = true`, and refuses a switched
+// family, a met goal, a renamed body residual, an opened lock, a claimed human
+// decision or a product-coverage claim. It reuses the S04 envelope
+// (`native_family_receipt`) and the T01 value types (`da_parse`), and is pure
+// std/serde/serde_json, so it and its contract test compile in the default
+// feature set.
+pub mod native_retirement_readiness;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;

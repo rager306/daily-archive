@@ -610,6 +610,7 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
                                             "--example", "derived_maturity_rehearsal",
                                             "--example", "external_holdout_capture",
                                             "--example", "native_family_gate_rehearsal",
+                                            "--example", "native_retirement_readiness",
                                             "--example", "parse_batch_budget_shadow",
                                             "--example", "rest_batch_asset_shadow"], t),
             # S08/T03 (M514-1lss2s): the corpus-bound same-n resource runner is
