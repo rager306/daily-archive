@@ -109,6 +109,14 @@ pub mod native_corpus_resource_same_n;
 // and is pure std/serde/serde_yaml/serde_json/sha2, so it and its contract test
 // compile in the default feature set (no `pdf-layout`, no `pdf-classifier`).
 pub mod native_corpus_rollback_rehearsal;
+// S08/T05 (M514-1lss2s): GROBID retirement acceptance package. It binds every
+// S08 evidence carrier by path + pointer + sha256, carries the T02 evaluation
+// and enumerates every mandatory gate with a typed state, computing
+// `s09_authorized` from the blocking set and refusing a GSD-lifecycle
+// authorization. It reuses the S04 envelope (`native_family_receipt`) and the
+// T02 value types (`da_parse`), and is pure std/serde/serde_yaml/serde_json/sha2,
+// so it and its contract test compile in the default feature set.
+pub mod native_acceptance_package;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;

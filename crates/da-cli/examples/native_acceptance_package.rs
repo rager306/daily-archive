@@ -1,0 +1,844 @@
+//! S08/T05 (M514-1lss2s) — GROBID retirement acceptance-package runner.
+//!
+//! This is the executable half of the acceptance-package contract. It reads the
+//! committed S08 carriers, invokes the T02 frozen-threshold evaluator and writes
+//! `artifacts/parse_compat/grobid_retirement_acceptance_package.json` atomically
+//! (tmp + rename). It reads and binds, by sha256 + pointer:
+//!
+//! * the T01 corpus-bound native measurement (610 assigned = 531 measurable +
+//!   79 typed exclusions);
+//! * the T03 same-n resource receipt and the T04 real-corpus rollback rehearsal;
+//! * the frozen reference pins, the executed reference probe and the closed
+//!   absorption-progress schema;
+//! * the T02 evaluator source, the frozen M513 release decision package, the
+//!   parity-ledger named gaps, the horizon followup, the S07 learning cycle, the
+//!   S05 body residual and the container-wide Java batch-budget carrier.
+//!
+//! ## Modes
+//!
+//! * `--self-check` — hermetic. No carrier is read and nothing is written.
+//!   Rejects each named mutation (non-diagnostic claim, renamed body residual,
+//!   gate without evidence, unbound carrier, drifted blocking set,
+//!   `s09_authorized=true` under an unmet gate, GSD-lifecycle authorization,
+//!   opened lock, non-canonical declared requirement).
+//! * default — canonical run over the committed carriers.
+//!
+//! Diagnostic only: `claim_scope = diagnostic_only`, `product_coverage_effect
+//! = none`, `thresholds = not_accepted`, all five locks closed, no graph/import/
+//! promotion, no production route (D127 / ADR-040 / ADR-076 §14).
+
+use da_cli::native_acceptance::NativeAcceptanceReceipt;
+use da_cli::native_acceptance_package::{
+    AcceptanceGate, AcceptancePackageExpectation, AcceptancePackageInput,
+    DEFAULT_ACCEPTANCE_PACKAGE_ARTIFACT_REL, EvaluationBinding, GateSources,
+    GrobidRetirementAcceptancePackage, JAVA_CPU_GATE_ID, LEARNING_DISPOSITION_GATE_ID,
+    NAMED_GAP_H20, NAMED_GAP_H21, NAMED_GAP_LEARNING_RUVLLM_ABLATION,
+    PACKAGE_BINDING_REQUIREMENT_IDS, PACKAGE_BODY_RESIDUAL_REL, PACKAGE_COMPATIBILITY_REL,
+    PACKAGE_DB_CANONICAL_REQUIREMENT_IDS, PACKAGE_DECLARED_REQUIREMENT_IDS,
+    PACKAGE_EVIDENCE_CARRIERS, PACKAGE_FOLLOWUP_REL, PACKAGE_LEARNING_CYCLE_REL,
+    PACKAGE_M513_RELEASE_PACKAGE_REL, PACKAGE_NATIVE_MEASUREMENT_REL, PACKAGE_REFERENCE_PINS_REL,
+    PACKAGE_REFERENCE_PROBE_REL, PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_SCHEMA_REL,
+    POINTER_BODY_RESIDUAL_AGGREGATE, POINTER_COMPATIBILITY_NAMED_GAPS, POINTER_FOLLOWUP_STAGES,
+    POINTER_LEARNING_OUTCOME, POINTER_M513_REMAINDERS, POINTER_MEASUREMENT_DOCUMENTS,
+    POINTER_PINS_VALUES, POINTER_RESOURCE_REFERENCE_METRICS, POINTER_SCHEMA_REQUIRED_SCOPE,
+    POINTER_SCHEMA_REQUIREMENT_IDS, build_acceptance_package, build_attribution, gate_blocks_s09,
+    validate_acceptance_package,
+};
+use da_cli::native_family_receipt::{CarrierBinding, sha256_prefixed};
+use da_parse::{
+    BodyAxisResidual, CandidateMeasurement, MandatoryGate, MeasuredMetric,
+    NATIVE_ACCEPTANCE_BODY_AXIS_GATE_ID, NATIVE_ACCEPTANCE_EVALUATION_SCHEMA_VERSION,
+    NativeAcceptanceInput, PopulationDenominator, ReferenceDocument, ReferenceSet, Series,
+    ThresholdVerdict, evaluate_native_acceptance,
+};
+use std::collections::BTreeMap;
+use std::error::Error;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::ExitCode;
+
+const BODY_TOKEN: &str = "p1_localization_uncertain";
+
+// ─────────────────────────────── arguments ───────────────────────────────
+
+struct Args {
+    root: PathBuf,
+    report: PathBuf,
+    self_check: bool,
+}
+
+fn parse_args() -> Args {
+    let mut root = PathBuf::from(".");
+    let mut report = PathBuf::from(DEFAULT_ACCEPTANCE_PACKAGE_ARTIFACT_REL);
+    let mut self_check = false;
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--root" => root = args.next().unwrap_or_default().into(),
+            "--report" => report = args.next().unwrap_or_default().into(),
+            "--self-check" => self_check = true,
+            "--help" => {
+                println!("native_acceptance_package [--root DIR] [--report FILE] [--self-check]");
+                std::process::exit(0);
+            }
+            other => {
+                eprintln!("unknown argument {other}");
+                std::process::exit(2);
+            }
+        }
+    }
+    Args {
+        root,
+        report,
+        self_check,
+    }
+}
+
+fn main() -> ExitCode {
+    let args = parse_args();
+    match run(&args) {
+        Ok(summary) => {
+            println!("{summary}");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("native_acceptance_package: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+// ───────────────────────── carrier loading ─────────────────────────
+
+fn read_bytes(root: &Path, rel: &str) -> Result<Vec<u8>, Box<dyn Error>> {
+    Ok(fs::read(root.join(rel))?)
+}
+
+/// Build the evidence list from the one shared carrier table, so the producing
+/// example and the contract test cannot keep different sets.
+fn evidence_from_root(root: &Path) -> Result<Vec<CarrierBinding>, Box<dyn Error>> {
+    PACKAGE_EVIDENCE_CARRIERS
+        .iter()
+        .map(|(rel, pointer)| {
+            let bytes = read_bytes(root, rel)?;
+            Ok(CarrierBinding {
+                manifest: (*rel).to_owned(),
+                pointer: (*pointer).to_owned(),
+                revision_sha256: sha256_prefixed(&bytes),
+            })
+        })
+        .collect()
+}
+
+fn binding_for<'a>(
+    evidence: &'a [CarrierBinding],
+    rel: &str,
+    pointer: &str,
+) -> Result<&'a CarrierBinding, Box<dyn Error>> {
+    evidence
+        .iter()
+        .find(|binding| binding.manifest == rel && binding.pointer == pointer)
+        .ok_or_else(|| format!("carrier `{rel}#{pointer}` is not in the evidence list").into())
+}
+
+fn find_key(value: &serde_json::Value, wanted: &str) -> bool {
+    match value {
+        serde_json::Value::Object(map) => {
+            map.contains_key(wanted) || map.values().any(|child| find_key(child, wanted))
+        }
+        serde_json::Value::Array(items) => items.iter().any(|child| find_key(child, wanted)),
+        _ => false,
+    }
+}
+
+fn closed_locks() -> BTreeMap<String, String> {
+    BTreeMap::from([
+        ("deployed".to_owned(), "false".to_owned()),
+        ("import_eligible".to_owned(), "false".to_owned()),
+        ("auto_promote".to_owned(), "forbidden".to_owned()),
+        ("production_route".to_owned(), "forbidden".to_owned()),
+        ("graph_write".to_owned(), "forbidden".to_owned()),
+    ])
+}
+
+// ───────────────────────── full run ─────────────────────────
+
+fn run(args: &Args) -> Result<String, Box<dyn Error>> {
+    if args.self_check {
+        return run_self_check();
+    }
+    let root = args.root.as_path();
+    let evidence = evidence_from_root(root)?;
+
+    // ── T01: the candidate measurement ─────────────────────────────────────
+    let t01_bytes = read_bytes(root, PACKAGE_NATIVE_MEASUREMENT_REL)?;
+    let t01 = NativeAcceptanceReceipt::parse_json_bytes(&t01_bytes)?;
+    let mut exclusion_reasons: BTreeMap<String, u64> = BTreeMap::new();
+    for document in &t01.documents {
+        if let Some(reason) = &document.exclusion_reason {
+            *exclusion_reasons.entry(reason.clone()).or_insert(0) += 1;
+        }
+    }
+    let candidate = CandidateMeasurement {
+        source_path: PACKAGE_NATIVE_MEASUREMENT_REL.to_owned(),
+        series: None,
+        metrics: t01
+            .metrics
+            .iter()
+            .map(|row| MeasuredMetric {
+                metric_id: row.metric_id.clone(),
+                numerator: Some(row.numerator as f64),
+                denominator: Some(row.denominator as f64),
+                stratum: None,
+                series: None,
+            })
+            .collect(),
+        denominator: PopulationDenominator {
+            assigned: t01.populations.assigned,
+            executed: t01.populations.measurable,
+            refused: t01.populations.refused,
+            excluded: t01.populations.excluded,
+            exclusion_reasons,
+        },
+    };
+
+    // ── frozen reference: contract, pins and the executed probe ────────────
+    let schema_bytes = read_bytes(root, PACKAGE_SCHEMA_REL)?;
+    let contract: serde_json::Value = serde_yaml::from_slice(&schema_bytes)?;
+    let pins_bytes = read_bytes(root, PACKAGE_REFERENCE_PINS_REL)?;
+    let pins_value: serde_json::Value = serde_json::from_slice(&pins_bytes)?;
+    let probe_bytes = read_bytes(root, PACKAGE_REFERENCE_PROBE_REL)?;
+    let probe_value: serde_json::Value = serde_json::from_slice(&probe_bytes)?;
+
+    let series = Series {
+        corpus_id: contract["assigned_population"]["census_id"]
+            .as_str()
+            .ok_or("the schema carries no census id")?
+            .to_owned(),
+        profile: probe_value["executed_population"]["execution_route_profile"]
+            .as_str()
+            .ok_or("the probe carries no execution route profile")?
+            .to_owned(),
+        oracle: probe_value["evaluated_population"]["oracle"]
+            .as_str()
+            .ok_or("the probe carries no evaluated oracle")?
+            .to_owned(),
+        source_revision: contract["threshold_policy"]["freeze_revision"]
+            .as_str()
+            .ok_or("the schema carries no freeze revision")?
+            .to_owned(),
+    };
+    let candidate = CandidateMeasurement {
+        series: Some(series.clone()),
+        ..candidate
+    };
+
+    let pins_binding = binding_for(&evidence, PACKAGE_REFERENCE_PINS_REL, POINTER_PINS_VALUES)?;
+    let references = ReferenceSet {
+        reference_series: Some(series),
+        documents: vec![ReferenceDocument {
+            path: PACKAGE_REFERENCE_PINS_REL.to_owned(),
+            sha256: Some(pins_binding.revision_sha256.clone()),
+            bytes: Some(pins_bytes),
+            document: pins_value,
+        }],
+    };
+
+    // ── the body-axis residual stays named ─────────────────────────────────
+    let body_bytes = read_bytes(root, PACKAGE_BODY_RESIDUAL_REL)?;
+    let body_value: serde_json::Value = serde_json::from_slice(&body_bytes)?;
+    if !find_key(&body_value, BODY_TOKEN) {
+        return Err(format!(
+            "the body-residual carrier {PACKAGE_BODY_RESIDUAL_REL} lost the named `{BODY_TOKEN}` residual"
+        )
+        .into());
+    }
+    let body_axis = BodyAxisResidual {
+        verdict: "not_assessable".to_owned(),
+        residual: vec![BODY_TOKEN.to_owned()],
+        evidence_path: PACKAGE_BODY_RESIDUAL_REL.to_owned(),
+    };
+
+    // ── T02: evaluate the candidate against the frozen pins ────────────────
+    let evaluation = evaluate_native_acceptance(&NativeAcceptanceInput {
+        candidate,
+        contract: contract.clone(),
+        references,
+        locks: closed_locks(),
+        body_axis,
+    })
+    .map_err(|refusal| format!("the T02 evaluator refused: {refusal}"))?;
+
+    let evaluation_binding = EvaluationBinding {
+        schema_version: evaluation.schema_version.clone(),
+        threshold_policy_state: evaluation.threshold_policy_state.clone(),
+        candidate_source_path: evaluation.candidate_source_path.clone(),
+        frozen_reference_path: evaluation.frozen_reference_path.clone(),
+        thresholds: evaluation.thresholds.clone(),
+    };
+
+    // ── extra gates: named gaps, learning disposition, Java CPU absence ────
+    let m513_bytes = read_bytes(root, PACKAGE_M513_RELEASE_PACKAGE_REL)?;
+    let m513_value: serde_json::Value = serde_json::from_slice(&m513_bytes)?;
+    let remainders = m513_value["remainders"]
+        .as_array()
+        .ok_or("the M513 package carries no remainders")?;
+    let remainder_state = |id: &str| -> Result<String, Box<dyn Error>> {
+        let entry = remainders
+            .iter()
+            .find(|entry| entry["id"].as_str() == Some(id))
+            .ok_or_else(|| format!("the M513 package has no remainder `{id}`"))?;
+        let state = entry["state"]
+            .as_str()
+            .ok_or_else(|| format!("M513 remainder `{id}` carries no state"))?;
+        match state {
+            "pending" | "typed_refusal" | "accepted_residual" => Ok(state.to_owned()),
+            other => Err(format!(
+                "M513 remainder `{id}` state `{other}` is outside the package mapping"
+            )
+            .into()),
+        }
+    };
+    let ruvllm_state = remainder_state(NAMED_GAP_LEARNING_RUVLLM_ABLATION)?;
+    let h20_state = remainder_state(NAMED_GAP_H20)?;
+    let h21_state = remainder_state(NAMED_GAP_H21)?;
+
+    let compatibility_bytes = read_bytes(root, PACKAGE_COMPATIBILITY_REL)?;
+    let compatibility: serde_yaml::Value = serde_yaml::from_slice(&compatibility_bytes)?;
+    let named_gaps = compatibility["parity_ledger"]["named_gaps"]
+        .as_sequence()
+        .ok_or("the parity ledger carries no named_gaps")?;
+    let ruvllm_reason = named_gaps
+        .iter()
+        .find(|gap| gap["capability"].as_str() == Some("learning.ruvllm_ablation"))
+        .and_then(|gap| gap["reason"].as_str())
+        .ok_or("the parity ledger lost the learning.ruvllm_ablation named gap")?;
+
+    let followup_bytes = read_bytes(root, PACKAGE_FOLLOWUP_REL)?;
+    let followup: serde_json::Value = serde_json::from_slice(&followup_bytes)?;
+    let stages = followup["stages"]
+        .as_array()
+        .ok_or("the followup carries no stages")?;
+    for stage_id in ["H20", "H21"] {
+        if !stages
+            .iter()
+            .any(|stage| stage["stage_id"].as_str() == Some(stage_id))
+        {
+            return Err(format!("the followup lost stage {stage_id}").into());
+        }
+    }
+
+    let cycle_bytes = read_bytes(root, PACKAGE_LEARNING_CYCLE_REL)?;
+    let cycle: serde_json::Value = serde_json::from_slice(&cycle_bytes)?;
+    let outcome_kind = cycle["outcome"]["kind"]
+        .as_str()
+        .ok_or("the learning cycle carries no outcome")?;
+    if outcome_kind != "measured_no_gain" {
+        return Err(format!(
+            "the S07 learning cycle outcome is `{outcome_kind}`, not `measured_no_gain`"
+        )
+        .into());
+    }
+
+    let resource_bytes = read_bytes(root, PACKAGE_RESOURCE_RECEIPT_REL)?;
+    let resource: serde_json::Value = serde_json::from_slice(&resource_bytes)?;
+    let reference_metrics = resource["reference_metrics"]
+        .as_array()
+        .ok_or("the resource receipt carries no reference_metrics")?;
+    if reference_metrics.is_empty()
+        || reference_metrics
+            .iter()
+            .any(|row| row["state"].as_str() != Some("not_observed"))
+    {
+        return Err(
+            "the corpus resource receipt must record every reference metric `not_observed`".into(),
+        );
+    }
+
+    let m513_binding = binding_for(
+        &evidence,
+        PACKAGE_M513_RELEASE_PACKAGE_REL,
+        POINTER_M513_REMAINDERS,
+    )?
+    .clone();
+    let cycle_binding = binding_for(
+        &evidence,
+        PACKAGE_LEARNING_CYCLE_REL,
+        POINTER_LEARNING_OUTCOME,
+    )?
+    .clone();
+    let resource_binding = binding_for(
+        &evidence,
+        PACKAGE_RESOURCE_RECEIPT_REL,
+        POINTER_RESOURCE_REFERENCE_METRICS,
+    )?
+    .clone();
+    let compatibility_binding = binding_for(
+        &evidence,
+        PACKAGE_COMPATIBILITY_REL,
+        POINTER_COMPATIBILITY_NAMED_GAPS,
+    )?
+    .clone();
+    let followup_binding =
+        binding_for(&evidence, PACKAGE_FOLLOWUP_REL, POINTER_FOLLOWUP_STAGES)?.clone();
+
+    let extra_gates = vec![
+        make_gate(
+            NAMED_GAP_LEARNING_RUVLLM_ABLATION,
+            "named_gap",
+            &ruvllm_state,
+            compatibility_binding,
+            format!(
+                "capability `learning.ruvllm_ablation` has no Java donor (`{ruvllm_reason}`); decision_ref D471"
+            ),
+            Some("D471:no_java_donor".to_owned()),
+            "a Java donor for `learning.ruvllm_ablation` or an explicit scope decision (D471)"
+                .to_owned(),
+        ),
+        make_gate(
+            NAMED_GAP_H20,
+            "human_release",
+            &h20_state,
+            followup_binding,
+            "the frozen external holdout package and the human release decision remain pending (H20)"
+                .to_owned(),
+            Some("H20".to_owned()),
+            "a recorded human release decision: named reviewer, explicit decision and passing \
+             quality/cost/rights gates"
+                .to_owned(),
+        ),
+        make_gate(
+            NAMED_GAP_H21,
+            "named_gap",
+            &h21_state,
+            m513_binding,
+            "the revision-label residual is an accepted residual, not a closed gate (H21)"
+                .to_owned(),
+            Some("H21".to_owned()),
+            "close the revision-label residual or record owner acceptance".to_owned(),
+        ),
+        make_gate(
+            LEARNING_DISPOSITION_GATE_ID,
+            "learning_disposition",
+            "unmet",
+            cycle_binding,
+            "the S07 learning candidate returned `measured_no_gain` over the frozen corpus"
+                .to_owned(),
+            Some("measured_no_gain".to_owned()),
+            "a learning candidate that achieves a same-n gain over the frozen corpus".to_owned(),
+        ),
+        make_gate(
+            JAVA_CPU_GATE_ID,
+            "resource_absence",
+            "not_observed",
+            resource_binding,
+            "container-wide Java CPU is not same-n to the 610 assigned corpus (D510)".to_owned(),
+            Some("reference_row_not_same_n".to_owned()),
+            "a pinned same-n Java CPU reference over the 610 assigned corpus (D510)".to_owned(),
+        ),
+    ];
+
+    // ── attribution: declared vs DB-canonical vs carrier bindings ──────────
+    let contract_requirement_ids: Vec<String> = contract["requirement_ids"]
+        .as_array()
+        .ok_or("the schema carries no requirement_ids")?
+        .iter()
+        .filter_map(|value| value.as_str().map(str::to_owned))
+        .collect();
+    let strings = |values: &[&str]| -> Vec<String> {
+        values.iter().map(|value| (*value).to_owned()).collect()
+    };
+    let attribution = build_attribution(
+        &strings(&PACKAGE_DECLARED_REQUIREMENT_IDS),
+        &strings(&PACKAGE_DB_CANONICAL_REQUIREMENT_IDS),
+        &strings(&PACKAGE_BINDING_REQUIREMENT_IDS),
+        &contract_requirement_ids,
+        binding_for(
+            &evidence,
+            PACKAGE_SCHEMA_REL,
+            POINTER_SCHEMA_REQUIREMENT_IDS,
+        )?
+        .clone(),
+    )?;
+
+    let gate_sources = GateSources {
+        candidate_measurement: binding_for(
+            &evidence,
+            PACKAGE_NATIVE_MEASUREMENT_REL,
+            POINTER_MEASUREMENT_DOCUMENTS,
+        )?
+        .clone(),
+        pins: binding_for(&evidence, PACKAGE_REFERENCE_PINS_REL, POINTER_PINS_VALUES)?.clone(),
+        schema: binding_for(&evidence, PACKAGE_SCHEMA_REL, POINTER_SCHEMA_REQUIRED_SCOPE)?.clone(),
+        body_residual: binding_for(
+            &evidence,
+            PACKAGE_BODY_RESIDUAL_REL,
+            POINTER_BODY_RESIDUAL_AGGREGATE,
+        )?
+        .clone(),
+    };
+
+    let package = build_acceptance_package(&AcceptancePackageInput {
+        claim_scope: "diagnostic_only".to_owned(),
+        product_coverage_effect: "none".to_owned(),
+        thresholds: "not_accepted".to_owned(),
+        locks: closed_locks(),
+        evaluation: evaluation_binding,
+        evaluation_gates: evaluation.gates.clone(),
+        gate_sources,
+        extra_gates,
+        evidence: evidence.clone(),
+        attribution,
+        human_release_recorded: false,
+    })?;
+
+    let threshold_gate_count = contract["threshold_policy"]["thresholds"]
+        .as_array()
+        .map(|values| values.len() as u64)
+        .unwrap_or(0);
+    let pending_family_gate_count = contract["required_scope"]["families"]
+        .as_array()
+        .map(|families| {
+            families
+                .iter()
+                .filter(|family| family["state"].as_str() == Some("threshold_pending"))
+                .count() as u64
+        })
+        .unwrap_or(0);
+    let expectation = AcceptancePackageExpectation {
+        evidence: evidence.clone(),
+        threshold_gate_count,
+        pending_family_gate_count,
+        body_residual: vec![BODY_TOKEN.to_owned()],
+        db_canonical_requirement_ids: strings(&PACKAGE_DB_CANONICAL_REQUIREMENT_IDS),
+    };
+    validate_acceptance_package(&package, &expectation)?;
+
+    let bytes = package.artifact_json_bytes()?;
+    write_artifact_atomically(&args.report, &bytes)?;
+
+    Ok(format!(
+        "acceptance package `{}`: {} evidence carriers bound, {} mandatory gates ({} threshold, \
+         {} body-axis, {} threshold_pending family, {} named/extra), {} blocking gates, \
+         s09_authorized={} basis={} gsd_lifecycle_authorizes={} human_release_recorded={}; \
+         attribution declared={:?} db_only={:?} binding_only={:?} status={}; canonical run",
+        package.schema_version,
+        package.evidence.len(),
+        package.mandatory_gates.len(),
+        threshold_gate_count,
+        1,
+        pending_family_gate_count,
+        package.mandatory_gates.len() as u64 - threshold_gate_count - 1 - pending_family_gate_count,
+        package.blocking_gates.len(),
+        package.authorization.s09_authorized,
+        package.authorization.basis,
+        package.authorization.gsd_lifecycle_authorizes,
+        package.authorization.human_release_recorded,
+        package.attribution.declared_requirement_ids,
+        package.attribution.db_only,
+        package.attribution.binding_only,
+        package.attribution.db_linkage_status,
+    ))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn make_gate(
+    gate_id: &str,
+    kind: &str,
+    state: &str,
+    evidence: CarrierBinding,
+    detail: String,
+    reason: Option<String>,
+    evidence_needed: String,
+) -> AcceptanceGate {
+    AcceptanceGate {
+        gate_id: gate_id.to_owned(),
+        kind: kind.to_owned(),
+        state: state.to_owned(),
+        required: true,
+        evidence,
+        detail,
+        family_id: None,
+        metric_id: None,
+        reason,
+        evidence_needed,
+        blocks_s09: gate_blocks_s09(true, state),
+    }
+}
+
+fn write_artifact_atomically(path: &Path, bytes: &[u8]) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let tmp = path.with_extension("tmp");
+    fs::write(&tmp, bytes)?;
+    fs::rename(&tmp, path)?;
+    Ok(())
+}
+
+// ──────────────────────────────── self-check ────────────────────────────────
+
+/// Deterministic negative controls, all hermetic (no carrier, no write). Each
+/// mutation must be refused **by name**; any mutation that slips through fails.
+fn run_self_check() -> Result<String, Box<dyn Error>> {
+    let (input, expectation) = synthetic_fixtures();
+    let base = build_acceptance_package(&input)?;
+    validate_acceptance_package(&base, &expectation)?;
+
+    let mut checked = 0usize;
+
+    // (1) a non-diagnostic claim.
+    let mut m = base.clone();
+    m.claim_scope = "product_progress".to_owned();
+    expect_refusal("non_diagnostic_claim", &m, &expectation, "ClaimScopeDrift")?;
+    checked += 1;
+
+    // (2) a renamed body residual.
+    let mut m = base.clone();
+    for gate in &mut m.mandatory_gates {
+        if gate.kind == "body_axis" {
+            gate.reason = Some("p1_localization_unknown".to_owned());
+        }
+    }
+    expect_refusal(
+        "renamed_body_residual",
+        &m,
+        &expectation,
+        "BodyResidualRenamed",
+    )?;
+    checked += 1;
+
+    // (3) a gate without usable evidence.
+    let mut m = base.clone();
+    m.mandatory_gates[0].evidence.manifest = String::new();
+    expect_refusal(
+        "gate_without_evidence",
+        &m,
+        &expectation,
+        "GateWithoutEvidence",
+    )?;
+    checked += 1;
+
+    // (4) a gate whose evidence carrier is not bound.
+    let mut m = base.clone();
+    m.mandatory_gates[0].evidence = CarrierBinding {
+        manifest: "unbound.json".to_owned(),
+        pointer: "documents".to_owned(),
+        revision_sha256: sha256_prefixed(b"unbound"),
+    };
+    expect_refusal("unbound_carrier", &m, &expectation, "UnboundCarrier")?;
+    checked += 1;
+
+    // (5) an authorization that the blocking set does not support.
+    let mut m = base.clone();
+    m.authorization.s09_authorized = true;
+    expect_refusal(
+        "unmet_gate_authorized",
+        &m,
+        &expectation,
+        "UnmetGateAuthorized",
+    )?;
+    checked += 1;
+
+    // (6) authorization derived from the harness lifecycle.
+    let mut m = base.clone();
+    m.authorization.gsd_lifecycle_authorizes = true;
+    expect_refusal(
+        "gsd_lifecycle_authorization",
+        &m,
+        &expectation,
+        "GsdLifecycleAuthorization",
+    )?;
+    checked += 1;
+
+    // (7) a blocking set that drops a blocking gate.
+    let mut m = base.clone();
+    m.blocking_gates.pop();
+    expect_refusal("blocking_set_drift", &m, &expectation, "BlockingSetDrift")?;
+    checked += 1;
+
+    // (8) an opened lock.
+    let mut m = base.clone();
+    m.locks.insert("deployed".to_owned(), "true".to_owned());
+    expect_refusal("opened_lock", &m, &expectation, "LockOpened")?;
+    checked += 1;
+
+    // (9) a declared requirement outside the DB-canonical set.
+    let mut m = base.clone();
+    m.attribution
+        .declared_requirement_ids
+        .push("R999".to_owned());
+    expect_refusal(
+        "declared_requirement_not_canonical",
+        &m,
+        &expectation,
+        "DeclaredRequirementNotCanonical",
+    )?;
+    checked += 1;
+
+    // (10) a threshold gate dropped from a package that claims three.
+    let mut m = base.clone();
+    m.mandatory_gates.retain(|gate| gate.kind != "threshold");
+    expect_refusal(
+        "threshold_gate_count_drift",
+        &m,
+        &expectation,
+        "ThresholdCountDrift",
+    )?;
+    checked += 1;
+
+    // (11) a drifted evidence binding.
+    let mut drifted = expectation.clone();
+    drifted.evidence[0].revision_sha256 = sha256_prefixed(b"drifted");
+    expect_refusal("evidence_drift", &base, &drifted, "EvidenceDrift")?;
+    checked += 1;
+
+    Ok(format!(
+        "acceptance package self-check: {checked} named refusals executed, all refused"
+    ))
+}
+
+fn expect_refusal(
+    label: &str,
+    package: &GrobidRetirementAcceptancePackage,
+    expectation: &AcceptancePackageExpectation,
+    variant: &str,
+) -> Result<(), Box<dyn Error>> {
+    match validate_acceptance_package(package, expectation) {
+        Ok(()) => Err(format!("{label} was admitted").into()),
+        Err(error) => {
+            let debug = format!("{error:?}");
+            if debug.starts_with(variant) {
+                Ok(())
+            } else {
+                Err(format!("{label} refused as `{debug}`, expected `{variant}`").into())
+            }
+        }
+    }
+}
+
+/// Hermetic fixtures: a synthetic evidence set, evaluation and gate ledger that
+/// validate without reading any carrier.
+fn synthetic_fixtures() -> (AcceptancePackageInput, AcceptancePackageExpectation) {
+    let binding = |manifest: &str, pointer: &str| CarrierBinding {
+        manifest: manifest.to_owned(),
+        pointer: pointer.to_owned(),
+        revision_sha256: sha256_prefixed(manifest.as_bytes()),
+    };
+    let candidate_binding = binding("candidate.json", "documents");
+    let pins_binding = binding("pins.json", "values");
+    let schema_binding = binding("schema.yaml", "required_scope.families");
+    let schema_requirements_binding = binding("schema.yaml", "requirement_ids");
+    let body_binding = binding("body.json", "aggregate");
+    let m513_binding = binding("m513.json", "remainders");
+    let evidence = vec![
+        candidate_binding.clone(),
+        pins_binding.clone(),
+        schema_binding.clone(),
+        schema_requirements_binding.clone(),
+        body_binding.clone(),
+        m513_binding.clone(),
+    ];
+
+    let evaluation_gates = vec![
+        MandatoryGate {
+            gate_id: "threshold.t1".to_owned(),
+            kind: "threshold".to_owned(),
+            state: "unmet".to_owned(),
+            required: true,
+            family_id: Some("family.required".to_owned()),
+            metric_id: Some("metric.required".to_owned()),
+            reason: None,
+            evidence: "measured metric.required on the synthetic candidate".to_owned(),
+        },
+        MandatoryGate {
+            gate_id: NATIVE_ACCEPTANCE_BODY_AXIS_GATE_ID.to_owned(),
+            kind: "body_axis".to_owned(),
+            state: "not_assessable".to_owned(),
+            required: true,
+            family_id: None,
+            metric_id: None,
+            reason: Some(BODY_TOKEN.to_owned()),
+            evidence: "body residual is not assessable".to_owned(),
+        },
+        MandatoryGate {
+            gate_id: "required_scope.family.pending".to_owned(),
+            kind: "threshold_pending_family".to_owned(),
+            state: "threshold_pending".to_owned(),
+            required: true,
+            family_id: Some("family.pending".to_owned()),
+            metric_id: None,
+            reason: Some("lane_not_admitted_in_measurement".to_owned()),
+            evidence: "family.pending has no measurable mechanism".to_owned(),
+        },
+    ];
+    let thresholds = vec![ThresholdVerdict {
+        threshold_id: "t1".to_owned(),
+        family_id: "family.required".to_owned(),
+        metric_id: "metric.required".to_owned(),
+        stratum: None,
+        direction: "at_least".to_owned(),
+        margin: 0.0,
+        verdict: "unmet".to_owned(),
+        reason: None,
+        frozen_reference_value: Some(1.0),
+        candidate_value: Some(0.0),
+        candidate_denominator: Some(1.0),
+        comparability: "matched".to_owned(),
+    }];
+
+    let extra_gates = vec![make_gate(
+        "named_gap.synthetic",
+        "named_gap",
+        "pending",
+        m513_binding,
+        "synthetic named gap".to_owned(),
+        Some("synthetic".to_owned()),
+        "synthetic evidence".to_owned(),
+    )];
+
+    let strings = |values: &[&str]| -> Vec<String> {
+        values.iter().map(|value| (*value).to_owned()).collect()
+    };
+    let attribution = build_attribution(
+        &strings(&["R1"]),
+        &strings(&["R1", "R2"]),
+        &strings(&["R3"]),
+        &strings(&["R2"]),
+        schema_requirements_binding,
+    )
+    .expect("the synthetic attribution reconciles");
+
+    let input = AcceptancePackageInput {
+        claim_scope: "diagnostic_only".to_owned(),
+        product_coverage_effect: "none".to_owned(),
+        thresholds: "not_accepted".to_owned(),
+        locks: closed_locks(),
+        evaluation: EvaluationBinding {
+            schema_version: NATIVE_ACCEPTANCE_EVALUATION_SCHEMA_VERSION.to_owned(),
+            threshold_policy_state: "frozen".to_owned(),
+            candidate_source_path: candidate_binding.manifest.clone(),
+            frozen_reference_path: pins_binding.manifest.clone(),
+            thresholds,
+        },
+        evaluation_gates,
+        gate_sources: GateSources {
+            candidate_measurement: candidate_binding,
+            pins: pins_binding,
+            schema: schema_binding,
+            body_residual: body_binding,
+        },
+        extra_gates,
+        evidence: evidence.clone(),
+        attribution,
+        human_release_recorded: false,
+    };
+    let expectation = AcceptancePackageExpectation {
+        evidence,
+        threshold_gate_count: 1,
+        pending_family_gate_count: 1,
+        body_residual: vec![BODY_TOKEN.to_owned()],
+        db_canonical_requirement_ids: strings(&["R1", "R2"]),
+    };
+    (input, expectation)
+}
