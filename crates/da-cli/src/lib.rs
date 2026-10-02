@@ -100,6 +100,15 @@ pub mod native_resource_same_n;
 // std/serde/serde_yaml/serde_json/sha2, so it and its contract test compile in
 // the default feature set (no `pdf-layout`, no `pdf-classifier`).
 pub mod native_corpus_resource_same_n;
+// S08/T04 (M514-1lss2s): real-corpus rollback rehearsal. It runs the declared
+// baseline -> switched -> returned sequence in process memory only over the 610
+// assigned holdout documents, proves `returned == baseline` on the bytes of the
+// committed preserved-TEI oracle and refuses a leaked native fragment. It
+// reuses the S04 envelope (`native_family_receipt`), the T03 freeze binding
+// (`native_route_receipt`) and the T01 assigned identity (`native_acceptance`),
+// and is pure std/serde/serde_yaml/serde_json/sha2, so it and its contract test
+// compile in the default feature set (no `pdf-layout`, no `pdf-classifier`).
+pub mod native_corpus_rollback_rehearsal;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
