@@ -30,8 +30,15 @@ ZSTD_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
 # Requires: cargo install sccache
 # Combined with [profile.dev.package."*"] incremental = false in Cargo.toml,
 # this caches dependency compilation (samyama, ruvector, etc).
+#
+# Note: only NON-incremental compilations are cacheable. Workspace members
+# (da-*, kg-*) build with `-C incremental=...` and are reported by sccache as
+# `non-cacheable: incremental`; that is intended, not a misconfiguration.
 RUSTC_WRAPPER = "sccache"
-SCCACHE_BASEDIRS = "/root/vendor-source:/root/daily-archive"
+# List every workspace root sharing the cache; the sccache server reads this at
+# startup, so restart the server after changing it.
+SCCACHE_BASEDIRS = "/root/vendor-source:/root/daily-archive:/root/reactivegraph:/root/law-nexus"
+SCCACHE_CACHE_SIZE = "25G"   # NB: no space — "25 GiB" silently falls back to the 10G default
 
 [build]
 rustc-wrapper = "sccache"

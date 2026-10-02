@@ -661,14 +661,21 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
             # required-features=["learning-evaluation"], so neither the default
             # `cargo test -p da-cli --tests` nor a feature-less `--example` build
             # reaches it: the first compiles an EMPTY test target, the second
-            # fails the whole command. Both examples carrying the feature are
+            # fails the whole command. Every example carrying the feature is
             # provisioned by NAME — `--examples` would compile all ~86 runners,
             # which is what the lists above avoid. This closes the gap the
             # default-examples comment used to record as "out of this change".
+            #
+            # `parse_learning_cycle` (S07/T03) was added to da-cli with the same
+            # `required-features = ["learning-evaluation"]` but was NOT added
+            # here, so scripts/tests/test_absorption_test_inventory.py stayed red
+            # after S07 closed. Named explicitly for the same reason as its two
+            # siblings above.
             ("da-cli learning-evaluation example runners", ["cargo", "build", "-p", "da-cli",
                                                               "--features", "learning-evaluation",
                                                               "--example", "parse_policy_ablation",
-                                                              "--example", "parse_learning_ablation"], t),
+                                                              "--example", "parse_learning_ablation",
+                                                              "--example", "parse_learning_cycle"], t),
             ("da-cli learning-evaluation tests", ["cargo", "test", "-p", "da-cli",
                                                    "--features", "learning-evaluation", "--tests"], t),
             # `native_content_receipt` (S05/T06) is the content receipt emitter and
@@ -690,6 +697,17 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
             ("da-cli route-e2e example runner", ["cargo", "build", "-p", "da-cli",
                                                    "--features", "pdf-layout,pdf-classifier",
                                                    "--example", "native_route_e2e"], t),
+            # `native_corpus_acceptance` (S08/T01) is the corpus-bound native
+            # acceptance measurement runner. Like `native_content_receipt` and
+            # `native_route_e2e` it declares `pdf-classifier` on top of
+            # `pdf-layout`, so it is provisioned in its own two-feature step
+            # rather than the layout-only list above. A cargo command fails as a
+            # unit, so the name is placed only in a step whose `--features`
+            # cover its manifest `required-features`; the inventory test asserts
+            # that binding.
+            ("da-cli native-acceptance example runner", ["cargo", "build", "-p", "da-cli",
+                                                           "--features", "pdf-layout,pdf-classifier",
+                                                           "--example", "native_corpus_acceptance"], t),
         ])
     return steps
 

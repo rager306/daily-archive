@@ -70,6 +70,12 @@ pub mod native_document_group;
 // test compile in the default feature set (no `pdf-layout`, no
 // `pdf-classifier`).
 pub mod native_content_receipt;
+// S08/T01 (M514-1lss2s): corpus-bound native acceptance measurement runner with
+// a typed gap ledger. Pure std/serde/serde_yaml/serde_json/sha2 (no da-parse, no
+// pdf-layout), so the module and its contract test compile in the default
+// feature set; the gated example `native_corpus_acceptance` drives it against
+// the real 610-document frozen holdout.
+pub mod native_acceptance;
 // S06/T03 (M514-1lss2s): route receipt envelope and independent validator for
 // the end-to-end PDF->native route. It reuses the S04 envelope
 // (`native_family_receipt`) and binds the T02 prospective limit freeze, and is
