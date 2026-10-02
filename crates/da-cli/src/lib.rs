@@ -90,6 +90,16 @@ pub mod native_route_receipt;
 // test compile in the default feature set (no `pdf-layout`, no
 // `pdf-classifier`).
 pub mod native_resource_same_n;
+// S08/T03 (M514-1lss2s): corpus-bound same-n resource receipt. It binds the
+// native resources the T01 acceptance runner measured over the frozen
+// 610-document holdout and pairs each metric with a pinned same-n reference row
+// only where one exists — every reference metric is a typed `not_observed`
+// absence, never a restated Java number (D510). It reuses the S04 envelope
+// (`native_family_receipt`), the T03 freeze binding (`native_route_receipt`) and
+// the S06 pairing/absence vocabulary (`native_resource_same_n`), and is pure
+// std/serde/serde_yaml/serde_json/sha2, so it and its contract test compile in
+// the default feature set (no `pdf-layout`, no `pdf-classifier`).
+pub mod native_corpus_resource_same_n;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;

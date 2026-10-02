@@ -612,6 +612,13 @@ def architecture_gate_steps(quick: bool = False) -> list[tuple[str, list[str], i
                                             "--example", "native_family_gate_rehearsal",
                                             "--example", "parse_batch_budget_shadow",
                                             "--example", "rest_batch_asset_shadow"], t),
+            # S08/T03 (M514-1lss2s): the corpus-bound same-n resource runner is
+            # ungated (no `required-features`), so it cannot ride the
+            # `pdf-layout,pdf-classifier` feature steps. It is provisioned by
+            # NAME here, matching how its ungated contract test in the default
+            # `da-cli tests` step below is executed rather than compiled empty.
+            ("da-cli corpus-resource same-n example runner", ["cargo", "build", "-p", "da-cli",
+                                                                "--example", "native_corpus_resource_same_n"], t),
             ("da-cli tests", ["cargo", "test", "-p", "da-cli", "--tests"], t),
             # Feature-gated example contracts. Twelve da-cli test files declare
             # `#![cfg(feature = "pdf-layout")]`; a plain
