@@ -128,6 +128,16 @@ pub mod native_acceptance_package;
 // std/serde/serde_json, so it and its contract test compile in the default
 // feature set.
 pub mod native_retirement_readiness;
+// S09/T04 (M514-1lss2s): process-local Java-disabled smoke rehearsal. It
+// consumes the T01 authorization verdict and a declared per-family selection and
+// is deliberately not a runtime route: the live state emits a typed
+// `not_authorized` refusal (`families_switched = []`, `product_scope_confirmed =
+// false`), and only an authorized rehearsal with an installed identity-isolated
+// guard, zero Java consults and a non-vacuous positive control switches a family.
+// It reuses the S04 envelope (`native_family_receipt`) and the T01/T02 value
+// types (`da_parse`, `native_retirement_readiness`), and is pure
+// std/serde/sha2, so it and its contract test compile in the default feature set.
+pub mod native_java_disabled_smoke;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
