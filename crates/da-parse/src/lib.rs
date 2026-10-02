@@ -77,6 +77,7 @@ mod native_header_sequence;
 mod native_heading_regions;
 mod native_personal_name;
 mod native_region_input;
+mod native_retirement_authorization;
 mod native_route_failure;
 mod native_route_result;
 mod native_section_reading_order;
@@ -486,6 +487,21 @@ pub use native_region_input::{
     MAX_NATIVE_REGION_TOKENS, NATIVE_REGION_INPUT_SCHEMA_VERSION, NativeRegionAbsence,
     NativeRegionCarrier, NativeRegionError, NativeRegionIdentity, NativeRegionRun,
     NativeRegionToken, build_native_region_carrier, build_native_word_region_carrier,
+};
+pub use native_retirement_authorization::{
+    FamilyAuthorization, HumanReleaseRecord, NATIVE_RETIREMENT_AUTHORIZATION_SCHEMA_VERSION,
+    NativeRetirementAuthorization, PackageBinding, REFUSAL_FAMILY_GATE_BLOCKS,
+    REFUSAL_HUMAN_DECISION_NOT_RECORDED, REFUSAL_HUMAN_REVIEWER_UNNAMED,
+    REFUSAL_LIFECYCLE_STATE_AUTHORIZES, REFUSAL_PACKAGE_ABSENT, REFUSAL_PACKAGE_PIN_STALE,
+    REFUSAL_PACKAGE_STATUS_UNKNOWN, REFUSAL_PROSE_DOES_NOT_AUTHORIZE, REFUSAL_REQUIRED_GATE_BLOCKS,
+    RETIREMENT_AUTHORIZATION_AUTHORIZED, RETIREMENT_AUTHORIZATION_REFUSAL_VOCABULARY,
+    RETIREMENT_AUTHORIZATION_REFUSED, RETIREMENT_BASIS_HUMAN_RELEASE_REQUIRED,
+    RETIREMENT_BASIS_RECORDED_HUMAN_RELEASE, RETIREMENT_CLAIM_SCOPE_AUTHORIZED,
+    RETIREMENT_CLAIM_SCOPE_BLOCKED, RETIREMENT_HUMAN_DECISION_RECORDED_TOKENS,
+    RETIREMENT_HUMAN_DECISION_VOCABULARY, RETIREMENT_NON_BLOCKING_GATE_STATES,
+    RETIREMENT_PACKAGE_STATUS_AUTHORIZED, RETIREMENT_PACKAGE_STATUS_VOCABULARY,
+    RETIREMENT_REQUIRED_LOCKS, RetirementAuthorization, RetirementAuthorizationInput,
+    RetirementRefusal, authorize_native_retirement,
 };
 pub use native_route_failure::{
     NATIVE_ROUTE_FAILURE_SCHEMA_VERSION, ROUTE_FAILURE_REASON_PREFIX_VOCABULARY,
