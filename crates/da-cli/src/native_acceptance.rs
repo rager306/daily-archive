@@ -20,9 +20,10 @@
 //! and no share is narrowed.
 //!
 //! Where a frozen metric is natively observable *through the runner's own
-//! producing path*, it is measured with a non-empty denominator. Where the
-//! producing mechanism is absent (the class-parity axis) or the oracle is absent
-//! (the S01 composition scanner is not on the native route path), the runner
+//! producing path*, it is measured with a non-empty denominator. The S01
+//! composition scanner and the S02 class-parity bridge are now part of that path
+//! through shared feature-free modules, so their families are measured rather
+//! than gapped. Where a producing mechanism is genuinely absent, the runner
 //! emits a TYPED gap cell — `not_observable` with a machine-readable reason — and
 //! that gate is carried into the acceptance package's blocking set. A family the
 //! frozen schema still carries as `threshold_pending` is emitted as a

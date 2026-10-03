@@ -24,14 +24,17 @@
 use da_cli::native_acceptance_package::{
     AUTHORIZATION_BASIS_HUMAN_RELEASE_REQUIRED, BODY_RESIDUAL_TOKEN,
     DEFAULT_ACCEPTANCE_PACKAGE_ARTIFACT_REL, GATE_KIND_VOCABULARY, GATE_NON_BLOCKING_STATES,
-    GATE_STATE_VOCABULARY, GrobidRetirementAcceptancePackage, INDEPENDENCE_COMMAND, NAMED_GAP_H20,
+    GATE_STATE_VOCABULARY, GrobidRetirementAcceptancePackage, INDEPENDENCE_COMMAND,
+    INDEPENDENCE_LIMITATION, INDEPENDENCE_SERIES_IDENTITY_RULE, NAMED_GAP_H20,
     PACKAGE_DB_CANONICAL_REQUIREMENT_IDS, PACKAGE_EVIDENCE_CARRIERS,
     PACKAGE_NATIVE_MEASUREMENT_REL, PACKAGE_REFERENCE_PINS_REL, PACKAGE_REFERENCE_PROBE_REL,
-    PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_ROLLBACK_RECEIPT_REL, RECOMPUTE_CARRIER_DIGEST_ALGORITHM,
-    gate_blocks_s09, validate_acceptance_package,
+    PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_ROLLBACK_RECEIPT_REL, PACKAGE_SCHEMA_REL,
+    RECOMPUTE_CARRIER_DIGEST_ALGORITHM, SERIES_IDENTITY_VERDICT_SAME_SERIES,
+    derive_series_identity, gate_blocks_s09, series_fingerprint, validate_acceptance_package,
 };
 use da_cli::native_family_receipt::{CarrierBinding, sha256_prefixed};
 use da_cli::native_resource_same_n::SAME_N_ABSENCE_REASON_VOCABULARY;
+use da_parse::Series;
 use serde_json::Value;
 use std::error::Error;
 use std::fs;
@@ -93,6 +96,32 @@ fn load_package(root: &Path) -> Result<GrobidRetirementAcceptancePackage, Box<dy
         root,
         DEFAULT_ACCEPTANCE_PACKAGE_ARTIFACT_REL,
     )?)?)
+}
+
+/// Re-derive the reference series from the committed schema and the executed
+/// reference probe, exactly as the producing example builds it, so both series
+/// fingerprints are recomputable from committed bytes rather than trusted.
+fn committed_series(root: &Path) -> Result<Series, Box<dyn Error>> {
+    let schema: Value = serde_yaml::from_slice(&read(root, PACKAGE_SCHEMA_REL)?)?;
+    let probe: Value = serde_json::from_slice(&read(root, PACKAGE_REFERENCE_PROBE_REL)?)?;
+    Ok(Series {
+        corpus_id: schema["assigned_population"]["census_id"]
+            .as_str()
+            .ok_or("the schema carries no census id")?
+            .to_owned(),
+        profile: probe["executed_population"]["execution_route_profile"]
+            .as_str()
+            .ok_or("the probe carries no execution route profile")?
+            .to_owned(),
+        oracle: probe["evaluated_population"]["oracle"]
+            .as_str()
+            .ok_or("the probe carries no evaluated oracle")?
+            .to_owned(),
+        source_revision: schema["threshold_policy"]["freeze_revision"]
+            .as_str()
+            .ok_or("the schema carries no freeze revision")?
+            .to_owned(),
+    })
 }
 
 fn expect_refusal(
@@ -310,6 +339,47 @@ fn acceptance_package_states_recomputability_and_independence() -> Result<(), Bo
     for judge in &independence.judges {
         assert_manifest_names(&root, &judge.manifest, &judge.symbol, "independence judge")?;
     }
+
+    // R134 clause (c), M515/S06: the series-identity verdict is derived package
+    // data, not a prose deferral. Independently re-derive the series from the
+    // committed schema plus the executed probe and recompute both fingerprints.
+    let identity = &independence.series_identity;
+    assert_eq!(
+        identity.rule, INDEPENDENCE_SERIES_IDENTITY_RULE,
+        "the series-identity rule drifted from the contract"
+    );
+    let series = committed_series(&root)?;
+    let derived = derive_series_identity(&Some(series.clone()), &Some(series.clone()));
+    assert_eq!(
+        derived.verdict, SERIES_IDENTITY_VERDICT_SAME_SERIES,
+        "the committed candidate and reference must fingerprint as the same series"
+    );
+    assert_eq!(
+        identity, &derived,
+        "the committed series identity is not the derived one"
+    );
+    assert_eq!(
+        identity.candidate_fingerprint,
+        series_fingerprint(&series),
+        "the candidate fingerprint is not the committed series fingerprint"
+    );
+    assert_eq!(
+        identity.reference_fingerprint,
+        series_fingerprint(&series),
+        "the reference fingerprint is not the committed series fingerprint"
+    );
+    assert!(
+        identity.basis.contains("conservation"),
+        "a same_series verdict must name conservation"
+    );
+    assert_eq!(
+        independence.limitation, INDEPENDENCE_LIMITATION,
+        "the recorded limitation drifted from the resolved statement"
+    );
+    assert!(
+        !independence.limitation.contains("M515/S06"),
+        "the limitation still defers the verdict to M515/S06"
+    );
 
     Ok(())
 }
@@ -530,6 +600,27 @@ fn acceptance_package_refuses_named_mutations() -> Result<(), Box<dyn Error>> {
     m.carrier_independence.judges.clear();
     expect_refusal(
         "judges_cleared",
+        &m,
+        &expectation,
+        "CarrierIndependenceDrift",
+    )?;
+
+    // R134 clause (c): a series-identity verdict that contradicts its own
+    // fingerprints is refused by name.
+    let mut m = package.clone();
+    m.carrier_independence.series_identity.verdict = "independent_series".to_owned();
+    expect_refusal(
+        "series_identity_contradiction",
+        &m,
+        &expectation,
+        "CarrierIndependenceDrift",
+    )?;
+
+    // R134 clause (c): a fingerprint that is not a sha256 digest is refused.
+    let mut m = package.clone();
+    m.carrier_independence.series_identity.candidate_fingerprint = "not-a-digest".to_owned();
+    expect_refusal(
+        "series_identity_non_digest_fingerprint",
         &m,
         &expectation,
         "CarrierIndependenceDrift",

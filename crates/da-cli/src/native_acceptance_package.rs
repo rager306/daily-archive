@@ -38,11 +38,11 @@
 
 use crate::native_family_receipt::{
     CarrierBinding, LEAK_MARKERS, REQUIRED_LOCKS, Redaction, is_repo_relative_path,
-    is_sha256_digest,
+    is_sha256_digest, sha256_prefixed,
 };
 use da_parse::{
     MandatoryGate, NATIVE_ACCEPTANCE_BODY_AXIS_GATE_ID,
-    NATIVE_ACCEPTANCE_EVALUATION_SCHEMA_VERSION, ThresholdVerdict,
+    NATIVE_ACCEPTANCE_EVALUATION_SCHEMA_VERSION, Series, ThresholdVerdict,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -333,11 +333,43 @@ pub const RECOMPUTE_SURFACE_GOVERNOR_RULE_SYMBOL: &str = "acceptance_package";
 pub const INDEPENDENCE_SAME_GENERATOR_RULE: &str = "a producer whose generator identity equals the candidate's generator identity is same-generator and must fail independence; a different label does not make a same-generator producer independent";
 /// The series-identity rule.
 pub const INDEPENDENCE_SERIES_IDENTITY_RULE: &str = "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority";
+
+// ── derived series identity (M515/S06) ──────────────────────────────────────
+//
+// R134 clause (c) required a machine-checkable series-identity verdict. The
+// verdict is derived from the candidate and reference series, never supplied as
+// a literal: `same_series` when both complete series fingerprint equal,
+// `independent_series` when both complete series fingerprint differently, and
+// `series_identity_unresolved` otherwise. A side with no series carries no
+// fingerprint; a resolved verdict carries two `sha256:` fingerprints.
+
+/// The closed series-identity verdict vocabulary: the candidate's fingerprint
+/// equals the frozen reference's, so the measurement is conservation.
+pub const SERIES_IDENTITY_VERDICT_SAME_SERIES: &str = "same_series";
+/// The candidate's fingerprint differs from the frozen reference's.
+pub const SERIES_IDENTITY_VERDICT_INDEPENDENT_SERIES: &str = "independent_series";
+/// At least one side is absent or incomplete, so the identity is unresolved.
+pub const SERIES_IDENTITY_VERDICT_UNRESOLVED: &str = "series_identity_unresolved";
+/// The closed series-identity verdict vocabulary.
+pub const SERIES_IDENTITY_VERDICT_VOCABULARY: [&str; 3] = [
+    SERIES_IDENTITY_VERDICT_SAME_SERIES,
+    SERIES_IDENTITY_VERDICT_INDEPENDENT_SERIES,
+    SERIES_IDENTITY_VERDICT_UNRESOLVED,
+];
+/// The basis a `same_series` verdict must carry: it names conservation, never
+/// independent non-inferiority.
+pub const SERIES_IDENTITY_BASIS_CONSERVATION: &str = "conservation_of_frozen_reference_series";
+/// The basis an `independent_series` verdict carries.
+pub const SERIES_IDENTITY_BASIS_FINGERPRINTS_DIFFER: &str =
+    "candidate_and_reference_series_fingerprints_differ_under_the_series_identity_rule";
+/// The published canonicalization for a series fingerprint.
+pub const SERIES_FINGERPRINT_CANONICALIZATION: &str = "sha256 over the four series keys in declaration order (corpus_id, profile, oracle, source_revision), each encoded as `<label>:<byte-length>:<raw bytes>\\n`; the length prefix makes the encoding unambiguous, and a side with no series carries no fingerprint";
+
 /// The command that judges the named independence mechanisms.
 pub const INDEPENDENCE_COMMAND: &str =
     "cargo test -p da-application --test promotion_qualification";
 /// The recorded limitation. It must not claim independence.
-pub const INDEPENDENCE_LIMITATION: &str = "The preservation candidate currently equals the frozen reference series, so the measured result is conservation of the same series, not an independent non-inferiority comparison. The series-identity verdict is re-resolved by M515/S06; this package records the linkage and claims no independence.";
+pub const INDEPENDENCE_LIMITATION: &str = "The candidate is measured on the frozen reference series; the recorded series-identity verdict is `same_series`, so the measured result is conservation of the frozen reference series. This package claims no independent non-inferiority.";
 /// The carrier-independence statement.
 pub const CARRIER_INDEPENDENCE_STATEMENT: &str = "The candidate carrier is judged against the named independence mechanisms below; a same-generator/different-label producer fails independence, and the recorded limitation is stated rather than waived.";
 
@@ -590,6 +622,29 @@ pub struct IndependenceJudge {
     pub symbol: String,
 }
 
+/// R134 clause (c): the derived series-identity verdict. It is computed from the
+/// candidate and reference series by [`derive_series_identity`], never supplied
+/// as a literal, and it is a required field of [`CarrierIndependence`] — a
+/// package missing it fails to parse rather than silently deferring the
+/// identity to a later milestone.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SeriesIdentity {
+    /// One of [`SERIES_IDENTITY_VERDICT_VOCABULARY`].
+    pub verdict: String,
+    /// The `sha256:` fingerprint of the candidate series, or empty when the side
+    /// carries no series.
+    pub candidate_fingerprint: String,
+    /// The `sha256:` fingerprint of the reference series, or empty when the side
+    /// carries no series.
+    pub reference_fingerprint: String,
+    /// The series-identity rule; always [`INDEPENDENCE_SERIES_IDENTITY_RULE`].
+    pub rule: String,
+    /// The recorded basis. A `same_series` verdict names conservation; an
+    /// unresolved verdict carries an empty basis.
+    pub basis: String,
+}
+
 /// R134 clause (c): the same-generator/different-label provenance linkage.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -602,6 +657,8 @@ pub struct CarrierIndependence {
     pub same_generator_rule: String,
     /// The series-identity rule.
     pub series_identity_rule: String,
+    /// R134 clause (c): the derived series-identity verdict.
+    pub series_identity: SeriesIdentity,
     /// The named judges.
     pub judges: Vec<IndependenceJudge>,
     /// The command that judges them.
@@ -707,6 +764,10 @@ pub struct AcceptancePackageInput {
     pub locks: BTreeMap<String, String>,
     /// The T02 evaluation.
     pub evaluation: EvaluationBinding,
+    /// The candidate measurement's series identity, as supplied by the producer.
+    pub candidate_series: Option<Series>,
+    /// The frozen reference's series identity, as supplied by the producer.
+    pub reference_series: Option<Series>,
     /// The raw T02 mandatory gates.
     pub evaluation_gates: Vec<MandatoryGate>,
     /// The source bindings for the evaluation gates.
@@ -1023,6 +1084,76 @@ fn check_reviewer_recomputation(
     Ok(())
 }
 
+/// The canonical byte encoding a [`Series`] is fingerprinted over: the four keys
+/// in declaration order (corpus_id, profile, oracle, source_revision), each as
+/// `label:<byte-length>:<raw bytes>\n`. The length prefix makes the encoding
+/// unambiguous, so no two distinct series can collide through a delimiter.
+fn series_canonical_bytes(series: &Series) -> Vec<u8> {
+    let mut encoded = String::new();
+    for (label, value) in [
+        ("corpus_id", &series.corpus_id),
+        ("profile", &series.profile),
+        ("oracle", &series.oracle),
+        ("source_revision", &series.source_revision),
+    ] {
+        encoded.push_str(label);
+        encoded.push(':');
+        encoded.push_str(&value.len().to_string());
+        encoded.push(':');
+        encoded.push_str(value);
+        encoded.push('\n');
+    }
+    encoded.into_bytes()
+}
+
+/// The `sha256:<hex>` fingerprint of a series under
+/// [`SERIES_FINGERPRINT_CANONICALIZATION`]. It is a pure function of the four
+/// series keys: no clock, no filesystem and no corpus access.
+pub fn series_fingerprint(series: &Series) -> String {
+    sha256_prefixed(&series_canonical_bytes(series))
+}
+
+/// Derive the series-identity verdict from the candidate and reference series.
+///
+/// Both complete and equal fingerprints -> `same_series`; both complete and
+/// different -> `independent_series`; otherwise `series_identity_unresolved`
+/// with an empty basis. A side with no series carries no fingerprint (empty
+/// string). The verdict is derived, never supplied as a literal.
+pub fn derive_series_identity(
+    candidate: &Option<Series>,
+    reference: &Option<Series>,
+) -> SeriesIdentity {
+    let candidate_fingerprint = candidate
+        .as_ref()
+        .map(series_fingerprint)
+        .unwrap_or_default();
+    let reference_fingerprint = reference
+        .as_ref()
+        .map(series_fingerprint)
+        .unwrap_or_default();
+    let both_complete = candidate.as_ref().is_some_and(Series::is_complete)
+        && reference.as_ref().is_some_and(Series::is_complete);
+    let verdict = if !both_complete {
+        SERIES_IDENTITY_VERDICT_UNRESOLVED
+    } else if candidate_fingerprint == reference_fingerprint {
+        SERIES_IDENTITY_VERDICT_SAME_SERIES
+    } else {
+        SERIES_IDENTITY_VERDICT_INDEPENDENT_SERIES
+    };
+    let basis = match verdict {
+        SERIES_IDENTITY_VERDICT_SAME_SERIES => SERIES_IDENTITY_BASIS_CONSERVATION,
+        SERIES_IDENTITY_VERDICT_INDEPENDENT_SERIES => SERIES_IDENTITY_BASIS_FINGERPRINTS_DIFFER,
+        _ => "",
+    };
+    SeriesIdentity {
+        verdict: verdict.to_owned(),
+        candidate_fingerprint,
+        reference_fingerprint,
+        rule: INDEPENDENCE_SERIES_IDENTITY_RULE.to_owned(),
+        basis: basis.to_owned(),
+    }
+}
+
 fn check_carrier_independence(block: &CarrierIndependence) -> Result<(), AcceptancePackageError> {
     let drift = |detail: &str| AcceptancePackageError::CarrierIndependenceDrift {
         detail: detail.to_owned(),
@@ -1052,6 +1183,69 @@ fn check_carrier_independence(block: &CarrierIndependence) -> Result<(), Accepta
     }
     if block.command.trim().is_empty() || block.statement.trim().is_empty() {
         return Err(drift("the command or statement is empty"));
+    }
+
+    // R134 clause (c): the series-identity verdict is derived package data, not
+    // a prose deferral. Refuse every contradiction by name.
+    let identity = &block.series_identity;
+    if !SERIES_IDENTITY_VERDICT_VOCABULARY.contains(&identity.verdict.as_str()) {
+        return Err(drift(
+            "series_identity.verdict is outside the closed vocabulary",
+        ));
+    }
+    if identity.rule.trim().is_empty() {
+        return Err(drift("series_identity.rule is empty"));
+    }
+    for (side, fingerprint) in [
+        ("candidate", &identity.candidate_fingerprint),
+        ("reference", &identity.reference_fingerprint),
+    ] {
+        if !fingerprint.is_empty() && !is_sha256_digest(fingerprint) {
+            return Err(drift(&format!(
+                "series_identity.{side}_fingerprint is not a sha256 digest"
+            )));
+        }
+    }
+    match identity.verdict.as_str() {
+        SERIES_IDENTITY_VERDICT_SAME_SERIES => {
+            if !is_sha256_digest(&identity.candidate_fingerprint)
+                || !is_sha256_digest(&identity.reference_fingerprint)
+            {
+                return Err(drift("a same_series verdict needs two sha256 fingerprints"));
+            }
+            if identity.candidate_fingerprint != identity.reference_fingerprint {
+                return Err(drift(
+                    "a same_series verdict carries two different fingerprints",
+                ));
+            }
+            if !identity.basis.contains(SERIES_IDENTITY_BASIS_CONSERVATION) {
+                return Err(drift(
+                    "a same_series verdict basis does not name conservation",
+                ));
+            }
+        }
+        SERIES_IDENTITY_VERDICT_INDEPENDENT_SERIES => {
+            if !is_sha256_digest(&identity.candidate_fingerprint)
+                || !is_sha256_digest(&identity.reference_fingerprint)
+            {
+                return Err(drift(
+                    "an independent_series verdict needs two sha256 fingerprints",
+                ));
+            }
+            if identity.candidate_fingerprint == identity.reference_fingerprint {
+                return Err(drift(
+                    "an independent_series verdict carries two equal fingerprints",
+                ));
+            }
+        }
+        SERIES_IDENTITY_VERDICT_UNRESOLVED => {
+            if !identity.basis.trim().is_empty() {
+                return Err(drift(
+                    "an unresolved series-identity verdict carries a basis",
+                ));
+            }
+        }
+        _ => unreachable!("the vocabulary check above covers every verdict"),
     }
     Ok(())
 }
@@ -1300,8 +1494,11 @@ pub fn build_acceptance_package(
     check_reviewer_recomputation(&reviewer_recomputation, input.evidence.len() as u64)?;
 
     // R134 clause (c): state the same-generator/different-label linkage the
-    // existing independence mechanisms already enforce. Independence is not
-    // claimed; the series-identity limitation is recorded verbatim.
+    // existing independence mechanisms already enforce. The series-identity
+    // verdict is derived from the supplied candidate and reference series, never
+    // taken as a literal; a same-series candidate records conservation rather
+    // than independence.
+    let series_identity = derive_series_identity(&input.candidate_series, &input.reference_series);
     let carrier_independence = CarrierIndependence {
         candidate_manifest: input.gate_sources.candidate_measurement.manifest.clone(),
         reference_manifests: vec![
@@ -1310,6 +1507,7 @@ pub fn build_acceptance_package(
         ],
         same_generator_rule: INDEPENDENCE_SAME_GENERATOR_RULE.to_owned(),
         series_identity_rule: INDEPENDENCE_SERIES_IDENTITY_RULE.to_owned(),
+        series_identity,
         judges: vec![
             IndependenceJudge {
                 manifest: JUDGE_PROMOTION_GATE_MANIFEST.to_owned(),

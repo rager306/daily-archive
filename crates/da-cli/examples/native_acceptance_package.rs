@@ -363,7 +363,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
 
     let pins_binding = binding_for(&evidence, PACKAGE_REFERENCE_PINS_REL, POINTER_PINS_VALUES)?;
     let references = ReferenceSet {
-        reference_series: Some(series),
+        reference_series: Some(series.clone()),
         documents: vec![ReferenceDocument {
             path: PACKAGE_REFERENCE_PINS_REL.to_owned(),
             sha256: Some(pins_binding.revision_sha256.clone()),
@@ -593,6 +593,8 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         thresholds: "not_accepted".to_owned(),
         locks: closed_locks(),
         evaluation: evaluation_binding,
+        candidate_series: Some(series.clone()),
+        reference_series: Some(series),
         evaluation_gates: evaluation.gates.clone(),
         gate_sources,
         extra_gates,
@@ -829,6 +831,33 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
     )?;
     checked += 1;
 
+    // (14) a `same_series` verdict whose two fingerprints differ.
+    let mut m = base.clone();
+    assert_eq!(
+        m.carrier_independence.series_identity.verdict, "same_series",
+        "the synthetic fixture must derive a same_series verdict"
+    );
+    m.carrier_independence.series_identity.candidate_fingerprint =
+        sha256_prefixed(b"a-different-candidate-series");
+    expect_refusal(
+        "series_identity_same_series_fingerprints_differ",
+        &m,
+        &expectation,
+        "CarrierIndependenceDrift",
+    )?;
+    checked += 1;
+
+    // (15) an `independent_series` verdict carrying two equal fingerprints.
+    let mut m = base.clone();
+    m.carrier_independence.series_identity.verdict = "independent_series".to_owned();
+    expect_refusal(
+        "series_identity_independent_series_fingerprints_equal",
+        &m,
+        &expectation,
+        "CarrierIndependenceDrift",
+    )?;
+    checked += 1;
+
     Ok(format!(
         "acceptance package self-check: {checked} named refusals executed, all refused"
     ))
@@ -945,6 +974,15 @@ fn synthetic_fixtures() -> (AcceptancePackageInput, AcceptancePackageExpectation
     )
     .expect("the synthetic attribution reconciles");
 
+    // A complete synthetic series pair: both sides are the same series, so the
+    // derived verdict is `same_series` and the base fixture validates.
+    let synthetic_series = Series {
+        corpus_id: "synthetic-corpus".to_owned(),
+        profile: "synthetic-profile".to_owned(),
+        oracle: "synthetic-oracle".to_owned(),
+        source_revision: "synthetic-revision".to_owned(),
+    };
+
     let input = AcceptancePackageInput {
         claim_scope: "diagnostic_only".to_owned(),
         product_coverage_effect: "none".to_owned(),
@@ -957,6 +995,8 @@ fn synthetic_fixtures() -> (AcceptancePackageInput, AcceptancePackageExpectation
             frozen_reference_path: pins_binding.manifest.clone(),
             thresholds,
         },
+        candidate_series: Some(synthetic_series.clone()),
+        reference_series: Some(synthetic_series),
         evaluation_gates,
         gate_sources: GateSources {
             candidate_measurement: candidate_binding,

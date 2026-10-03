@@ -24,7 +24,7 @@
     {
       "manifest": "artifacts/parse_compat/native_corpus_rollback_rehearsal.json",
       "pointer": "corpus_claim",
-      "revision_sha256": "sha256:ba1e18ab8b8761bc7dd546ba269fa38e8a456b5eeac90b5a5a8db9e4572ef381"
+      "revision_sha256": "sha256:b9bc5fa2e34eb66b5a26a0ad89bf8952c7c19e0b28d3edb9f2e46dc365bb3e09"
     },
     {
       "manifest": "artifacts/parse_compat/absorption_progress_reference_pins.json",
@@ -656,6 +656,13 @@
     ],
     "same_generator_rule": "a producer whose generator identity equals the candidate's generator identity is same-generator and must fail independence; a different label does not make a same-generator producer independent",
     "series_identity_rule": "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority",
+    "series_identity": {
+      "verdict": "same_series",
+      "candidate_fingerprint": "sha256:c5a9d938f31660452032b4d9b86a4e8bebb621f93ae7d0a57bb28ed12778f161",
+      "reference_fingerprint": "sha256:c5a9d938f31660452032b4d9b86a4e8bebb621f93ae7d0a57bb28ed12778f161",
+      "rule": "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority",
+      "basis": "conservation_of_frozen_reference_series"
+    },
     "judges": [
       {
         "manifest": "crates/da-application/src/native_family_promotion_gate.rs",
@@ -675,7 +682,7 @@
       }
     ],
     "command": "cargo test -p da-application --test promotion_qualification",
-    "limitation": "The preservation candidate currently equals the frozen reference series, so the measured result is conservation of the same series, not an independent non-inferiority comparison. The series-identity verdict is re-resolved by M515/S06; this package records the linkage and claims no independence.",
+    "limitation": "The candidate is measured on the frozen reference series; the recorded series-identity verdict is `same_series`, so the measured result is conservation of the frozen reference series. This package claims no independent non-inferiority.",
     "statement": "The candidate carrier is judged against the named independence mechanisms below; a same-generator/different-label producer fails independence, and the recorded limitation is stated rather than waived."
   },
   "redaction": {
