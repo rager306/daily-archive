@@ -1294,6 +1294,7 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
             "resource_sha256": (
                 self.file_sha256(resource_path) if resource_path else None
             ),
+            "declared_statement_surfaces": {},
             "errors": [],
         }
 
@@ -1334,6 +1335,32 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
         if resource_doc is None and resource_path and self.path_exists(resource_path):
             bundle["errors"].append("resource_unreadable")
         bundle["resource"] = self._acceptance_resource_view(resource_doc, resource_rule)
+
+        # R134 clauses (a) and (c): every manifest the two statement blocks name
+        # is resolved on the live tree, so the oracle can prove the reviewer
+        # surfaces and the independence judges are readable rather than merely
+        # asserted in the package. The map is ``{manifest: path_exists}`` and a
+        # named manifest that does not resolve fails closed in the oracle.
+        declared_statement_surfaces: dict[str, bool] = {}
+        package = bundle.get("package")
+        if isinstance(package, dict):
+            for block_name, surfaces_name in (
+                ("reviewer_recomputation", "recompute_surfaces"),
+                ("carrier_independence", "judges"),
+            ):
+                block = package.get(block_name)
+                if not isinstance(block, dict):
+                    continue
+                surfaces = block.get(surfaces_name)
+                if not isinstance(surfaces, list):
+                    continue
+                for entry in surfaces:
+                    if not isinstance(entry, dict):
+                        continue
+                    manifest = _text(entry.get("manifest"))
+                    if manifest and manifest not in declared_statement_surfaces:
+                        declared_statement_surfaces[manifest] = self.path_exists(manifest)
+        bundle["declared_statement_surfaces"] = declared_statement_surfaces
 
         return bundle
 
@@ -2219,6 +2246,33 @@ def _acceptance_package_vocabulary(block: Any) -> list[str]:
             ):
                 if key not in locks:
                     missing.append(f"acceptance_package.expected.locks.{key}")
+        # R134 clauses (a) and (c): the rule must carry the two statement
+        # expectations, or the oracle would silently no-op and a dropped or
+        # contradicted statement block would pass unseen.
+        recomputation = expected.get("recomputation")
+        if not isinstance(recomputation, dict):
+            missing.append("acceptance_package.expected.recomputation")
+        else:
+            if _text(recomputation.get("block")) is None:
+                missing.append("acceptance_package.expected.recomputation.block")
+            if _text(recomputation.get("digest_algorithm")) is None:
+                missing.append(
+                    "acceptance_package.expected.recomputation.digest_algorithm"
+                )
+            if _count(recomputation.get("minimum_surfaces")) is None:
+                missing.append(
+                    "acceptance_package.expected.recomputation.minimum_surfaces"
+                )
+        independence = expected.get("independence")
+        if not isinstance(independence, dict):
+            missing.append("acceptance_package.expected.independence")
+        else:
+            if _text(independence.get("block")) is None:
+                missing.append("acceptance_package.expected.independence.block")
+            if _count(independence.get("minimum_judges")) is None:
+                missing.append(
+                    "acceptance_package.expected.independence.minimum_judges"
+                )
 
     registered = set(_text_list(block.get("violations")))
     if registered != set(ACCEPTANCE_PACKAGE_VIOLATION_LABELS):
@@ -5195,6 +5249,103 @@ def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:
                     or _text(refusal.get("refusal_reason")) is None
                 ):
                     _add("acceptance_package_rollback_without_byte_identity")
+
+    # ── R134 clause (a): the reviewer-recomputability statement ──
+    # The Rust validator owns the same statement over the freshly built package;
+    # this half owns it over the *committed* artifact, so a statement dropped or
+    # contradicted after publication is refused by name. The package field is
+    # `carrier_digest_algorithm`, mirroring the Rust struct.
+    recompute_rule = _mapping(expected.get("recomputation"))
+    recompute_block_name = _text(recompute_rule.get("block"))
+    if recompute_block_name is not None:
+        recompute_algorithm = _text(recompute_rule.get("digest_algorithm"))
+        minimum_surfaces = _count(recompute_rule.get("minimum_surfaces"))
+        resolved_surfaces = evidence.get("declared_statement_surfaces")
+        resolved_surfaces = (
+            resolved_surfaces if isinstance(resolved_surfaces, dict) else {}
+        )
+        recompute = package.get(recompute_block_name)
+        recompute_drift = not isinstance(recompute, dict)
+        if isinstance(recompute, dict):
+            if _text(recompute.get("carrier_digest_algorithm")) != recompute_algorithm:
+                recompute_drift = True
+            if recompute.get("committed_bytes_only") is not True:
+                recompute_drift = True
+            if recompute.get("corpus_derived_pins") is not False:
+                recompute_drift = True
+            surfaces = recompute.get("recompute_surfaces")
+            if not isinstance(surfaces, list) or (
+                minimum_surfaces is not None and len(surfaces) < minimum_surfaces
+            ):
+                recompute_drift = True
+            else:
+                for surface in surfaces:
+                    if not isinstance(surface, dict):
+                        recompute_drift = True
+                        continue
+                    manifest = _text(surface.get("manifest"))
+                    symbol = _text(surface.get("symbol"))
+                    if manifest is None or symbol is None:
+                        recompute_drift = True
+                        continue
+                    if resolved_surfaces.get(manifest) is not True:
+                        recompute_drift = True
+            if (
+                _text(recompute.get("statement")) is None
+                or _text(recompute.get("canonicalization")) is None
+            ):
+                recompute_drift = True
+        if recompute_drift:
+            _add("acceptance_package_recompute_statement_drift")
+
+    # ── R134 clause (c): the same-generator/different-label linkage ──
+    # A candidate listed among the reference manifests, or a judge manifest that
+    # does not resolve, fails closed: the package must point at the named
+    # independence mechanisms, not merely describe them.
+    independence_rule = _mapping(expected.get("independence"))
+    independence_block_name = _text(independence_rule.get("block"))
+    if independence_block_name is not None:
+        minimum_judges = _count(independence_rule.get("minimum_judges"))
+        resolved_surfaces = evidence.get("declared_statement_surfaces")
+        resolved_surfaces = (
+            resolved_surfaces if isinstance(resolved_surfaces, dict) else {}
+        )
+        independence = package.get(independence_block_name)
+        independence_drift = not isinstance(independence, dict)
+        if isinstance(independence, dict):
+            candidate = _text(independence.get("candidate_manifest"))
+            references = independence.get("reference_manifests")
+            reference_set = (
+                {_text(entry) for entry in references}
+                if isinstance(references, list)
+                else set()
+            )
+            if candidate is None or candidate in reference_set:
+                independence_drift = True
+            judges = independence.get("judges")
+            if not isinstance(judges, list) or (
+                minimum_judges is not None and len(judges) < minimum_judges
+            ):
+                independence_drift = True
+            else:
+                for judge in judges:
+                    if not isinstance(judge, dict):
+                        independence_drift = True
+                        continue
+                    manifest = _text(judge.get("manifest"))
+                    symbol = _text(judge.get("symbol"))
+                    if manifest is None or symbol is None:
+                        independence_drift = True
+                        continue
+                    if resolved_surfaces.get(manifest) is not True:
+                        independence_drift = True
+            if (
+                _text(independence.get("command")) is None
+                or _text(independence.get("statement")) is None
+            ):
+                independence_drift = True
+        if independence_drift:
+            _add("acceptance_package_independence_statement_drift")
 
     return violations
 

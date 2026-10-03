@@ -310,6 +310,8 @@ ACCEPTANCE_PACKAGE_VIOLATION_LABELS = frozenset(
         "acceptance_package_lifecycle_authorization",
         "acceptance_package_pooled_resource_claim",
         "acceptance_package_rollback_without_byte_identity",
+        "acceptance_package_recompute_statement_drift",
+        "acceptance_package_independence_statement_drift",
     }
 )
 

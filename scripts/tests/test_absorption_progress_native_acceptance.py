@@ -13,7 +13,7 @@ as progress. This file proves the half that now sees it is honest:
 * the committed positive fixture is clean, including the boundary case where the
   declaration authority is absent (absence is silence, never compliance);
 * every committed negative record raises its own labelled violation and nothing
-  else, and the matrix is required to cover all thirteen labels plus each of the
+  else, and the matrix is required to cover all fifteen labels plus each of the
   five pooled-resource refusal shapes exactly once;
 * the live package is resolved by pointer, its carrier pins recompute from the
   committed bytes, its blocking set re-derives from the gate ledger, and it
@@ -105,7 +105,7 @@ def live_package() -> dict:
 def test_rule_registers_exactly_the_domain_literal_vocabulary(package_rule: dict) -> None:
     """The rule may not register a label the oracle cannot emit, or vice versa."""
     assert set(package_rule["violations"]) == set(ACCEPTANCE_PACKAGE_VIOLATION_LABELS)
-    assert len(ACCEPTANCE_PACKAGE_VIOLATION_LABELS) == 13
+    assert len(ACCEPTANCE_PACKAGE_VIOLATION_LABELS) == 15
 
 def test_merged_contract_vocabulary_is_complete(contract: dict) -> None:
     assert missing_progress_vocabulary(contract) == []
@@ -495,4 +495,36 @@ def test_a_duplicate_carrier_binding_is_refused(contract: dict) -> None:
     record["package"]["evidence"].append(copy.deepcopy(record["package"]["evidence"][0]))
     assert _acceptance_package_violations(contract, record) == {
         "acceptance_package_evidence_drift"
+    }
+
+def test_a_recompute_statement_drift_is_refused(contract: dict) -> None:
+    """R134 clause (a): a committed statement the package contradicts is refused."""
+    record = _clean_bundle()
+    record["package"]["reviewer_recomputation"]["corpus_derived_pins"] = True
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_recompute_statement_drift"
+    }
+
+    # A named reviewer surface that does not resolve on the live tree fails closed.
+    record = _clean_bundle()
+    surface = record["package"]["reviewer_recomputation"]["recompute_surfaces"][0]
+    record["declared_statement_surfaces"][surface["manifest"]] = False
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_recompute_statement_drift"
+    }
+
+def test_an_independence_statement_drift_is_refused(contract: dict) -> None:
+    """R134 clause (c): a linkage that names no judge is refused."""
+    record = _clean_bundle()
+    record["package"]["carrier_independence"]["judges"] = []
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_independence_statement_drift"
+    }
+
+    # A candidate listed among the reference manifests is not independent.
+    record = _clean_bundle()
+    independence = record["package"]["carrier_independence"]
+    independence["candidate_manifest"] = independence["reference_manifests"][0]
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_independence_statement_drift"
     }

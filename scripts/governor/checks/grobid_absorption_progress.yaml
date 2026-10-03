@@ -922,6 +922,19 @@ acceptance_package:
       production_route: forbidden
       graph_write: forbidden
     redaction_flags: [raw_text, raw_pdf, tei_xml, images, physical_paths, hostname, executable]
+    # R134 clause (a): the reviewer-recomputability statement the package must
+    # carry, the algorithm it must declare and the minimum reviewer surfaces.
+    # The reader proves every named surface resolves on the live tree.
+    recomputation:
+      block: reviewer_recomputation
+      digest_algorithm: sha256
+      minimum_surfaces: 2
+    # R134 clause (c): the same-generator/different-label provenance linkage the
+    # package must carry and the minimum named independence judges. The reader
+    # proves every judge manifest resolves on the live tree.
+    independence:
+      block: carrier_independence
+      minimum_judges: 3
   # The closed vocabulary of adapter labels this half may emit. Kept separate from
   # the scorecard `violations` list above so the exact-set test stays valid and the
   # halves stay separately governable. The literal set lives in
@@ -940,6 +953,8 @@ acceptance_package:
     - acceptance_package_lifecycle_authorization
     - acceptance_package_pooled_resource_claim
     - acceptance_package_rollback_without_byte_identity
+    - acceptance_package_recompute_statement_drift
+    - acceptance_package_independence_statement_drift
   fixtures:
     positive:
       id: native_acceptance_clean
@@ -963,6 +978,8 @@ acceptance_package:
           - acceptance_package_lifecycle_authorization
           - acceptance_package_pooled_resource_claim
           - acceptance_package_rollback_without_byte_identity
+          - acceptance_package_recompute_statement_drift
+          - acceptance_package_independence_statement_drift
 
 # S09/T03: the authorization axis is reported separately from product coverage
 # (R141). The retirement-readiness receipt is the S09 artifact that binds the S08
