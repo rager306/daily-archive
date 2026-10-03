@@ -8,8 +8,11 @@
 //! T01 acceptance runner actually measured over the 610 assigned documents
 //! ([`crate::native_acceptance`]) and pairs each metric with a reference row
 //! **only where a pinned same-n source covers exactly the same document set**.
-//! No such reference exists for the 610-corpus, so every reference metric is
-//! emitted `not_observed` with a closed reason (D510) — never a restated Java
+//! The per-document Java provenance carrier
+//! ([`CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL`]) covers exactly the 531
+//! measurable documents, so `java_latency_ms` is emitted `observed`; the two
+//! metrics with no same-n row (`java_model_invocations`, `java_cpu_wall_clock_ns`)
+//! stay `not_observed` with a closed reason (D510) — never a restated Java
 //! number, never a pooled value, never a saving claim.
 //!
 //! ## The pairing rule is the contract
@@ -53,8 +56,8 @@ use crate::native_family_receipt::{
 use crate::native_resource_same_n::{
     SAME_N_ABSENCE_POLICY, SAME_N_ABSENCE_REASON_VOCABULARY, SAME_N_MISMATCH_HARD_FAILURE,
     SAME_N_OBSERVATION_STATE_VOCABULARY, SAME_N_PAIRING_RULE, SAME_N_POOLED_FORBIDDEN,
-    SAME_N_REFERENCE_METRIC_ORDER, SAME_N_SAVING_CLAIM_FORBIDDEN, SameNMetricObservation,
-    SameNPairing, SameNReceiptError, SameNResiduals,
+    SAME_N_SAVING_CLAIM_FORBIDDEN, SameNMetricObservation, SameNPairing, SameNReceiptError,
+    SameNResiduals,
 };
 use crate::native_route_receipt::{
     ROUTE_DIRECTION_VOCABULARY, ROUTE_FREEZE_SCOPE, ROUTE_FREEZE_STATE_FROZEN,
@@ -90,6 +93,28 @@ pub const CORPUS_RESOURCE_HOLDOUT_MANIFEST_REL: &str = "data/parse/holdout_manif
 pub const CORPUS_RESOURCE_HOLDOUT_POINTER: &str = "articles";
 /// The closed reason for a carrier that is not same-n to the 610 assigned set.
 pub const CORPUS_RESOURCE_REFERENCE_NOT_SAME_N: &str = "reference_row_not_same_n";
+/// The reference metric rows the corpus receipt carries, in canonical order.
+///
+/// The corpus receipt adds `java_latency_ms`: the pinned Java reference
+/// provenance records a per-document wall-clock latency, so the corpus-bound
+/// pair can be measured there. The S06 route vocabulary
+/// (`SAME_N_REFERENCE_METRIC_ORDER`) stays frozen at its two rows; this order is
+/// the corpus envelope's own vocabulary.
+pub const CORPUS_RESOURCE_REFERENCE_METRIC_ORDER: [&str; 3] = [
+    "java_latency_ms",
+    "java_model_invocations",
+    "java_cpu_wall_clock_ns",
+];
+/// The closed pairing-population vocabulary: the corpus population a carrier's
+/// `covered_documents` count is measured against.
+pub const CORPUS_RESOURCE_PAIRING_POPULATION_VOCABULARY: [&str; 2] = ["assigned", "measurable"];
+/// Repository-relative carrier of the per-document Java reference provenance.
+pub const CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL: &str =
+    "crates/da-parse/tests/fixtures/holdout/provenance.yaml";
+/// The typed absence reason for a reference metric the same-n carrier set does
+/// not measure at all. Distinct from `reference_row_not_same_n`, which names a
+/// row that exists on a different document set.
+pub const CORPUS_RESOURCE_REFERENCE_ROW_ABSENT: &str = "reference_row_absent";
 /// The declared measurement scope of the native population.
 pub const CORPUS_RESOURCE_NATIVE_SCOPE: &str = "native_plane_extraction";
 /// The declared measurement scope of the reference population.
@@ -112,16 +137,21 @@ pub struct AssignedIdentity {
 }
 
 /// A pinned reference carrier examined for pairing, and whether it is same-n to
-/// the 610 assigned corpus.
+/// the population it names.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CorpusResourceReferenceCarrier {
     /// Binding to the examined carrier.
     pub carrier: CarrierBinding,
-    /// `true` only when the carrier covers exactly the 610 assigned set.
+    /// `true` only when the carrier covers the whole population it names.
     pub same_n: bool,
     /// The closed reason the carrier is not same-n; empty when `same_n`.
     pub reason: String,
+    /// `assigned` | `measurable`: the corpus population `covered_documents` is
+    /// measured against.
+    pub pairing_population: String,
+    /// Documents of `pairing_population` this carrier actually covers.
+    pub covered_documents: u64,
 }
 
 /// The emitted corpus-bound same-n resource receipt.
@@ -156,7 +186,8 @@ pub struct CorpusResourceSameNReceipt {
     pub native_metrics: Vec<AcceptanceMetricRow>,
     /// The reference carriers examined, each named as same-n or not.
     pub reference_carriers: Vec<CorpusResourceReferenceCarrier>,
-    /// The reference metric rows; absent here because no same-n source exists.
+    /// The reference metric rows; `observed` only where a pinned same-n source
+    /// covers the population it names, `not_observed` otherwise.
     pub reference_metrics: Vec<SameNMetricObservation>,
     /// One typed row per assigned document, in carrier order.
     pub documents: Vec<AcceptanceDocumentRow>,
@@ -294,8 +325,9 @@ pub fn build_corpus_resource_same_n_receipt(
         }
     }
 
-    // Every reference carrier must be pinned and typed same-n or not.
-    check_reference_carriers(&input.reference_carriers)?;
+    // Every reference carrier must be pinned and typed same-n or not, and its
+    // coverage must agree with the population it names.
+    check_reference_carriers(&input.reference_carriers, &input.native_receipt.populations)?;
     // Every reference row must be closed and, when observed, bound to a pinned
     // same-n carrier.
     check_reference_metrics(&input.reference_metrics, &input.reference_carriers)?;
@@ -416,7 +448,7 @@ pub fn validate_corpus_resource_same_n_receipt(
         }
     }
 
-    check_reference_carriers(&receipt.reference_carriers)?;
+    check_reference_carriers(&receipt.reference_carriers, &receipt.populations)?;
     check_reference_metrics(&receipt.reference_metrics, &receipt.reference_carriers)?;
 
     assert_redaction(&receipt.redaction)?;
@@ -627,10 +659,12 @@ fn check_document_set(
     Ok(())
 }
 
+/// A native metric is identified by `(metric_id, stratum)`: the same metric may
+/// be observed once per stratum, so only the exact pair must be unique.
 fn check_no_native_duplicates(rows: &[AcceptanceMetricRow]) -> Result<(), SameNReceiptError> {
     let mut seen = BTreeSet::new();
     for row in rows {
-        if !seen.insert(row.metric_id.as_str()) {
+        if !seen.insert((row.metric_id.as_str(), row.stratum.as_deref())) {
             return Err(SameNReceiptError::MetricDuplicate {
                 metric: row.metric_id.clone(),
             });
@@ -639,10 +673,12 @@ fn check_no_native_duplicates(rows: &[AcceptanceMetricRow]) -> Result<(), SameNR
     Ok(())
 }
 
-/// A reference carrier must be pinned and typed: a non-same-n carrier carries a
-/// closed reason, a same-n carrier carries none.
+/// A reference carrier must be pinned and typed: a same-n carrier covers the
+/// whole population it names and carries no reason; a not-same-n carrier covers
+/// strictly fewer documents and names a closed absence reason.
 fn check_reference_carriers(
     carriers: &[CorpusResourceReferenceCarrier],
+    populations: &AcceptancePopulations,
 ) -> Result<(), SameNReceiptError> {
     for entry in carriers {
         let binding = &entry.carrier;
@@ -664,6 +700,26 @@ fn check_reference_carriers(
                 detail: "carrier carries no pointer".to_owned(),
             });
         }
+        if !CORPUS_RESOURCE_PAIRING_POPULATION_VOCABULARY
+            .contains(&entry.pairing_population.as_str())
+        {
+            return Err(SameNReceiptError::PopulationUnknown {
+                population: entry.pairing_population.clone(),
+            });
+        }
+        let population = if entry.pairing_population == "assigned" {
+            populations.assigned
+        } else {
+            populations.measurable
+        };
+        if entry.covered_documents > population {
+            return Err(SameNReceiptError::Mismatch {
+                detail: format!(
+                    "carrier `{}` covers {} documents but the `{}` population holds {population}",
+                    binding.manifest, entry.covered_documents, entry.pairing_population
+                ),
+            });
+        }
         if entry.same_n {
             if !entry.reason.is_empty() {
                 return Err(SameNReceiptError::ReferenceSourceUnpinned {
@@ -671,11 +727,29 @@ fn check_reference_carriers(
                     detail: "a same-n carrier must not carry an absence reason".to_owned(),
                 });
             }
-        } else if !SAME_N_ABSENCE_REASON_VOCABULARY.contains(&entry.reason.as_str()) {
-            return Err(SameNReceiptError::AbsenceReasonUnknown {
-                metric: "<carrier>".to_owned(),
-                reason: entry.reason.clone(),
-            });
+            if entry.covered_documents != population {
+                return Err(SameNReceiptError::Mismatch {
+                    detail: format!(
+                        "a same-n carrier `{}` must cover the whole `{}` population ({} of {population})",
+                        binding.manifest, entry.pairing_population, entry.covered_documents
+                    ),
+                });
+            }
+        } else {
+            if !SAME_N_ABSENCE_REASON_VOCABULARY.contains(&entry.reason.as_str()) {
+                return Err(SameNReceiptError::AbsenceReasonUnknown {
+                    metric: "<carrier>".to_owned(),
+                    reason: entry.reason.clone(),
+                });
+            }
+            if entry.covered_documents >= population {
+                return Err(SameNReceiptError::Mismatch {
+                    detail: format!(
+                        "a not-same-n carrier `{}` must cover fewer than the whole `{}` population ({} of {population})",
+                        binding.manifest, entry.pairing_population, entry.covered_documents
+                    ),
+                });
+            }
         }
     }
     Ok(())
@@ -687,7 +761,7 @@ fn check_reference_metrics(
 ) -> Result<(), SameNReceiptError> {
     let mut seen = BTreeSet::new();
     for row in rows {
-        if !SAME_N_REFERENCE_METRIC_ORDER.contains(&row.id.as_str()) {
+        if !CORPUS_RESOURCE_REFERENCE_METRIC_ORDER.contains(&row.id.as_str()) {
             return Err(SameNReceiptError::MetricUnknown {
                 metric: row.id.clone(),
             });
@@ -758,8 +832,7 @@ fn check_observation_shape(row: &SameNMetricObservation) -> Result<(), SameNRece
 }
 
 /// An observed reference row must name a pinned measured carrier that the
-/// receipt declares same-n. No same-n carrier exists for the 610-corpus, so any
-/// observed row is refused here.
+/// receipt declares same-n to the population the row pairs over.
 fn check_reference_source(
     row: &SameNMetricObservation,
     carriers: &[CorpusResourceReferenceCarrier],

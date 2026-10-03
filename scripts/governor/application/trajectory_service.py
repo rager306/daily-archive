@@ -5930,7 +5930,10 @@ class TrajectoryService:
                 actions.append("Add 'Next gate' section to README.md.")
             if flag.flag == "resource_target_bloat":
                 actions.append(
-                    "target/ bloated: prune debug incremental/examples before workspace cargo."
+                    "target/ bloated: prune the derived kache build cache "
+                    "(`python3 -m governor hygiene --apply`) or `cargo clean` before "
+                    "a large build wave. Examples are hardlinked to deps/, so "
+                    "deleting them reclaims little."
                 )
             # Control-plane signals each name their own remedy, so the report is
             # actionable rather than merely descriptive.

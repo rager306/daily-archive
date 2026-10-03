@@ -20,6 +20,11 @@ DEFAULT_DAYS_EXEC = 30
 DEFAULT_DAYS_QUARANTINE = 30
 DEFAULT_DAYS_ACTIVITY = 14
 DEFAULT_MIN_AGE_HOURS = 24
+# Derived build caches (kache content-addressed store under target/) are not
+# evidence: they regenerate on the next build. They are still large, and cargo
+# keeps one copy per distinct feature-set fingerprint, so `target/` grows with
+# the number of feature combinations the verification stack must compile.
+DEFAULT_BUILD_CACHE_GB = 4
 
 
 @dataclass(frozen=True)
@@ -30,6 +35,7 @@ class RetentionPolicy:
     days_quarantine: int = DEFAULT_DAYS_QUARANTINE
     days_activity: int = DEFAULT_DAYS_ACTIVITY
     min_age_hours: int = DEFAULT_MIN_AGE_HOURS
+    build_cache_gb: int = DEFAULT_BUILD_CACHE_GB
 
     @classmethod
     def from_mapping(cls, mapping: Any) -> "RetentionPolicy":
@@ -53,6 +59,7 @@ class RetentionPolicy:
             days_quarantine=non_negative("days_quarantine", DEFAULT_DAYS_QUARANTINE),
             days_activity=non_negative("days_activity", DEFAULT_DAYS_ACTIVITY),
             min_age_hours=non_negative("min_age_hours", DEFAULT_MIN_AGE_HOURS),
+            build_cache_gb=non_negative("build_cache_gb", DEFAULT_BUILD_CACHE_GB),
         )
 
     def exec_cutoff_seconds(self, reference: float) -> float:

@@ -229,3 +229,46 @@ def test_policy_falls_back_to_defaults_when_contract_is_absent_or_junk(tmp_path:
         "retention:\n  days_exec: not-a-number\n", encoding="utf-8"
     )
     assert load_retention_policy(tmp_path).days_exec == 30
+
+
+def test_build_cache_is_planned_only_when_it_exceeds_the_policy_floor(
+    tmp_path: Path,
+) -> None:
+    """target/ grows one dependency-graph copy per feature-set fingerprint.
+
+    The kache store is derived, so pruning it costs rebuild time and never
+    evidence, but a target/ that is merely warm must not be proposed for churn.
+    """
+    kache = tmp_path / "target" / "debug" / "incremental.kache-auto"
+    kache.mkdir(parents=True)
+    (kache / "blob.bin").write_bytes(b"c" * (5 * 1024 * 1024))
+
+    below = build_plan(tmp_path, RetentionPolicy(build_cache_gb=50), tmp_dir=tmp_path / "tmp")
+    assert below.build_cache_dirs == []
+
+    # A 5 MB cache with a 1 GB floor stays untouched; a 0 GB floor means "any size".
+    floor_above = build_plan(
+        tmp_path, RetentionPolicy(build_cache_gb=1), tmp_dir=tmp_path / "tmp"
+    )
+    assert floor_above.build_cache_dirs == []
+
+    above = build_plan(tmp_path, RetentionPolicy(build_cache_gb=0), tmp_dir=tmp_path / "tmp")
+    assert above.build_cache_dirs == [kache]
+    assert above.counts()["build_caches"] == 1
+    assert above.total_bytes() > 0
+
+
+def test_build_cache_prune_is_recorded_in_the_manifest(tmp_path: Path) -> None:
+    """A prune that leaves no record cannot be audited; the cache is gone as named."""
+    kache = tmp_path / "target" / "debug" / "incremental.kache-auto"
+    kache.mkdir(parents=True)
+    (kache / "blob.bin").write_bytes(b"c" * (5 * 1024 * 1024))
+
+    plan = build_plan(tmp_path, RetentionPolicy(build_cache_gb=0), tmp_dir=tmp_path / "tmp")
+    manifest_path = apply_plan(plan, tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert not kache.exists()
+    assert manifest["counts"]["build_caches"] == 1
+    assert str(kache) in manifest["removed"]["build_cache_dirs"]
+    assert "regenerate" in manifest["note"]

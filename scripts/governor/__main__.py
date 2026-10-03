@@ -69,6 +69,11 @@ def main() -> int:
     hygiene.add_argument("--days-activity", type=int, default=None, help="retention for .gsd/activity")
     hygiene.add_argument("--min-age-hours", type=int, default=None, help="never touch anything newer than this")
     hygiene.add_argument("--no-scratch", action="store_true", help="keep /tmp scratch directories")
+    hygiene.add_argument(
+        "--no-build-cache",
+        action="store_true",
+        help="keep derived target/ build caches (kache) instead of proposing to prune them",
+    )
 
     # ── Subcommand: doctor-baseline (accepted engine-doctor divergence) ──
     baseline = sub.add_parser(
@@ -309,7 +314,8 @@ def _run_hygiene(args) -> int:
         print(f"  {name:12s} {int(data['files']):7d} files  {data['mb']:9.1f} MB")
     print(
         f"policy: exec {policy.days_exec}d, quarantine {policy.days_quarantine}d, "
-        f"activity {policy.days_activity}d, min age {policy.min_age_hours}h"
+        f"activity {policy.days_activity}d, min age {policy.min_age_hours}h, "
+        f"build cache >= {policy.build_cache_gb}GB"
     )
 
     plan = build_plan(
@@ -317,12 +323,14 @@ def _run_hygiene(args) -> int:
         policy,
         tmp_dir=tmp_dir,
         include_scratch=not getattr(args, "no_scratch", False),
+        include_build_cache=not getattr(args, "no_build_cache", False),
     )
     counts = plan.counts()
     print(
         "plan: "
         f"{counts['scratch_dirs']} scratch dirs, {counts['exec_captures']} exec captures, "
-        f"{counts['quarantine_runs']} quarantine runs, {counts['activity_files']} activity files "
+        f"{counts['quarantine_runs']} quarantine runs, {counts['activity_files']} activity files, "
+        f"{counts['build_caches']} build caches "
         f"({plan.total_bytes() / 1e6:.1f} MB)"
     )
     if not getattr(args, "apply", False):

@@ -858,6 +858,54 @@ def test_target_dir_reports_debug_incremental_separately(tmp_path: Path) -> None
     assert "debug/deps" in dirs
 
 
+def test_target_dir_counts_hardlinked_artifacts_once(tmp_path: Path) -> None:
+    """Cargo hardlinks artifacts into several directories; size each inode once.
+
+    Counting every path at full size reported target/ at 61.4 GiB against a real
+    48.5 GiB on 2026-10-03, and the inflated number drove the drift flag and its
+    recommendations. Deleting one link of a hardlinked pair also reclaims nothing,
+    so the duplicate bytes are reported separately rather than as a saving.
+    """
+    import os
+
+    from governor.checks.resource_safety import check_target_dir
+
+    deps = tmp_path / "target" / "debug" / "deps"
+    deps.mkdir(parents=True)
+    payload = deps / "libfoo-0123456789abcdef.rlib"
+    payload.write_bytes(b"z" * (60 * 1024 * 1024))
+    examples = tmp_path / "target" / "debug" / "examples"
+    examples.mkdir(parents=True)
+    link = examples / "foo"
+    os.link(payload, link)
+
+    result = check_target_dir(str(tmp_path), disk_free_gb=80)
+    # One 60 MB inode, visited twice: the size must not double.
+    expected_gb = 60 / 1024
+    assert abs(result["size_gb"] - expected_gb) < 0.2
+    assert abs(result["hardlinked_gb"] - expected_gb) < 0.2
+
+
+def test_target_dir_names_the_kache_cache_separately(tmp_path: Path) -> None:
+    """`incremental.kache-auto` is the live cache (D524) and must be nameable.
+
+    It used to fall into the generic `debug` bucket, so no recommendation ever
+    named it and the only build-cache advice pointed at `debug/incremental`, which
+    kache leaves empty because it strips `-C incremental`.
+    """
+    from governor.checks.resource_safety import check_target_dir
+
+    kache = tmp_path / "target" / "debug" / "incremental.kache-auto"
+    kache.mkdir(parents=True)
+    (kache / "blob.bin").write_bytes(b"k" * (130 * 1024 * 1024))
+
+    result = check_target_dir(str(tmp_path), disk_free_gb=80)
+    assert result["kache_cache_gb"] > 0
+    dirs = {row["dir"] for row in result["top_consumers"]}
+    assert "debug/incremental.kache-auto" in dirs
+    assert any("incremental.kache-auto" in rec for rec in result["recommendations"])
+
+
 def _write_logging_contract(root: Path) -> None:
     for crate in ["da-domain", "da-ports", "kg-ontology", "kg-pipeline"]:
         _write(root / f"crates/{crate}/Cargo.toml", "[dependencies]\nserde = '1'\n")

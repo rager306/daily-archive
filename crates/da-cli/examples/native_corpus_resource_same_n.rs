@@ -12,21 +12,26 @@
 //! * the committed route receipt (`artifacts/parse_compat/native_route_e2e.json`)
 //!   for the prospective limit freeze, whose revision is recomputed from the
 //!   governor freeze carriers;
-//! * the two pinned reference carriers (`native_java_work.json` and
-//!   `parse_batch_budget_live.json`), neither of which is same-n to the 610
-//!   assigned documents.
+//! * the three pinned reference carriers: the per-document Java provenance
+//!   (`crates/da-parse/tests/fixtures/holdout/provenance.yaml`), which covers
+//!   exactly the 531 measurable documents, and `native_java_work.json` /
+//!   `parse_batch_budget_live.json`, neither of which is same-n to a corpus
+//!   population.
 //!
-//! Because no same-n reference exists for the 610-corpus, every reference metric
-//! is emitted `not_observed` with a closed reason (D510) — never a restated Java
-//! number, never a pooled value, never a saving claim. The native resources T01
-//! actually measured are bound with their non-empty denominators.
+//! The provenance carrier is same-n to the 531 measurable documents, so its
+//! `java_latency_ms` row is emitted `observed` with a pinned source; the two
+//! metrics it does not measure stay `not_observed` with a closed reason (D510) —
+//! never a restated Java number, never a pooled value, never a saving claim. The
+//! native resources T01 actually measured are bound with their non-empty
+//! denominators.
 //!
 //! ## Modes
 //!
 //! * `--self-check` — hermetic. No carrier is read and nothing is written.
 //!   Rejects each named mutation (mismatched document set, reference row without
-//!   a pinned same-n source, pooled claim, saving claim, untyped reason, empty
-//!   denominator, opened lock, freeze-revision drift).
+//!   a pinned same-n source, an observed row with no source, a same-n carrier
+//!   with a reason or a partial coverage, pooled claim, saving claim, untyped
+//!   reason, empty denominator, opened lock, freeze-revision drift).
 //! * default — canonical run over the committed carriers, written atomically
 //!   (tmp + rename).
 //!
@@ -38,25 +43,25 @@ use da_cli::native_acceptance::{
     AcceptanceCarrierBinding, AcceptanceDocumentExpectation, AcceptanceDocumentRow,
     AcceptanceExpectation, AcceptanceFamilyExpectation, AcceptanceGapCell, AcceptanceGuard,
     AcceptanceMetricRow, AcceptancePopulations, AcceptanceThresholdExpectation,
-    NativeAcceptanceReceipt, build_native_acceptance, load_holdout_documents,
+    NativeAcceptanceReceipt, REFERENCE_PROBE_REL, build_native_acceptance, load_holdout_documents,
 };
 use da_cli::native_corpus_resource_same_n::{
     AssignedIdentity, CORPUS_RESOURCE_GOVERNOR_POINTER, CORPUS_RESOURCE_GOVERNOR_REL,
     CORPUS_RESOURCE_HOLDOUT_MANIFEST_REL, CORPUS_RESOURCE_HOLDOUT_POINTER,
     CORPUS_RESOURCE_NATIVE_MEASUREMENT_REL, CORPUS_RESOURCE_REFERENCE_BUDGET_REL,
-    CORPUS_RESOURCE_REFERENCE_NOT_SAME_N, CORPUS_RESOURCE_REFERENCE_WORK_REL,
+    CORPUS_RESOURCE_REFERENCE_NOT_SAME_N, CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL,
+    CORPUS_RESOURCE_REFERENCE_ROW_ABSENT, CORPUS_RESOURCE_REFERENCE_WORK_REL,
     CORPUS_RESOURCE_ROUTE_RECEIPT_REL, CorpusResourceReferenceCarrier,
     CorpusResourceSameNExpectation, CorpusResourceSameNInput,
     DEFAULT_CORPUS_RESOURCE_SAME_N_ARTIFACT_REL, build_corpus_resource_same_n_receipt,
     carrier_bare_digest, freeze_revision, validate_corpus_resource_same_n_receipt,
 };
 use da_cli::native_family_receipt::{CarrierBinding, sha256_hex, sha256_prefixed};
-use da_cli::native_resource_same_n::{
-    SAME_N_REFERENCE_METRIC_ORDER, SameNMetricObservation, SameNSource,
-};
+use da_cli::native_resource_same_n::{SameNMetricObservation, SameNSource};
 use da_cli::native_route_receipt::{
     RouteFreezeDeclaration, RouteLimitsBinding, RouteMetricDeclaration,
 };
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -151,18 +156,118 @@ fn recompute_freeze(
     Ok((revision, carriers))
 }
 
-fn reference_metrics() -> Vec<SameNMetricObservation> {
-    SAME_N_REFERENCE_METRIC_ORDER
-        .iter()
-        .map(|id| SameNMetricObservation {
-            id: (*id).to_owned(),
+/// A typed absence row: a closed reason, no value and no source.
+fn typed_absence(id: &str) -> SameNMetricObservation {
+    SameNMetricObservation {
+        id: id.to_owned(),
+        direction: None,
+        state: "not_observed".to_owned(),
+        value: None,
+        reason: Some(CORPUS_RESOURCE_REFERENCE_ROW_ABSENT.to_owned()),
+        source: None,
+    }
+}
+
+/// Build the measured reference pair: `java_latency_ms` observed with the
+/// provenance source, the two unmeasured metrics typed absences. `manifest` and
+/// `manifest_sha256` must name the declared same-n carrier.
+fn measured_reference_metrics(
+    manifest: &str,
+    manifest_sha256: &str,
+    max_latency_ms: u64,
+) -> Vec<SameNMetricObservation> {
+    vec![
+        SameNMetricObservation {
+            id: "java_latency_ms".to_owned(),
             direction: None,
-            state: "not_observed".to_owned(),
-            value: None,
-            reason: Some(CORPUS_RESOURCE_REFERENCE_NOT_SAME_N.to_owned()),
-            source: None,
-        })
-        .collect()
+            state: "observed".to_owned(),
+            value: Some(max_latency_ms),
+            reason: None,
+            source: Some(SameNSource {
+                kind: "measured_reference".to_owned(),
+                manifest: Some(manifest.to_owned()),
+                pointer: Some("documents[].latency_ms".to_owned()),
+                sha256: Some(manifest_sha256.to_owned()),
+                measurement_state: Some("measured".to_owned()),
+                metric_id: Some("latency_ms".to_owned()),
+            }),
+        },
+        typed_absence("java_model_invocations"),
+        typed_absence("java_cpu_wall_clock_ns"),
+    ]
+}
+
+/// Read the pinned provenance carrier, filter its rows to the measurable corpus
+/// ids, refuse any `source_pdf_sha256` drift, and return the maximum latency.
+fn provenance_max_latency(
+    provenance_bytes: &[u8],
+    native_receipt: &NativeAcceptanceReceipt,
+) -> Result<u64, Box<dyn Error>> {
+    let value: serde_yaml::Value = serde_yaml::from_slice(provenance_bytes)?;
+    let rows = value
+        .get("documents")
+        .and_then(serde_yaml::Value::as_sequence)
+        .ok_or("the provenance carrier declares no documents")?;
+    let mut by_id: BTreeMap<&str, &serde_yaml::Value> = BTreeMap::new();
+    for row in rows {
+        if let Some(id) = row.get("article_id").and_then(serde_yaml::Value::as_str) {
+            by_id.insert(id, row);
+        }
+    }
+    if by_id.len() != rows.len() {
+        return Err("the provenance carrier declares a duplicate or unnamed article id".into());
+    }
+    let measurable: Vec<&AcceptanceDocumentRow> = native_receipt
+        .documents
+        .iter()
+        .filter(|document| document.state == "measurable")
+        .collect();
+    if measurable.len() as u64 != native_receipt.populations.measurable {
+        return Err(format!(
+            "{} measurable rows but populations.measurable = {}",
+            measurable.len(),
+            native_receipt.populations.measurable
+        )
+        .into());
+    }
+    let mut max_latency_ms = 0u64;
+    for document in &measurable {
+        let row = by_id.get(document.id.as_str()).ok_or_else(|| {
+            format!(
+                "measurable document `{}` has no provenance row",
+                document.id
+            )
+        })?;
+        let source_sha = row
+            .get("source_pdf_sha256")
+            .and_then(serde_yaml::Value::as_str)
+            .ok_or_else(|| format!("provenance row `{}` has no source_pdf_sha256", document.id))?;
+        if source_sha != document.sha256 {
+            return Err(format!(
+                "provenance row `{}` pins {} but the corpus document pins {}",
+                document.id, source_sha, document.sha256
+            )
+            .into());
+        }
+        let latency = row
+            .get("latency_ms")
+            .and_then(serde_yaml::Value::as_u64)
+            .ok_or_else(|| format!("provenance row `{}` has no latency_ms", document.id))?;
+        max_latency_ms = max_latency_ms.max(latency);
+    }
+    Ok(max_latency_ms)
+}
+
+/// The pinned probe's `latency_accounting.max_latency_ms`, the independent
+/// recompute the provenance maximum must equal.
+fn probe_max_latency(root: &Path) -> Result<u64, Box<dyn Error>> {
+    let (bytes, _) = read_carrier(root, REFERENCE_PROBE_REL)?;
+    let value: serde_json::Value = serde_json::from_slice(&bytes)?;
+    value
+        .get("latency_accounting")
+        .and_then(|node| node.get("max_latency_ms"))
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(|| "the release probe declares no latency_accounting.max_latency_ms".into())
 }
 
 fn assigned_from_manifest(text: &str) -> Result<Vec<AssignedIdentity>, Box<dyn Error>> {
@@ -209,12 +314,52 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
 
     let (work_bytes, work_sha) =
         read_carrier(args.root.as_path(), CORPUS_RESOURCE_REFERENCE_WORK_REL)?;
-    let _ = work_bytes;
+    let work_value: serde_yaml::Value = serde_yaml::from_slice(&work_bytes)?;
+    let work_documents = work_value
+        .get("documents")
+        .and_then(serde_yaml::Value::as_sequence)
+        .map(|rows| rows.len() as u64)
+        .ok_or("the java work carrier declares no documents")?;
+
     let (budget_bytes, budget_sha) =
         read_carrier(args.root.as_path(), CORPUS_RESOURCE_REFERENCE_BUDGET_REL)?;
-    let _ = budget_bytes;
+    let budget_value: serde_json::Value = serde_json::from_slice(&budget_bytes)?;
+    let budget_documents = budget_value
+        .get("executed_population")
+        .and_then(|node| node.get("documents"))
+        .and_then(serde_json::Value::as_u64)
+        .ok_or("the budget carrier declares no executed_population.documents")?;
+
+    // The per-document Java provenance is same-n to the 531 measurable corpus
+    // documents. Its maximum latency is independently recomputed against the
+    // pinned release probe before the observed row is built.
+    let (provenance_bytes, _) = read_carrier(
+        args.root.as_path(),
+        CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL,
+    )?;
+    let provenance_sha256 = sha256_prefixed(&provenance_bytes);
+    let provenance_bare_sha256 = sha256_hex(&provenance_bytes);
+    let max_latency_ms = provenance_max_latency(&provenance_bytes, &native_receipt)?;
+    let probe_latency_ms = probe_max_latency(args.root.as_path())?;
+    if max_latency_ms != probe_latency_ms {
+        return Err(format!(
+            "recomputed provenance max latency {max_latency_ms} != release probe {probe_latency_ms}"
+        )
+        .into());
+    }
 
     let reference_carriers = vec![
+        CorpusResourceReferenceCarrier {
+            carrier: CarrierBinding {
+                manifest: CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL.to_owned(),
+                pointer: "documents".to_owned(),
+                revision_sha256: provenance_sha256,
+            },
+            same_n: true,
+            reason: String::new(),
+            pairing_population: "measurable".to_owned(),
+            covered_documents: native_receipt.populations.measurable,
+        },
         CorpusResourceReferenceCarrier {
             carrier: CarrierBinding {
                 manifest: CORPUS_RESOURCE_REFERENCE_WORK_REL.to_owned(),
@@ -223,6 +368,8 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             },
             same_n: false,
             reason: CORPUS_RESOURCE_REFERENCE_NOT_SAME_N.to_owned(),
+            pairing_population: "assigned".to_owned(),
+            covered_documents: work_documents,
         },
         CorpusResourceReferenceCarrier {
             carrier: CarrierBinding {
@@ -232,12 +379,19 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             },
             same_n: false,
             reason: CORPUS_RESOURCE_REFERENCE_NOT_SAME_N.to_owned(),
+            pairing_population: "assigned".to_owned(),
+            covered_documents: budget_documents,
         },
     ];
+    let reference_metrics = measured_reference_metrics(
+        CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL,
+        &provenance_bare_sha256,
+        max_latency_ms,
+    );
+    let _ = carriers;
 
     let governance_pointer =
         format!("{CORPUS_RESOURCE_GOVERNOR_POINTER}.limit_policy.freeze_revision.carriers");
-    let _ = carriers;
 
     let input = CorpusResourceSameNInput {
         assigned_source: CarrierBinding {
@@ -264,7 +418,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         },
         limits,
         reference_carriers,
-        reference_metrics: reference_metrics(),
+        reference_metrics,
         claim_scope: "diagnostic_only".to_owned(),
         product_coverage_effect: "none".to_owned(),
         thresholds: "not_accepted".to_owned(),
@@ -286,10 +440,15 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         .iter()
         .filter(|row| row.is_observed())
         .count();
+    let same_n_carriers = receipt
+        .reference_carriers
+        .iter()
+        .filter(|carrier| carrier.same_n)
+        .count();
     Ok(format!(
         "corpus resource same-n `{}`: {} assigned documents ({} measurable, {} excluded), \
          {} native metrics measured, {} reference metrics ({} observed, {} typed not_observed), \
-         {} reference carriers all declared not same-n, {} documents rows; freeze {}; \
+         {} reference carriers ({} same-n), {} documents rows; freeze {}; \
          pairing {} pooled={} saving_claim={}; canonical run",
         receipt.schema_version,
         receipt.populations.assigned,
@@ -300,6 +459,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         observed_reference,
         receipt.reference_metrics.len() - observed_reference,
         receipt.reference_carriers.len(),
+        same_n_carriers,
         receipt.documents.len(),
         receipt.limits.freeze_revision,
         receipt.pairing.rule,
@@ -374,7 +534,7 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
 
     // (5) an absence reason outside the closed vocabulary.
     let mut m = base.clone();
-    m.reference_metrics[0].reason = Some("mystery".to_owned());
+    m.reference_metrics[1].reason = Some("mystery".to_owned());
     expect_refusal(
         "untyped_absence_reason",
         &m,
@@ -397,13 +557,46 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
     checked += 1;
 
     // (8) a drifted freeze revision.
-    let mut expectation = expectation.clone();
-    expectation.freeze_revision = sha256_prefixed(b"drifted");
+    let mut drifted = expectation.clone();
+    drifted.freeze_revision = sha256_prefixed(b"drifted");
     expect_refusal(
         "freeze_revision_drift",
         &base,
-        &expectation,
+        &drifted,
         "StaleFreezeRevision",
+    )?;
+    checked += 1;
+
+    // (9) a same-n carrier carrying an absence reason.
+    let mut m = base.clone();
+    m.reference_carriers[0].reason = "mystery".to_owned();
+    expect_refusal(
+        "same_n_carrier_with_reason",
+        &m,
+        &expectation,
+        "ReferenceSourceUnpinned",
+    )?;
+    checked += 1;
+
+    // (10) a same-n carrier whose covered_documents is not the whole population.
+    let mut m = base.clone();
+    m.reference_carriers[0].covered_documents = 0;
+    expect_refusal(
+        "same_n_carrier_partial_coverage",
+        &m,
+        &expectation,
+        "Mismatch",
+    )?;
+    checked += 1;
+
+    // (11) an observed reference row with no source.
+    let mut m = base.clone();
+    m.reference_metrics[0].source = None;
+    expect_refusal(
+        "observed_row_without_source",
+        &m,
+        &expectation,
+        "ZeroMasquerade",
     )?;
     checked += 1;
 
@@ -477,16 +670,35 @@ fn synthetic_fixtures() -> (CorpusResourceSameNInput, CorpusResourceSameNExpecta
             direction_vocabulary: limits.direction_vocabulary.clone(),
         },
         limits,
-        reference_carriers: vec![CorpusResourceReferenceCarrier {
-            carrier: CarrierBinding {
-                manifest: "reference/work.json".to_owned(),
-                pointer: "documents".to_owned(),
-                revision_sha256: sha256_prefixed(b"work"),
+        reference_carriers: vec![
+            CorpusResourceReferenceCarrier {
+                carrier: CarrierBinding {
+                    manifest: "reference/provenance.yaml".to_owned(),
+                    pointer: "documents".to_owned(),
+                    revision_sha256: sha256_prefixed(b"provenance"),
+                },
+                same_n: true,
+                reason: String::new(),
+                pairing_population: "measurable".to_owned(),
+                covered_documents: 1,
             },
-            same_n: false,
-            reason: CORPUS_RESOURCE_REFERENCE_NOT_SAME_N.to_owned(),
-        }],
-        reference_metrics: reference_metrics(),
+            CorpusResourceReferenceCarrier {
+                carrier: CarrierBinding {
+                    manifest: "reference/work.json".to_owned(),
+                    pointer: "documents".to_owned(),
+                    revision_sha256: sha256_prefixed(b"work"),
+                },
+                same_n: false,
+                reason: CORPUS_RESOURCE_REFERENCE_NOT_SAME_N.to_owned(),
+                pairing_population: "measurable".to_owned(),
+                covered_documents: 0,
+            },
+        ],
+        reference_metrics: measured_reference_metrics(
+            "reference/provenance.yaml",
+            &sha256_hex(b"provenance"),
+            64611,
+        ),
         claim_scope: "diagnostic_only".to_owned(),
         product_coverage_effect: "none".to_owned(),
         thresholds: "not_accepted".to_owned(),

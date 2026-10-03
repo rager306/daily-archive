@@ -70,6 +70,7 @@ class RetentionPlan:
     exec_groups: list[list[Path]] = field(default_factory=list)
     quarantine_dirs: list[Path] = field(default_factory=list)
     activity_files: list[Path] = field(default_factory=list)
+    build_cache_dirs: list[Path] = field(default_factory=list)
 
     def counts(self) -> dict[str, int]:
         return {
@@ -77,17 +78,23 @@ class RetentionPlan:
             "exec_captures": len(self.exec_groups),
             "quarantine_runs": len(self.quarantine_dirs),
             "activity_files": len(self.activity_files),
+            "build_caches": len(self.build_cache_dirs),
         }
 
     def total_bytes(self) -> int:
         total = sum(tree_bytes(path) for path in self.scratch_dirs + self.quarantine_dirs)
         total += sum(file_bytes(item) for group in self.exec_groups for item in group)
         total += sum(file_bytes(item) for item in self.activity_files)
+        total += sum(tree_bytes(path) for path in self.build_cache_dirs)
         return total
 
     def is_empty(self) -> bool:
         return not (
-            self.scratch_dirs or self.exec_groups or self.quarantine_dirs or self.activity_files
+            self.scratch_dirs
+            or self.exec_groups
+            or self.quarantine_dirs
+            or self.activity_files
+            or self.build_cache_dirs
         )
 
 
@@ -97,6 +104,7 @@ def build_plan(
     *,
     tmp_dir: Path = Path("/tmp"),
     include_scratch: bool = True,
+    include_build_cache: bool = True,
 ) -> RetentionPlan:
     """Compute what is old enough to remove. Performs no deletion."""
     policy = policy or RetentionPolicy()
@@ -123,6 +131,8 @@ def build_plan(
     plan.activity_files = _stale_entries(
         gsd / "activity", policy.activity_cutoff_seconds(now), want_dir=False
     )
+    if include_build_cache:
+        plan.build_cache_dirs = _build_cache_dirs(project_root, policy.build_cache_gb)
     return plan
 
 
@@ -137,10 +147,13 @@ def apply_plan(plan: RetentionPlan, project_root: Path) -> Path:
             "exec_captures": [[str(item) for item in group] for group in plan.exec_groups[:500]],
             "quarantine_dirs": [str(path) for path in plan.quarantine_dirs[:500]],
             "activity_files": [str(path) for path in plan.activity_files[:500]],
+            "build_cache_dirs": [str(path) for path in plan.build_cache_dirs[:500]],
         },
         "note": (
             "GSD runtime retention. Exec captures are evidence and may be cited by "
-            "SUMMARY artifacts; this manifest is the record of what left."
+            "SUMMARY artifacts; this manifest is the record of what left. Build "
+            "caches under target/ are derived and regenerate on the next build, so "
+            "removing them costs rebuild time, never evidence."
         ),
     }
     for path in plan.scratch_dirs + plan.quarantine_dirs:
@@ -150,6 +163,8 @@ def apply_plan(plan: RetentionPlan, project_root: Path) -> Path:
             _unlink(item)
     for item in plan.activity_files:
         _unlink(item)
+    for path in plan.build_cache_dirs:
+        shutil.rmtree(path, ignore_errors=True)
 
     manifests = project_root / ".gsd" / "retention"
     manifests.mkdir(parents=True, exist_ok=True)
@@ -174,6 +189,31 @@ def store_report(project_root: Path, tmp_dir: Path = Path("/tmp")) -> dict[str, 
 
 
 # ── helpers ────────────────────────────────────────────────────────────────
+
+
+def _build_cache_dirs(project_root: Path, min_gb: int) -> list[Path]:
+    """Derived build caches under `target/` that are large enough to be worth pruning.
+
+    Cargo keeps one artifact set per distinct feature-set fingerprint, so target/
+    accumulates a copy of the dependency graph for every combination the
+    verification stack compiles (default, pdf-layout, pdf-classifier, both). None
+    of that is evidence: the kache content-addressed store is a compile cache and
+    regenerates on the next build. Pruning it costs rebuild time and nothing else.
+
+    `min_gb` is the size below which a cache is left alone, so this never proposes
+    churn on a target/ that is merely warm.
+    """
+    target_debug = project_root / "target" / "debug"
+    if not target_debug.is_dir():
+        return []
+    floor = max(0, min_gb) * 1024**3
+    candidates = []
+    for entry in sorted(target_debug.glob("incremental.*")):
+        if not entry.is_dir():
+            continue
+        if tree_bytes(entry) >= floor:
+            candidates.append(entry)
+    return candidates
 
 
 def _stale_exec_groups(exec_dir: Path, cutoff: float) -> list[list[Path]]:

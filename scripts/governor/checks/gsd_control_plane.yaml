@@ -54,6 +54,11 @@ retention:
   days_quarantine: 30
   days_activity: 14
   min_age_hours: 24
+  # Derived build caches under target/ (kache content-addressed store). Cargo keeps
+  # one dependency-graph copy per feature-set fingerprint, so target/ grows with the
+  # combinations the verification stack must compile. Below this size the cache is
+  # left alone; above it `governor hygiene` proposes pruning it. Never evidence.
+  build_cache_gb: 4
 
 signals:
   - contract_invalid

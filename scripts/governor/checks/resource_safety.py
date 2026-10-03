@@ -110,40 +110,68 @@ def check_target_dir(workspace: str = ".", disk_free_gb: float | None = None) ->
     - If disk has <20GB free: warn >5GB, critical >15GB
 
     Recommendations adapt: "plenty of space" vs "disk pressure — clean now".
+
+    Sizes count each inode once, so the total matches `du` even though cargo
+    hardlinks dependency artifacts into both `deps/` and `examples/`.
     """
+    # Smallest bucket that is still named in `top_consumers` and in recommendations.
+    _NAMED_CONSUMER_GB = 0.1
     target = Path(workspace) / "target"
     if not target.exists():
         return {"exists": False, "size_gb": 0, "status": "healthy", "message": "target/ not found"}
 
+    # Cargo hardlinks dependency artifacts into more than one directory
+    # (`deps/<name>-<hash>` and `examples/<name>` share one inode). Counting every
+    # path at full size overstated target/ by ~13 GiB against `du` on 2026-10-03 and
+    # fed that inflated number to the drift flag and its recommendations. Size each
+    # inode once; keep the duplicate-link bytes separate, because deleting one link
+    # of a hardlinked pair reclaims nothing.
     total = 0
+    hardlinked = 0
+    seen_inodes: set[tuple[int, int]] = set()
     subdir_sizes = {}
     for dirpath, _dirnames, filenames in os.walk(target):
         dir_total = 0
+        duplicate_total = 0
         for f in filenames:
             fp = os.path.join(dirpath, f)
             try:
-                dir_total += os.path.getsize(fp)
+                st = os.stat(fp)
             except OSError:
-                pass
+                continue
+            key = (st.st_dev, st.st_ino)
+            if key in seen_inodes:
+                duplicate_total += st.st_size
+                continue
+            seen_inodes.add(key)
+            dir_total += st.st_size
         total += dir_total
+        hardlinked += duplicate_total
 
         # Categorize debug/release hot spots, not only the top-level profile dir.
         rel = os.path.relpath(dirpath, target)
         parts = [] if rel == "." else rel.split(os.sep)
         if not parts:
             bucket = "(root)"
-        elif len(parts) >= 2 and parts[0] in {"debug", "release"} and parts[1] in {
-            "incremental",
-            "deps",
-            "examples",
-            "build",
-        }:
+        elif (
+            len(parts) >= 2
+            and parts[0] in {"debug", "release"}
+            and (
+                parts[1] in {"deps", "examples", "build"}
+                # `incremental` plus its variants — `incremental.kache-auto` is the
+                # live kache cache under D524 and was previously buried in the
+                # generic `debug` bucket, so no recommendation ever named it.
+                or parts[1] == "incremental"
+                or parts[1].startswith("incremental.")
+            )
+        ):
             bucket = f"{parts[0]}/{parts[1]}"
         else:
             bucket = parts[0]
         subdir_sizes[bucket] = subdir_sizes.get(bucket, 0) + dir_total
 
     size_gb = total / (1024**3)
+    hardlinked_gb = hardlinked / (1024**3)
 
     # Sort subdirs by size descending
     sorted_subdirs = sorted(subdir_sizes.items(), key=lambda x: -x[1])
@@ -156,6 +184,9 @@ def check_target_dir(workspace: str = ".", disk_free_gb: float | None = None) ->
     # Specific recommendations based on breakdown
     recommendations = []
     incremental_gb = subdir_sizes.get("debug/incremental", 0) / (1024**3)
+    kache_gb = sum(
+        s for k, s in subdir_sizes.items() if k.startswith("debug/incremental.")
+    ) / (1024**3)
     deps_gb = subdir_sizes.get("debug/deps", 0) / (1024**3)
     examples_gb = subdir_sizes.get("debug/examples", 0) / (1024**3)
     release_exists = any(k == "release" or k.startswith("release/") for k in subdir_sizes)
@@ -166,9 +197,17 @@ def check_target_dir(workspace: str = ".", disk_free_gb: float | None = None) ->
         recommendations.append(
             f"Remove incremental cache: rm -rf target/debug/incremental ({incremental_gb:.1f}GB)"
         )
-    if examples_gb > 2:
+    if kache_gb >= _NAMED_CONSUMER_GB:
         recommendations.append(
-            f"Remove example artifacts: rm -rf target/debug/examples ({examples_gb:.1f}GB)"
+            f"Remove kache compile cache: rm -rf target/debug/incremental.kache-auto ({kache_gb:.1f}GB, regenerates on next build)"
+        )
+    # Same bar as `top_consumers`: a bucket worth listing is worth naming a remedy for.
+    if examples_gb > 2:
+        # Examples are hardlinked to their deps/ twin, so removing them reclaims far
+        # less than their apparent size; say so instead of implying the full win.
+        recommendations.append(
+            f"Examples hold {examples_gb:.1f}GB but are hardlinked to deps/ — deleting them reclaims little; "
+            "prefer 'cargo clean' for a real win"
         )
     if release_exists and release_gb > 5:
         recommendations.append(
@@ -226,6 +265,8 @@ def check_target_dir(workspace: str = ".", disk_free_gb: float | None = None) ->
         "message": message,
         "top_consumers": top_consumers,
         "incremental_cache_gb": round(incremental_gb, 1),
+        "kache_cache_gb": round(kache_gb, 1),
+        "hardlinked_gb": round(hardlinked_gb, 1),
         "deps_cache_gb": round(deps_gb, 1),
         "debug_profile_gb": round(debug_gb, 1),
         "release_profile_gb": round(release_gb, 1),
