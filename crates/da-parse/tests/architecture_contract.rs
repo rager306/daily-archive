@@ -2971,25 +2971,35 @@ fn native_fulltext_composition_is_pure_and_stays_outside_every_runtime_route() {
     assert_eq!(registry["auto_promote"].as_str(), Some("forbidden"));
 }
 
-/// Composer markers that may not appear in any runtime seam, with the
-/// sanctioned DATA-table path scrubbed before matching.
+/// Composer markers that may not appear in any runtime seam, with the two
+/// sanctioned read-only DATA identities scrubbed before matching.
 ///
-/// The scanner's subject is the composer, not its configuration file. The
-/// schema-validated table `data/parse/native_fulltext_composition.yaml` is a
-/// DATA artifact whose *file name* embeds the composer's name: a read-only
-/// reference to that path (a qualification ledger's sha256 binding, a fixture
-/// `include_str!`) is a configuration dependency, not composer wiring. Strip
-/// that exact path literal first, and keep failing on every composer
-/// identifier or API name, including a line that carries both the path and an
-/// identifier.
+/// The scanner's subject is the composer, not the DATA that names it. Two
+/// committed artifacts embed the composer's name as a read-only identity:
+///
+/// * the schema-validated table `data/parse/native_fulltext_composition.yaml`
+///   (a qualification ledger's sha256 binding, a fixture `include_str!`) is a
+///   configuration dependency, not composer wiring; and
+/// * the capability id `parse.component.native_fulltext_composition_shadow`
+///   in the compatibility registry, the reference pins and the acceptance
+///   package is an ontology identity read as DATA, never a call site.
+///
+/// Strip those exact literal tokens first, and keep failing on every composer
+/// identifier or API name, including a line that carries a DATA token and an
+/// identifier together. D381 records the rule: refining the proxy's precision
+/// with positive and negative controls preserves the guard's teeth, while a
+/// runtime seam that *names* composer identifiers must never be exempted.
 fn fulltext_composition_leak_markers(line: &str) -> Vec<&'static str> {
     const COMPOSITION_DATA_PATH: &str = "data/parse/native_fulltext_composition.yaml";
+    const COMPOSITION_CAPABILITY_ID: &str = "parse.component.native_fulltext_composition_shadow";
     const MARKERS: [&str; 3] = [
         "native_fulltext_composition",
         "NativeFulltextComposition",
         "compose_native_fulltext",
     ];
-    let scrubbed = line.replace(COMPOSITION_DATA_PATH, "");
+    let scrubbed = line
+        .replace(COMPOSITION_DATA_PATH, "")
+        .replace(COMPOSITION_CAPABILITY_ID, "");
     let mut hits = Vec::new();
     for marker in MARKERS {
         if scrubbed.contains(marker) {
@@ -3016,13 +3026,28 @@ fn fulltext_composition_scanner_ignores_the_data_path_but_never_the_identifiers(
         )
         .is_empty()
     );
+    // Positive control: the sanctioned capability id is an ontology identity
+    // read as DATA, not a composer call site.
+    assert!(
+        fulltext_composition_leak_markers(
+            "        \"family_id\": \"parse.component.native_fulltext_composition_shadow\","
+        )
+        .is_empty()
+    );
+    assert!(
+        fulltext_composition_leak_markers(
+            "== Some(\"parse.component.native_fulltext_composition_shadow\")"
+        )
+        .is_empty()
+    );
     // Negative control: every composer identifier still trips, including a
-    // line that quotes the DATA path and the identifier together.
+    // line that quotes a DATA token and the identifier together.
     for line in [
         "use da_parse::NativeFulltextComposition;",
         "mod native_fulltext_composition;",
         "fn run() { compose_native_fulltext(&input) }",
         "let cfg = load(\"data/parse/native_fulltext_composition.yaml\"); NativeFulltextComposition::new(cfg);",
+        "let id = \"parse.component.native_fulltext_composition_shadow\"; compose_native_fulltext(&input);",
     ] {
         assert_eq!(
             fulltext_composition_leak_markers(line).len(),

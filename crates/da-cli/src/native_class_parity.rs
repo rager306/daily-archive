@@ -355,53 +355,7 @@ pub fn measure_document_class_profiles(
     Ok(profiles)
 }
 
-// ─────────────────────────── composition harness ───────────────────────────
-
-/// Compose one document's admitted band with the single SUT this module reaches,
-/// returning the emission XML.
-///
-/// A typed composition refusal becomes a named [`MeasurementError`]
-/// ([`NATIVE_COMPOSITION_REFUSED`]), never a panic: a document the composer
-/// refuses is not measured, and its refusal is carried, not swallowed.
-pub fn compose_native_document(
-    profile_fingerprint: &str,
-    config_fingerprint: &str,
-    source: &ProbeSource,
-    admitted: &AdmittedBand,
-    source_tei_xml: &str,
-) -> Result<String, MeasurementError> {
-    let input = NativeFulltextCompositionInput {
-        java_fulltext: TeiEnvelope::new(
-            source_tei_xml.as_bytes(),
-            TeiIdentity::new(GROBID_HTTP_BACKEND_ID, profile_fingerprint.to_string()),
-        ),
-        identity: FulltextCompositionIdentity {
-            source_sha256: source.sha256.clone(),
-            profile_fingerprint: profile_fingerprint.to_string(),
-            config_fingerprint: config_fingerprint.to_string(),
-        },
-        header: admitted.header.clone(),
-        references: admitted.references.clone(),
-        segmentation: None,
-        figure: None,
-        table: None,
-        formula: None,
-        admissions: probe_admissions(&source.sha256),
-        s17_lineage: None,
-    };
-    match compose_native_fulltext(input) {
-        NativeFulltextCompositionOutcome::Accepted(candidate) => {
-            String::from_utf8(candidate.envelope.raw_tei().to_vec()).map_err(|error| {
-                MeasurementError::new(format!(
-                    "{NATIVE_COMPOSITION_REFUSED}: emitted document is not UTF-8 ({error})"
-                ))
-            })
-        }
-        NativeFulltextCompositionOutcome::Rejected { error, .. } => Err(MeasurementError::new(
-            format!("{NATIVE_COMPOSITION_REFUSED}: {error:?}"),
-        )),
-    }
-}
+// ─────────────────────────── admission harness ───────────────────────────
 
 /// Header and references admitted, every other component typed unsupported or
 /// not observed.

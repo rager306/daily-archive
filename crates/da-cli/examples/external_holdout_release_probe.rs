@@ -68,9 +68,13 @@
 //! promotion, no external byte: `import_eligible=false`, D127 stays closed.
 #![cfg(feature = "pdf-layout")]
 
+#[path = "support/native_compose.rs"]
+mod native_compose;
+
+use crate::native_compose::compose_native_document;
 use clap::Parser;
 use da_cli::native_class_parity::{
-    ClassProfile, compose_native_document, harmonic_mean, measure_document_class_profiles, ratio,
+    ClassProfile, harmonic_mean, measure_document_class_profiles, ratio,
 };
 use da_cli::native_composition_measurement::{
     AdmittedBand, CLASS_HEADER_TITLE, CLASS_ORDER, build_admitted_band, measure_source,

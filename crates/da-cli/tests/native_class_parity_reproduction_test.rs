@@ -18,9 +18,12 @@
 //! (`ClassParityClassMissing`), not silently averaged into a shrunken
 //! denominator.
 
+#[path = "../examples/support/native_compose.rs"]
+mod native_compose;
+
+use crate::native_compose::compose_native_document;
 use da_cli::native_class_parity::{
-    CLASS_PARITY_CLASS_MISSING, ClassParityCounts, compose_native_document,
-    measure_document_class_profiles,
+    CLASS_PARITY_CLASS_MISSING, ClassParityCounts, measure_document_class_profiles,
 };
 use da_cli::native_composition_measurement::{build_admitted_band, measure_source};
 use serde_json::Value as Json;

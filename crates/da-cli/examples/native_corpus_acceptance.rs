@@ -41,6 +41,10 @@
 //! = none`, `thresholds = not_accepted`, all five locks closed, no graph/import/
 //! promotion, no production route (D127 / ADR-040 / ADR-076 §14).
 
+#[path = "support/native_compose.rs"]
+mod native_compose;
+
+use crate::native_compose::compose_native_document;
 use da_adapters::PdfInspectorLayoutDonor;
 use da_adapters::layout_donors::LayoutDonorLimits;
 use da_cli::native_acceptance::{
@@ -51,8 +55,8 @@ use da_cli::native_acceptance::{
     build_native_acceptance, derive_expectation, threshold_is_measured, validate_native_acceptance,
 };
 use da_cli::native_class_parity::{
-    ClassParityCounts, ClassParityProjection, compose_native_document,
-    load_class_parity_projections, measure_document_class_profiles,
+    ClassParityCounts, ClassParityProjection, load_class_parity_projections,
+    measure_document_class_profiles,
 };
 use da_cli::native_composition_measurement::{
     CLASS_ORDER, build_admitted_band, class_admissions, measure_source,
