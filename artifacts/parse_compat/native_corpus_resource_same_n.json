@@ -97,7 +97,7 @@
   "freeze_governor": {
     "manifest": "scripts/governor/checks/grobid_absorption_progress.yaml",
     "pointer": "native_route_e2e.limit_policy.freeze_revision.carriers",
-    "revision_sha256": "sha256:930946308eede45c7d05604f7b1b1a5383846e6467e39c437fbdc3bba445a5a5"
+    "revision_sha256": "sha256:a0c062f1425db2af0145df8072eb94c67bf36ce16a500e6b331fb5aac5fc646b"
   },
   "pairing": {
     "rule": "same_documents_only",
@@ -114,7 +114,7 @@
   "native_measurement": {
     "manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
     "pointer": "documents",
-    "revision_sha256": "sha256:c667f339b5447cf8ec16551e8e7a201c45ea91d5aaf4f1e401bb8d6e6c5c1592"
+    "revision_sha256": "sha256:e00f458cccab71c22ba86c5a644002a862166bf47e4b8255c084697e2ee182a6"
   },
   "populations": {
     "assigned": 610,
@@ -137,9 +137,37 @@
       "metric_id": "native_acceptance.native_plane_units",
       "numerator": 1795785,
       "denominator": 531
+    },
+    {
+      "metric_id": "preservation.occurrence_conservation",
+      "numerator": 74910,
+      "denominator": 79621
+    },
+    {
+      "metric_id": "extraction.native_capability_recall",
+      "numerator": 945771,
+      "denominator": 1000000,
+      "stratum": "micro_occurrence"
+    },
+    {
+      "metric_id": "extraction.native_capability_recall",
+      "numerator": 3055,
+      "denominator": 7077,
+      "stratum": "weakest_stratum"
     }
   ],
   "reference_carriers": [
+    {
+      "carrier": {
+        "manifest": "crates/da-parse/tests/fixtures/holdout/provenance.yaml",
+        "pointer": "documents",
+        "revision_sha256": "sha256:087f5b72ca8ed9c3124e964dc48b7eb106d99a266ca4e5273177851b090b6cd7"
+      },
+      "same_n": true,
+      "reason": "",
+      "pairing_population": "measurable",
+      "covered_documents": 531
+    },
     {
       "carrier": {
         "manifest": "artifacts/parse_compat/native_java_work.json",
@@ -147,7 +175,9 @@
         "revision_sha256": "sha256:87e69860b04ca0b9a2ca4df2c7c411007a09b16db376a9700844110ba74bf00c"
       },
       "same_n": false,
-      "reason": "reference_row_not_same_n"
+      "reason": "reference_row_not_same_n",
+      "pairing_population": "assigned",
+      "covered_documents": 3
     },
     {
       "carrier": {
@@ -156,16 +186,33 @@
         "revision_sha256": "sha256:fa13b1fb4921177aade374ea002b1a85889ae816f79992083cbf6be371d2461d"
       },
       "same_n": false,
-      "reason": "reference_row_not_same_n"
+      "reason": "reference_row_not_same_n",
+      "pairing_population": "assigned",
+      "covered_documents": 6
     }
   ],
   "reference_metrics": [
+    {
+      "id": "java_latency_ms",
+      "direction": null,
+      "state": "observed",
+      "value": 64611,
+      "reason": null,
+      "source": {
+        "kind": "measured_reference",
+        "manifest": "crates/da-parse/tests/fixtures/holdout/provenance.yaml",
+        "pointer": "documents[].latency_ms",
+        "sha256": "087f5b72ca8ed9c3124e964dc48b7eb106d99a266ca4e5273177851b090b6cd7",
+        "measurement_state": "measured",
+        "metric_id": "latency_ms"
+      }
+    },
     {
       "id": "java_model_invocations",
       "direction": null,
       "state": "not_observed",
       "value": null,
-      "reason": "reference_row_not_same_n",
+      "reason": "reference_row_absent",
       "source": null
     },
     {
@@ -173,7 +220,7 @@
       "direction": null,
       "state": "not_observed",
       "value": null,
-      "reason": "reference_row_not_same_n",
+      "reason": "reference_row_absent",
       "source": null
     }
   ],
@@ -7500,10 +7547,10 @@
     }
   ],
   "residuals": {
-    "observed_metrics": 3,
+    "observed_metrics": 7,
     "absent_metrics": 2,
     "untyped_metrics": 0,
-    "reference_rows_bound": 0
+    "reference_rows_bound": 1
   },
   "redaction": {
     "raw_text": false,
