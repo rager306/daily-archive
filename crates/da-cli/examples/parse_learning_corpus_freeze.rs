@@ -46,6 +46,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
 }
 
 fn main() -> anyhow::Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("parse_learning_corpus_freeze");
     let source_bytes = std::fs::read(SOURCE_PATH)?;
     let source_sha256 = Sha256Digest::new(sha256_hex(&source_bytes))?;
     let source_text = std::str::from_utf8(&source_bytes)?;

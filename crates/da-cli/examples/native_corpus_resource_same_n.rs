@@ -106,6 +106,7 @@ fn parse_args() -> Args {
 }
 
 fn main() -> ExitCode {
+    let _log_guard = da_cli::logging::init_pipeline_logging("native_corpus_resource_same_n");
     let args = parse_args();
     match run(&args) {
         Ok(summary) => {
