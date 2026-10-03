@@ -14,14 +14,13 @@
 //! producing path*, it is measured with a non-empty denominator. Where the
 //! producing mechanism is absent, the runner emits a **typed gap cell**
 //! (`not_observable` with a machine-readable reason) instead of manufacturing a
-//! value: the class-parity axis behind the two extraction thresholds is not a
-//! native route product. The preservation threshold
-//! (`preservation.occurrence_conservation`) is measured over the frozen
-//! reference TEI through the shared composition scanner
-//! (`da_cli::native_composition_measurement`), whose admitted/source aggregate is
-//! emission-independent; its former `producing_mechanism_absent` gap cell is
-//! dropped once the metric is measured. A family the closed schema still carries
-//! as `threshold_pending` is emitted as a `threshold_pending` gap.
+//! value. The preservation threshold (`preservation.occurrence_conservation`)
+//! and both extraction strata (`extraction.native_capability_recall`, micro and
+//! weakest) are measured over the frozen reference TEI through the shared S01
+//! scanner and the shared class-parity projection
+//! (`da_cli::native_class_parity`), so the runner reads the same numbers the
+//! independently judged reference probe projects. A family the closed schema
+//! still carries as `threshold_pending` is emitted as a `threshold_pending` gap.
 //!
 //! Every one of the 610 assigned documents is re-verified by PDF sha256 before
 //! any work; the 531 measurable documents are folded through the S03 native
@@ -47,11 +46,17 @@ use da_adapters::layout_donors::LayoutDonorLimits;
 use da_cli::native_acceptance::{
     ABSORPTION_SCHEMA_REL, AcceptanceDocumentRow, AcceptanceError, AcceptanceExpectation,
     AcceptanceGapCell, AcceptanceGuard, AcceptanceMetricRow, AcceptancePopulations,
-    DEFAULT_ACCEPTANCE_ARTIFACT_REL, HOLDOUT_MANIFEST_REL, NativeAcceptanceReceipt,
-    REFERENCE_PINS_REL, REFERENCE_PROBE_REL, assert_acceptance_redacted, build_native_acceptance,
-    derive_expectation, validate_native_acceptance,
+    AcceptanceThresholdExpectation, DEFAULT_ACCEPTANCE_ARTIFACT_REL, HOLDOUT_MANIFEST_REL,
+    NativeAcceptanceReceipt, REFERENCE_PINS_REL, REFERENCE_PROBE_REL, assert_acceptance_redacted,
+    build_native_acceptance, derive_expectation, threshold_is_measured, validate_native_acceptance,
 };
-use da_cli::native_composition_measurement::measure_document_admitted_coverage;
+use da_cli::native_class_parity::{
+    ClassParityCounts, ClassParityProjection, compose_native_document,
+    load_class_parity_projections, measure_document_class_profiles,
+};
+use da_cli::native_composition_measurement::{
+    CLASS_ORDER, build_admitted_band, class_admissions, measure_source,
+};
 use da_cli::native_family_receipt::sha256_prefixed;
 use da_parse::{
     GrobidHttpBackend, GrobidProfile, JavaInvocationCounter, ParseBackend, ParseBackendRequest,
@@ -196,12 +201,12 @@ fn read_carrier(root: &Path, rel: &str) -> Result<(String, String), Box<dyn Erro
     Ok((text, sha256_prefixed(&bytes)))
 }
 
-fn load_expectation(root: &Path) -> Result<AcceptanceExpectation, Box<dyn Error>> {
+fn load_expectation(root: &Path) -> Result<(AcceptanceExpectation, String), Box<dyn Error>> {
     let (pins_text, pins_sha) = read_carrier(root, REFERENCE_PINS_REL)?;
     let (probe_text, probe_sha) = read_carrier(root, REFERENCE_PROBE_REL)?;
     let (schema_text, schema_sha) = read_carrier(root, ABSORPTION_SCHEMA_REL)?;
     let (manifest_text, _) = read_carrier(root, HOLDOUT_MANIFEST_REL)?;
-    Ok(derive_expectation(
+    let expectation = derive_expectation(
         &pins_text,
         &pins_sha,
         &probe_text,
@@ -209,7 +214,8 @@ fn load_expectation(root: &Path) -> Result<AcceptanceExpectation, Box<dyn Error>
         &schema_text,
         &schema_sha,
         &manifest_text,
-    )?)
+    )?;
+    Ok((expectation, pins_text))
 }
 
 // ───────────────────── frozen reference-TEI pins ─────────────────────
@@ -223,16 +229,34 @@ struct ReferenceTei {
     size_bytes: u64,
 }
 
-/// Load the measurable reference-TEI pins from the acceptance manifest. Every
-/// measurable document is pinned here by its own sha256 and size, so the join
-/// into the run can never silently shrink the preservation denominator.
-fn load_reference_tei(root: &Path) -> Result<BTreeMap<String, ReferenceTei>, Box<dyn Error>> {
+/// Load the measurable reference-TEI pins and the class-parity DATA the probe
+/// declares from the acceptance manifest: every measurable document is pinned
+/// by its own sha256 and size, and the reference profile/consolidation
+/// fingerprints plus the source-consumed class set come from the same
+/// `release_probe` block (never restated).  The join into the run can therefore
+/// never silently shrink the preservation denominator, and the class-parity
+/// projection reads one DATA source.
+struct ReferenceInputs {
+    tei: BTreeMap<String, ReferenceTei>,
+    profile_fingerprint: String,
+    config_fingerprint: String,
+    source_consumed_classes: BTreeSet<String>,
+}
+
+fn load_reference_inputs(root: &Path) -> Result<ReferenceInputs, Box<dyn Error>> {
     let text = fs::read_to_string(root.join(ACCEPTANCE_MANIFEST_REL))?;
     let manifest: serde_yaml::Value = serde_yaml::from_str(&text)?;
-    let rows = manifest
+    let lane = manifest
         .get(REFERENCE_TEI_POINTER[0])
         .and_then(|contract| contract.get(REFERENCE_TEI_POINTER[1]))
-        .and_then(|lane| lane.get(REFERENCE_TEI_POINTER[2]))
+        .ok_or_else(|| {
+            format!(
+                "{ACCEPTANCE_MANIFEST_REL} is missing {}",
+                REFERENCE_TEI_POINTER[..2].join(".")
+            )
+        })?;
+    let rows = lane
+        .get(REFERENCE_TEI_POINTER[2])
         .and_then(serde_yaml::Value::as_sequence)
         .ok_or_else(|| {
             format!(
@@ -240,7 +264,7 @@ fn load_reference_tei(root: &Path) -> Result<BTreeMap<String, ReferenceTei>, Box
                 REFERENCE_TEI_POINTER.join(".")
             )
         })?;
-    let mut reference = BTreeMap::new();
+    let mut tei = BTreeMap::new();
     for row in rows {
         let article_id = row
             .get("article_id")
@@ -261,7 +285,7 @@ fn load_reference_tei(root: &Path) -> Result<BTreeMap<String, ReferenceTei>, Box
             .get("size_bytes")
             .and_then(serde_yaml::Value::as_u64)
             .ok_or_else(|| format!("reference_tei {article_id} is missing `size_bytes`"))?;
-        let previous = reference.insert(
+        let previous = tei.insert(
             article_id.clone(),
             ReferenceTei {
                 path,
@@ -273,20 +297,67 @@ fn load_reference_tei(root: &Path) -> Result<BTreeMap<String, ReferenceTei>, Box
             return Err(format!("reference_tei names {article_id} more than once").into());
         }
     }
-    Ok(reference)
+
+    let reference_profile = lane
+        .get("reference_profile")
+        .and_then(serde_yaml::Value::as_str)
+        .ok_or("release_probe.reference_profile is missing")?;
+    let flags = lane
+        .get("reference_consolidation_flags")
+        .and_then(serde_yaml::Value::as_mapping)
+        .ok_or("release_probe.reference_consolidation_flags is missing")?;
+    let mut flag_pairs: Vec<String> = Vec::with_capacity(flags.len());
+    for (key, value) in flags {
+        let key = key
+            .as_str()
+            .ok_or("a reference_consolidation_flags key is not a string")?;
+        let value = value
+            .as_str()
+            .ok_or("a reference_consolidation_flags value is not a string")?;
+        flag_pairs.push(format!("{key}={value}"));
+    }
+    flag_pairs.sort();
+
+    let mut source_consumed_classes = BTreeSet::new();
+    let classes = lane
+        .get("class_parity")
+        .and_then(|parity| parity.get("source_consumed_classes"))
+        .and_then(serde_yaml::Value::as_sequence)
+        .ok_or("release_probe.class_parity.source_consumed_classes is missing")?;
+    for class in classes {
+        source_consumed_classes.insert(
+            class
+                .as_str()
+                .ok_or("a source_consumed_classes entry is not a string")?
+                .to_owned(),
+        );
+    }
+    if source_consumed_classes.is_empty() {
+        return Err("release_probe.class_parity.source_consumed_classes is empty".into());
+    }
+
+    Ok(ReferenceInputs {
+        tei,
+        profile_fingerprint: format!("profile={reference_profile}"),
+        config_fingerprint: format!("consolidation={}", flag_pairs.join(",")),
+        source_consumed_classes,
+    })
 }
 
-/// The typed gap ledger: one cell per frozen threshold that is not measured, and
-/// one per pending required family. No threshold literal is restated; only
-/// ids/reasons. A threshold whose `metric_id` is measured by the run drops its
-/// `not_observable` cell rather than being carried both measured and gapped.
+/// The typed gap ledger: one cell per frozen threshold that is not measured at
+/// its declared stratum, and one per pending required family. No threshold
+/// literal is restated; only ids/reasons. A threshold measured at its exact
+/// `(metric_id, stratum)` drops its `not_observable` cell rather than being
+/// carried both measured and gapped; a threshold measured only at another
+/// stratum of the same metric id keeps its gap here and is refused by name by
+/// the validator.
 fn build_gap_ledger(
     expectation: &AcceptanceExpectation,
-    measured_metric_ids: &BTreeSet<String>,
+    metrics: &[AcceptanceMetricRow],
 ) -> Vec<AcceptanceGapCell> {
     let mut gaps = Vec::new();
     for threshold in &expectation.thresholds {
-        if measured_metric_ids.contains(&threshold.metric_id) {
+        if threshold_is_measured(metrics, &expectation.thresholds, threshold) {
             continue;
         }
         let reason = match threshold.family_id.as_str() {
@@ -364,9 +435,13 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         return run_self_check();
     }
 
-    let expectation = load_expectation(&args.root)?;
+    let (expectation, pins_text) = load_expectation(&args.root)?;
     let guard = install_guard()?;
-    let reference_tei = load_reference_tei(&args.root)?;
+    let reference_inputs = load_reference_inputs(&args.root)?;
+    // The two extraction projections are declared by the pins' own derivations,
+    // not restated: a renamed projection refuses by name instead of silently
+    // regressing a threshold back to a gap.
+    let class_parity_projections = load_class_parity_projections(&pins_text)?;
 
     let limit = args
         .limit
@@ -385,6 +460,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
     let mut preservation_source = 0u64;
     let mut preservation_rows = 0u64;
     let mut unpinned_measurable: Vec<String> = Vec::new();
+    let mut class_profiles = Vec::new();
 
     for (index, expected) in expectation.documents.iter().take(limit).enumerate() {
         let pdf_bytes = match fs::read(args.root.join(&expected.source_pdf)) {
@@ -412,7 +488,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         // come from the same shared scanner the release probe uses, so this
         // runner and that probe cannot drift.
         if expected.state == "measurable" {
-            if let Some(reference) = reference_tei.get(&expected.id) {
+            if let Some(reference) = reference_inputs.tei.get(&expected.id) {
                 let tei_bytes = fs::read(args.root.join(&reference.path)).map_err(|error| {
                     format!(
                         "reference TEI for {} could not be read ({}): {error}",
@@ -440,15 +516,63 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
                 let tei_xml = std::str::from_utf8(&tei_bytes).map_err(|error| {
                     format!("reference TEI for {} is not UTF-8: {error}", expected.id)
                 })?;
-                let counts = measure_document_admitted_coverage(tei_xml).map_err(|error| {
+                // The composer's identity surface takes a raw 64-hex source
+                // digest while the pin carries the `sha256:` prefix: strip it
+                // once, exactly as the reference probe does.
+                let identity_sha256 = reference
+                    .sha256
+                    .strip_prefix("sha256:")
+                    .unwrap_or(&reference.sha256)
+                    .to_string();
+                let source =
+                    measure_source(&expected.id, &identity_sha256, tei_xml).map_err(|error| {
+                        format!(
+                            "reference TEI for {} could not be measured: {error}",
+                            expected.id
+                        )
+                    })?;
+                let admitted = build_admitted_band(&source).map_err(|error| {
                     format!(
-                        "reference TEI for {} could not be measured: {error}",
+                        "reference TEI for {} could not admit its band: {error}",
                         expected.id
                     )
                 })?;
-                preservation_admitted += counts.admitted as u64;
-                preservation_source += counts.source_population as u64;
+                for admission in class_admissions(&source, &admitted, tei_xml) {
+                    preservation_admitted += admission.admitted_len() as u64;
+                    preservation_source += admission.source_population() as u64;
+                }
                 preservation_rows += 1;
+
+                // The class-parity axis is projected onto the same composed
+                // emission the reference probe scans, so the two extraction
+                // thresholds measure the bytes the pins were derived from.
+                let emission = compose_native_document(
+                    &reference_inputs.profile_fingerprint,
+                    &reference_inputs.config_fingerprint,
+                    &source,
+                    &admitted,
+                    tei_xml,
+                )
+                .map_err(|error| {
+                    format!(
+                        "reference TEI for {} could not be composed: {error}",
+                        expected.id
+                    )
+                })?;
+                let document_profiles = measure_document_class_profiles(
+                    &source,
+                    tei_xml,
+                    &admitted,
+                    &emission,
+                    &reference_inputs.source_consumed_classes,
+                )
+                .map_err(|error| {
+                    format!(
+                        "reference TEI for {} could not be projected: {error}",
+                        expected.id
+                    )
+                })?;
+                class_profiles.extend(document_profiles);
             } else {
                 unpinned_measurable.push(expected.id.clone());
             }
@@ -557,6 +681,22 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         .into());
     }
 
+    // Every class-parity document contributes the full declared class set; a
+    // dropped class would silently shrink the denominator, so the fold must be
+    // exactly `measurable * CLASS_ORDER.len()`.
+    let expected_profile_rows = preservation_rows * CLASS_ORDER.len() as u64;
+    if class_profiles.len() as u64 != expected_profile_rows {
+        return Err(format!(
+            "the class-parity projection returned {} class rows but {} measurable documents \
+             must yield {} (a dropped class silently shrinks the denominator)",
+            class_profiles.len(),
+            preservation_rows,
+            expected_profile_rows
+        )
+        .into());
+    }
+    let class_parity = ClassParityCounts::from_profiles(&class_profiles);
+
     let mut bounded_expectation = expectation.clone();
     bounded_expectation.populations = populations.clone();
     bounded_expectation.documents = expectation.documents.iter().take(limit).cloned().collect();
@@ -593,14 +733,60 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         });
     }
 
-    // A threshold is gapped only while it is not measured. The preservation
-    // threshold drops its `producing_mechanism_absent` cell here; the two
-    // extraction cells and the `threshold_pending` family cells are unchanged.
-    let measured_metric_ids: BTreeSet<String> = metrics
-        .iter()
-        .map(|metric| metric.metric_id.clone())
-        .collect();
-    let gaps = build_gap_ledger(&expectation, &measured_metric_ids);
+    // The two extraction strata are projected from the shared class-parity
+    // measurement; a stratum with no positive denominator is refused here rather
+    // than silently regressing the threshold back to a gap cell.  The micro row
+    // is emitted at the *declared* fraction denominator (the micros encoding
+    // base, read by pointer from the pins), and the weakest row at the measured
+    // weakest class counts.
+    for projection in &class_parity_projections {
+        match projection.projection {
+            ClassParityProjection::MicroOccurrence => {
+                let numerator = class_parity
+                    .native_capability_recall_micros_at(projection.reference_denominator)
+                    .ok_or_else(|| {
+                        format!(
+                            "the class-parity micro stratum `{}` has an empty denominator",
+                            projection.stratum
+                        )
+                    })?;
+                metrics.push(AcceptanceMetricRow {
+                    metric_id: projection.metric_id.clone(),
+                    numerator,
+                    denominator: projection.reference_denominator,
+                    stratum: Some(projection.stratum.clone()),
+                });
+            }
+            ClassParityProjection::WeakestStratum => {
+                let (_class, conserved, source_population) =
+                    class_parity.weakest_class().ok_or_else(|| {
+                        format!(
+                            "the class-parity weakest stratum `{}` measured no class",
+                            projection.stratum
+                        )
+                    })?;
+                if source_population == 0 {
+                    return Err(format!(
+                        "the class-parity weakest stratum `{}` has an empty denominator",
+                        projection.stratum
+                    )
+                    .into());
+                }
+                metrics.push(AcceptanceMetricRow {
+                    metric_id: projection.metric_id.clone(),
+                    numerator: conserved as u64,
+                    denominator: source_population as u64,
+                    stratum: Some(projection.stratum.clone()),
+                });
+            }
+        }
+    }
+
+    // A threshold is gapped only while it is not measured at its declared
+    // stratum.  The preservation threshold drops its `producing_mechanism_absent`
+    // cell, and the two extraction strata drop their `class_parity_axis_absent`
+    // cells, once measured; the `threshold_pending` family cells are unchanged.
+    let gaps = build_gap_ledger(&expectation, &metrics);
 
     let receipt = build_native_acceptance(&bounded_expectation, guard, documents, metrics, gaps)?;
     let bytes = receipt.artifact_json_bytes()?;
@@ -749,6 +935,43 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
         "ThresholdBothMeasuredAndGapped",
     )?;
     checked += 1;
+
+    // (11) a threshold whose declared stratum is not measured is refused by name,
+    // never substituted by another stratum of the same metric id.
+    {
+        let mut stratum_expectation = expectation.clone();
+        stratum_expectation.thresholds = vec![
+            AcceptanceThresholdExpectation {
+                threshold_id: "threshold.stratum.micro".to_owned(),
+                metric_id: "metric.stratum".to_owned(),
+                family_id: "family.required".to_owned(),
+                stratum: Some("declared_stratum".to_owned()),
+            },
+            AcceptanceThresholdExpectation {
+                threshold_id: "threshold.stratum.weakest".to_owned(),
+                metric_id: "metric.stratum".to_owned(),
+                family_id: "family.required".to_owned(),
+                stratum: Some("other_stratum".to_owned()),
+            },
+        ];
+        let mut m = base.clone();
+        m.gaps.clear();
+        // Only `other_stratum` is measured: `declared_stratum` declares a
+        // threshold the same metric could substitute, so it must be refused.
+        m.metrics.push(AcceptanceMetricRow {
+            metric_id: "metric.stratum".to_owned(),
+            numerator: 1,
+            denominator: 2,
+            stratum: Some("other_stratum".to_owned()),
+        });
+        expect_refusal(
+            "threshold_stratum_unmeasured",
+            &m,
+            &stratum_expectation,
+            "ThresholdStratumUnmeasured",
+        )?;
+        checked += 1;
+    }
 
     Ok(format!(
         "native acceptance self-check: {checked} named refusals executed, all refused"

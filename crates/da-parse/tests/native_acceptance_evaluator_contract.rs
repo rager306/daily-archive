@@ -235,33 +235,42 @@ fn committed_pins_evaluate_without_a_manufactured_pass() {
     assert_eq!(evaluation.threshold_policy_state, "frozen");
     assert_eq!(evaluation.candidate_source_path, T01);
 
-    // The committed T01 runner now measures the preservation threshold over the
-    // frozen reference TEI, so `preservation_micro_occurrence` compares inside
-    // the committed series and resolves `met` with a positive candidate
-    // denominator — a measured value reproducing the pinned fraction, never a
-    // manufactured pass. The two extraction thresholds are still absent from
-    // T01, so their honest verdict stays `not_comparable`/`metric_absent`.
+    // The committed T01 runner measures all three frozen thresholds over the
+    // frozen reference TEI: preservation and both extraction strata (micro and
+    // weakest) compare inside the committed series and resolve `met` with a
+    // positive candidate denominator — measured values reproducing the pinned
+    // fractions, never a manufactured pass. Nothing stays `not_comparable`;
+    // `REASON_METRIC_ABSENT` is absent from every verdict.
     assert_eq!(evaluation.thresholds.len(), 3);
-    let mut met_thresholds: Vec<&str> = Vec::new();
     for verdict in &evaluation.thresholds {
-        if verdict.threshold_id == "preservation_micro_occurrence" {
-            assert_eq!(
-                verdict.verdict, "met",
-                "preservation is measured by the committed T01 runner"
-            );
-            assert_ne!(verdict.reason.as_deref(), Some(REASON_METRIC_ABSENT));
-            assert_eq!(verdict.comparability, "matched");
-            assert!(
-                verdict.candidate_denominator.unwrap_or(0.0) > 0.0,
-                "a measured threshold needs a positive candidate denominator"
-            );
-            met_thresholds.push(verdict.threshold_id.as_str());
-        } else {
-            assert_eq!(verdict.verdict, "not_comparable");
-            assert_eq!(verdict.reason.as_deref(), Some(REASON_METRIC_ABSENT));
-        }
+        assert_eq!(
+            verdict.verdict, "met",
+            "threshold {} is measured by the committed T01 runner",
+            verdict.threshold_id
+        );
+        assert_ne!(verdict.reason.as_deref(), Some(REASON_METRIC_ABSENT));
+        assert_eq!(verdict.comparability, "matched");
+        assert!(
+            verdict.candidate_denominator.unwrap_or(0.0) > 0.0,
+            "a measured threshold needs a positive candidate denominator"
+        );
+        assert!(verdict.frozen_reference_value.is_some());
     }
-    assert_eq!(met_thresholds, vec!["preservation_micro_occurrence"]);
+    // The two extraction thresholds share one metric id and are distinguished
+    // only by stratum: each must resolve against its own stratum, never by a
+    // fallback to the other.
+    let mut extraction_strata: Vec<Option<&str>> = evaluation
+        .thresholds
+        .iter()
+        .filter(|verdict| verdict.metric_id == "extraction.native_capability_recall")
+        .map(|verdict| verdict.stratum.as_deref())
+        .collect();
+    assert_eq!(extraction_strata.len(), 2);
+    extraction_strata.sort_unstable();
+    assert_ne!(
+        extraction_strata[0], extraction_strata[1],
+        "the two extraction thresholds must resolve distinct strata"
+    );
 
     // The ledger names all sixteen mandatory gates: three thresholds, the body
     // axis and every schema-declared `threshold_pending` family.

@@ -9,9 +9,10 @@
 //! its typed gap ledger, and rejects each named mutation.
 
 use da_cli::native_acceptance::{
-    ABSORPTION_SCHEMA_REL, AcceptanceError, AcceptanceMetricRow, AcceptancePopulations,
-    DEFAULT_ACCEPTANCE_ARTIFACT_REL, GAP_KIND_VOCABULARY, HOLDOUT_MANIFEST_REL, REFERENCE_PINS_REL,
-    REFERENCE_PROBE_REL, derive_expectation, validate_native_acceptance,
+    ABSORPTION_SCHEMA_REL, AcceptanceError, AcceptanceGapCell, AcceptanceMetricRow,
+    AcceptancePopulations, DEFAULT_ACCEPTANCE_ARTIFACT_REL, GAP_KIND_VOCABULARY,
+    HOLDOUT_MANIFEST_REL, REFERENCE_PINS_REL, REFERENCE_PROBE_REL, derive_expectation,
+    validate_native_acceptance,
 };
 use std::error::Error;
 use std::fs;
@@ -144,10 +145,65 @@ fn native_corpus_acceptance_artifact_is_canonical_and_census_bound() -> Result<(
         .iter()
         .filter(|gap| gap.kind == "threshold_pending")
         .count();
-    assert_eq!(not_observable, 2, "expected two not_observable gaps");
+    assert_eq!(not_observable, 0, "every observable threshold is measured");
     assert_eq!(
         threshold_pending, 12,
         "expected twelve threshold_pending families"
+    );
+
+    // ── both extraction strata are measured with positive denominators and ──
+    // ── carry distinct strata inside the shared metric id ───────────────────
+    let pins_json: serde_json::Value = serde_json::from_slice(&pins_bytes)?;
+    let pin_values = pins_json
+        .get("values")
+        .and_then(serde_json::Value::as_array)
+        .expect("pins.values");
+    let extraction_rows: Vec<&AcceptanceMetricRow> = receipt
+        .metrics
+        .iter()
+        .filter(|row| row.metric_id == "extraction.native_capability_recall")
+        .collect();
+    assert_eq!(
+        extraction_rows.len(),
+        2,
+        "both extraction strata must be measured, not gapped"
+    );
+    let mut extraction_strata: Vec<&str> = Vec::new();
+    for row in &extraction_rows {
+        assert!(
+            row.denominator > 0,
+            "an extraction stratum denominator must be positive"
+        );
+        let stratum = row
+            .stratum
+            .as_deref()
+            .expect("an extraction row must name its stratum");
+        extraction_strata.push(stratum);
+        let pin = pin_values
+            .iter()
+            .find(|value| {
+                value.get("metric_id").and_then(serde_json::Value::as_str)
+                    == Some("extraction.native_capability_recall")
+                    && value.get("stratum").and_then(serde_json::Value::as_str) == Some(stratum)
+            })
+            .unwrap_or_else(|| panic!("the pins declare no extraction stratum `{stratum}`"));
+        assert_eq!(
+            Some(row.numerator),
+            pin["fraction"]["numerator"].as_u64(),
+            "the measured numerator must equal the pinned reference for `{stratum}`"
+        );
+        assert_eq!(
+            Some(row.denominator),
+            pin["fraction"]["denominator"].as_u64(),
+            "the measured denominator must equal the pinned reference for `{stratum}`"
+        );
+    }
+    extraction_strata.sort_unstable();
+    extraction_strata.dedup();
+    assert_eq!(
+        extraction_strata.len(),
+        2,
+        "the two extraction rows must carry distinct strata"
     );
 
     // ── named mutations are all refused ────────────────────────────────────
@@ -203,20 +259,55 @@ fn native_corpus_acceptance_artifact_is_canonical_and_census_bound() -> Result<(
         "MetricZeroDenominator",
     )?;
 
-    // A frozen threshold measured with a positive denominator while its gap cell
-    // is still carried is refused by name, never admitted as both.
+    // A frozen threshold measured at its declared stratum while its gap cell is
+    // still carried is refused by name, never admitted as both.
+    let extraction_threshold = expectation
+        .thresholds
+        .iter()
+        .find(|threshold| threshold.metric_id == "extraction.native_capability_recall")
+        .expect("the two extraction thresholds share the metric id")
+        .clone();
     let mut m = receipt.clone();
-    m.metrics.push(AcceptanceMetricRow {
-        metric_id: "extraction.native_capability_recall".to_owned(),
-        numerator: 1,
-        denominator: 2,
-        stratum: None,
+    m.gaps.push(AcceptanceGapCell {
+        threshold_id: extraction_threshold.threshold_id.clone(),
+        metric_id: extraction_threshold.metric_id.clone(),
+        family_id: extraction_threshold.family_id.clone(),
+        kind: "not_observable".to_owned(),
+        reason: "measured_and_gapped_mutation".to_owned(),
     });
     expect_refusal(
         "both_measured_and_gapped",
         &m,
         &expectation,
         "ThresholdBothMeasuredAndGapped",
+    )?;
+
+    // A threshold whose declared stratum is not measured must never be resolved
+    // by another stratum of the same metric id: the same metric measured at a
+    // different stratum is a substitution, refused by name.
+    let extraction_thresholds: Vec<_> = expectation
+        .thresholds
+        .iter()
+        .filter(|threshold| threshold.metric_id == "extraction.native_capability_recall")
+        .collect();
+    assert_eq!(extraction_thresholds.len(), 2);
+    let target = extraction_thresholds[0];
+    let other = extraction_thresholds[1];
+    let mut m = receipt.clone();
+    for row in m
+        .metrics
+        .iter_mut()
+        .filter(|row| row.metric_id == "extraction.native_capability_recall")
+    {
+        if row.stratum == target.stratum {
+            row.stratum = other.stratum.clone();
+        }
+    }
+    expect_refusal(
+        "threshold_stratum_unmeasured",
+        &m,
+        &expectation,
+        "ThresholdStratumUnmeasured",
     )?;
 
     // A redaction leak must be refused by the serializer itself.

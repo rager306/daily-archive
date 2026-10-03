@@ -30,6 +30,7 @@ use crate::native_composition_measurement::{
     class_admissions, find_unique, scan_xml,
 };
 use da_parse::*;
+use serde_json::Value;
 use std::collections::BTreeSet;
 
 /// The named refusal for an incomplete class set: an emission whose class
@@ -500,6 +501,16 @@ impl ClassParityCounts {
         self.native_capability_recall().map(micros)
     }
 
+    /// The native capability recall encoded at the *declared* fraction
+    /// denominator (`round(recall * denominator)`), or `None` without a
+    /// denominator.  The frozen micros derivation is `recall_micros / 1e6`, so
+    /// the denominator is read by pointer from the pins rather than restated
+    /// here.
+    pub fn native_capability_recall_micros_at(&self, denominator: u64) -> Option<u64> {
+        self.native_capability_recall()
+            .map(|recall| (recall * denominator as f64).round() as u64)
+    }
+
     /// The weakest class by `conserved / source_population`, or `None` when no
     /// class declares a carrier.  Ties keep the first-seen class, matching the
     /// pinned reference aggregation.
@@ -522,4 +533,118 @@ impl ClassParityCounts {
         }
         weakest
     }
+}
+
+// ─────────────────────── the declared extraction projections ────────────────
+
+/// The named refusal for a frozen extraction derivation this module does not
+/// implement: a changed derivation must refuse by name rather than be silently
+/// skipped into a gapped threshold.
+pub const CLASS_PARITY_PROJECTION_UNKNOWN: &str = "ClassParityProjectionUnknown";
+
+/// Which projection of the class-parity aggregate a frozen extraction threshold
+/// declares.  The two extraction thresholds share one metric id and differ only
+/// by this projection, so a row that does not name its projection could be
+/// substituted by the wrong stratum.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClassParityProjection {
+    /// The micro occurrence recall encoded as integer micros at the declared
+    /// denominator (`native_capability_recall` over one denominator).
+    MicroOccurrence,
+    /// The weakest class by `conserved / source_population`.
+    WeakestStratum,
+}
+
+/// One frozen extraction threshold's declared class-parity projection, read by
+/// pointer from the pins' `derivation` (never a restated literal).  The stratum
+/// and metric id are the frozen DATA tokens the receipt row must carry; the
+/// reference denominator is the micros base the micro projection encodes at.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtractionThresholdProjection {
+    pub metric_id: String,
+    pub stratum: String,
+    pub projection: ClassParityProjection,
+    pub reference_denominator: u64,
+}
+
+/// Read the class-parity projections the pins declare, by pointer.
+///
+/// The pins name each threshold's exact derivation, so the runner executes the
+/// declared projection instead of guessing which stratum is which.  An
+/// unrecognized class-parity derivation (one that names `class_parity` or
+/// `class_profiles` but matches neither known projection) is refused by name; a
+/// non-class-parity pin (the preservation threshold's `admitted /
+/// source_population`) is skipped.
+///
+/// `pins_text` is the committed `absorption_progress_reference_pins.json` bytes.
+pub fn load_class_parity_projections(
+    pins_text: &str,
+) -> Result<Vec<ExtractionThresholdProjection>, MeasurementError> {
+    let value: Value = serde_json::from_str(pins_text).map_err(|error| {
+        MeasurementError::new(format!(
+            "{CLASS_PARITY_PROJECTION_UNKNOWN}: pins are not valid JSON ({error})"
+        ))
+    })?;
+    let values = value
+        .get("values")
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            MeasurementError::new(format!(
+                "{CLASS_PARITY_PROJECTION_UNKNOWN}: pins carry no `values` array"
+            ))
+        })?;
+    let mut projections = Vec::new();
+    for entry in values {
+        let derivation = entry
+            .get("derivation")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let projection = if derivation.contains("native_capability_recall_micros") {
+            ClassParityProjection::MicroOccurrence
+        } else if derivation.contains("minimum")
+            && derivation.contains("conserved/source_population")
+        {
+            ClassParityProjection::WeakestStratum
+        } else if derivation.contains("class_parity") || derivation.contains("class_profiles") {
+            return Err(MeasurementError::new(format!(
+                "{CLASS_PARITY_PROJECTION_UNKNOWN}: unrecognized class-parity derivation `{derivation}`"
+            )));
+        } else {
+            continue;
+        };
+        let metric_id = entry
+            .get("metric_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                MeasurementError::new(format!(
+                    "{CLASS_PARITY_PROJECTION_UNKNOWN}: a class-parity derivation carries no metric_id"
+                ))
+            })?
+            .to_string();
+        let stratum = entry
+            .get("stratum")
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                MeasurementError::new(format!(
+                    "{CLASS_PARITY_PROJECTION_UNKNOWN}: a class-parity derivation carries no stratum"
+                ))
+            })?
+            .to_string();
+        let reference_denominator = entry
+            .get("fraction")
+            .and_then(|fraction| fraction.get("denominator"))
+            .and_then(Value::as_u64)
+            .ok_or_else(|| {
+                MeasurementError::new(format!(
+                    "{CLASS_PARITY_PROJECTION_UNKNOWN}: a class-parity derivation carries no fraction denominator"
+                ))
+            })?;
+        projections.push(ExtractionThresholdProjection {
+            metric_id,
+            stratum,
+            projection,
+            reference_denominator,
+        });
+    }
+    Ok(projections)
 }

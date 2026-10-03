@@ -398,6 +398,14 @@ pub enum AcceptanceError {
     UnknownGapTarget { family_id: String },
     /// A frozen threshold is carried BOTH measured and as a gap.
     ThresholdBothMeasuredAndGapped { threshold_id: String },
+    /// A frozen threshold declares a stratum that is not measured with a positive
+    /// denominator while the same metric id IS measured at another stratum: the
+    /// threshold would be silently substituted by the wrong stratum of the same
+    /// metric, never a pass.
+    ThresholdStratumUnmeasured {
+        threshold_id: String,
+        stratum: String,
+    },
     /// A frozen threshold is carried NEITHER measured nor as a gap (silent
     /// zero).
     ThresholdSilentZero { threshold_id: String },
@@ -515,6 +523,16 @@ impl fmt::Display for AcceptanceError {
                     "threshold `{threshold_id}` is both measured and gapped"
                 )
             }
+            AcceptanceError::ThresholdStratumUnmeasured {
+                threshold_id,
+                stratum,
+            } => {
+                write!(
+                    formatter,
+                    "threshold `{threshold_id}` declares stratum `{stratum}` that is not measured; \
+                     another stratum of the same metric id cannot substitute it"
+                )
+            }
             AcceptanceError::ThresholdSilentZero { threshold_id } => {
                 write!(
                     formatter,
@@ -611,6 +629,30 @@ pub fn build_native_acceptance(
     };
     validate_native_acceptance(&receipt, expectation)?;
     Ok(receipt)
+}
+
+/// Whether `metrics` measures `threshold` with a positive denominator: a row
+/// resolves a threshold when it carries the same metric id and, when the metric
+/// id is shared by more than one frozen threshold, exactly the threshold's
+/// declared stratum.  A metric id carried by a single threshold needs no stratum
+/// on the row: there is no other stratum of that metric id to substitute.  This
+/// is the single place the `(metric_id, stratum)` join lives, so a threshold can
+/// never be silently substituted by another stratum of the same metric id.
+pub fn threshold_is_measured(
+    metrics: &[AcceptanceMetricRow],
+    thresholds: &[AcceptanceThresholdExpectation],
+    threshold: &AcceptanceThresholdExpectation,
+) -> bool {
+    let shared = thresholds
+        .iter()
+        .filter(|candidate| candidate.metric_id == threshold.metric_id)
+        .count()
+        > 1;
+    metrics.iter().any(|row| {
+        row.denominator > 0
+            && row.metric_id == threshold.metric_id
+            && (!shared || row.stratum.as_deref() == threshold.stratum.as_deref())
+    })
 }
 
 /// Validate a receipt against the re-derived expectation. Every failure is a
@@ -876,26 +918,52 @@ pub fn validate_native_acceptance(
         }
     }
 
-    // Every frozen threshold is either measured with a non-empty denominator or
-    // explicitly carried in the ledger with a reason. Never both, never neither.
+    // Every frozen threshold is either measured with a non-empty denominator at
+    // its declared stratum or explicitly carried in the ledger with a reason.
+    // Never both, never neither, and never resolved by another stratum of the
+    // same metric id.
     for threshold in &expectation.thresholds {
-        let measured = measured_metric_ids.contains(threshold.metric_id.as_str());
+        let measured = threshold_is_measured(&receipt.metrics, &expectation.thresholds, threshold);
         let gapped = gapped_thresholds.contains(threshold.threshold_id.as_str());
         if measured && gapped {
             return Err(AcceptanceError::ThresholdBothMeasuredAndGapped {
                 threshold_id: threshold.threshold_id.clone(),
             });
         }
-        if !measured && !gapped {
-            return Err(AcceptanceError::ThresholdSilentZero {
-                threshold_id: threshold.threshold_id.clone(),
-            });
-        }
-        if measured && !gapped_families.contains(threshold.family_id.as_str()) {
+        if measured {
             // A measured threshold must still name its family in the ledger only
             // when the family is required; here the measurement itself is the
             // evidence, so absence from the gap ledger is legal.
+            continue;
         }
+        if gapped {
+            continue;
+        }
+        // Neither measured nor gapped: a silent zero, unless the same metric id
+        // is measured at another stratum.  That case is a substitution the
+        // validator refuses by name rather than admitting.
+        let same_metric_measured = receipt
+            .metrics
+            .iter()
+            .any(|row| row.metric_id == threshold.metric_id && row.denominator > 0);
+        let shared = expectation
+            .thresholds
+            .iter()
+            .filter(|candidate| candidate.metric_id == threshold.metric_id)
+            .count()
+            > 1;
+        if shared
+            && same_metric_measured
+            && let Some(stratum) = &threshold.stratum
+        {
+            return Err(AcceptanceError::ThresholdStratumUnmeasured {
+                threshold_id: threshold.threshold_id.clone(),
+                stratum: stratum.clone(),
+            });
+        }
+        return Err(AcceptanceError::ThresholdSilentZero {
+            threshold_id: threshold.threshold_id.clone(),
+        });
     }
 
     // No measured metric may claim an unknown threshold id via its name; and no
