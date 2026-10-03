@@ -224,10 +224,42 @@ Ordered; each slice is bounded and has a named proof.
   same-generator/different-label provenance check the R134 reviewer found absent. Proof:
   both checks fail closed on an injected mutation and pass on the committed carriers.
 
+  **Spike result (2026-10-03) — both checks already exist and are already tested.** The
+  reviewer's finding is about the M514 carriers, not about the codebase:
+
+  | requirement | existing mechanism |
+  |---|---|
+  | same-generator / different-label provenance | `crates/da-application/tests/promotion_qualification.rs::shared_producer_digest_is_unqualified`, plus the `PromotionGateBlockReason::ProducerNotIndependent` block reason in `crates/da-application/src/native_family_promotion_gate.rs` (lines 76, 328, 830) |
+  | producer-independence thresholds | `promotion_qualification.rs::weak_producer_independence_is_unqualified_and_thresholds_are_explicit` |
+  | recompute from readable bytes | recompute checks already present in `crates/da-parse/tests/`: `native_header_same_n.rs`, `native_bibliography_same_n.rs`, `native_fulltext_same_n.rs`, `native_acceptance_evaluator_contract.rs`, `batch_contract.rs`, `external_holdout_probe_semantics.rs` |
+
+  So S04 is mostly **pointing the existing discipline at the M514 carriers and recording
+  the linkage**, plus the one genuinely missing piece: an explicit
+  reviewer-recomputability statement over the acceptance package's own bytes. It is not
+  new mechanism construction. Do not restate or duplicate `promotion_qualification`'s
+  assertions — reuse them.
+
 - **S05 — R140 / R142 evidence closure.**
   Makes the conservation/contamination measurement and reward versioning R142 demands
   explicit, and re-states R140's delivered-vs-typed-absence boundary with measured
   numbers. Proof: the named measurements are present and pinned.
+
+  **Spike result (2026-10-03) — the evidence exists; the reviewer asked for an explicit
+  pointer.** `artifacts/parse_learning/candidate_cycle.json` already carries
+  `candidate_id`, `weights_digest`, `split`, `prompt_lineage_digest`,
+  **`reward_definition_sha256`** (this is the reward versioning R142 names), `gain_rule`,
+  `baseline_n`, `candidate_n`, `baseline_metric_one/two`, `candidate_metric_one/two`,
+  `metric_one_delta`, `metric_two_delta`, **`validation_gap`**, `quality_qualification`,
+  `critic_failures`, and conservation/contamination entries.
+  `artifacts/parse_learning/learning_corpus.json` carries `reward_definition`,
+  `gain_rule`, `train`, `validation`, **`corpus_digest`**, `split_rule`,
+  `document_identity_field`, `prompt_identity_role`.
+
+  So R142's "does not explicitly show" is a **linkage statement, not a missing
+  measurement**: S05 records the pointer from the requirement to these exact fields
+  (with the sha256 that pins them) instead of re-deriving them. R140's boundary is the
+  same kind of statement — the typed absences stay typed, and the requirement says so by
+  name rather than by prose.
 
 - **S06 — Re-validate and re-issue the acceptance package.**
   Re-resolve all three thresholds against the frozen references, re-emit the acceptance
@@ -260,6 +292,21 @@ Ordered; each slice is bounded and has a named proof.
 ---
 
 ## 7. Risks and unknowns
+
+**Synthesis of the 2026-10-03 spikes (S01–S05).** Every spike landed on the same shape:
+validators flagged *missing explicit linkage*, while the mechanism or the evidence
+already exists, is committed, and is already independently judged. In detail:
+
+| slice | what the validator asked for | what the spike found |
+|---|---|---|
+| S01/S02 | a measurement engine for the frozen metrics | the producer exists (probe example, 4,762 lines); the acceptance runner hardcodes the gaps in `build_gap_ledger` |
+| S03 | a same-n Java resource reference | per-document Java latency already recorded for 531 docs; the obstacle is pairing discipline |
+| S04 | recompute + provenance checks | both already exist and are tested (`shared_producer_digest_is_unqualified`, `ProducerNotIndependent`) |
+| S05 | conservation/contamination + reward versioning | already present (`reward_definition_sha256`, `corpus_digest`, `validation_gap`) |
+
+This makes the milestone **predominantly a wiring and evidence-linkage milestone**, not a
+build-from-scratch one. Estimate it that way. If any slice turns out to need genuinely
+new mechanism, say so in the slice PLAN rather than absorbing the cost silently.
 
 - **The thresholds may not be reachable.** `extraction_weakest_family`'s frozen reference
   is 0.4317 — a weakest-stratum value measured on the Java reference series. The native
