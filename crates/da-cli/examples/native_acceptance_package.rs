@@ -41,10 +41,14 @@ use da_cli::native_acceptance_package::{
     POINTER_BODY_RESIDUAL_AGGREGATE, POINTER_COMPATIBILITY_NAMED_GAPS, POINTER_FOLLOWUP_STAGES,
     POINTER_LEARNING_OUTCOME, POINTER_M513_REMAINDERS, POINTER_MEASUREMENT_DOCUMENTS,
     POINTER_PINS_VALUES, POINTER_RESOURCE_REFERENCE_METRICS, POINTER_SCHEMA_REQUIRED_SCOPE,
-    POINTER_SCHEMA_REQUIREMENT_IDS, build_acceptance_package, build_attribution, gate_blocks_s09,
-    validate_acceptance_package,
+    POINTER_SCHEMA_REQUIREMENT_IDS, RESOURCE_PAIR_GATE_KIND, build_acceptance_package,
+    build_attribution, gate_blocks_s09, validate_acceptance_package,
+};
+use da_cli::native_corpus_resource_same_n::{
+    CORPUS_RESOURCE_REFERENCE_NOT_SAME_N, CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL,
 };
 use da_cli::native_family_receipt::{CarrierBinding, sha256_prefixed};
+use da_cli::native_resource_same_n::SAME_N_ABSENCE_REASON_VOCABULARY;
 use da_parse::{
     BodyAxisResidual, CandidateMeasurement, MandatoryGate, MeasuredMetric,
     NATIVE_ACCEPTANCE_BODY_AXIS_GATE_ID, NATIVE_ACCEPTANCE_EVALUATION_SCHEMA_VERSION,
@@ -160,6 +164,129 @@ fn closed_locks() -> BTreeMap<String, String> {
         ("production_route".to_owned(), "forbidden".to_owned()),
         ("graph_write".to_owned(), "forbidden".to_owned()),
     ])
+}
+
+// ───────────────────────── resource axis ─────────────────────────
+
+/// What the same-n resource receipt's reference rows report, derived rather
+/// than restated: the observed-row count, the measured Java latency, the
+/// measurable population the pair covers and the typed absence reason the
+/// pair would otherwise carry.
+struct ResourceAxis {
+    observed_rows: u64,
+    observed_java_latency_ms: Option<u64>,
+    measurable_documents: u64,
+    absence_reason: String,
+}
+
+/// Derive the resource axis from the corpus same-n receipt.
+///
+/// Every reference row is either `observed` (it must carry a pinned
+/// `measured_reference` source) or `not_observed` (it must carry a reason from
+/// the closed vocabulary); any other state is refused. The returned axis drives
+/// the Java resource gate instead of the old hardcoded typed absence.
+fn derive_resource_axis(resource: &serde_json::Value) -> Result<ResourceAxis, Box<dyn Error>> {
+    let rows = resource["reference_metrics"]
+        .as_array()
+        .ok_or("the resource receipt carries no reference_metrics")?;
+    if rows.is_empty() {
+        return Err("the resource receipt carries no reference metric rows".into());
+    }
+    let measurable_documents = resource["populations"]["measurable"]
+        .as_u64()
+        .ok_or("the resource receipt carries no `populations.measurable`")?;
+    let mut observed_rows = 0u64;
+    let mut observed_java_latency_ms: Option<u64> = None;
+    let mut absence_reason: Option<String> = None;
+    for row in rows {
+        let id = row["id"]
+            .as_str()
+            .ok_or("every resource reference row must carry an `id`")?;
+        match row["state"].as_str() {
+            Some("observed") => {
+                let source = row
+                    .get("source")
+                    .filter(|value| !value.is_null())
+                    .ok_or_else(|| {
+                        format!("observed resource reference row `{id}` has no source")
+                    })?;
+                if source["kind"].as_str() != Some("measured_reference") {
+                    return Err(format!(
+                        "observed resource reference row `{id}` is not a `measured_reference`"
+                    )
+                    .into());
+                }
+                observed_rows += 1;
+                if id == "java_latency_ms" {
+                    let value = row["value"].as_u64().ok_or(
+                        "the observed java_latency_ms resource reference row carries no integer value",
+                    )?;
+                    observed_java_latency_ms =
+                        Some(observed_java_latency_ms.map_or(value, |known| known.max(value)));
+                }
+            }
+            Some("not_observed") => {
+                let reason = row["reason"].as_str().unwrap_or_default();
+                if !SAME_N_ABSENCE_REASON_VOCABULARY.contains(&reason) {
+                    return Err(format!(
+                        "not_observed resource reference row `{id}` carries an untyped reason"
+                    )
+                    .into());
+                }
+                if absence_reason.is_none() {
+                    absence_reason = Some(reason.to_owned());
+                }
+            }
+            other => {
+                return Err(format!(
+                    "resource reference row `{id}` has state `{}`, expected `observed` or `not_observed`",
+                    other.unwrap_or("<absent>")
+                )
+                .into());
+            }
+        }
+    }
+    Ok(ResourceAxis {
+        observed_rows,
+        observed_java_latency_ms,
+        measurable_documents,
+        absence_reason: absence_reason
+            .unwrap_or_else(|| CORPUS_RESOURCE_REFERENCE_NOT_SAME_N.to_owned()),
+    })
+}
+
+/// Build the Java resource-axis gate from the derived axis: a measured same-n
+/// pair is `resource_pair`/`met` (non-blocking); an all-typed-absence receipt
+/// keeps the `resource_absence`/`not_observed` form and blocks S09.
+fn resource_axis_gate(axis: &ResourceAxis, evidence: CarrierBinding) -> AcceptanceGate {
+    if axis.observed_rows > 0 {
+        let latency = axis.observed_java_latency_ms.unwrap_or_default();
+        make_gate(
+            JAVA_CPU_GATE_ID,
+            RESOURCE_PAIR_GATE_KIND,
+            "met",
+            evidence,
+            format!(
+                "the Java resource axis is a measured same-n pair: java_latency_ms {latency} ms \
+                 (maximum over the {} measurable documents) is bound to the same-n carrier \
+                 {CORPUS_RESOURCE_REFERENCE_PROVENANCE_REL}; D510 container-wide Java CPU is \
+                 re-scoped by D531 to this same-n reference pair",
+                axis.measurable_documents
+            ),
+            None,
+            String::new(),
+        )
+    } else {
+        make_gate(
+            JAVA_CPU_GATE_ID,
+            "resource_absence",
+            "not_observed",
+            evidence,
+            "container-wide Java CPU is not same-n to the 610 assigned corpus (D510)".to_owned(),
+            Some(axis.absence_reason.clone()),
+            "a pinned same-n Java CPU reference over the 610 assigned corpus (D510)".to_owned(),
+        )
+    }
 }
 
 // ───────────────────────── full run ─────────────────────────
@@ -343,18 +470,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
 
     let resource_bytes = read_bytes(root, PACKAGE_RESOURCE_RECEIPT_REL)?;
     let resource: serde_json::Value = serde_json::from_slice(&resource_bytes)?;
-    let reference_metrics = resource["reference_metrics"]
-        .as_array()
-        .ok_or("the resource receipt carries no reference_metrics")?;
-    if reference_metrics.is_empty()
-        || reference_metrics
-            .iter()
-            .any(|row| row["state"].as_str() != Some("not_observed"))
-    {
-        return Err(
-            "the corpus resource receipt must record every reference metric `not_observed`".into(),
-        );
-    }
+    let resource_axis = derive_resource_axis(&resource)?;
 
     let m513_binding = binding_for(
         &evidence,
@@ -428,15 +544,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             Some("measured_no_gain".to_owned()),
             "a learning candidate that achieves a same-n gain over the frozen corpus".to_owned(),
         ),
-        make_gate(
-            JAVA_CPU_GATE_ID,
-            "resource_absence",
-            "not_observed",
-            resource_binding,
-            "container-wide Java CPU is not same-n to the 610 assigned corpus (D510)".to_owned(),
-            Some("reference_row_not_same_n".to_owned()),
-            "a pinned same-n Java CPU reference over the 610 assigned corpus (D510)".to_owned(),
-        ),
+        resource_axis_gate(&resource_axis, resource_binding),
     ];
 
     // ── attribution: declared vs DB-canonical vs carrier bindings ──────────

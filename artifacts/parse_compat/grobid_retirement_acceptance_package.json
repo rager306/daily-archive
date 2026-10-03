@@ -19,7 +19,7 @@
     {
       "manifest": "artifacts/parse_compat/native_corpus_resource_same_n.json",
       "pointer": "reference_metrics",
-      "revision_sha256": "sha256:491114b86f761c2529b6b6a2ddd0da31e56916fcd0fa669970e4f4619bbe6d4b"
+      "revision_sha256": "sha256:a616f2f87e4e58161c515c182c9984b6f02ef07c5b5839f73dd9d5d4a0437288"
     },
     {
       "manifest": "artifacts/parse_compat/native_corpus_rollback_rehearsal.json",
@@ -447,18 +447,17 @@
     },
     {
       "gate_id": "resource.container_java_cpu",
-      "kind": "resource_absence",
-      "state": "not_observed",
+      "kind": "resource_pair",
+      "state": "met",
       "required": true,
       "evidence": {
         "manifest": "artifacts/parse_compat/native_corpus_resource_same_n.json",
         "pointer": "reference_metrics",
-        "revision_sha256": "sha256:491114b86f761c2529b6b6a2ddd0da31e56916fcd0fa669970e4f4619bbe6d4b"
+        "revision_sha256": "sha256:a616f2f87e4e58161c515c182c9984b6f02ef07c5b5839f73dd9d5d4a0437288"
       },
-      "detail": "container-wide Java CPU is not same-n to the 610 assigned corpus (D510)",
-      "reason": "reference_row_not_same_n",
-      "evidence_needed": "a pinned same-n Java CPU reference over the 610 assigned corpus (D510)",
-      "blocks_s09": true
+      "detail": "the Java resource axis is a measured same-n pair: java_latency_ms 64611 ms (maximum over the 531 measurable documents) is bound to the same-n carrier crates/da-parse/tests/fixtures/holdout/provenance.yaml; D510 container-wide Java CPU is re-scoped by D531 to this same-n reference pair",
+      "evidence_needed": "",
+      "blocks_s09": false
     }
   ],
   "blocking_gates": [
@@ -541,11 +540,6 @@
       "gate_id": "learning.s07_measured_no_gain",
       "state": "unmet",
       "evidence_needed": "a learning candidate that achieves a same-n gain over the frozen corpus"
-    },
-    {
-      "gate_id": "resource.container_java_cpu",
-      "state": "not_observed",
-      "evidence_needed": "a pinned same-n Java CPU reference over the 610 assigned corpus (D510)"
     }
   ],
   "attribution": {

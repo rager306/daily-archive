@@ -15,9 +15,11 @@ use da_cli::native_acceptance_package::{
     LEARNING_DISPOSITION_GATE_ID, NAMED_GAP_H20, NAMED_GAP_H21, NAMED_GAP_LEARNING_RUVLLM_ABLATION,
     PACKAGE_BODY_RESIDUAL_REL, PACKAGE_DB_CANONICAL_REQUIREMENT_IDS, PACKAGE_EVIDENCE_CARRIERS,
     PACKAGE_NATIVE_MEASUREMENT_REL, PACKAGE_REFERENCE_PINS_REL, PACKAGE_REFERENCE_PROBE_REL,
-    PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_SCHEMA_REL, gate_blocks_s09, validate_acceptance_package,
+    PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_SCHEMA_REL, RESOURCE_PAIR_GATE_KIND, gate_blocks_s09,
+    validate_acceptance_package,
 };
 use da_cli::native_family_receipt::{CarrierBinding, sha256_prefixed};
+use da_cli::native_resource_same_n::SAME_N_ABSENCE_REASON_VOCABULARY;
 use da_parse::{
     BodyAxisResidual, CandidateMeasurement, MeasuredMetric, NativeAcceptanceInput,
     PopulationDenominator, ReferenceDocument, ReferenceSet, Series, evaluate_native_acceptance,
@@ -239,7 +241,7 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         "threshold_pending_family",
         "named_gap",
         "learning_disposition",
-        "resource_absence",
+        "resource_pair",
         "human_release",
     ] {
         assert!(kinds.contains(kind), "gate kind `{kind}` is missing");
@@ -278,6 +280,19 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
             "mandatory gate `{gate_id}` is missing"
         );
     }
+
+    // The resource-axis gate is the measured same-n pair, not the typed absence.
+    let resource_gate = package
+        .mandatory_gates
+        .iter()
+        .find(|gate| gate.gate_id == JAVA_CPU_GATE_ID)
+        .ok_or("the resource gate is missing")?;
+    assert_eq!(
+        resource_gate.kind, RESOURCE_PAIR_GATE_KIND,
+        "the resource gate is not the measured same-n pair"
+    );
+    assert_eq!(resource_gate.state, "met");
+    assert!(!resource_gate.blocks_s09);
 
     // ── the body residual survives verbatim ───────────────────────────────
     let body = package
@@ -404,16 +419,49 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         contract_requirement_ids
     );
 
-    // ── the resource receipt really records the Java absence ──────────────
+    // ── the resource receipt records a same-n pair or a typed absence ─────
     let resource: serde_json::Value =
         serde_json::from_slice(&read(&root, PACKAGE_RESOURCE_RECEIPT_REL)?)?;
+    let reference_rows = resource["reference_metrics"]
+        .as_array()
+        .ok_or("reference_metrics")?;
+    let mut observed_rows = 0usize;
+    for row in reference_rows {
+        match row["state"].as_str() {
+            Some("observed") => {
+                let source = row
+                    .get("source")
+                    .filter(|value| !value.is_null())
+                    .ok_or("an observed resource reference row carries no same-n source")?;
+                assert_eq!(
+                    source["kind"].as_str(),
+                    Some("measured_reference"),
+                    "an observed resource reference row is not a measured reference"
+                );
+                observed_rows += 1;
+            }
+            Some("not_observed") => {
+                let reason = row["reason"].as_str().unwrap_or_default();
+                assert!(
+                    SAME_N_ABSENCE_REASON_VOCABULARY.contains(&reason),
+                    "a not_observed resource reference row carries an untyped reason `{reason}`"
+                );
+            }
+            other => panic!(
+                "a resource reference row has state `{other:?}`, expected observed or not_observed"
+            ),
+        }
+    }
     assert!(
-        resource["reference_metrics"]
-            .as_array()
-            .ok_or("reference_metrics")?
+        observed_rows > 0,
+        "the resource receipt carries no observed same-n reference row"
+    );
+    assert!(
+        reference_rows
             .iter()
-            .all(|row| row["state"].as_str() == Some("not_observed")),
-        "a reference metric was observed without a same-n source"
+            .any(|row| row["id"].as_str() == Some("java_latency_ms")
+                && row["state"].as_str() == Some("observed")),
+        "the measured java_latency_ms same-n reference row is missing"
     );
 
     // ── named mutations are all refused ───────────────────────────────────

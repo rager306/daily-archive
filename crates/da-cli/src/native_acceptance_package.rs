@@ -131,13 +131,16 @@ pub const POINTER_BUDGET_EXECUTED_POPULATION: &str = "executed_population";
 
 // ── closed vocabularies ─────────────────────────────────────────────────────
 
-/// The closed gate-kind vocabulary.
-pub const GATE_KIND_VOCABULARY: [&str; 7] = [
+/// The closed gate-kind vocabulary. `resource_pair` types a measured same-n
+/// Java resource reference; `resource_absence` is retained for the typed-absence
+/// form the receipt used before the pair was measured.
+pub const GATE_KIND_VOCABULARY: [&str; 8] = [
     "threshold",
     "body_axis",
     "threshold_pending_family",
     "named_gap",
     "learning_disposition",
+    "resource_pair",
     "resource_absence",
     "human_release",
 ];
@@ -169,8 +172,11 @@ pub const NAMED_GAP_H20: &str = "h20_frozen_external_holdout_decision";
 pub const NAMED_GAP_H21: &str = "h21_revision_label_residual";
 /// The S07 measured-no-gain disposition gate id.
 pub const LEARNING_DISPOSITION_GATE_ID: &str = "learning.s07_measured_no_gain";
-/// The container-wide Java CPU absence gate id.
+/// The container-wide Java resource-axis gate id (stable across the typed
+/// absence and the measured pair).
 pub const JAVA_CPU_GATE_ID: &str = "resource.container_java_cpu";
+/// The gate kind for a measured same-n resource reference pair (D531).
+pub const RESOURCE_PAIR_GATE_KIND: &str = "resource_pair";
 /// The body-residual token that must survive verbatim.
 pub const BODY_RESIDUAL_TOKEN: &str = "p1_localization_uncertain";
 
@@ -308,7 +314,8 @@ pub struct AcceptanceGate {
     /// Stable gate id.
     pub gate_id: String,
     /// `threshold` | `body_axis` | `threshold_pending_family` | `named_gap` |
-    /// `learning_disposition` | `resource_absence` | `human_release`.
+    /// `learning_disposition` | `resource_pair` | `resource_absence` |
+    /// `human_release`.
     pub kind: String,
     /// Typed state from [`GATE_STATE_VOCABULARY`].
     pub state: String,
@@ -648,7 +655,11 @@ fn check_gate(
             state: gate.state.clone(),
         });
     }
-    if gate.detail.trim().is_empty() || gate.evidence_needed.trim().is_empty() {
+    let expected_blocks = gate_blocks_s09(gate.required, &gate.state);
+    // A met (non-blocking) gate needs no further evidence; a gate that still
+    // blocks S09 must say what would clear it.
+    if gate.detail.trim().is_empty() || (expected_blocks && gate.evidence_needed.trim().is_empty())
+    {
         return Err(AcceptancePackageError::GateWithoutEvidence {
             gate_id: gate.gate_id.clone(),
         });
@@ -664,7 +675,6 @@ fn check_gate(
             ),
         });
     }
-    let expected_blocks = gate_blocks_s09(gate.required, &gate.state);
     if gate.blocks_s09 != expected_blocks {
         return Err(AcceptancePackageError::BlockingSetDrift {
             detail: format!(

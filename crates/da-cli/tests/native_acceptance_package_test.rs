@@ -29,6 +29,7 @@ use da_cli::native_acceptance_package::{
     PACKAGE_ROLLBACK_RECEIPT_REL, gate_blocks_s09, validate_acceptance_package,
 };
 use da_cli::native_family_receipt::{CarrierBinding, sha256_prefixed};
+use da_cli::native_resource_same_n::SAME_N_ABSENCE_REASON_VOCABULARY;
 use serde_json::Value;
 use std::error::Error;
 use std::fs;
@@ -384,8 +385,10 @@ fn rollback_without_byte_identity(document: &Value) -> Result<(), String> {
     Ok(())
 }
 
-/// A same-n resource claim is real only when every reference row is a typed
-/// absence and the pairing forbids pooling and savings.
+/// A same-n resource claim is real when every reference row is either an
+/// observed row carrying a same-n source or a typed absence, the pairing
+/// forbids pooling and savings, and the receipt's bound-row count matches the
+/// rows that actually carry a source.
 fn pooled_resource_claim(document: &Value) -> Result<(), String> {
     let pairing = document
         .get("pairing")
@@ -406,19 +409,57 @@ fn pooled_resource_claim(document: &Value) -> Result<(), String> {
     if rows.is_empty() {
         return Err("pooled_resource_claim: no reference metric rows".to_owned());
     }
+    let mut bound = 0u64;
     for row in rows {
-        if row.get("state").and_then(Value::as_str) != Some("not_observed") {
-            return Err(
-                "pooled_resource_claim: a reference metric is not a typed absence".to_owned(),
-            );
-        }
-        if row
+        let has_source = row
             .get("source")
             .map(|value| !value.is_null())
-            .unwrap_or(false)
-        {
-            return Err("pooled_resource_claim: a reference metric claims a source".to_owned());
+            .unwrap_or(false);
+        match row.get("state").and_then(Value::as_str) {
+            Some("observed") => {
+                if !has_source {
+                    return Err(
+                        "pooled_resource_claim: an observed reference metric has no source"
+                            .to_owned(),
+                    );
+                }
+                bound += 1;
+            }
+            Some("not_observed") => {
+                let reason = row
+                    .get("reason")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                if !SAME_N_ABSENCE_REASON_VOCABULARY.contains(&reason) {
+                    return Err(
+                        "pooled_resource_claim: a not_observed reference metric has an untyped reason"
+                            .to_owned(),
+                    );
+                }
+                if has_source {
+                    return Err(
+                        "pooled_resource_claim: a not_observed reference metric claims a source"
+                            .to_owned(),
+                    );
+                }
+            }
+            other => {
+                return Err(format!(
+                    "pooled_resource_claim: a reference metric has state `{}`, expected observed or not_observed",
+                    other.unwrap_or("<absent>")
+                ));
+            }
         }
+    }
+    let declared_bound = document
+        .get("residuals")
+        .and_then(|residuals| residuals.get("reference_rows_bound"))
+        .and_then(Value::as_u64)
+        .ok_or("pooled_resource_claim: missing residuals.reference_rows_bound")?;
+    if declared_bound != bound {
+        return Err(format!(
+            "pooled_resource_claim: residuals.reference_rows_bound is {declared_bound}, but {bound} rows carry a source"
+        ));
     }
     Ok(())
 }
@@ -439,14 +480,47 @@ fn acceptance_package_refuses_a_rollback_claim_without_byte_identity() -> Result
 #[test]
 fn acceptance_package_refuses_a_pooled_resource_claim() -> Result<(), Box<dyn Error>> {
     let root = repo_root();
-    let mut resource: Value = serde_json::from_slice(&read(&root, PACKAGE_RESOURCE_RECEIPT_REL)?)?;
+    let resource: Value = serde_json::from_slice(&read(&root, PACKAGE_RESOURCE_RECEIPT_REL)?)?;
+    // The committed receipt carries one observed same-n row and two typed
+    // absences, and its bound-row count matches the rows with a source.
     pooled_resource_claim(&resource).map_err(|error| -> Box<dyn Error> { error.into() })?;
 
-    resource["pairing"]["pooled"] = Value::String("allowed".to_owned());
-    assert!(pooled_resource_claim(&resource).is_err());
+    // Pooling is refused.
+    let mut pooled = resource.clone();
+    pooled["pairing"]["pooled"] = Value::String("allowed".to_owned());
+    assert!(pooled_resource_claim(&pooled).is_err());
 
-    let mut resource: Value = serde_json::from_slice(&read(&root, PACKAGE_RESOURCE_RECEIPT_REL)?)?;
-    resource["reference_metrics"][0]["state"] = Value::String("observed".to_owned());
-    assert!(pooled_resource_claim(&resource).is_err());
+    // A saving claim is refused.
+    let mut saving = resource.clone();
+    saving["pairing"]["saving_claim"] = Value::String("allowed".to_owned());
+    assert!(pooled_resource_claim(&saving).is_err());
+
+    // An observed row without a same-n source is refused.
+    let mut unbound = resource.clone();
+    let observed = unbound["reference_metrics"]
+        .as_array_mut()
+        .expect("reference_metrics")
+        .iter_mut()
+        .find(|row| row["state"].as_str() == Some("observed"))
+        .expect("an observed reference row");
+    observed["source"] = Value::Null;
+    assert!(pooled_resource_claim(&unbound).is_err());
+
+    // A not_observed row with an untyped reason is refused.
+    let mut untyped = resource.clone();
+    let absent = untyped["reference_metrics"]
+        .as_array_mut()
+        .expect("reference_metrics")
+        .iter_mut()
+        .find(|row| row["state"].as_str() == Some("not_observed"))
+        .expect("a not_observed reference row");
+    absent["reason"] = Value::String("untyped".to_owned());
+    assert!(pooled_resource_claim(&untyped).is_err());
+
+    // A drifted bound-row count is refused.
+    let mut drifted = resource.clone();
+    drifted["residuals"]["reference_rows_bound"] = Value::from(0u64);
+    assert!(pooled_resource_claim(&drifted).is_err());
+
     Ok(())
 }
