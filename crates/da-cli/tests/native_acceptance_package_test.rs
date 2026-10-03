@@ -13,7 +13,7 @@
 //! source-bound progress without treating an artifact's existence as capability,
 //! and the frozen 610-document corpus is a gitignored local asset; every pin
 //! this test recomputes resolves from a repository-relative *committed* carrier
-//! (the package's own fourteen-carrier table). A `committed_carrier_pins` check
+//! (the package's own twenty-one-carrier table). A `committed_carrier_pins` check
 //! asserts every bound manifest is a tracked artifact, never a frozen-corpus
 //! source PDF, so the audit cannot silently start depending on the corpus.
 //!
@@ -148,7 +148,7 @@ fn native_acceptance_package_audit_recomputes_committed_carrier_pins() -> Result
 {
     let root = repo_root();
     let pins = committed_carrier_pins(&root)?;
-    assert_eq!(pins.len(), 14, "the evidence carrier table drifted");
+    assert_eq!(pins.len(), 21, "the evidence carrier table drifted");
 
     let package = load_package(&root)?;
     let mut declared = package.evidence.clone();
@@ -193,8 +193,8 @@ fn acceptance_package_states_recomputability_and_independence() -> Result<(), Bo
         "carrier_count is not the bound carrier count"
     );
     assert_eq!(
-        recompute.carrier_count, 14,
-        "the package must carry the fourteen bound carriers"
+        recompute.carrier_count, 21,
+        "the package must carry the twenty-one bound carriers"
     );
     assert!(
         recompute.recompute_surfaces.len() >= 2,

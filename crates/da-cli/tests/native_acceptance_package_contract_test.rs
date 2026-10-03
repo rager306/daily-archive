@@ -187,7 +187,7 @@ fn expect_refusal(
 fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn Error>> {
     let root = repo_root();
     let evidence = expected_evidence(&root)?;
-    assert_eq!(evidence.len(), 14, "the evidence carrier table drifted");
+    assert_eq!(evidence.len(), 21, "the evidence carrier table drifted");
 
     let schema: serde_json::Value = serde_yaml::from_slice(&read(&root, PACKAGE_SCHEMA_REL)?)?;
     let threshold_gate_count = schema["threshold_policy"]["thresholds"]
@@ -236,8 +236,8 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         "the carried carrier_count is not the bound carrier count"
     );
     assert_eq!(
-        package.reviewer_recomputation.carrier_count, 14,
-        "the package must carry the fourteen bound carriers"
+        package.reviewer_recomputation.carrier_count, 21,
+        "the package must carry the twenty-one bound carriers"
     );
     assert_eq!(
         package.carrier_independence.candidate_manifest, PACKAGE_NATIVE_MEASUREMENT_REL,
@@ -638,9 +638,9 @@ fn the_package_module_carries_no_threshold_literal_and_no_side_channel() {
         );
     }
     for carrier_literal in [
-        "carrier_count: 14",
-        "carrier_count: 14u64",
-        "carrier_count:14",
+        "carrier_count: 21",
+        "carrier_count: 21u64",
+        "carrier_count:21",
     ] {
         assert!(
             !source.contains(carrier_literal),

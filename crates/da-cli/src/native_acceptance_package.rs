@@ -92,6 +92,10 @@ pub const PACKAGE_COMPATIBILITY_REL: &str = "data/parse/grobid_compatibility.yam
 pub const PACKAGE_FOLLOWUP_REL: &str = "doc/review/grobid-absorption-followup.json";
 /// The S07 closed learning-cycle carrier.
 pub const PACKAGE_LEARNING_CYCLE_REL: &str = "artifacts/parse_learning/candidate_cycle.json";
+/// The S07 learning-corpus carrier that defines the reward version.
+pub const PACKAGE_LEARNING_CORPUS_REL: &str = "artifacts/parse_learning/learning_corpus.json";
+/// The Java-free vertical-slice carrier (R140).
+pub const PACKAGE_VERTICAL_SLICE_REL: &str = "artifacts/parse_compat/java_free_vertical_slice.json";
 /// The S05 body-residual carrier.
 pub const PACKAGE_BODY_RESIDUAL_REL: &str =
     "artifacts/parse_compat/native_body_uncertainty_split.json";
@@ -124,6 +128,20 @@ pub const POINTER_COMPATIBILITY_NAMED_GAPS: &str = "parity_ledger.named_gaps";
 pub const POINTER_FOLLOWUP_STAGES: &str = "stages";
 /// Pointer into the learning cycle at its outcome.
 pub const POINTER_LEARNING_OUTCOME: &str = "outcome";
+/// Pointer into the learning cycle at the reward-definition digest it trained on.
+pub const POINTER_LEARNING_REWARD_VERSION: &str = "reward_definition_sha256";
+/// Pointer into the learning cycle at its corpus-conservation block.
+pub const POINTER_LEARNING_CONSERVATION: &str = "conservation";
+/// Pointer into the learning cycle at its contamination assessment.
+pub const POINTER_LEARNING_CONTAMINATION: &str = "contamination_assessment";
+/// Pointer into the learning cycle at its validation gap.
+pub const POINTER_LEARNING_VALIDATION_GAP: &str = "validation_gap";
+/// Pointer into the learning corpus at its reward definition.
+pub const POINTER_LEARNING_REWARD_DEFINITION: &str = "reward_definition";
+/// Pointer into the native measurement at its typed gaps (R140).
+pub const POINTER_NATIVE_GAPS: &str = "gaps";
+/// Pointer into the vertical slice at its Java guard (R140).
+pub const POINTER_VERTICAL_SLICE_GUARD: &str = "guard";
 /// Pointer into the body-residual carrier at its aggregate.
 pub const POINTER_BODY_RESIDUAL_AGGREGATE: &str = "aggregate";
 /// Pointer into the batch-budget carrier at its executed population.
@@ -198,7 +216,7 @@ pub const PACKAGE_BINDING_REQUIREMENT_IDS: [&str; 3] = ["R139", "R123", "R124"];
 /// The evidence carriers the package binds, as `(repository-relative path,
 /// pointer)`. Both the producing example and the contract test derive their
 /// sha256 from this one list, so the kept set cannot drift.
-pub const PACKAGE_EVIDENCE_CARRIERS: [(&str, &str); 14] = [
+pub const PACKAGE_EVIDENCE_CARRIERS: [(&str, &str); 21] = [
     (
         PACKAGE_NATIVE_MEASUREMENT_REL,
         POINTER_MEASUREMENT_DOCUMENTS,
@@ -222,7 +240,60 @@ pub const PACKAGE_EVIDENCE_CARRIERS: [(&str, &str); 14] = [
     (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_OUTCOME),
     (PACKAGE_BODY_RESIDUAL_REL, POINTER_BODY_RESIDUAL_AGGREGATE),
     (PACKAGE_BUDGET_REL, POINTER_BUDGET_EXECUTED_POPULATION),
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_REWARD_VERSION),
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_CONSERVATION),
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_CONTAMINATION),
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_VALIDATION_GAP),
+    (
+        PACKAGE_LEARNING_CORPUS_REL,
+        POINTER_LEARNING_REWARD_DEFINITION,
+    ),
+    (PACKAGE_NATIVE_MEASUREMENT_REL, POINTER_NATIVE_GAPS),
+    (PACKAGE_VERTICAL_SLICE_REL, POINTER_VERTICAL_SLICE_GUARD),
 ];
+
+// ── per-requirement field linkage (M515/S05) ────────────────────────────────
+//
+// The R140 and R142 records resolved to "does not explicitly show" because no
+// package pointer named their fields. The two groups below declare the exact
+// field-level linkage the reviewer asked for; the hermetic
+// `requirement_evidence_linkage_test` recomputes every pin from the committed
+// manifest bytes. The groups are pure data: no validator variant and no
+// governor label is derived from them here.
+
+/// The R140 evidence pointers: the typed gaps the frozen corpus carries and the
+/// Java-free vertical-slice guard that proves the native path made zero Java
+/// calls.
+pub const REQUIREMENT_EVIDENCE_R140: [(&str, &str); 2] = [
+    (PACKAGE_NATIVE_MEASUREMENT_REL, POINTER_NATIVE_GAPS),
+    (PACKAGE_VERTICAL_SLICE_REL, POINTER_VERTICAL_SLICE_GUARD),
+];
+
+/// The R142 evidence pointers: the reward version/digest, the corpus
+/// conservation before/after and veto, the contamination assessment, the
+/// validation gap and the learning-corpus reward definition.
+pub const REQUIREMENT_EVIDENCE_R142: [(&str, &str); 5] = [
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_REWARD_VERSION),
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_CONSERVATION),
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_CONTAMINATION),
+    (PACKAGE_LEARNING_CYCLE_REL, POINTER_LEARNING_VALIDATION_GAP),
+    (
+        PACKAGE_LEARNING_CORPUS_REL,
+        POINTER_LEARNING_REWARD_DEFINITION,
+    ),
+];
+
+/// The field-level evidence pointers bound to a named requirement, or `None`
+/// when the requirement has no declared pointer group.
+pub fn requirement_evidence_pointers(
+    requirement_id: &str,
+) -> Option<&'static [(&'static str, &'static str)]> {
+    match requirement_id {
+        "R140" => Some(&REQUIREMENT_EVIDENCE_R140),
+        "R142" => Some(&REQUIREMENT_EVIDENCE_R142),
+        _ => None,
+    }
+}
 
 // ── reviewer recomputation and carrier independence (M515/S04) ─────────────
 //
