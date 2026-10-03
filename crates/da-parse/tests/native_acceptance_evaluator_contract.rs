@@ -235,15 +235,33 @@ fn committed_pins_evaluate_without_a_manufactured_pass() {
     assert_eq!(evaluation.threshold_policy_state, "frozen");
     assert_eq!(evaluation.candidate_source_path, T01);
 
-    // The T01 runner produces `native_acceptance.*` metrics; none of the three
-    // frozen threshold metric ids is present. The honest verdict is
-    // `not_comparable`/`metric_absent` — never a manufactured pass.
+    // The committed T01 runner now measures the preservation threshold over the
+    // frozen reference TEI, so `preservation_micro_occurrence` compares inside
+    // the committed series and resolves `met` with a positive candidate
+    // denominator — a measured value reproducing the pinned fraction, never a
+    // manufactured pass. The two extraction thresholds are still absent from
+    // T01, so their honest verdict stays `not_comparable`/`metric_absent`.
     assert_eq!(evaluation.thresholds.len(), 3);
+    let mut met_thresholds: Vec<&str> = Vec::new();
     for verdict in &evaluation.thresholds {
-        assert_eq!(verdict.verdict, "not_comparable");
-        assert_eq!(verdict.reason.as_deref(), Some(REASON_METRIC_ABSENT));
-        assert_ne!(verdict.verdict, "met");
+        if verdict.threshold_id == "preservation_micro_occurrence" {
+            assert_eq!(
+                verdict.verdict, "met",
+                "preservation is measured by the committed T01 runner"
+            );
+            assert_ne!(verdict.reason.as_deref(), Some(REASON_METRIC_ABSENT));
+            assert_eq!(verdict.comparability, "matched");
+            assert!(
+                verdict.candidate_denominator.unwrap_or(0.0) > 0.0,
+                "a measured threshold needs a positive candidate denominator"
+            );
+            met_thresholds.push(verdict.threshold_id.as_str());
+        } else {
+            assert_eq!(verdict.verdict, "not_comparable");
+            assert_eq!(verdict.reason.as_deref(), Some(REASON_METRIC_ABSENT));
+        }
     }
+    assert_eq!(met_thresholds, vec!["preservation_micro_occurrence"]);
 
     // The ledger names all sixteen mandatory gates: three thresholds, the body
     // axis and every schema-declared `threshold_pending` family.

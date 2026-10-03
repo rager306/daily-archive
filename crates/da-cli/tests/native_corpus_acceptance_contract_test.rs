@@ -144,7 +144,7 @@ fn native_corpus_acceptance_artifact_is_canonical_and_census_bound() -> Result<(
         .iter()
         .filter(|gap| gap.kind == "threshold_pending")
         .count();
-    assert_eq!(not_observable, 3, "expected three not_observable gaps");
+    assert_eq!(not_observable, 2, "expected two not_observable gaps");
     assert_eq!(
         threshold_pending, 12,
         "expected twelve threshold_pending families"
@@ -191,6 +191,31 @@ fn native_corpus_acceptance_artifact_is_canonical_and_census_bound() -> Result<(
     let mut m = receipt.clone();
     m.gaps[0].reason = String::new();
     expect_refusal("empty_gap_reason", &m, &expectation, "EmptyGapReason")?;
+
+    // A measured metric row with a zero (silent) denominator is refused by name.
+    let mut m = receipt.clone();
+    m.metrics[0].denominator = 0;
+    expect_refusal(
+        "zero_denominator",
+        &m,
+        &expectation,
+        "MetricZeroDenominator",
+    )?;
+
+    // A frozen threshold measured with a positive denominator while its gap cell
+    // is still carried is refused by name, never admitted as both.
+    let mut m = receipt.clone();
+    m.metrics.push(AcceptanceMetricRow {
+        metric_id: "extraction.native_capability_recall".to_owned(),
+        numerator: 1,
+        denominator: 2,
+    });
+    expect_refusal(
+        "both_measured_and_gapped",
+        &m,
+        &expectation,
+        "ThresholdBothMeasuredAndGapped",
+    )?;
 
     // A redaction leak must be refused by the serializer itself.
     let mut m = receipt.clone();
