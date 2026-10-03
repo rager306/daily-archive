@@ -157,6 +157,33 @@ Ordered; each slice is bounded and has a named proof.
   hermetic and bounded, and never letting the probe's `local_proxy_only` claim scope
   leak into the acceptance claim.
 
+  **Spike result — implementation sketch.** In `native_corpus_acceptance.rs` the two gaps
+  are not discovered, they are *hardcoded* in `build_gap_ledger(expectation)`:
+
+  ```rust
+  let reason = match threshold.family_id.as_str() {
+      "parse.component.native_fulltext_composition_shadow" =>
+          "producing_mechanism_absent:s01_composition_scanner_consumes_composed_emission",
+      _ => "class_parity_axis_absent:not_a_native_route_product",
+  };
+  ```
+
+  So the shape of both slices is the same and it is bounded:
+  1. extend the per-document fold in `run(&Args)` (and the incremental resume cache) so
+     each document also carries the composed-emission scan numbers — the axes the probe
+     already computes;
+  2. replace the unconditional gap construction in `build_gap_ledger` with a
+     measure-or-gap decision: emit `met | unmet` with a non-empty denominator when the
+     axis covers the document, and keep the typed gap cell only where it genuinely
+     does not;
+  3. keep the `--self-check` mutation matrix green, and add the two mutations that now
+     matter: a scan that shrinks the denominator, and a class-parity projection that
+     drops the weakest class.
+
+  That is a wiring change against an existing, independently judged producer — not a new
+  engine. S02 additionally decides option (i) vs (ii) above; option (i) is smaller and
+  keeps the acceptance claim on the composed emission the pins were derived from.
+
 - **S03 — Same-n Java resource reference.**
   Retires `resource.container_java_cpu = not_observed{reference_row_not_same_n}` by
   producing a same-n Java CPU reference for the paired resource envelope. Proof: the
