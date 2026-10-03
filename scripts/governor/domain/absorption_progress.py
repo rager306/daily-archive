@@ -285,7 +285,7 @@ NATIVE_ROUTE_VIOLATION_LABELS = frozenset(
 #: else, and none of them moves the product `java_independence` axis (D499).
 #:
 #: Why this half exists (R141): T05 published the S08 acceptance package, which
-#: binds all fourteen S08 carriers by sha256 and names every mandatory gate with
+#: binds all twenty-one S08 carriers by sha256 and names every mandatory gate with
 #: `s09_authorized=false`. A package's mere existence must not read as progress,
 #: so publishing it *without* the sibling governor half would let an artifact's
 #: presence stand in for capability. This half makes the package auditable:

@@ -1,6 +1,6 @@
 """M514-1lss2s/S08/T06 — the acceptance-package gate-ledger half of the progress check.
 
-The S08 acceptance package is the artifact that binds all fourteen S08 evidence
+The S08 acceptance package is the artifact that binds all twenty-one S08 evidence
 carriers by repository-relative path + pointer + sha256, carries the T02
 frozen-threshold evaluation and names every mandatory gate with a computed
 ``s09_authorized``. R141 is explicit that the Governor may never read an

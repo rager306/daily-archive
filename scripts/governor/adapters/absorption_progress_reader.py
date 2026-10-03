@@ -1205,7 +1205,7 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
         """Resolve the S08 acceptance package and every carrier it binds.
 
         The half this governs is the T05 acceptance package: one artifact that
-        binds all fourteen S08 evidence carriers by repository-relative path +
+        binds all twenty-one S08 evidence carriers by repository-relative path +
         pointer + sha256, carries the T02 frozen-threshold evaluation, and
         enumerates every mandatory gate with a typed state and a computed
         ``s09_authorized``. The rule names only *where* the package lives, which

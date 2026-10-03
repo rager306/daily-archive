@@ -790,7 +790,7 @@ native_route_e2e:
 
 # ── Acceptance package gate ledger (M514/S08/T06) ─────────────────────────
 # T05 published `artifacts/parse_compat/grobid_retirement_acceptance_package.json`:
-# it binds all fourteen S08 evidence carriers by repository-relative path +
+# it binds all twenty-one S08 evidence carriers by repository-relative path +
 # pointer + sha256, carries the T02 frozen-threshold evaluation verbatim, and
 # enumerates all 21 mandatory gates (20 blocking) with `s09_authorized=false`.
 # This block is the sibling governor half that makes the package auditable
@@ -825,7 +825,7 @@ acceptance_package:
     path: artifacts/parse_compat/grobid_retirement_acceptance_package.json
     schema_version: grobid-retirement-acceptance-package.v1
     required: true
-  # The fourteen evidence carriers the package must bind, as `(manifest, pointer)`.
+  # The twenty-one evidence carriers the package must bind, as `(manifest, pointer)`.
   # The list is the requirement, not the evidence: the reader recomputes each
   # sha256 from the committed bytes, so a dropped, unbound or duplicate binding
   # fails closed while the rule never restates a digest.
@@ -844,6 +844,13 @@ acceptance_package:
     - {manifest: artifacts/parse_learning/candidate_cycle.json, pointer: outcome}
     - {manifest: artifacts/parse_compat/native_body_uncertainty_split.json, pointer: aggregate}
     - {manifest: artifacts/parse_compat/parse_batch_budget_live.json, pointer: executed_population}
+    - {manifest: artifacts/parse_learning/candidate_cycle.json, pointer: reward_definition_sha256}
+    - {manifest: artifacts/parse_learning/candidate_cycle.json, pointer: conservation}
+    - {manifest: artifacts/parse_learning/candidate_cycle.json, pointer: contamination_assessment}
+    - {manifest: artifacts/parse_learning/candidate_cycle.json, pointer: validation_gap}
+    - {manifest: artifacts/parse_learning/learning_corpus.json, pointer: reward_definition}
+    - {manifest: artifacts/parse_compat/native_corpus_acceptance.json, pointer: gaps}
+    - {manifest: artifacts/parse_compat/java_free_vertical_slice.json, pointer: guard}
   # The frozen reference the threshold verdicts must stay bound to, the candidate
   # carrier the evaluation names, and the body residual that may never be renamed
   # (D499). The reference pointer resolves the pins; the token is the wording.
