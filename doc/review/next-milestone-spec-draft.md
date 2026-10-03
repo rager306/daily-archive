@@ -141,6 +141,22 @@ Ordered; each slice is bounded and has a named proof.
   probe already scans, or (ii) make the native route product expose the class-parity
   axis. Re-estimate from that decision, not from a line count.
 
+  **Spike result — the inventory is concrete.**
+
+  | piece | path | size |
+  |---|---|---|
+  | reference producer (the "measurement engine") | `crates/da-cli/examples/external_holdout_release_probe.rs` | 4,762 lines, committed |
+  | its contract test | `crates/da-parse/tests/external_holdout_probe_contract.rs` | 1,591 lines |
+  | independent semantic judge (roxmltree) | `crates/da-parse/tests/external_holdout_probe_semantics.rs` | 170 KB |
+  | contracts already exercising `class_parity` | `external_holdout_release_probe_test.rs`, `data_contracts.rs`, `external_holdout_probe_contract.rs`, `external_holdout_probe_semantics.rs`, `grobid_retirement_package_doc_contract.rs`, `parity_report_contract.rs` | 6 files |
+  | judge material for the preservation axis | the above plus `native_fulltext_corpus_data_contract.rs`, `native_fulltext_corpus_semantics.rs`, `native_fulltext_corpus_mutations.rs`, `native_citation_oracle.rs`, `fixtures/holdout/frozen_tables.json` | 7 sources |
+
+  The "~2.5k-line measurement engine" M514 deferred is therefore the probe example that
+  already exists at 4,762 lines. S01/S02 do not rebuild it; they make the acceptance
+  runner consume the axes it already produces — while keeping the acceptance run
+  hermetic and bounded, and never letting the probe's `local_proxy_only` claim scope
+  leak into the acceptance claim.
+
 - **S03 — Same-n Java resource reference.**
   Retires `resource.container_java_cpu = not_observed{reference_row_not_same_n}` by
   producing a same-n Java CPU reference for the paired resource envelope. Proof: the
