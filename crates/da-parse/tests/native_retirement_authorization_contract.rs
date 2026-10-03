@@ -7,7 +7,7 @@
 //! closed vocabulary. The live half then reads the committed S08 gate ledger
 //! and the committed human release record and asserts the exact typed reasons
 //! for the refusal that must exist today (`reviewer=null`, `decision=pending`,
-//! seventeen blocking gates).
+//! sixteen blocking gates).
 //!
 //! The test is deliberately ungated (no `#![cfg(feature = ...)]`): the
 //! `da-parse --tests` gate compiles it in the default feature set.
@@ -41,8 +41,8 @@ const FAMILY_HEADER: &str = "stage.header_composition";
 const SYNTHETIC_PIN: &str =
     "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-/// The seventeen required, non-clear gates the committed S08 ledger carries today.
-const LIVE_BLOCKING_GATE_COUNT: usize = 17;
+/// The sixteen required, non-clear gates the committed S08 ledger carries today.
+const LIVE_BLOCKING_GATE_COUNT: usize = 16;
 /// The fifteen `required_scope.families` the committed schema declares.
 const LIVE_REQUIRED_FAMILY_COUNT: usize = 15;
 

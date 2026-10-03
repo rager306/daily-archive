@@ -188,9 +188,9 @@ def test_live_receipt_binds_every_required_family_and_gate(
     assert len(plan_ids) == 15
     declared_gates = set(live_receipt["authorization"]["blocking_gates"])
     assert declared_gates == set(expected["required_blocking_gate_ids"])
-    # M515/S02: both extraction thresholds now resolve `met`, so they left the
-    # blocking set (19 -> 17).
-    assert len(declared_gates) == 17
+    # M515/S03: the Java resource gate is a measured same-n pair (`resource_pair`
+    # / `met`), so it left the blocking set (17 -> 16).
+    assert len(declared_gates) == 16
 
 def test_live_body_residual_is_verbatim(live_receipt: dict) -> None:
     assert live_receipt["body_residual"]["token"] == "p1_localization_uncertain"
