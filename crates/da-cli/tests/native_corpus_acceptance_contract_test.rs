@@ -172,6 +172,7 @@ fn native_corpus_acceptance_artifact_is_canonical_and_census_bound() -> Result<(
         metric_id: "tuned_threshold_literal".to_owned(),
         numerator: 1,
         denominator: 2,
+        stratum: None,
     });
     expect_refusal("tuned_threshold", &m, &expectation, "UnknownThreshold")?;
 
@@ -209,6 +210,7 @@ fn native_corpus_acceptance_artifact_is_canonical_and_census_bound() -> Result<(
         metric_id: "extraction.native_capability_recall".to_owned(),
         numerator: 1,
         denominator: 2,
+        stratum: None,
     });
     expect_refusal(
         "both_measured_and_gapped",

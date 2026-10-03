@@ -191,6 +191,12 @@ pub struct AcceptanceMetricRow {
     pub numerator: u64,
     /// The measured denominator. Zero is rejected as a silent zero.
     pub denominator: u64,
+    /// The frozen stratum this row resolves, when the metric id is shared by
+    /// more than one threshold (the two extraction thresholds differ only by
+    /// stratum). `None` while the producing mechanism does not yet emit one;
+    /// `skip_serializing_if` keeps committed receipt bytes unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stratum: Option<String>,
 }
 
 /// One typed gap cell. `kind` is `not_observable` or `threshold_pending`.
@@ -290,6 +296,10 @@ pub struct AcceptanceThresholdExpectation {
     pub metric_id: String,
     /// The frozen family id.
     pub family_id: String,
+    /// The frozen stratum this threshold is compared at, read by pointer from
+    /// the pins (never restated). `None` when the pin carries no stratum axis.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stratum: Option<String>,
 }
 
 /// One required family resolved from the closed schema.
@@ -1062,10 +1072,15 @@ pub fn load_reference_thresholds(
                 reason: format!("reference pin {threshold_id} has no family_id"),
             })?
             .to_owned();
+        let stratum = entry
+            .get("stratum")
+            .and_then(|node| node.as_str())
+            .map(|value| value.to_owned());
         thresholds.push(AcceptanceThresholdExpectation {
             threshold_id,
             metric_id,
             family_id,
+            stratum,
         });
     }
     Ok(thresholds)
@@ -1238,4 +1253,105 @@ pub fn derive_expectation(
         populations,
         documents,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn pins(values: serde_json::Value) -> String {
+        serde_json::json!({ "values": values }).to_string()
+    }
+
+    #[test]
+    fn load_reference_thresholds_reads_stratum_by_pointer_and_tolerates_absence() {
+        let text = pins(serde_json::json!([
+            {
+                "threshold_id": "extraction_micro_occurrence",
+                "metric_id": "extraction.native_capability_recall",
+                "family_id": "stage.reference_segmentation",
+                "stratum": "micro_occurrence"
+            },
+            {
+                "threshold_id": "extraction_weakest_family",
+                "metric_id": "extraction.native_capability_recall",
+                "family_id": "stage.header_composition",
+                "stratum": "weakest_stratum"
+            },
+            {
+                "threshold_id": "preservation_micro_occurrence",
+                "metric_id": "preservation.occurrence_conservation",
+                "family_id": "parse.component.native_fulltext_composition_shadow"
+            }
+        ]));
+        let thresholds = load_reference_thresholds(&text).expect("the pins must load");
+        assert_eq!(thresholds.len(), 3);
+        assert_eq!(thresholds[0].stratum.as_deref(), Some("micro_occurrence"));
+        assert_eq!(thresholds[1].stratum.as_deref(), Some("weakest_stratum"));
+        assert!(
+            thresholds[2].stratum.is_none(),
+            "a pin with no stratum axis must resolve None, never a fabricated token"
+        );
+        // The two extraction thresholds share one metric id and differ only by
+        // stratum; collapsing them would lose which one a row resolves.
+        assert_eq!(thresholds[0].metric_id, thresholds[1].metric_id);
+        assert_ne!(thresholds[0].stratum, thresholds[1].stratum);
+    }
+
+    #[test]
+    fn malformed_pins_are_refused_by_name() {
+        let error =
+            load_reference_thresholds("{}").expect_err("a pins file without values is refused");
+        assert!(matches!(
+            error,
+            AcceptanceError::ArtifactSerialization { .. }
+        ));
+        let text = pins(serde_json::json!([
+            { "threshold_id": "t", "family_id": "f" }
+        ]));
+        let error =
+            load_reference_thresholds(&text).expect_err("an entry without metric_id is refused");
+        assert!(matches!(
+            error,
+            AcceptanceError::ArtifactSerialization { .. }
+        ));
+    }
+
+    #[test]
+    fn metric_row_stratum_is_optional_and_omitted_when_absent() {
+        let absent = AcceptanceMetricRow {
+            metric_id: "m".to_owned(),
+            numerator: 1,
+            denominator: 2,
+            stratum: None,
+        };
+        let serialized = serde_json::to_string(&absent).expect("the row must serialize");
+        assert!(
+            !serialized.contains("stratum"),
+            "an absent stratum must not enter the committed bytes: {serialized}"
+        );
+        let parsed: AcceptanceMetricRow =
+            serde_json::from_str(r#"{"metric_id":"m","numerator":1,"denominator":2}"#)
+                .expect("a legacy row without stratum must still parse");
+        assert!(parsed.stratum.is_none());
+
+        let present = AcceptanceMetricRow {
+            metric_id: "m".to_owned(),
+            numerator: 1,
+            denominator: 2,
+            stratum: Some("micro_occurrence".to_owned()),
+        };
+        let serialized = serde_json::to_string(&present).expect("the row must serialize");
+        assert!(serialized.contains(r#""stratum":"micro_occurrence""#));
+    }
+
+    #[test]
+    fn threshold_expectation_stratum_is_optional() {
+        let parsed: AcceptanceThresholdExpectation =
+            serde_json::from_str(r#"{"threshold_id":"t","metric_id":"m","family_id":"f"}"#)
+                .expect("a legacy expectation without stratum must still parse");
+        assert!(parsed.stratum.is_none());
+        let serialized = serde_json::to_string(&parsed).expect("the expectation must serialize");
+        assert!(!serialized.contains("stratum"));
+    }
 }

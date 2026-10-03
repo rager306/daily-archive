@@ -522,6 +522,7 @@ fn synthetic_t01_receipt() -> (NativeAcceptanceReceipt, Vec<AssignedIdentity>) {
             threshold_id: "threshold.frozen".to_owned(),
             metric_id: "metric.frozen".to_owned(),
             family_id: "family.required".to_owned(),
+            stratum: None,
         }],
         families: vec![AcceptanceFamilyExpectation {
             family_id: "family.required".to_owned(),
@@ -590,6 +591,7 @@ fn synthetic_t01_receipt() -> (NativeAcceptanceReceipt, Vec<AssignedIdentity>) {
             metric_id: "native_acceptance.pdf_verification_coverage".to_owned(),
             numerator: 2,
             denominator: 2,
+            stratum: None,
         }],
         vec![AcceptanceGapCell {
             threshold_id: "threshold.frozen".to_owned(),

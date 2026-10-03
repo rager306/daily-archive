@@ -190,7 +190,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
                 metric_id: row.metric_id.clone(),
                 numerator: Some(row.numerator as f64),
                 denominator: Some(row.denominator as f64),
-                stratum: None,
+                stratum: row.stratum.clone(),
                 series: None,
             })
             .collect(),

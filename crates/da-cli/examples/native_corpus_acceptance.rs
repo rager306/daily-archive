@@ -566,16 +566,19 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             metric_id: "native_acceptance.pdf_verification_coverage".to_owned(),
             numerator: verified,
             denominator: populations.assigned,
+            stratum: None,
         },
         AcceptanceMetricRow {
             metric_id: "native_acceptance.native_plane_coverage".to_owned(),
             numerator: plane_observed,
             denominator: populations.measurable,
+            stratum: None,
         },
         AcceptanceMetricRow {
             metric_id: "native_acceptance.native_plane_units".to_owned(),
             numerator: plane_units_total,
             denominator: plane_rows.max(1),
+            stratum: None,
         },
     ];
 
@@ -586,6 +589,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             metric_id: PRESERVATION_METRIC_ID.to_owned(),
             numerator: preservation_admitted,
             denominator: preservation_source,
+            stratum: None,
         });
     }
 
@@ -691,6 +695,7 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
         metric_id: "tuned_threshold_literal".to_owned(),
         numerator: 1,
         denominator: 2,
+        stratum: None,
     });
     expect_refusal("tuned_threshold", &m, &expectation, "UnknownThreshold")?;
     checked += 1;
@@ -735,6 +740,7 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
         metric_id: "metric.frozen".to_owned(),
         numerator: 1,
         denominator: 2,
+        stratum: None,
     });
     expect_refusal(
         "both_measured_and_gapped",
@@ -795,6 +801,7 @@ fn synthetic_fixtures() -> (AcceptanceExpectation, NativeAcceptanceReceipt) {
             threshold_id: "threshold.frozen".to_owned(),
             metric_id: "metric.frozen".to_owned(),
             family_id: "family.required".to_owned(),
+            stratum: None,
         }],
         families: vec![AcceptanceFamilyExpectation {
             family_id: "family.required".to_owned(),
@@ -863,6 +870,7 @@ fn synthetic_fixtures() -> (AcceptanceExpectation, NativeAcceptanceReceipt) {
             metric_id: "native_acceptance.pdf_verification_coverage".to_owned(),
             numerator: 2,
             denominator: 2,
+            stratum: None,
         }],
         vec![AcceptanceGapCell {
             threshold_id: "threshold.frozen".to_owned(),
