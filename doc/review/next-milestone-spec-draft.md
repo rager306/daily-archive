@@ -190,6 +190,35 @@ Ordered; each slice is bounded and has a named proof.
   operational axis reports a measured pair instead of a typed absence, and
   `pairing=same_documents_only` / `pooled=forbidden` stay enforced.
 
+  **Spike result (2026-10-03) — the reference partially exists, and the obstacle is
+  pairing discipline, not measurement.** `external_holdout_release_probe.json#latency_accounting`:
+
+  ```json
+  {"documents": 531,
+   "latency_source": "crates/da-parse/tests/fixtures/holdout/provenance.yaml#documents[].latency_ms",
+   "measurement_source": "recorded_wall_clock_per_document",
+   "min_latency_ms": 1469, "max_latency_ms": 64611,
+   "pooled_latency_claim": "forbidden", "wall_clock_at_run_time": false}
+  ```
+
+  So a per-document Java latency reference already exists for 531 documents — the very
+  `provenance.yaml` carrier M514/S08/T03 first tripped over, because it covers a
+  different document set under a different pin. S03 is therefore the same pairing
+  problem S08/T04 already solved for a different envelope: pair only where the pinned
+  same-n row covers **exactly** the same documents and the same metric, with
+  `mismatch=hard_failure`, `pooled=forbidden`, `absence_policy=typed_not_observed`.
+
+  Cost does **not** need measuring: `cost_accounting.status = "bounded_not_measured"`,
+  with `unknown_is_not_zero: true` and bounds referenced from
+  `data/parse/acceptance_manifest.yaml#external_holdout_contract.cost_bounds`. S03 must
+  keep it that way rather than manufacturing a cost number.
+
+  Also carried verbatim from the probe's `named_limitations` and to be preserved by the
+  acceptance package: 79 documents are excluded **by name**, never silently dropped;
+  531 documents is a count, not a statistical corpus; and the probe **does not claim
+  independence from the production route** — the reference was produced by the declared
+  live Java release and the admitted band is a local proxy.
+
 - **S04 — Independent recompute and provenance evidence (R134).**
   Adds the explicit reviewer-recomputability-from-readable-source-bytes check and the
   same-generator/different-label provenance check the R134 reviewer found absent. Proof:
