@@ -229,6 +229,39 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         "the artifact is not its own canonical re-serialization"
     );
 
+    // ── the two R134 statement blocks round-trip with the committed bytes ──
+    assert_eq!(
+        package.reviewer_recomputation.carrier_count,
+        package.evidence.len() as u64,
+        "the carried carrier_count is not the bound carrier count"
+    );
+    assert_eq!(
+        package.reviewer_recomputation.carrier_count, 14,
+        "the package must carry the fourteen bound carriers"
+    );
+    assert_eq!(
+        package.carrier_independence.candidate_manifest, PACKAGE_NATIVE_MEASUREMENT_REL,
+        "the candidate manifest is not the T01 native measurement carrier"
+    );
+    assert!(
+        package
+            .carrier_independence
+            .reference_manifests
+            .contains(&PACKAGE_REFERENCE_PINS_REL.to_owned())
+    );
+    assert!(
+        package
+            .carrier_independence
+            .reference_manifests
+            .contains(&PACKAGE_REFERENCE_PROBE_REL.to_owned())
+    );
+    let round_trip: serde_json::Value = serde_json::from_slice(&artifact_bytes)?;
+    assert!(
+        round_trip.get("reviewer_recomputation").is_some()
+            && round_trip.get("carrier_independence").is_some(),
+        "a committed R134 statement block is absent from the artifact bytes"
+    );
+
     // ── every gate is typed and every type is present ─────────────────────
     let kinds: BTreeSet<&str> = package
         .mandatory_gates
@@ -604,6 +637,20 @@ fn the_package_module_carries_no_threshold_literal_and_no_side_channel() {
             "the package module carries frozen threshold literal `{frozen}`"
         );
     }
+    for carrier_literal in [
+        "carrier_count: 14",
+        "carrier_count: 14u64",
+        "carrier_count:14",
+    ] {
+        assert!(
+            !source.contains(carrier_literal),
+            "the package module hardcodes the carrier count literal `{carrier_literal}`"
+        );
+    }
+    assert!(
+        source.contains("carrier_count: input.evidence.len() as u64"),
+        "the package module must derive carrier_count from the bound evidence"
+    );
     for forbidden in [
         "tracing::",
         "tokio::",

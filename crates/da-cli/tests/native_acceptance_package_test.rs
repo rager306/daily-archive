@@ -24,9 +24,11 @@
 use da_cli::native_acceptance_package::{
     AUTHORIZATION_BASIS_HUMAN_RELEASE_REQUIRED, BODY_RESIDUAL_TOKEN,
     DEFAULT_ACCEPTANCE_PACKAGE_ARTIFACT_REL, GATE_KIND_VOCABULARY, GATE_NON_BLOCKING_STATES,
-    GATE_STATE_VOCABULARY, GrobidRetirementAcceptancePackage, NAMED_GAP_H20,
-    PACKAGE_DB_CANONICAL_REQUIREMENT_IDS, PACKAGE_EVIDENCE_CARRIERS, PACKAGE_RESOURCE_RECEIPT_REL,
-    PACKAGE_ROLLBACK_RECEIPT_REL, gate_blocks_s09, validate_acceptance_package,
+    GATE_STATE_VOCABULARY, GrobidRetirementAcceptancePackage, INDEPENDENCE_COMMAND, NAMED_GAP_H20,
+    PACKAGE_DB_CANONICAL_REQUIREMENT_IDS, PACKAGE_EVIDENCE_CARRIERS,
+    PACKAGE_NATIVE_MEASUREMENT_REL, PACKAGE_REFERENCE_PINS_REL, PACKAGE_REFERENCE_PROBE_REL,
+    PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_ROLLBACK_RECEIPT_REL, RECOMPUTE_CARRIER_DIGEST_ALGORITHM,
+    gate_blocks_s09, validate_acceptance_package,
 };
 use da_cli::native_family_receipt::{CarrierBinding, sha256_prefixed};
 use da_cli::native_resource_same_n::SAME_N_ABSENCE_REASON_VOCABULARY;
@@ -112,6 +114,33 @@ fn expect_refusal(
     }
 }
 
+/// Resolve a named surface or judge manifest through the filesystem and
+/// confirm the manifest text carries the named symbol, so a renamed or moved
+/// judge fails the audit instead of being taken on trust.
+fn assert_manifest_names(
+    root: &Path,
+    manifest: &str,
+    symbol: &str,
+    label: &str,
+) -> Result<(), Box<dyn Error>> {
+    assert!(!manifest.trim().is_empty(), "{label} has an empty manifest");
+    assert!(!symbol.trim().is_empty(), "{label} has an empty symbol");
+    let path = root.join(manifest);
+    let metadata = fs::metadata(&path).map_err(|error| -> Box<dyn Error> {
+        format!("{label} manifest `{manifest}` does not resolve: {error}").into()
+    })?;
+    assert!(
+        metadata.is_file(),
+        "{label} manifest `{manifest}` is not a file"
+    );
+    let text = String::from_utf8(fs::read(&path)?)?;
+    assert!(
+        text.contains(symbol),
+        "{label} manifest `{manifest}` does not carry symbol `{symbol}`"
+    );
+    Ok(())
+}
+
 // ── the pins, re-derived from committed bytes ──────────────────────────────
 
 #[test]
@@ -133,6 +162,155 @@ fn native_acceptance_package_audit_recomputes_committed_carrier_pins() -> Result
 
     let expectation = expectation(&root)?;
     validate_acceptance_package(&package, &expectation)?;
+    Ok(())
+}
+
+// ── R134 (a) recompute and (c) provenance statements are carried and real ──
+
+#[test]
+fn acceptance_package_states_recomputability_and_independence() -> Result<(), Box<dyn Error>> {
+    let root = repo_root();
+    let package = load_package(&root)?;
+
+    // ── R134 clause (a): reviewer recomputability over committed bytes ────
+    let recompute = &package.reviewer_recomputation;
+    assert_eq!(
+        recompute.carrier_digest_algorithm, RECOMPUTE_CARRIER_DIGEST_ALGORITHM,
+        "the recompute digest algorithm is not sha256"
+    );
+    assert_eq!(recompute.carrier_digest_algorithm, "sha256");
+    assert!(
+        recompute.committed_bytes_only,
+        "recomputation must read committed bytes only"
+    );
+    assert!(
+        !recompute.corpus_derived_pins,
+        "no pin may be derived from the gitignored corpus"
+    );
+    assert_eq!(
+        recompute.carrier_count,
+        package.evidence.len() as u64,
+        "carrier_count is not the bound carrier count"
+    );
+    assert_eq!(
+        recompute.carrier_count, 14,
+        "the package must carry the fourteen bound carriers"
+    );
+    assert!(
+        recompute.recompute_surfaces.len() >= 2,
+        "fewer than two recompute surfaces are named"
+    );
+    assert!(!recompute.statement.trim().is_empty());
+    assert!(!recompute.canonicalization.trim().is_empty());
+    assert!(!recompute.self_canonicalization.trim().is_empty());
+
+    // The three named recompute surfaces must resolve to real committed
+    // manifests that carry the named symbol.
+    let expected_surfaces = [
+        (
+            "crates/da-cli/tests/native_acceptance_package_test.rs",
+            "native_acceptance_package_audit_recomputes_committed_carrier_pins",
+        ),
+        (
+            "scripts/governor/adapters/absorption_progress_reader.py",
+            "_acceptance_package_violations",
+        ),
+        (
+            "scripts/governor/checks/grobid_absorption_progress.yaml",
+            "acceptance_package",
+        ),
+    ];
+    for (manifest, symbol) in expected_surfaces {
+        assert!(
+            recompute
+                .recompute_surfaces
+                .iter()
+                .any(|surface| surface.manifest == manifest && surface.symbol == symbol),
+            "the recompute surface `{manifest}#{symbol}` is not named"
+        );
+        assert_manifest_names(&root, manifest, symbol, "recompute surface")?;
+    }
+    for surface in &recompute.recompute_surfaces {
+        assert_manifest_names(
+            &root,
+            &surface.manifest,
+            &surface.symbol,
+            "recompute surface",
+        )?;
+    }
+
+    // ── R134 clause (c): same-generator/different-label linkage ───────────
+    let independence = &package.carrier_independence;
+    assert_eq!(
+        independence.candidate_manifest, PACKAGE_NATIVE_MEASUREMENT_REL,
+        "the candidate manifest is not the T01 native measurement carrier"
+    );
+    assert!(
+        independence
+            .reference_manifests
+            .contains(&PACKAGE_REFERENCE_PINS_REL.to_owned()),
+        "the frozen reference pins are not judged against"
+    );
+    assert!(
+        independence
+            .reference_manifests
+            .contains(&PACKAGE_REFERENCE_PROBE_REL.to_owned()),
+        "the executed reference probe is not judged against"
+    );
+    assert!(
+        !independence
+            .reference_manifests
+            .iter()
+            .any(|manifest| manifest == &independence.candidate_manifest),
+        "the candidate is listed among its own references"
+    );
+    assert!(!independence.same_generator_rule.trim().is_empty());
+    assert!(!independence.series_identity_rule.trim().is_empty());
+    assert!(!independence.statement.trim().is_empty());
+    assert!(!independence.limitation.trim().is_empty());
+    assert_eq!(
+        independence.command, INDEPENDENCE_COMMAND,
+        "the declared judge command drifted"
+    );
+    assert_eq!(
+        independence.command, "cargo test -p da-application --test promotion_qualification",
+        "the declared command is not the promotion_qualification test target"
+    );
+
+    // The four existing mechanisms must be named by manifest and symbol, and
+    // each manifest must resolve and carry that symbol.
+    let expected_judges = [
+        (
+            "crates/da-application/src/native_family_promotion_gate.rs",
+            "ProducerNotIndependent",
+        ),
+        (
+            "crates/da-application/tests/promotion_qualification.rs",
+            "shared_producer_digest_is_unqualified",
+        ),
+        (
+            "crates/da-application/tests/promotion_qualification.rs",
+            "weak_producer_independence_is_unqualified_and_thresholds_are_explicit",
+        ),
+        (
+            "crates/da-parse/src/native_acceptance.rs",
+            "REFUSAL_SELF_REFERENCE",
+        ),
+    ];
+    for (manifest, symbol) in expected_judges {
+        assert!(
+            independence
+                .judges
+                .iter()
+                .any(|judge| judge.manifest == manifest && judge.symbol == symbol),
+            "the independence judge `{manifest}#{symbol}` is not named"
+        );
+        assert_manifest_names(&root, manifest, symbol, "independence judge")?;
+    }
+    for judge in &independence.judges {
+        assert_manifest_names(&root, &judge.manifest, &judge.symbol, "independence judge")?;
+    }
+
     Ok(())
 }
 
@@ -336,6 +514,26 @@ fn acceptance_package_refuses_named_mutations() -> Result<(), Box<dyn Error>> {
     let mut drifted = expectation.clone();
     drifted.evidence[0].revision_sha256 = sha256_prefixed(b"drifted");
     expect_refusal("evidence_drift", &package, &drifted, "EvidenceDrift")?;
+
+    // R134 clause (a): an emptied recompute-surface list is refused by name.
+    let mut m = package.clone();
+    m.reviewer_recomputation.recompute_surfaces.clear();
+    expect_refusal(
+        "recompute_surfaces_cleared",
+        &m,
+        &expectation,
+        "ReviewerRecomputationDrift",
+    )?;
+
+    // R134 clause (c): an emptied judge list is refused by name.
+    let mut m = package.clone();
+    m.carrier_independence.judges.clear();
+    expect_refusal(
+        "judges_cleared",
+        &m,
+        &expectation,
+        "CarrierIndependenceDrift",
+    )?;
 
     Ok(())
 }
