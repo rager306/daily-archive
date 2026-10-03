@@ -331,12 +331,12 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         serde_json::to_value(&package.evaluation.thresholds)?,
         "the carried threshold verdicts drifted from a fresh evaluation"
     );
-    // T05 (M515/S01): the preservation threshold is now measured. The candidate
-    // series matches the frozen reference and `native_corpus_acceptance.json`
-    // carries preservation.occurrence_conservation = 74910/79621, so the
-    // evaluator resolves it `met`. The two extraction thresholds stay
-    // not_comparable (metric_absent): S02 owns that class-parity work, and a
-    // manufactured pass is still forbidden.
+    // T04 (M515/S02): both extraction thresholds now resolve `met`. The
+    // candidate receipt carries the class-parity rows projected from the frozen
+    // reference probe, so each extraction threshold matches the pins with a
+    // positive denominator and `comparability: matched`. No manufactured pass:
+    // the values are read by pointer from the pins and folded through the shared
+    // class-parity module.
     let threshold = |id: &str| {
         package
             .evaluation
@@ -361,8 +361,16 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
     );
     for id in ["extraction_micro_occurrence", "extraction_weakest_family"] {
         let verdict = threshold(id);
-        assert_eq!(verdict.verdict, "not_comparable");
-        assert_eq!(verdict.reason.as_deref(), Some("metric_absent"));
+        assert_eq!(verdict.verdict, "met");
+        assert_eq!(verdict.comparability, "matched");
+        assert!(
+            verdict.candidate_denominator.unwrap_or(0.0) > 0.0,
+            "`{id}` must resolve with a non-empty denominator"
+        );
+        assert!(
+            verdict.reason.is_none(),
+            "a met extraction threshold must not carry a refusal reason"
+        );
     }
     let evaluator_gates = evaluation.gates.len() as u64;
     assert_eq!(
