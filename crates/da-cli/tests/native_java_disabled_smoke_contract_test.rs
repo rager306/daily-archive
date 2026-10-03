@@ -35,8 +35,8 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The twenty required, non-clear gates the committed S08 ledger carries today.
-const LIVE_BLOCKING_GATE_COUNT: usize = 20;
+/// The nineteen required, non-clear gates the committed S08 ledger carries today.
+const LIVE_BLOCKING_GATE_COUNT: usize = 19;
 /// The fifteen `required_scope.families` the committed schema declares.
 const LIVE_REQUIRED_FAMILY_COUNT: usize = 15;
 
@@ -444,13 +444,22 @@ fn smoke_receipt_is_canonical_and_records_the_live_refusal() -> Result<(), Box<d
     let mut expected_ids = families.clone();
     expected_ids.sort();
     assert_eq!(selection_ids, expected_ids);
-    assert!(
-        receipt
-            .selection
-            .iter()
-            .all(|row| !row.blocking_gates.is_empty()),
-        "every refused family must name the gate(s) blocking it"
-    );
+    // M515/S01: the preservation threshold now resolves `met`, so the
+    // preservation family is refused by the global human gate rather than by a
+    // family gate. Every other selected family still names its blocking gate.
+    for row in &receipt.selection {
+        if row.family_id == SYNTHETIC_FAMILY_PRESERVATION {
+            assert!(
+                row.blocking_gates.is_empty(),
+                "the preservation family must no longer name a blocking gate"
+            );
+        } else {
+            assert!(
+                !row.blocking_gates.is_empty(),
+                "every other refused family must name the gate(s) blocking it"
+            );
+        }
+    }
 
     // ── named mutations are all refused ───────────────────────────────────
     let mut m = receipt.clone();

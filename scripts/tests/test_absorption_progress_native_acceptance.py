@@ -165,7 +165,10 @@ def test_live_package_names_every_gate_and_recomputes_authorization(
     ]
     declared = [(entry["gate_id"], entry["state"]) for entry in live_package["blocking_gates"]]
     assert declared == recomputed
-    assert len(declared) == 20
+    # T05 (M515/S01): preservation_micro_occurrence now resolves `met`, so its
+    # gate left the blocking set (20 -> 19). The two extraction thresholds stay
+    # not_comparable, so S09 remains unauthorized.
+    assert len(declared) == 19
 
     authorization = live_package["authorization"]
     assert authorization["s09_authorized"] is False

@@ -41,8 +41,8 @@ const FAMILY_HEADER: &str = "stage.header_composition";
 const SYNTHETIC_PIN: &str =
     "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-/// The twenty required, non-clear gates the committed S08 ledger carries today.
-const LIVE_BLOCKING_GATE_COUNT: usize = 20;
+/// The nineteen required, non-clear gates the committed S08 ledger carries today.
+const LIVE_BLOCKING_GATE_COUNT: usize = 19;
 /// The fifteen `required_scope.families` the committed schema declares.
 const LIVE_REQUIRED_FAMILY_COUNT: usize = 15;
 

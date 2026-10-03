@@ -30,8 +30,8 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The twenty required, non-clear gates the committed S08 ledger carries today.
-const LIVE_BLOCKING_GATE_COUNT: usize = 20;
+/// The nineteen required, non-clear gates the committed S08 ledger carries today.
+const LIVE_BLOCKING_GATE_COUNT: usize = 19;
 /// The fifteen `required_scope.families` the committed schema declares.
 const LIVE_REQUIRED_FAMILY_COUNT: usize = 15;
 
@@ -366,13 +366,24 @@ fn readiness_receipt_is_canonical_and_records_the_blocked_state() -> Result<(), 
             .iter()
             .all(|row| !row.in_plan && !row.switched)
     );
-    // Every planned family names the gate(s) blocking it.
-    assert!(
-        receipt
-            .family_plan
-            .iter()
-            .all(|row| !row.blocking_gates.is_empty())
-    );
+    // M515/S01: `threshold.preservation_micro_occurrence` now resolves `met`, so
+    // `parse.component.native_fulltext_composition_shadow` is refused by the
+    // global human gate rather than by a family gate. Every other planned family
+    // still names the gate(s) blocking it.
+    let preservation_family = "parse.component.native_fulltext_composition_shadow";
+    for row in &receipt.family_plan {
+        if row.family_id == preservation_family {
+            assert!(
+                row.blocking_gates.is_empty(),
+                "the preservation family must no longer name a blocking gate"
+            );
+        } else {
+            assert!(
+                !row.blocking_gates.is_empty(),
+                "every other planned family must name the gate(s) blocking it"
+            );
+        }
+    }
 
     // ── the frozen M513 package still awaits the human decision ───────────
     let m513: serde_json::Value =

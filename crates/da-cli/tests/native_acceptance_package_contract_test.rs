@@ -331,9 +331,36 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         serde_json::to_value(&package.evaluation.thresholds)?,
         "the carried threshold verdicts drifted from a fresh evaluation"
     );
-    // The honest committed outcome: every frozen threshold is not_comparable
-    // (metric_absent), never a manufactured pass.
-    for verdict in &package.evaluation.thresholds {
+    // T05 (M515/S01): the preservation threshold is now measured. The candidate
+    // series matches the frozen reference and `native_corpus_acceptance.json`
+    // carries preservation.occurrence_conservation = 74910/79621, so the
+    // evaluator resolves it `met`. The two extraction thresholds stay
+    // not_comparable (metric_absent): S02 owns that class-parity work, and a
+    // manufactured pass is still forbidden.
+    let threshold = |id: &str| {
+        package
+            .evaluation
+            .thresholds
+            .iter()
+            .find(|verdict| verdict.threshold_id == id)
+            .unwrap_or_else(|| panic!("the package carries no `{id}` threshold verdict"))
+    };
+    let preservation = threshold("preservation_micro_occurrence");
+    assert_ne!(
+        preservation.verdict, "not_comparable",
+        "the preservation threshold must be measured, not metric_absent"
+    );
+    assert_eq!(
+        preservation.verdict, "met",
+        "the preservation threshold must resolve met against the frozen pins"
+    );
+    assert_ne!(
+        preservation.reason.as_deref(),
+        Some("metric_absent"),
+        "the preservation threshold must not report metric_absent"
+    );
+    for id in ["extraction_micro_occurrence", "extraction_weakest_family"] {
+        let verdict = threshold(id);
         assert_eq!(verdict.verdict, "not_comparable");
         assert_eq!(verdict.reason.as_deref(), Some("metric_absent"));
     }
