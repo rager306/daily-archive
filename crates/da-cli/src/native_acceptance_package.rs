@@ -224,6 +224,70 @@ pub const PACKAGE_EVIDENCE_CARRIERS: [(&str, &str); 14] = [
     (PACKAGE_BUDGET_REL, POINTER_BUDGET_EXECUTED_POPULATION),
 ];
 
+// ── reviewer recomputation and carrier independence (M515/S04) ─────────────
+//
+// R134 clause (a): every oracle digest binding must be recomputable by a
+// reviewer from readable committed bytes through a published per-artifact
+// canonicalization. R134 clause (c): a same-generator/different-label producer
+// must fail independence. The two blocks below state that linkage over the
+// package's own committed bytes; the validator refuses either block by name.
+
+/// The digest algorithm every carrier binding is recomputed under.
+pub const RECOMPUTE_CARRIER_DIGEST_ALGORITHM: &str = "sha256";
+/// The published per-artifact canonicalization for a carrier digest.
+pub const RECOMPUTE_CANONICALIZATION: &str = "sha256 over the raw committed bytes of each carrier manifest, read at its repository-relative path; no normalization, no re-serialization, no corpus-derived input";
+/// The canonicalization for the package's own digest.
+pub const RECOMPUTE_SELF_CANONICALIZATION: &str = "sha256 over the exact committed bytes of the acceptance package artifact at its repository-relative path, before any parse";
+/// The reviewer-recomputation statement.
+pub const REVIEWER_RECOMPUTATION_STATEMENT: &str = "Every oracle digest binding in this package is recomputable by a reviewer from readable committed bytes through the published canonicalization above; the pins are committed carriers, never corpus-derived inputs.";
+
+/// Recompute surface: the hermetic audit that re-derives the carrier pins.
+pub const RECOMPUTE_SURFACE_AUDIT_MANIFEST: &str =
+    "crates/da-cli/tests/native_acceptance_package_test.rs";
+/// Recompute surface: the audit symbol a reviewer runs.
+pub const RECOMPUTE_SURFACE_AUDIT_SYMBOL: &str =
+    "native_acceptance_package_audit_recomputes_committed_carrier_pins";
+/// Recompute surface: the governor acceptance reader.
+pub const RECOMPUTE_SURFACE_GOVERNOR_ADAPTER_MANIFEST: &str =
+    "scripts/governor/adapters/absorption_progress_reader.py";
+/// Recompute surface: the governor acceptance reader symbol.
+pub const RECOMPUTE_SURFACE_GOVERNOR_ADAPTER_SYMBOL: &str = "_acceptance_package_violations";
+/// Recompute surface: the governor acceptance rule.
+pub const RECOMPUTE_SURFACE_GOVERNOR_RULE_MANIFEST: &str =
+    "scripts/governor/checks/grobid_absorption_progress.yaml";
+/// Recompute surface: the governor acceptance rule key.
+pub const RECOMPUTE_SURFACE_GOVERNOR_RULE_SYMBOL: &str = "acceptance_package";
+
+/// The same-generator/different-label rule.
+pub const INDEPENDENCE_SAME_GENERATOR_RULE: &str = "a producer whose generator identity equals the candidate's generator identity is same-generator and must fail independence; a different label does not make a same-generator producer independent";
+/// The series-identity rule.
+pub const INDEPENDENCE_SERIES_IDENTITY_RULE: &str = "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority";
+/// The command that judges the named independence mechanisms.
+pub const INDEPENDENCE_COMMAND: &str =
+    "cargo test -p da-application --test promotion_qualification";
+/// The recorded limitation. It must not claim independence.
+pub const INDEPENDENCE_LIMITATION: &str = "The preservation candidate currently equals the frozen reference series, so the measured result is conservation of the same series, not an independent non-inferiority comparison. The series-identity verdict is re-resolved by M515/S06; this package records the linkage and claims no independence.";
+/// The carrier-independence statement.
+pub const CARRIER_INDEPENDENCE_STATEMENT: &str = "The candidate carrier is judged against the named independence mechanisms below; a same-generator/different-label producer fails independence, and the recorded limitation is stated rather than waived.";
+
+/// Independence judge: the promotion gate's typed refusal.
+pub const JUDGE_PROMOTION_GATE_MANIFEST: &str =
+    "crates/da-application/src/native_family_promotion_gate.rs";
+/// Independence judge: the promotion gate refusal symbol.
+pub const JUDGE_PROMOTION_GATE_SYMBOL: &str = "ProducerNotIndependent";
+/// Independence judge: the shared-producer-digest qualification test.
+pub const JUDGE_QUALIFICATION_MANIFEST: &str =
+    "crates/da-application/tests/promotion_qualification.rs";
+/// Independence judge: the shared-producer-digest test symbol.
+pub const JUDGE_SHARED_PRODUCER_SYMBOL: &str = "shared_producer_digest_is_unqualified";
+/// Independence judge: the weak-independence/threshold test symbol.
+pub const JUDGE_WEAK_INDEPENDENCE_SYMBOL: &str =
+    "weak_producer_independence_is_unqualified_and_thresholds_are_explicit";
+/// Independence judge: the evaluator's self-reference refusal.
+pub const JUDGE_SELF_REFERENCE_MANIFEST: &str = "crates/da-parse/src/native_acceptance.rs";
+/// Independence judge: the self-reference refusal symbol.
+pub const JUDGE_SELF_REFERENCE_SYMBOL: &str = "REFUSAL_SELF_REFERENCE";
+
 // ───────────────────────────── errors ─────────────────────────────
 
 /// Every refusal is a named variant so a mutation is rejected *by name*.
@@ -295,6 +359,10 @@ pub enum AcceptancePackageError {
     EvidenceDrift { detail: String },
     /// The artifact leaked a payload, endpoint or host path marker.
     RedactionLeak { marker: String },
+    /// The reviewer-recomputation statement drifted from the contract.
+    ReviewerRecomputationDrift { detail: String },
+    /// The carrier-independence statement drifted from the contract.
+    CarrierIndependenceDrift { detail: String },
 }
 
 impl fmt::Display for AcceptancePackageError {
@@ -409,6 +477,70 @@ pub struct PackageAuthorization {
     pub human_release_recorded: bool,
 }
 
+/// A published surface a reviewer recomputes an oracle binding through.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecomputeSurface {
+    /// The repository-relative manifest the surface lives in.
+    pub manifest: String,
+    /// The symbol within the manifest.
+    pub symbol: String,
+}
+
+/// R134 clause (a): the reviewer-recomputability statement over committed bytes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReviewerRecomputation {
+    /// The digest algorithm; always `sha256`.
+    pub carrier_digest_algorithm: String,
+    /// The published canonicalization for a carrier digest.
+    pub canonicalization: String,
+    /// The canonicalization for the package's own digest.
+    pub self_canonicalization: String,
+    /// The number of bound carriers; derived, never hardcoded.
+    pub carrier_count: u64,
+    /// True only when recomputation reads committed bytes.
+    pub committed_bytes_only: bool,
+    /// False: no pin is derived from the gitignored corpus.
+    pub corpus_derived_pins: bool,
+    /// The named surfaces a reviewer recomputes through.
+    pub recompute_surfaces: Vec<RecomputeSurface>,
+    /// The human-readable statement.
+    pub statement: String,
+}
+
+/// A named existing mechanism the package points at for independence.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct IndependenceJudge {
+    /// The repository-relative manifest the judge lives in.
+    pub manifest: String,
+    /// The symbol within the manifest.
+    pub symbol: String,
+}
+
+/// R134 clause (c): the same-generator/different-label provenance linkage.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CarrierIndependence {
+    /// The candidate carrier manifest.
+    pub candidate_manifest: String,
+    /// The frozen reference manifests the candidate is judged against.
+    pub reference_manifests: Vec<String>,
+    /// The same-generator/different-label rule.
+    pub same_generator_rule: String,
+    /// The series-identity rule.
+    pub series_identity_rule: String,
+    /// The named judges.
+    pub judges: Vec<IndependenceJudge>,
+    /// The command that judges them.
+    pub command: String,
+    /// The recorded limitation; no independence is claimed.
+    pub limitation: String,
+    /// The human-readable statement.
+    pub statement: String,
+}
+
 /// The emitted acceptance package.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -435,6 +567,10 @@ pub struct GrobidRetirementAcceptancePackage {
     pub attribution: AttributionReconciliation,
     /// The authorization separation block.
     pub authorization: PackageAuthorization,
+    /// R134 clause (a): the reviewer-recomputability statement.
+    pub reviewer_recomputation: ReviewerRecomputation,
+    /// R134 clause (c): the same-generator/different-label linkage.
+    pub carrier_independence: CarrierIndependence,
     /// Redaction invariants.
     pub redaction: Redaction,
 }
@@ -776,6 +912,79 @@ fn check_attribution(
     Ok(())
 }
 
+fn check_reviewer_recomputation(
+    block: &ReviewerRecomputation,
+    carrier_count: u64,
+) -> Result<(), AcceptancePackageError> {
+    let drift = |detail: &str| AcceptancePackageError::ReviewerRecomputationDrift {
+        detail: detail.to_owned(),
+    };
+    if block.carrier_digest_algorithm != RECOMPUTE_CARRIER_DIGEST_ALGORITHM {
+        return Err(drift("carrier_digest_algorithm is not sha256"));
+    }
+    if !block.committed_bytes_only {
+        return Err(drift("committed_bytes_only is not true"));
+    }
+    if block.corpus_derived_pins {
+        return Err(drift("corpus_derived_pins is not false"));
+    }
+    if block.carrier_count != carrier_count {
+        return Err(drift(
+            "carrier_count does not equal the bound carrier count",
+        ));
+    }
+    if block.recompute_surfaces.is_empty() {
+        return Err(drift("recompute_surfaces is empty"));
+    }
+    for surface in &block.recompute_surfaces {
+        if surface.manifest.trim().is_empty() || surface.symbol.trim().is_empty() {
+            return Err(drift(
+                "a recompute surface is missing its manifest or symbol",
+            ));
+        }
+    }
+    if block.statement.trim().is_empty()
+        || block.canonicalization.trim().is_empty()
+        || block.self_canonicalization.trim().is_empty()
+    {
+        return Err(drift("the statement or a canonicalization is empty"));
+    }
+    Ok(())
+}
+
+fn check_carrier_independence(block: &CarrierIndependence) -> Result<(), AcceptancePackageError> {
+    let drift = |detail: &str| AcceptancePackageError::CarrierIndependenceDrift {
+        detail: detail.to_owned(),
+    };
+    if block.candidate_manifest.trim().is_empty() {
+        return Err(drift("candidate_manifest is empty"));
+    }
+    if block
+        .reference_manifests
+        .iter()
+        .any(|manifest| manifest == &block.candidate_manifest)
+    {
+        return Err(drift(
+            "candidate_manifest is listed among the reference manifests",
+        ));
+    }
+    if block.same_generator_rule.trim().is_empty() || block.series_identity_rule.trim().is_empty() {
+        return Err(drift("a generation or series rule is empty"));
+    }
+    if block.judges.is_empty() {
+        return Err(drift("judges is empty"));
+    }
+    for judge in &block.judges {
+        if judge.manifest.trim().is_empty() || judge.symbol.trim().is_empty() {
+            return Err(drift("a judge is missing its manifest or symbol"));
+        }
+    }
+    if block.command.trim().is_empty() || block.statement.trim().is_empty() {
+        return Err(drift("the command or statement is empty"));
+    }
+    Ok(())
+}
+
 fn sorted_bindings(mut bindings: Vec<CarrierBinding>) -> Vec<CarrierBinding> {
     bindings.sort_by(|a, b| {
         (
@@ -991,6 +1200,69 @@ pub fn build_acceptance_package(
 
     check_attribution(&input.attribution, &input.evidence)?;
 
+    // R134 clause (a): state reviewer-recomputability over the package's own
+    // committed bytes. The count is derived from the bound carriers, never
+    // hardcoded, and no pin is derived from the gitignored corpus.
+    let reviewer_recomputation = ReviewerRecomputation {
+        carrier_digest_algorithm: RECOMPUTE_CARRIER_DIGEST_ALGORITHM.to_owned(),
+        canonicalization: RECOMPUTE_CANONICALIZATION.to_owned(),
+        self_canonicalization: RECOMPUTE_SELF_CANONICALIZATION.to_owned(),
+        carrier_count: input.evidence.len() as u64,
+        committed_bytes_only: true,
+        corpus_derived_pins: false,
+        recompute_surfaces: vec![
+            RecomputeSurface {
+                manifest: RECOMPUTE_SURFACE_AUDIT_MANIFEST.to_owned(),
+                symbol: RECOMPUTE_SURFACE_AUDIT_SYMBOL.to_owned(),
+            },
+            RecomputeSurface {
+                manifest: RECOMPUTE_SURFACE_GOVERNOR_ADAPTER_MANIFEST.to_owned(),
+                symbol: RECOMPUTE_SURFACE_GOVERNOR_ADAPTER_SYMBOL.to_owned(),
+            },
+            RecomputeSurface {
+                manifest: RECOMPUTE_SURFACE_GOVERNOR_RULE_MANIFEST.to_owned(),
+                symbol: RECOMPUTE_SURFACE_GOVERNOR_RULE_SYMBOL.to_owned(),
+            },
+        ],
+        statement: REVIEWER_RECOMPUTATION_STATEMENT.to_owned(),
+    };
+    check_reviewer_recomputation(&reviewer_recomputation, input.evidence.len() as u64)?;
+
+    // R134 clause (c): state the same-generator/different-label linkage the
+    // existing independence mechanisms already enforce. Independence is not
+    // claimed; the series-identity limitation is recorded verbatim.
+    let carrier_independence = CarrierIndependence {
+        candidate_manifest: input.gate_sources.candidate_measurement.manifest.clone(),
+        reference_manifests: vec![
+            input.gate_sources.pins.manifest.clone(),
+            PACKAGE_REFERENCE_PROBE_REL.to_owned(),
+        ],
+        same_generator_rule: INDEPENDENCE_SAME_GENERATOR_RULE.to_owned(),
+        series_identity_rule: INDEPENDENCE_SERIES_IDENTITY_RULE.to_owned(),
+        judges: vec![
+            IndependenceJudge {
+                manifest: JUDGE_PROMOTION_GATE_MANIFEST.to_owned(),
+                symbol: JUDGE_PROMOTION_GATE_SYMBOL.to_owned(),
+            },
+            IndependenceJudge {
+                manifest: JUDGE_QUALIFICATION_MANIFEST.to_owned(),
+                symbol: JUDGE_SHARED_PRODUCER_SYMBOL.to_owned(),
+            },
+            IndependenceJudge {
+                manifest: JUDGE_QUALIFICATION_MANIFEST.to_owned(),
+                symbol: JUDGE_WEAK_INDEPENDENCE_SYMBOL.to_owned(),
+            },
+            IndependenceJudge {
+                manifest: JUDGE_SELF_REFERENCE_MANIFEST.to_owned(),
+                symbol: JUDGE_SELF_REFERENCE_SYMBOL.to_owned(),
+            },
+        ],
+        command: INDEPENDENCE_COMMAND.to_owned(),
+        limitation: INDEPENDENCE_LIMITATION.to_owned(),
+        statement: CARRIER_INDEPENDENCE_STATEMENT.to_owned(),
+    };
+    check_carrier_independence(&carrier_independence)?;
+
     let blocking = blocking_gates_of(&gates);
     let s09_authorized = blocking.is_empty();
 
@@ -1011,6 +1283,8 @@ pub fn build_acceptance_package(
             gsd_lifecycle_authorizes: false,
             human_release_recorded: input.human_release_recorded,
         },
+        reviewer_recomputation,
+        carrier_independence,
         redaction: Redaction::clean(),
     })
 }
@@ -1062,6 +1336,13 @@ pub fn validate_acceptance_package(
             ),
         });
     }
+
+    // R134 clauses (a) and (c): refuse either statement block by name.
+    check_reviewer_recomputation(
+        &package.reviewer_recomputation,
+        package.evidence.len() as u64,
+    )?;
+    check_carrier_independence(&package.carrier_independence)?;
 
     let mut ids: BTreeSet<String> = BTreeSet::new();
     for gate in &package.mandatory_gates {

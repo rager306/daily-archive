@@ -802,6 +802,33 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
     expect_refusal("evidence_drift", &base, &drifted, "EvidenceDrift")?;
     checked += 1;
 
+    // (12) a reviewer-recomputation block that admits corpus-derived pins and
+    // names no recompute surface.
+    let mut m = base.clone();
+    m.reviewer_recomputation.corpus_derived_pins = true;
+    m.reviewer_recomputation.recompute_surfaces.clear();
+    expect_refusal(
+        "reviewer_recomputation_drift",
+        &m,
+        &expectation,
+        "ReviewerRecomputationDrift",
+    )?;
+    checked += 1;
+
+    // (13) an independence block with no judges whose candidate is named as its
+    // own reference.
+    let mut m = base.clone();
+    m.carrier_independence.judges.clear();
+    m.carrier_independence.candidate_manifest =
+        m.carrier_independence.reference_manifests[0].clone();
+    expect_refusal(
+        "carrier_independence_drift",
+        &m,
+        &expectation,
+        "CarrierIndependenceDrift",
+    )?;
+    checked += 1;
+
     Ok(format!(
         "acceptance package self-check: {checked} named refusals executed, all refused"
     ))

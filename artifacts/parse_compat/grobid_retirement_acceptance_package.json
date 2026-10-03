@@ -590,6 +590,59 @@
     "gsd_lifecycle_authorizes": false,
     "human_release_recorded": false
   },
+  "reviewer_recomputation": {
+    "carrier_digest_algorithm": "sha256",
+    "canonicalization": "sha256 over the raw committed bytes of each carrier manifest, read at its repository-relative path; no normalization, no re-serialization, no corpus-derived input",
+    "self_canonicalization": "sha256 over the exact committed bytes of the acceptance package artifact at its repository-relative path, before any parse",
+    "carrier_count": 14,
+    "committed_bytes_only": true,
+    "corpus_derived_pins": false,
+    "recompute_surfaces": [
+      {
+        "manifest": "crates/da-cli/tests/native_acceptance_package_test.rs",
+        "symbol": "native_acceptance_package_audit_recomputes_committed_carrier_pins"
+      },
+      {
+        "manifest": "scripts/governor/adapters/absorption_progress_reader.py",
+        "symbol": "_acceptance_package_violations"
+      },
+      {
+        "manifest": "scripts/governor/checks/grobid_absorption_progress.yaml",
+        "symbol": "acceptance_package"
+      }
+    ],
+    "statement": "Every oracle digest binding in this package is recomputable by a reviewer from readable committed bytes through the published canonicalization above; the pins are committed carriers, never corpus-derived inputs."
+  },
+  "carrier_independence": {
+    "candidate_manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
+    "reference_manifests": [
+      "artifacts/parse_compat/absorption_progress_reference_pins.json",
+      "artifacts/parse_compat/external_holdout_release_probe.json"
+    ],
+    "same_generator_rule": "a producer whose generator identity equals the candidate's generator identity is same-generator and must fail independence; a different label does not make a same-generator producer independent",
+    "series_identity_rule": "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority",
+    "judges": [
+      {
+        "manifest": "crates/da-application/src/native_family_promotion_gate.rs",
+        "symbol": "ProducerNotIndependent"
+      },
+      {
+        "manifest": "crates/da-application/tests/promotion_qualification.rs",
+        "symbol": "shared_producer_digest_is_unqualified"
+      },
+      {
+        "manifest": "crates/da-application/tests/promotion_qualification.rs",
+        "symbol": "weak_producer_independence_is_unqualified_and_thresholds_are_explicit"
+      },
+      {
+        "manifest": "crates/da-parse/src/native_acceptance.rs",
+        "symbol": "REFUSAL_SELF_REFERENCE"
+      }
+    ],
+    "command": "cargo test -p da-application --test promotion_qualification",
+    "limitation": "The preservation candidate currently equals the frozen reference series, so the measured result is conservation of the same series, not an independent non-inferiority comparison. The series-identity verdict is re-resolved by M515/S06; this package records the linkage and claims no independence.",
+    "statement": "The candidate carrier is judged against the named independence mechanisms below; a same-generator/different-label producer fails independence, and the recorded limitation is stated rather than waived."
+  },
   "redaction": {
     "raw_text": false,
     "raw_pdf": false,
