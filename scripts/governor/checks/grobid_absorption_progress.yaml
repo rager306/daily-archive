@@ -864,13 +864,18 @@ acceptance_package:
     fragment_leak_field: native_fragment_leak_free
     residuals_pointer: residuals
     populations_pointer: populations
-  # The same-n resource receipt (T03). No same-n reference exists, so every
-  # reference metric must be a typed absence: a pooled row or a saving claim is
-  # refused by name.
+  # The same-n resource receipt (T03). The receipt now carries a measured
+  # same-n pair over the 531 measurable documents plus typed absences for the
+  # metrics that carrier cannot supply, so a reference row is honest either as
+  # `observed` with a pinned source or as `not_observed` with a reason drawn
+  # from the closed absence vocabulary. A pooled row or a saving claim is still
+  # refused by name (D510/D531).
   resource_carrier:
     path: artifacts/parse_compat/native_corpus_resource_same_n.json
     pointer: reference_metrics
-    absence_state: not_observed
+    observation_states: [observed, not_observed]
+    observed_requires_source: true
+    absence_reason_vocabulary: [native_metric_not_measured, reference_row_absent, reference_row_not_same_n, reference_row_not_measured, not_applicable_to_population]
     pairing_pointer: pairing
     pairing_rule: same_documents_only
     forbidden_pooling: forbidden
@@ -886,7 +891,7 @@ acceptance_package:
     authorization_basis: human_release_decision_required
     gate_state_vocabulary: [met, unmet, not_comparable, threshold_pending, not_assessable, not_observed, typed_refusal, pending, accepted_residual]
     non_blocking_states: [met, accepted_residual]
-    gate_kind_vocabulary: [threshold, body_axis, threshold_pending_family, named_gap, learning_disposition, resource_absence, human_release]
+    gate_kind_vocabulary: [threshold, body_axis, threshold_pending_family, named_gap, learning_disposition, resource_pair, resource_absence, human_release]
     required_gate_ids:
       - threshold.preservation_micro_occurrence
       - threshold.extraction_micro_occurrence

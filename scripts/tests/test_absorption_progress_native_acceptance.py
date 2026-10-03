@@ -13,7 +13,8 @@ as progress. This file proves the half that now sees it is honest:
 * the committed positive fixture is clean, including the boundary case where the
   declaration authority is absent (absence is silence, never compliance);
 * every committed negative record raises its own labelled violation and nothing
-  else, and the matrix is required to cover all thirteen labels;
+  else, and the matrix is required to cover all thirteen labels plus each of the
+  five pooled-resource refusal shapes exactly once;
 * the live package is resolved by pointer, its carrier pins recompute from the
   committed bytes, its blocking set re-derives from the gate ledger, and it
   validates clean;
@@ -166,9 +167,11 @@ def test_live_package_names_every_gate_and_recomputes_authorization(
     declared = [(entry["gate_id"], entry["state"]) for entry in live_package["blocking_gates"]]
     assert declared == recomputed
     # T04 (M515/S02): both extraction thresholds now resolve `met`, so their
-    # gates left the blocking set (19 -> 17). S09 remains unauthorized on the
-    # body-axis and required-scope gates.
-    assert len(declared) == 17
+    # gates left the blocking set (19 -> 17). T03 (M515/S03) derived the Java
+    # resource gate as a measured `resource_pair`/`met`, dropping it from the
+    # blocking set (17 -> 16). S09 remains unauthorized on the body-axis and
+    # required-scope gates.
+    assert len(declared) == 16
 
     authorization = live_package["authorization"]
     assert authorization["s09_authorized"] is False
@@ -190,12 +193,46 @@ def test_live_rollback_carries_byte_identity(live_evidence: dict) -> None:
     assert rollback["documents_rehearsed"] == rollback["corpus_claim"]["declared_documents"]
     assert rollback["residuals"]["byte_identity_violations"] == 0
 
-def test_live_resource_claims_no_same_n_observation(live_evidence: dict) -> None:
+def test_live_resource_reports_a_measured_pair_and_typed_absences(
+    live_evidence: dict, package_rule: dict
+) -> None:
     resource = live_evidence["resource"]
     assert resource["pairing"]["rule"] == "same_documents_only"
     assert resource["pairing"]["pooled"] == "forbidden"
     assert resource["pairing"]["saving_claim"] == "forbidden"
-    assert all(row["state"] == "not_observed" for row in resource["reference_metrics"])
+
+    artifact = _load_json(RESOURCE_PATH)
+    same_n_manifests = {
+        entry["carrier"]["manifest"]
+        for entry in artifact["reference_carriers"]
+        if entry.get("same_n") is True
+    }
+    assert same_n_manifests
+
+    observed = [
+        row for row in resource["reference_metrics"] if row["state"] == "observed"
+    ]
+    absent = [
+        row
+        for row in resource["reference_metrics"]
+        if row["state"] == "not_observed"
+    ]
+    assert observed, "the corpus receipt must carry at least one measured reference row"
+    assert absent, "the metrics the carrier cannot supply must stay typed absences"
+    assert observed[0]["id"] == "java_latency_ms"
+    source = observed[0]["source"]
+    assert source is not None
+    assert source["kind"] == "measured_reference"
+    assert source["manifest"] in same_n_manifests
+    assert source["pointer"] == "documents[].latency_ms"
+    assert source["measurement_state"] == "measured"
+
+    vocabulary = set(package_rule["resource_carrier"]["absence_reason_vocabulary"])
+    assert vocabulary
+    for row in absent:
+        assert row["source"] is None
+        assert row["reason"] in vocabulary
+    assert resource["residuals"]["reference_rows_bound"] == len(observed)
 
 def test_live_tree_service_reports_no_acceptance_finding() -> None:
     service = TrajectoryService.__new__(TrajectoryService)
@@ -206,7 +243,17 @@ def test_live_tree_service_reports_no_acceptance_finding() -> None:
         if "acceptance_package" in (f.flag or "") or "acceptance_package" in (f.evidence or "")
     ]
     assert leaked == [], [f.flag for f in flags]
-    assert flags == [], [f.flag for f in flags]
+    # The composed absorption check also carries the retirement-readiness half,
+    # which T05 rebinds to the re-issued acceptance package. This module owns the
+    # acceptance-package half, so assert no acceptance finding and no finding
+    # from any other half; a readiness-only finding is tracked by its own module.
+    unrelated = [
+        f
+        for f in flags
+        if "acceptance_package" not in (f.evidence or "")
+        and "retirement_readiness" not in (f.evidence or "")
+    ]
+    assert unrelated == [], [f.flag for f in flags]
 
 def test_the_service_path_consumes_the_acceptance_observation(monkeypatch) -> None:
     """The half must fail closed through the real service, not only when called
@@ -367,6 +414,10 @@ def test_a_renamed_body_residual_is_refused(contract: dict) -> None:
     }
 
 def test_a_pooled_resource_claim_is_refused(contract: dict) -> None:
+    # The committed observed-with-source row is accepted: a measured same-n pair
+    # is exactly what the receipt is allowed to report.
+    assert _acceptance_package_violations(contract, _clean_bundle()) == set()
+
     record = _clean_bundle()
     record["resource"]["pairing"]["pooled"] = "allowed"
     assert _acceptance_package_violations(contract, record) == {
@@ -374,7 +425,41 @@ def test_a_pooled_resource_claim_is_refused(contract: dict) -> None:
     }
 
     record = _clean_bundle()
-    record["resource"]["reference_metrics"][0]["state"] = "observed"
+    record["resource"]["pairing"]["saving_claim"] = "allowed"
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_pooled_resource_claim"
+    }
+
+    # An observed row with no source is a number standing on nothing.
+    record = _clean_bundle()
+    for row in record["resource"]["reference_metrics"]:
+        if row["state"] == "observed":
+            row["source"] = None
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_pooled_resource_claim"
+    }
+
+    # An observed source must pin the carrier's pointer and sha256.
+    record = _clean_bundle()
+    for row in record["resource"]["reference_metrics"]:
+        if row["state"] == "observed":
+            del row["source"]["sha256"]
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_pooled_resource_claim"
+    }
+
+    # A typed absence must name a reason from the closed vocabulary.
+    record = _clean_bundle()
+    for row in record["resource"]["reference_metrics"]:
+        if row["state"] == "not_observed":
+            row["reason"] = "made_up_reason"
+    assert _acceptance_package_violations(contract, record) == {
+        "acceptance_package_pooled_resource_claim"
+    }
+
+    # The declared bound-row count must equal the rows that actually bind a source.
+    record = _clean_bundle()
+    record["resource"]["residuals"]["reference_rows_bound"] = 99
     assert _acceptance_package_violations(contract, record) == {
         "acceptance_package_pooled_resource_claim"
     }

@@ -2166,13 +2166,22 @@ def _acceptance_package_vocabulary(block: Any) -> list[str]:
         for key in (
             "path",
             "pointer",
-            "absence_state",
             "pairing_rule",
             "forbidden_pooling",
             "forbidden_saving",
         ):
             if _text(resource.get(key)) is None:
                 missing.append(f"acceptance_package.resource_carrier.{key}")
+        if not _text_list(resource.get("observation_states")):
+            missing.append("acceptance_package.resource_carrier.observation_states")
+        if resource.get("observed_requires_source") is not True:
+            missing.append(
+                "acceptance_package.resource_carrier.observed_requires_source"
+            )
+        if not _text_list(resource.get("absence_reason_vocabulary")):
+            missing.append(
+                "acceptance_package.resource_carrier.absence_reason_vocabulary"
+            )
 
     expected = block.get("expected")
     if not isinstance(expected, dict):
@@ -4795,8 +4804,9 @@ def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:
     * ``lifecycle_authorization`` — the package derives authorization from a GSD
       lifecycle state;
     * ``pooled_resource_claim`` — the same-n resource pairing is not the declared
-      same-documents contract, or a reference metric is not the typed absence it
-      must be;
+      same-documents contract, the pairing claims a pool or a saving, a reference
+      metric is not an observed row bound to a pinned source or a typed absence
+      with a closed reason, or the declared bound-row count drifts;
     * ``rollback_without_byte_identity`` — the rollback rehearsal does not carry
       byte identity, leaks a native fragment, or has a refused row with no typed
       reason.
@@ -4848,7 +4858,11 @@ def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:
     byte_identity_field = _text(rollback_rule.get("byte_identity_field"))
     fragment_leak_field = _text(rollback_rule.get("fragment_leak_field"))
 
-    absence_state = _text(resource_rule.get("absence_state"))
+    observation_states = set(_text_list(resource_rule.get("observation_states")))
+    observed_requires_source = resource_rule.get("observed_requires_source") is True
+    absence_reason_vocabulary = set(
+        _text_list(resource_rule.get("absence_reason_vocabulary"))
+    )
     pairing_rule = _text(resource_rule.get("pairing_rule"))
     forbidden_pooling = _text(resource_rule.get("forbidden_pooling"))
     forbidden_saving = _text(resource_rule.get("forbidden_saving"))
@@ -5025,7 +5039,13 @@ def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:
                 _add("acceptance_package_mandatory_gate_dropped")
             if _text(gate.get("detail")) is None:
                 _add("acceptance_package_mandatory_gate_dropped")
-            if _text(gate.get("evidence_needed")) is None:
+            # A gate that still blocks S09 must say what evidence would clear it;
+            # a non-blocking (`met`/`accepted_residual`) gate needs none. This
+            # mirrors the package rule (`gate_blocks_s09`).
+            if (
+                gate.get("blocks_s09") is True
+                and _text(gate.get("evidence_needed")) is None
+            ):
                 _add("acceptance_package_mandatory_gate_dropped")
             if not isinstance(gate.get("required"), bool):
                 _add("acceptance_package_mandatory_gate_dropped")
@@ -5114,8 +5134,29 @@ def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:
                 if not isinstance(row, dict):
                     _add("acceptance_package_pooled_resource_claim")
                     continue
-                if _text(row.get("state")) != absence_state:
+                state = _text(row.get("state"))
+                if state is None or state not in observation_states:
+                    # A state outside the declared observation vocabulary is a
+                    # claim the receipt cannot honestly make.
                     _add("acceptance_package_pooled_resource_claim")
+                elif state == "observed":
+                    # An observed row must bind a source with the carrier's
+                    # manifest/pointer/sha256, or the number stands on nothing.
+                    source = row.get("source")
+                    if not isinstance(source, dict):
+                        if observed_requires_source:
+                            _add("acceptance_package_pooled_resource_claim")
+                    elif (
+                        _text(source.get("manifest")) is None
+                        or _text(source.get("pointer")) is None
+                        or _text(source.get("sha256")) is None
+                    ):
+                        _add("acceptance_package_pooled_resource_claim")
+                elif state == "not_observed":
+                    # An absent row must name why, from the closed vocabulary.
+                    reason = _text(row.get("reason"))
+                    if reason is None or reason not in absence_reason_vocabulary:
+                        _add("acceptance_package_pooled_resource_claim")
                 if row.get("source") is not None:
                     bound += 1
             residuals = _mapping(resource.get("residuals"))
