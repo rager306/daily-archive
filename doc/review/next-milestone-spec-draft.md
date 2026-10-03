@@ -100,6 +100,23 @@ Ordered; each slice is bounded and has a named proof.
   and `stage.header_composition`, micro and weakest-stratum. Proof: same as S01, for both
   extraction thresholds.
 
+  **Spike result (2026-10-03) — what the bridge actually is.** The frozen references are
+  not opaque numbers; `absorption_progress_reference_pins.json#values` names their exact
+  derivation, so S02 is a bounded implementation, not an open-ended port:
+
+  | threshold | fraction | derivation (verbatim) |
+  |---|---|---|
+  | `preservation_micro_occurrence` | 74910/79621 = 0.94083 | `evaluated_population.aggregate.admitted / source_population` |
+  | `extraction_micro_occurrence` | 945771/1e6 = 0.94577 | `evaluated_population.class_parity.aggregate.native_capability_recall_micros / 1e6` |
+  | `extraction_weakest_family` | 3055/7077 = 0.43168 | `minimum conserved/source_population across class_profiles classes` |
+
+  So S02 needs three named things over the native route product: (a) a **class-profile
+  projection** carrying per-class `conserved`/`source_population`, (b) **micros
+  aggregation** to 1e6, (c) the **weakest-class minimum** across class profiles. S01
+  separately needs an admitted-vs-source count on the composed emission. Nothing here
+  requires reproducing Java internals — it requires projecting the same axes onto the
+  native output that the frozen references already aggregate.
+
 - **S03 — Same-n Java resource reference.**
   Retires `resource.container_java_cpu = not_observed{reference_row_not_same_n}` by
   producing a same-n Java CPU reference for the paired resource envelope. Proof: the
@@ -154,8 +171,9 @@ Ordered; each slice is bounded and has a named proof.
   and honest reporting*, not passing.
 - **`not_comparable` means absence of mechanism, not a near miss.** Do not treat S01/S02
   as tuning work.
-- **Cost.** S02 is the "~2.5k-line measurement engine" M514 deferred; it is the largest
-  slice and should be re-estimated after a spike.
+- **Cost.** S02 is the "~2.5k-line measurement engine" M514 deferred. The 2026-10-03 spike
+  (§4) reduced it to three named projections over the native route product — re-estimate
+  from that list rather than from the line count.
 - **Java stays active.** The reference series is produced by the Java route; this
   milestone does not retire it.
 
