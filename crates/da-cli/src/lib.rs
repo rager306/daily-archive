@@ -76,6 +76,14 @@ pub mod native_content_receipt;
 // feature set; the gated example `native_corpus_acceptance` drives it against
 // the real 610-document frozen holdout.
 pub mod native_acceptance;
+// S01/T01 (M515-v2mvmc): the shared composition-measurement surface. It owns the
+// compact scanner, the source-side `ProbeSource`, the `AdmittedBand`, and the
+// fixed class enumeration once, so the external-holdout probe and the corpus
+// acceptance runner measure the same `admitted / source_population` aggregate.
+// It uses `da_parse` (an unconditional `da-cli` dependency) for the typed
+// parsers that build the admitted band, and does not use `pdf-layout`, so it
+// compiles in the default feature set.
+pub mod native_composition_measurement;
 // S06/T03 (M514-1lss2s): route receipt envelope and independent validator for
 // the end-to-end PDF->native route. It reuses the S04 envelope
 // (`native_family_receipt`) and binds the T02 prospective limit freeze, and is

@@ -69,6 +69,12 @@
 #![cfg(feature = "pdf-layout")]
 
 use clap::Parser;
+use da_cli::native_composition_measurement::{
+    AdmittedBand, CLASS_AUTHOR_AFFILIATION, CLASS_AUTHOR_LINE, CLASS_HEADER_EMAIL,
+    CLASS_HEADER_IDS, CLASS_HEADER_TITLE, CLASS_ORDER, CLASS_REFERENCE_DOMAIN, ClassAdmission,
+    PROBE_CITATION_ROLES, ProbeSource, XmlScan, build_admitted_band, citation_class_wire_token,
+    class_admissions, measure_source, scan_xml,
+};
 use da_parse::*;
 use serde::Deserialize;
 use serde_json::{Value as Json, json};
@@ -150,47 +156,6 @@ const MARGIN_REF_KEY: &str = "acceptance_margins";
 
 /// The z of the 95% Wilson score interval.  Not a margin.
 const WILSON_Z: f64 = 1.96;
-
-// ───────────────────────── the class vocabulary ─────────────────────────────
-
-// The class tokens are derived from the production enum, from the composer's own
-// declared reference-link derivation and from its citation role mapping: none of
-// these is a second literal copy.
-const CLASS_AUTHOR_LINE: &str = "AdmittedAuthorLine";
-const CLASS_HEADER_TITLE: &str = "SemanticFieldLoss::HeaderTitle";
-const CLASS_HEADER_EMAIL: &str = "SemanticFieldLoss::HeaderEmail";
-const CLASS_HEADER_IDS: &str = "SemanticFieldLoss::HeaderIds";
-const CLASS_AUTHOR_AFFILIATION: &str = "SemanticFieldLoss::AuthorAffiliation";
-const CLASS_REFERENCE_DOMAIN: &str = NATIVE_FULLTEXT_REFERENCE_LINK_DERIVATION;
-const CLASS_CITATION_DOI: &str = "CitationFieldRole::doi";
-const CLASS_CITATION_ARXIV: &str = "CitationFieldRole::arxiv_id";
-const CLASS_CITATION_URL: &str = "CitationFieldRole::url";
-const CLASS_CITATION_ARTICLE_TITLE: &str = "CitationFieldRole::article_title";
-
-const CLASS_ORDER: [&str; 10] = [
-    CLASS_AUTHOR_LINE,
-    CLASS_HEADER_TITLE,
-    CLASS_HEADER_EMAIL,
-    CLASS_HEADER_IDS,
-    CLASS_AUTHOR_AFFILIATION,
-    CLASS_REFERENCE_DOMAIN,
-    CLASS_CITATION_DOI,
-    CLASS_CITATION_ARXIV,
-    CLASS_CITATION_URL,
-    CLASS_CITATION_ARTICLE_TITLE,
-];
-
-const PROBE_CITATION_ROLES: [(CitationFieldRole, &str); 4] = [
-    (CitationFieldRole::Doi, CLASS_CITATION_DOI),
-    (CitationFieldRole::ArxivId, CLASS_CITATION_ARXIV),
-    (CitationFieldRole::Url, CLASS_CITATION_URL),
-    (
-        CitationFieldRole::ArticleTitle,
-        CLASS_CITATION_ARTICLE_TITLE,
-    ),
-];
-
-const CHECKSUM_IDNO_TYPES: [&str; 3] = ["MD5", "SHA1", "SHA256"];
 
 /// Every redaction flag the artifact must carry, all `false`.
 const REDACTION_FLAGS: [&str; 16] = [
@@ -1145,767 +1110,6 @@ struct ExpectedProbe {
     gold_standard_present: usize,
 }
 
-// ───────────────────────── the compact XML tag scanner ──────────────────────
-//
-// `da-cli` has no XML parser and adding one is out of scope, so this file carries
-// a minimal, non-validating scanner: it builds the element list with attributes
-// and content ranges, and reconstructs an element's normalized text with XML
-// entity decoding.  It is deliberately nothing more than that — it is not a
-// substitute for the `roxmltree` oracle in `native_fulltext_corpus_semantics.rs`
-// (the authoritative structural oracle), it does not validate well-formedness,
-// and it is never used on untrusted input.  Its only job is to let the runtime
-// runner read the same carriers the oracle reads.
-
-struct Elem {
-    name: String,
-    attrs: Vec<(String, String)>,
-    content_start: usize,
-    end: usize,
-    parent: Option<usize>,
-}
-
-struct XmlScan {
-    elems: Vec<Elem>,
-    source: String,
-}
-
-/// Byte offset of the `>` that closes the tag opened at `start`, skipping `>`
-/// characters inside quoted attribute values.
-fn find_tag_end(source: &str, start: usize) -> Option<usize> {
-    let bytes = source.as_bytes();
-    let mut i = start + 1;
-    let mut quote: Option<u8> = None;
-    while i < bytes.len() {
-        let byte = bytes[i];
-        match quote {
-            Some(q) => {
-                if byte == q {
-                    quote = None;
-                }
-            }
-            None => {
-                if byte == b'"' || byte == b'\'' {
-                    quote = Some(byte);
-                } else if byte == b'>' {
-                    return Some(i);
-                }
-            }
-        }
-        i += 1;
-    }
-    None
-}
-
-fn find_after(source: &str, start: usize, marker: &str) -> usize {
-    source[start..]
-        .find(marker)
-        .map(|offset| start + offset + marker.len())
-        .unwrap_or(source.len())
-}
-
-fn skip_whitespace(bytes: &[u8], mut i: usize) -> usize {
-    while i < bytes.len() && bytes[i].is_ascii_whitespace() {
-        i += 1;
-    }
-    i
-}
-
-fn is_name_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == ':' || c == '.'
-}
-
-fn tag_name(inner: &str) -> &str {
-    let start = inner
-        .find(|c: char| !c.is_whitespace() && c != '/')
-        .unwrap_or(inner.len());
-    let rest = &inner[start..];
-    let end = rest.find(|c: char| !is_name_char(c)).unwrap_or(rest.len());
-    &rest[..end]
-}
-
-/// Decode the five predefined XML entities plus numeric character references.
-/// The composer re-escapes every emitted value (`esc`), so both sides of the
-/// measurement must decode to compare; this is the same projection `roxmltree`
-/// applies.
-fn decode_entities(input: &str) -> String {
-    let mut out = String::with_capacity(input.len());
-    let mut chars = input.char_indices().peekable();
-    while let Some((index, ch)) = chars.next() {
-        if ch != '&' {
-            out.push(ch);
-            continue;
-        }
-        let rest = &input[index + 1..];
-        let Some(semi) = rest.find(';') else {
-            out.push(ch);
-            continue;
-        };
-        if semi > 12 {
-            out.push(ch);
-            continue;
-        }
-        let entity = &rest[..semi];
-        let decoded = match entity {
-            "amp" => Some('&'),
-            "lt" => Some('<'),
-            "gt" => Some('>'),
-            "quot" => Some('"'),
-            "apos" => Some('\''),
-            _ => entity
-                .strip_prefix("#x")
-                .or_else(|| entity.strip_prefix("#X"))
-                .and_then(|hex| u32::from_str_radix(hex, 16).ok())
-                .or_else(|| entity.strip_prefix('#').and_then(|dec| dec.parse().ok()))
-                .and_then(char::from_u32),
-        };
-        match decoded {
-            Some(decoded) => {
-                out.push(decoded);
-                for _ in 0..=semi {
-                    chars.next();
-                }
-            }
-            None => out.push(ch),
-        }
-    }
-    out
-}
-
-fn parse_attrs(inner: &str) -> Vec<(String, String)> {
-    let bytes = inner.as_bytes();
-    let mut attrs = Vec::new();
-    let mut i = 0;
-    while i < bytes.len() && !bytes[i].is_ascii_whitespace() {
-        i += 1;
-    }
-    while i < bytes.len() {
-        while i < bytes.len() && (bytes[i].is_ascii_whitespace() || bytes[i] == b'/') {
-            i += 1;
-        }
-        if i >= bytes.len() {
-            break;
-        }
-        let name_start = i;
-        while i < bytes.len() && bytes[i] != b'=' && !bytes[i].is_ascii_whitespace() {
-            i += 1;
-        }
-        let name = inner[name_start..i].to_string();
-        if name.is_empty() {
-            i += 1;
-            continue;
-        }
-        i = skip_whitespace(bytes, i);
-        if i >= bytes.len() || bytes[i] != b'=' {
-            attrs.push((name, String::new()));
-            continue;
-        }
-        i = skip_whitespace(bytes, i + 1);
-        if i >= bytes.len() {
-            attrs.push((name, String::new()));
-            break;
-        }
-        let quote = bytes[i];
-        if quote == b'"' || quote == b'\'' {
-            i += 1;
-            let value_start = i;
-            while i < bytes.len() && bytes[i] != quote {
-                i += 1;
-            }
-            attrs.push((name, decode_entities(&inner[value_start..i])));
-            if i < bytes.len() {
-                i += 1;
-            }
-        } else {
-            let value_start = i;
-            while i < bytes.len() && !bytes[i].is_ascii_whitespace() {
-                i += 1;
-            }
-            attrs.push((name, decode_entities(&inner[value_start..i])));
-        }
-    }
-    attrs
-}
-
-fn scan_xml(source: &str) -> XmlScan {
-    let bytes = source.as_bytes();
-    let mut elems: Vec<Elem> = Vec::new();
-    let mut stack: Vec<usize> = Vec::new();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] != b'<' {
-            i += 1;
-            continue;
-        }
-        let rest = &source[i..];
-        if rest.starts_with("<!--") {
-            i = find_after(source, i, "-->");
-            continue;
-        }
-        if rest.starts_with("<![CDATA[") {
-            i = find_after(source, i, "]]>");
-            continue;
-        }
-        if rest.starts_with("<?") {
-            i = find_after(source, i, "?>");
-            continue;
-        }
-        if rest.starts_with("<!") {
-            i = find_after(source, i, ">");
-            continue;
-        }
-        let Some(gt) = find_tag_end(source, i) else {
-            break;
-        };
-        if rest.starts_with("</") {
-            let name = tag_name(&source[i + 2..gt]).to_string();
-            while let Some(top) = stack.pop() {
-                elems[top].end = i;
-                if elems[top].name == name {
-                    break;
-                }
-            }
-            i = gt + 1;
-            continue;
-        }
-        let inner = &source[i + 1..gt];
-        let self_closing = inner.trim_end().ends_with('/');
-        let name = tag_name(inner).to_string();
-        let attrs = parse_attrs(inner);
-        let parent = stack.last().copied();
-        let index = elems.len();
-        elems.push(Elem {
-            name,
-            attrs,
-            content_start: gt + 1,
-            end: gt + 1,
-            parent,
-        });
-        if self_closing {
-            elems[index].end = gt + 1;
-        } else {
-            stack.push(index);
-        }
-        i = gt + 1;
-    }
-    for top in stack {
-        elems[top].end = source.len();
-    }
-    XmlScan {
-        elems,
-        source: source.to_string(),
-    }
-}
-
-impl XmlScan {
-    /// The unique element named `name` anywhere in the document.
-    fn unique(&self, name: &str) -> usize {
-        let mut found = self
-            .elems
-            .iter()
-            .enumerate()
-            .filter(|(_, e)| e.name == name);
-        let (index, _) = found
-            .next()
-            .unwrap_or_else(|| panic!("the document declares no <{name}> element"));
-        assert!(
-            found.next().is_none(),
-            "the scanner requires a unique <{name}> element"
-        );
-        index
-    }
-
-    fn is_descendant(&self, node: usize, root: usize) -> bool {
-        let mut current = self.elems[node].parent;
-        while let Some(parent) = current {
-            if parent == root {
-                return true;
-            }
-            current = self.elems[parent].parent;
-        }
-        false
-    }
-
-    fn descendants(&self, root: usize, name: &str) -> Vec<usize> {
-        (0..self.elems.len())
-            .filter(|&index| self.elems[index].name == name && self.is_descendant(index, root))
-            .collect()
-    }
-
-    fn children(&self, root: usize, name: &str) -> Vec<usize> {
-        (0..self.elems.len())
-            .filter(|&index| {
-                self.elems[index].name == name && self.elems[index].parent == Some(root)
-            })
-            .collect()
-    }
-
-    fn attr(&self, index: usize, name: &str) -> Option<&str> {
-        self.elems[index]
-            .attrs
-            .iter()
-            .find(|(key, _)| key == name)
-            .map(|(_, value)| value.as_str())
-    }
-
-    /// Normalized, entity-decoded text of an element: tags become a space (the
-    /// join `roxmltree`'s text-descendant join performs) and whitespace runs
-    /// collapse.
-    fn text(&self, index: usize) -> String {
-        let raw = &self.source[self.elems[index].content_start..self.elems[index].end];
-        let mut stripped = String::with_capacity(raw.len());
-        let bytes = raw.as_bytes();
-        let mut i = 0;
-        while i < bytes.len() {
-            if bytes[i] == b'<' {
-                if let Some(gt) = find_tag_end(raw, i) {
-                    stripped.push(' ');
-                    i = gt + 1;
-                    continue;
-                }
-                i += 1;
-                continue;
-            }
-            let ch = raw[i..].chars().next().expect("in-bounds char");
-            stripped.push(ch);
-            i += ch.len_utf8();
-        }
-        decode_entities(&stripped)
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
-    fn text_list(&self, indices: &[usize]) -> Vec<String> {
-        indices.iter().map(|&index| self.text(index)).collect()
-    }
-}
-
-// ───────────────────── the independent source-side measurement ──────────────
-
-/// One real `author`/`affiliation key` binding, in document order.
-struct AffiliationOccurrence {
-    author_index: usize,
-    key: String,
-    text: String,
-}
-
-/// Everything the compact scanner reads from one frozen reference document:
-/// the *source population* side of the profile.  Nothing here is produced by the
-/// composer.
-struct ProbeSource {
-    article_id: String,
-    sha256: String,
-    header_titles: Vec<String>,
-    title_stmt_titles: Vec<String>,
-    header_emails: Vec<String>,
-    header_idnos: Vec<String>,
-    header_pubnum_ids: Vec<String>,
-    author_name_texts: Vec<String>,
-    affiliation_occurrences: Vec<AffiliationOccurrence>,
-    date_text: String,
-    reference_texts: Vec<String>,
-    citation_carriers: Vec<(CitationFieldRole, String)>,
-}
-
-fn is_checksum_idno(scan: &XmlScan, index: usize) -> bool {
-    scan.attr(index, "type")
-        .is_some_and(|kind| CHECKSUM_IDNO_TYPES.contains(&kind))
-}
-
-fn measure_source(article_id: &str, declared_sha256: &str, xml: &str) -> ProbeSource {
-    let scan = scan_xml(xml);
-    let header = scan.unique("teiHeader");
-    let list = scan.unique("listBibl");
-
-    let title_stmt = scan
-        .children(header, "fileDesc")
-        .first()
-        .and_then(|&desc| scan.children(desc, "titleStmt").first().copied());
-    let title_stmt_titles: Vec<String> = title_stmt
-        .map(|stmt| scan.text_list(&scan.descendants(stmt, "title")))
-        .unwrap_or_default();
-    let header_titles = scan.text_list(&scan.descendants(header, "title"));
-    let header_emails = scan.text_list(&scan.descendants(header, "email"));
-    let header_idnos = scan.text_list(&scan.descendants(header, "idno"));
-    let header_pubnum_ids: Vec<String> = scan
-        .descendants(header, "idno")
-        .into_iter()
-        .filter(|&index| !is_checksum_idno(&scan, index))
-        .map(|index| scan.text(index))
-        .collect();
-
-    let author_elements = scan.descendants(header, "author");
-    let author_name_texts: Vec<String> = author_elements
-        .iter()
-        .map(|&author| {
-            scan.children(author, "persName")
-                .first()
-                .map(|&pers_name| scan.text(pers_name))
-                .unwrap_or_default()
-        })
-        .collect();
-
-    let mut affiliation_occurrences = Vec::new();
-    for (author_index, &author) in author_elements.iter().enumerate() {
-        for affiliation in scan.children(author, "affiliation") {
-            let Some(key) = scan.attr(affiliation, "key") else {
-                continue;
-            };
-            affiliation_occurrences.push(AffiliationOccurrence {
-                author_index,
-                key: key.to_string(),
-                text: scan.text(affiliation),
-            });
-        }
-    }
-
-    let date_text = scan
-        .descendants(header, "date")
-        .into_iter()
-        .map(|index| scan.text(index))
-        .find(|text| !text.is_empty())
-        .unwrap_or_else(|| {
-            panic!("FATAL {PROBE} {article_id}: the header declares no dated element with text")
-        });
-
-    let reference_texts: Vec<String> = scan.text_list(&scan.children(list, "biblStruct"));
-
-    let mut citation_carriers = Vec::new();
-    for index in scan.descendants(list, "idno") {
-        match scan.attr(index, "type") {
-            Some("DOI") => citation_carriers.push((CitationFieldRole::Doi, scan.text(index))),
-            Some("arXiv") => citation_carriers.push((CitationFieldRole::ArxivId, scan.text(index))),
-            _ => {}
-        }
-    }
-    for index in scan.descendants(list, "ptr") {
-        if let Some(target) = scan.attr(index, "target")
-            && target.starts_with("http")
-        {
-            citation_carriers.push((CitationFieldRole::Url, target.to_string()));
-        }
-    }
-    for index in scan.descendants(list, "title") {
-        if scan.attr(index, "level") == Some("a") {
-            citation_carriers.push((CitationFieldRole::ArticleTitle, scan.text(index)));
-        }
-    }
-
-    ProbeSource {
-        article_id: article_id.to_string(),
-        sha256: declared_sha256.to_string(),
-        header_titles,
-        title_stmt_titles,
-        header_emails,
-        header_idnos,
-        header_pubnum_ids,
-        author_name_texts,
-        affiliation_occurrences,
-        date_text,
-        reference_texts,
-        citation_carriers,
-    }
-}
-
-// ────────────────────────── the admitted band (input) ───────────────────────
-
-/// One named, typed admission narrowing: a class whose real carrier population
-/// could not be admitted in full, with the reason.  `admitted < source_population`
-/// is only allowed when a row of this table explains it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct AdmissionGap {
-    class: &'static str,
-    source_population: usize,
-    admitted: usize,
-    reason: String,
-}
-
-/// The typed composition input plus the admitted-side values the measurement
-/// compares the emission against.  All of it is derived from the real document.
-struct AdmittedBand {
-    header: HeaderCompositionOutcome,
-    references: ReferenceCompositionOutcome,
-    titles: Vec<String>,
-    emails: Vec<String>,
-    ids: Vec<String>,
-    author_lines: Vec<(String, String)>,
-    affiliation_bindings: Vec<(String, String)>,
-    reference_texts: Vec<String>,
-    citation_fields: Vec<(CitationFieldRole, String)>,
-    gaps: Vec<AdmissionGap>,
-}
-
-/// The serde wire tag and reason of a rejected parser outcome, e.g.
-/// `ambiguous:single_token`.
-fn outcome_token<T: serde::Serialize>(outcome: &T) -> String {
-    let value = serde_json::to_value(outcome).expect("a parser outcome serializes");
-    let tag = value
-        .get("outcome")
-        .and_then(|tag| tag.as_str())
-        .unwrap_or("unknown")
-        .to_string();
-    match value.get("reason").and_then(|reason| reason.as_str()) {
-        Some(reason) => format!("{tag}:{reason}"),
-        None => tag,
-    }
-}
-
-/// Assemble the admitted band from the real frozen document through the public
-/// typed parsers.  Every parser rejection becomes a named [`AdmissionGap`];
-/// nothing is silently dropped and no value is invented.
-fn build_admitted_band(source: &ProbeSource) -> AdmittedBand {
-    let mut gaps = Vec::new();
-
-    let date = match NativeDateParser::new().parse(&source.date_text) {
-        NativeDateOutcome::Recognized { date } => date,
-        other => panic!(
-            "FATAL {PROBE} {}: the real publication date form cannot be admitted by \
-             NativeDateParser ({}); the header band cannot be composed from the frozen document",
-            source.article_id,
-            outcome_token(&other)
-        ),
-    };
-
-    let titles = source.title_stmt_titles.clone();
-    if titles.len() < source.header_titles.len() {
-        gaps.push(AdmissionGap {
-            class: CLASS_HEADER_TITLE,
-            source_population: source.header_titles.len(),
-            admitted: titles.len(),
-            reason: format!(
-                "band definition: the admitted title field is the direct fileDesc/titleStmt/title \
-                 children; the remaining {} of {} header title carriers are conserved by the \
-                 source subtree and are not produced by the admitted band",
-                source.header_titles.len() - titles.len(),
-                source.header_titles.len()
-            ),
-        });
-    }
-
-    let emails = source.header_emails.clone();
-    let ids = source.header_pubnum_ids.clone();
-
-    let affiliation_parser = NativeAffiliationParser::new();
-    let mut occurrence_component: Vec<Option<usize>> = Vec::new();
-    let mut rejected_affiliations = Vec::new();
-    let mut recognized_components = 0usize;
-    for occurrence in &source.affiliation_occurrences {
-        match affiliation_parser.parse(&occurrence.text) {
-            NativeAffiliationOutcome::Recognized { components } => {
-                assert!(
-                    !components.is_empty(),
-                    "{}: a recognized affiliation must carry at least one component",
-                    source.article_id
-                );
-                occurrence_component.push(Some(recognized_components));
-                recognized_components += 1;
-            }
-            other => {
-                occurrence_component.push(None);
-                rejected_affiliations.push(outcome_token(&other));
-            }
-        }
-    }
-
-    let name_parser = NativePersonalNameParser::new();
-    let mut authors: Vec<HeaderAuthor> = Vec::new();
-    let mut author_lines: Vec<(String, String)> = Vec::new();
-    let mut affiliation_bindings: Vec<(String, String)> = Vec::new();
-    let mut rejected_names = Vec::new();
-
-    for (author_index, name_text) in source.author_name_texts.iter().enumerate() {
-        let name = match name_parser.parse(PersonalNameContext::Header, name_text) {
-            NativePersonalNameOutcome::Recognized { name } => name,
-            other => {
-                rejected_names.push(outcome_token(&other));
-                continue;
-            }
-        };
-        let ordinal = authors.len();
-        let owner = format!("author-{ordinal}");
-        let mut links = Vec::new();
-        for (occurrence_index, occurrence) in source.affiliation_occurrences.iter().enumerate() {
-            if occurrence.author_index != author_index {
-                continue;
-            }
-            // A rejected affiliation text is not admitted, and neither is an
-            // affiliation carrying no key: the link is simply not in the band.
-            if occurrence_component[occurrence_index].is_none() {
-                continue;
-            }
-            let parsed = match affiliation_parser.parse(&occurrence.text) {
-                NativeAffiliationOutcome::Recognized { components } => components,
-                other => panic!(
-                    "{PROBE} {}: an affiliation admitted once must be admitted again ({})",
-                    source.article_id,
-                    outcome_token(&other)
-                ),
-            };
-            let span = parsed
-                .first()
-                .expect("a recognized affiliation carries a component")
-                .span;
-            links.push(NativeAffiliationLink {
-                key: occurrence.key.clone(),
-                affiliation_ordinal: occurrence_index,
-                affiliation_span: span,
-            });
-        }
-        author_lines.push((owner.clone(), name.surname.clone()));
-        affiliation_bindings.extend(links.iter().map(|link| (owner.clone(), link.key.clone())));
-        authors.push(HeaderAuthor {
-            ordinal,
-            span: CompositionSpan {
-                start: ordinal,
-                end: ordinal + 1,
-            },
-            name,
-            affiliations: links,
-        });
-    }
-
-    assert!(
-        !authors.is_empty(),
-        "FATAL {PROBE} {}: the frozen reference admitted no author line",
-        source.article_id
-    );
-    for reason in &rejected_names {
-        gaps.push(AdmissionGap {
-            class: CLASS_AUTHOR_LINE,
-            source_population: source.author_name_texts.len(),
-            admitted: authors.len(),
-            reason: format!("NativePersonalNameParser rejected the real persName text ({reason})"),
-        });
-    }
-    for reason in &rejected_affiliations {
-        gaps.push(AdmissionGap {
-            class: CLASS_AUTHOR_AFFILIATION,
-            source_population: source.affiliation_occurrences.len(),
-            admitted: affiliation_bindings.len(),
-            reason: format!(
-                "NativeAffiliationParser rejected the real affiliation key carrier text ({reason})"
-            ),
-        });
-    }
-
-    let references: Vec<NativeReference> = source
-        .reference_texts
-        .iter()
-        .enumerate()
-        .map(|(ordinal, text)| NativeReference {
-            ordinal,
-            source: text.clone(),
-            span: CitationSpan {
-                start: 0,
-                end: text.len(),
-            },
-            provenance: "frozen-external-holdout-reference".into(),
-        })
-        .collect();
-    assert!(
-        references
-            .iter()
-            .all(|reference| reference.span.start < reference.span.end),
-        "FATAL {PROBE} {}: a source biblStruct carries empty text, so no honest reference span exists",
-        source.article_id
-    );
-
-    let citation_fields: Vec<CitationField> = source
-        .citation_carriers
-        .iter()
-        .map(|(role, value)| CitationField {
-            role: *role,
-            value: value.clone(),
-            span: CitationSpan {
-                start: 0,
-                end: value.len(),
-            },
-        })
-        .collect();
-    assert!(
-        citation_fields
-            .iter()
-            .all(|field| field.span.start < field.span.end),
-        "FATAL {PROBE} {}: a citation carrier carries an empty value",
-        source.article_id
-    );
-
-    let header = HeaderCompositionOutcome::Accepted {
-        composition: HeaderCompositionCandidate {
-            candidate: HeaderCandidate {
-                date,
-                authors,
-                fields: NativeHeaderFields {
-                    title: titles.clone(),
-                    email: emails.clone(),
-                    ids: ids.clone(),
-                },
-            },
-            receipts: vec![
-                ComponentReceipt {
-                    component: CompositionComponent::Date,
-                    disposition: ComponentDisposition::Accepted,
-                },
-                ComponentReceipt {
-                    component: CompositionComponent::Names,
-                    disposition: ComponentDisposition::Accepted,
-                },
-                ComponentReceipt {
-                    component: CompositionComponent::Affiliations,
-                    disposition: ComponentDisposition::Accepted,
-                },
-            ],
-        },
-    };
-    let references_outcome = ReferenceCompositionOutcome::Accepted {
-        composition: ReferenceCompositionCandidate {
-            candidate: ReferenceCandidate {
-                references,
-                fields: citation_fields.clone(),
-                anchors: Vec::new(),
-                adjacent_pairs: Vec::new(),
-            },
-            receipts: vec![
-                ComponentReceipt {
-                    component: CompositionComponent::References,
-                    disposition: ComponentDisposition::Accepted,
-                },
-                ComponentReceipt {
-                    component: CompositionComponent::CitationFields,
-                    disposition: if citation_fields.is_empty() {
-                        ComponentDisposition::Empty
-                    } else {
-                        ComponentDisposition::Accepted
-                    },
-                },
-                ComponentReceipt {
-                    component: CompositionComponent::Anchors,
-                    disposition: ComponentDisposition::Empty,
-                },
-            ],
-        },
-    };
-
-    assert!(
-        affiliation_bindings.len() <= source.affiliation_occurrences.len(),
-        "{}: the admitted band cannot carry more bindings than the source declares",
-        source.article_id
-    );
-
-    AdmittedBand {
-        header,
-        references: references_outcome,
-        titles,
-        emails,
-        ids,
-        author_lines,
-        affiliation_bindings,
-        reference_texts: source.reference_texts.clone(),
-        citation_fields: source.citation_carriers.clone(),
-        gaps,
-    }
-}
-
 // ─────────────────────────── the independent oracle ────────────────────────
 
 /// One class's measured profile: `TP = conserved`, `FN = lost`, `FP = fabricated`.
@@ -2069,22 +1273,6 @@ fn emitted_author_lines(scan: &XmlScan) -> Vec<(String, String)> {
 /// The source document's own author-line carriers, keyed by the empty owner (a
 /// source `author` carries no `xml:id`, which is exactly the distinction between
 /// a band carrier and a conserved source carrier).
-fn source_author_lines(xml: &str) -> Vec<(String, String)> {
-    let scan = scan_xml(xml);
-    let header = scan.unique("teiHeader");
-    scan.descendants(header, "author")
-        .into_iter()
-        .map(|author| {
-            let surname = scan
-                .children(author, "surname")
-                .first()
-                .map(|&index| scan.text(index))
-                .unwrap_or_default();
-            (String::new(), surname)
-        })
-        .collect()
-}
-
 /// The emitted header's affiliation bindings: `author-{ordinal}` -> key.
 fn emitted_affiliation_bindings(scan: &XmlScan) -> Vec<(String, String)> {
     let header = scan.unique("teiHeader");
@@ -2103,23 +1291,6 @@ fn emitted_affiliation_bindings(scan: &XmlScan) -> Vec<(String, String)> {
 }
 
 /// The source document's own affiliation bindings, keyed by the empty owner.
-fn source_affiliation_bindings(xml: &str) -> Vec<(String, String)> {
-    let scan = scan_xml(xml);
-    let header = scan.unique("teiHeader");
-    scan.descendants(header, "author")
-        .into_iter()
-        .flat_map(|author| {
-            scan.descendants(author, "affiliation")
-                .into_iter()
-                .filter_map(|index| {
-                    scan.attr(index, "key")
-                        .map(|key| (String::new(), key.to_string()))
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect()
-}
-
 /// The emitted `listBibl` carriers of the measured citation roles.
 fn emitted_citation_carriers(scan: &XmlScan) -> Vec<(String, String)> {
     let list = scan.unique("listBibl");
@@ -2136,9 +1307,12 @@ fn emitted_citation_carriers(scan: &XmlScan) -> Vec<(String, String)> {
 }
 
 /// Every class's measured profile for one document, from the emission bytes only.
-/// The source-consumed class set is read from DATA (`lane.class_parity`), never
-/// compiled in: a class the manifest marks as carried by the copied source
-/// subtree is measured as conserved and its shortfall is not a fabricated loss.
+/// The per-class admitted/source values come from the shared
+/// [`class_admissions`] enumeration (one source of truth with the acceptance
+/// runner); the source-consumed class set is read from DATA
+/// (`lane.class_parity`), never compiled in, so a class the manifest marks as
+/// carried by the copied source subtree is measured as conserved and its
+/// shortfall is not a fabricated loss.
 fn oracle_class_profiles(
     lane: &LaneData,
     source: &ProbeSource,
@@ -2158,95 +1332,67 @@ fn oracle_class_profiles(
 
     let emitted_lines = emitted_author_lines(&scan);
     let emitted_affiliations = emitted_affiliation_bindings(&scan);
-    let source_author_carriers = source_author_lines(source_xml);
-    let source_affiliation_carriers = source_affiliation_bindings(source_xml);
-
     let emitted_citations = emitted_citation_carriers(&scan);
-    let source_citations: Vec<(String, String)> = source
-        .citation_carriers
-        .iter()
-        .map(|(role, value)| (citation_field_role_token(*role).to_string(), value.clone()))
-        .collect();
-    let admitted_citations: Vec<(String, String)> = admitted
-        .citation_fields
-        .iter()
-        .map(|(role, value)| (citation_field_role_token(*role).to_string(), value.clone()))
-        .collect();
 
-    let mut profiles = Vec::with_capacity(CLASS_ORDER.len());
-    profiles.push(binding_profile(
-        CLASS_AUTHOR_LINE,
-        source.author_name_texts.len(),
-        &admitted.author_lines,
-        &emitted_lines,
-        &source_author_carriers,
-        source_consumed(CLASS_AUTHOR_LINE),
-    ));
-    profiles.push(class_profile(
-        CLASS_HEADER_TITLE,
-        source.header_titles.len(),
-        &admitted.titles,
-        &emitted_titles,
-        &source.header_titles,
-        source_consumed(CLASS_HEADER_TITLE),
-    ));
-    profiles.push(class_profile(
-        CLASS_HEADER_EMAIL,
-        source.header_emails.len(),
-        &admitted.emails,
-        &emitted_emails,
-        &source.header_emails,
-        source_consumed(CLASS_HEADER_EMAIL),
-    ));
-    profiles.push(class_profile(
-        CLASS_HEADER_IDS,
-        source.header_pubnum_ids.len(),
-        &admitted.ids,
-        &emitted_ids,
-        &source.header_idnos,
-        source_consumed(CLASS_HEADER_IDS),
-    ));
-    profiles.push(binding_profile(
-        CLASS_AUTHOR_AFFILIATION,
-        source.affiliation_occurrences.len(),
-        &admitted.affiliation_bindings,
-        &emitted_affiliations,
-        &source_affiliation_carriers,
-        source_consumed(CLASS_AUTHOR_AFFILIATION),
-    ));
-    profiles.push(class_profile(
-        CLASS_REFERENCE_DOMAIN,
-        source.reference_texts.len(),
-        &admitted.reference_texts,
-        &emitted_reference_texts,
-        &source.reference_texts,
-        source_consumed(CLASS_REFERENCE_DOMAIN),
-    ));
-    for (role, class) in PROBE_CITATION_ROLES {
-        let token = citation_field_role_token(role);
-        let admitted_values: Vec<String> = admitted_citations
-            .iter()
-            .filter(|(candidate, _)| candidate == token)
-            .map(|(_, value)| value.clone())
-            .collect();
-        let source_values: Vec<String> = source_citations
-            .iter()
-            .filter(|(candidate, _)| candidate == token)
-            .map(|(_, value)| value.clone())
-            .collect();
-        let emitted_values: Vec<String> = emitted_citations
-            .iter()
-            .filter(|(candidate, _)| candidate == token)
-            .map(|(_, value)| value.clone())
-            .collect();
-        profiles.push(class_profile(
-            class,
-            source_values.len(),
-            &admitted_values,
-            &emitted_values,
-            &source_values,
-            source_consumed(class),
-        ));
+    let admissions = class_admissions(source, admitted, source_xml);
+    let mut profiles = Vec::with_capacity(admissions.len());
+    for admission in &admissions {
+        let class = admission.class();
+        let profile = match admission {
+            ClassAdmission::Binding {
+                source_population,
+                admitted,
+                source_carriers,
+                ..
+            } => {
+                let emitted = match class {
+                    CLASS_AUTHOR_LINE => &emitted_lines,
+                    CLASS_AUTHOR_AFFILIATION => &emitted_affiliations,
+                    other => panic!("FATAL {PROBE} unbound binding class `{other}`"),
+                };
+                binding_profile(
+                    class,
+                    *source_population,
+                    admitted,
+                    emitted,
+                    source_carriers,
+                    source_consumed(class),
+                )
+            }
+            ClassAdmission::Text {
+                source_population,
+                admitted,
+                source_carriers,
+                ..
+            } => {
+                let emitted: Vec<String> = if class == CLASS_HEADER_TITLE {
+                    emitted_titles.clone()
+                } else if class == CLASS_HEADER_EMAIL {
+                    emitted_emails.clone()
+                } else if class == CLASS_HEADER_IDS {
+                    emitted_ids.clone()
+                } else if class == CLASS_REFERENCE_DOMAIN {
+                    emitted_reference_texts.clone()
+                } else if let Some(token) = citation_class_wire_token(class) {
+                    emitted_citations
+                        .iter()
+                        .filter(|(candidate, _)| candidate == token)
+                        .map(|(_, value)| value.clone())
+                        .collect()
+                } else {
+                    panic!("FATAL {PROBE} unbound text class `{class}`")
+                };
+                class_profile(
+                    class,
+                    *source_population,
+                    admitted,
+                    &emitted,
+                    source_carriers,
+                    source_consumed(class),
+                )
+            }
+        };
+        profiles.push(profile);
     }
     assert_eq!(
         profiles.len(),
@@ -2576,8 +1722,10 @@ fn measure_document(row: &LaneReferenceRow, lane: &LaneData, latency_ms: u64) ->
         .strip_prefix("sha256:")
         .unwrap_or(&row.declared_sha256)
         .to_string();
-    let source = measure_source(&row.article_id, &identity_sha256, &xml);
-    let admitted = build_admitted_band(&source);
+    let source = measure_source(&row.article_id, &identity_sha256, &xml)
+        .unwrap_or_else(|error| panic!("FATAL {PROBE} {error}"));
+    let admitted =
+        build_admitted_band(&source).unwrap_or_else(|error| panic!("FATAL {PROBE} {error}"));
     let candidate = compose_document(&source, &admitted, &xml, lane);
     let emission =
         String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap_or_else(|error| {
