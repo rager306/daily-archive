@@ -117,6 +117,30 @@ Ordered; each slice is bounded and has a named proof.
   requires reproducing Java internals — it requires projecting the same axes onto the
   native output that the frozen references already aggregate.
 
+  **Spike result — the producers already exist; the mismatch is a producing path.**
+  `crates/da-cli/examples/native_corpus_acceptance.rs` (T01) states the mismatch itself,
+  in its own module docs:
+
+  > Where a frozen metric is natively observable *through this runner's own producing
+  > path*, it is measured with a non-empty denominator. Where the producing mechanism is
+  > absent, the runner emits a typed gap cell (`not_observable` with a machine-readable
+  > reason): the class-parity axis behind the two extraction thresholds is not a native
+  > route product, and the `native_fulltext_composition_shadow` scanner behind the
+  > preservation threshold consumes the composed emission, not the native route result.
+
+  The reference producer already exists and is named in the pins' source artifact:
+  `external_holdout_release_probe.json#evaluated_population.class_parity.producer` =
+  "da-cli compact non-validating scan over the composed emission", with an independent
+  judge at `crates/da-parse/tests/external_holdout_probe_semantics.rs` (roxmltree,
+  170 KB, committed). `class_parity` / `native_capability_recall` already appear in
+  `crates/da-cli/examples/external_holdout_release_probe.rs`.
+
+  So S01/S02 are **wiring and projection onto mechanisms that already exist and are
+  already independently judged**, not net-new engine construction. S01/S02 must either
+  (i) make the acceptance runner consume the composed emission on the same path the
+  probe already scans, or (ii) make the native route product expose the class-parity
+  axis. Re-estimate from that decision, not from a line count.
+
 - **S03 — Same-n Java resource reference.**
   Retires `resource.container_java_cpu = not_observed{reference_row_not_same_n}` by
   producing a same-n Java CPU reference for the paired resource envelope. Proof: the
