@@ -15,10 +15,13 @@
 //! producing mechanism is absent, the runner emits a **typed gap cell**
 //! (`not_observable` with a machine-readable reason) instead of manufacturing a
 //! value: the class-parity axis behind the two extraction thresholds is not a
-//! native route product, and the `native_fulltext_composition_shadow` scanner
-//! behind the preservation threshold consumes the composed emission, not the
-//! native route result. A family the closed schema still carries as
-//! `threshold_pending` is emitted as a `threshold_pending` gap.
+//! native route product. The preservation threshold
+//! (`preservation.occurrence_conservation`) is measured over the frozen
+//! reference TEI through the shared composition scanner
+//! (`da_cli::native_composition_measurement`), whose admitted/source aggregate is
+//! emission-independent; its former `producing_mechanism_absent` gap cell is
+//! dropped once the metric is measured. A family the closed schema still carries
+//! as `threshold_pending` is emitted as a `threshold_pending` gap.
 //!
 //! Every one of the 610 assigned documents is re-verified by PDF sha256 before
 //! any work; the 531 measurable documents are folded through the S03 native
@@ -29,7 +32,8 @@
 //!
 //! * `--self-check` — hermetic. No corpus, no artifact write. Rejects each named
 //!   mutation (sha drift, unknown document, guard-less zero, observed Java > 0,
-//!   tuned threshold, shrunken denominator, and the two gap-ledger mutations).
+//!   tuned threshold, shrunken denominator, the two gap-ledger mutations, a
+//!   zero-denominator metric and a threshold both measured and gapped).
 //! * `--limit N` — bounded local run, non-canonical limited artifact only.
 //! * default — full-corpus canonical run, written atomically (tmp + rename)
 //!   with an incremental per-document resume cache so a resumed run converges.
@@ -47,11 +51,12 @@ use da_cli::native_acceptance::{
     REFERENCE_PINS_REL, REFERENCE_PROBE_REL, assert_acceptance_redacted, build_native_acceptance,
     derive_expectation, validate_native_acceptance,
 };
+use da_cli::native_composition_measurement::measure_document_admitted_coverage;
 use da_cli::native_family_receipt::sha256_prefixed;
 use da_parse::{
     GrobidHttpBackend, GrobidProfile, JavaInvocationCounter, ParseBackend, ParseBackendRequest,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -63,6 +68,18 @@ const GUARD_ENDPOINT: &str = "http://127.0.0.1:9";
 const CONTROL_ENDPOINT: &str = "http://";
 /// The observed seam token.
 const OBSERVER: &str = "java_transport_fetch_tei";
+/// The frozen acceptance carrier pinning each measurable document's reference TEI
+/// bytes. Read directly, same precedent as the holdout manifest in
+/// `load_expectation`: every row is byte-pinned by its own sha256.
+const ACCEPTANCE_MANIFEST_REL: &str = "data/parse/acceptance_manifest.yaml";
+/// Pointer inside the acceptance manifest to the measurable reference TEI rows.
+const REFERENCE_TEI_POINTER: [&str; 3] = [
+    "external_holdout_contract",
+    "release_probe",
+    "reference_tei",
+];
+/// The frozen preservation metric id, resolved by pointer from the pins.
+const PRESERVATION_METRIC_ID: &str = "preservation.occurrence_conservation";
 
 // ─────────────────────────────── arguments ───────────────────────────────
 
@@ -195,11 +212,83 @@ fn load_expectation(root: &Path) -> Result<AcceptanceExpectation, Box<dyn Error>
     )?)
 }
 
-/// The typed gap ledger: one cell per frozen threshold and one per pending
-/// required family. No threshold literal is restated; only ids/reasons.
-fn build_gap_ledger(expectation: &AcceptanceExpectation) -> Vec<AcceptanceGapCell> {
+// ───────────────────── frozen reference-TEI pins ─────────────────────
+
+/// One frozen reference TEI row: the committed bytes the preservation metric is
+/// measured over.
+#[derive(Debug, Clone)]
+struct ReferenceTei {
+    path: String,
+    sha256: String,
+    size_bytes: u64,
+}
+
+/// Load the measurable reference-TEI pins from the acceptance manifest. Every
+/// measurable document is pinned here by its own sha256 and size, so the join
+/// into the run can never silently shrink the preservation denominator.
+fn load_reference_tei(root: &Path) -> Result<BTreeMap<String, ReferenceTei>, Box<dyn Error>> {
+    let text = fs::read_to_string(root.join(ACCEPTANCE_MANIFEST_REL))?;
+    let manifest: serde_yaml::Value = serde_yaml::from_str(&text)?;
+    let rows = manifest
+        .get(REFERENCE_TEI_POINTER[0])
+        .and_then(|contract| contract.get(REFERENCE_TEI_POINTER[1]))
+        .and_then(|lane| lane.get(REFERENCE_TEI_POINTER[2]))
+        .and_then(serde_yaml::Value::as_sequence)
+        .ok_or_else(|| {
+            format!(
+                "{ACCEPTANCE_MANIFEST_REL} is missing {}",
+                REFERENCE_TEI_POINTER.join(".")
+            )
+        })?;
+    let mut reference = BTreeMap::new();
+    for row in rows {
+        let article_id = row
+            .get("article_id")
+            .and_then(serde_yaml::Value::as_str)
+            .ok_or("reference_tei row is missing `article_id`")?
+            .to_owned();
+        let path = row
+            .get("path")
+            .and_then(serde_yaml::Value::as_str)
+            .ok_or_else(|| format!("reference_tei {article_id} is missing `path`"))?
+            .to_owned();
+        let sha256 = row
+            .get("sha256")
+            .and_then(serde_yaml::Value::as_str)
+            .ok_or_else(|| format!("reference_tei {article_id} is missing `sha256`"))?
+            .to_owned();
+        let size_bytes = row
+            .get("size_bytes")
+            .and_then(serde_yaml::Value::as_u64)
+            .ok_or_else(|| format!("reference_tei {article_id} is missing `size_bytes`"))?;
+        let previous = reference.insert(
+            article_id.clone(),
+            ReferenceTei {
+                path,
+                sha256,
+                size_bytes,
+            },
+        );
+        if previous.is_some() {
+            return Err(format!("reference_tei names {article_id} more than once").into());
+        }
+    }
+    Ok(reference)
+}
+
+/// The typed gap ledger: one cell per frozen threshold that is not measured, and
+/// one per pending required family. No threshold literal is restated; only
+/// ids/reasons. A threshold whose `metric_id` is measured by the run drops its
+/// `not_observable` cell rather than being carried both measured and gapped.
+fn build_gap_ledger(
+    expectation: &AcceptanceExpectation,
+    measured_metric_ids: &BTreeSet<String>,
+) -> Vec<AcceptanceGapCell> {
     let mut gaps = Vec::new();
     for threshold in &expectation.thresholds {
+        if measured_metric_ids.contains(&threshold.metric_id) {
+            continue;
+        }
         let reason = match threshold.family_id.as_str() {
             "parse.component.native_fulltext_composition_shadow" => {
                 "producing_mechanism_absent:s01_composition_scanner_consumes_composed_emission"
@@ -277,7 +366,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
 
     let expectation = load_expectation(&args.root)?;
     let guard = install_guard()?;
-    let gaps = build_gap_ledger(&expectation);
+    let reference_tei = load_reference_tei(&args.root)?;
 
     let limit = args
         .limit
@@ -292,6 +381,10 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
     let mut plane_units_total = 0u64;
     let mut plane_rows = 0u64;
     let limits_donor = LayoutDonorLimits::default();
+    let mut preservation_admitted = 0u64;
+    let mut preservation_source = 0u64;
+    let mut preservation_rows = 0u64;
+    let mut unpinned_measurable: Vec<String> = Vec::new();
 
     for (index, expected) in expectation.documents.iter().take(limit).enumerate() {
         let pdf_bytes = match fs::read(args.root.join(&expected.source_pdf)) {
@@ -313,6 +406,53 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             .into());
         }
         verified += 1;
+
+        // The preservation aggregate is measured over the frozen reference TEI,
+        // not over the composed emission: `admitted` and `source_population`
+        // come from the same shared scanner the release probe uses, so this
+        // runner and that probe cannot drift.
+        if expected.state == "measurable" {
+            if let Some(reference) = reference_tei.get(&expected.id) {
+                let tei_bytes = fs::read(args.root.join(&reference.path)).map_err(|error| {
+                    format!(
+                        "reference TEI for {} could not be read ({}): {error}",
+                        expected.id, reference.path
+                    )
+                })?;
+                if tei_bytes.len() as u64 != reference.size_bytes {
+                    return Err(format!(
+                        "reference TEI size drift for {}: observed {}, pinned {}",
+                        expected.id,
+                        tei_bytes.len(),
+                        reference.size_bytes
+                    )
+                    .into());
+                }
+                let observed_tei_sha = sha256_prefixed(&tei_bytes);
+                if observed_tei_sha != reference.sha256 {
+                    return Err(format!(
+                        "reference TEI checksum drift for {}: observed {observed_tei_sha}, \
+                         pinned {}",
+                        expected.id, reference.sha256
+                    )
+                    .into());
+                }
+                let tei_xml = std::str::from_utf8(&tei_bytes).map_err(|error| {
+                    format!("reference TEI for {} is not UTF-8: {error}", expected.id)
+                })?;
+                let counts = measure_document_admitted_coverage(tei_xml).map_err(|error| {
+                    format!(
+                        "reference TEI for {} could not be measured: {error}",
+                        expected.id
+                    )
+                })?;
+                preservation_admitted += counts.admitted as u64;
+                preservation_source += counts.source_population as u64;
+                preservation_rows += 1;
+            } else {
+                unpinned_measurable.push(expected.id.clone());
+            }
+        }
 
         let plane = if expected.state == "excluded" {
             CachedPlane {
@@ -405,11 +545,23 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         expectation.populations.clone()
     };
 
+    // Every measurable document must be pinned in the reference-TEI carrier and
+    // measured exactly once, so a broken join fails loudly here instead of
+    // quietly shrinking the preservation denominator.
+    if preservation_rows != populations.measurable {
+        return Err(format!(
+            "the reference-TEI join measured {preservation_rows} rows but the run has {} \
+             measurable documents (unpinned: {unpinned_measurable:?})",
+            populations.measurable
+        )
+        .into());
+    }
+
     let mut bounded_expectation = expectation.clone();
     bounded_expectation.populations = populations.clone();
     bounded_expectation.documents = expectation.documents.iter().take(limit).cloned().collect();
 
-    let metrics = vec![
+    let mut metrics = vec![
         AcceptanceMetricRow {
             metric_id: "native_acceptance.pdf_verification_coverage".to_owned(),
             numerator: verified,
@@ -426,6 +578,25 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             denominator: plane_rows.max(1),
         },
     ];
+
+    // The preservation metric is pushed only when it has a non-empty
+    // denominator: a zero-denominator row is a silent zero, refused by name.
+    if preservation_source > 0 {
+        metrics.push(AcceptanceMetricRow {
+            metric_id: PRESERVATION_METRIC_ID.to_owned(),
+            numerator: preservation_admitted,
+            denominator: preservation_source,
+        });
+    }
+
+    // A threshold is gapped only while it is not measured. The preservation
+    // threshold drops its `producing_mechanism_absent` cell here; the two
+    // extraction cells and the `threshold_pending` family cells are unchanged.
+    let measured_metric_ids: BTreeSet<String> = metrics
+        .iter()
+        .map(|metric| metric.metric_id.clone())
+        .collect();
+    let gaps = build_gap_ledger(&expectation, &measured_metric_ids);
 
     let receipt = build_native_acceptance(&bounded_expectation, guard, documents, metrics, gaps)?;
     let bytes = receipt.artifact_json_bytes()?;
@@ -545,6 +716,32 @@ fn run_self_check() -> Result<String, Box<dyn Error>> {
     let mut m = base.clone();
     m.gaps[0].reason = String::new();
     expect_refusal("empty_gap_reason", &m, &expectation, "EmptyGapReason")?;
+    checked += 1;
+
+    // (9) a measured metric row with a zero (silent) denominator
+    let mut m = base.clone();
+    m.metrics[0].denominator = 0;
+    expect_refusal(
+        "zero_denominator",
+        &m,
+        &expectation,
+        "MetricZeroDenominator",
+    )?;
+    checked += 1;
+
+    // (10) a frozen threshold measured while its gap cell is still carried
+    let mut m = base.clone();
+    m.metrics.push(AcceptanceMetricRow {
+        metric_id: "metric.frozen".to_owned(),
+        numerator: 1,
+        denominator: 2,
+    });
+    expect_refusal(
+        "both_measured_and_gapped",
+        &m,
+        &expectation,
+        "ThresholdBothMeasuredAndGapped",
+    )?;
     checked += 1;
 
     Ok(format!(
