@@ -18,6 +18,7 @@ from typing import Any
 
 import yaml
 
+from governor.adapters.filesystem_code_scanner import _cfg_test_line_ranges
 from governor.domain.trajectory import DriftFlag
 
 
@@ -206,7 +207,14 @@ def _check_textbook_manifests(root: Path, rule: dict, _flag) -> list[DriftFlag]:
 
 
 def _check_hardcoded_urls(root: Path, rule: dict, _flag) -> list[DriftFlag]:
-    """Scan Rust src for hardcoded service URLs."""
+    """Scan Rust src for hardcoded service URLs.
+
+    Inline `#[cfg(test)]` items are out of scope: a test that asserts URL-shape
+    detection or a redaction guard needs URL-shaped literals by construction, and
+    flagging them is a false positive that trains readers to ignore the rule. The
+    line-range helper is the same one `scan_pattern` uses, so production lines
+    outside such items stay in scope.
+    """
     flags = []
     pattern = re.compile(rule.get("pattern", r'https?://[a-z0-9.-]+'))
     exclude = re.compile(rule.get("exclude_pattern", ""), re.IGNORECASE) if rule.get("exclude_pattern") else None
@@ -230,12 +238,17 @@ def _check_hardcoded_urls(root: Path, rule: dict, _flag) -> list[DriftFlag]:
         except OSError:
             continue
 
+        test_ranges = _cfg_test_line_ranges(text.splitlines())
+
         for match in pattern.finditer(text):
             url = match.group(0)
             # Skip if matches the YAML exclude_pattern regex
             if exclude and exclude.search(url):
                 continue
             line_num = text[:match.start()].count('\n') + 1
+            # Skip inline #[cfg(test)] items (fixtures and sentinels live there)
+            if any(lo <= line_num <= hi for lo, hi in test_ranges):
+                continue
             flags.append(_flag(
                 "data_integrity_hardcoded_url",
                 f"{rel}:{line_num} contains hardcoded URL '{url}' "
