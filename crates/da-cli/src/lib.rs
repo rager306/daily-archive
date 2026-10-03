@@ -84,6 +84,13 @@ pub mod native_acceptance;
 // parsers that build the admitted band, and does not use `pdf-layout`, so it
 // compiles in the default feature set.
 pub mod native_composition_measurement;
+// S02/T01 (M515-v2mvmc): the shared class-parity projection, extracted once from
+// the runtime probe example so the corpus acceptance runner can resolve both
+// `extraction.native_capability_recall` strata without a second hand copy.  It
+// consumes the S01 composition surface (scanner, class enumeration, typed
+// refusals) and `da_parse`, and does not use `pdf-layout`, so it compiles in the
+// default feature set.
+pub mod native_class_parity;
 // S06/T03 (M514-1lss2s): route receipt envelope and independent validator for
 // the end-to-end PDF->native route. It reuses the S04 envelope
 // (`native_family_receipt`) and binds the T02 prospective limit freeze, and is

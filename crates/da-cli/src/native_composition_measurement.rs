@@ -296,7 +296,12 @@ pub fn measure_document_admitted_coverage(
 
 /// The unique element named `name`, or a typed refusal when it is absent or
 /// duplicated (the panicking [`XmlScan::unique`] stays for the emission scan).
-fn find_unique(scan: &XmlScan, name: &str) -> Result<usize, MeasurementError> {
+///
+/// M515/S02 widened this from a module-private helper to a public seam so the
+/// class-parity projection can refuse an emission whose class-carrying anchors
+/// are missing (`ClassParityClassMissing`) instead of panicking on them; the
+/// scanner itself is unchanged.
+pub fn find_unique(scan: &XmlScan, name: &str) -> Result<usize, MeasurementError> {
     let mut found = scan
         .elems
         .iter()
