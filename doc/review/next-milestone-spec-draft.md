@@ -7,6 +7,34 @@ finding that a validator already produced.
 
 ---
 
+## 0. One-screen summary (for the approval decision)
+
+**What it fixes.** `514-VALIDATION.md` blocked M514 because the three frozen thresholds
+resolve `not_comparable` (`metric_absent`) — no frozen metric is measured at all — plus a
+missing same-n Java resource reference and partial R134/R140/R142 coverage. Rule C2:
+"without frozen thresholds there is no acceptance."
+
+**What the spikes found (S01–S05).** Every validator complaint turned out to be a
+**missing explicit linkage** against a mechanism or piece of evidence that already exists,
+is committed, and is already independently judged. This is a **wiring milestone**, not a
+build-from-scratch one.
+
+**Six slices:** S01 composition-scanner consumption; S02 route→class-parity wiring;
+S03 same-n Java resource pairing; S04 R134 recompute/provenance linkage;
+S05 R140/R142 evidence linkage; S06 re-resolve thresholds, re-issue the package, run the
+full gate.
+
+**Success means measurable and honestly reported, not "thresholds passed".** If the native
+plane measures below a frozen reference, that is the result and it is reported as-is.
+
+**Out of scope:** promotion, deploy, import, graph writes (all five locks stay closed);
+`data/parse/acceptance_manifest.yaml` and the M513 release package stay read-only; the S09
+human release record is written by a human, never an agent.
+
+**Decision needed:** approve as-is, or name the changes. Nothing is created until then.
+
+---
+
 ## 1. Why this milestone exists
 
 `514-VALIDATION.md` closed M514 as `needs-attention`. Its own rationale reads:
