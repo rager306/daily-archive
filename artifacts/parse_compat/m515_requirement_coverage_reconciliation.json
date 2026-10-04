@@ -1,0 +1,222 @@
+{
+  "schema_version": "m515-requirement-coverage-reconciliation.v1",
+  "milestone_id": "M515-v2mvmc",
+  "slice_id": "S07",
+  "task_id": "T01",
+  "generated_at": "2026-10-04",
+  "claim_scope": "coverage_reconciliation_data_only",
+  "product_coverage_effect": "none",
+  "purpose": "Reviewable source for the M515 requirement-coverage correction. It separates, for each touched requirement, the contour M515 actually delivered (a bound-and-recomputed evidence pointer linkage, or a guard touch, or a terminal-gate advance) from the substantive clause that remains open. The driving operator applies the recorded_coverage_statement text to the requirement store and the S06 requirements sections; this block itself changes no requirement status and no measured artifact.",
+  "redaction": {
+    "repository_relative_paths_only": true,
+    "absolute_paths_present": false,
+    "author_identities_present": false
+  },
+  "evidence_source": {
+    "acceptance_package": {
+      "manifest": "artifacts/parse_compat/grobid_retirement_acceptance_package.json",
+      "revision_sha256": "sha256:de3773a8c0f5e6f2574ef41acc087e26c6a4805a53d4f5454af310f721956223",
+      "evidence_carrier_count": 21,
+      "mandatory_gate_count": 21,
+      "blocking_gate_count": 16,
+      "s09_authorized": false,
+      "thresholds_state": "not_accepted"
+    },
+    "recomputation_rule": "Every revision_sha256 below is recomputed from committed bytes by crates/da-cli/tests/requirement_evidence_linkage_test.rs and crates/da-cli/tests/native_acceptance_package_test.rs; a stale pin fails that test. Linkage proves the pointer resolves to committed bytes, not that the requirement is satisfied.",
+    "linkage_decision": "D535",
+    "linkage_semantics_decision": "D534"
+  },
+  "requirements": [
+    {
+      "id": "R140",
+      "class": "core-capability",
+      "store_status": "active",
+      "primary_owner": "M514-1lss2s/S03",
+      "m515_binding": "M515-v2mvmc/S06",
+      "delivered_contour": {
+        "kind": "evidence_pointer_linkage",
+        "requirement_evidence_id": "REQUIREMENT_EVIDENCE_R140",
+        "statement": "M515/S06 bound and recomputed the R140 typed-absence/delivered pointer pair inside the re-issued acceptance package: the pointer pair is declared as REQUIREMENT_EVIDENCE_R140 and recomputed from committed bytes on every linkage test run.",
+        "is_requirement_satisfaction": false,
+        "evidence": [
+          {
+            "manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
+            "pointer": "gaps",
+            "revision_sha256": "sha256:e00f458cccab71c22ba86c5a644002a862166bf47e4b8255c084697e2ee182a6"
+          },
+          {
+            "manifest": "artifacts/parse_compat/java_free_vertical_slice.json",
+            "pointer": "guard",
+            "revision_sha256": "sha256:88cad43fe3c298ff0afa692235b1f2946fb7574c14661342fc6eed006bbeaaf7"
+          }
+        ]
+      },
+      "open_clause": {
+        "statement": "Quality of the declared native families on the fixed corpus with no Java calls (substantive capability), with typed absence and excluded documents not counted as delivered capability.",
+        "status": "open",
+        "why_open": "The linked evidence is a typed-absence/delivered boundary and a guard shape check; it makes no quality, Java-independence, threshold or product-coverage claim. R140 therefore stays active."
+      },
+      "coverage_status": "evidence_linkage_only",
+      "recorded_coverage_statement": "M515/S06 bound and recomputed the R140 evidence pointer pair (native_corpus_acceptance.json#gaps + java_free_vertical_slice.json#guard) in the re-issued acceptance package (sha256:de3773a8...). This is evidence linkage, not requirement satisfaction: R140's substantive clause (quality on the fixed corpus with no Java calls) remains OPEN and R140 stays active."
+    },
+    {
+      "id": "R142",
+      "class": "quality-attribute",
+      "store_status": "active",
+      "primary_owner": "M514-1lss2s/S07",
+      "m515_binding": null,
+      "m515_binding_claim_discrepancy": "The S06 SUMMARY states the explicit M515-v2mvmc/S06 supporting-slice binding was added to R142; the requirement store does NOT carry it (R142 supporting slices are S01,S02,S08). The store and the record already diverge. S07 corrects this by recording the binding as evidence-linkage-only.",
+      "delivered_contour": {
+        "kind": "evidence_pointer_linkage",
+        "requirement_evidence_id": "REQUIREMENT_EVIDENCE_R142",
+        "statement": "M515/S06 bound and recomputed the five R142 field pointers inside the re-issued acceptance package; the pointers resolve to committed bytes and the reward-definition digests are asserted equal across the two manifests.",
+        "is_requirement_satisfaction": false,
+        "evidence": [
+          {
+            "manifest": "artifacts/parse_learning/candidate_cycle.json",
+            "pointer": "reward_definition_sha256",
+            "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+          },
+          {
+            "manifest": "artifacts/parse_learning/candidate_cycle.json",
+            "pointer": "conservation",
+            "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+          },
+          {
+            "manifest": "artifacts/parse_learning/candidate_cycle.json",
+            "pointer": "contamination_assessment",
+            "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+          },
+          {
+            "manifest": "artifacts/parse_learning/candidate_cycle.json",
+            "pointer": "validation_gap",
+            "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+          },
+          {
+            "manifest": "artifacts/parse_learning/learning_corpus.json",
+            "pointer": "reward_definition",
+            "revision_sha256": "sha256:b5ebfb5f91b214c6eab777da16651f81036ae5189b6e2beea7ced980acb5aaab"
+          }
+        ]
+      },
+      "open_clause": {
+        "statement": "Evaluation of the learnable part: train -> persist -> reload -> independent eval on one frozen set, dual metrics plus same-n and validation gap; mutation tests for labels, weights, leakage and reward drift; no auto-promotion.",
+        "status": "open",
+        "why_open": "Field-pointer linkage makes the existing measurement markers reviewer-recomputable; it does not execute or evaluate the learnable policy. R142 therefore stays active."
+      },
+      "coverage_status": "evidence_linkage_only",
+      "recorded_coverage_statement": "M515/S06 bound and recomputed the five R142 field pointers (candidate_cycle.json#reward_definition_sha256/#conservation/#contamination_assessment/#validation_gap and learning_corpus.json#reward_definition) in the re-issued acceptance package (sha256:de3773a8...). This is evidence linkage, not requirement satisfaction: R142's substantive clause (evaluation of the learnable part on one frozen set) remains OPEN and R142 stays active. Store action: add the M515-v2mvmc/S06 supporting-slice binding, recorded as evidence-linkage-only."
+    },
+    {
+      "id": "R123",
+      "class": "core-capability",
+      "store_status": "active",
+      "primary_owner": "M465-sqt7w0/S02",
+      "m515_binding": null,
+      "delivered_contour": {
+        "kind": "guard_touched_only",
+        "requirement_evidence_id": null,
+        "statement": "M515 touches R123 only through the R140 guard artifact: artifacts/parse_compat/java_free_vertical_slice.json declares requirement_ids=[R140,R123,R124] and its guard (installed=true, identity_isolated=true, observed_java_calls=0) was re-bound inside the re-issued package. There is no per-requirement M515 carrier binding for R123.",
+        "is_requirement_satisfaction": false,
+        "evidence": [
+          {
+            "manifest": "artifacts/parse_compat/java_free_vertical_slice.json",
+            "pointer": "requirement_ids",
+            "revision_sha256": "sha256:88cad43fe3c298ff0afa692235b1f2946fb7574c14661342fc6eed006bbeaaf7"
+          }
+        ]
+      },
+      "open_clause": {
+        "statement": "Guard-touched only, not covered. One-family-at-a-time replacement with conservation, same-n, dual metrics, val_gap and explicit promotion; no family is spliced into production and explicit promotion remains pending a later human yes.",
+        "status": "open",
+        "why_open": "A guard artifact naming the requirement is not coverage of the family-promotion clause. M515 delivered no family evidence for R123, so it stays active."
+      },
+      "coverage_status": "guard_touched_only",
+      "recorded_coverage_statement": "M515 guard-touched R123 only: java_free_vertical_slice.json#requirement_ids names R123 and its guard was re-bound into the re-issued package, but there is no per-requirement M515 evidence binding. R123 is guard-touched, NOT covered, and stays active. Store action: add the M515-v2mvmc/S06 supporting-slice binding recorded as guard-touched only."
+    },
+    {
+      "id": "R124",
+      "class": "operability",
+      "store_status": "active",
+      "store_status_note": "active/PARTIAL: the policy_hash/none fail-closed clause is explicitly open per the M511 clause-level audit.",
+      "primary_owner": "M465-sqt7w0/S01",
+      "m515_binding": null,
+      "delivered_contour": {
+        "kind": "guard_touched_only",
+        "requirement_evidence_id": null,
+        "statement": "M515 touches R124 only through the R140 guard artifact: artifacts/parse_compat/java_free_vertical_slice.json declares requirement_ids=[R140,R123,R124] and its guard was re-bound inside the re-issued package. M515 delivered no new fail-closed enforcement for R124.",
+        "is_requirement_satisfaction": false,
+        "evidence": [
+          {
+            "manifest": "artifacts/parse_compat/java_free_vertical_slice.json",
+            "pointer": "requirement_ids",
+            "revision_sha256": "sha256:88cad43fe3c298ff0afa692235b1f2946fb7574c14661342fc6eed006bbeaaf7"
+          }
+        ]
+      },
+      "open_clause": {
+        "statement": "Guard-touched only, not covered. The fail-closed clause set is PARTIAL: the policy_hash/none-missing-from-parse-receipts clause remains a named open residual with no fail-closed check on the scholarly_parse_plane surface.",
+        "status": "open",
+        "why_open": "A guard artifact naming the requirement is not coverage of the fail-closed clause set, and the policy_hash clause was never claimed closed. R124 therefore stays active/PARTIAL."
+      },
+      "coverage_status": "guard_touched_only",
+      "recorded_coverage_statement": "M515 guard-touched R124 only: java_free_vertical_slice.json#requirement_ids names R124 and its guard was re-bound into the re-issued package, but no new fail-closed enforcement was delivered. R124 is guard-touched, NOT covered, stays active/PARTIAL, and the policy_hash/none clause remains open. Store action: add the M515-v2mvmc/S06 supporting-slice binding recorded as guard-touched only."
+    },
+    {
+      "id": "R141",
+      "class": "operability",
+      "store_status": "active",
+      "primary_owner": "M514-1lss2s/S01",
+      "m515_binding": "M515-v2mvmc/S06",
+      "delivered_contour": {
+        "kind": "terminal_gate_advance",
+        "requirement_evidence_id": null,
+        "statement": "M515/S06 advanced R141 by running the terminal governance proof: PYTHONPATH=scripts python3 -m governor architecture returned 'architecture gate steps: 23/23 passed, 0 timed out' / 'ARCHITECTURE GATE: PASS', and --phase preflight exited 0 with no acceptance_package_* / retirement_readiness_* finding.",
+        "is_requirement_satisfaction": false,
+        "evidence": [
+          {
+            "manifest": "artifacts/parse_compat/grobid_retirement_acceptance_package.json",
+            "pointer": "blocking_gates",
+            "revision_sha256": "sha256:de3773a8c0f5e6f2574ef41acc087e26c6a4805a53d4f5454af310f721956223"
+          }
+        ]
+      },
+      "open_clause": {
+        "statement": "Validation of the terminal gate proof as delivered capability rather than artifact presence: the scorecard contract exercised end to end, a terminal GSD state never counted as delivered product, and an axis the pinned census measured never going silent.",
+        "status": "open",
+        "why_open": "A green gate at one tested revision advances R141 but does not by itself validate the requirement; the milestone validation of the terminal proof is S07/T02. R141 stays active."
+      },
+      "coverage_status": "advanced_not_validated",
+      "recorded_coverage_statement": "M515/S06 bound the M515-v2mvmc/S06 supporting slice to R141 and advanced it with the terminal gate proof (architecture gate 23/23 PASS at the tested revision; preflight exit 0 with no acceptance_package_*/retirement_readiness_* finding). This is an advance, NOT validation: R141 stays active pending the S07/T02 milestone re-validation."
+    }
+  ],
+  "c1_series_identity_residual": {
+    "status": "disclosed_unresolved",
+    "presented_as_resolved": false,
+    "must_not_be_presented_as_resolved": true,
+    "measured_fact": {
+      "verdict": "same_series",
+      "candidate_fingerprint": "sha256:c5a9d938f31660452032b4d9b86a4e8bebb621f93ae7d0a57bb28ed12778f161",
+      "reference_fingerprint": "sha256:c5a9d938f31660452032b4d9b86a4e8bebb621f93ae7d0a57bb28ed12778f161",
+      "fingerprints_equal": true,
+      "basis": "conservation_of_frozen_reference_series",
+      "rule": "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority"
+    },
+    "source": {
+      "manifest": "artifacts/parse_compat/grobid_retirement_acceptance_package.json",
+      "pointer": "carrier_independence.series_identity",
+      "revision_sha256": "sha256:de3773a8c0f5e6f2574ef41acc087e26c6a4805a53d4f5454af310f721956223"
+    },
+    "reviewer_disagreement": "The milestone roadmap assessment of 2026-10-04 records Reviewer A NEEDS-ATTENTION semantics on this reading: with candidate_fingerprint equal to reference_fingerprint, the three frozen thresholds resolve met on conservation of the frozen reference series, not on independent non-inferiority, so the same-series verdict can be read as a residual gap. Decision D536 records the verdict as deliberate derived package data (data/parse/absorption_progress.schema.yaml declares comparability.same_series_required: true) and machine-checkable; D534 records that S04 never claimed the candidate is independent. The residual stays disclosed and unresolved.",
+    "remediation": "out_of_scope_for_S07; no status edit may present it as resolved"
+  },
+  "invariants": {
+    "no_requirement_validated_on_linkage": true,
+    "linkage_is_not_requirement_satisfaction": true,
+    "every_touched_requirement_states_delivered_contour_and_open_clause": true,
+    "c1_residual_disclosed_and_unresolved": true,
+    "measured_artifacts_altered": false,
+    "requirement_statuses_changed_by_this_block": false,
+    "statement": "This block is reviewable coverage data only. It claims no requirement validated on the strength of linkage, marks each delivered contour is_requirement_satisfaction=false, and records the C1 series-identity residual as a disclosed measured fact that must not be presented as resolved."
+  }
+}
