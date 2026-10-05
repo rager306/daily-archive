@@ -2,7 +2,7 @@
 //! over the cached parse payload of one sweep paper and print entities.
 //! No gold needed — this is the non-gold counterpart of eval_extract.
 //!
-//! Usage: cargo run -p da-cli --example extract_probe -- 2504.16925
+//! Usage: cargo run -p da-cli --example da_toolbox -- extract_probe 2504.16925
 
 use anyhow::Result;
 use da_adapters::{FilePipelineCache, RuleBasedExtractor};

@@ -6,7 +6,7 @@
 //! scan (every node of the label is visited).
 //!
 //! Usage:
-//!   cargo run -p da-cli --example materialize_index_bench -- \
+//!   cargo run -p da-cli --example da_toolbox -- materialize_index_bench \
 //!     --snapshot artifacts/catalog_sweep/catalog_materialized.sgsnap
 
 use anyhow::Result;

@@ -935,7 +935,7 @@ fn semantic_loss(
 /// value and an illegal character are not, and a literal `\r` would be
 /// normalized to `\n` by the XML end-of-line rules.  Such a value is a typed
 /// semantic loss, never a silently omitted element.
-fn representable_text(value: &str) -> bool {
+pub(crate) fn representable_text(value: &str) -> bool {
     !value.is_empty() && value.chars().all(|c| is_legal_xml_char(c) && c != '\r')
 }
 
@@ -978,26 +978,26 @@ pub const fn citation_field_role_token(role: CitationFieldRole) -> &'static str 
 
 /// The admitted header semantics one admitted header band carries.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-struct AdmittedHeaderSemantics {
-    titles: Vec<String>,
-    emails: Vec<String>,
-    ids: Vec<String>,
+pub(crate) struct AdmittedHeaderSemantics {
+    pub(crate) titles: Vec<String>,
+    pub(crate) emails: Vec<String>,
+    pub(crate) ids: Vec<String>,
     /// `(author ordinal, affiliation key)` bindings, in admitted order.
-    author_affiliations: Vec<(usize, String)>,
+    pub(crate) author_affiliations: Vec<(usize, String)>,
 }
 
 /// One admitted bibliography field: its role wire token and its value.
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct AdmittedCitationSemantic {
-    role: &'static str,
-    value: String,
+pub(crate) struct AdmittedCitationSemantic {
+    pub(crate) role: &'static str,
+    pub(crate) value: String,
 }
 
 /// Every admitted semantic field the emission is obligated to conserve.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-struct AdmittedSemantics {
-    header: AdmittedHeaderSemantics,
-    citations: Vec<AdmittedCitationSemantic>,
+pub(crate) struct AdmittedSemantics {
+    pub(crate) header: AdmittedHeaderSemantics,
+    pub(crate) citations: Vec<AdmittedCitationSemantic>,
 }
 
 /// Validate and extract the semantic fields of an admitted header band.
@@ -1015,7 +1015,7 @@ struct AdmittedSemantics {
 /// binding the outcome actually carries — a representable key and a valid link
 /// span — and a missing component can never be silently replaced by an empty
 /// string because no string is invented here.
-fn header_semantics(
+pub(crate) fn header_semantics(
     candidate: &HeaderCandidate,
 ) -> Result<AdmittedHeaderSemantics, NativeFulltextCompositionError> {
     for (class, label, values) in [
@@ -1087,7 +1087,7 @@ fn header_semantics(
 /// field must be conserved at the bibliography level; a field whose span is
 /// invalid or whose value cannot be represented is a typed refusal rather than a
 /// silently dropped role.
-fn citation_semantics(
+pub(crate) fn citation_semantics(
     candidate: &ReferenceCandidate,
 ) -> Result<Vec<AdmittedCitationSemantic>, NativeFulltextCompositionError> {
     let mut semantics = Vec::with_capacity(candidate.fields.len());
@@ -1283,7 +1283,7 @@ fn emission_has_citation_role(
 /// returns the byte-identical Java envelope.  The counts are recomputed from the
 /// admitted values and the re-parsed emission; the returned ledger is the
 /// observable record, never an input.
-fn audit_semantic_fields(
+pub(crate) fn audit_semantic_fields(
     document: &XmlDocument,
     source: &str,
     admitted: &AdmittedSemantics,
@@ -1752,7 +1752,9 @@ fn validate_well_formed(text: &str) -> Result<(), NativeFulltextCompositionError
 /// It returns the structural view it parsed, so the post-splice reference-resolve
 /// gate in `compose_inner` reads the emitted document exactly once instead of
 /// parsing it a second time to ask the same question.
-fn validate_emitted(bytes: &[u8]) -> Result<XmlDocument, NativeFulltextCompositionError> {
+pub(crate) fn validate_emitted(
+    bytes: &[u8],
+) -> Result<XmlDocument, NativeFulltextCompositionError> {
     let text =
         std::str::from_utf8(bytes).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
     let document = XmlDocument::parse(text).map_err(|error| {
@@ -1773,17 +1775,143 @@ fn component_name(component: FulltextComponent) -> &'static str {
         FulltextComponent::LearningPolicy => "learning_policy",
     }
 }
-fn valid_sha(s: &str) -> bool {
+pub(crate) fn valid_sha(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
 }
-fn digest(bytes: &[u8]) -> String {
+pub(crate) fn digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
-fn esc(s: &str) -> String {
+pub(crate) fn esc(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
+}
+
+/// Preserved-source context a header fragment is assembled around.
+///
+/// The composer reads this context from the preserved Java `teiHeader` (open-tag
+/// attributes, wrapper namespace declarations and the byte intervals of the
+/// subtrees it moves).  A native emission that has no preserved source passes
+/// [`HeaderFragmentSource::native`], which carries empty declarations and no
+/// preserved segments and yields the same skeleton without preserved subtrees.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct HeaderFragmentSource<'a> {
+    pub attributes: &'a str,
+    pub file_desc_declarations: &'a str,
+    pub title_stmt_declarations: &'a str,
+    pub existing: &'a str,
+    pub title_stmt: &'a [(usize, usize)],
+    pub file_desc: &'a [(usize, usize)],
+    pub header: &'a [(usize, usize)],
+}
+
+impl<'a> HeaderFragmentSource<'a> {
+    /// No preserved source: an emission assembled from the native plane alone.
+    pub(crate) const fn native() -> Self {
+        Self {
+            attributes: "",
+            file_desc_declarations: "",
+            title_stmt_declarations: "",
+            existing: "",
+            title_stmt: &[],
+            file_desc: &[],
+            header: &[],
+        }
+    }
+}
+
+/// Serialize a native header band into a TEI `teiHeader` fragment.
+///
+/// Shared verbatim by the composer's `header_xml` and by the native emission
+/// (`native_tei_emission`), so both agree on one serialization of the admitted
+/// header semantics.
+pub(crate) fn render_header_fragment(
+    c: &crate::HeaderCompositionCandidate,
+    source: HeaderFragmentSource<'_>,
+) -> String {
+    let HeaderFragmentSource {
+        attributes,
+        file_desc_declarations,
+        title_stmt_declarations,
+        existing,
+        title_stmt,
+        file_desc,
+        header,
+    } = source;
+    let mut out = String::from("<teiHeader");
+    out.push_str(attributes);
+    out.push_str("><fileDesc");
+    out.push_str(file_desc_declarations);
+    out.push_str("><titleStmt");
+    out.push_str(title_stmt_declarations);
+    out.push('>');
+    for a in &c.candidate.authors {
+        out.push_str("<author xml:id=\"author-");
+        out.push_str(&a.ordinal.to_string());
+        out.push_str("\">");
+        if let Some(g) = &a.name.given_name {
+            out.push_str("<forename>");
+            out.push_str(&esc(g));
+            out.push_str("</forename>");
+        }
+        out.push_str("<surname>");
+        out.push_str(&esc(&a.name.surname));
+        out.push_str("</surname>");
+        // S03/T02: the admitted author->affiliation binding is carried, not
+        // just the author line.  The link's key/ordinal/span is all the
+        // composer's typed input holds (the affiliation component text is not
+        // retained by `RecognizedAffiliationComponent`), and the key is the
+        // binding the independent oracle reads.  `header_semantics` already
+        // validated the key's representability, the span and the component.
+        for link in &a.affiliations {
+            out.push_str("<affiliation key=\"");
+            out.push_str(&esc(&link.key));
+            out.push_str("\"/>");
+        }
+        out.push_str("</author>");
+    }
+    // S03/T02: admitted header fields are serialized verbatim, in candidate
+    // order, one element per value — never deduplicated, merged or reordered.
+    // The A-FIELDS audit measured that these were the fields `header_xml` never
+    // carried at all: an `Accepted` emission claimed structure and links, not
+    // the semantics the admitted band produced.
+    for title in &c.candidate.fields.title {
+        out.push_str("<title>");
+        out.push_str(&esc(title));
+        out.push_str("</title>");
+    }
+    for email in &c.candidate.fields.email {
+        out.push_str("<email>");
+        out.push_str(&esc(email));
+        out.push_str("</email>");
+    }
+    for id in &c.candidate.fields.ids {
+        out.push_str("<idno type=\"pubnum\">");
+        out.push_str(&esc(id));
+        out.push_str("</idno>");
+    }
+    for &(start, end) in title_stmt {
+        out.push_str(&existing[start..end]);
+    }
+    out.push_str("</titleStmt><date when=\"");
+    out.push_str(&c.candidate.date.year.to_string());
+    if let Some(month) = c.candidate.date.month {
+        out.push_str(&format!("-{month:02}"));
+    }
+    if let Some(day) = c.candidate.date.day {
+        out.push_str(&format!("-{day:02}"));
+    }
+    out.push_str("\"/>");
+    for &(start, end) in file_desc {
+        out.push_str(&existing[start..end]);
+    }
+    out.push_str("</fileDesc>");
+    for &(start, end) in header {
+        out.push_str(&existing[start..end]);
+    }
+    out.push_str("</teiHeader>");
+    out
 }
 
 fn header_xml(
@@ -1873,79 +2001,18 @@ fn header_xml(
         document.element_index_opt("teiHeader")?,
         &["fileDesc", "titleStmt"],
     );
-    let mut out = String::from("<teiHeader");
-    out.push_str(attributes);
-    out.push_str("><fileDesc");
-    out.push_str(&file_desc_declarations);
-    out.push_str("><titleStmt");
-    out.push_str(&title_stmt_declarations);
-    out.push('>');
-    for a in &c.candidate.authors {
-        out.push_str("<author xml:id=\"author-");
-        out.push_str(&a.ordinal.to_string());
-        out.push_str("\">");
-        if let Some(g) = &a.name.given_name {
-            out.push_str("<forename>");
-            out.push_str(&esc(g));
-            out.push_str("</forename>");
-        }
-        out.push_str("<surname>");
-        out.push_str(&esc(&a.name.surname));
-        out.push_str("</surname>");
-        // S03/T02: the admitted author->affiliation binding is carried, not
-        // just the author line.  The link's key/ordinal/span is all the
-        // composer's typed input holds (the affiliation component text is not
-        // retained by `RecognizedAffiliationComponent`), and the key is the
-        // binding the independent oracle reads.  `header_semantics` already
-        // validated the key's representability, the span and the component.
-        for link in &a.affiliations {
-            out.push_str("<affiliation key=\"");
-            out.push_str(&esc(&link.key));
-            out.push_str("\"/>");
-        }
-        out.push_str("</author>");
-    }
-    // S03/T02: admitted header fields are serialized verbatim, in candidate
-    // order, one element per value — never deduplicated, merged or reordered.
-    // The A-FIELDS audit measured that these were the fields `header_xml` never
-    // carried at all: an `Accepted` emission claimed structure and links, not
-    // the semantics the admitted band produced.
-    for title in &c.candidate.fields.title {
-        out.push_str("<title>");
-        out.push_str(&esc(title));
-        out.push_str("</title>");
-    }
-    for email in &c.candidate.fields.email {
-        out.push_str("<email>");
-        out.push_str(&esc(email));
-        out.push_str("</email>");
-    }
-    for id in &c.candidate.fields.ids {
-        out.push_str("<idno type=\"pubnum\">");
-        out.push_str(&esc(id));
-        out.push_str("</idno>");
-    }
-    for (start, end) in title_stmt {
-        out.push_str(&existing[start..end]);
-    }
-    out.push_str("</titleStmt><date when=\"");
-    out.push_str(&c.candidate.date.year.to_string());
-    if let Some(month) = c.candidate.date.month {
-        out.push_str(&format!("-{month:02}"));
-    }
-    if let Some(day) = c.candidate.date.day {
-        out.push_str(&format!("-{day:02}"));
-    }
-    out.push_str("\"/>");
-    for (start, end) in file_desc {
-        out.push_str(&existing[start..end]);
-    }
-    out.push_str("</fileDesc>");
-    for (start, end) in header {
-        out.push_str(&existing[start..end]);
-    }
-    out.push_str("</teiHeader>");
-    Ok(out)
+    Ok(render_header_fragment(
+        c,
+        HeaderFragmentSource {
+            attributes,
+            file_desc_declarations: &file_desc_declarations,
+            title_stmt_declarations: &title_stmt_declarations,
+            existing,
+            title_stmt: &title_stmt,
+            file_desc: &file_desc,
+            header: &header,
+        },
+    ))
 }
 /// The source bibliography's own published keys, one per direct `listBibl`
 /// child, in document order.
@@ -2065,6 +2132,47 @@ fn mandatory_targets(
 /// dangle.  Supplied anchors must resolve in that same published domain — a
 /// target that reaches into a different document is not a link this band can
 /// honour.
+/// Serialize admitted native references into a TEI `listBibl` fragment under
+/// the supplied published keys, plus any admitted bibliography fields.
+///
+/// Shared verbatim by the composer's `references_xml` and by the native emission
+/// so both agree on one serialization.  `keys` must be exactly the published key
+/// domain, one key per reference, in the same order.
+pub(crate) fn render_bibliography_fragment(
+    keys: &[String],
+    references: &[crate::NativeReference],
+    fields: &[crate::CitationField],
+) -> String {
+    let mut out = String::from("<listBibl>");
+    for (key, reference) in keys.iter().zip(references) {
+        out.push_str("<biblStruct xml:id=\"");
+        out.push_str(key);
+        out.push_str("\">");
+        out.push_str(&esc(&reference.source));
+        out.push_str("</biblStruct>");
+    }
+    // S03/T02: admitted bibliography fields (role + value) are serialized so the
+    // emission carries the citation roles the admitted band produced, not only
+    // the reference text.  `ReferenceCandidate.fields` is a flat pool without a
+    // record ordinal, so a field cannot be attributed to one `biblStruct`; the
+    // fields are conserved at the bibliography level and the post-serialization
+    // gate checks each one independently.  `citation_semantics` already refused
+    // an unrepresentable value or an invalid span.
+    if !fields.is_empty() {
+        out.push_str("<noteGrp>");
+        for field in fields {
+            out.push_str("<note role=\"");
+            out.push_str(citation_field_role_token(field.role));
+            out.push_str("\">");
+            out.push_str(&esc(&field.value));
+            out.push_str("</note>");
+        }
+        out.push_str("</noteGrp>");
+    }
+    out.push_str("</listBibl>");
+    out
+}
+
 fn references_xml(
     c: &crate::ReferenceCompositionCandidate,
     document: &XmlDocument,
@@ -2104,33 +2212,7 @@ fn references_xml(
             }
         }
     }
-    let mut out = String::from("<listBibl>");
-    for (key, reference) in keys.iter().zip(references) {
-        out.push_str("<biblStruct xml:id=\"");
-        out.push_str(key);
-        out.push_str("\">");
-        out.push_str(&esc(&reference.source));
-        out.push_str("</biblStruct>");
-    }
-    // S03/T02: admitted bibliography fields (role + value) are serialized so the
-    // emission carries the citation roles the admitted band produced, not only
-    // the reference text.  `ReferenceCandidate.fields` is a flat pool without a
-    // record ordinal, so a field cannot be attributed to one `biblStruct`; the
-    // fields are conserved at the bibliography level and the post-serialization
-    // gate checks each one independently.  `citation_semantics` already refused
-    // an unrepresentable value or an invalid span.
-    if !c.candidate.fields.is_empty() {
-        out.push_str("<noteGrp>");
-        for field in &c.candidate.fields {
-            out.push_str("<note role=\"");
-            out.push_str(citation_field_role_token(field.role));
-            out.push_str("\">");
-            out.push_str(&esc(&field.value));
-            out.push_str("</note>");
-        }
-        out.push_str("</noteGrp>");
-    }
-    out.push_str("</listBibl>");
+    let out = render_bibliography_fragment(&keys, references, &c.candidate.fields);
     Ok((
         out,
         ReferenceLinkLedger {
@@ -2280,7 +2362,7 @@ fn parse_attributes(body: &str) -> Result<Vec<(&str, &str)>, NativeFulltextCompo
 /// mentions the string declares nothing), and `id`/`xml:id` are read through the
 /// XML attribute grammar (so no legal spelling escapes the uniqueness gate).
 #[derive(Debug)]
-struct XmlDocument {
+pub(crate) struct XmlDocument {
     elements: Vec<XmlElement>,
     /// Every `xml:id` value in document order — the document's link address
     /// space.  `xml:id` alone, not `id`: without a DTD or schema only `xml:id` is
@@ -2684,6 +2766,12 @@ impl XmlDocument {
 
     fn reference_range(&self) -> Result<(usize, usize), NativeFulltextCompositionError> {
         self.unique("listBibl")
+    }
+
+    /// Number of `xml:id` values in document order — the address space a
+    /// `#fragment` target can resolve against.
+    pub(crate) fn xml_id_count(&self) -> usize {
+        self.xml_ids.len()
     }
 }
 

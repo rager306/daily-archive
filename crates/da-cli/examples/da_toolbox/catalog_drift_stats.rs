@@ -1,7 +1,7 @@
 //! Derive deterministic zero-mention drift statistics from a materialization report.
 //!
 //! Usage:
-//!   cargo run -p da-cli --example catalog_drift_stats -- \
+//!   cargo run -p da-cli --example da_toolbox -- catalog_drift_stats \
 //!     --run-report archive/artifacts-legacy/catalog_sweep/materialization_run_report.json \
 //!     --output artifacts/catalog_sweep/catalog_drift_stats.json
 

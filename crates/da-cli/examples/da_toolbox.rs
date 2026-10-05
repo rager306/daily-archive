@@ -99,8 +99,33 @@ impl<E: std::fmt::Debug> IntoExit for Result<(), E> {
 }
 
 fn main() {
+    // ADR-052: the composition root owns .env-backed rolling JSON logging and
+    // holds the WorkerGuard. Only the parent process initialises here: the
+    // child re-dispatch path runs a folded example's own `main`, which
+    // initialises logging for itself, so initialising in the child too would
+    // double-init the global subscriber (`try_init` would fail) and open a
+    // second appender. Keeping this binding alive holds the parent's writer
+    // open until the re-dispatched child has finished.
+    let _log_guard = if std::env::var("DA_TOOLBOX_COMMAND").is_err() {
+        da_cli::logging::init_pipeline_logging("da_toolbox")
+    } else {
+        None
+    };
+
+    let code = run();
+    // `process::exit` does not run destructors, and the WorkerGuard flushes the
+    // non-blocking rolling JSON writer on drop, so drop it explicitly first.
+    drop(_log_guard);
+    std::process::exit(code);
+}
+
+/// Resolves the requested subcommand to a process exit code.
+///
+/// Kept separate from `main` so the logging guard is dropped — and the file
+/// writer flushed — before `process::exit`, which skips destructors.
+fn run() -> i32 {
     if let Ok(command) = std::env::var("DA_TOOLBOX_COMMAND") {
-        std::process::exit(dispatch(&command));
+        return dispatch(&command);
     }
 
     let mut args = std::env::args();
@@ -109,7 +134,7 @@ fn main() {
         Some(command) => command,
         None => {
             eprintln!("usage: da_toolbox <command> [args...]");
-            std::process::exit(2);
+            return 2;
         }
     };
     let rest: Vec<String> = args.collect();
@@ -118,7 +143,7 @@ fn main() {
         Ok(path) => path,
         Err(error) => {
             eprintln!("da_toolbox: cannot resolve current executable: {error}");
-            std::process::exit(2);
+            return 2;
         }
     };
     let status = match std::process::Command::new(executable)
@@ -129,10 +154,10 @@ fn main() {
         Ok(status) => status,
         Err(error) => {
             eprintln!("da_toolbox: failed to re-dispatch `{command}`: {error}");
-            std::process::exit(2);
+            return 2;
         }
     };
-    std::process::exit(status.code().unwrap_or(1));
+    status.code().unwrap_or(1)
 }
 
 fn dispatch(command: &str) -> i32 {

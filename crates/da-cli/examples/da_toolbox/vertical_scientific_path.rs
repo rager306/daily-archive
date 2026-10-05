@@ -7,8 +7,8 @@
 //! promotes evidence; D127 remains false.
 //!
 //! Usage:
-//!   cargo run -p da-cli --example vertical_scientific_path -- --help
-//!   cargo run -p da-cli --example vertical_scientific_path
+//!   cargo run -p da-cli --example da_toolbox -- vertical_scientific_path --help
+//!   cargo run -p da-cli --example da_toolbox -- vertical_scientific_path
 
 use anyhow::{Context, Result, bail, ensure};
 use clap::Parser;

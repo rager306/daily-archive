@@ -1149,6 +1149,17 @@
       "inventory_test": "gsd_exec 63eae436-4d79-4d26-85c8-b0555f0bda81 pytest scripts/tests/test_absorption_test_inventory.py 14 passed",
       "governor_preflight": "gsd_exec 54f9dead-1dc0-402b-b26d-fac666cc4f54 governor --phase preflight --check-only exit 0",
       "remediation": "The first closeout attempt bundled fmt+clippy+build+smoke in one 300s script (gsd_exec 5d0b1c13) which SIGTERM-timed-out (timed_out=true), so the compound script's real final exit was 1 while closeout claimed 0. Every check was then re-run as an independent command on HEAD 2fbcefe6d; all exit 0."
+    },
+    "doc_reference_repair": {
+      "applied_by": "M516/S01/T02 closeout attempt (recovery 92625dc5)",
+      "finding": "Five relocated modules (catalog_drift_stats, extract_probe, inventory_fp, materialize_index_bench, vertical_scientific_path) still documented `cargo run --example <former-name>` in their `//!` usage headers; after consolidation that names no target.",
+      "fix": "Rewrote each usage line to the consolidated form `cargo run -p da-cli --example da_toolbox -- <name> [args...]`. Comment-only: 7 insertions / 7 deletions across 5 files; no executable, manifest or test line touched.",
+      "evidence": {
+        "dangling_ref_scan": "gsd_exec c67086b8-2a77-44f5-b724-2b86a2fd4797 first scan found 5 in-module doc refs; gsd_exec bcf2b74e-737b-450a-b037-6bf5180882f6 post-fix rescan found 0",
+        "comment_only": "git diff --unified=0 showed 0 non-comment changed lines",
+        "rebuild": "gsd_exec 23fa00f9-e3fb-4553-ab97-0390924a422b cargo build -p da-cli --example da_toolbox exit 0 in 19.5 s",
+        "fmt_check": "gsd_exec e60eb880-452e-41e8-9b25-2caf4b42d8ad cargo fmt --all --check exit 0"
+      }
     }
   },
   "t06_bounded_build_proof": {

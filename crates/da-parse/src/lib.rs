@@ -83,6 +83,7 @@ mod native_route_result;
 mod native_section_reading_order;
 mod native_segmentation;
 mod native_table_sequence;
+mod native_tei_emission;
 mod native_visual;
 mod native_visual_family_cluster;
 mod native_visual_native_input;
@@ -561,6 +562,15 @@ pub use native_table_sequence::{
     check_table_label_block, cluster_opens_new_table, decode_table_sequence,
     table_cells_from_inventory, table_label_is_admissible, table_revert_reason,
     table_spans_from_decoded,
+};
+pub use native_tei_emission::{
+    NATIVE_TEI_EMISSION_BACKEND_ID, NATIVE_TEI_EMISSION_DEFAULT_MAX_ABSENCES,
+    NATIVE_TEI_EMISSION_DEFAULT_MAX_ENVELOPE_BYTES, NATIVE_TEI_EMISSION_DEFAULT_MAX_FRAGMENT_BYTES,
+    NATIVE_TEI_EMISSION_SCHEMA_VERSION, NATIVE_TEI_EMISSION_TEI_NAMESPACE, NativeTeiAbsence,
+    NativeTeiAbsenceReason, NativeTeiBodyInput, NativeTeiByteAccounting, NativeTeiDisposition,
+    NativeTeiEmissionError, NativeTeiEmissionInput, NativeTeiEmissionLimits,
+    NativeTeiEmissionManifest, NativeTeiEmissionOutcome, NativeTeiFamily,
+    NativeTeiFamilyDisposition, emit_native_tei,
 };
 pub use native_visual::{
     FigureHeadReceipt, FormulaHeadReceipt, MAX_DIGEST_BYTES, MAX_PRIMITIVES, MAX_RECEIPTS,

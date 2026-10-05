@@ -5,8 +5,8 @@
 //! `min_papers` other fixtures (constrained select / D127 spirit).
 //!
 //! Usage:
-//!   cargo run -p da-cli --example inventory_fp -- 2603.21520
-//!   cargo run -p da-cli --example inventory_fp -- 2603.21520 --apply-dry-run
+//!   cargo run -p da-cli --example da_toolbox -- inventory_fp 2603.21520
+//!   cargo run -p da-cli --example da_toolbox -- inventory_fp 2603.21520 --apply-dry-run
 //!
 //! Predictions for a paper can be piped as lines `Type\tLabel` via --preds-file,
 //! or use built-in sample FP list for the known weak paper 2603.21520.
