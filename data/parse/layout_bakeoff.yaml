@@ -131,6 +131,61 @@ native_route_corpus:
       source_pdf: data/sources/arxiv/math-co/2502.05199/source/2502.05199.pdf
       sha256: 092bb2d68267c3ce7b2a52efeafdec9c7d7b12b5dbcb4561fbdd7eadb4b81c18
       pages: 18
+# S03/T03 (M516-th0oby): the frozen reference TEI each `native_route_corpus`
+# document is measured against when the three absorption-progress thresholds are
+# recomputed on the expanded corpus. This is a sibling block, not a second DATA
+# file (a new top-level `data/parse/*.yaml` would force a `data_contracts.rs`
+# SANCTIONED bump; MEM1911). The nine added holdout documents bind the
+# `data/parse/acceptance_manifest.yaml#external_holdout_contract.release_probe.reference_tei`
+# row whose `article_id` matches the route document id; the three S02 corridor
+# documents bind the preserved rich-profile TEI fixture `data/parse/regression_cases.yaml`
+# names. A bare 64-hex sha256 is the same identity form `native_route_corpus.documents`
+# uses; the reference bytes are git-tracked fixtures, never the gitignored PDFs.
+native_route_threshold_reference:
+  id: native-pdf-to-tei-route-threshold-reference
+  source_rule: >-
+    Each route-corpus document id maps to exactly one reference TEI {path, sha256}.
+    Holdout ids resolve to the acceptance-manifest measurable reference TEI for the
+    matching article_id; corridor ids resolve to the preserved rich-profile TEI
+    fixture `data/parse/regression_cases.yaml` binds. The block is not a second
+    corpus: the document list stays authoritative in `native_route_corpus.documents`.
+  documents:
+    - id: hub-2507.19457
+      path: crates/da-parse/tests/fixtures/preserved/hub_2507.19457.tei.xml
+      sha256: 985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4
+    - id: rlm-2512.24601
+      path: crates/da-parse/tests/fixtures/preserved/rlm_2512.24601.tei.xml
+      sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
+    - id: reca-2605.26525v1
+      path: crates/da-parse/tests/fixtures/preserved/reca_2605.26525v1.tei.xml
+      sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
+    - id: '1409.0473'
+      path: crates/da-parse/tests/fixtures/holdout/1409.0473.tei.xml
+      sha256: 11c46c00dc4b97b47c9591356d29eedd888e467d0d042fa104d2583ee6f3bb55
+    - id: '1410.4615'
+      path: crates/da-parse/tests/fixtures/holdout/1410.4615.tei.xml
+      sha256: 4236917ee79e85b48908ea242f848d34043f1ca9e86586c7892e1a77182f94ce
+    - id: '1410.5401'
+      path: crates/da-parse/tests/fixtures/holdout/1410.5401.tei.xml
+      sha256: a73daefd41d7f04a390515ec22f0a56cc87d8aaf668205d72308bec2181b382b
+    - id: '1506.02438'
+      path: crates/da-parse/tests/fixtures/holdout/1506.02438.tei.xml
+      sha256: 6a6a0633e0a451642dbb61878b23774adf0a4ff312c6d98e6a090178963f5be1
+    - id: '2402.04268'
+      path: crates/da-parse/tests/fixtures/holdout/2402.04268.tei.xml
+      sha256: 70a7570684f01bee5a7610e4f0f6e060bd27c5271db8a2f96415d3ff6a37d78a
+    - id: '2402.10980'
+      path: crates/da-parse/tests/fixtures/holdout/2402.10980.tei.xml
+      sha256: 40df81c4281fe56172f73f4fa542a703754d5640188b81b1cc39c80908f86f6d
+    - id: '2406.13163'
+      path: crates/da-parse/tests/fixtures/holdout/2406.13163.tei.xml
+      sha256: 703288350b4a8b52170ac8cfc3985a5bef590d39c88e958a90cce1fe32fc0731
+    - id: '1203.2295'
+      path: crates/da-parse/tests/fixtures/holdout/1203.2295.tei.xml
+      sha256: a230094fff20d5434e1871ee9511ce61d71777b6ff0454faeaedc79cdfef6629
+    - id: '2502.05199'
+      path: crates/da-parse/tests/fixtures/holdout/2502.05199.tei.xml
+      sha256: 5c8a83dbeaaaf8e17f119e2a33e8d2f09f77930188bfeb1def93ce88a18bfb9a
 lanes:
   required: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
   same_input: true

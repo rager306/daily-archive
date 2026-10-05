@@ -105,6 +105,15 @@ pub mod native_route_receipt;
 // (D499/D508). Pure std/serde/serde_json/sha2, so it and its contract test
 // compile in the default feature set (no `pdf-layout`, no `pdf-classifier`).
 pub mod native_route_independence;
+// S03/T03 (M516-th0oby): the three frozen absorption-progress thresholds
+// recomputed on the expanded native PDF-to-TEI route corpus. It joins a measured
+// candidate to each frozen threshold by exact `(metric_id, stratum)` and publishes
+// the retained pin beside it without touching the pins, re-pointing the reference
+// or promoting a threshold (D545). Pure std/serde/serde_yaml/serde_json/sha2 (no
+// da-parse, no pdf-layout), so it and its contract test compile in the default
+// feature set; the ungated example `native_route_threshold_candidates` drives the
+// shared measurement modules against the route corpus's reference TEI.
+pub mod native_route_threshold_candidates;
 // S06/T06 (M514-1lss2s): same-n resource comparison receipt. It reuses the S04
 // envelope (`native_family_receipt`) and the T03 freeze binding
 // (`native_route_receipt`), pairs every native metric with a pinned measured
