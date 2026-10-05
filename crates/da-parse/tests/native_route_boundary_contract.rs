@@ -20,9 +20,10 @@
 //!   the live `configuration_fingerprint` literal in `crates/da-parse/src/profile.rs`;
 //! * every scholarly-endpoint declaration resolves to a real ledger entry by
 //!   pointer and carries no URL/route restatement;
-//! * the governor corpus binding still recomputes from the pinned layout
-//!   documents (3 / 202), and the route's own `native_route_corpus` block
-//!   resolves to its expanded twelve documents / 381 pages;
+//! * the governor corpus binding resolves its declared pointer and recomputes
+//!   from the pinned documents, agreeing with the manifest block it names (the
+//!   route's own `native_route_corpus`, twelve documents / 381 pages), while the
+//!   layout donor `corpus.documents` block stays three documents / 202 pages;
 //! * the limit freeze is declared `frozen` with a shaped revision (the composite
 //!   arithmetic is owned by `scripts/tests/test_absorption_progress_native_route_freeze.py`);
 //! * five named negative mutations (restated stage list, unknown endpoint,
@@ -422,7 +423,8 @@ fn restates_url(declaration: &Value) -> bool {
 
 fn check_corpus(f: &Fixtures, errs: &mut Vec<String>) {
     let corpus = &block(f)["corpus"];
-    let documents = resolve(&f.layout, "corpus.documents");
+    let pointer = corpus["pointer"].as_str();
+    let documents = pointer.and_then(|p| resolve(&f.layout, p));
     let count = documents.and_then(Value::as_sequence).map(Vec::len);
     let pages: i64 = documents
         .and_then(Value::as_sequence)
@@ -431,7 +433,7 @@ fn check_corpus(f: &Fixtures, errs: &mut Vec<String>) {
     let declared_count = corpus["document_count"].as_u64();
     let declared_pages = corpus["page_denominator"].as_u64();
     if corpus["manifest"].as_str() != Some(LAYOUT_BAKEOFF)
-        || corpus["pointer"].as_str() != Some("corpus.documents")
+        || pointer.is_none()
         || count != declared_count.map(|n| n as usize)
         || pages < 0
         || Some(pages as u64) != declared_pages
@@ -441,9 +443,18 @@ fn check_corpus(f: &Fixtures, errs: &mut Vec<String>) {
                 .into(),
         );
     }
-    if resolve(&f.layout, "corpus.corpus_n").and_then(Value::as_u64) != declared_count
-        || resolve(&f.layout, "corpus.page_denominator").and_then(Value::as_u64) != declared_pages
-    {
+    // The manifest block the governor names (via its own count/page pointers)
+    // must declare the same counts, so a governor count cannot drift from the
+    // corpus authority it points at.
+    let manifest_count = corpus["count_pointer"]
+        .as_str()
+        .and_then(|p| resolve(&f.layout, p))
+        .and_then(Value::as_u64);
+    let manifest_pages = corpus["page_denominator_pointer"]
+        .as_str()
+        .and_then(|p| resolve(&f.layout, p))
+        .and_then(Value::as_u64);
+    if manifest_count != declared_count || manifest_pages != declared_pages {
         errs.push(
             "[native-route-corpus] counts must agree with the manifest's own corpus_n / page_denominator"
                 .into(),
@@ -513,14 +524,21 @@ fn native_route_e2e_block_is_bound_to_the_live_carriers() {
         "the governor block must be clean: {errs:?}"
     );
 
-    // The governor block's layout binding still resolves to three / 202. The
-    // route's OWN corpus is the expanded twelve / 381, pinned separately.
-    let governor_documents = resolve(&fixtures.layout, "corpus.documents")
+    // The governor block binds the route's OWN corpus (the expanded twelve /
+    // 381), while the layout donor `corpus.documents` block stays three / 202.
+    let corpus = &block(&fixtures)["corpus"];
+    assert_eq!(
+        corpus["pointer"].as_str(),
+        Some("native_route_corpus.documents")
+    );
+    assert_eq!(corpus["document_count"].as_u64(), Some(12));
+    assert_eq!(corpus["page_denominator"].as_u64(), Some(381));
+    let layout_documents = resolve(&fixtures.layout, "corpus.documents")
         .and_then(Value::as_sequence)
         .expect("corpus.documents resolves");
-    assert_eq!(governor_documents.len(), 3);
+    assert_eq!(layout_documents.len(), 3);
     assert_eq!(
-        governor_documents
+        layout_documents
             .iter()
             .filter_map(|doc| doc["pages"].as_i64())
             .sum::<i64>(),
