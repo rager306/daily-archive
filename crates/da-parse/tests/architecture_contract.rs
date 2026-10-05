@@ -2915,7 +2915,20 @@ fn native_fulltext_composition_is_pure_and_stays_outside_every_runtime_route() {
         // lib.rs is the sanctioned public re-export boundary. It exposes
         // the shadow API without wiring it into ParserPort or production
         // composition; all other runtime files must remain unaware.
-        if rel == SURFACE || rel == "crates/da-parse/src/lib.rs" {
+        //
+        // `native_tei_emission.rs` is the sanctioned pure sibling of this
+        // composer: it consumes the composer's shared serialization helpers
+        // (`render_header_fragment` / `validate_emitted` / ...) by design so the
+        // two emitters cannot drift into two serializations of the same
+        // semantics, and it carries its own quarantine rule
+        // (`native_tei_emission_is_pure_and_stays_outside_every_runtime_route`).
+        // It is a shadow module in the parse plane, not a runtime seam, so it is
+        // exempt from *this* composer scanner without weakening any runtime
+        // seam's exemption.
+        if rel == SURFACE
+            || rel == "crates/da-parse/src/lib.rs"
+            || rel == "crates/da-parse/src/native_tei_emission.rs"
+        {
             continue;
         }
         for (line_no, raw) in std::fs::read_to_string(&file)
@@ -3068,6 +3081,238 @@ fn native_fulltext_boundary_scanner_fails_visible_on_synthetic_violations() {
             &["std::fs", "ParserPort"]
         )
         .is_empty()
+    );
+}
+
+// ───── S02/T06: native TEI emission remains pure and quarantined ─────
+
+/// The TEI namespace literal the emitter legitimately carries.  It is XML
+/// schema data, not a network endpoint, so the side-channel scanner scrubs
+/// exactly this token before matching URL markers.
+const NATIVE_TEI_EMISSION_NAMESPACE: &str = "http://www.tei-c.org/ns/1.0";
+
+/// Side-channel hits for the emitter, with the TEI namespace scrubbed first.
+fn native_tei_emission_side_channel_hits(text: &str, markers: &[&str]) -> Vec<String> {
+    let scrubbed = text.replace(NATIVE_TEI_EMISSION_NAMESPACE, "");
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(&scrubbed).lines().enumerate() {
+        for marker in markers {
+            if raw.contains(marker) {
+                hits.push(format!(
+                    "[native-tei-emission-boundary] line {}: marker `{marker}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+/// The production portion of a source file: everything before the in-file
+/// `#[cfg(test)]` module.  A test-only `use super::*;` must not read as a
+/// runtime import of the module under test.
+fn production_source(text: &str) -> &str {
+    text.split("#[cfg(test)]").next().unwrap_or(text)
+}
+
+/// Emitter identifiers that may not appear in any runtime seam.
+fn native_tei_emission_leak_markers(line: &str) -> Vec<&'static str> {
+    const MARKERS: [&str; 3] = [
+        "native_tei_emission",
+        "NativeTeiEmission",
+        "emit_native_tei",
+    ];
+    let mut hits = Vec::new();
+    for marker in MARKERS {
+        if line.contains(marker) {
+            hits.push(marker);
+        }
+    }
+    hits
+}
+
+/// S02/T06 — the native TEI emitter is the same class of object as the
+/// quarantined fulltext composer: a pure shadow emission boundary that no
+/// runtime route may name (D381).  A shadow candidate a runtime seam can call is
+/// exactly the condition the exemption must not be broadened for, so the emitter
+/// gets the composer's structural guard: restricted imports and zero runtime
+/// mentions.  Only the example/test plane that drives the shadow route may call
+/// it.
+#[test]
+fn native_tei_emission_is_pure_and_stays_outside_every_runtime_route() {
+    const SURFACE: &str = "crates/da-parse/src/native_tei_emission.rs";
+    let text = read_text(SURFACE);
+    assert!(
+        text.len() > 10_000,
+        "native TEI emission source unexpectedly truncated"
+    );
+
+    // (a) The import roots are restricted to the sanctioned closed set.  The
+    // emitter consumes no runtime port, no adapter, no clock and no network: it
+    // is a pure native-plane emission boundary.
+    let allowed = BTreeSet::from([
+        "crate".to_string(),
+        "serde".to_string(),
+        "sha2".to_string(),
+        "std".to_string(),
+    ]);
+    let roots = import_roots_of(production_source(&text));
+    assert!(
+        roots.is_subset(&allowed),
+        "native TEI emission imports outside the sanctioned set: {roots:?}"
+    );
+    for required in ["crate", "serde", "std"] {
+        assert!(
+            roots.contains(required),
+            "native TEI emission lost its `{required}` import root"
+        );
+    }
+    assert!(
+        !strip_line_comments(&text).contains("extern crate"),
+        "native TEI emission must not use `extern crate`"
+    );
+
+    // No side channel is even nameable from the module's code.  The TEI
+    // namespace is XML schema data, not an endpoint, and is scrubbed first.
+    let forbidden = [
+        "std::env",
+        "std::fs",
+        "std::path",
+        "PathBuf",
+        "std::net",
+        "reqwest",
+        "std::process",
+        "Command::",
+        "std::time",
+        "SystemTime",
+        "Instant",
+        "std::thread",
+        "std::sync",
+        "tokio",
+        "tracing",
+        "log::",
+        "println!",
+        "eprintln!",
+        "rand",
+        "ParserPort",
+        "ScholarlyParser",
+        "GrobidParser",
+        "TeiLifter",
+        "TeiParseIr",
+        "ParsedArticle",
+        "GraphStore",
+        "Samyama",
+        "SONA",
+        "ruVLLM",
+        "RVF",
+        "redb",
+        "da_adapters",
+        "http://",
+        "https://",
+    ];
+    let hits = native_tei_emission_side_channel_hits(&text, &forbidden);
+    assert!(
+        hits.is_empty(),
+        "native TEI emission acquired a side channel or forbidden coupling:\n{}",
+        hits.join("\n")
+    );
+    for required in [
+        "pub fn emit_native_tei",
+        "NativeTeiEmissionInput",
+        "NativeTeiEmissionManifest",
+        "NativeTeiEmissionError",
+        "NativeTeiFamily",
+        "NATIVE_TEI_EMISSION_BACKEND_ID",
+    ] {
+        assert!(
+            text.contains(required),
+            "native TEI emission lost {required}"
+        );
+    }
+
+    // (b) No runtime seam may name the emitter identifiers.  The emitter's
+    // collaborator lives in da-parse/src, which is not a runtime seam for this
+    // rule; da-parse/src is deliberately not scanned, so the composer's own
+    // doc cross-reference does not read as a leak.  Do not broaden an existing
+    // exemption.
+    let runtime_dirs = [
+        "crates/da-cli/src",
+        "crates/da-application/src",
+        "crates/da-adapters/src",
+        "crates/da-domain/src",
+        "crates/da-ports/src",
+    ];
+    let mut files = Vec::new();
+    for dir in runtime_dirs {
+        collect_rs_files(&repo_root().join(dir), &mut files);
+    }
+    let mut leaked = Vec::new();
+    for file in files {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(&file)
+            .to_string_lossy()
+            .to_string();
+        for (line_no, raw) in std::fs::read_to_string(&file)
+            .expect("runtime source readable")
+            .lines()
+            .enumerate()
+        {
+            for marker in native_tei_emission_leak_markers(raw) {
+                leaked.push(format!(
+                    "{rel}:{}: marker `{marker}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "native TEI emission leaked into runtime or production composition roots:\n{}",
+        leaked.join("\n")
+    );
+}
+
+#[test]
+fn native_tei_emission_scanner_trips_on_runtime_identifiers_but_not_the_artifact_path() {
+    // Negative control: every emitter identifier trips the runtime-seam scan.
+    assert_eq!(
+        native_tei_emission_leak_markers("use da_parse::NativeTeiEmissionManifest;").len(),
+        1
+    );
+    assert_eq!(
+        native_tei_emission_leak_markers("mod native_tei_emission;").len(),
+        1
+    );
+    assert_eq!(
+        native_tei_emission_leak_markers("fn run() { emit_native_tei(input) }").len(),
+        1
+    );
+    // Positive control: the committed artifact path is read-only DATA and does
+    // not contain an emitter identifier.
+    assert!(
+        native_tei_emission_leak_markers(
+            "let p = \"artifacts/parse_compat/native_route_tei_emission.json\";"
+        )
+        .is_empty()
+    );
+    // The side-channel scanner scrubs the TEI namespace but keeps a real URL.
+    assert!(
+        native_tei_emission_side_channel_hits(
+            "pub const NS: &str = \"http://www.tei-c.org/ns/1.0\";",
+            &["http://"]
+        )
+        .is_empty()
+    );
+    assert_eq!(
+        native_tei_emission_side_channel_hits(
+            "let url = \"http://127.0.0.1:8070/api\";",
+            &["http://"]
+        )
+        .len(),
+        1
     );
 }
 

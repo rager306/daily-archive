@@ -27,6 +27,10 @@ const EMISSION: &str =
     include_str!("../../../artifacts/parse_compat/native_route_tei_emission.json");
 const BASELINE: &str =
     include_str!("../../../artifacts/parse_compat/absorption_progress_baseline.json");
+const LAYOUT: &str = include_str!("../../../data/parse/layout_bakeoff.yaml");
+const GOVERNOR: &str =
+    include_str!("../../../scripts/governor/checks/grobid_absorption_progress.yaml");
+const LAYOUT_REL: &str = "data/parse/layout_bakeoff.yaml";
 
 const ZERO_DIGEST: &str = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -65,6 +69,134 @@ fn committed_artifact_is_reproducible_from_carriers() {
         built.artifact_json_bytes().unwrap().as_slice(),
         INDEPENDENCE.as_bytes()
     );
+}
+
+#[test]
+fn committed_axis_replays_from_the_declared_corpus_and_the_emission_manifest() {
+    let layout: serde_yaml::Value =
+        serde_yaml::from_str(LAYOUT).expect("the slice declaration parses");
+    let declared = &layout["corpus"];
+
+    // Rebuild the axis from the committed route receipt + emission manifest and
+    // require the committed bytes to match the rebuild exactly.
+    let built = build_route_independence_receipt(ROUTE.as_bytes(), EMISSION.as_bytes(), true)
+        .expect("the builder derives from the committed carriers");
+    assert_eq!(built, receipt());
+    assert_eq!(
+        built.artifact_json_bytes().unwrap().as_slice(),
+        INDEPENDENCE.as_bytes()
+    );
+
+    // The declared corpus is the denominator the axis is bound to; nothing is
+    // hand-typed.
+    assert_eq!(
+        built.corpus.corpus_id,
+        declared["id"].as_str().expect("a declared corpus id")
+    );
+    assert_eq!(
+        built.corpus.documents,
+        declared["corpus_n"]
+            .as_u64()
+            .expect("a declared document count")
+    );
+    assert_eq!(
+        built.corpus.pages,
+        declared["page_denominator"]
+            .as_u64()
+            .expect("a declared page denominator")
+    );
+    assert_eq!(built.corpus.pointer, LAYOUT_REL);
+}
+
+/// The governor half recomputes the receipt's pins from the committed carriers
+/// (`scripts/governor/adapters/absorption_progress_reader.py`).  This test
+/// asserts the *agreement shape* the governor's closed vocabulary names — the
+/// same population/document denominator across the route receipt, the emission
+/// manifest and the independence receipt — without importing Python.
+#[test]
+fn committed_axis_agrees_with_the_governor_population_denominator() {
+    let receipt = receipt();
+    let emission: Value = serde_json::from_str(EMISSION).expect("the emission artifact parses");
+    let route: Value = serde_json::from_str(ROUTE).expect("the route receipt parses");
+    let governor: serde_yaml::Value =
+        serde_yaml::from_str(GOVERNOR).expect("the governor rule parses");
+    let block = &governor["native_route_independence"];
+
+    // The governor's closed denominator vocabulary and measured state.
+    let denominator_fields: Vec<&str> = block["expected"]["denominator_fields"]
+        .as_sequence()
+        .expect("denominator_fields")
+        .iter()
+        .map(|value| value.as_str().expect("a denominator field"))
+        .collect();
+    assert_eq!(denominator_fields, ["documents", "pages"]);
+    let states: Vec<&str> = block["expected"]["measurement_state_vocabulary"]
+        .as_sequence()
+        .expect("measurement_state_vocabulary")
+        .iter()
+        .map(|value| value.as_str().expect("a state"))
+        .collect();
+    assert!(states.contains(&receipt.axis.state.as_str()));
+
+    // The route receipt's governed population.
+    let population = route["populations"]
+        .as_array()
+        .expect("populations")
+        .iter()
+        .find(|population| population["population"] == "native_route")
+        .expect("the native_route population");
+    let population_documents = population["documents"]
+        .as_array()
+        .expect("population documents");
+    let route_documents = population_documents.len() as u64;
+    let route_pages: u64 = population_documents
+        .iter()
+        .map(|document| document["pages"].as_u64().expect("a page count"))
+        .sum();
+
+    // Same population/document denominator across every committed carrier.
+    assert_eq!(receipt.axis.denominator.documents, receipt.corpus.documents);
+    assert_eq!(receipt.axis.denominator.pages, receipt.corpus.pages);
+    assert_eq!(receipt.corpus.documents, route_documents);
+    assert_eq!(receipt.corpus.pages, route_pages);
+    assert_eq!(
+        route_documents,
+        emission["corpus"]["document_count"]
+            .as_u64()
+            .expect("an emission document count")
+    );
+    assert_eq!(
+        route_pages,
+        emission["corpus"]["page_denominator"]
+            .as_u64()
+            .expect("an emission page denominator")
+    );
+    let binding = receipt.emission.as_ref().expect("the emission binding");
+    assert_eq!(binding.document_count, route_documents);
+    assert_eq!(binding.page_denominator, route_pages);
+
+    // The emission envelope agrees with the receipt on the closed envelope.
+    assert_eq!(
+        emission["claim_scope"].as_str().expect("a claim scope"),
+        receipt.claim_scope
+    );
+    assert_eq!(
+        emission["product_coverage_effect"]
+            .as_str()
+            .expect("a product coverage effect"),
+        receipt.product_coverage_effect
+    );
+    assert_eq!(
+        emission["thresholds"].as_str().expect("thresholds"),
+        receipt.thresholds
+    );
+    for (lock, value) in &receipt.locks {
+        assert_eq!(
+            emission["locks"][lock].as_str().expect("a lock"),
+            value.as_str(),
+            "lock {lock}"
+        );
+    }
 }
 
 #[test]
