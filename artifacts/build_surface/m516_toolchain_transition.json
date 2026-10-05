@@ -1,0 +1,292 @@
+{
+  "artifact": "m516_toolchain_transition",
+  "milestone": "M516-th0oby",
+  "slice": "S01",
+  "task": "T05",
+  "schema_version": 1,
+  "recorded_at": "2026-10-05T08:13:42Z",
+  "recorded_head": "364da454dd723265790507f90c429f642aedb63e",
+
+  "toolchains": {
+    "recorded_with": {
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+      "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+      "default_toolchain": "1.99.0-x86_64-unknown-linux-gnu"
+    },
+    "available_on_machine": [
+      "stable-x86_64-unknown-linux-gnu (active, default)",
+      "1.98.0-x86_64-unknown-linux-gnu",
+      "1.98.1-x86_64-unknown-linux-gnu",
+      "1.99-x86_64-unknown-linux-gnu",
+      "1.99.0-x86_64-unknown-linux-gnu"
+    ],
+    "resolved_aliases": {
+      "cargo +1.99": "1.99.0 (rustc 1.99.0 b940084d7)",
+      "cargo +1.99.0": "1.99.0 (rustc 1.99.0 b940084d7)",
+      "cargo +1.98.1": "1.98.1 (rustc 1.98.1 48a229cea)"
+    },
+    "note": "`+1.99` and `+1.99.0` resolve to the same installed toolchain; the declared verify names `+1.99`, which is the default toolchain on this machine."
+  },
+
+  "transition": {
+    "commit": "9bea8f789c11c39404c9645538ac223ff6a80c03",
+    "committed_at": "2026-10-05T11:49:21+07:00",
+    "subject": "chore: Привёл дерево в совместимость с Rust 1.99",
+    "is_ancestor_of_recorded_head": true,
+    "changes": [
+      {
+        "file": "crates/da-cli/src/layout_runtime.rs",
+        "kind": "api-rename",
+        "summary": "six Atomic::fetch_update calls renamed to Atomic::try_update",
+        "call_sites": [
+          "crates/da-cli/src/layout_runtime.rs:501",
+          "crates/da-cli/src/layout_runtime.rs:528",
+          "crates/da-cli/src/layout_runtime.rs:565",
+          "crates/da-cli/src/layout_runtime.rs:570",
+          "crates/da-cli/src/layout_runtime.rs:590",
+          "crates/da-cli/src/layout_runtime.rs:595"
+        ],
+        "diffstat": "+6 -6"
+      },
+      {
+        "file": "Cargo.lock",
+        "kind": "dependency-patch-bump",
+        "package": "async-trait",
+        "from": "0.1.91",
+        "to": "0.1.92",
+        "from_checksum": "ae36dc4177970ef04fde5178d3e2429882def40e57a451f919c098f72baa6cec",
+        "to_checksum": "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667",
+        "workspace_requirement": "async-trait = \"0.1\" (Cargo.toml:56)",
+        "diffstat": "+2 -2"
+      }
+    ],
+    "current_state_verified": {
+      "try_update_call_sites_in_repo": 6,
+      "fetch_update_call_sites_in_repo": 0,
+      "async_trait_version_in_lockfile": "0.1.92",
+      "git_status_porcelain_entries": 0,
+      "cargo_lock_sha256": "2de8f02a99ce4364118721215c85442710819d144080c697bef05c327e5ac17a"
+    }
+  },
+
+  "compatibility": {
+    "claim": "The rename to try_update does not force a forward-only commitment: try_update is present and compiles on BOTH 1.98.1 and 1.99.0. Only the old name, fetch_update, is deprecated on 1.99.0 and therefore fails under the workspace policy of deny-warnings; the new name is valid on either toolchain.",
+    "method": "std-level compile probe of the exact expression shape used at the six call sites, compiled with `rustc <tc> --edition 2021 -D warnings --emit=metadata`. Files: target/tmp/t05probe/try_update.rs and target/tmp/t05probe/fetch_update.rs (scratch, gitignored).",
+    "try_update": {
+      "1.98.1": { "exit_code": 0, "verdict": "compiles" },
+      "1.99.0": { "exit_code": 0, "verdict": "compiles" }
+    },
+    "fetch_update": {
+      "1.98.1": { "exit_code": 0, "verdict": "compiles, not deprecated" },
+      "1.99.0": {
+        "exit_code": 1,
+        "verdict": "fails under -D warnings",
+        "diagnostic": "error: use of deprecated method `std::sync::atomic::Atomic::<usize>::fetch_update`: renamed to `try_update` for consistency",
+        "lint_note": "`-D deprecated` implied by `-D warnings`"
+      }
+    },
+    "not_verified": {
+      "repo_level_1_98_1_compile": "A full `cargo +1.98.1 check -p da-cli --lib` was NOT run. It would build the entire da-cli dependency graph (samyama, ruvector, RocksDB-linked crates) a second time; the machine had ~30 GB free disk at record time and that is exactly the target growth this slice bounds. 1.98.1 compatibility is established by the std-level probe of the exact expression, not by a whole-crate compile. Do not read this row as if the whole crate was compiled under 1.98.1."
+    },
+    "evidence_id": "c07d7d93-01d1-404d-bf0b-35f0129dd9d0"
+  },
+
+  "checks_run_under_1_99": [
+    {
+      "check": "cargo +1.99 clippy --workspace --all-targets --no-deps -- -D warnings",
+      "role": "declared task verify",
+      "exit_code": 0,
+      "duration": "5m 06s",
+      "workspace_crates_checked": 12,
+      "workspace_crates": [
+        "kg-ontology", "kg-embeddings", "kg-storage", "kg-algorithms",
+        "kg-pipeline", "da-domain", "da-ports", "da-parse",
+        "da-application", "da-mcp", "da-adapters", "da-cli"
+      ],
+      "errors": 0,
+      "warning_lines": 48,
+      "warning_sources": [
+        "samyama (lib) generated 42 warnings",
+        "samyama-graph-algorithms (lib) generated 2 warnings",
+        "samyama-sdk (lib) generated 1 warning"
+      ],
+      "warning_note": "All 48 warnings come from vendor path dependencies (samyama*). `--no-deps` caps dependency lints, so none of them are denied; no workspace crate emitted a warning, which is why the gate exits 0 under `-D warnings`.",
+      "log": "target/tmp/t05_clippy_199.log",
+      "evidence_id": "5931cc1b-1110-4858-be01-1bc9e8b52931"
+    },
+    {
+      "check": "rustc +1.99.0 --edition 2021 -D warnings (probe: Atomic::try_update)",
+      "exit_code": 0,
+      "note": "the renamed API compiles and is not deprecated on 1.99.0",
+      "evidence_id": "c07d7d93-01d1-404d-bf0b-35f0129dd9d0"
+    },
+    {
+      "check": "rustc +1.99.0 --edition 2021 -D warnings (probe: Atomic::fetch_update)",
+      "exit_code": 1,
+      "note": "the old API is deprecated on 1.99.0 and fails the deny-warnings policy; this is the reason the rename is required on this toolchain",
+      "evidence_id": "c07d7d93-01d1-404d-bf0b-35f0129dd9d0"
+    }
+  ],
+
+  "checks_not_run": [
+    {
+      "check": "cargo +1.99 test --workspace",
+      "why": "Not a T05 check. This task records the transition only; the test suite is not re-executed and no row here implies it passed under 1.99."
+    },
+    {
+      "check": "cargo +1.99 clippy --all-targets --features pdf-layout --no-deps -- -D warnings",
+      "why": "Not run. The pdf-layout feature-gated example runners and contract tests are a separate surface; their build proof belongs to T06 (`--features pdf-layout` build). The declared T05 gate is the default-feature clippy run."
+    },
+    {
+      "check": "cargo +1.98.1 check -p da-cli --lib (repo-level)",
+      "why": "Not run, for the disk-cost reason recorded under compatibility.not_verified. Since the source tree is no longer on 1.98.1, a whole-crate 1.98.1 compile would duplicate the da-cli dependency artifact set a second time."
+    },
+    {
+      "check": "PYTHONPATH=scripts python3 -m governor architecture",
+      "why": "Full architecture gate is a slice-end check, not a per-task check."
+    },
+    {
+      "check": "cargo +1.99 build --workspace (default) and --workspace --features pdf-layout",
+      "why": "T06 owns the bounded-surface build proof on both feature sets; T05 must not pre-empt it."
+    }
+  ],
+
+  "toolchain_duplication_cost": {
+    "claim": "A second installed toolchain does not replace the first toolchain's artifacts; cargo namespaces both the fingerprint and the artifact filename by the rustc hash, so the same crate built under two toolchains coexists on disk. Building the same crates a second time under a second toolchain adds roughly one more artifact set.",
+    "mechanism": "target/debug/.fingerprint/<crate>-<hash>/lib-<crate>.json carries a `rustc` field. Two toolchains produce two different `rustc` hashes, hence two fingerprint directories and two artifact filenames (libkg_ontology-<hash>.rlib). Direct evidence below.",
+    "method": "An isolated CARGO_TARGET_DIR (target/tmp/t05dupe, removed from the main target/ namespace) was built first with 1.98.1 and then with 1.99.0, building the same crate and profile (kg-ontology --lib, dev profile, plus its dependencies) into the same directory. Sizes are apparent bytes (`du -sb`).",
+    "sample": "kg-ontology (lib, dev profile + its dependency set)",
+    "first_toolchain": {
+      "toolchain": "1.98.1",
+      "bytes": 116048724,
+      "mib": 110.68,
+      "duration_s": 36.3
+    },
+    "second_toolchain_same_dir": {
+      "toolchain": "1.99.0",
+      "added_bytes": 91071462,
+      "added_mib": 86.85,
+      "total_bytes": 207120186,
+      "total_mib": 197.52,
+      "duration_s": 23.3
+    },
+    "duplication_factors": {
+      "total_over_single_toolchain": 1.7847,
+      "added_over_single_toolchain": 0.7847
+    },
+    "direct_artifact_proof": {
+      "coexisting_rlib_count": 2,
+      "rlibs": [
+        {
+          "file": "libkg_ontology-1be2e07264f0dd93.rlib",
+          "bytes": 4330754,
+          "rustc_fingerprint": "5244445300240561903",
+          "toolchain": "1.99.0"
+        },
+        {
+          "file": "libkg_ontology-9bb960c186c2c8e7.rlib",
+          "bytes": 4418914,
+          "rustc_fingerprint": "1625334936438085654",
+          "toolchain": "1.98.1"
+        }
+      ],
+      "fingerprint_basis": "rustc fingerprint 5244445300240561903 is the value observed for kg-ontology in the main target/, which is built by the default 1.99.0 toolchain; the other hash is therefore the 1.98.1 build."
+    },
+    "live_tree_context": {
+      "target_debug_bytes": 10667623707,
+      "target_debug_human": "~10.7 GB",
+      "note": "The live target/ is ~10.7 GB and, per T01, already carries a 3.12x rlib duplication factor (1238 rlibs over 397 distinct crates). A second toolchain adds a further artifact set on top of that. This is why T03 closeout must reclaim through per-package `cargo clean` (which removes target artifacts) and not only through the content-addressed cache GC, which only releases derived store entries."
+    },
+    "evidence_id": "34790fe5-07bd-4d87-bd47-1810b85c2e49"
+  },
+
+  "failure_modes": {
+    "question": "What breaks when dependencies fail?",
+    "external_dependencies": [
+      "rustup toolchain resolution (1.98.1, 1.99.0)",
+      "cargo / clippy subprocesses",
+      "filesystem under target/"
+    ],
+    "paths": [
+      {
+        "dependency": "rustup toolchain",
+        "failure": "requested toolchain absent",
+        "behavior": "`rustup run <tc> rustc` / `cargo +<tc>` exits non-zero with `toolchain 'X' is not installed`. The record names the exact resolved toolchain for every claim, so an absent toolchain fails loudly rather than being silently substituted.",
+        "recorded_evidence": "toolchains.resolved_aliases + toolchains.available_on_machine"
+      },
+      {
+        "dependency": "cargo clippy",
+        "failure": "workspace crate emits a denied lint under -D warnings",
+        "behavior": "exit_code != 0 and no `Finished` line in the log. The gate log is preserved at target/tmp/t05_clippy_199.log with counted errors, so a failure is visible rather than inferred.",
+        "observed": "exit_code 0, errors 0 (the 48 warnings are vendor-dep lints capped by --no-deps)"
+      },
+      {
+        "dependency": "filesystem / disk",
+        "failure": "disk exhausted mid-build",
+        "behavior": "cargo exits non-zero and the build stops; because the resource under test is disk, the record captures the exact per-toolchain byte cost up front and notes that the machine had ~30 GB free, making the second-toolchain cost measurable before it is paid again.",
+        "recorded_evidence": "toolchain_duplication_cost"
+      },
+      {
+        "dependency": "network / registry",
+        "failure": "dependency fetch needed",
+        "behavior": "The rename introduces no new dependency: it uses `std`. async-trait was already in the lockfile; the patch bump changes only the resolved version. All builds at record time used the already-resolved lock, so no network dependency is added by this transition."
+      }
+    ],
+    "negative_control": "fetch_update under -D warnings on 1.99.0 exits 1, proving the deprecation path is enforced (not just declared)."
+  },
+
+  "load_profile": {
+    "question": "What saturates first at 10x?",
+    "resource": "disk under target/",
+    "reasoning": "This task is an evidence record, not a runtime service. Its resource dimension is the build cache: at 1x, one toolchain's artifact set for the sampled crates was 116.0 MB and the tree's target/ is ~10.7 GB; at 10x toolchain/feature combinations the artifact sets coexist (cargo namespaces by rustc/feature fingerprint), so disk saturates first, not CPU or memory.",
+    "protection": "T03 wires the closeout reclamation (`retention.target_cap_gb: 60` as DATA) into slice close and uses both mechanisms: content-addressed cache GC plus per-package `cargo clean`, which is the path that frees what a second toolchain duplicates.",
+    "measured_saturation_input": "second toolchain adds 0.78x of the single-toolchain artifact set (86.85 MiB added on 110.68 MiB)"
+  },
+
+  "negative_checks": [
+    {
+      "scenario": "old API rejected on the new toolchain",
+      "input": "AtomicUsize::fetch_update under rustc 1.99.0 with -D warnings",
+      "expected": "compile failure (deprecated)",
+      "observed": "exit_code 1, `use of deprecated method ... fetch_update ... renamed to try_update`"
+    },
+    {
+      "scenario": "new API accepted on the old toolchain (no forward-only commitment)",
+      "input": "AtomicUsize::try_update under rustc 1.98.1 with -D warnings",
+      "expected": "compile success",
+      "observed": "exit_code 0"
+    },
+    {
+      "scenario": "dependency warnings do not silently pass the gate",
+      "input": "cargo +1.99 clippy --workspace --all-targets --no-deps -- -D warnings against vendor deps that emit warnings",
+      "expected": "gate passes only because deps are capped; workspace crates must be clean",
+      "observed": "48 vendor warnings present, 0 workspace warnings, exit_code 0"
+    },
+    {
+      "scenario": "stale call sites removed",
+      "input": "grep fetch_update across crates/",
+      "expected": "zero matches after the rename",
+      "observed": "0 matches; 6 try_update matches in layout_runtime.rs"
+    }
+  ],
+
+  "provenance": {
+    "commit_under_record": "9bea8f789c11c39404c9645538ac223ff6a80c03",
+    "commit_diffstat": "2 files changed, 8 insertions(+), 8 deletions(-)",
+    "recorded_head": "364da454dd723265790507f90c429f642aedb63e",
+    "cargo_lock_sha256": "2de8f02a99ce4364118721215c85442710819d144080c697bef05c327e5ac17a",
+    "evidence_ids": {
+      "probe": "c07d7d93-01d1-404d-bf0b-35f0129dd9d0",
+      "clippy_gate": "5931cc1b-1110-4858-be01-1bc9e8b52931",
+      "duplication_measurement": "34790fe5-07bd-4d87-bd47-1810b85c2e49"
+    },
+    "inspect_with": [
+      "jq '.transition' artifacts/build_surface/m516_toolchain_transition.json",
+      "jq '.compatibility' artifacts/build_surface/m516_toolchain_transition.json",
+      "jq '.checks_run_under_1_99' artifacts/build_surface/m516_toolchain_transition.json",
+      "jq '.checks_not_run' artifacts/build_surface/m516_toolchain_transition.json",
+      "jq '.toolchain_duplication_cost' artifacts/build_surface/m516_toolchain_transition.json",
+      "cat target/tmp/t05_clippy_199.log"
+    ]
+  }
+}
