@@ -602,15 +602,33 @@ fn java_free_slice_errs(manifest: &Value, compatibility: &Value) -> Vec<String> 
         }
     }
 
-    // Corpus identity is bound by path + pointer, never copied in.
+    // Corpus identity is bound by path + pointer, never copied in. The pointer
+    // names a corpus block's `.documents` list inside this manifest; neither the
+    // block name nor the list segment is hardcoded, so the native route can
+    // carry its own corpus without touching the layout donor corpus.
     let binding = &slice["corpus_binding"];
-    let documents = manifest["corpus"]["documents"]
-        .as_sequence()
-        .map(Vec::len)
+    let corpus_block_pointer = binding["pointer"]
+        .as_str()
+        .and_then(|pointer| pointer.strip_suffix(".documents"))
+        .filter(|prefix| !prefix.is_empty() && !prefix.contains('/') && !prefix.contains('#'));
+    let corpus_block = corpus_block_pointer.and_then(|prefix| dotted(manifest, prefix));
+    let documents = corpus_block.and_then(|block| block["documents"].as_sequence());
+    let document_count = binding["document_count"].as_u64();
+    let page_denominator = corpus_block.and_then(|block| block["page_denominator"].as_u64());
+    let corpus_n = corpus_block.and_then(|block| block["corpus_n"].as_u64());
+    let page_sum: u64 = documents
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|document| document["pages"].as_u64())
+                .sum()
+        })
         .unwrap_or(0);
     if binding["manifest"].as_str() != Some(MANIFEST)
-        || binding["pointer"].as_str() != Some("corpus.documents")
-        || binding["document_count"].as_u64() != Some(documents as u64)
+        || corpus_block_pointer.is_none()
+        || documents.is_none()
+        || document_count != documents.map(|seq| seq.len() as u64)
+        || corpus_n != document_count
+        || page_denominator != Some(page_sum)
         || binding["identity_rule"].as_str() != Some("exact_document_id_and_sha256")
     {
         errs.push(
@@ -866,12 +884,24 @@ fn java_free_vertical_slice_declaration_is_bound_to_existing_carriers() {
     assert_eq!(p1, Some("pdfalto_layout_lattice"), "P1 name via pointer");
     assert_eq!(p2, Some("document_segmentation"), "P2 name via pointer");
 
-    // The corpus binding resolves to the real, pinned three documents.
+    // The corpus binding resolves to the route's own pinned twelve documents,
+    // while the layout donor corpus stays the untouched three / 202.
+    let binding = &slice["corpus_binding"];
+    let pointer = binding["pointer"].as_str().expect("corpus pointer");
+    let block_pointer = pointer
+        .strip_suffix(".documents")
+        .expect("corpus list pointer");
+    let block = dotted(&manifest, block_pointer).expect("corpus block resolves");
+    assert_eq!(block["documents"].as_sequence().unwrap().len(), 12);
+    assert_eq!(block["corpus_n"].as_u64(), Some(12));
+    assert_eq!(block["page_denominator"].as_u64(), Some(381));
+    assert_eq!(binding["document_count"].as_u64(), Some(12));
+    assert_eq!(manifest["corpus"]["corpus_n"].as_u64(), Some(3));
+    assert_eq!(manifest["corpus"]["page_denominator"].as_u64(), Some(202));
     assert_eq!(
         manifest["corpus"]["documents"].as_sequence().unwrap().len(),
         3
     );
-    assert_eq!(slice["corpus_binding"]["document_count"].as_u64(), Some(3));
 }
 
 #[test]

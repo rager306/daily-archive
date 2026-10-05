@@ -41,6 +41,96 @@ corpus:
       pages: 63
       page_classes: [two_column, full_width_title, figure_heavy, table_formula, callout, rotation_crop, ocr_risk]
       supporting_s07_case: reg.tei.reca-bibliography-2605.26525
+# S03 (M516-th0oby): the native PDF-to-TEI route's OWN corpus, distinct from the
+# layout token-donor bakeoff above. `java_free_vertical_slice.corpus_binding`
+# reads this block by pointer. `corpus.documents` and both layout oracle
+# fixtures stay byte-unchanged (D543): layout_lattice_oracle.yaml has no
+# in-repo generator, so growing the donor corpus honestly is impossible here.
+#
+# The three hub-/rlm-/reca- rows mirror the S02 corridor verbatim. The nine
+# bare-arXiv rows are a documented stratified sample of the frozen holdout
+# measurable set — `data/parse/holdout_manifests.yaml#articles` identities that
+# also carry a row in
+# `data/parse/acceptance_manifest.yaml#external_holdout_contract.release_probe.reference_tei`
+# (531 measurable rows, all PDFs present locally). Strata are the closed
+# `domains` vocabulary declared in `data/parse/comparison_contract.yaml`
+# (`native_fulltext_composition_shadow.strata.domains`): computer_science,
+# physics, mathematics. The target 3-per-stratum allocation is reduced by
+# availability (mathematics has 2 eligible, physics contributes 3 of 4) and the
+# shortfall is absorbed by computer_science: 4 / 3 / 2 = 9 (D544). Within a
+# stratum the lexicographically smallest article_id wins, so the sample is
+# deterministic and reproducible.
+native_route_corpus:
+  id: native-pdf-to-tei-route-corpus
+  corpus_n: 12
+  page_denominator: 381
+  source_root: data/sources
+  source_identity_rule: >-
+    Each row pins a repository-relative PDF by bare sha256 and its PDF-verified
+    page count; a document's identity is its id plus that exact sha256, never
+    the path alone. The three S02 corridor rows restate `corpus.documents`
+    field-for-field; the nine holdout rows are already-committed arXiv
+    identities whose PDF bytes and reference TEI exist in-tree.
+  selection:
+    source: data/parse/holdout_manifests.yaml#articles
+    measurable: data/parse/acceptance_manifest.yaml#external_holdout_contract.release_probe.reference_tei
+    strata_vocabulary: data/parse/comparison_contract.yaml#native_fulltext_composition_shadow.strata.domains
+    stratum_rule: >-
+      An identity's stratum is its arXiv primary category mapped to the declared
+      domains vocabulary: cs-* -> computer_science; math-* -> mathematics;
+      cond-mat-*, physics-*, hep-*, quant-ph, astro-ph, gr-qc, nucl-* ->
+      physics. Identities outside the closed domains vocabulary are ineligible.
+    allocation: {computer_science: 4, physics: 3, mathematics: 2}
+    within_stratum: ascending_article_id
+  documents:
+    - id: hub-2507.19457
+      source_pdf: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
+      sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
+      pages: 96
+    - id: rlm-2512.24601
+      source_pdf: data/sources/arxiv/cs-ai/2512.24601/source/original.pdf
+      sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
+      pages: 43
+    - id: reca-2605.26525v1
+      source_pdf: data/sources/arxiv/cs-cv/2605.26525v1/source/2605.26525v1.pdf
+      sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
+      pages: 63
+    - id: '1409.0473'
+      source_pdf: data/sources/arxiv/cs-cl/1409.0473/source/1409.0473.pdf
+      sha256: 84801c8410da51b449d379d2fa4939a416123f2c93991077a680f863026022a7
+      pages: 15
+    - id: '1410.4615'
+      source_pdf: data/sources/arxiv/cs-ne/1410.4615/source/1410.4615.pdf
+      sha256: 0b1bf1fdf2156d949dc47f69c739c1e8f621044d4d67f0f25d6becae33d27e0d
+      pages: 25
+    - id: '1410.5401'
+      source_pdf: data/sources/arxiv/cs-ne/1410.5401/source/1410.5401.pdf
+      sha256: b8d2939cd7c76097f2cc2e5061188ca824ef8cad12de4500dfbd014b60dd16a9
+      pages: 26
+    - id: '1506.02438'
+      source_pdf: data/sources/arxiv/cs-lg/1506.02438/source/1506.02438.pdf
+      sha256: 5aa736ccf3517a1f36d0ca8146982e69beaf9a2bdccac2ae324f780743bc045e
+      pages: 14
+    - id: '2402.04268'
+      source_pdf: data/sources/arxiv/cond-mat-soft/2402.04268/source/2402.04268.pdf
+      sha256: 2c1da086d14fa90e0c80ae44f90a7de0a2c5ae842c5b7bb606cc738a149e9a98
+      pages: 24
+    - id: '2402.10980'
+      source_pdf: data/sources/arxiv/physics-chem-ph/2402.10980/source/2402.10980.pdf
+      sha256: 587d6093ae3ed02bbc04daa13b4095e3dbf1378d5cb9a61dd60438a341108283
+      pages: 24
+    - id: '2406.13163'
+      source_pdf: data/sources/arxiv/cond-mat-mtrl-sci/2406.13163/source/2406.13163.pdf
+      sha256: 7c59d9ba6f5a44b9654ce64c2c81715821a916819de40964ace53cf15728fbe6
+      pages: 22
+    - id: '1203.2295'
+      source_pdf: data/sources/arxiv/math-oc/1203.2295/source/1203.2295.pdf
+      sha256: f4594edaccccad936def8b1b4673d6d4796f624e9952f1e94a650cfc3ea94608
+      pages: 11
+    - id: '2502.05199'
+      source_pdf: data/sources/arxiv/math-co/2502.05199/source/2502.05199.pdf
+      sha256: 092bb2d68267c3ce7b2a52efeafdec9c7d7b12b5dbcb4561fbdd7eadb4b81c18
+      pages: 18
 lanes:
   required: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
   same_input: true
@@ -182,11 +272,11 @@ java_free_vertical_slice:
   claim_scope: diagnostic_only
   product_coverage_effect: none
   # Corpus identity is read by pointer; the pinned document ids / sha256 stay in
-  # `corpus.documents` only and are never copied into this block.
+  # `native_route_corpus.documents` only and are never copied into this block.
   corpus_binding:
     manifest: data/parse/layout_bakeoff.yaml
-    pointer: corpus.documents
-    document_count: 3
+    pointer: native_route_corpus.documents
+    document_count: 12
     identity_rule: exact_document_id_and_sha256
   # Stage ids resolve against the existing cascade DATA; names are read by
   # pointer, never copied here.

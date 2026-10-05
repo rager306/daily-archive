@@ -126,7 +126,10 @@ def test_live_receipt_is_resolved_by_pointer_and_validates_clean(contract: dict)
     assert evidence["cascade_stage_ids"] == [
         "P0", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9",
     ]
-    assert len(evidence["corpus_documents"]) == 3
+    # The route now carries its own twelve-document corpus
+    # (`native_route_corpus`); the rule's java_free_slice corpus pointer and the
+    # committed receipt move with it in the sibling S03 tasks (T02B/T04).
+    assert len(evidence["corpus_documents"]) == 12
     assert _java_free_slice_violations(contract, evidence) == set()
 
 

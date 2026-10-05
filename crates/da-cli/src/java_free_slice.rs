@@ -628,29 +628,51 @@ pub fn load_declaration(
         });
     }
     let corpus_pointer = required_str(corpus_binding, "pointer", "corpus_binding")?;
-    if corpus_pointer != "corpus.documents" {
-        return Err(JavaFreeSliceError::SchemaDrift {
-            field: "corpus_binding.pointer".to_owned(),
-            expected: "corpus.documents".to_owned(),
-            found: corpus_pointer,
-        });
-    }
     let document_count = required_u64(corpus_binding, "document_count", "corpus_binding")? as usize;
 
-    let corpus_value = member(&layout, "corpus", SLICE_DECLARATION_DATA_REL)?;
-    let corpus_id = required_str(corpus_value, "id", "corpus")?;
-    let corpus_n = required_u64(corpus_value, "corpus_n", "corpus")? as usize;
-    let page_denominator = required_u64(corpus_value, "page_denominator", "corpus")?;
+    // The pointer names the document list of a corpus block inside the single
+    // declaration manifest. Neither the block name nor the list segment is
+    // hardcoded: the containing block is derived by stripping the trailing
+    // `.documents` segment, and that block must carry the corpus shape
+    // (`id` / `corpus_n` / `page_denominator` / `documents`). A pointer that is
+    // absent, empty, does not end in `.documents`, escapes the manifest (an
+    // empty, `/`, `\` or `#` segment), or resolves to a non-mapping is refused
+    // by name rather than silently ignored.
+    let corpus_block_pointer =
+        corpus_block_pointer(&corpus_pointer).ok_or_else(|| JavaFreeSliceError::SchemaDrift {
+            field: "corpus_binding.pointer".to_owned(),
+            expected: "a dotted pointer to a corpus block's `.documents` list".to_owned(),
+            found: corpus_pointer.clone(),
+        })?;
+    let corpus_value = pointer(&layout, &corpus_block_pointer, SLICE_DECLARATION_DATA_REL)
+        .map_err(|_| JavaFreeSliceError::SchemaDrift {
+            field: "corpus_binding.pointer".to_owned(),
+            expected: format!("a corpus block at `{corpus_block_pointer}`"),
+            found: corpus_pointer.clone(),
+        })?;
+    as_mapping(corpus_value, &corpus_block_pointer).map_err(|_| {
+        JavaFreeSliceError::SchemaDrift {
+            field: "corpus_binding.pointer".to_owned(),
+            expected: format!("`{corpus_block_pointer}` to be a corpus mapping"),
+            found: corpus_pointer.clone(),
+        }
+    })?;
+    let corpus_id = required_str(corpus_value, "id", &corpus_block_pointer)?;
+    let corpus_n = required_u64(corpus_value, "corpus_n", &corpus_block_pointer)? as usize;
+    let page_denominator = required_u64(corpus_value, "page_denominator", &corpus_block_pointer)?;
+    // The block must actually carry the list the pointer claims; an absent list
+    // is refused here, not discovered later as a silent zero.
+    member(corpus_value, "documents", &corpus_block_pointer)?;
     if corpus_n != document_count {
         return Err(JavaFreeSliceError::CorpusBindingMismatch {
-            document: "corpus".to_owned(),
+            document: corpus_block_pointer.clone(),
             reason: format!("corpus_n is {corpus_n} but document_count is {document_count}"),
         });
     }
     let documents = read_declared_documents(&layout, &corpus_pointer)?;
     if documents.len() != document_count {
         return Err(JavaFreeSliceError::CorpusBindingMismatch {
-            document: "corpus".to_owned(),
+            document: corpus_block_pointer.clone(),
             reason: format!(
                 "document_count is {document_count} but the pointer yields {} documents",
                 documents.len()
@@ -1660,6 +1682,35 @@ fn parse_yaml(text: &str, path: &str) -> Result<Value, JavaFreeSliceError> {
     })
 }
 
+/// Derive the corpus-block pointer from a declared document-list pointer.
+///
+/// A slice declaration names a `...<corpus>.documents` pointer; the block that
+/// contains the list is resolved by stripping the trailing `.documents` segment.
+/// Both the block name and the list segment are DATA, never constants. `None`
+/// refuses an absent, empty, non-`.documents`, or manifest-escaping pointer:
+/// every segment must be a plain key token (no `/`, `\`, `#` or empty `..`), so
+/// the walk stays inside the single declaration manifest.
+fn corpus_block_pointer(pointer: &str) -> Option<String> {
+    let trimmed = pointer.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let segments: Vec<&str> = trimmed.split('.').collect();
+    if segments.len() < 2 || segments.iter().any(|segment| segment.is_empty()) {
+        return None;
+    }
+    if segments
+        .iter()
+        .any(|segment| segment.contains('/') || segment.contains('\\') || segment.contains('#'))
+    {
+        return None;
+    }
+    if segments.last().copied() != Some("documents") {
+        return None;
+    }
+    Some(segments[..segments.len() - 1].join("."))
+}
+
 /// Walk a dot-separated pointer. Numeric segments index sequences.
 fn pointer<'a>(
     root: &'a Value,
@@ -1894,10 +1945,10 @@ mod tests {
             declaration.out_of_slice_stage_ids(),
             vec!["P3", "P4", "P5", "P6", "P7", "P8", "P9"]
         );
-        assert_eq!(declaration.documents.len(), 3);
-        assert_eq!(declaration.page_denominator, 202);
+        assert_eq!(declaration.documents.len(), 12);
+        assert_eq!(declaration.page_denominator, 381);
         assert_eq!(declaration.lane_ids.len(), 2);
-        assert_eq!(declaration.lane_page_denominator(), 404);
+        assert_eq!(declaration.lane_page_denominator(), 762);
         assert_eq!(declaration.stages.len(), 10);
         assert!(declaration.stage("P0").is_some());
         assert_eq!(
@@ -1996,8 +2047,8 @@ mod tests {
         .expect("a justified receipt builds");
         validate_receipt(&receipt, &declaration).expect("and re-validates");
         assert_eq!(receipt.stages.len(), 10);
-        assert_eq!(receipt.corpus.identities.len(), 3);
-        assert_eq!(receipt.corpus.lane_page_denominator, 404);
+        assert_eq!(receipt.corpus.identities.len(), 12);
+        assert_eq!(receipt.corpus.lane_page_denominator, 762);
         assert_eq!(receipt.guard.observed_java_calls, 0);
         // A zero is reachable only as Observed under an installed guard.
         let p1 = receipt

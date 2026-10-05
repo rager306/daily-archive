@@ -20,8 +20,9 @@
 //!   the live `configuration_fingerprint` literal in `crates/da-parse/src/profile.rs`;
 //! * every scholarly-endpoint declaration resolves to a real ledger entry by
 //!   pointer and carries no URL/route restatement;
-//! * the corpus counts are recomputed from the pinned documents (3 / 202) and
-//!   agree with the manifest's own `corpus_n` / `page_denominator`;
+//! * the governor corpus binding still recomputes from the pinned layout
+//!   documents (3 / 202), and the route's own `native_route_corpus` block
+//!   resolves to its expanded twelve documents / 381 pages;
 //! * the limit freeze is declared `frozen` with a shaped revision (the composite
 //!   arithmetic is owned by `scripts/tests/test_absorption_progress_native_route_freeze.py`);
 //! * five named negative mutations (restated stage list, unknown endpoint,
@@ -512,17 +513,29 @@ fn native_route_e2e_block_is_bound_to_the_live_carriers() {
         "the governor block must be clean: {errs:?}"
     );
 
-    // The corpus counts resolve to the real pinned three documents / 202 pages.
-    let documents = resolve(&fixtures.layout, "corpus.documents")
+    // The governor block's layout binding still resolves to three / 202. The
+    // route's OWN corpus is the expanded twelve / 381, pinned separately.
+    let governor_documents = resolve(&fixtures.layout, "corpus.documents")
         .and_then(Value::as_sequence)
         .expect("corpus.documents resolves");
-    assert_eq!(documents.len(), 3);
+    assert_eq!(governor_documents.len(), 3);
     assert_eq!(
-        documents
+        governor_documents
             .iter()
             .filter_map(|doc| doc["pages"].as_i64())
             .sum::<i64>(),
         202
+    );
+    let route_documents = resolve(&fixtures.layout, "native_route_corpus.documents")
+        .and_then(Value::as_sequence)
+        .expect("native_route_corpus.documents resolves");
+    assert_eq!(route_documents.len(), 12);
+    assert_eq!(
+        route_documents
+            .iter()
+            .filter_map(|doc| doc["pages"].as_i64())
+            .sum::<i64>(),
+        381
     );
 
     // The endpoints resolve to real ledger entries, not to copies of their URLs.
