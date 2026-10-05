@@ -75,6 +75,34 @@ def main() -> int:
         help="keep derived target/ build caches (kache) instead of proposing to prune them",
     )
 
+    # ── Subcommand: closeout (slice-close reclamation; dry run by default) ──
+    closeout = sub.add_parser(
+        "closeout",
+        help="Slice-close reclamation: report the hygiene plan, or --apply to reclaim",
+    )
+    closeout.add_argument("--root", default=None)
+    closeout.add_argument("--tmp-dir", default="/tmp", help="scratch directory to sweep")
+    closeout.add_argument(
+        "--apply", action="store_true", help="reclaim (cache GC + per-package clean); default: report only"
+    )
+    closeout.add_argument(
+        "--decline",
+        default=None,
+        help="record a deliberate per-slice opt-out and reclaim nothing",
+    )
+    closeout.add_argument("--milestone", default=None, help="milestone to bind a --decline record to")
+    closeout.add_argument("--slice", dest="slice_id", default=None, help="slice to bind a --decline record to")
+    closeout.add_argument(
+        "--no-package-clean",
+        action="store_true",
+        help="skip per-package target cleaning (keep only the cache GC)",
+    )
+    closeout.add_argument(
+        "--no-build-cache",
+        action="store_true",
+        help="skip the derived build-cache store entries (keep only per-package cleaning)",
+    )
+
     # ── Subcommand: doctor-baseline (accepted engine-doctor divergence) ──
     baseline = sub.add_parser(
         "doctor-baseline",
@@ -152,6 +180,8 @@ def main() -> int:
         return _run_review_registry(args)
     elif args.command == "hygiene":
         return _run_hygiene(args)
+    elif args.command == "closeout":
+        return _run_closeout(args)
     elif args.command == "doctor-baseline":
         return _run_doctor_baseline(args)
 
@@ -244,6 +274,12 @@ def main() -> int:
             f"historical_c3={policy.get('historical_c3_decision')} "
             f"active_blocker={policy.get('historical_c3_active_blocker')}"
         )
+
+    # Closeout is the slice-close path: invoke the hygiene dry run and report its
+    # result here, so reclamation is wired into finishing a slice rather than run by
+    # hand. Nothing is deleted from this path.
+    if args.phase == "closeout":
+        _report_closeout_dry_run(project_root)
 
     # Exit code: 0 = on_track or drift_risk, 1 = blocked.
     # Handle both str and Enum(str) verdict values.
@@ -342,6 +378,105 @@ def _run_hygiene(args) -> int:
     manifest = apply_plan(plan, project_root)
     print(f"removed; manifest at {manifest}")
     return 0
+
+
+def _print_closeout_report(report) -> None:
+    """Name every planned reclamation with the policy that selected it."""
+    cap_state = "OVER CAP — reclaim required" if report.over_cap else "within cap"
+    print("closeout reclamation:")
+    print(
+        f"  target/: {report.target_gb:.1f} GB (cap {report.target_cap_gb} GB) — {cap_state}"
+    )
+    print(
+        f"  policy: exec {report.retention.days_exec}d, "
+        f"quarantine {report.retention.days_quarantine}d, "
+        f"activity {report.retention.days_activity}d, "
+        f"min age {report.retention.min_age_hours}h, "
+        f"build cache >= {report.retention.build_cache_gb}GB"
+    )
+    print("  plan:")
+    for name, count, policy in report.category_policy():
+        print(f"    - {name}: {count} ({policy})")
+    print(
+        f"  reclaims {report.reclaimed_bytes() / 1e6:.1f} MB from stores "
+        f"+ {len(report.package_commands)} package clean command(s)"
+    )
+
+
+def _run_closeout(args) -> int:
+    """Slice-close reclamation: report the hygiene plan, or --apply to reclaim."""
+    from governor.application.closeout_service import (
+        apply_closeout,
+        build_closeout_report,
+        load_closeout_policy,
+        record_decline,
+    )
+
+    project_root = Path(args.root).resolve() if getattr(args, "root", None) else _detect_root()
+    if not (project_root / ".gsd").exists():
+        print(f"not a GSD project: {project_root}", file=sys.stderr)
+        return 1
+
+    # Opt-out first: a deliberate decline must leave a record and reclaim nothing,
+    # so it can never be confused with a run that simply found nothing to do.
+    decline = getattr(args, "decline", None)
+    if decline is not None:
+        path = record_decline(
+            project_root,
+            decline,
+            milestone=getattr(args, "milestone", None),
+            slice_id=getattr(args, "slice_id", None),
+        )
+        print(f"closeout reclamation declined; recorded at {path}")
+        return 0
+
+    closeout_policy = load_closeout_policy(project_root)
+    if not closeout_policy.hygiene_enabled:
+        reason = closeout_policy.opt_out_reason or "hygiene_enabled=false in gsd_control_plane.yaml"
+        print(f"closeout reclamation disabled by DATA: {reason}")
+        return 0
+
+    report = build_closeout_report(
+        project_root,
+        closeout_policy=closeout_policy,
+        tmp_dir=Path(getattr(args, "tmp_dir", "/tmp")),
+    )
+    if getattr(args, "no_package_clean", False):
+        report.package_commands = []
+    if getattr(args, "no_build_cache", False):
+        report.retention_plan.build_cache_dirs = []
+
+    _print_closeout_report(report)
+    if not getattr(args, "apply", False):
+        print("dry run — pass --apply to reclaim (cache GC + per-package clean)")
+        return 0
+    manifest = apply_closeout(report, project_root)
+    print(f"reclaimed; closeout manifest at {manifest}")
+    return 0
+
+
+def _report_closeout_dry_run(project_root: Path) -> None:
+    """Invoke the hygiene dry run at closeout and report its result.
+
+    This is the wiring that makes reclamation part of finishing a slice rather than
+    something someone remembers. It is housekeeping, so it must never change the
+    trajectory verdict: any failure is reported and swallowed.
+    """
+    try:
+        from governor.application.closeout_service import (
+            build_closeout_report,
+            load_closeout_policy,
+        )
+
+        policy = load_closeout_policy(project_root)
+        if not policy.hygiene_enabled:
+            reason = policy.opt_out_reason or "hygiene_enabled=false in gsd_control_plane.yaml"
+            print(f"  closeout reclamation disabled by DATA: {reason}")
+            return
+        report = build_closeout_report(project_root)
+        _print_closeout_report(report)
+    except Exception as error:  # housekeeping must not break the report
+        print(f"  closeout reclamation unavailable: {error}")
 
 
 def _run_doctor_baseline(args) -> int:

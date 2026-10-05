@@ -270,6 +270,15 @@ These four come from measured failure, not preference. Each names the cost:
   `.gsd/retention/`. The policy is DATA in `checks/gsd_control_plane.yaml#retention`
   (exec 30 d, quarantine 30 d, activity 14 d, scratch older than 24 h), so the
   threshold that fires and the command that clears it read one source.
+- **Bound target/ at slice closeout, not by hand.** `python3 -m governor --phase
+  closeout` invokes the same hygiene dry run and reports the plan (each reclamation
+  with its policy, plus the `target/` size against the `target_cap_gb` DATA cap);
+  `python3 -m governor closeout` does the same standalone and `--apply` reclaims
+  through both mechanisms — the cache GC (`apply_plan`) releases derived store
+  entries, while `cargo clean -p <crate>` per `closeout.packages` removes target
+  artifacts, which is the only path that frees what a second toolchain duplicates.
+  A slice can decline deliberately with `governor closeout --decline "<reason>"`;
+  the decline is recorded under `.gsd/retention/` and nothing is reclaimed.
 - **A bloat signal must be clearable.** The control-plane check counts entries *past*
   their retention window, never total store size: an absolute limit on a store that
   grows daily is permanently red, and a flag nobody can clear is a flag nobody reads.

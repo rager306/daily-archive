@@ -59,6 +59,40 @@ retention:
   # combinations the verification stack must compile. Below this size the cache is
   # left alone; above it `governor hygiene` proposes pruning it. Never evidence.
   build_cache_gb: 4
+  # Enforced cap on the derived build tree (target/). The windows above prune by age;
+  # this one is a size ceiling, because a second toolchain duplicates target
+  # artifacts for the same crates regardless of how old they are. Below the cap the
+  # tree is left alone so a warm build is not churned; above it the slice-closeout
+  # path must reclaim. It lives in `retention` because that is the DATA the hygiene
+  # command already reads, so the number that fires and the command that clears it
+  # cannot drift apart.
+  target_cap_gb: 60
+
+# Slice-close reclamation contract. The closeout path runs the hygiene dry run and
+# reports its plan; nothing is deleted without an explicit apply. `hygiene_enabled:
+# false` is the project-level opt-out, while a per-slice decline is recorded through
+# `governor closeout --decline` so a deliberate skip leaves a record rather than
+# silence. `packages` is DATA so the packages whose target artifacts per-package
+# cleaning removes are never hardcoded; that cleaning is the only mechanism that
+# frees the artifact space a second toolchain duplicates, while the cache GC above
+# only releases derived store entries. The closeout step must use both.
+closeout:
+  hygiene_enabled: true
+  per_package_clean: true
+  opt_out_reason: ""
+  packages:
+    - kg-ontology
+    - kg-storage
+    - kg-embeddings
+    - kg-algorithms
+    - kg-pipeline
+    - da-domain
+    - da-ports
+    - da-application
+    - da-parse
+    - da-adapters
+    - da-cli
+    - da-mcp
 
 signals:
   - contract_invalid

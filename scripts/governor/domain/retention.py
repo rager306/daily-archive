@@ -25,17 +25,26 @@ DEFAULT_MIN_AGE_HOURS = 24
 # keeps one copy per distinct feature-set fingerprint, so `target/` grows with
 # the number of feature combinations the verification stack must compile.
 DEFAULT_BUILD_CACHE_GB = 4
+# Enforced cap on the derived build tree. The windows above prune by age; the
+# derived tree is capped by size because a second toolchain duplicates target
+# artifacts for the same crates regardless of how old they are. Below the cap the
+# tree is left alone so a warm build is never churned; above it closeout must
+# reclaim. It lives in the retention policy because that is the DATA the hygiene
+# command already reads, so the number that fires and the command that clears it
+# cannot drift apart.
+DEFAULT_TARGET_CAP_GB = 60
 
 
 @dataclass(frozen=True)
 class RetentionPolicy:
-    """How long each runtime store is allowed to keep entries."""
+    """How long (and how large) each runtime/derived store may grow."""
 
     days_exec: int = DEFAULT_DAYS_EXEC
     days_quarantine: int = DEFAULT_DAYS_QUARANTINE
     days_activity: int = DEFAULT_DAYS_ACTIVITY
     min_age_hours: int = DEFAULT_MIN_AGE_HOURS
     build_cache_gb: int = DEFAULT_BUILD_CACHE_GB
+    target_cap_gb: int = DEFAULT_TARGET_CAP_GB
 
     @classmethod
     def from_mapping(cls, mapping: Any) -> "RetentionPolicy":
@@ -60,6 +69,7 @@ class RetentionPolicy:
             days_activity=non_negative("days_activity", DEFAULT_DAYS_ACTIVITY),
             min_age_hours=non_negative("min_age_hours", DEFAULT_MIN_AGE_HOURS),
             build_cache_gb=non_negative("build_cache_gb", DEFAULT_BUILD_CACHE_GB),
+            target_cap_gb=non_negative("target_cap_gb", DEFAULT_TARGET_CAP_GB),
         )
 
     def exec_cutoff_seconds(self, reference: float) -> float:
