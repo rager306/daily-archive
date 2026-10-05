@@ -62,6 +62,10 @@ use da_cli::native_family_receipt::{
     CLAIM_SCOPE_DIAGNOSTIC_ONLY, GuardProvenance, PRODUCT_COVERAGE_EFFECT_NONE,
     normalize_document_identity, sha256_prefixed,
 };
+use da_cli::native_route_independence::{
+    DEFAULT_INDEPENDENCE_ARTIFACT_REL, RouteIndependenceReceipt, build_route_independence_receipt,
+    derive_route_independence_expectation, validate_route_independence_receipt,
+};
 use da_cli::native_route_receipt::{
     DEFAULT_ROUTE_ARTIFACT_REL, ROUTE_DIRECTION_VOCABULARY, ROUTE_FAMILY_ORDER,
     ROUTE_FLOOR_METRIC_VOCABULARY, ROUTE_FREEZE_SCOPE, ROUTE_FREEZE_STATE_FROZEN,
@@ -155,24 +159,31 @@ struct Args {
     root: PathBuf,
     report: PathBuf,
     emission: PathBuf,
+    independence: PathBuf,
     self_check: bool,
+    independence_only: bool,
 }
 
 fn parse_args() -> Args {
     let mut root = PathBuf::from(".");
     let mut report = PathBuf::from(DEFAULT_ROUTE_ARTIFACT_REL);
     let mut emission = PathBuf::from(DEFAULT_TEI_EMISSION_ARTIFACT_REL);
+    let mut independence = PathBuf::from(DEFAULT_INDEPENDENCE_ARTIFACT_REL);
     let mut self_check = false;
+    let mut independence_only = false;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--root" => root = args.next().unwrap_or_default().into(),
             "--report" => report = args.next().unwrap_or_default().into(),
             "--emission" => emission = args.next().unwrap_or_default().into(),
+            "--independence" => independence = args.next().unwrap_or_default().into(),
+            "--independence-only" => independence_only = true,
             "--self-check" => self_check = true,
             "--help" => {
                 println!(
-                    "native_route_e2e [--root DIR] [--report FILE] [--emission FILE] [--self-check]"
+                    "native_route_e2e [--root DIR] [--report FILE] [--emission FILE] \
+                     [--independence FILE] [--independence-only] [--self-check]"
                 );
                 std::process::exit(0);
             }
@@ -186,7 +197,9 @@ fn parse_args() -> Args {
         root,
         report,
         emission,
+        independence,
         self_check,
+        independence_only,
     }
 }
 
@@ -1200,11 +1213,73 @@ fn write_artifact_atomic(path: &std::path::Path, bytes: &[u8]) -> Result<(), Box
     Ok(())
 }
 
+// ─────────────────────────── independence mode ───────────────────────────
+
+/// Build the measured independence receipt from the committed carriers alone.
+///
+/// Hermetic: it reads `artifacts/parse_compat/native_route_e2e.json` and
+/// `artifacts/parse_compat/native_route_tei_emission.json`, runs the observer's
+/// positive control on the unreachable seam, and writes the receipt atomically.
+/// It never reads a PDF and never runs the route.
+fn run_independence(args: &Args) -> Result<String, Box<dyn Error>> {
+    let route_bytes = fs::read(args.root.join(DEFAULT_ROUTE_ARTIFACT_REL))?;
+    let emission_bytes = fs::read(args.root.join(DEFAULT_TEI_EMISSION_ARTIFACT_REL))?;
+
+    // The positive control proves the installed observer raises its counter for
+    // an attempted consult; without it the observed zero would be vacuous.
+    guard_positive_control()?;
+
+    let receipt = build_route_independence_receipt(&route_bytes, &emission_bytes, true)?;
+    let expected = derive_route_independence_expectation(&route_bytes, &emission_bytes)?;
+    validate_route_independence_receipt(&receipt, &expected)?;
+
+    let artifact = receipt.artifact_json_bytes()?;
+    assert_route_redacted(std::str::from_utf8(&artifact)?)?;
+    write_artifact_atomic(&args.independence, &artifact)?;
+
+    Ok(independence_summary(&receipt))
+}
+
+fn independence_summary(receipt: &RouteIndependenceReceipt) -> String {
+    format!(
+        "native route independence `{}`: state {}, observed {} java calls over {} documents / \
+         {} pages; guard observer `{}` installed={} identity_isolated={} positive_control={}; \
+         evidence guard={} emission={:?}; comparability {}/{}/{}/{}; claim {} product {} locks \
+         closed; residuals unmeasured_stages {} unclassified_families {} java_fallback_bytes {} \
+         native_emitted_bytes {} typed_absence_bytes {}",
+        receipt.schema_version,
+        receipt.axis.state,
+        receipt.axis.value,
+        receipt.axis.denominator.documents,
+        receipt.axis.denominator.pages,
+        receipt.guard.observer,
+        receipt.guard.installed,
+        receipt.guard.identity_isolated,
+        receipt.guard.positive_control_observed,
+        receipt.axis.evidence_identity.guard_provenance_sha256,
+        receipt.axis.evidence_identity.emission_sha256,
+        receipt.axis.comparability_identity.corpus_id,
+        receipt.axis.comparability_identity.profile,
+        receipt.axis.comparability_identity.oracle,
+        receipt.axis.comparability_identity.source_revision,
+        receipt.claim_scope,
+        receipt.product_coverage_effect,
+        receipt.residuals.unmeasured_stages,
+        receipt.residuals.unclassified_families,
+        receipt.residuals.java_fallback_bytes,
+        receipt.residuals.native_emitted_bytes,
+        receipt.residuals.typed_absence_bytes,
+    )
+}
+
 // ─────────────────────────────── runner ───────────────────────────────
 
 fn run(args: &Args) -> Result<String, Box<dyn Error>> {
     if args.self_check {
         return run_self_check(&args.root);
+    }
+    if args.independence_only {
+        return run_independence(args);
     }
 
     // ── declaration ───────────────────────────────────────────────────────

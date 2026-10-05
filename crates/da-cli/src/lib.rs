@@ -97,6 +97,14 @@ pub mod native_class_parity;
 // pure std/serde/sha2, so it and its contract test compile in the default
 // feature set (no `pdf-layout`, no `pdf-classifier`).
 pub mod native_route_receipt;
+// S02/T04 (M516-th0oby): measured independence receipt for the native route.
+// It binds the route receipt's guard-owned zero and the T03 native TEI emission
+// artifact into an axis the schema can read as `measured` (non-empty denominator,
+// evidence identity, comparability identity) and refuses an unbound or unguarded
+// axis. It leaves the product `java_independence` scorecard row untouched
+// (D499/D508). Pure std/serde/serde_json/sha2, so it and its contract test
+// compile in the default feature set (no `pdf-layout`, no `pdf-classifier`).
+pub mod native_route_independence;
 // S06/T06 (M514-1lss2s): same-n resource comparison receipt. It reuses the S04
 // envelope (`native_family_receipt`) and the T03 freeze binding
 // (`native_route_receipt`), pairs every native metric with a pinned measured
