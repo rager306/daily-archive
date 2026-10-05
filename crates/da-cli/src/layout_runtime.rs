@@ -498,7 +498,7 @@ where
             let mut scratch = ScratchArena::new(capacity).expect("validated scratch capacity");
             while let Ok((ordinal, job)) = rx.recv() {
                 input_depth_worker
-                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                    .try_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
                         Some(depth.saturating_sub(1))
                     })
                     .ok();
@@ -525,7 +525,7 @@ where
                 result_high_water_worker.fetch_max(depth, Ordering::SeqCst);
                 if result_tx.send(terminal).is_err() {
                     result_depth_worker
-                        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                        .try_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
                             Some(depth.saturating_sub(1))
                         })
                         .ok();
@@ -562,12 +562,12 @@ where
             in_flight_high_water_dispatch.fetch_max(active, Ordering::SeqCst);
             if inputs[worker].send((ordinal, job)).is_err() {
                 input_depth_dispatch
-                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                    .try_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
                         Some(depth.saturating_sub(1))
                     })
                     .ok();
                 in_flight_dispatch
-                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |active| {
+                    .try_update(Ordering::SeqCst, Ordering::SeqCst, |active| {
                         Some(active.saturating_sub(1))
                     })
                     .ok();
@@ -587,12 +587,12 @@ where
         match result_rx.recv() {
             Ok(terminal) => {
                 result_depth
-                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                    .try_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
                         Some(depth.saturating_sub(1))
                     })
                     .ok();
                 in_flight
-                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |active| {
+                    .try_update(Ordering::SeqCst, Ordering::SeqCst, |active| {
                         Some(active.saturating_sub(1))
                     })
                     .ok();
