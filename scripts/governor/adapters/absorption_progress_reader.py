@@ -94,6 +94,7 @@ from governor.domain.absorption_progress import (
     NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
     RETIREMENT_READINESS_VIOLATION_LABELS,
+    THRESHOLD_CANDIDATES_VIOLATION_LABELS,
     contract_thresholds,
     missing_contract_vocabulary,
     score_number,
@@ -151,6 +152,7 @@ _RULE_KEYS = (
     "native_content_receipt",
     "native_route_e2e",
     "native_route_independence",
+    "threshold_candidates",
     "acceptance_package",
     "retirement_readiness",
 )
@@ -768,7 +770,7 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
         if isinstance(layout.get("document"), dict):
             resolved = _resolve_declared_pointer(layout["document"], layout.get("pointer"))
             bundle["corpus_documents"] = resolved if isinstance(resolved, list) else None
-            corpus_block = layout["document"].get("corpus")
+            corpus_block = _corpus_block_for_pointer(layout["document"], layout.get("pointer"))
             if isinstance(corpus_block, dict):
                 bundle["corpus_page_denominator"] = _count(corpus_block.get("page_denominator"))
 
@@ -790,6 +792,24 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
                         continue
                     pins[path] = {
                         "id": _text(entry.get("id")),
+                        "sha256": _text(entry.get("sha256")),
+                        "recomputed_sha256": self.file_sha256(path),
+                    }
+        # The frozen acceptance manifest extends the preserved-provenance oracle
+        # over the added route documents, so its holdout reference TEI rows are
+        # declared pins too.
+        holdout = _carrier("holdout_reference_tei")
+        if isinstance(holdout.get("document"), dict):
+            resolved = _resolve_declared_pointer(holdout["document"], holdout.get("pointer"))
+            if isinstance(resolved, list):
+                for entry in resolved:
+                    if not isinstance(entry, dict):
+                        continue
+                    path = _text(entry.get("path"))
+                    if path is None or path in pins:
+                        continue
+                    pins[path] = {
+                        "id": _text(entry.get("article_id")),
                         "sha256": _text(entry.get("sha256")),
                         "recomputed_sha256": self.file_sha256(path),
                     }
@@ -844,6 +864,8 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
         oracle_rule = oracle_rule if isinstance(oracle_rule, dict) else {}
         oracle_manifest = _text(oracle_rule.get("manifest"))
         oracle_pointer = _text(oracle_rule.get("pointer"))
+        holdout_manifest = _text(oracle_rule.get("holdout_manifest"))
+        holdout_pointer = _text(oracle_rule.get("holdout_pointer"))
         segmentation_manifest = _text(oracle_rule.get("segmentation_manifest"))
         segmentation_source = _text(oracle_rule.get("segmentation_source"))
 
@@ -921,7 +943,7 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
                     bundle["corpus_document_count"] = len(bundle["corpus_documents"])
                 else:
                     bundle["errors"].append("corpus_source_pointer_unresolved")
-                corpus_block = corpus_document.get("corpus")
+                corpus_block = _corpus_block_for_pointer(corpus_document, corpus_pointer)
                 if isinstance(corpus_block, dict):
                     declared_n = _count(corpus_block.get("corpus_n"))
                     if declared_n is not None:
@@ -949,6 +971,29 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
                             "sha256": _text(entry.get("sha256")),
                             "recomputed_sha256": self.file_sha256(path),
                         }
+                    # The frozen acceptance manifest extends the preserved-
+                    # provenance oracle over the added route documents: an added
+                    # document's reference TEI is a declared pin too, so it is
+                    # bound to its committed bytes rather than trusted.
+                    if holdout_manifest:
+                        holdout = self.read_yaml(holdout_manifest)
+                        extension = (
+                            _resolve_declared_pointer(holdout, holdout_pointer)
+                            if isinstance(holdout, dict)
+                            else _UNRESOLVED
+                        )
+                        if isinstance(extension, list):
+                            for entry in extension:
+                                if not isinstance(entry, dict):
+                                    continue
+                                path = _text(entry.get("path"))
+                                if path is None or path in fixtures:
+                                    continue
+                                fixtures[path] = {
+                                    "id": _text(entry.get("article_id")),
+                                    "sha256": _text(entry.get("sha256")),
+                                    "recomputed_sha256": self.file_sha256(path),
+                                }
                     bundle["oracle_fixture_pins"] = fixtures
                 else:
                     bundle["errors"].append("oracle_source_pointer_unresolved")
@@ -1215,7 +1260,7 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
                     bundle["corpus_document_count"] = len(bundle["corpus_documents"])
                 else:
                     bundle["errors"].append("corpus_source_pointer_unresolved")
-                corpus_block = corpus_document.get("corpus")
+                corpus_block = _corpus_block_for_pointer(corpus_document, corpus_pointer)
                 if isinstance(corpus_block, dict):
                     bundle["corpus_page_denominator"] = _count(
                         corpus_block.get("page_denominator")
@@ -1363,6 +1408,128 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
                 bundle["route_declaration_revision_sha256"] = _text(
                     declaration.get("revision_sha256")
                 )
+
+        return bundle
+
+    def read_threshold_candidates(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the T03 threshold-candidate artifact and its two authorities.
+
+        The half this governs is the T03 evidence that each of the three frozen
+        thresholds was recomputed on the expanded native-route corpus and
+        published beside its retained pin (D545). The rule names only *where* the
+        candidate artifact, the S03 corpus declaration and the frozen pins live;
+        nothing about the artifact contents is restated, so the rule cannot drift
+        from the artifact it governs. ``available`` is True only when the S03
+        declaration carrier resolves -- the same authority the Java-free, family,
+        content, route and independence halves read -- so a tree without that
+        authority is *absence*, not a violation. An unreadable *candidate* under a
+        resolvable declaration is a claim with no evidence and the oracle reports
+        it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("threshold_candidates")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        pinned_rule = rule.get("pinned_reference")
+        pinned_rule = pinned_rule if isinstance(pinned_rule, dict) else {}
+        pinned_manifest = _text(pinned_rule.get("manifest"))
+        pinned_pointer = _text(pinned_rule.get("pointer"))
+        pins_path = _text(pinned_rule.get("pins_path"))
+        pins_pointer = _text(pinned_rule.get("pins_pointer"))
+
+        candidate_rule = rule.get("candidate")
+        candidate_rule = candidate_rule if isinstance(candidate_rule, dict) else {}
+        candidate_path = _text(candidate_rule.get("path"))
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_sha256": (
+                self.file_sha256(declaration_manifest) if declaration_manifest else None
+            ),
+            "declaration": None,
+            "corpus_documents": None,
+            "corpus_document_count": None,
+            "corpus_page_denominator": None,
+            "pinned_manifest": pinned_manifest,
+            "pinned_pointer": pinned_pointer,
+            "pins_path": pins_path,
+            "pins_pointer": pins_pointer,
+            "pins_exists": bool(pins_path and self.path_exists(pins_path)),
+            "pins_sha256": self.file_sha256(pins_path) if pins_path else None,
+            "pinned_thresholds": {},
+            "candidate_path": candidate_path,
+            "candidate_exists": bool(
+                candidate_path and self.path_exists(candidate_path)
+            ),
+            "candidate_sha256": (
+                self.file_sha256(candidate_path) if candidate_path else None
+            ),
+            "candidate": None,
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            documents = _resolve_declared_pointer(manifest, declaration_pointer)
+            if isinstance(documents, list):
+                bundle["declaration"] = manifest
+                bundle["available"] = True
+                bundle["corpus_documents"] = [
+                    {
+                        "id": _text(entry.get("id")),
+                        "sha256": _text(entry.get("sha256")),
+                        "pages": _count(entry.get("pages")),
+                    }
+                    for entry in documents
+                    if isinstance(entry, dict)
+                ]
+                bundle["corpus_document_count"] = len(bundle["corpus_documents"])
+                corpus_block = _corpus_block_for_pointer(manifest, declaration_pointer)
+                if isinstance(corpus_block, dict):
+                    declared_n = _count(corpus_block.get("corpus_n"))
+                    if declared_n is not None:
+                        bundle["corpus_document_count"] = declared_n
+                    bundle["corpus_page_denominator"] = _count(
+                        corpus_block.get("page_denominator")
+                    )
+            else:
+                bundle["errors"].append("declaration_pointer_unresolved")
+
+        policy = (
+            _resolve_declared_pointer(self.read_yaml(pinned_manifest), pinned_pointer)
+            if pinned_manifest
+            else _UNRESOLVED
+        )
+        pins = self.read_json(pins_path) if pins_path else None
+        values = (
+            _resolve_declared_pointer(pins, pins_pointer)
+            if isinstance(pins, dict)
+            else _UNRESOLVED
+        )
+        if isinstance(policy, dict) and isinstance(values, list):
+            pinned: dict[str, Any] = {}
+            for entry in values:
+                if not isinstance(entry, dict):
+                    continue
+                threshold_id = _text(entry.get("threshold_id"))
+                if threshold_id is not None:
+                    pinned[threshold_id] = entry
+            bundle["pinned_thresholds"] = pinned
+
+        bundle["candidate"] = self.read_json(candidate_path) if candidate_path else None
+        if bundle["candidate"] is None and bundle["candidate_exists"]:
+            bundle["errors"].append("candidate_unreadable")
 
         return bundle
 
@@ -1812,6 +1979,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
     missing.extend(
         _native_route_independence_vocabulary(contract.get("native_route_independence"))
     )
+    missing.extend(_threshold_candidates_vocabulary(contract.get("threshold_candidates")))
     missing.extend(_acceptance_package_vocabulary(contract.get("acceptance_package")))
     missing.extend(_retirement_readiness_vocabulary(contract.get("retirement_readiness")))
     return missing
@@ -2364,6 +2532,81 @@ def _native_route_independence_vocabulary(block: Any) -> list[str]:
         missing.append("native_route_independence.violations")
     return missing
 
+def _threshold_candidates_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``threshold_candidates`` fields absent or unusable.
+
+    Without these the threshold-candidate half cannot tell a declared-and-
+    evidenced candidate from a claim with no artifact, an unbound pin or an
+    unregistered label. The declared label set must be exactly the domain's
+    literal set -- a label the oracle can emit must be registered, and a
+    registered label must be one the oracle can emit -- so an unregistered
+    emission is a data/implementation mismatch rather than a silent finding.
+    The caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["threshold_candidates"]
+    missing: list[str] = []
+
+    if _text(block.get("schema_version")) is None:
+        missing.append("threshold_candidates.schema_version")
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("threshold_candidates.declaration")
+    else:
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("threshold_candidates.declaration.manifest")
+        if _text(declaration.get("pointer")) is None:
+            missing.append("threshold_candidates.declaration.pointer")
+
+    pinned = block.get("pinned_reference")
+    if not isinstance(pinned, dict):
+        missing.append("threshold_candidates.pinned_reference")
+    else:
+        for key in ("manifest", "pointer", "pins_path", "pins_pointer"):
+            if _text(pinned.get(key)) is None:
+                missing.append(f"threshold_candidates.pinned_reference.{key}")
+
+    candidate = block.get("candidate")
+    if not isinstance(candidate, dict):
+        missing.append("threshold_candidates.candidate")
+    else:
+        if not _is_relative_path(candidate.get("path")):
+            missing.append("threshold_candidates.candidate.path")
+        if _text(candidate.get("schema_version")) is None:
+            missing.append("threshold_candidates.candidate.schema_version")
+        if candidate.get("required") is not True:
+            missing.append("threshold_candidates.candidate.required")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("threshold_candidates.expected")
+    else:
+        for key in ("claim_scope", "product_coverage_effect", "thresholds"):
+            if _text(expected.get(key)) is None:
+                missing.append(f"threshold_candidates.expected.{key}")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict):
+            missing.append("threshold_candidates.expected.locks")
+        else:
+            for key in (
+                "deployed",
+                "import_eligible",
+                "auto_promote",
+                "production_route",
+                "graph_write",
+            ):
+                if key not in locks:
+                    missing.append(f"threshold_candidates.expected.locks.{key}")
+        for key in ("direction_vocabulary", "comparability_vocabulary"):
+            if not _text_list(expected.get(key)):
+                missing.append(f"threshold_candidates.expected.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(THRESHOLD_CANDIDATES_VIOLATION_LABELS):
+        missing.append("threshold_candidates.violations")
+    return missing
+
 def _acceptance_package_vocabulary(block: Any) -> list[str]:
     """Dotted names of ``acceptance_package`` fields absent or unusable.
 
@@ -2755,6 +2998,23 @@ def _resolve_declared_pointer(document: Any, pointer: Any) -> Any:
         return resolve_pointer(document, pointer.replace(".", "/"))
     return _UNRESOLVED
 
+def _corpus_block_for_pointer(document: Any, pointer: Any) -> Any:
+    """The mapping that *owns* the list a ``.documents`` pointer names.
+
+    The S03 route study moved the native route corpus into its own block
+    (``native_route_corpus.documents``), so the page denominator and the declared
+    ``corpus_n`` live on the parent block rather than under a top-level ``corpus``
+    key. Deriving that parent from the declared pointer keeps the reader from
+    hardcoding either the block name or the old ``corpus`` literal (D543); when
+    the pointer is not a dotted ``.documents`` path the block is unresolved.
+    """
+    if not isinstance(pointer, str) or "." not in pointer:
+        return _UNRESOLVED
+    parent = pointer.rsplit(".", 1)[0]
+    if not parent:
+        return _UNRESOLVED
+    return _resolve_declared_pointer(document, parent)
+
 def _text(value: Any) -> Optional[str]:
     if isinstance(value, str) and value.strip():
         return value
@@ -2776,6 +3036,16 @@ def _count(value: Any) -> Optional[int]:
     if isinstance(value, float) and value.is_integer():
         return int(value)
     return None
+
+def _fraction_pair(value: Any) -> Optional[tuple[int, int]]:
+    """A ``{numerator, denominator}`` fraction as ``(numerator, denominator)``."""
+    if not isinstance(value, dict):
+        return None
+    numerator = _count(value.get("numerator"))
+    denominator = _count(value.get("denominator"))
+    if numerator is None or denominator is None or denominator == 0:
+        return None
+    return (numerator, denominator)
 
 
 def _is_relative_path(value: Any) -> bool:
@@ -2875,6 +3145,7 @@ def absorption_progress_violations(
     _native_content_receipt_violations_into(contract, observations, violations)
     _native_route_violations_into(contract, observations, violations)
     _native_route_independence_violations_into(contract, observations, violations)
+    _threshold_candidates_violations_into(contract, observations, violations)
     _acceptance_package_violations_into(contract, observations, violations)
     _retirement_readiness_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
@@ -3224,6 +3495,21 @@ def _native_route_independence_violations_into(
         _native_route_independence_violations(
             contract,
             observations.get("native_route_independence")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+def _threshold_candidates_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the threshold-candidate labels carried by the observations."""
+    violations.update(
+        _threshold_candidates_violations(
+            contract,
+            observations.get("threshold_candidates")
             if isinstance(observations, dict)
             else None,
         )
@@ -4989,12 +5275,8 @@ def _native_route_violations(contract: Any, evidence: Any) -> set[str]:
         if not isinstance(r_corpus, dict):
             pair_unbound()
         else:
-            if _count(r_corpus.get("document_count")) != len(corpus_pins):
-                pair_unbound()
-            if _count(r_corpus.get("page_denominator")) != corpus_pages:
-                pair_unbound()
-            r_pins: dict[str, tuple[Optional[str], Optional[int]]] = {}
             r_corpus_documents = r_corpus.get("documents")
+            r_pins: dict[str, tuple[Optional[str], Optional[int]]] = {}
             if isinstance(r_corpus_documents, list):
                 for entry in r_corpus_documents:
                     if not isinstance(entry, dict):
@@ -5005,8 +5287,24 @@ def _native_route_violations(contract: Any, evidence: Any) -> set[str]:
                             _text(entry.get("sha256")),
                             _count(entry.get("pages")),
                         )
-            if r_pins != corpus_pins:
+            # The same-n resource receipt is measured over the document set that
+            # carries a Java reference (the S02 corridor), a *subset* of the S03
+            # route corpus. The comparator is containment, not equality: a
+            # resource document outside the route corpus, or one whose sha/pages
+            # disagree, is unbound.
+            if not r_pins:
                 pair_unbound()
+            else:
+                if _count(r_corpus.get("document_count")) != len(r_pins):
+                    pair_unbound()
+                if _count(r_corpus.get("page_denominator")) != sum(
+                    pages for _, pages in r_pins.values() if pages is not None
+                ):
+                    pair_unbound()
+                for entry_id, (sha, pages) in r_pins.items():
+                    route_pin = corpus_pins.get(entry_id)
+                    if route_pin is None or (sha, pages) != route_pin:
+                        pair_unbound()
 
         r_populations = resource.get("populations")
         if not isinstance(r_populations, list) or not r_populations:
@@ -5020,13 +5318,9 @@ def _native_route_violations(contract: Any, evidence: Any) -> set[str]:
                 if token not in resource_population_vocabulary:
                     pair_unbound()
                     continue
-                if _count(population.get("document_count")) != corpus_count:
-                    pair_unbound()
-                if _count(population.get("page_denominator")) != corpus_pages:
-                    pair_unbound()
                 population_documents = population.get("documents")
+                r_pop_pins: dict[str, tuple[Optional[str], Optional[int]]] = {}
                 if isinstance(population_documents, list):
-                    r_pop_pins = {}
                     for entry in population_documents:
                         if not isinstance(entry, dict):
                             continue
@@ -5036,10 +5330,19 @@ def _native_route_violations(contract: Any, evidence: Any) -> set[str]:
                                 _text(entry.get("sha256")),
                                 _count(entry.get("pages")),
                             )
-                    if r_pop_pins != corpus_pins:
-                        pair_unbound()
-                else:
+                if not r_pop_pins:
                     pair_unbound()
+                else:
+                    if _count(population.get("document_count")) != len(r_pop_pins):
+                        pair_unbound()
+                    if _count(population.get("page_denominator")) != sum(
+                        pages for _, pages in r_pop_pins.values() if pages is not None
+                    ):
+                        pair_unbound()
+                    for entry_id, (sha, pages) in r_pop_pins.items():
+                        route_pin = corpus_pins.get(entry_id)
+                        if route_pin is None or (sha, pages) != route_pin:
+                            pair_unbound()
                 vocabulary = native_metrics if token == "native" else reference_metrics
                 metrics = population.get("metrics")
                 if not isinstance(metrics, list) or not metrics:
@@ -5372,6 +5675,156 @@ def _native_route_independence_violations(contract: Any, evidence: Any) -> set[s
         if _text(comparability.get("source_revision")) != route_revision:
             stale()
 
+    return violations
+
+def _threshold_candidates_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a threshold-candidate claim the artifact and the pins do not evidence.
+
+    The shape R141 forbids is a *claim* that the frozen thresholds were
+    recomputed on the expanded corpus -- a candidate presented beside its pin --
+    backed by no artifact, by an artifact whose pins no longer match the
+    committed bytes, by the pin re-labelled as the candidate (the self-reference
+    the honesty rule forbids), by a threshold claimed accepted, by a comparability
+    verdict without a shared corpus identity, or by a candidate row with no
+    denominator. ``set()`` (empty) means clean; a tree without the declaration
+    authority is *unverified*, never clean and never refuted.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("threshold_candidates")
+    if not isinstance(rule, dict):
+        return violations
+
+    def absent() -> None:
+        violations.add("candidate_absent")
+
+    def stale() -> None:
+        violations.add("candidate_stale")
+
+    def relabelled() -> None:
+        violations.add("pin_relabelled_as_candidate")
+
+    def accepted() -> None:
+        violations.add("threshold_accepted")
+
+    def comparability() -> None:
+        violations.add("comparability_without_shared_identity")
+
+    def unbound() -> None:
+        violations.add("unbound_candidate_denominator")
+
+    expected = rule.get("expected")
+    expected = expected if isinstance(expected, dict) else {}
+    direction_vocabulary = set(_text_list(expected.get("direction_vocabulary")))
+    comparability_vocabulary = set(_text_list(expected.get("comparability_vocabulary")))
+    accepted_tokens = set(_text_list(expected.get("accepted_verdict_tokens")))
+    locks_rule = expected.get("locks")
+    locks_rule = locks_rule if isinstance(locks_rule, dict) else {}
+
+    candidate = evidence.get("candidate")
+    if evidence.get("candidate_exists") is not True or not isinstance(candidate, dict):
+        absent()
+        return violations
+
+    # The envelope: diagnostic-only, no product-coverage effect, thresholds still
+    # not accepted and every promotion lock closed.
+    if _text(candidate.get("claim_scope")) != _text(expected.get("claim_scope")):
+        accepted()
+    if _text(candidate.get("product_coverage_effect")) != _text(
+        expected.get("product_coverage_effect")
+    ):
+        accepted()
+    if _text(candidate.get("thresholds")) != _text(expected.get("thresholds")):
+        accepted()
+    locks = candidate.get("locks")
+    if not isinstance(locks, dict):
+        accepted()
+    else:
+        for key, want in locks_rule.items():
+            if str(locks.get(key)) != str(want):
+                accepted()
+
+    # The candidate must name the committed pins, and the corpus it measured must
+    # be the declared route corpus.
+    frozen = candidate.get("frozen_reference")
+    declared_pins = _text(frozen.get("sha256")) if isinstance(frozen, dict) else None
+    live_pins = _text(evidence.get("pins_sha256"))
+    if declared_pins is None or live_pins is None or declared_pins != live_pins:
+        stale()
+
+    corpus = candidate.get("corpus")
+    if not isinstance(corpus, dict):
+        stale()
+    else:
+        if _count(corpus.get("document_count")) != _count(
+            evidence.get("corpus_document_count")
+        ):
+            stale()
+        if _count(corpus.get("page_denominator")) != _count(
+            evidence.get("corpus_page_denominator")
+        ):
+            stale()
+
+    pinned = evidence.get("pinned_thresholds")
+    pinned = pinned if isinstance(pinned, dict) else {}
+    rows = candidate.get("threshold_candidates")
+    if not isinstance(rows, list) or not rows:
+        absent()
+        return violations
+
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            unbound()
+            continue
+        threshold_id = _text(row.get("threshold_id"))
+        if threshold_id is not None:
+            seen.add(threshold_id)
+        if _text(row.get("direction")) not in direction_vocabulary:
+            unbound()
+        verdict = _text(row.get("verdict"))
+        if verdict is not None and verdict in accepted_tokens:
+            accepted()
+        comparability_token = _text(row.get("comparability"))
+        if comparability_token is not None and comparability_token not in (
+            comparability_vocabulary
+        ):
+            comparability()
+        elif comparability_token == "matched":
+            population = corpus.get("population") if isinstance(corpus, dict) else None
+            if not isinstance(population, dict) or _text(corpus.get("id") or "") != _text(
+                population.get("id") or ""
+            ):
+                comparability()
+        candidate_row = row.get("candidate")
+        if not isinstance(candidate_row, dict):
+            unbound()
+        else:
+            denominator = _count(candidate_row.get("denominator"))
+            fraction = candidate_row.get("fraction")
+            fraction_denominator = (
+                _count(fraction.get("denominator")) if isinstance(fraction, dict) else None
+            )
+            if (
+                denominator is None
+                or denominator <= 0
+                or fraction_denominator is None
+                or fraction_denominator <= 0
+            ):
+                unbound()
+        reference = row.get("reference")
+        if isinstance(reference, dict) and isinstance(candidate_row, dict):
+            if reference.get("fraction") == candidate_row.get("fraction"):
+                relabelled()
+        if threshold_id is not None and threshold_id in pinned and isinstance(reference, dict):
+            pin_fraction = pinned[threshold_id].get("fraction")
+            if _fraction_pair(reference.get("fraction")) != _fraction_pair(pin_fraction):
+                stale()
+    if pinned and seen != set(pinned):
+        stale()
     return violations
 
 def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:

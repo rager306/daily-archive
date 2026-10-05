@@ -65,6 +65,7 @@ PARITY_RECEIPT = "artifacts/parse_compat/native_family_parity.json"
 EXCLUSION_RECEIPT = "artifacts/parse_compat/native_exclusion_recovery.json"
 DECLARATION_MANIFEST = "data/parse/layout_bakeoff.yaml"
 PRESERVED_PROVENANCE = "crates/da-parse/tests/fixtures/preserved/provenance.yaml"
+ACCEPTANCE_MANIFEST = "data/parse/acceptance_manifest.yaml"
 HOLDOUT_MANIFEST = "data/parse/holdout_manifests.yaml"
 RELEASE_PROBE = "artifacts/parse_compat/external_holdout_release_probe.json"
 POSITIVE_FIXTURE = "governor/fixtures/absorption_progress/native_family.positive.json"
@@ -176,8 +177,17 @@ def test_live_receipt_pins_match_the_frozen_carrier_bytes(
 
     provenance = _load_yaml(PRESERVED_PROVENANCE)
     pins = {entry["path"]: entry["sha256"] for entry in provenance["fixtures"]}
+    # The frozen acceptance manifest extends the preserved-provenance oracle over
+    # the added route documents, so its holdout reference TEI rows are pins too.
+    holdout = _load_yaml(ACCEPTANCE_MANIFEST)["external_holdout_contract"][
+        "release_probe"
+    ]["reference_tei"]
+    pins.update({entry["path"]: entry["sha256"] for entry in holdout})
     for document in parity["oracle"]["documents"]:
-        assert pins[document["fixture_path"]] == document["sha256"]
+        assert (
+            pins[document["fixture_path"]].split("sha256:")[-1]
+            == document["sha256"].split("sha256:")[-1]
+        )
 
     assert exclusion["declaration"]["revision_sha256"] == "sha256:" + _bare_sha(HOLDOUT_MANIFEST)
     assert exclusion["probe"]["revision_sha256"] == "sha256:" + _bare_sha(RELEASE_PROBE)
@@ -191,12 +201,12 @@ def test_live_receipts_keep_the_declared_populations(
     parity = evidence["receipts"]["parity"]["document"]
     exclusion = evidence["receipts"]["exclusion"]["document"]
 
-    corpus = _load_yaml(DECLARATION_MANIFEST)["corpus"]["documents"]
+    corpus = _load_yaml(DECLARATION_MANIFEST)["native_route_corpus"]["documents"]
     pinned = {entry["id"]: entry["sha256"] for entry in corpus}
     declared = {entry["id"]: entry["sha256"] for entry in parity["populations"][0]["documents"]}
     assert declared == pinned
-    assert parity["populations"][0]["document_count"] == len(corpus) == 3
-    assert parity["populations"][0]["page_denominator"] == 202
+    assert parity["populations"][0]["document_count"] == len(corpus) == 12
+    assert parity["populations"][0]["page_denominator"] == 381
 
     assert exclusion["population"]["assigned"] == 610
     assert exclusion["population"]["excluded"] == 79

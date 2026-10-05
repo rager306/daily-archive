@@ -192,7 +192,7 @@ java_free_slice:
     pointer: defaults.cascade_stages
   corpus:
     manifest: data/parse/layout_bakeoff.yaml
-    pointer: corpus.documents
+    pointer: native_route_corpus.documents
   expected:
     claim_scope: diagnostic_only
     product_coverage_effect: none
@@ -293,6 +293,14 @@ native_family_receipt:
     - id: preserved_tei_provenance
       path: crates/da-parse/tests/fixtures/preserved/provenance.yaml
       pointer: fixtures
+      kind: oracle_pins
+    # The frozen acceptance manifest pins the holdout reference TEI that extends
+    # the preserved-provenance oracle over the added route documents. It is a
+    # declared carrier so the receipt's added-fixture pins are bound to committed
+    # bytes rather than trusted.
+    - id: holdout_reference_tei
+      path: data/parse/acceptance_manifest.yaml
+      pointer: external_holdout_contract.release_probe.reference_tei
       kind: oracle_pins
     - id: holdout_manifests
       path: data/parse/holdout_manifests.yaml
@@ -409,6 +417,8 @@ native_content_receipt:
   oracle:
     manifest: crates/da-parse/tests/fixtures/preserved/provenance.yaml
     pointer: fixtures
+    holdout_manifest: data/parse/acceptance_manifest.yaml
+    holdout_pointer: external_holdout_contract.release_probe.reference_tei
     segmentation_manifest: data/parse/document_segmentation.yaml
     segmentation_source: artifacts/parse_compat/document_segmentation_oracle_source.json
   populations:
@@ -599,7 +609,7 @@ native_route_e2e:
           kind: content_carrier
         - path: crates/da-parse/tests/fixtures/preserved/provenance.yaml
           kind: oracle_pins
-      value: "sha256:7e49372de845a745c562d97cd4faec7afc34a5615c44b0609e3580a32aae09c0"
+      value: "sha256:ea7e61e52be0757f79442988cf3f723f1582f5bf843059855b5ad5290cbb6d83"
     ceiling_metric_source:
       manifest: data/parse/comparison_contract.yaml
       pointer: batch_budget_ceilings.metrics
@@ -862,6 +872,62 @@ native_route_independence:
     - native_route_independence_lock_opened
     - native_route_independence_product_coverage_claimed
     - native_route_independence_threshold_claimed
+
+# ── Threshold candidates half (M516-th0oby/S03/T03) ────────────────────────
+# T03 published `artifacts/parse_compat/absorption_progress_threshold_candidates.json`:
+# each of the three frozen thresholds is presented beside the retained reference pin,
+# the candidate fraction measured on the expanded native-route corpus, and an explicit
+# comparability verdict (D545). This sibling half makes that artifact auditable rather
+# than merely present: a candidate file that is absent or stale, a pin re-labelled as
+# the candidate, a threshold claimed accepted, a comparability verdict without a shared
+# corpus identity and an unbound candidate denominator are each a typed, fail-closed
+# finding.
+#
+# The rule names where the artifact and its two authorities live and what a candidate
+# must declare; nothing about the artifact contents is restated, so the rule cannot
+# drift from the artifact it governs. The pins resolve from the frozen schema by
+# pointer and the corpus resolves from the S03 declaration; the reader recomputes every
+# sha256 from the committed bytes. The candidate is the independent measurement the
+# frozen pins must never be rewritten to (the self-reference the honesty rule forbids):
+# the half refuses a candidate that equals its pin.
+#
+# Severity: this block registers no dimension and no severity — it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks (D492).
+threshold_candidates:
+  schema_version: threshold-candidates-rule.v1
+  declaration:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: native_route_corpus.documents
+  pinned_reference:
+    manifest: data/parse/absorption_progress.schema.yaml
+    pointer: threshold_policy
+    pins_path: artifacts/parse_compat/absorption_progress_reference_pins.json
+    pins_pointer: values
+  candidate:
+    path: artifacts/parse_compat/absorption_progress_threshold_candidates.json
+    schema_version: absorption-progress-threshold-candidates.v1
+    required: true
+  expected:
+    claim_scope: diagnostic_only
+    product_coverage_effect: none
+    thresholds: not_accepted
+    locks:
+      deployed: "false"
+      import_eligible: "false"
+      auto_promote: forbidden
+      production_route: forbidden
+      graph_write: forbidden
+    direction_vocabulary: [at_least, at_most]
+    comparability_vocabulary: [not_comparable, matched]
+    accepted_verdict_tokens: [accepted, attained, met]
+  violations:
+    - candidate_absent
+    - candidate_stale
+    - pin_relabelled_as_candidate
+    - threshold_accepted
+    - comparability_without_shared_identity
+    - unbound_candidate_denominator
 
 # ── Acceptance package gate ledger (M514/S08/T06) ─────────────────────────
 # T05 published `artifacts/parse_compat/grobid_retirement_acceptance_package.json`:

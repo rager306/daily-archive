@@ -3000,6 +3000,16 @@ class TrajectoryService:
             # reused declaration authority stays silence, not compliance, so a tree
             # without the carrier yields no finding here.
             "native_route_independence": reader.read_native_route_independence(contract),
+            # S03/T04 (M516-th0oby): the threshold-candidate artifact presents each
+            # frozen threshold beside its retained pin and a candidate fraction
+            # measured on the expanded native-route corpus, with an explicit
+            # comparability verdict (D545). Publishing it here (MEM1948) keeps the
+            # half non-vacuous: a candidate re-labelled as the pin, a threshold
+            # claimed accepted, a stale candidate and an unbound denominator must
+            # each reach the composed finding rather than read as clean by being
+            # never observed. Absence of the declaration authority stays silence,
+            # not compliance.
+            "threshold_candidates": reader.read_threshold_candidates(contract),
             # S08/T06: the acceptance package is the artifact that binds every S08
             # carrier and names every mandatory gate with a computed
             # `s09_authorized`. Publishing it without a sibling governor half would

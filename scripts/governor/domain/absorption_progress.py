@@ -82,6 +82,7 @@ __all__ = [
     "NATIVE_ROUTE_VIOLATION_LABELS",
     "RETIREMENT_READINESS_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
+    "THRESHOLD_CANDIDATES_VIOLATION_LABELS",
     "THRESHOLD_DIRECTIONS",
     "comparability_key",
     "contract_thresholds",
@@ -398,6 +399,22 @@ NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS = frozenset(
         "native_route_independence_lock_opened",
         "native_route_independence_product_coverage_claimed",
         "native_route_independence_threshold_claimed",
+    }
+)
+
+#: The threshold-candidate half's closed label set (M516-th0oby/S03/T03). The
+#: candidate artifact is the *independent* measurement the frozen pins must never
+#: be rewritten to; a candidate re-labelled as the pin, a threshold claimed
+#: accepted, a comparability verdict without a shared corpus identity, and an
+#: unbound candidate denominator are each a typed, fail-closed finding.
+THRESHOLD_CANDIDATES_VIOLATION_LABELS = frozenset(
+    {
+        "candidate_absent",
+        "candidate_stale",
+        "pin_relabelled_as_candidate",
+        "threshold_accepted",
+        "comparability_without_shared_identity",
+        "unbound_candidate_denominator",
     }
 )
 

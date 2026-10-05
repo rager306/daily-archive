@@ -162,8 +162,8 @@ def test_live_receipts_are_resolved_by_pointer_and_validate_clean(
     assert live_evidence["resource_receipt_exists"] is True
     assert isinstance(live_evidence["receipt"], dict)
     assert isinstance(live_evidence["resource_receipt"], dict)
-    assert live_evidence["corpus_document_count"] == 3
-    assert live_evidence["corpus_page_denominator"] == 202
+    assert live_evidence["corpus_document_count"] == 12
+    assert live_evidence["corpus_page_denominator"] == 381
     assert live_evidence["stage_ids"] == [f"P{index}" for index in range(10)]
     assert live_evidence["admission_stage"] == "P0"
     assert live_evidence["stages_in_slice"] == ["P1", "P2"]
@@ -196,14 +196,27 @@ def test_live_receipts_keep_the_frozen_carrier_pins(
 def test_live_route_keeps_the_declared_slice_and_typed_cells(
     contract: dict, live_evidence: dict, live_receipt: dict, live_resource: dict
 ) -> None:
-    """3 documents / 202 pages, a total P0..P9 stance per document, typed families."""
+    """12 documents / 381 pages, a total P0..P9 stance per document, typed families."""
     expected = contract["native_route_e2e"]["expected"]
     corpus_pins = {entry["id"]: entry for entry in live_evidence["corpus_documents"]}
-    assert set(corpus_pins) == {"hub-2507.19457", "rlm-2512.24601", "reca-2605.26525v1"}
-    assert sum(entry["pages"] for entry in corpus_pins.values()) == 202
+    assert set(corpus_pins) == {
+        "hub-2507.19457",
+        "rlm-2512.24601",
+        "reca-2605.26525v1",
+        "1409.0473",
+        "1410.4615",
+        "1410.5401",
+        "1506.02438",
+        "2402.04268",
+        "2402.10980",
+        "2406.13163",
+        "1203.2295",
+        "2502.05199",
+    }
+    assert sum(entry["pages"] for entry in corpus_pins.values()) == 381
 
     documents = live_receipt["documents"]
-    assert len(documents) == 3
+    assert len(documents) == 12
     assert {document["id"] for document in documents} == set(corpus_pins)
     for document in documents:
         assert document["sha256"] == corpus_pins[document["id"]]["sha256"]
@@ -238,12 +251,21 @@ def test_live_route_keeps_the_declared_slice_and_typed_cells(
     assert body["plane_preservation"] in expected["body_verdict_vocabulary"]
     assert body["plane_gap_reason"] in expected["body_reason_vocabulary"]
 
+    # The same-n resource receipt is measured over the S02 corridor, a *subset*
+    # of the S03 route corpus (a document with no Java reference cannot enter a
+    # same-n comparison).
     resource_corpus = live_resource["corpus"]
-    assert resource_corpus["document_count"] == 3
-    assert resource_corpus["page_denominator"] == 202
+    assert resource_corpus["document_count"] == len(resource_corpus["documents"])
+    assert resource_corpus["page_denominator"] == sum(
+        entry["pages"] for entry in resource_corpus["documents"]
+    )
     assert {
-        (entry["id"], entry["sha256"]) for entry in resource_corpus["documents"]
-    } == {(entry["id"], entry["sha256"]) for entry in live_evidence["corpus_documents"]}
+        (entry["id"], entry["sha256"], entry["pages"])
+        for entry in resource_corpus["documents"]
+    } <= {
+        (entry["id"], entry["sha256"], entry["pages"])
+        for entry in live_evidence["corpus_documents"]
+    }
 
 
 def test_live_tree_service_reports_no_native_route_finding() -> None:
@@ -302,6 +324,29 @@ def test_the_service_path_consumes_the_family_observation(monkeypatch) -> None:
     broken_flags = [f for f in flags if f.flag == "absorption_progress_broken"]
     assert broken_flags, [f.flag for f in flags]
     assert "native_family_claim_without_receipt" in broken_flags[0].evidence
+
+
+def test_the_service_path_consumes_the_threshold_candidates_observation(
+    monkeypatch,
+) -> None:
+    """The T03 threshold-candidate half must be consumed by the live service.
+
+    MEM1948: a sibling half is inert unless `_check_absorption_progress` puts the
+    reader's bundle into the observations map. Patching the reader to return a
+    broken candidate bundle must surface as a composed finding.
+    """
+    def broken(self, contract):  # noqa: ANN001, ARG001
+        return {"available": True, "candidate": None}
+
+    monkeypatch.setattr(
+        FilesystemAbsorptionProgressReader, "read_threshold_candidates", broken
+    )
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _REPO_ROOT
+    flags = service._check_absorption_progress()
+    broken_flags = [f for f in flags if f.flag == "absorption_progress_broken"]
+    assert broken_flags, [f.flag for f in flags]
+    assert "candidate_absent" in broken_flags[0].evidence
 
 
 # ── fixtures: positive clean, negative matrix covers the closed set ────────

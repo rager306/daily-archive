@@ -60,6 +60,7 @@ fn parse_args() -> Result<Args, String> {
 }
 
 fn main() -> ExitCode {
+    let _log_guard = da_cli::logging::init_pipeline_logging("native_route_threshold_candidates");
     let args = match parse_args() {
         Ok(args) => args,
         Err(error) => {

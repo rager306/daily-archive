@@ -146,8 +146,8 @@ def test_live_receipt_is_resolved_by_pointer_and_validates_clean(
     assert live_evidence["emission_exists"] is True
     assert live_evidence["route_receipt_exists"] is True
     assert isinstance(live_evidence["receipt"], dict)
-    assert live_evidence["emission_corpus"]["document_count"] == 3
-    assert live_evidence["emission_corpus"]["page_denominator"] == 202
+    assert live_evidence["emission_corpus"]["document_count"] == 12
+    assert live_evidence["emission_corpus"]["page_denominator"] == 381
     assert _native_route_independence_violations(contract, live_evidence) == set()
 
 
@@ -181,8 +181,8 @@ def test_live_axis_is_measured_with_a_non_empty_denominator(
     axis = receipt["axis"]
     assert axis["state"] == "measured"
     assert axis["value"] == 0
-    assert axis["denominator"]["documents"] == 3
-    assert axis["denominator"]["pages"] == 202
+    assert axis["denominator"]["documents"] == 12
+    assert axis["denominator"]["pages"] == 381
     assert receipt["claim_scope"] == "diagnostic_only"
     assert receipt["product_coverage_effect"] == "none"
     assert receipt["thresholds"] == "not_accepted"

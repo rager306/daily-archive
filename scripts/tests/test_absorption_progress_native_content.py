@@ -68,6 +68,7 @@ BASELINE_PATH = "artifacts/parse_compat/absorption_progress_baseline.json"
 RECEIPT_PATH = "artifacts/parse_compat/native_content_receipt.json"
 DECLARATION_MANIFEST = "data/parse/layout_bakeoff.yaml"
 ORACLE_MANIFEST = "crates/da-parse/tests/fixtures/preserved/provenance.yaml"
+HOLDOUT_MANIFEST = "data/parse/acceptance_manifest.yaml"
 SEGMENTATION_MANIFEST = "data/parse/document_segmentation.yaml"
 SEGMENTATION_SOURCE = "artifacts/parse_compat/document_segmentation_oracle_source.json"
 POSITIVE_FIXTURE = "governor/fixtures/absorption_progress/native_content.positive.json"
@@ -156,8 +157,8 @@ def test_live_receipt_is_resolved_by_pointer_and_validates_clean(
     assert live_evidence["errors"] == []
     assert live_evidence["receipt_exists"] is True
     assert isinstance(live_evidence["receipt"], dict)
-    assert live_evidence["corpus_document_count"] == 3
-    assert live_evidence["corpus_page_denominator"] == 202
+    assert live_evidence["corpus_document_count"] == 12
+    assert live_evidence["corpus_page_denominator"] == 381
     assert set(live_evidence["oracle_fixture_pins"]) and all(
         pin.get("recomputed_sha256") for pin in live_evidence["oracle_fixture_pins"].values()
     )
@@ -189,8 +190,17 @@ def test_live_receipt_pins_match_the_frozen_carrier_bytes(
 
     provenance = _load_yaml(ORACLE_MANIFEST)
     pins = {entry["path"]: entry["sha256"] for entry in provenance["fixtures"]}
+    # The frozen acceptance manifest extends the preserved-provenance oracle over
+    # the added route documents, so its holdout reference TEI rows are pins too.
+    holdout = _load_yaml(HOLDOUT_MANIFEST)["external_holdout_contract"][
+        "release_probe"
+    ]["reference_tei"]
+    pins.update({entry["path"]: entry["sha256"] for entry in holdout})
     for document in live_receipt["oracle"]["documents"]:
-        assert pins[document["fixture_path"]] == document["sha256"]
+        assert (
+            pins[document["fixture_path"]].split("sha256:")[-1]
+            == document["sha256"].split("sha256:")[-1]
+        )
 
     assert live_evidence["declaration_sha256"] == "sha256:" + _bare_sha(DECLARATION_MANIFEST)
     assert live_evidence["oracle_sha256"] == "sha256:" + _bare_sha(ORACLE_MANIFEST)
@@ -205,7 +215,7 @@ def test_live_receipt_pins_match_the_frozen_carrier_bytes(
 def test_live_receipt_keeps_the_declared_population_and_total_partition(
     live_receipt: dict
 ) -> None:
-    corpus = _load_yaml(DECLARATION_MANIFEST)["corpus"]
+    corpus = _load_yaml(DECLARATION_MANIFEST)["native_route_corpus"]
     pinned = {entry["id"]: entry["sha256"] for entry in corpus["documents"]}
 
     populations = live_receipt["populations"]
@@ -224,12 +234,12 @@ def test_live_receipt_keeps_the_declared_population_and_total_partition(
         total_documents += population["document_count"]
         total_pages += population["page_denominator"]
     assert declared == pinned
-    assert total_documents == corpus["corpus_n"] == 3
-    assert total_pages == corpus["page_denominator"] == 202
+    assert total_documents == corpus["corpus_n"] == 12
+    assert total_pages == corpus["page_denominator"] == 381
 
     partition = live_receipt["partition"]
     assert partition["state"] == "partitioned"
-    assert partition["declared_document_count"] == 3
+    assert partition["declared_document_count"] == 12
     assigned = {assignment["document_id"] for assignment in partition["assignments"]}
     assert assigned == set(pinned)
     assert live_receipt["pooling"]["group_strata_pooled"] is False

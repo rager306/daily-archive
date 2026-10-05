@@ -402,7 +402,7 @@ def native_route_freeze_violations(fixtures: Fixtures) -> list[str]:
         count = pages = None
     if (
         corpus.get("manifest") != DECLARATION_MANIFEST
-        or corpus.get("pointer") != "corpus.documents"
+        or corpus.get("pointer") != "native_route_corpus.documents"
         or count != corpus.get("document_count")
         or pages != corpus.get("page_denominator")
         or _resolve(fixtures.layout, corpus.get("count_pointer"))
@@ -504,12 +504,21 @@ def test_live_block_is_clean_and_bound_to_the_live_carriers() -> None:
     assert native_route_freeze_violations(fixtures) == []
 
     documents = _resolve(fixtures.layout, fixtures.block["corpus"]["pointer"])
-    assert isinstance(documents, list) and len(documents) == 3
-    assert sum(doc["pages"] for doc in documents) == 202
+    assert isinstance(documents, list) and len(documents) == 12
+    assert sum(doc["pages"] for doc in documents) == 381
     assert {doc["id"] for doc in documents} == {
         "hub-2507.19457",
         "rlm-2512.24601",
         "reca-2605.26525v1",
+        "1409.0473",
+        "1410.4615",
+        "1410.5401",
+        "1506.02438",
+        "2402.04268",
+        "2402.10980",
+        "2406.13163",
+        "1203.2295",
+        "2502.05199",
     }
 
 
