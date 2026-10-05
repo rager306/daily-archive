@@ -78,6 +78,7 @@ __all__ = [
     "JAVA_FREE_SLICE_VIOLATION_LABELS",
     "NATIVE_CONTENT_VIOLATION_LABELS",
     "NATIVE_FAMILY_VIOLATION_LABELS",
+    "NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS",
     "NATIVE_ROUTE_VIOLATION_LABELS",
     "RETIREMENT_READINESS_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
@@ -362,6 +363,41 @@ RETIREMENT_READINESS_VIOLATION_LABELS = frozenset(
         "retirement_readiness_body_residual_renamed",
         "retirement_readiness_product_coverage_claimed",
         "retirement_readiness_goal_marked_met",
+    }
+)
+
+#: The closed adapter-level vocabulary of the S02 native-route independence half
+#: (M516-th0oby/S02/T05). Literals on purpose (D492): the closed vocabulary is
+#: owned here, and the rule DATA restates it so a label the oracle can emit but
+#: that is not registered — or a registered label the oracle cannot emit — is a
+#: data/implementation mismatch rather than a silent finding. The adapter is the
+#: only layer that reads the receipt; it emits exactly these labels and nothing
+#: else, and none of them moves the product `java_independence` axis (D499).
+#:
+#: Why this half exists (R141): the T04 independence receipt records a
+#: *measured* axis (`state=measured`) whose value is bound to a non-empty
+#: denominator, an evidence identity and a comparability identity — unlike the
+#: product `java_independence` scorecard row, which legitimately stays
+#: `not_measured` while the production route is Java (D499/D508). A receipt that
+#: nothing independently re-reads is not evidence, so publishing it *without* a
+#: sibling governor half would let the artifact's mere existence read as
+#: progress. These literals name the refusals that keep the half honest:
+#: a claim with no receipt, a receipt whose pin no longer matches the committed
+#: carriers (stale), an axis that is not measured, a denominator or an evidence
+#: / comparability identity that is unbound, a guard-less observed zero, an
+#: opened promotion lock, and a product-coverage or threshold claim.
+NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS = frozenset(
+    {
+        "native_route_independence_claim_without_receipt",
+        "native_route_independence_receipt_stale",
+        "native_route_independence_axis_not_measured",
+        "native_route_independence_unbound_denominator",
+        "native_route_independence_unbound_evidence_identity",
+        "native_route_independence_unbound_comparability_identity",
+        "native_route_independence_guard_missing_for_observed_zero",
+        "native_route_independence_lock_opened",
+        "native_route_independence_product_coverage_claimed",
+        "native_route_independence_threshold_claimed",
     }
 )
 

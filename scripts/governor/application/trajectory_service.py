@@ -2983,6 +2983,23 @@ class TrajectoryService:
             # (R141). Absence of the declaration authority stays silence, not
             # compliance, so a tree without the carrier yields no finding here.
             "native_route_e2e": reader.read_native_route_e2e(contract),
+            # S02/T05 (M516-th0oby): the T04 independence receipt is the half that
+            # reports the route's guard-owned zero as a *measured* axis, bound to a
+            # non-empty denominator, an evidence identity and a comparability
+            # identity, with a diagnostic-only scope that leaves the product
+            # `java_independence` scorecard row untouched (D499/D508). Publishing
+            # the receipt without a sibling half would let the artifact's existence
+            # read as progress (R141), so the reader resolves the receipt, the
+            # committed emission artifact and the committed route receipt — with
+            # each recomputed sha256, the recomputed route-guard provenance digest,
+            # the emission's declared corpus/profile and the route declaration
+            # revision. The pure oracle then refuses a claim with no receipt, a
+            # stale pin, an axis that is not measured, an unbound denominator /
+            # evidence / comparability identity, a guard-less observed zero, an
+            # opened lock and a product-coverage or threshold claim. Absence of the
+            # reused declaration authority stays silence, not compliance, so a tree
+            # without the carrier yields no finding here.
+            "native_route_independence": reader.read_native_route_independence(contract),
             # S08/T06: the acceptance package is the artifact that binds every S08
             # carrier and names every mandatory gate with a computed
             # `s09_authorized`. Publishing it without a sibling governor half would

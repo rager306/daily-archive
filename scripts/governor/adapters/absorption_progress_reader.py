@@ -91,6 +91,7 @@ from governor.domain.absorption_progress import (
     JAVA_FREE_SLICE_VIOLATION_LABELS,
     NATIVE_CONTENT_VIOLATION_LABELS,
     NATIVE_FAMILY_VIOLATION_LABELS,
+    NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
     RETIREMENT_READINESS_VIOLATION_LABELS,
     contract_thresholds,
@@ -149,6 +150,7 @@ _RULE_KEYS = (
     "native_family_receipt",
     "native_content_receipt",
     "native_route_e2e",
+    "native_route_independence",
     "acceptance_package",
     "retirement_readiness",
 )
@@ -190,6 +192,26 @@ def projection_digest(projection: Any) -> Optional[str]:
     blob = json.dumps(
         [list(pair) for pair in pairs], ensure_ascii=False, separators=(",", ":")
     ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(blob).hexdigest()}"
+
+def canonical_json_digest(value: Any) -> Optional[str]:
+    """``sha256:<64 hex>`` over the canonical compact encoding of a JSON value.
+
+    The independence receipt's evidence identity binds the route receipt's guard
+    block by the digest of its canonical bytes. The Rust carrier serializes that
+    block with ``serde_json::to_vec`` (compact, one ``","``/``":"`` between
+    members, insertion order preserved). This helper reproduces exactly that
+    encoding so the Governor recomputes the digest from the committed route
+    receipt rather than trusting the receipt's own copy of it:
+    ``sha256(json.dumps(value, ensure_ascii=False, separators=(",", ":")))``.
+    ``None`` when the value cannot be encoded.
+    """
+    try:
+        blob = json.dumps(
+            value, ensure_ascii=False, separators=(",", ":")
+        ).encode("utf-8")
+    except (TypeError, ValueError):
+        return None
     return f"sha256:{hashlib.sha256(blob).hexdigest()}"
 
 
@@ -1201,6 +1223,149 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    def read_native_route_independence(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the S02 independence receipt and the committed carriers it binds.
+
+        The half this governs is the T04 receipt that turns the route's
+        guard-owned zero into a *measured* independence axis: a value bound to a
+        non-empty denominator, an evidence identity and a comparability identity,
+        with a diagnostic-only claim scope that leaves the product
+        ``java_independence`` scorecard axis untouched (D499/D508). The rule names
+        only *where* the receipt, the emission artifact and the route receipt live,
+        and reuses the sibling ``native_route_e2e`` declaration by pointer; nothing
+        about the receipt contents is restated in the rule.
+
+        ``None`` means the rule does not govern an independence half. Otherwise a
+        bundle carrying the receipt document, the committed emission artifact and
+        the committed route receipt, each with its recomputed ``sha256``, the
+        recomputed route-guard provenance digest, the emission's declared corpus
+        and profile fingerprint, and the route declaration revision. ``available``
+        is True only when the reused declaration authority resolves; a tree that
+        does not carry it is *absence*, not a violation, but an unreadable
+        *receipt* under a resolvable declaration is a claim with no evidence and
+        the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("native_route_independence")
+        if not isinstance(rule, dict):
+            return None
+
+        # The declaration authority is the sibling route half's, read by pointer
+        # so the manifest/pointer are never restated here (D377/D506).
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        from_block = _text(declaration_rule.get("from_block"))
+        sibling = contract.get(from_block) if from_block else None
+        sibling = sibling if isinstance(sibling, dict) else {}
+        sibling_declaration = sibling.get(_text(declaration_rule.get("field")) or "")
+        sibling_declaration = (
+            sibling_declaration if isinstance(sibling_declaration, dict) else {}
+        )
+        declaration_manifest = _text(sibling_declaration.get("manifest"))
+        declaration_pointer = _text(sibling_declaration.get("pointer"))
+
+        receipt_rule = rule.get("receipt")
+        receipt_rule = receipt_rule if isinstance(receipt_rule, dict) else {}
+        receipt_path = _text(receipt_rule.get("path"))
+
+        emission_rule = rule.get("emission_receipt")
+        emission_rule = emission_rule if isinstance(emission_rule, dict) else {}
+        emission_path = _text(emission_rule.get("path"))
+
+        route_rule = rule.get("route_receipt")
+        route_rule = route_rule if isinstance(route_rule, dict) else {}
+        route_path = _text(route_rule.get("path"))
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "declaration_sha256": (
+                self.file_sha256(declaration_manifest) if declaration_manifest else None
+            ),
+            "declaration": None,
+            "receipt_path": receipt_path,
+            "receipt_exists": bool(receipt_path and self.path_exists(receipt_path)),
+            "receipt_sha256": self.file_sha256(receipt_path) if receipt_path else None,
+            "receipt": None,
+            "emission_path": emission_path,
+            "emission_exists": bool(emission_path and self.path_exists(emission_path)),
+            "emission_sha256": self.file_sha256(emission_path) if emission_path else None,
+            "emission": None,
+            "emission_corpus": None,
+            "emission_profile_fingerprint": None,
+            "route_receipt_path": route_path,
+            "route_receipt_exists": bool(route_path and self.path_exists(route_path)),
+            "route_receipt_sha256": (
+                self.file_sha256(route_path) if route_path else None
+            ),
+            "route_receipt": None,
+            "guard_provenance_sha256": None,
+            "route_declaration_revision_sha256": None,
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["declaration"] = block
+                bundle["available"] = True
+
+        bundle["receipt"] = self.read_json(receipt_path) if receipt_path else None
+        if bundle["receipt"] is None and bundle["receipt_exists"]:
+            bundle["errors"].append("receipt_unreadable")
+
+        emission = self.read_json(emission_path) if emission_path else None
+        bundle["emission"] = emission
+        if emission is None and bundle["emission_exists"]:
+            bundle["errors"].append("emission_unreadable")
+        elif isinstance(emission, dict):
+            corpus = emission.get("corpus")
+            if isinstance(corpus, dict):
+                bundle["emission_corpus"] = {
+                    "corpus_id": _text(corpus.get("corpus_id")),
+                    "pointer": _text(corpus.get("pointer")),
+                    "document_count": _count(corpus.get("document_count")),
+                    "page_denominator": _count(corpus.get("page_denominator")),
+                }
+            documents = emission.get("documents")
+            if isinstance(documents, list) and documents and isinstance(documents[0], dict):
+                emission_block = documents[0].get("emission")
+                identity = (
+                    emission_block.get("identity")
+                    if isinstance(emission_block, dict)
+                    else None
+                )
+                if isinstance(identity, dict):
+                    bundle["emission_profile_fingerprint"] = _text(
+                        identity.get("profile_fingerprint")
+                    )
+
+        route_receipt = self.read_json(route_path) if route_path else None
+        bundle["route_receipt"] = route_receipt
+        if route_receipt is None and bundle["route_receipt_exists"]:
+            bundle["errors"].append("route_receipt_unreadable")
+        elif isinstance(route_receipt, dict):
+            guard = route_receipt.get("guard")
+            if isinstance(guard, dict):
+                bundle["guard_provenance_sha256"] = canonical_json_digest(guard)
+            declaration = route_receipt.get("declaration")
+            if isinstance(declaration, dict):
+                bundle["route_declaration_revision_sha256"] = _text(
+                    declaration.get("revision_sha256")
+                )
+
+        return bundle
+
     def read_acceptance_package(self, contract: Any) -> Optional[dict[str, Any]]:
         """Resolve the S08 acceptance package and every carrier it binds.
 
@@ -1644,6 +1809,9 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
     missing.extend(_native_family_receipt_vocabulary(contract.get("native_family_receipt")))
     missing.extend(_native_content_receipt_vocabulary(contract.get("native_content_receipt")))
     missing.extend(_native_route_vocabulary(contract.get("native_route_e2e")))
+    missing.extend(
+        _native_route_independence_vocabulary(contract.get("native_route_independence"))
+    )
     missing.extend(_acceptance_package_vocabulary(contract.get("acceptance_package")))
     missing.extend(_retirement_readiness_vocabulary(contract.get("retirement_readiness")))
     return missing
@@ -2108,6 +2276,93 @@ _UNRESOLVED = object()
 #: without inventing a JSON-pointer library (and its escape grammar) for it.
 _POINTER_SELECTOR_RE = re.compile(r"^([A-Za-z0-9_]+)\[([A-Za-z0-9_]+)=([^\[\]]+)\]$")
 
+
+def _native_route_independence_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``native_route_independence`` fields absent or unusable.
+
+    Without these the independence half cannot tell a declared-and-evidenced axis
+    from a claim with no receipt, an unbound denominator/identity or an
+    unregistered label. The declared label set must be exactly the domain's
+    literal set -- a label the oracle can emit must be registered, and a
+    registered label must be one the oracle can emit -- so an unregistered
+    emission is a data/implementation mismatch rather than a silent finding. The
+    caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["native_route_independence"]
+    missing: list[str] = []
+
+    if _text(block.get("schema_version")) is None:
+        missing.append("native_route_independence.schema_version")
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("native_route_independence.declaration")
+    else:
+        for key in ("from_block", "field"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"native_route_independence.declaration.{key}")
+
+    for key in ("receipt", "emission_receipt"):
+        receipt = block.get(key)
+        if not isinstance(receipt, dict):
+            missing.append(f"native_route_independence.{key}")
+            continue
+        if not _is_relative_path(receipt.get("path")):
+            missing.append(f"native_route_independence.{key}.path")
+        if _text(receipt.get("schema_version")) is None:
+            missing.append(f"native_route_independence.{key}.schema_version")
+        if receipt.get("required") is not True:
+            missing.append(f"native_route_independence.{key}.required")
+
+    route_receipt = block.get("route_receipt")
+    if not isinstance(route_receipt, dict):
+        missing.append("native_route_independence.route_receipt")
+    else:
+        if not _is_relative_path(route_receipt.get("path")):
+            missing.append("native_route_independence.route_receipt.path")
+        if _text(route_receipt.get("schema_version")) is None:
+            missing.append("native_route_independence.route_receipt.schema_version")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("native_route_independence.expected")
+    else:
+        for key in (
+            "claim_scope",
+            "product_coverage_effect",
+            "thresholds",
+            "oracle",
+            "guard_observer",
+        ):
+            if _text(expected.get(key)) is None:
+                missing.append(f"native_route_independence.expected.{key}")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict):
+            missing.append("native_route_independence.expected.locks")
+        else:
+            for key in (
+                "deployed",
+                "import_eligible",
+                "auto_promote",
+                "production_route",
+                "graph_write",
+            ):
+                if key not in locks:
+                    missing.append(f"native_route_independence.expected.locks.{key}")
+        for key in (
+            "measurement_state_vocabulary",
+            "denominator_fields",
+            "evidence_identity_keys",
+            "comparability_identity_keys",
+        ):
+            if not _text_list(expected.get(key)):
+                missing.append(f"native_route_independence.expected.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS):
+        missing.append("native_route_independence.violations")
+    return missing
 
 def _acceptance_package_vocabulary(block: Any) -> list[str]:
     """Dotted names of ``acceptance_package`` fields absent or unusable.
@@ -2619,6 +2874,7 @@ def absorption_progress_violations(
     _native_family_receipt_violations_into(contract, observations, violations)
     _native_content_receipt_violations_into(contract, observations, violations)
     _native_route_violations_into(contract, observations, violations)
+    _native_route_independence_violations_into(contract, observations, violations)
     _acceptance_package_violations_into(contract, observations, violations)
     _retirement_readiness_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
@@ -2953,6 +3209,21 @@ def _native_route_violations_into(
         _native_route_violations(
             contract,
             observations.get("native_route_e2e")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+def _native_route_independence_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the native-route independence labels carried by the observations."""
+    violations.update(
+        _native_route_independence_violations(
+            contract,
+            observations.get("native_route_independence")
             if isinstance(observations, dict)
             else None,
         )
@@ -4818,6 +5089,290 @@ def _native_route_violations(contract: Any, evidence: Any) -> set[str]:
 
     return violations
 
+
+def _native_route_independence_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse an independence claim the receipt and its carriers do not evidence.
+
+    The shape R141 forbids is a *claim* of native-route independence — a
+    `measured` axis (`state=measured`) whose value is bound to a non-empty
+    denominator, an evidence identity and a comparability identity — that is
+    backed by no receipt, by a receipt whose pins no longer match the committed
+    carriers, by an axis that is not measured, by an unbound denominator or
+    identity, by a guard-less observed zero, by an opened promotion lock, or by a
+    product-coverage or threshold claim. Concretely:
+
+    * ``claim_without_receipt`` — the reused S03 declaration resolves but the
+      required independence receipt is absent, unreadable, or not the receipt
+      this rule's own ``schema_version`` names;
+    * ``receipt_stale`` — a pin no longer matches the committed carrier: the
+      evidence identity's emission digest does not equal the recomputed bytes of
+      the emission artifact, the guard provenance digest does not equal the
+      recomputed digest of the route receipt's guard block, the receipt's corpus
+      no longer matches the emission's declared corpus, or its comparability
+      profile/source revision no longer matches the emission profile / route
+      declaration revision;
+    * ``axis_not_measured`` — the axis is absent or carries a state outside the
+      declared ``measurement_state_vocabulary``;
+    * ``unbound_denominator`` — the corpus or the axis denominator is absent,
+      zero, not repository-relative, or the two disagree;
+    * ``unbound_evidence_identity`` — the guard provenance digest is absent or
+      malformed, or the emission digest is missing/malformed/mismatched against
+      the receipt's own emission binding;
+    * ``unbound_comparability_identity`` — a declared comparability key is
+      absent/empty, the source revision is not a digest, or the oracle / corpus
+      id disagrees with the rule's declared oracle / the receipt corpus;
+    * ``guard_missing_for_observed_zero`` — an observed zero is offered by an
+      observer other than the declared one, or without the installed,
+      identity-isolated, positively controlled provenance that makes the zero a
+      measurement;
+    * ``lock_opened`` — a promotion lock the rule keeps closed is missing or
+      open;
+    * ``product_coverage_claimed`` / ``threshold_claimed`` — the claim is not
+      diagnostic-only with no product-coverage effect and no accepted thresholds,
+      which is the only scope that does not move the product ``java_independence``
+      axis (D499).
+
+    ``set()`` (empty) means clean. A missing or absent-evidence bundle is
+    *unverified*, never clean and never refuted: a tree that does not carry the
+    reused declaration authority is silence, not compliance, so nothing here is
+    inferred from an artifact's mere existence.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("native_route_independence")
+    if not isinstance(rule, dict):
+        return violations
+
+    expected = rule.get("expected") if isinstance(rule.get("expected"), dict) else {}
+    receipt_rule = rule.get("receipt") if isinstance(rule.get("receipt"), dict) else {}
+
+    def claim_without_receipt() -> None:
+        violations.add("native_route_independence_claim_without_receipt")
+
+    def stale() -> None:
+        violations.add("native_route_independence_receipt_stale")
+
+    def axis_not_measured() -> None:
+        violations.add("native_route_independence_axis_not_measured")
+
+    def unbound_denominator() -> None:
+        violations.add("native_route_independence_unbound_denominator")
+
+    def unbound_evidence() -> None:
+        violations.add("native_route_independence_unbound_evidence_identity")
+
+    def unbound_comparability() -> None:
+        violations.add("native_route_independence_unbound_comparability_identity")
+
+    def guard_missing() -> None:
+        violations.add("native_route_independence_guard_missing_for_observed_zero")
+
+    def lock_opened() -> None:
+        violations.add("native_route_independence_lock_opened")
+
+    def product_claimed() -> None:
+        violations.add("native_route_independence_product_coverage_claimed")
+
+    def threshold_claimed() -> None:
+        violations.add("native_route_independence_threshold_claimed")
+
+    def declares_false(value: Any) -> bool:
+        """True when a lock declares false in either JSON representation."""
+        if value is False:
+            return True
+        return isinstance(value, str) and value.strip().lower() == "false"
+
+    receipt = evidence.get("receipt")
+    if not isinstance(receipt, dict):
+        if receipt_rule.get("required") is True:
+            claim_without_receipt()
+        return violations
+
+    # The receipt must be the receipt THIS rule governs. A receipt of another
+    # schema is not evidence for this claim, so it is a claim without a receipt
+    # rather than a silent pass.
+    expected_schema = _text(receipt_rule.get("schema_version"))
+    if expected_schema is not None and _text(receipt.get("schema_version")) != expected_schema:
+        claim_without_receipt()
+        return violations
+
+    # ── claim scope: diagnostic only, no coverage, no accepted thresholds ──
+    if _text(receipt.get("claim_scope")) != _text(expected.get("claim_scope")):
+        product_claimed()
+    if _text(receipt.get("product_coverage_effect")) != _text(
+        expected.get("product_coverage_effect")
+    ):
+        product_claimed()
+    if _text(receipt.get("thresholds")) != _text(expected.get("thresholds")):
+        threshold_claimed()
+
+    locks_rule = expected.get("locks") if isinstance(expected.get("locks"), dict) else {}
+    locks = receipt.get("locks") if isinstance(receipt.get("locks"), dict) else {}
+    for lock, declared in locks_rule.items():
+        found = locks.get(lock)
+        if declared is False:
+            if not declares_false(found):
+                lock_opened()
+        elif found != declared:
+            lock_opened()
+
+    # ── the axis must be present and measured ─────────────────────────────
+    axis = receipt.get("axis") if isinstance(receipt.get("axis"), dict) else None
+    if axis is None:
+        axis_not_measured()
+        return violations
+    measurement_states = set(_text_list(expected.get("measurement_state_vocabulary")))
+    if measurement_states and _text(axis.get("state")) not in measurement_states:
+        axis_not_measured()
+
+    denominator_fields = _text_list(expected.get("denominator_fields")) or [
+        "documents",
+        "pages",
+    ]
+
+    # ── denominator: bound to a declared corpus and non-empty ─────────────
+    corpus = receipt.get("corpus") if isinstance(receipt.get("corpus"), dict) else None
+    if corpus is None:
+        unbound_denominator()
+    else:
+        if _text(corpus.get("corpus_id")) is None:
+            unbound_denominator()
+        if not _is_relative_path(corpus.get("pointer")):
+            unbound_denominator()
+        for field in denominator_fields:
+            if _count(corpus.get(field)) in (None, 0):
+                unbound_denominator()
+    axis_denominator = (
+        axis.get("denominator") if isinstance(axis.get("denominator"), dict) else None
+    )
+    if axis_denominator is None:
+        unbound_denominator()
+    else:
+        for field in denominator_fields:
+            if _count(axis_denominator.get(field)) in (None, 0):
+                unbound_denominator()
+        if corpus is not None:
+            for field in denominator_fields:
+                if _count(axis_denominator.get(field)) != _count(corpus.get(field)):
+                    unbound_denominator()
+
+    # ── evidence identity: well-formed and self-consistent ────────────────
+    evidence_identity = (
+        axis.get("evidence_identity")
+        if isinstance(axis.get("evidence_identity"), dict)
+        else None
+    )
+    emission_binding = (
+        receipt.get("emission") if isinstance(receipt.get("emission"), dict) else None
+    )
+    guard_digest = (
+        _text(evidence_identity.get("guard_provenance_sha256"))
+        if evidence_identity
+        else None
+    )
+    emission_digest = (
+        _text(evidence_identity.get("emission_sha256")) if evidence_identity else None
+    )
+    binding_digest = (
+        _text(emission_binding.get("artifact_sha256")) if emission_binding else None
+    )
+    if evidence_identity is None:
+        unbound_evidence()
+    else:
+        if guard_digest is None or not _SHA256_RE.match(guard_digest):
+            unbound_evidence()
+        if emission_digest is None and binding_digest is None:
+            pass
+        elif emission_digest is None or binding_digest is None:
+            unbound_evidence()
+        elif not _SHA256_RE.match(emission_digest) or not _SHA256_RE.match(binding_digest):
+            unbound_evidence()
+        elif emission_digest != binding_digest:
+            unbound_evidence()
+
+    # ── comparability: every key present, oracle and corpus consistent ────
+    comparability = (
+        axis.get("comparability_identity")
+        if isinstance(axis.get("comparability_identity"), dict)
+        else None
+    )
+    comparability_keys = _text_list(expected.get("comparability_identity_keys"))
+    if comparability is None:
+        unbound_comparability()
+    else:
+        for key in comparability_keys:
+            if _text(comparability.get(key)) is None:
+                unbound_comparability()
+        source_revision = _text(comparability.get("source_revision"))
+        if source_revision is not None and not _SHA256_RE.match(source_revision):
+            unbound_comparability()
+        oracle = _text(expected.get("oracle"))
+        if oracle is not None and _text(comparability.get("oracle")) != oracle:
+            unbound_comparability()
+        if corpus is not None and _text(comparability.get("corpus_id")) != _text(
+            corpus.get("corpus_id")
+        ):
+            unbound_comparability()
+
+    # ── a zero is a measurement only with an installed, isolated guard ────
+    guard = receipt.get("guard") if isinstance(receipt.get("guard"), dict) else None
+    guard_observer = _text(expected.get("guard_observer"))
+    if guard is None:
+        guard_missing()
+    else:
+        if guard_observer is not None and _text(guard.get("observer")) != guard_observer:
+            guard_missing()
+        if _count(axis.get("value")) == 0 and not (
+            guard.get("installed") is True
+            and guard.get("identity_isolated") is True
+            and guard.get("positive_control_observed") is True
+        ):
+            guard_missing()
+
+    # ── staleness: the receipt's pins must match the committed carriers ────
+    recomputed_emission = _text(evidence.get("emission_sha256"))
+    recomputed_guard = _text(evidence.get("guard_provenance_sha256"))
+    if recomputed_emission is None or emission_digest is None or binding_digest is None:
+        if emission_digest is not None or binding_digest is not None:
+            stale()
+    else:
+        if emission_digest != recomputed_emission or binding_digest != recomputed_emission:
+            stale()
+    if recomputed_guard is None:
+        if guard_digest is not None:
+            stale()
+    elif guard_digest is not None and guard_digest != recomputed_guard:
+        stale()
+
+    emission_corpus = (
+        evidence.get("emission_corpus")
+        if isinstance(evidence.get("emission_corpus"), dict)
+        else None
+    )
+    if emission_corpus is not None and corpus is not None:
+        if _text(corpus.get("corpus_id")) != _text(emission_corpus.get("corpus_id")):
+            stale()
+        for field, emission_field in (
+            ("documents", "document_count"),
+            ("pages", "page_denominator"),
+        ):
+            if _count(corpus.get(field)) != _count(emission_corpus.get(emission_field)):
+                stale()
+
+    emission_profile = _text(evidence.get("emission_profile_fingerprint"))
+    if comparability is not None and emission_profile is not None:
+        if _text(comparability.get("profile")) != emission_profile:
+            stale()
+
+    route_revision = _text(evidence.get("route_declaration_revision_sha256"))
+    if comparability is not None and route_revision is not None:
+        if _text(comparability.get("source_revision")) != route_revision:
+            stale()
+
+    return violations
 
 def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:
     """Refuse an acceptance-package claim the package does not evidence.
