@@ -1150,5 +1150,100 @@
       "governor_preflight": "gsd_exec 54f9dead-1dc0-402b-b26d-fac666cc4f54 governor --phase preflight --check-only exit 0",
       "remediation": "The first closeout attempt bundled fmt+clippy+build+smoke in one 300s script (gsd_exec 5d0b1c13) which SIGTERM-timed-out (timed_out=true), so the compound script's real final exit was 1 while closeout claimed 0. Every check was then re-run as an independent command on HEAD 2fbcefe6d; all exit 0."
     }
+  },
+  "t06_bounded_build_proof": {
+    "measured_at": "2026-10-05T16:00:00+07:00",
+    "head_revision": "4df634716cd3f91ece1105559845a0c4c375641a",
+    "toolchain": {
+      "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)"
+    },
+    "purpose": "Prove the bounded build surface still builds on the default and pdf-layout feature sets, and measure the disk-for-time tradeoff so a future session can reclaim safely.",
+    "pre_task_measurement": {
+      "target_total_human": "11G (du -sh before the T06 builds)",
+      "target_debug_examples_bytes": 186022455,
+      "target_debug_examples_unique_inode_count": 1,
+      "note": "Only the consolidated da_toolbox runner was present; its two directory entries are hardlinks to a single inode."
+    },
+    "builds": {
+      "default": {
+        "command": "cargo build --workspace --examples",
+        "exit_code": 0,
+        "wall_seconds": 769,
+        "log": "target/build_surface/default_build.log",
+        "target_total_bytes_after": 18056608344,
+        "target_debug_bytes_after": 18039620306,
+        "target_debug_deps_bytes_after": 8028093681,
+        "target_debug_examples_bytes_after": 6806819680,
+        "static_enabled_example_targets": 56,
+        "measured_unique_example_binaries": 58,
+        "binary_count_delta_vs_static": 2,
+        "gsd_exec_cached_replay": "815180c7-91ed-42c0-8ecc-b8693ab5f436 (exit 0, 7182 ms)"
+      },
+      "pdf_layout": {
+        "command": "cargo build -p da-cli --features pdf-layout --examples",
+        "exit_code": 0,
+        "wall_seconds": 451,
+        "log": "target/build_surface/pdflayout_build.log",
+        "target_total_bytes_after": 22416554554,
+        "target_debug_bytes_after": 22399551810,
+        "target_debug_deps_bytes_after": 8429489843,
+        "target_debug_examples_bytes_after": 10765136787,
+        "static_enabled_example_targets": 74,
+        "measured_unique_example_binaries": 90,
+        "gated_boundary_check": "layout_bakeoff (required-features=[pdf-layout]) present at 120.6 MB after this build; not produced by the default set.",
+        "gsd_exec_cached_replay": "89f9c4a1-aade-4486-9140-334ebb7a3c66 (exit 0, 12960 ms)"
+      }
+    },
+    "baseline_comparison_to_t01": {
+      "t01_target_total_bytes": 9208589624,
+      "t01_target_debug_examples_bytes": 0,
+      "t01_example_binaries_unique_inode_count": 0,
+      "t01_rlib_distinct_crates": 397,
+      "t06_rlib_distinct_crates": 408,
+      "t06_rlib_file_count": 1334,
+      "default_target_total_bytes": 18056608344,
+      "pdf_layout_target_total_bytes": 22416554554,
+      "target_growth_default_bytes": 8848018720,
+      "target_growth_default_to_pdf_layout_bytes": 4359946210,
+      "wall_cost_seconds": 1220,
+      "example_sources_top_level_unchanged": true
+    },
+    "tradeoff": {
+      "rebuild_cost_seconds": {
+        "default": 769,
+        "pdf_layout": 451,
+        "combined": 1220
+      },
+      "example_surface_bytes_after_both_builds": 10765136787,
+      "reclaimed_bytes_measured": 10716774400,
+      "reclaim_free_before_bytes": 3252195328,
+      "reclaim_free_after_bytes": 13968969728,
+      "post_reclaim_target_total_bytes": 11651418758,
+      "reclaim_method": "Removed the regenerable target/debug/examples contents (hardlinked example binaries plus .d/.rmeta); the governor closeout removes the same target artifacts per package, while the cache GC releases derived store entries.",
+      "consolidation_link_operations_removed": 156,
+      "consolidation_percent": 27.66,
+      "interpretation": "The bounded example surface is the dominant disk cost: rebuilding the default set costs 769 s and ~8.85 GB of target growth; the pdf-layout set adds ~4.36 GB more and 451 s. Reclaiming the example surface returns ~10.7 GB, so the trade is explicit: about 20 minutes of rebuild for about 10.7 GB."
+    },
+    "surface_integrity": {
+      "example_sources_top_level": 82,
+      "example_sources_total_rs": 112,
+      "sources_deleted": 0,
+      "static_distinct_example_targets": 83,
+      "static_default_enabled": 56,
+      "static_pdf_layout_enabled": 74,
+      "note": "cargo metadata is authoritative; the source counts are unchanged from the T02 post-consolidation surface. The file-level executable count is a superset of the static target count because default-variant and pdf-layout-variant binaries coexist in target/debug/examples under distinct content hashes."
+    },
+    "verification": {
+      "default_build": "cargo build --workspace --examples -> exit 0 in 769 s",
+      "pdf_layout_build": "cargo build -p da-cli --features pdf-layout --examples -> exit 0 in 451 s",
+      "cached_replays": [
+        "gsd_exec 815180c7-91ed-42c0-8ecc-b8693ab5f436 exit 0",
+        "gsd_exec 89f9c4a1-aade-4486-9140-334ebb7a3c66 exit 0"
+      ],
+      "reclaim": "gsd_exec 44b1f0a9-b213-474d-9ec1-21abd58a5739 freed 10716774400 B",
+      "measurement": "gsd_exec 07aa6130-47de-4875-aaf1-c51d46d93387",
+      "disk_pressure_event": "Filesystem free fell to 3.25 GB (99%) while the pdf-layout build ran because two unrelated workspaces were compiling concurrently (samyama-graph cargo test --release, kutha-graph cargo test). The regenerable default-variant example binaries were reclaimed mid-build, restoring free to 12.86 GB, and the build still completed exit 0. Total measured reclaim: 10.72 GB."
+    }
   }
 }
