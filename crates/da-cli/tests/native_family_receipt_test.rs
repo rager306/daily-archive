@@ -106,6 +106,9 @@ const BASELINE: &str =
 /// The governor check block that governs the two receipts.
 const GOV_CHECK: &str =
     include_str!("../../../scripts/governor/checks/grobid_absorption_progress.yaml");
+/// The frozen acceptance manifest that pins the holdout reference TEI, the
+/// independent oracle for the added route documents.
+const ACCEPTANCE_MANIFEST: &str = include_str!("../../../data/parse/acceptance_manifest.yaml");
 
 // ─────────────────────────── DATA mirrors ───────────────────────────
 
@@ -120,6 +123,28 @@ struct ProvenanceFixture {
     id: String,
     path: String,
     sha256: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceReferenceTei {
+    article_id: String,
+    path: String,
+    sha256: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceReleaseProbe {
+    reference_tei: Vec<AcceptanceReferenceTei>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceExternalHoldout {
+    release_probe: AcceptanceReleaseProbe,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceManifest {
+    external_holdout_contract: AcceptanceExternalHoldout,
 }
 
 #[derive(Debug, Deserialize)]
@@ -165,6 +190,56 @@ fn provenance() -> Provenance {
     serde_yaml::from_str(PROVENANCE).expect("the committed provenance must parse")
 }
 
+/// Repository root, resolved from this test's own crate directory
+/// (`crates/da-cli` → `../..`).
+fn repo_root() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// The frozen holdout reference-TEI rows, as the acceptance manifest pins them.
+fn acceptance_reference_tei() -> Vec<AcceptanceReferenceTei> {
+    serde_yaml::from_str::<AcceptanceManifest>(ACCEPTANCE_MANIFEST)
+        .expect("the committed acceptance manifest must parse")
+        .external_holdout_contract
+        .release_probe
+        .reference_tei
+}
+
+/// The pinned reference TEI for a declared document the preserved-provenance
+/// carrier does not name, keyed by normalized document identity.
+fn reference_tei_path(document_id: &str) -> String {
+    let key = normalize_document_identity(document_id);
+    acceptance_reference_tei()
+        .into_iter()
+        .find(|row| normalize_document_identity(&row.article_id) == key)
+        .unwrap_or_else(|| panic!("no pinned reference TEI for `{document_id}`"))
+        .path
+}
+
+/// The pinned oracle fixtures (preserved provenance plus the frozen holdout
+/// reference TEI), keyed by normalized identity, as `(path, bare sha256)`.
+fn oracle_pins() -> BTreeMap<String, (String, String)> {
+    let mut pins = BTreeMap::new();
+    for fixture in provenance().fixtures {
+        pins.insert(
+            normalize_document_identity(&fixture.id),
+            (fixture.path, fixture.sha256),
+        );
+    }
+    for row in acceptance_reference_tei() {
+        let sha = row
+            .sha256
+            .strip_prefix("sha256:")
+            .unwrap_or(&row.sha256)
+            .to_owned();
+        pins.insert(
+            normalize_document_identity(&row.article_id),
+            (row.path, sha),
+        );
+    }
+    pins
+}
+
 fn probe_population() -> ProbePopulation {
     let value: serde_json::Value = serde_json::from_str(PROBE).expect("the probe must parse");
     serde_json::from_value(
@@ -187,18 +262,25 @@ fn baseline_denominator() -> BaselineDenominator {
     .expect("the baseline denominator must parse")
 }
 
-fn tei_bytes_for(document_id: &str) -> &'static str {
+fn tei_bytes_for(document_id: &str) -> String {
     // Both id spellings (`hub_2507.19457` from the provenance pins and
     // `hub-2507.19457` from the corpus declaration) normalize to the same key,
     // so the arXiv id substring identifies the fixture.
     if document_id.contains("2507.19457") {
-        HUB_TEI
+        HUB_TEI.to_owned()
     } else if document_id.contains("2512.24601") {
-        RLM_TEI
+        RLM_TEI.to_owned()
     } else if document_id.contains("2605.26525") {
-        RECA_TEI
+        RECA_TEI.to_owned()
     } else {
-        panic!("no preserved TEI fixture for `{document_id}`")
+        // The added route documents are pinned by the frozen holdout reference
+        // TEI in the acceptance manifest. Read the git-tracked fixture bytes and
+        // let the caller hash them; a document with no pinned reference TEI is
+        // refused by name.
+        let path = reference_tei_path(document_id);
+        std::fs::read_to_string(repo_root().join(&path)).unwrap_or_else(|error| {
+            panic!("cannot read holdout TEI `{path}` for `{document_id}`: {error}")
+        })
     }
 }
 
@@ -224,11 +306,8 @@ fn parity_expectation() -> ParityExpectation {
             .collect(),
     };
     let mut oracle_fixture_sha256 = BTreeMap::new();
-    for fixture in provenance().fixtures {
-        oracle_fixture_sha256.insert(
-            normalize_document_identity(&fixture.id),
-            sha256_hex(tei_bytes_for(&fixture.id).as_bytes()),
-        );
+    for key in oracle_pins().into_keys() {
+        oracle_fixture_sha256.insert(key.clone(), sha256_hex(tei_bytes_for(&key).as_bytes()));
     }
     ParityExpectation {
         corpus,
@@ -368,7 +447,7 @@ fn committed_parity_receipt_replays_from_the_committed_carriers() {
     );
     assert_eq!(population.document_count, declaration.corpus_n as u64);
     assert_eq!(population.page_denominator, declaration.page_denominator);
-    assert_eq!(population.page_denominator, 202);
+    assert_eq!(population.page_denominator, 381);
     assert_eq!(population.documents.len(), declaration.documents.len());
     for (identity, declared) in population.documents.iter().zip(&declaration.documents) {
         assert_eq!(identity.id, declared.id);
@@ -1196,23 +1275,23 @@ fn every_receipt_mutation_fails_by_name() {
 
     // A corpus count that drifted from the documents it restates.
     let mut count = parity_expectation.clone();
-    count.corpus.document_count = 4;
+    count.corpus.document_count = 13;
     assert_eq!(
         validate_parity_receipt(&parity, &count).unwrap_err(),
         NativeFamilyReceiptError::CorpusCountDrift {
-            expected: 3,
-            found: 4
+            expected: 12,
+            found: 13
         }
     );
 
     // A corpus page denominator that drifted from the pinned documents.
     let mut pages = parity_expectation.clone();
-    pages.corpus.page_denominator = 203;
+    pages.corpus.page_denominator = 382;
     assert_eq!(
         validate_parity_receipt(&parity, &pages).unwrap_err(),
         NativeFamilyReceiptError::CorpusPageDrift {
-            expected: 202,
-            found: 203
+            expected: 381,
+            found: 382
         }
     );
 

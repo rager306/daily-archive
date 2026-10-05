@@ -79,7 +79,7 @@ use da_parse::{
     project_native_words, require_independent_section_oracle, require_non_vacuous_callout_oracle,
     require_non_vacuous_visual_oracle, segment_document_full, visual_oracle_positive_rows,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
@@ -103,6 +103,9 @@ const CLASSIFIER_VERSION: &str = "0.1.0";
 const GUARD_ENDPOINT: &str = "http://127.0.0.1:9";
 /// The gitignored-free reviewed segmentation fixture, committed.
 const SEGMENTATION_FIXTURE: &str = "crates/da-parse/tests/fixtures/segmentation_oracle.yaml";
+/// The frozen acceptance manifest that pins the holdout reference TEI; it
+/// extends the preserved-provenance oracle over the added route documents.
+const ACCEPTANCE_MANIFEST_REL: &str = "data/parse/acceptance_manifest.yaml";
 
 /// Subtrees stripped from the body-prose oracle (the T01 probe's exclusion set).
 const EXCLUDED_SUBTREES: [&str; 5] = ["figure", "table", "formula", "note", "figDesc"];
@@ -194,6 +197,70 @@ fn load_provenance(text: &str) -> Result<(String, Vec<Pin>), Box<dyn Error>> {
         });
     }
     Ok((backend, pins))
+}
+
+/// Fill the oracle-pin list with the frozen-holdout reference TEI for every
+/// declared document the preserved-provenance carrier does not name.
+///
+/// The independent oracle is data, not a fallback byte source: an added document
+/// whose reference TEI is not pinned is refused by name rather than measured
+/// against a silently absent oracle. The pin is `id` plus the bare sha256, the
+/// same shape `provenance.yaml` publishes.
+fn extend_oracle_pins_from_holdout(
+    root: &std::path::Path,
+    documents: &[da_cli::java_free_slice::DeclaredDocument],
+    pins: &mut Vec<Pin>,
+) -> Result<(), Box<dyn Error>> {
+    let covered: BTreeSet<String> = pins
+        .iter()
+        .map(|pin| normalize_document_identity(&pin.id))
+        .collect();
+    let missing: Vec<&da_cli::java_free_slice::DeclaredDocument> = documents
+        .iter()
+        .filter(|document| !covered.contains(&normalize_document_identity(&document.id)))
+        .collect();
+    if missing.is_empty() {
+        return Ok(());
+    }
+    let manifest_bytes = fs::read(root.join(ACCEPTANCE_MANIFEST_REL))?;
+    let manifest: serde_yaml::Value = serde_yaml::from_slice(&manifest_bytes)?;
+    let rows = manifest["external_holdout_contract"]["release_probe"]["reference_tei"]
+        .as_sequence()
+        .ok_or("the acceptance manifest declares no reference_tei rows")?;
+    let mut by_article: BTreeMap<String, (String, String)> = BTreeMap::new();
+    for row in rows {
+        let article = row["article_id"]
+            .as_str()
+            .ok_or("a reference_tei row declares no article_id")?;
+        let path = row["path"]
+            .as_str()
+            .ok_or("a reference_tei row declares no path")?;
+        let sha = row["sha256"]
+            .as_str()
+            .ok_or("a reference_tei row declares no sha256")?;
+        by_article.insert(
+            normalize_document_identity(article),
+            (
+                path.to_owned(),
+                sha.strip_prefix("sha256:").unwrap_or(sha).to_owned(),
+            ),
+        );
+    }
+    for document in missing {
+        let key = normalize_document_identity(&document.id);
+        let (path, sha256) = by_article.get(&key).ok_or_else(|| {
+            format!(
+                "no pinned reference TEI for declared document {}",
+                document.id
+            )
+        })?;
+        pins.push(Pin {
+            id: document.id.clone(),
+            path: path.clone(),
+            sha256: sha256.clone(),
+        });
+    }
+    Ok(())
 }
 
 /// Ordered opening-tag spans `<tag ...>` in the document (non-nested).
@@ -592,15 +659,21 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
 
     // ── oracle pins ────────────────────────────────────────────────────────
     let provenance_bytes = fs::read(args.root.join(CONTENT_ORACLE_MANIFEST_REL))?;
-    let (oracle_backend, pins) = load_provenance(std::str::from_utf8(&provenance_bytes)?)?;
+    let (oracle_backend, mut pins) = load_provenance(std::str::from_utf8(&provenance_bytes)?)?;
     if oracle_backend != ORACLE_BACKEND {
         return Err(
             format!("oracle backend is `{oracle_backend}`, expected `{ORACLE_BACKEND}`").into(),
         );
     }
+    // The preserved-provenance carrier names the S02 corridor fixtures; the added
+    // route documents are pinned by the frozen holdout reference TEI in the
+    // acceptance manifest, so the independent oracle covers the whole declared
+    // corpus. A declared document with no pinned reference TEI is refused by
+    // name, never measured against a silently absent oracle.
+    extend_oracle_pins_from_holdout(&args.root, &declaration.documents, &mut pins)?;
     if pins.len() != declaration.documents.len() {
         return Err(format!(
-            "provenance pins {} fixtures for {} declared documents",
+            "the oracle pins {} fixtures for {} declared documents",
             pins.len(),
             declaration.documents.len()
         )

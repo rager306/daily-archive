@@ -69,7 +69,7 @@ pub const DEFAULT_CONTENT_ARTIFACT_REL: &str = "artifacts/parse_compat/native_co
 /// Pointer to the slice declaration block inside the declaration carrier.
 pub const CONTENT_DECLARATION_POINTER: &str = "java_free_vertical_slice";
 /// Pointer to the pinned corpus documents.
-pub const CONTENT_CORPUS_POINTER: &str = "corpus.documents";
+pub const CONTENT_CORPUS_POINTER: &str = "native_route_corpus.documents";
 /// Repository-relative carrier of the preserved-TEI oracle pins (the same
 /// carrier S04 binds; this receipt never re-pins it).
 pub const CONTENT_ORACLE_MANIFEST_REL: &str =

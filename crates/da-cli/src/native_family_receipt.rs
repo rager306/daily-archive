@@ -47,7 +47,7 @@ pub const DECLARATION_MANIFEST_REL: &str = "data/parse/layout_bakeoff.yaml";
 /// Pointer to the slice declaration block inside the carrier.
 pub const DECLARATION_POINTER: &str = "java_free_vertical_slice";
 /// Pointer to the pinned corpus documents.
-pub const CORPUS_POINTER: &str = "corpus.documents";
+pub const CORPUS_POINTER: &str = "native_route_corpus.documents";
 /// Repository-relative carrier of the preserved-TEI oracle pins.
 pub const ORACLE_MANIFEST_REL: &str = "crates/da-parse/tests/fixtures/preserved/provenance.yaml";
 /// Identity of the oracle builder. It must differ from both native-band

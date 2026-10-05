@@ -132,6 +132,9 @@ const RECA_TEI: &str =
 /// The governor check block that governs this receipt.
 const GOV_CHECK: &str =
     include_str!("../../../scripts/governor/checks/grobid_absorption_progress.yaml");
+/// The frozen acceptance manifest that pins the holdout reference TEI, the
+/// independent oracle for the added route documents.
+const ACCEPTANCE_MANIFEST: &str = include_str!("../../../data/parse/acceptance_manifest.yaml");
 
 /// Identity of the classifier that produced the group partition. It mirrors the
 /// emitter's typed constants; a drift on either side is a test failure.
@@ -163,6 +166,29 @@ struct LayoutCorpus {
 #[derive(Debug, Deserialize)]
 struct Layout {
     corpus: LayoutCorpus,
+    native_route_corpus: LayoutCorpus,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceReferenceTei {
+    article_id: String,
+    path: String,
+    sha256: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceReleaseProbe {
+    reference_tei: Vec<AcceptanceReferenceTei>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceExternalHoldout {
+    release_probe: AcceptanceReleaseProbe,
+}
+
+#[derive(Debug, Deserialize)]
+struct AcceptanceManifest {
+    external_holdout_contract: AcceptanceExternalHoldout,
 }
 
 #[derive(Debug, Deserialize)]
@@ -321,23 +347,80 @@ fn provenance() -> Provenance {
     serde_yaml::from_str(PROVENANCE).expect("the committed provenance must parse")
 }
 
+/// Repository root, resolved from this test's own crate directory
+/// (`crates/da-cli` → `../..`).
+fn repo_root() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// The frozen holdout reference-TEI rows, as the acceptance manifest pins them.
+fn acceptance_reference_tei() -> Vec<AcceptanceReferenceTei> {
+    serde_yaml::from_str::<AcceptanceManifest>(ACCEPTANCE_MANIFEST)
+        .expect("the committed acceptance manifest must parse")
+        .external_holdout_contract
+        .release_probe
+        .reference_tei
+}
+
+/// The pinned reference TEI for a declared document the preserved-provenance
+/// carrier does not name, keyed by normalized document identity.
+fn reference_tei_path(document_id: &str) -> String {
+    let key = normalize_document_identity(document_id);
+    acceptance_reference_tei()
+        .into_iter()
+        .find(|row| normalize_document_identity(&row.article_id) == key)
+        .unwrap_or_else(|| panic!("no pinned reference TEI for `{document_id}`"))
+        .path
+}
+
+/// The pinned oracle fixtures (preserved provenance plus the frozen holdout
+/// reference TEI), keyed by normalized identity, as `(path, bare sha256)`.
+fn oracle_pins() -> BTreeMap<String, (String, String)> {
+    let mut pins = BTreeMap::new();
+    for fixture in provenance().fixtures {
+        pins.insert(
+            normalize_document_identity(&fixture.id),
+            (fixture.path, fixture.sha256),
+        );
+    }
+    for row in acceptance_reference_tei() {
+        let sha = row
+            .sha256
+            .strip_prefix("sha256:")
+            .unwrap_or(&row.sha256)
+            .to_owned();
+        pins.insert(
+            normalize_document_identity(&row.article_id),
+            (row.path, sha),
+        );
+    }
+    pins
+}
+
 fn gov() -> GovRule {
     serde_yaml::from_str::<GovCheck>(GOV_CHECK)
         .expect("the committed check must parse")
         .native_content_receipt
 }
 
-fn tei_bytes_for(document_id: &str) -> &'static str {
+fn tei_bytes_for(document_id: &str) -> String {
     // `hub_2507.19457` (provenance) and `hub-2507.19457` (declaration) normalize
     // to the same key, so the arXiv id substring identifies the fixture.
     if document_id.contains("2507.19457") {
-        HUB_TEI
+        HUB_TEI.to_owned()
     } else if document_id.contains("2512.24601") {
-        RLM_TEI
+        RLM_TEI.to_owned()
     } else if document_id.contains("2605.26525") {
-        RECA_TEI
+        RECA_TEI.to_owned()
     } else {
-        panic!("no preserved TEI fixture for `{document_id}`")
+        // The added route documents are pinned by the frozen holdout reference
+        // TEI in the acceptance manifest. Read the git-tracked fixture bytes and
+        // let the caller hash them; a document with no pinned reference TEI is
+        // refused by name.
+        let path = reference_tei_path(document_id);
+        std::fs::read_to_string(repo_root().join(&path)).unwrap_or_else(|error| {
+            panic!("cannot read holdout TEI `{path}` for `{document_id}`: {error}")
+        })
     }
 }
 
@@ -358,8 +441,15 @@ fn required_families() -> Vec<ContentFamily> {
         .collect()
 }
 
-/// The declared corpus, rebuilt from the committed declaration bytes.
+/// The declared route corpus the receipt is bound to, rebuilt from the
+/// committed declaration bytes (`native_route_corpus`; D543).
 fn declared_corpus() -> LayoutCorpus {
+    layout().native_route_corpus
+}
+
+/// The layout token-donor corpus (`corpus`), the frozen 3-document/202-page
+/// donor the visual-heads contract is declared against; it stays byte-unchanged.
+fn layout_donor_corpus() -> LayoutCorpus {
     layout().corpus
 }
 
@@ -423,11 +513,8 @@ fn expectation() -> ContentExpectation {
     let receipt = receipt();
     let corpus = declared_corpus();
     let mut oracle_fixture_sha256 = BTreeMap::new();
-    for fixture in provenance().fixtures {
-        oracle_fixture_sha256.insert(
-            normalize_document_identity(&fixture.id),
-            sha256_hex(tei_bytes_for(&fixture.id).as_bytes()),
-        );
+    for key in oracle_pins().into_keys() {
+        oracle_fixture_sha256.insert(key.clone(), sha256_hex(tei_bytes_for(&key).as_bytes()));
     }
     ContentExpectation {
         partition: expected_partition(&receipt, &corpus),
@@ -485,10 +572,13 @@ fn committed_content_receipt_replays_from_the_committed_carriers() {
     assert_eq!(receipt.redaction, Redaction::clean());
 
     // The declaration binding, re-derived from the declaration bytes.
-    assert_eq!(corpus.corpus_n, 3, "the declared corpus is three documents");
     assert_eq!(
-        corpus.page_denominator, 202,
-        "the declared denominator is 202 pages"
+        corpus.corpus_n, 12,
+        "the declared corpus is twelve documents"
+    );
+    assert_eq!(
+        corpus.page_denominator, 381,
+        "the declared denominator is 381 pages"
     );
     assert_eq!(
         corpus
@@ -506,14 +596,17 @@ fn committed_content_receipt_replays_from_the_committed_carriers() {
         "the declaration pin must be the committed declaration bytes"
     );
 
-    // The corpus DATA agrees with the other committed carriers.
-    assert_eq!(heads.source_authority.exact_document_count, corpus.corpus_n);
+    // The frozen visual-heads contract is declared against the layout
+    // token-donor corpus (`corpus`), which stays byte-unchanged (D543) while the
+    // route receipt measures the expanded `native_route_corpus`.
+    let donor = layout_donor_corpus();
+    assert_eq!(heads.source_authority.exact_document_count, donor.corpus_n);
     assert_eq!(
         heads.source_authority.page_denominator,
-        corpus.page_denominator
+        donor.page_denominator
     );
-    assert_eq!(heads.source_documents.len(), corpus.documents.len());
-    for (head, declared) in heads.source_documents.iter().zip(&corpus.documents) {
+    assert_eq!(heads.source_documents.len(), donor.documents.len());
+    for (head, declared) in heads.source_documents.iter().zip(&donor.documents) {
         assert_eq!(head.id, declared.id);
         assert_eq!(head.sha256, declared.sha256);
         assert_eq!(head.pages, declared.pages);
@@ -643,11 +736,11 @@ fn committed_content_receipt_replays_from_the_committed_carriers() {
     );
     assert_eq!(
         total_documents, corpus.corpus_n,
-        "the denominator stays 3 documents"
+        "the denominator stays 12 documents"
     );
     assert_eq!(
         total_pages, corpus.page_denominator,
-        "the denominator stays 202 pages"
+        "the denominator stays 381 pages"
     );
 
     // The family matrix: canonical, complete, typed, and non-vacuous.
@@ -791,16 +884,14 @@ fn committed_content_receipt_replays_from_the_committed_carriers() {
         receipt.oracle.segmentation_source_sha256
     );
     assert_eq!(receipt.oracle.documents.len(), corpus.documents.len());
+    let pins = oracle_pins();
     for fixture in &receipt.oracle.documents {
-        let pin = provenance
-            .fixtures
-            .iter()
-            .find(|pin| {
-                normalize_document_identity(&pin.id)
-                    == normalize_document_identity(&fixture.document_id)
-            })
+        let key = normalize_document_identity(&fixture.document_id);
+        let (path, sha256) = pins
+            .get(&key)
             .expect("the receipt names only pinned oracle documents");
-        assert_eq!(pin.sha256, sha256_hex(tei_bytes_for(&pin.id).as_bytes()));
+        assert_eq!(&fixture.fixture_path, path);
+        assert_eq!(&fixture.sha256, sha256);
         assert_eq!(
             fixture.sha256,
             sha256_hex(tei_bytes_for(&fixture.document_id).as_bytes())
@@ -875,8 +966,8 @@ fn the_governor_rule_and_the_receipt_agree_on_the_committed_data() {
     // The rule's population equals the declaration's.
     assert_eq!(gov.populations.document_count, corpus.corpus_n);
     assert_eq!(gov.populations.page_denominator, corpus.page_denominator);
-    assert_eq!(gov.populations.document_count, 3);
-    assert_eq!(gov.populations.page_denominator, 202);
+    assert_eq!(gov.populations.document_count, 12);
+    assert_eq!(gov.populations.page_denominator, 381);
 
     // Expected claim values agree with the artifact.
     assert_eq!(gov.expected.claim_scope, CLAIM_SCOPE_DIAGNOSTIC_ONLY);

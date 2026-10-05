@@ -284,7 +284,7 @@ native_family_receipt:
   carriers:
     - id: layout_bakeoff
       path: data/parse/layout_bakeoff.yaml
-      pointer: corpus.documents
+      pointer: native_route_corpus.documents
       kind: corpus
     - id: absorption_progress_baseline
       path: artifacts/parse_compat/absorption_progress_baseline.json
@@ -305,8 +305,8 @@ native_family_receipt:
   populations:
     parity:
       population_kind: corpus
-      document_count: 3
-      page_denominator: 202
+      document_count: 12
+      page_denominator: 381
       family_dispositions: [observed, typed_absence, refused, out_of_scope]
     exclusion:
       population_kind: exclusion
@@ -398,10 +398,11 @@ native_content_receipt:
     schema_version: native-content-receipt.v1
     required: true
   # The corpus pin resolves by pointer; the count and the page denominator are the
-  # declared requirements the receipt must reproduce (3 documents / 202 pages).
+  # declared requirements the receipt must reproduce (12 documents / 381 pages,
+  # the native_route_corpus block; D543).
   corpus:
     manifest: data/parse/layout_bakeoff.yaml
-    pointer: corpus.documents
+    pointer: native_route_corpus.documents
   # The oracle carrier and the reviewed segmentation oracle. The rule never
   # restates a fixture identity: the preserved-TEI pins resolve from the carrier
   # and the reader recomputes every sha256 from the committed bytes.
@@ -411,8 +412,8 @@ native_content_receipt:
     segmentation_manifest: data/parse/document_segmentation.yaml
     segmentation_source: artifacts/parse_compat/document_segmentation_oracle_source.json
   populations:
-    document_count: 3
-    page_denominator: 202
+    document_count: 12
+    page_denominator: 381
   expected:
     claim_scope: diagnostic_only
     product_coverage_effect: none
