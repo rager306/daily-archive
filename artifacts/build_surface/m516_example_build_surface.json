@@ -1140,11 +1140,15 @@
       "reason": "cargo metadata shows every source-level feature-gated example already declares its required-features, so there is no un-declared gated target to move. The 82 un-gated targets are deliberately default-buildable (manifest comments: 'must build in the default feature set'); gating them would break the named gate provisioning and recorded contracts."
     },
     "evidence": {
-      "compile": "gsd_exec a5fb0988-fb9d-4f49-96bf-7d4806e1baa5 cargo check -p da-cli --example da_toolbox exit 0",
-      "clippy": "gsd_exec 2d2f5394-11cf-4f76-8910-a1306499b30e cargo clippy -p da-cli --example da_toolbox --no-deps -- -D warnings exit 0",
-      "link_and_smoke": "gsd_exec 33b5404a-583c-4091-8f0a-baafb51adadd build + dispatch smoke exit 0",
-      "feature_matrix_gate": "gsd_exec 70c2898e-26b5-4dea-bc94-12277426f19c cargo check -p da-cli --features pdf-classifier --examples exit 0",
-      "inventory_test": "gsd_exec 05cb1a92-dc70-4688-a34a-94bfb949a57d pytest scripts/tests/test_absorption_test_inventory.py 14 passed"
+      "surface_recompute": "gsd_exec 194a4742-0f1b-496d-9165-71eb5aaf810e cargo metadata --no-deps recompute: 83 targets / 27 gated / 408 link-ops; MATCH_OK=True; 0 source deletions",
+      "fmt": "gsd_exec 40a10824-d85d-416a-8ce0-1ff517ea3a62 cargo fmt --all --check exit 0",
+      "clippy": "gsd_exec a2a0b5f1-30c1-431a-b9af-9f685ace97d3 cargo clippy -p da-cli --example da_toolbox --no-deps -- -D warnings exit 0",
+      "build": "gsd_exec 7fb7977a-4ee0-4faa-a338-4fce31af6a79 cargo build -p da-cli --example da_toolbox exit 0",
+      "smoke": "gsd_exec 595fa5e9-8d3e-4188-ad02-ce1f12a6f155 noargs=2 unknown=2 extract_probe_noarg!=0 SMOKE_OK",
+      "feature_matrix_gate": "gsd_exec 5870aa58-1cca-43ce-8164-146887ebb931 cargo check -p da-cli --features pdf-classifier --examples exit 0",
+      "inventory_test": "gsd_exec 63eae436-4d79-4d26-85c8-b0555f0bda81 pytest scripts/tests/test_absorption_test_inventory.py 14 passed",
+      "governor_preflight": "gsd_exec 54f9dead-1dc0-402b-b26d-fac666cc4f54 governor --phase preflight --check-only exit 0",
+      "remediation": "The first closeout attempt bundled fmt+clippy+build+smoke in one 300s script (gsd_exec 5d0b1c13) which SIGTERM-timed-out (timed_out=true), so the compound script's real final exit was 1 while closeout claimed 0. Every check was then re-run as an independent command on HEAD 2fbcefe6d; all exit 0."
     }
   }
 }
