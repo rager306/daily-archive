@@ -28,6 +28,10 @@
 //!   route never consults Java and never consumes a pre-existing TEI: the
 //!   preserved TEI is only an **independent oracle**, sha256-pinned in
 //!   `provenance.yaml`.
+//! - It feeds the native header, reference and body outcomes into
+//!   `da_parse::emit_native_tei` and writes the digest-bound native emission
+//!   artifact.  The emission's base document is assembled from the native plane
+//!   alone: the preserved fixtures are never an input to it.
 //! - It builds the T03 receipt (guard provenance, per-stage P0..P9 stances from
 //!   DATA, per-family typed dispositions, the reproduced S05 body axis, the
 //!   frozen limits, the five closed locks and redaction), re-reads it through
@@ -69,17 +73,27 @@ use da_cli::native_route_receipt::{
 };
 use da_parse::{
     BodyCasePolicy, BodyNormalization, BodyUnitInventory, BodyUnitRung, CalloutTargetClass,
-    FullLocation, FullSemanticRegion, GrobidHttpBackend, GrobidProfile, JavaInvocationCounter,
+    CitationSpan, CompositionComponent, CompositionError, FullLocation, FullSemanticRegion,
+    FulltextCompositionIdentity, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend, GrobidProfile,
+    HeaderCompositionOutcome, HeaderSequenceInput, HeadingRegionConfig, JavaInvocationCounter,
     NATIVE_CALLOUT_ORACLE_SCHEMA_VERSION, NATIVE_MEASURED_LANE_ID, NATIVE_SECTION_SUT_GENERATOR_ID,
-    NATIVE_VISUAL_ORACLE_SCHEMA_VERSION, NativeCalloutOracle, NativeCalloutOraclePin,
-    NativeCalloutOracleRow, NativeRouteBodyAxis, NativeRouteBodyOracle, NativeRouteBoundary,
+    NATIVE_VISUAL_ORACLE_SCHEMA_VERSION, NativeAffiliationOutcome, NativeAffiliationParser,
+    NativeCalloutOracle, NativeCalloutOraclePin, NativeCalloutOracleRow, NativeDateOutcome,
+    NativeDateParser, NativeHeaderFields, NativePersonalNameOutcome, NativePersonalNameParser,
+    NativeReference, NativeRouteBodyAxis, NativeRouteBodyOracle, NativeRouteBoundary,
     NativeRouteFamilyDisposition, NativeRouteInput, NativeRouteOutOfSliceReason,
     NativeRouteOutOfSliceStage, NativeRouteStageStance, NativeRouteUnmetReason,
-    NativeSectionOracleBoundary, NativeSectionOracleRow, NativeVisualFamily, NativeVisualOracle,
+    NativeSectionOracleBoundary, NativeSectionOracleRow, NativeTeiAbsence, NativeTeiAbsenceReason,
+    NativeTeiBodyInput, NativeTeiEmissionInput, NativeTeiEmissionLimits, NativeTeiEmissionManifest,
+    NativeTeiEmissionOutcome, NativeTeiFamily, NativeVisualFamily, NativeVisualOracle,
     NativeVisualOraclePin, NativeVisualOracleRow, ParseBackend, ParseBackendRequest,
-    RouteInputSpec, RouteRecoveryDisposition, attempt_native_route, build_native_route_result,
-    native_section_regions, oracle_content_digest, require_independent_section_oracle,
-    require_non_vacuous_callout_oracle, require_non_vacuous_visual_oracle,
+    PersonalNameContext, ReferenceCandidate, ReferenceCompositionCandidate,
+    ReferenceCompositionOutcome, RouteInputSpec, RouteRecoveryDisposition, TeiEnvelope,
+    TeiIdentity, assign_heading_regions, attempt_native_route, build_bibliography_line_facts,
+    build_native_route_result, build_native_word_region_carrier, emit_native_tei,
+    native_section_regions, oracle_content_digest, project_native_words,
+    require_independent_section_oracle, require_non_vacuous_callout_oracle,
+    require_non_vacuous_visual_oracle, run_header_sequence_with_fields,
 };
 use da_ports::{FeatureTemplate, LexiconBundle, LexiconChannel};
 use std::collections::BTreeMap;
@@ -110,6 +124,14 @@ const GOVERNOR_REL: &str = "scripts/governor/checks/grobid_absorption_progress.y
 /// Pointer inside the governor block.
 const GOVERNOR_POINTER: &str = "native_route_e2e";
 
+/// The committed native TEI emission artifact (S02/T03).  It carries no raw TEI:
+/// `data/parse/SCHEMA.yaml#forbidden_report_fields` forbids `tei_xml`/`raw_tei`,
+/// so the emission is held in-process and bound by digest only.
+const DEFAULT_TEI_EMISSION_ARTIFACT_REL: &str =
+    "artifacts/parse_compat/native_route_tei_emission.json";
+/// Schema version of the emission artifact envelope.
+const TEI_EMISSION_SCHEMA_VERSION: &str = "native-route-tei-emission/v1";
+
 /// The preserved-TEI oracle pin carrier (an independent generator, not the SUT).
 const PROVENANCE_REL: &str = "crates/da-parse/tests/fixtures/preserved/provenance.yaml";
 /// The reviewed segmentation oracle manifest.
@@ -132,21 +154,26 @@ const BLOCK_TAGS: [&str; 10] = [
 struct Args {
     root: PathBuf,
     report: PathBuf,
+    emission: PathBuf,
     self_check: bool,
 }
 
 fn parse_args() -> Args {
     let mut root = PathBuf::from(".");
     let mut report = PathBuf::from(DEFAULT_ROUTE_ARTIFACT_REL);
+    let mut emission = PathBuf::from(DEFAULT_TEI_EMISSION_ARTIFACT_REL);
     let mut self_check = false;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--root" => root = args.next().unwrap_or_default().into(),
             "--report" => report = args.next().unwrap_or_default().into(),
+            "--emission" => emission = args.next().unwrap_or_default().into(),
             "--self-check" => self_check = true,
             "--help" => {
-                println!("native_route_e2e [--root DIR] [--report FILE] [--self-check]");
+                println!(
+                    "native_route_e2e [--root DIR] [--report FILE] [--emission FILE] [--self-check]"
+                );
                 std::process::exit(0);
             }
             other => {
@@ -158,6 +185,7 @@ fn parse_args() -> Args {
     Args {
         root,
         report,
+        emission,
         self_check,
     }
 }
@@ -885,6 +913,293 @@ fn population_metrics(
     .collect()
 }
 
+// ─────────────────────────── native TEI emission ───────────────────────────
+//
+// S02/T03: after the S03/S04/S05 native planes run, the runner feeds the
+// native header/reference/body outcomes into `da_parse::emit_native_tei` and
+// writes a digest-bound emission artifact.  The base document is assembled from
+// the native plane alone: the preserved TEI fixtures are only the sha256-pinned
+// comparison oracle above, never an input here.  Because the declared corridor's
+// native header band admits no recognised date, its header lane is an explicit
+// typed absence (never a Java fallback); the body is native-emitted and the
+// bibliography is the native References run grouped into entries.
+
+/// One native region's text, joined per `(page, block, line)` line in reading
+/// order.  Uses only the carrier's own admitted tokens.
+fn region_lines(
+    carrier: &da_parse::NativeRegionCarrier,
+    region: FullSemanticRegion,
+) -> Vec<String> {
+    let Some(run) = carrier.run(region) else {
+        return Vec::new();
+    };
+    let mut groups: BTreeMap<(u32, u32, u32), Vec<&str>> = BTreeMap::new();
+    for token in &run.tokens {
+        groups
+            .entry((
+                token.location.page_ordinal,
+                token.location.block_ordinal,
+                token.location.line_ordinal,
+            ))
+            .or_default()
+            .push(token.text());
+    }
+    groups.values().map(|texts| texts.join(" ")).collect()
+}
+
+/// The native header composition, built from the Header run's own lines through
+/// the native parsers.  The corridor's header band recognises no date, so this
+/// is a rejected lane and the caller declares it a typed absence.
+fn header_composition(carrier: &da_parse::NativeRegionCarrier) -> HeaderCompositionOutcome {
+    let lines = region_lines(carrier, FullSemanticRegion::Header);
+    let date_text = lines
+        .iter()
+        .find(|line| {
+            matches!(
+                NativeDateParser::new().parse(line),
+                NativeDateOutcome::Recognized { .. }
+            )
+        })
+        .cloned()
+        .unwrap_or_default();
+    let name_texts: Vec<&str> = lines
+        .iter()
+        .filter(|line| {
+            matches!(
+                NativePersonalNameParser::new().parse(PersonalNameContext::Header, line),
+                NativePersonalNameOutcome::Recognized { .. }
+            )
+        })
+        .map(String::as_str)
+        .collect();
+    let affiliation_texts: Vec<&str> = lines
+        .iter()
+        .filter(|line| {
+            matches!(
+                NativeAffiliationParser::new().parse(line),
+                NativeAffiliationOutcome::Recognized { .. }
+            )
+        })
+        .map(String::as_str)
+        .collect();
+    run_header_sequence_with_fields(
+        HeaderSequenceInput {
+            date_text: &date_text,
+            name_texts,
+            affiliation_texts,
+        },
+        NativeHeaderFields::default(),
+    )
+}
+
+/// The native bibliography composition: the References run's line facts grouped
+/// into one entry per `(page, block)`, in reading order.
+fn reference_composition(
+    carrier: &da_parse::NativeRegionCarrier,
+) -> Result<ReferenceCompositionOutcome, Box<dyn Error>> {
+    let Some(run) = carrier.run(FullSemanticRegion::References) else {
+        return Ok(ReferenceCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::References,
+            },
+        });
+    };
+    let facts = build_bibliography_line_facts(run).map_err(|error| -> Box<dyn Error> {
+        format!("bibliography line facts refused: {error:?}").into()
+    })?;
+    let mut groups: BTreeMap<(u32, u32), Vec<&str>> = BTreeMap::new();
+    for fact in &facts {
+        groups
+            .entry((fact.page_ordinal, fact.block_ordinal))
+            .or_default()
+            .push(fact.text.as_str());
+    }
+    let references: Vec<NativeReference> = groups
+        .values()
+        .enumerate()
+        .map(|(ordinal, texts)| {
+            let source = texts.join(" ");
+            NativeReference {
+                ordinal,
+                span: CitationSpan {
+                    start: 0,
+                    end: source.len(),
+                },
+                source,
+                provenance: "native-route-e2e-carrier".into(),
+            }
+        })
+        .collect();
+    if references.is_empty() {
+        return Ok(ReferenceCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::References,
+            },
+        });
+    }
+    Ok(ReferenceCompositionOutcome::Accepted {
+        composition: ReferenceCompositionCandidate {
+            candidate: ReferenceCandidate {
+                references,
+                fields: Vec::new(),
+                anchors: Vec::new(),
+                adjacent_pairs: Vec::new(),
+            },
+            receipts: Vec::new(),
+        },
+    })
+}
+
+/// Build one document's native emission from the native carrier alone.
+fn build_document_emission(
+    document_id: &str,
+    source_sha256: &str,
+    profile_fingerprint: &str,
+    config_fingerprint: &str,
+    carrier: &da_parse::NativeRegionCarrier,
+) -> Result<(TeiEnvelope, NativeTeiEmissionManifest), Box<dyn Error>> {
+    // Families this slice never emits from the native plane are declared typed
+    // absence up front, never silently dropped.
+    let mut absences = vec![
+        NativeTeiAbsence {
+            family: NativeTeiFamily::Figure,
+            reason: NativeTeiAbsenceReason::NativeFamilyUnavailable,
+        },
+        NativeTeiAbsence {
+            family: NativeTeiFamily::Table,
+            reason: NativeTeiAbsenceReason::NativeFamilyUnavailable,
+        },
+        NativeTeiAbsence {
+            family: NativeTeiFamily::Formula,
+            reason: NativeTeiAbsenceReason::NativeFamilyUnavailable,
+        },
+        NativeTeiAbsence {
+            family: NativeTeiFamily::Visual,
+            reason: NativeTeiAbsenceReason::NativeFamilyUnavailable,
+        },
+        NativeTeiAbsence {
+            family: NativeTeiFamily::Callout,
+            reason: NativeTeiAbsenceReason::NativeFamilyUnavailable,
+        },
+    ];
+
+    let body_text = region_lines(carrier, FullSemanticRegion::Body).join(" ");
+    let body = if body_text.trim().is_empty() {
+        absences.push(NativeTeiAbsence {
+            family: NativeTeiFamily::Body,
+            reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+        });
+        None
+    } else {
+        Some(NativeTeiBodyInput::single_paragraph(body_text))
+    };
+
+    let header = header_composition(carrier);
+    if matches!(&header, HeaderCompositionOutcome::Rejected { .. }) {
+        absences.push(NativeTeiAbsence {
+            family: NativeTeiFamily::Header,
+            reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+        });
+    }
+
+    let references = reference_composition(carrier)?;
+    if matches!(&references, ReferenceCompositionOutcome::Rejected { .. }) {
+        absences.push(NativeTeiAbsence {
+            family: NativeTeiFamily::References,
+            reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+        });
+    }
+
+    let input = NativeTeiEmissionInput {
+        identity: FulltextCompositionIdentity {
+            source_sha256: source_sha256.to_owned(),
+            profile_fingerprint: profile_fingerprint.to_owned(),
+            config_fingerprint: config_fingerprint.to_owned(),
+        },
+        header,
+        references,
+        body,
+        absences,
+        limits: NativeTeiEmissionLimits::default(),
+    };
+    match emit_native_tei(input) {
+        NativeTeiEmissionOutcome::Accepted { envelope, manifest } => Ok((envelope, *manifest)),
+        NativeTeiEmissionOutcome::Rejected { error } => {
+            Err(format!("the native TEI emission for {document_id} was refused: {error}").into())
+        }
+    }
+}
+
+/// Refuse an emission that names a Java backend or carries a preserved-oracle
+/// byte substring.  The native envelope's own backend must not be the Java GROBID
+/// backend, and neither the Java backend id nor the oracle generator id (which
+/// only the preserved fixtures carry) may appear in the emitted bytes.
+fn assert_emission_oracle_free(envelope: &TeiEnvelope, text: &str) -> Result<(), Box<dyn Error>> {
+    if envelope.identity().backend_id() == GROBID_HTTP_BACKEND_ID {
+        return Err("the emission names the Java GROBID backend".into());
+    }
+    for marker in [GROBID_HTTP_BACKEND_ID, ORACLE_BACKEND] {
+        if text.contains(marker) {
+            return Err(format!("the emission carries the forbidden marker `{marker}`").into());
+        }
+    }
+    Ok(())
+}
+
+/// Assemble the emission artifact envelope from the committed route receipt (for
+/// the five locks, guard provenance and claim scope) and the per-document native
+/// manifests.  No raw TEI is carried: the emission is bound by digest only.
+fn build_emission_artifact(
+    receipt: &RouteReceipt,
+    corpus: &RouteDeclaredCorpus,
+    emissions: &[(String, NativeTeiEmissionManifest)],
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    let guard = serde_json::to_value(&receipt.guard)?;
+    let documents: Vec<serde_json::Value> = emissions
+        .iter()
+        .map(|(document_id, manifest)| {
+            serde_json::json!({
+                "document_id": document_id,
+                "emission": manifest,
+            })
+        })
+        .collect();
+    let value = serde_json::json!({
+        "schema_version": TEI_EMISSION_SCHEMA_VERSION,
+        "claim_scope": &receipt.claim_scope,
+        "product_coverage_effect": &receipt.product_coverage_effect,
+        "thresholds": &receipt.thresholds,
+        "locks": &receipt.locks,
+        "guard": guard,
+        "corpus": {
+            "corpus_id": &corpus.corpus_id,
+            "document_count": corpus.document_count,
+            "page_denominator": corpus.page_denominator,
+            "pointer": SLICE_DECLARATION_DATA_REL,
+        },
+        "documents": documents,
+    });
+    let mut bytes = serde_json::to_vec_pretty(&value)?;
+    bytes.push(b'\n');
+    Ok(bytes)
+}
+
+/// Write artifact bytes atomically (tmp + rename), creating the parent.
+fn write_artifact_atomic(path: &std::path::Path, bytes: &[u8]) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)?;
+    }
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = std::path::PathBuf::from(tmp);
+    fs::write(&tmp, bytes)?;
+    fs::rename(&tmp, path)?;
+    Ok(())
+}
+
 // ─────────────────────────────── runner ───────────────────────────────
 
 fn run(args: &Args) -> Result<String, Box<dyn Error>> {
@@ -1038,6 +1353,8 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
     let limits_donor = LayoutDonorLimits::default();
     let mut observed_documents = Vec::with_capacity(declaration.documents.len());
     let mut typed_failures = 0usize;
+    let profile_fingerprint = plain.identity().profile_fingerprint().to_owned();
+    let mut emissions: Vec<(String, NativeTeiEmissionManifest)> = Vec::new();
 
     for (index, document) in declaration.documents.iter().enumerate() {
         let (_, view) = oracle_documents[index];
@@ -1139,6 +1456,37 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
             )
             .into());
         }
+        // ── native TEI emission (S02/T03) ─────────────────────────────
+        // The base document is assembled from this native plane alone.  The
+        // preserved fixtures above are the comparison oracle, never an input.
+        let projection = project_native_words(&observation.document, &observation.lexemes)?;
+        let heading = assign_heading_regions(
+            &observation.document,
+            &observation.lattice,
+            &projection,
+            HeadingRegionConfig::default(),
+        )?;
+        let carrier = build_native_word_region_carrier(
+            &observation.document,
+            &observation.lattice,
+            &projection,
+            &heading,
+            &[
+                FullSemanticRegion::Header,
+                FullSemanticRegion::References,
+                FullSemanticRegion::Body,
+            ],
+        )?;
+        let (envelope, manifest) = build_document_emission(
+            &document.id,
+            &digest,
+            &profile_fingerprint,
+            &declaration_revision,
+            &carrier,
+        )?;
+        assert_emission_oracle_free(&envelope, std::str::from_utf8(envelope.raw_tei())?)?;
+        emissions.push((document.id.clone(), manifest));
+
         observed_documents.push(RouteObservedDocument {
             id: document.id.clone(),
             sha256: digest,
@@ -1204,6 +1552,13 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
     let artifact = receipt.artifact_json_bytes()?;
     assert_route_redacted(std::str::from_utf8(&artifact)?)?;
     write_artifact(&args.report, &artifact)?;
+
+    // ── native TEI emission artifact (S02/T03) ─────────────────────────────
+    // Digest-bound only: `data/parse/SCHEMA.yaml#forbidden_report_fields`
+    // forbids `tei_xml`/`raw_tei`, so no raw TEI is committed.
+    let emission_artifact = build_emission_artifact(&receipt, &corpus, &emissions)?;
+    assert_route_redacted(std::str::from_utf8(&emission_artifact)?)?;
+    write_artifact_atomic(&args.emission, &emission_artifact)?;
 
     Ok(summary(&receipt, typed_failures))
 }
@@ -1375,6 +1730,31 @@ fn run_self_check(root: &std::path::Path) -> Result<String, Box<dyn Error>> {
     .ok_or("a positive Java count was admitted")?;
     if !format!("{java_calls:?}").contains("ObservedJavaOnRoute") {
         return Err(format!("unexpected java-count refusal: {java_calls:?}").into());
+    }
+    checked += 1;
+
+    // (g) an emission that names a Java backend or carries a preserved-oracle
+    // byte substring must be refused; the clean native emission must pass.
+    let clean_bytes = b"<?xml version=\"1.0\" encoding=\"UTF-8\"?><TEI xmlns=\"http://www.tei-c.org/ns/1.0\"><teiHeader/></TEI>";
+    let clean = TeiEnvelope::new(
+        clean_bytes.to_vec(),
+        TeiIdentity::new("native-tei-emission", "profile=self-check"),
+    );
+    assert_emission_oracle_free(&clean, std::str::from_utf8(clean_bytes)?)?;
+    let java = TeiEnvelope::new(
+        clean_bytes.to_vec(),
+        TeiIdentity::new(GROBID_HTTP_BACKEND_ID, "profile=self-check"),
+    );
+    if assert_emission_oracle_free(&java, std::str::from_utf8(clean_bytes)?).is_ok() {
+        return Err("a Java-backend emission was admitted".into());
+    }
+    let oracle_bytes = format!("<TEI>{ORACLE_BACKEND}</TEI>");
+    let oracle = TeiEnvelope::new(
+        oracle_bytes.as_bytes().to_vec(),
+        TeiIdentity::new("native-tei-emission", "profile=self-check"),
+    );
+    if assert_emission_oracle_free(&oracle, &oracle_bytes).is_ok() {
+        return Err("a preserved-oracle byte substring was admitted".into());
     }
     checked += 1;
 

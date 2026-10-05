@@ -30,10 +30,10 @@
 //! The emitter is a shadow/diagnostic surface, not a runtime route.
 
 use crate::native_fulltext_composition::{
-    AdmittedSemantics, HeaderFragmentSource, NativeFulltextCompositionError, audit_semantic_fields,
-    citation_semantics, digest, esc, header_semantics, render_bibliography_fragment,
-    render_header_fragment, representable_attribute, representable_text, valid_sha,
-    validate_emitted,
+    AdmittedHeaderSemantics, AdmittedSemantics, HeaderFragmentSource,
+    NativeFulltextCompositionError, audit_semantic_fields, citation_semantics, digest, esc,
+    header_semantics, render_bibliography_fragment, render_header_fragment,
+    representable_attribute, representable_text, valid_sha, validate_emitted,
 };
 use crate::{
     CompositionError, FulltextCompositionIdentity, FulltextLeafRole, HeaderCompositionOutcome,
@@ -521,10 +521,21 @@ fn emit_inner(
         });
     }
 
-    // Which families this emission produces natively.
+    // Which families this emission produces natively.  A lane the native plane
+    // did not admit is emitted only as a declared typed absence, so the manifest
+    // can state exactly what was and was not exercised (S02).
+    let header_admitted = matches!(&input.header, HeaderCompositionOutcome::Accepted { .. });
+    let references_admitted = matches!(
+        &input.references,
+        ReferenceCompositionOutcome::Accepted { .. }
+    );
     let mut emitted: BTreeSet<NativeTeiFamily> = BTreeSet::new();
-    emitted.insert(NativeTeiFamily::Header);
-    emitted.insert(NativeTeiFamily::References);
+    if header_admitted {
+        emitted.insert(NativeTeiFamily::Header);
+    }
+    if references_admitted {
+        emitted.insert(NativeTeiFamily::References);
+    }
     if input.body.is_some() {
         emitted.insert(NativeTeiFamily::Body);
     }
@@ -546,50 +557,78 @@ fn emit_inner(
         }
     }
 
-    // Both admitted lanes must carry an Accepted composition.  A rejected lane
-    // is a typed refusal, never a fallback to Java.
+    // A rejected lane is a declared typed absence when the caller named it in
+    // `absences`; otherwise it is a typed refusal, never a fallback to Java.
     let header = match &input.header {
-        HeaderCompositionOutcome::Accepted { composition } => composition,
+        HeaderCompositionOutcome::Accepted { composition } => Some(composition),
         HeaderCompositionOutcome::Rejected { error } => {
-            return Err(NativeTeiEmissionError::InvalidComposition {
-                lane: NativeTeiFamily::Header,
-                error: error.clone(),
-            });
+            if !absence_reasons.contains_key(&NativeTeiFamily::Header) {
+                return Err(NativeTeiEmissionError::InvalidComposition {
+                    lane: NativeTeiFamily::Header,
+                    error: error.clone(),
+                });
+            }
+            None
         }
     };
     let references = match &input.references {
-        ReferenceCompositionOutcome::Accepted { composition } => composition,
+        ReferenceCompositionOutcome::Accepted { composition } => Some(composition),
         ReferenceCompositionOutcome::Rejected { error } => {
-            return Err(NativeTeiEmissionError::InvalidComposition {
-                lane: NativeTeiFamily::References,
-                error: error.clone(),
-            });
+            if !absence_reasons.contains_key(&NativeTeiFamily::References) {
+                return Err(NativeTeiEmissionError::InvalidComposition {
+                    lane: NativeTeiFamily::References,
+                    error: error.clone(),
+                });
+            }
+            None
         }
     };
 
     // Validate the admitted semantics before serializing anything (reuses the
     // composer's own validators; a non-representable value is a typed refusal).
     let admitted = AdmittedSemantics {
-        header: header_semantics(&header.candidate)?,
-        citations: citation_semantics(&references.candidate)?,
+        header: match header {
+            Some(header) => header_semantics(&header.candidate)?,
+            None => AdmittedHeaderSemantics {
+                titles: Vec::new(),
+                emails: Vec::new(),
+                ids: Vec::new(),
+                author_affiliations: Vec::new(),
+            },
+        },
+        citations: match references {
+            Some(references) => citation_semantics(&references.candidate)?,
+            None => Vec::new(),
+        },
     };
 
     // The native bibliography publishes GROBID's positional fallback key domain:
     // no Java source exists to declare `xml:id` keys, and this is the same form
     // the composer's `source_published_keys` publishes for an undeclared entry.
-    let keys = positional_reference_keys(&references.candidate.references)?;
+    let keys = match references {
+        Some(references) => positional_reference_keys(&references.candidate.references)?,
+        None => Vec::new(),
+    };
 
     // Native body text (S02/T02 extends this into section structure).
     let key_set: BTreeSet<String> = keys.iter().cloned().collect();
 
     // Serialize each band through the shared builders, so this emitter and the
     // composer can never disagree on one serialization of the same semantics.
-    let header_fragment = render_header_fragment(header, HeaderFragmentSource::native());
-    let bibliography_fragment = render_bibliography_fragment(
-        &keys,
-        &references.candidate.references,
-        &references.candidate.fields,
-    );
+    let header_fragment = match header {
+        Some(header) => render_header_fragment(header, HeaderFragmentSource::native()),
+        // The envelope stays structurally TEI; a header this emission did not
+        // produce is an empty element, never Java bytes.
+        None => String::from("<teiHeader/>"),
+    };
+    let bibliography_fragment = match references {
+        Some(references) => render_bibliography_fragment(
+            &keys,
+            &references.candidate.references,
+            &references.candidate.fields,
+        ),
+        None => String::from("<listBibl/>"),
+    };
 
     // Body: one `<div type="section">` per native section in reading order, one
     // `<p>`/`<head>`/`<ref>` per leaf.  A family the native plane cannot emit is
@@ -654,7 +693,9 @@ fn emit_inner(
 
     let reference_links = ReferenceLinkLedger {
         source_entries: keys.len(),
-        admitted_references: references.candidate.references.len(),
+        admitted_references: references
+            .map(|references| references.candidate.references.len())
+            .unwrap_or(0),
         // Body citation refs this emission serialized, and how many of their
         // distinct targets resolve in the emitted id space.
         target_occurrences: rendered_body.target_occurrences,
@@ -677,13 +718,21 @@ fn emit_inner(
             absence_canon.push('\n');
         }
     }
+    let header_bytes = if header.is_some() {
+        header_fragment.len()
+    } else {
+        0
+    };
+    let references_bytes = if references.is_some() {
+        bibliography_fragment.len()
+    } else {
+        0
+    };
     let byte_accounting = NativeTeiByteAccounting {
-        header_bytes: header_fragment.len(),
-        references_bytes: bibliography_fragment.len(),
+        header_bytes,
+        references_bytes,
         body_bytes: body_fragment.len(),
-        native_emitted_bytes: header_fragment.len()
-            + bibliography_fragment.len()
-            + body_fragment.len(),
+        native_emitted_bytes: header_bytes + references_bytes + body_fragment.len(),
         typed_absence_bytes: 0,
         envelope_bytes: bytes.len(),
         java_fallback_bytes: 0,
@@ -1288,6 +1337,50 @@ mod tests {
                 }
             }
         ));
+    }
+
+    #[test]
+    fn rejected_header_lane_with_declared_absence_is_typed_absence() {
+        let mut input = base_input();
+        input.header = HeaderCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::Date,
+            },
+        };
+        input.absences = vec![NativeTeiAbsence {
+            family: NativeTeiFamily::Header,
+            reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+        }];
+        let (envelope, manifest) = accepted(input);
+        let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
+        assert!(text.contains("<teiHeader/>"));
+        assert_eq!(
+            family(&manifest, NativeTeiFamily::Header).disposition,
+            NativeTeiDisposition::TypedAbsence
+        );
+        assert_eq!(manifest.byte_accounting.header_bytes, 0);
+    }
+
+    #[test]
+    fn rejected_references_lane_with_declared_absence_is_typed_absence() {
+        let mut input = base_input();
+        input.references = ReferenceCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::References,
+            },
+        };
+        input.absences = vec![NativeTeiAbsence {
+            family: NativeTeiFamily::References,
+            reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+        }];
+        let (envelope, manifest) = accepted(input);
+        let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
+        assert!(text.contains("<listBibl/>"));
+        assert_eq!(
+            family(&manifest, NativeTeiFamily::References).disposition,
+            NativeTeiDisposition::TypedAbsence
+        );
+        assert_eq!(manifest.byte_accounting.references_bytes, 0);
     }
 
     #[test]
