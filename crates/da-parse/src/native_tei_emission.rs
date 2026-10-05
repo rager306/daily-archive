@@ -32,10 +32,12 @@
 use crate::native_fulltext_composition::{
     AdmittedSemantics, HeaderFragmentSource, NativeFulltextCompositionError, audit_semantic_fields,
     citation_semantics, digest, esc, header_semantics, render_bibliography_fragment,
-    render_header_fragment, representable_text, valid_sha, validate_emitted,
+    render_header_fragment, representable_attribute, representable_text, valid_sha,
+    validate_emitted,
 };
 use crate::{
-    CompositionError, FulltextCompositionIdentity, HeaderCompositionOutcome, NativeReference,
+    CompositionError, FulltextCompositionIdentity, FulltextLeafRole, HeaderCompositionOutcome,
+    MAX_NATIVE_SECTION_DEPTH, MarkerSubtype, NativeBodyText, NativeReference, NoteDisposition,
     ReferenceCompositionOutcome, ReferenceLinkLedger, SemanticFieldLedger, TeiEnvelope,
     TeiIdentity,
 };
@@ -163,7 +165,13 @@ pub struct NativeTeiFamilyDisposition {
 /// bytes that partition the emission's content.  `typed_absence_bytes` is always
 /// `0`: a typed absence emits nothing and has no Java fallback.
 /// `java_fallback_bytes` is always `0`: this emission has no Java byte source.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// S02/T02 pairs every band's byte count with a digest computed from the very
+/// bytes that were serialized (`*_sha256`), so the accounting is derived from
+/// the components rather than asserted about them.  A typed absence carries no
+/// content bytes, so its digest is taken over the declared absence declaration
+/// instead.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NativeTeiByteAccounting {
     pub header_bytes: usize,
     pub references_bytes: usize,
@@ -172,17 +180,119 @@ pub struct NativeTeiByteAccounting {
     pub typed_absence_bytes: usize,
     pub envelope_bytes: usize,
     pub java_fallback_bytes: usize,
+    /// `sha256:…` of the serialized header fragment.
+    #[serde(default)]
+    pub header_sha256: String,
+    /// `sha256:…` of the serialized bibliography fragment.
+    #[serde(default)]
+    pub references_sha256: String,
+    /// `sha256:…` of the serialized body fragment.
+    #[serde(default)]
+    pub body_sha256: String,
+    /// `sha256:…` of the declared typed-absence declaration (family/reason
+    /// pairs in [`NativeTeiFamily::ALL`] order).  No content bytes, so the
+    /// digest stands in for the band.
+    #[serde(default)]
+    pub typed_absence_sha256: String,
 }
 
-/// Native body material.
+/// One native body leaf in reading order.
 ///
-/// S02/T01 reserves this input slot and serializes the joined native body text
-/// as XML character data; S02/T02 extends the same module with the section /
-/// paragraph reading-order serialization and the per-leaf typed refusals.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct NativeTeiBodyInput {
-    /// The joined native body text.
+/// The role vocabulary is [`FulltextLeafRole`] and the marker subtype is
+/// [`MarkerSubtype`] — the same closed vocabularies the block plane publishes —
+/// so this input surface does not invent a second leaf taxonomy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeTeiBodyLeaf {
+    /// The leaf's admitted text.  A prose leaf must carry text; an empty prose
+    /// leaf is a typed refusal, never a silent empty `<p>`.  A marker may be
+    /// empty (an empty `<ref>` or a typed absence).
     pub text: String,
+    pub role: FulltextLeafRole,
+    /// Present iff `role == Marker`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub marker_subtype: Option<MarkerSubtype>,
+    /// The published bibliography key a citation marker targets.  Present only
+    /// when the route resolved it against the native bibliography's published
+    /// `b{ordinal}` domain; a citation marker without a key is plain text, and a
+    /// key is never synthesized.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published_key: Option<String>,
+}
+
+/// One native section in reading order.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeTeiBodySection {
+    /// The section id from the native section plane (`section_id`), when the
+    /// plane named one.  Emitted as `xml:id` only when present and representable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub section_id: Option<String>,
+    /// The section depth from the heading's leading ordinal.
+    pub depth: u32,
+    /// The parent section id, when the section is nested.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_section_id: Option<String>,
+    /// The ordered leaves of this section.
+    pub leaves: Vec<NativeTeiBodyLeaf>,
+}
+
+/// A body-plane typed absence: a leaf the native plane cannot emit, recorded by
+/// name instead of silently dropped.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeTeiBodyAbsence {
+    pub role: FulltextLeafRole,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub marker_subtype: Option<MarkerSubtype>,
+    pub reason: NativeTeiAbsenceReason,
+}
+
+/// Native body material: ordered sections, each with ordered leaves.
+///
+/// S02/T01 serialized one joined body text as XML character data.  S02/T02
+/// replaces that with the structured reading order the route plane already
+/// produces: a `<div type="section">` per native section, a `<p>` per prose
+/// leaf, a `<head>` per heading leaf and a `<ref type="bibr">` per resolved
+/// citation marker.  The joined text is reached through
+/// [`NativeTeiBodyInput::from_body_text`] (`NativeBodyText::text()`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeTeiBodyInput {
+    pub sections: Vec<NativeTeiBodySection>,
+    /// The native note disposition from the block plane
+    /// ([`NoteDisposition`]).  Notes are not emitted by this slice: a note leaf
+    /// that carries text is refused, an empty one is a typed absence.
+    #[serde(default = "default_note_disposition")]
+    pub note_disposition: NoteDisposition,
+}
+
+fn default_note_disposition() -> NoteDisposition {
+    NoteDisposition::SourceNotEstablished
+}
+
+impl NativeTeiBodyInput {
+    /// A body with no section reading order: one unnamed section holding one
+    /// paragraph.  `text` is meant to be `NativeBodyText::text()`.
+    pub fn single_paragraph(text: impl Into<String>) -> Self {
+        Self {
+            sections: vec![NativeTeiBodySection {
+                section_id: None,
+                depth: 1,
+                parent_section_id: None,
+                leaves: vec![NativeTeiBodyLeaf {
+                    text: text.into(),
+                    role: FulltextLeafRole::Paragraph,
+                    marker_subtype: None,
+                    published_key: None,
+                }],
+            }],
+            note_disposition: NoteDisposition::SourceNotEstablished,
+        }
+    }
+
+    /// The joined native body text, emitted unchanged as one paragraph.  The
+    /// native body plane exposes its text only through `text()`; taking the
+    /// borrow here is what keeps the emission's body content the admitted one.
+    pub fn from_body_text(body: &NativeBodyText) -> Self {
+        Self::single_paragraph(body.text())
+    }
 }
 
 /// Bounded emission limits, resolved by the caller.
@@ -191,6 +301,23 @@ pub struct NativeTeiEmissionLimits {
     pub max_envelope_bytes: usize,
     pub max_fragment_bytes: usize,
     pub max_absences: usize,
+    #[serde(default = "default_max_body_sections")]
+    pub max_body_sections: usize,
+    #[serde(default = "default_max_body_leaves")]
+    pub max_body_leaves: usize,
+}
+
+/// Mirrors the native section plane's own [`MAX_NATIVE_SECTION_RUNS`].
+pub const NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_SECTIONS: usize = 16_384;
+/// Mirrors the block plane's own `MAX_FULLTEXT_BLOCKS`.
+pub const NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_LEAVES: usize = 100_000;
+
+fn default_max_body_sections() -> usize {
+    NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_SECTIONS
+}
+
+fn default_max_body_leaves() -> usize {
+    NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_LEAVES
 }
 
 impl Default for NativeTeiEmissionLimits {
@@ -199,6 +326,8 @@ impl Default for NativeTeiEmissionLimits {
             max_envelope_bytes: NATIVE_TEI_EMISSION_DEFAULT_MAX_ENVELOPE_BYTES,
             max_fragment_bytes: NATIVE_TEI_EMISSION_DEFAULT_MAX_FRAGMENT_BYTES,
             max_absences: NATIVE_TEI_EMISSION_DEFAULT_MAX_ABSENCES,
+            max_body_sections: NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_SECTIONS,
+            max_body_leaves: NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_LEAVES,
         }
     }
 }
@@ -209,6 +338,8 @@ impl NativeTeiEmissionLimits {
             max_envelope_bytes: NATIVE_TEI_EMISSION_DEFAULT_MAX_ENVELOPE_BYTES,
             max_fragment_bytes: NATIVE_TEI_EMISSION_DEFAULT_MAX_FRAGMENT_BYTES,
             max_absences: NATIVE_TEI_EMISSION_DEFAULT_MAX_ABSENCES,
+            max_body_sections: NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_SECTIONS,
+            max_body_leaves: NATIVE_TEI_EMISSION_DEFAULT_MAX_BODY_LEAVES,
         }
     }
 }
@@ -259,6 +390,57 @@ pub enum NativeTeiEmissionError {
         bytes: usize,
         max: usize,
     },
+    /// The body input carries no section: there is no content to serialize, so
+    /// the caller should have passed `body: None` (a typed absence) instead.
+    EmptyBodyInput,
+    TooManyBodySections {
+        count: usize,
+        max: usize,
+    },
+    TooManyBodyLeaves {
+        count: usize,
+        max: usize,
+    },
+    TooManyBodyAbsences {
+        count: usize,
+        max: usize,
+    },
+    BodySectionDepthExceeded {
+        depth: u32,
+        max: u32,
+    },
+    /// A section id cannot be carried verbatim into an XML attribute.
+    UnrepresentableSectionId {
+        section_id: String,
+    },
+    DuplicateSectionId {
+        section_id: String,
+    },
+    /// A prose leaf carries no text: an empty paragraph would be a silent empty
+    /// element, so it is a typed refusal.
+    EmptyBodyLeaf {
+        role: FulltextLeafRole,
+    },
+    /// A leaf's text cannot be carried into XML character data (an illegal XML
+    /// character or a carriage return).
+    UnrepresentableBodyLeaf {
+        role: FulltextLeafRole,
+        detail: String,
+    },
+    /// A family the native plane cannot emit carries text: dropping it would be
+    /// silent loss, and splicing Java bytes is forbidden.
+    AbsentFamilyCarriesText {
+        family: NativeTeiFamily,
+    },
+    /// A leaf role this slice cannot serialize carries text.
+    BodyLeafNotEmittable {
+        role: FulltextLeafRole,
+        marker_subtype: Option<MarkerSubtype>,
+    },
+    /// A citation marker names a bibliography key the emission does not publish.
+    UnresolvedCitationTarget {
+        key: String,
+    },
     /// A shared serialization / semantic gate refused the fragment.
     Fragment(NativeFulltextCompositionError),
     /// The composed bytes failed the pre-acceptance structural gate.
@@ -289,6 +471,14 @@ pub struct NativeTeiEmissionManifest {
     /// One disposition per [`NativeTeiFamily`], in [`NativeTeiFamily::ALL`] order.
     pub families: Vec<NativeTeiFamilyDisposition>,
     pub byte_accounting: NativeTeiByteAccounting,
+    /// Body-plane typed absences: leaves this slice cannot emit, recorded by
+    /// role instead of silently dropped.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub body_absences: Vec<NativeTeiBodyAbsence>,
+    /// The native note disposition carried by the body input, when a body was
+    /// supplied.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body_note_disposition: Option<NoteDisposition>,
     /// `ReferenceLinkLedger` reused verbatim; the native bibliography publishes
     /// the positional `b{ordinal}` key domain.
     pub reference_links: ReferenceLinkLedger,
@@ -390,18 +580,7 @@ fn emit_inner(
     let keys = positional_reference_keys(&references.candidate.references)?;
 
     // Native body text (S02/T02 extends this into section structure).
-    let body_text = match &input.body {
-        Some(body) => {
-            if !representable_text(&body.text) {
-                return Err(NativeTeiEmissionError::UnrepresentableInput {
-                    family: NativeTeiFamily::Body,
-                    detail: "native body text cannot be carried into XML character data".into(),
-                });
-            }
-            body.text.as_str()
-        }
-        None => "",
-    };
+    let key_set: BTreeSet<String> = keys.iter().cloned().collect();
 
     // Serialize each band through the shared builders, so this emitter and the
     // composer can never disagree on one serialization of the same semantics.
@@ -411,12 +590,27 @@ fn emit_inner(
         &references.candidate.references,
         &references.candidate.fields,
     );
-    let body_escaped = esc(body_text);
+
+    // Body: one `<div type="section">` per native section in reading order, one
+    // `<p>`/`<head>`/`<ref>` per leaf.  A family the native plane cannot emit is
+    // a typed absence, never a Java fallback; a leaf carrying text for such a
+    // family is a typed refusal (silent loss is forbidden).
+    let rendered_body = match &input.body {
+        Some(body) => render_body_fragment(body, &key_set, &input.limits, &mut absence_reasons)?,
+        None => RenderedBody::default(),
+    };
+    if rendered_body.body_absences.len() > input.limits.max_absences {
+        return Err(NativeTeiEmissionError::TooManyBodyAbsences {
+            count: rendered_body.body_absences.len(),
+            max: input.limits.max_absences,
+        });
+    }
+    let body_fragment = rendered_body.fragment.as_str();
 
     for (part, bytes) in [
         ("header_fragment", header_fragment.len()),
         ("references_fragment", bibliography_fragment.len()),
-        ("body_fragment", body_escaped.len()),
+        ("body_fragment", body_fragment.len()),
     ] {
         if bytes > input.limits.max_fragment_bytes {
             return Err(NativeTeiEmissionError::Oversized {
@@ -436,7 +630,7 @@ fn emit_inner(
     bytes.extend_from_slice(b"\">");
     bytes.extend_from_slice(header_fragment.as_bytes());
     bytes.extend_from_slice(b"<text><body>");
-    bytes.extend_from_slice(body_escaped.as_bytes());
+    bytes.extend_from_slice(body_fragment.as_bytes());
     bytes.extend_from_slice(b"</body><back><div type=\"references\">");
     bytes.extend_from_slice(bibliography_fragment.as_bytes());
     bytes.extend_from_slice(b"</div></back></text></TEI>");
@@ -461,25 +655,42 @@ fn emit_inner(
     let reference_links = ReferenceLinkLedger {
         source_entries: keys.len(),
         admitted_references: references.candidate.references.len(),
-        // The section/paragraph citation refs are S02/T02's surface; T01 emits
-        // no body `ref` elements, so the demand is empty and fully resolved.
-        target_occurrences: 0,
-        required_targets: 0,
-        resolved_targets: 0,
+        // Body citation refs this emission serialized, and how many of their
+        // distinct targets resolve in the emitted id space.
+        target_occurrences: rendered_body.target_occurrences,
+        required_targets: rendered_body.targets.len(),
+        resolved_targets: rendered_body
+            .targets
+            .iter()
+            .filter(|target| document.has_xml_id(target))
+            .count(),
         id_space: document.xml_id_count(),
     };
 
     let families = family_dispositions(&emitted, &absence_reasons);
+    let mut absence_canon = String::new();
+    for family in NativeTeiFamily::ALL {
+        if let Some(reason) = absence_reasons.get(&family) {
+            absence_canon.push_str(family.token());
+            absence_canon.push(':');
+            absence_canon.push_str(reason.token());
+            absence_canon.push('\n');
+        }
+    }
     let byte_accounting = NativeTeiByteAccounting {
         header_bytes: header_fragment.len(),
         references_bytes: bibliography_fragment.len(),
-        body_bytes: body_escaped.len(),
+        body_bytes: body_fragment.len(),
         native_emitted_bytes: header_fragment.len()
             + bibliography_fragment.len()
-            + body_escaped.len(),
+            + body_fragment.len(),
         typed_absence_bytes: 0,
         envelope_bytes: bytes.len(),
         java_fallback_bytes: 0,
+        header_sha256: digest(header_fragment.as_bytes()),
+        references_sha256: digest(bibliography_fragment.as_bytes()),
+        body_sha256: digest(body_fragment.as_bytes()),
+        typed_absence_sha256: digest(absence_canon.as_bytes()),
     };
 
     let envelope = TeiEnvelope::new(
@@ -495,6 +706,11 @@ fn emit_inner(
         emission_sha256: digest(&bytes),
         families,
         byte_accounting,
+        body_absences: rendered_body.body_absences,
+        body_note_disposition: input
+            .body
+            .as_ref()
+            .map(|body| body.note_disposition.clone()),
         reference_links,
         semantic_fields: Box::new(semantic_fields),
     };
@@ -567,12 +783,230 @@ fn family_dispositions(
         .collect()
 }
 
+/// The rendered body band and the typed-absence facts it produced.
+#[derive(Debug, Default)]
+struct RenderedBody {
+    /// The serialized inner `<body>` content (one `<div type="section">` per
+    /// native section).
+    fragment: String,
+    /// Body-plane typed absences (leaves this slice cannot emit).
+    body_absences: Vec<NativeTeiBodyAbsence>,
+    /// `ref type="bibr"` elements serialized.
+    target_occurrences: usize,
+    /// Distinct published keys those refs demand.
+    targets: BTreeSet<String>,
+}
+
+/// Which [`NativeTeiFamily`] a body leaf belongs to, when the native plane has
+/// no emission for it.  `None` means the leaf is either emittable prose or a
+/// family-less leaf (a note, an unsupported token, a keyless marker).
+fn leaf_family(role: FulltextLeafRole, subtype: Option<MarkerSubtype>) -> Option<NativeTeiFamily> {
+    match (role, subtype) {
+        (FulltextLeafRole::Marker, Some(MarkerSubtype::Figure)) => Some(NativeTeiFamily::Figure),
+        (FulltextLeafRole::Marker, Some(MarkerSubtype::Table)) => Some(NativeTeiFamily::Table),
+        (FulltextLeafRole::Marker, Some(MarkerSubtype::Equation)) => Some(NativeTeiFamily::Formula),
+        _ => None,
+    }
+}
+
+/// Serialize the native body reading order.
+///
+/// One `<div type="section">` per native section, in the input's reading order;
+/// one `<p>` per prose leaf, `<head>` per heading leaf, `<ref type="bibr">` per
+/// resolved citation marker.  A family the native plane cannot emit becomes a
+/// typed absence (merged into `absence_reasons`); a leaf carrying text for such
+/// a family is a typed refusal, never silent loss and never Java bytes.
+fn render_body_fragment(
+    body: &NativeTeiBodyInput,
+    keys: &BTreeSet<String>,
+    limits: &NativeTeiEmissionLimits,
+    absence_reasons: &mut BTreeMap<NativeTeiFamily, NativeTeiAbsenceReason>,
+) -> Result<RenderedBody, NativeTeiEmissionError> {
+    if body.sections.is_empty() {
+        return Err(NativeTeiEmissionError::EmptyBodyInput);
+    }
+    if body.sections.len() > limits.max_body_sections {
+        return Err(NativeTeiEmissionError::TooManyBodySections {
+            count: body.sections.len(),
+            max: limits.max_body_sections,
+        });
+    }
+    let mut rendered = RenderedBody::default();
+    let mut seen_section_ids: BTreeSet<String> = BTreeSet::new();
+    let mut leaf_count = 0usize;
+    for section in &body.sections {
+        if section.depth == 0 || section.depth > MAX_NATIVE_SECTION_DEPTH {
+            return Err(NativeTeiEmissionError::BodySectionDepthExceeded {
+                depth: section.depth,
+                max: MAX_NATIVE_SECTION_DEPTH,
+            });
+        }
+        rendered.fragment.push_str("<div type=\"section\"");
+        if let Some(section_id) = &section.section_id {
+            if !representable_attribute(section_id) {
+                return Err(NativeTeiEmissionError::UnrepresentableSectionId {
+                    section_id: section_id.clone(),
+                });
+            }
+            if !seen_section_ids.insert(section_id.clone()) {
+                return Err(NativeTeiEmissionError::DuplicateSectionId {
+                    section_id: section_id.clone(),
+                });
+            }
+            rendered.fragment.push_str(" xml:id=\"");
+            rendered.fragment.push_str(&esc(section_id));
+            rendered.fragment.push('"');
+        }
+        rendered.fragment.push('>');
+        for leaf in &section.leaves {
+            leaf_count += 1;
+            if leaf_count > limits.max_body_leaves {
+                return Err(NativeTeiEmissionError::TooManyBodyLeaves {
+                    count: leaf_count,
+                    max: limits.max_body_leaves,
+                });
+            }
+            render_leaf(&mut rendered, leaf, keys, absence_reasons)?;
+        }
+        rendered.fragment.push_str("</div>");
+    }
+    Ok(rendered)
+}
+
+fn render_leaf(
+    rendered: &mut RenderedBody,
+    leaf: &NativeTeiBodyLeaf,
+    keys: &BTreeSet<String>,
+    absence_reasons: &mut BTreeMap<NativeTeiFamily, NativeTeiAbsenceReason>,
+) -> Result<(), NativeTeiEmissionError> {
+    match leaf.role {
+        FulltextLeafRole::Paragraph | FulltextLeafRole::ListItem => {
+            require_non_empty_text(leaf)?;
+            rendered.fragment.push_str("<p>");
+            rendered.fragment.push_str(&esc(&leaf.text));
+            rendered.fragment.push_str("</p>");
+        }
+        FulltextLeafRole::Section => {
+            require_non_empty_text(leaf)?;
+            rendered.fragment.push_str("<head>");
+            rendered.fragment.push_str(&esc(&leaf.text));
+            rendered.fragment.push_str("</head>");
+        }
+        FulltextLeafRole::Marker => match leaf.marker_subtype {
+            Some(MarkerSubtype::Citation) => match &leaf.published_key {
+                Some(key) => {
+                    if !representable_attribute(key) {
+                        return Err(NativeTeiEmissionError::UnrepresentableBodyLeaf {
+                            role: leaf.role,
+                            detail: "citation key cannot be carried into an XML attribute".into(),
+                        });
+                    }
+                    if !keys.contains(key) {
+                        return Err(NativeTeiEmissionError::UnresolvedCitationTarget {
+                            key: key.clone(),
+                        });
+                    }
+                    rendered.fragment.push_str("<ref type=\"bibr\" target=\"#");
+                    rendered.fragment.push_str(&esc(key));
+                    rendered.fragment.push('"');
+                    if leaf.text.is_empty() {
+                        rendered.fragment.push_str("/>");
+                    } else {
+                        require_representable_text(leaf)?;
+                        rendered.fragment.push('>');
+                        rendered.fragment.push_str(&esc(&leaf.text));
+                        rendered.fragment.push_str("</ref>");
+                    }
+                    rendered.target_occurrences += 1;
+                    rendered.targets.insert(key.clone());
+                }
+                None => {
+                    if leaf.text.is_empty() {
+                        rendered.body_absences.push(NativeTeiBodyAbsence {
+                            role: leaf.role,
+                            marker_subtype: leaf.marker_subtype,
+                            reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+                        });
+                    } else {
+                        require_representable_text(leaf)?;
+                        rendered.fragment.push_str("<p>");
+                        rendered.fragment.push_str(&esc(&leaf.text));
+                        rendered.fragment.push_str("</p>");
+                    }
+                }
+            },
+            Some(subtype) => {
+                let family = leaf_family(leaf.role, Some(subtype))
+                    .expect("a non-citation marker subtype maps to a family");
+                if !leaf.text.is_empty() {
+                    return Err(NativeTeiEmissionError::AbsentFamilyCarriesText { family });
+                }
+                absence_reasons
+                    .entry(family)
+                    .or_insert(NativeTeiAbsenceReason::NoAdmittedTokens);
+                rendered.body_absences.push(NativeTeiBodyAbsence {
+                    role: leaf.role,
+                    marker_subtype: Some(subtype),
+                    reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+                });
+            }
+            None => {
+                if !leaf.text.is_empty() {
+                    return Err(NativeTeiEmissionError::BodyLeafNotEmittable {
+                        role: leaf.role,
+                        marker_subtype: leaf.marker_subtype,
+                    });
+                }
+                rendered.body_absences.push(NativeTeiBodyAbsence {
+                    role: leaf.role,
+                    marker_subtype: leaf.marker_subtype,
+                    reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+                });
+            }
+        },
+        FulltextLeafRole::Note | FulltextLeafRole::Unsupported => {
+            if !leaf.text.is_empty() {
+                return Err(NativeTeiEmissionError::BodyLeafNotEmittable {
+                    role: leaf.role,
+                    marker_subtype: leaf.marker_subtype,
+                });
+            }
+            rendered.body_absences.push(NativeTeiBodyAbsence {
+                role: leaf.role,
+                marker_subtype: leaf.marker_subtype,
+                reason: NativeTeiAbsenceReason::NoAdmittedTokens,
+            });
+        }
+    }
+    Ok(())
+}
+
+/// A prose leaf must carry text: an empty paragraph is a typed refusal rather
+/// than a silent empty element.
+fn require_non_empty_text(leaf: &NativeTeiBodyLeaf) -> Result<(), NativeTeiEmissionError> {
+    if leaf.text.is_empty() {
+        return Err(NativeTeiEmissionError::EmptyBodyLeaf { role: leaf.role });
+    }
+    require_representable_text(leaf)
+}
+
+fn require_representable_text(leaf: &NativeTeiBodyLeaf) -> Result<(), NativeTeiEmissionError> {
+    if !representable_text(&leaf.text) {
+        return Err(NativeTeiEmissionError::UnrepresentableBodyLeaf {
+            role: leaf.role,
+            detail: "body leaf text cannot be carried into XML character data".into(),
+        });
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        AffiliationSpan, CitationField, CitationFieldRole, CitationSpan, ComponentDisposition,
-        ComponentReceipt, CompositionComponent, CompositionSpan, HeaderAuthor, HeaderCandidate,
+        AffiliationSpan, BodyCasePolicy, BodyJoinPolicy, BodyNormalization, BodyUnitRung,
+        CitationField, CitationFieldRole, CitationSpan, ComponentDisposition, ComponentReceipt,
+        CompositionComponent, CompositionSpan, HeaderAuthor, HeaderCandidate,
         HeaderCompositionCandidate, NativeAffiliationLink, NativeHeaderFields, RecognizedDate,
         RecognizedPersonalName, ReferenceCandidate, ReferenceCompositionCandidate,
     };
@@ -820,12 +1254,16 @@ mod tests {
     #[test]
     fn body_input_is_native_emitted_and_escaped() {
         let mut input = base_input();
-        input.body = Some(NativeTeiBodyInput {
-            text: "Body <text> & more".into(),
-        });
+        input.body = Some(NativeTeiBodyInput::single_paragraph("Body <text> & more"));
         let (envelope, manifest) = accepted(input);
         let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
-        assert!(text.contains("<body>Body &lt;text&gt; &amp; more</body>"));
+        assert!(text.contains(
+            "<text><body><div type=\"section\"><p>Body &lt;text&gt; &amp; more</p></div></body>"
+        ));
+        assert_eq!(
+            manifest.body_note_disposition,
+            Some(NoteDisposition::SourceNotEstablished)
+        );
         assert_eq!(
             family(&manifest, NativeTeiFamily::Body).disposition,
             NativeTeiDisposition::NativeEmitted
@@ -870,14 +1308,12 @@ mod tests {
     #[test]
     fn unrepresentable_body_text_is_refused() {
         let mut input = base_input();
-        input.body = Some(NativeTeiBodyInput {
-            text: "carriage\rreturn".into(),
-        });
+        input.body = Some(NativeTeiBodyInput::single_paragraph("carriage\rreturn"));
         assert!(matches!(
             emit_native_tei(input),
             NativeTeiEmissionOutcome::Rejected {
-                error: NativeTeiEmissionError::UnrepresentableInput {
-                    family: NativeTeiFamily::Body,
+                error: NativeTeiEmissionError::UnrepresentableBodyLeaf {
+                    role: FulltextLeafRole::Paragraph,
                     ..
                 }
             }
@@ -929,5 +1365,322 @@ mod tests {
         reasons.sort_unstable();
         reasons.dedup();
         assert_eq!(reasons.len(), 4);
+    }
+
+    fn leaf(text: &str, role: FulltextLeafRole) -> NativeTeiBodyLeaf {
+        NativeTeiBodyLeaf {
+            text: text.into(),
+            role,
+            marker_subtype: None,
+            published_key: None,
+        }
+    }
+
+    fn section(id: &str, leaves: Vec<NativeTeiBodyLeaf>) -> NativeTeiBodySection {
+        NativeTeiBodySection {
+            section_id: Some(id.into()),
+            depth: 1,
+            parent_section_id: None,
+            leaves,
+        }
+    }
+
+    fn body_with(sections: Vec<NativeTeiBodySection>) -> NativeTeiBodyInput {
+        NativeTeiBodyInput {
+            sections,
+            note_disposition: NoteDisposition::SourceNotEstablished,
+        }
+    }
+
+    #[test]
+    fn synthetic_body_emits_div_and_p_in_reading_order() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![
+            section(
+                "body-0-1",
+                vec![
+                    NativeTeiBodyLeaf {
+                        text: "Introduction".into(),
+                        role: FulltextLeafRole::Section,
+                        marker_subtype: None,
+                        published_key: None,
+                    },
+                    leaf("First paragraph.", FulltextLeafRole::Paragraph),
+                ],
+            ),
+            section(
+                "body-1-2",
+                vec![leaf("Second paragraph.", FulltextLeafRole::Paragraph)],
+            ),
+        ]));
+        let (envelope, manifest) = accepted(input);
+        let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
+        let div0 = text
+            .find("<div type=\"section\" xml:id=\"body-0-1\">")
+            .expect("first section div");
+        let head = text.find("<head>Introduction</head>").expect("heading");
+        let p0 = text.find("<p>First paragraph.</p>").expect("first p");
+        let div1 = text
+            .find("<div type=\"section\" xml:id=\"body-1-2\">")
+            .expect("second section div");
+        let p1 = text.find("<p>Second paragraph.</p>").expect("second p");
+        assert!(div0 < head && head < p0 && p0 < div1 && div1 < p1);
+        assert!(manifest.body_absences.is_empty());
+    }
+
+    #[test]
+    fn empty_prose_leaf_is_refused() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![leaf("", FulltextLeafRole::Paragraph)],
+        )]));
+        assert!(matches!(
+            emit_native_tei(input),
+            NativeTeiEmissionOutcome::Rejected {
+                error: NativeTeiEmissionError::EmptyBodyLeaf {
+                    role: FulltextLeafRole::Paragraph
+                }
+            }
+        ));
+    }
+
+    #[test]
+    fn illegal_xml_char_in_body_leaf_is_refused() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![leaf("bad\u{0}value", FulltextLeafRole::Paragraph)],
+        )]));
+        assert!(matches!(
+            emit_native_tei(input),
+            NativeTeiEmissionOutcome::Rejected {
+                error: NativeTeiEmissionError::UnrepresentableBodyLeaf { .. }
+            }
+        ));
+    }
+
+    #[test]
+    fn absent_family_carries_text_is_refused() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![NativeTeiBodyLeaf {
+                text: "Figure 1".into(),
+                role: FulltextLeafRole::Marker,
+                marker_subtype: Some(MarkerSubtype::Figure),
+                published_key: None,
+            }],
+        )]));
+        assert!(matches!(
+            emit_native_tei(input),
+            NativeTeiEmissionOutcome::Rejected {
+                error: NativeTeiEmissionError::AbsentFamilyCarriesText {
+                    family: NativeTeiFamily::Figure
+                }
+            }
+        ));
+    }
+
+    #[test]
+    fn citation_marker_emits_ref_with_published_key() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![NativeTeiBodyLeaf {
+                text: "[1]".into(),
+                role: FulltextLeafRole::Marker,
+                marker_subtype: Some(MarkerSubtype::Citation),
+                published_key: Some("b0".into()),
+            }],
+        )]));
+        let (envelope, manifest) = accepted(input);
+        let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
+        assert!(text.contains("<ref type=\"bibr\" target=\"#b0\">[1]</ref>"));
+        assert_eq!(manifest.reference_links.target_occurrences, 1);
+        assert_eq!(manifest.reference_links.required_targets, 1);
+        assert_eq!(manifest.reference_links.resolved_targets, 1);
+    }
+
+    #[test]
+    fn citation_marker_without_key_is_plain_text() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![NativeTeiBodyLeaf {
+                text: "[1]".into(),
+                role: FulltextLeafRole::Marker,
+                marker_subtype: Some(MarkerSubtype::Citation),
+                published_key: None,
+            }],
+        )]));
+        let (envelope, manifest) = accepted(input);
+        let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
+        assert!(text.contains("<p>[1]</p>"));
+        assert!(!text.contains("target=\"#"));
+        assert_eq!(manifest.reference_links.target_occurrences, 0);
+    }
+
+    #[test]
+    fn unresolved_citation_target_is_refused() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![NativeTeiBodyLeaf {
+                text: "[9]".into(),
+                role: FulltextLeafRole::Marker,
+                marker_subtype: Some(MarkerSubtype::Citation),
+                published_key: Some("b7".into()),
+            }],
+        )]));
+        assert!(matches!(
+            emit_native_tei(input),
+            NativeTeiEmissionOutcome::Rejected {
+                error: NativeTeiEmissionError::UnresolvedCitationTarget { key }
+            } if key == "b7"
+        ));
+    }
+
+    #[test]
+    fn absent_families_are_typed_absence_in_manifest() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![
+                leaf("A paragraph.", FulltextLeafRole::Paragraph),
+                NativeTeiBodyLeaf {
+                    text: String::new(),
+                    role: FulltextLeafRole::Marker,
+                    marker_subtype: Some(MarkerSubtype::Figure),
+                    published_key: None,
+                },
+                NativeTeiBodyLeaf {
+                    text: String::new(),
+                    role: FulltextLeafRole::Marker,
+                    marker_subtype: Some(MarkerSubtype::Table),
+                    published_key: None,
+                },
+            ],
+        )]));
+        input.absences = vec![
+            NativeTeiAbsence {
+                family: NativeTeiFamily::Visual,
+                reason: NativeTeiAbsenceReason::NativeFamilyUnavailable,
+            },
+            NativeTeiAbsence {
+                family: NativeTeiFamily::Callout,
+                reason: NativeTeiAbsenceReason::NativeFamilyUnavailable,
+            },
+        ];
+        let (envelope, manifest) = accepted(input);
+        let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
+        assert!(text.contains("<p>A paragraph.</p>"));
+        for absent in [
+            NativeTeiFamily::Figure,
+            NativeTeiFamily::Table,
+            NativeTeiFamily::Visual,
+            NativeTeiFamily::Callout,
+        ] {
+            let disposition = family(&manifest, absent);
+            assert_eq!(disposition.disposition, NativeTeiDisposition::TypedAbsence);
+        }
+        assert_eq!(manifest.body_absences.len(), 2);
+        assert_eq!(manifest.byte_accounting.typed_absence_bytes, 0);
+        assert!(!manifest.byte_accounting.typed_absence_sha256.is_empty());
+    }
+
+    #[test]
+    fn byte_accounting_re_derives_from_components() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![leaf("A paragraph.", FulltextLeafRole::Paragraph)],
+        )]));
+        let (envelope, manifest) = accepted(input);
+        let text = std::str::from_utf8(envelope.raw_tei()).expect("utf-8 emission");
+        let body_start = text.find("<text><body>").expect("body open") + "<text><body>".len();
+        let body_end = text.find("</body>").expect("body close");
+        let body_fragment = &text[body_start..body_end];
+        assert_eq!(manifest.byte_accounting.body_bytes, body_fragment.len());
+        assert_eq!(
+            manifest.byte_accounting.body_sha256,
+            digest(body_fragment.as_bytes())
+        );
+        assert_eq!(
+            manifest.byte_accounting.native_emitted_bytes,
+            manifest.byte_accounting.header_bytes
+                + manifest.byte_accounting.references_bytes
+                + manifest.byte_accounting.body_bytes
+        );
+        assert_eq!(
+            manifest.byte_accounting.envelope_bytes,
+            envelope.raw_tei().len()
+        );
+        assert!(!manifest.byte_accounting.header_sha256.is_empty());
+        assert!(!manifest.byte_accounting.references_sha256.is_empty());
+    }
+
+    #[test]
+    fn duplicate_section_id_is_refused() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![
+            section("body-0-1", vec![leaf("One.", FulltextLeafRole::Paragraph)]),
+            section("body-0-1", vec![leaf("Two.", FulltextLeafRole::Paragraph)]),
+        ]));
+        assert!(matches!(
+            emit_native_tei(input),
+            NativeTeiEmissionOutcome::Rejected {
+                error: NativeTeiEmissionError::DuplicateSectionId { .. }
+            }
+        ));
+    }
+
+    #[test]
+    fn non_emittable_leaf_with_text_is_refused() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![section(
+            "body-0-1",
+            vec![leaf("a footnote", FulltextLeafRole::Note)],
+        )]));
+        assert!(matches!(
+            emit_native_tei(input),
+            NativeTeiEmissionOutcome::Rejected {
+                error: NativeTeiEmissionError::BodyLeafNotEmittable {
+                    role: FulltextLeafRole::Note,
+                    ..
+                }
+            }
+        ));
+    }
+
+    #[test]
+    fn empty_body_input_is_refused() {
+        let mut input = base_input();
+        input.body = Some(body_with(vec![]));
+        assert!(matches!(
+            emit_native_tei(input),
+            NativeTeiEmissionOutcome::Rejected {
+                error: NativeTeiEmissionError::EmptyBodyInput
+            }
+        ));
+    }
+
+    #[test]
+    fn body_input_from_native_body_text_uses_joined_text() {
+        let text = NativeBodyText::from_joined_text(
+            "doc-1",
+            "a".repeat(64),
+            3,
+            Some((1, 1)),
+            BodyJoinPolicy::VerbatimTokenConcat,
+            "abc def ghi",
+            BodyUnitRung::new(BodyNormalization::Raw, BodyCasePolicy::CaseSensitive),
+        )
+        .expect("a valid native body text");
+        let body = NativeTeiBodyInput::from_body_text(&text);
+        assert_eq!(body.sections.len(), 1);
+        assert_eq!(body.sections[0].leaves.len(), 1);
+        assert_eq!(body.sections[0].leaves[0].text, "abc def ghi");
+        assert_eq!(body.sections[0].leaves[0].role, FulltextLeafRole::Paragraph);
     }
 }

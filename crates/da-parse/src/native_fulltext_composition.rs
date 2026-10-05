@@ -943,7 +943,7 @@ pub(crate) fn representable_text(value: &str) -> bool {
 ///
 /// Attribute values additionally normalize tab, newline and carriage return to a
 /// single space, so a key carrying any of them cannot be re-emitted verbatim.
-fn representable_attribute(value: &str) -> bool {
+pub(crate) fn representable_attribute(value: &str) -> bool {
     !value.is_empty()
         && value
             .chars()
@@ -2772,6 +2772,13 @@ impl XmlDocument {
     /// `#fragment` target can resolve against.
     pub(crate) fn xml_id_count(&self) -> usize {
         self.xml_ids.len()
+    }
+
+    /// Whether an `xml:id` value exists in the emitted document, so a `#fragment`
+    /// target naming it resolves. The native emission asks this of its own bytes
+    /// instead of assuming a key it just published still exists.
+    pub(crate) fn has_xml_id(&self, id: &str) -> bool {
+        self.xml_ids.iter().any(|value| value == id)
     }
 }
 
