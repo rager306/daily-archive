@@ -1,0 +1,996 @@
+{
+  "artifact": "m516_example_build_surface",
+  "milestone": "M516-th0oby",
+  "slice": "S01",
+  "task": "T01",
+  "schema_version": 1,
+  "measured_at": "2026-10-05T05:45:06+00:00",
+  "toolchain": {
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "default_toolchain": "1.99.0-x86_64-unknown-linux-gnu",
+    "available_toolchains": [
+      "stable",
+      "1.98.0",
+      "1.98.1",
+      "1.99",
+      "1.99.0"
+    ]
+  },
+  "measurement_method": {
+    "example_sources": "top-level crates/*/examples/*.rs is one source per example; nested .rs are example modules",
+    "example_targets_and_gating": "cargo metadata --no-deps (authoritative required-features)",
+    "rlib_duplication": "target/debug/deps/*.rlib count vs distinct crate names after stripping lib prefix and 16-hex hash; unique inodes via st_ino",
+    "example_binaries": "files in target/debug/examples vs unique inodes via st_ino",
+    "static_build_surface": "an example target links under a feature set iff its required-features is a subset of the requested set"
+  },
+  "example_sources": {
+    "count": 108,
+    "note": "top-level .rs sources; matches the 108 figure recorded in the S01 plan",
+    "paths": [
+      "crates/da-adapters/examples/pdf_triage_canary.rs",
+      "crates/da-cli/examples/acap_aggregate.rs",
+      "crates/da-cli/examples/acap_contract_audit.rs",
+      "crates/da-cli/examples/acap_project_pipeline_layers.rs",
+      "crates/da-cli/examples/acceptance_evidence.rs",
+      "crates/da-cli/examples/analyze_figure.rs",
+      "crates/da-cli/examples/article_metadata_audit.rs",
+      "crates/da-cli/examples/batch_promote_gold.rs",
+      "crates/da-cli/examples/callout_matching_shadow.rs",
+      "crates/da-cli/examples/catalog_drift_stats.rs",
+      "crates/da-cli/examples/catalog_materialize_runner.rs",
+      "crates/da-cli/examples/catalog_reconcile.rs",
+      "crates/da-cli/examples/catalog_sweep_runner.rs",
+      "crates/da-cli/examples/concept_cluster_canary.rs",
+      "crates/da-cli/examples/consolidation_specialized_shadow.rs",
+      "crates/da-cli/examples/context_conservation_profile.rs",
+      "crates/da-cli/examples/corpus_regression_check.rs",
+      "crates/da-cli/examples/corpus_required_layer_checkpoint.rs",
+      "crates/da-cli/examples/cross_stage_semantic_invariants.rs",
+      "crates/da-cli/examples/detect_figures.rs",
+      "crates/da-cli/examples/document_segmentation_shadow.rs",
+      "crates/da-cli/examples/entity_resolution_canary.rs",
+      "crates/da-cli/examples/eval_batch.rs",
+      "crates/da-cli/examples/eval_extract.rs",
+      "crates/da-cli/examples/eval_html.rs",
+      "crates/da-cli/examples/external_holdout_capture.rs",
+      "crates/da-cli/examples/external_holdout_release_probe.rs",
+      "crates/da-cli/examples/extract_probe.rs",
+      "crates/da-cli/examples/extractive_summary_canary.rs",
+      "crates/da-cli/examples/feature_tagger_training_shadow.rs",
+      "crates/da-cli/examples/figure_context.rs",
+      "crates/da-cli/examples/fulltext_block_semantics_shadow.rs",
+      "crates/da-cli/examples/gepa_hub_research.rs",
+      "crates/da-cli/examples/gold_corpus_canary.rs",
+      "crates/da-cli/examples/gold_corpus_manifest.rs",
+      "crates/da-cli/examples/gold_graph_all_waves.rs",
+      "crates/da-cli/examples/gold_graph_wave.rs",
+      "crates/da-cli/examples/graph_task_suite.rs",
+      "crates/da-cli/examples/grobid_stage_tape.rs",
+      "crates/da-cli/examples/inventory_fp.rs",
+      "crates/da-cli/examples/java_free_vertical_slice.rs",
+      "crates/da-cli/examples/layout_bakeoff.rs",
+      "crates/da-cli/examples/materialization_hot_path_profile.rs",
+      "crates/da-cli/examples/materialization_profile.rs",
+      "crates/da-cli/examples/materialize_index_bench.rs",
+      "crates/da-cli/examples/native_acceptance_package.rs",
+      "crates/da-cli/examples/native_body_accounting_shadow.rs",
+      "crates/da-cli/examples/native_body_character_probe.rs",
+      "crates/da-cli/examples/native_body_order_lineage_probe.rs",
+      "crates/da-cli/examples/native_body_uncertainty_split_probe.rs",
+      "crates/da-cli/examples/native_content_receipt.rs",
+      "crates/da-cli/examples/native_core_profile.rs",
+      "crates/da-cli/examples/native_core_smp.rs",
+      "crates/da-cli/examples/native_corpus_acceptance.rs",
+      "crates/da-cli/examples/native_corpus_resource_same_n.rs",
+      "crates/da-cli/examples/native_corpus_rollback_rehearsal.rs",
+      "crates/da-cli/examples/native_exclusion_recovery.rs",
+      "crates/da-cli/examples/native_family_gate_rehearsal.rs",
+      "crates/da-cli/examples/native_family_parity.rs",
+      "crates/da-cli/examples/native_family_promotion_rehearsal.rs",
+      "crates/da-cli/examples/native_fulltext_composition_shadow.rs",
+      "crates/da-cli/examples/native_fulltext_corpus_shadow.rs",
+      "crates/da-cli/examples/native_java_disabled_smoke.rs",
+      "crates/da-cli/examples/native_java_work.rs",
+      "crates/da-cli/examples/native_resource_same_n.rs",
+      "crates/da-cli/examples/native_retirement_readiness.rs",
+      "crates/da-cli/examples/native_route_e2e.rs",
+      "crates/da-cli/examples/native_route_recovery.rs",
+      "crates/da-cli/examples/native_visual_heads_shadow.rs",
+      "crates/da-cli/examples/ontology_acceptance.rs",
+      "crates/da-cli/examples/ontology_contract_audit.rs",
+      "crates/da-cli/examples/ontology_endpoint_canary.rs",
+      "crates/da-cli/examples/ontology_v2_convergence_canary.rs",
+      "crates/da-cli/examples/ordered_mutation_canary.rs",
+      "crates/da-cli/examples/p5_shadow_join.rs",
+      "crates/da-cli/examples/parse_batch_budget_shadow.rs",
+      "crates/da-cli/examples/parse_compat_baseline.rs",
+      "crates/da-cli/examples/parse_learning_ablation.rs",
+      "crates/da-cli/examples/parse_learning_corpus_freeze.rs",
+      "crates/da-cli/examples/parse_learning_cycle.rs",
+      "crates/da-cli/examples/parse_policy_ablation.rs",
+      "crates/da-cli/examples/pipeline_acceptance.rs",
+      "crates/da-cli/examples/pipeline_cache_profile.rs",
+      "crates/da-cli/examples/pipeline_figures.rs",
+      "crates/da-cli/examples/pipeline_finalize.rs",
+      "crates/da-cli/examples/pipeline_ledger_audit.rs",
+      "crates/da-cli/examples/pipeline_metrics_profile.rs",
+      "crates/da-cli/examples/pipeline_semantic.rs",
+      "crates/da-cli/examples/prompt_eval.rs",
+      "crates/da-cli/examples/prompt_eval_inference.rs",
+      "crates/da-cli/examples/prompt_eval_scored.rs",
+      "crates/da-cli/examples/prompt_optimizer_readiness.rs",
+      "crates/da-cli/examples/python_archive_audit.rs",
+      "crates/da-cli/examples/rest_batch_asset_shadow.rs",
+      "crates/da-cli/examples/retrieval_benchmark.rs",
+      "crates/da-cli/examples/revision_graph_canary.rs",
+      "crates/da-cli/examples/revision_readiness_canary.rs",
+      "crates/da-cli/examples/rust_pipeline_acceptance.rs",
+      "crates/da-cli/examples/samyama_hot_path_profile.rs",
+      "crates/da-cli/examples/scholarly_evidence_canary.rs",
+      "crates/da-cli/examples/sona_policy_training.rs",
+      "crates/da-cli/examples/stage_ablation_report.rs",
+      "crates/da-cli/examples/suggest_whitelist.rs",
+      "crates/da-cli/examples/tex_source_inspect.rs",
+      "crates/da-cli/examples/vertical_scientific_path.rs",
+      "crates/da-cli/examples/visual_positive_fixture_run.rs",
+      "crates/kg-storage/examples/remote_graph_probe.rs",
+      "crates/kg-storage/examples/snapshot_identity_probe.rs"
+    ],
+    "nested_module_rs_count": 3
+  },
+  "example_targets": {
+    "count": 109,
+    "by_crate": {
+      "da-adapters": 1,
+      "da-cli": 106,
+      "kg-storage": 2
+    },
+    "feature_gated_count": 27,
+    "by_feature": {
+      "learning-evaluation": 3,
+      "pdf-classifier": 5,
+      "pdf-layout": 22,
+      "samyama": 1
+    },
+    "by_feature_combo": {
+      "learning-evaluation": 3,
+      "pdf-classifier": 1,
+      "pdf-classifier+pdf-layout": 4,
+      "pdf-layout": 18,
+      "samyama": 1
+    },
+    "targets": [
+      {
+        "package": "da-adapters",
+        "name": "pdf_triage_canary",
+        "src_path": "crates/da-adapters/examples/pdf_triage_canary.rs",
+        "required_features": [
+          "pdf-classifier"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "acap_aggregate",
+        "src_path": "crates/da-cli/examples/acap_aggregate.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "acap_contract_audit",
+        "src_path": "crates/da-cli/examples/acap_contract_audit.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "acap_project_pipeline_layers",
+        "src_path": "crates/da-cli/examples/acap_project_pipeline_layers.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "acceptance_evidence",
+        "src_path": "crates/da-cli/examples/acceptance_evidence.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "analyze_figure",
+        "src_path": "crates/da-cli/examples/analyze_figure.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "article_metadata_audit",
+        "src_path": "crates/da-cli/examples/article_metadata_audit.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "batch_promote_gold",
+        "src_path": "crates/da-cli/examples/batch_promote_gold.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "callout_matching_shadow",
+        "src_path": "crates/da-cli/examples/callout_matching_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "catalog_drift_stats",
+        "src_path": "crates/da-cli/examples/catalog_drift_stats.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "catalog_materialize_runner",
+        "src_path": "crates/da-cli/examples/catalog_materialize_runner.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "catalog_reconcile",
+        "src_path": "crates/da-cli/examples/catalog_reconcile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "catalog_sweep_runner",
+        "src_path": "crates/da-cli/examples/catalog_sweep_runner.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "concept_cluster_canary",
+        "src_path": "crates/da-cli/examples/concept_cluster_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "consolidation_specialized_shadow",
+        "src_path": "crates/da-cli/examples/consolidation_specialized_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "context_conservation_profile",
+        "src_path": "crates/da-cli/examples/context_conservation_profile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "corpus_regression_check",
+        "src_path": "crates/da-cli/examples/corpus_regression_check.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "corpus_required_layer_checkpoint",
+        "src_path": "crates/da-cli/examples/corpus_required_layer_checkpoint.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "cross_stage_semantic_invariants",
+        "src_path": "crates/da-cli/examples/cross_stage_semantic_invariants.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "derived_maturity_rehearsal",
+        "src_path": "crates/da-cli/examples/derived_maturity_rehearsal/main.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "detect_figures",
+        "src_path": "crates/da-cli/examples/detect_figures.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "document_segmentation_shadow",
+        "src_path": "crates/da-cli/examples/document_segmentation_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "entity_resolution_canary",
+        "src_path": "crates/da-cli/examples/entity_resolution_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "eval_batch",
+        "src_path": "crates/da-cli/examples/eval_batch.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "eval_extract",
+        "src_path": "crates/da-cli/examples/eval_extract.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "eval_html",
+        "src_path": "crates/da-cli/examples/eval_html.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "external_holdout_capture",
+        "src_path": "crates/da-cli/examples/external_holdout_capture.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "external_holdout_release_probe",
+        "src_path": "crates/da-cli/examples/external_holdout_release_probe.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "extract_probe",
+        "src_path": "crates/da-cli/examples/extract_probe.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "extractive_summary_canary",
+        "src_path": "crates/da-cli/examples/extractive_summary_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "feature_tagger_training_shadow",
+        "src_path": "crates/da-cli/examples/feature_tagger_training_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "figure_context",
+        "src_path": "crates/da-cli/examples/figure_context.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "fulltext_block_semantics_shadow",
+        "src_path": "crates/da-cli/examples/fulltext_block_semantics_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "gepa_hub_research",
+        "src_path": "crates/da-cli/examples/gepa_hub_research.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "gold_corpus_canary",
+        "src_path": "crates/da-cli/examples/gold_corpus_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "gold_corpus_manifest",
+        "src_path": "crates/da-cli/examples/gold_corpus_manifest.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "gold_graph_all_waves",
+        "src_path": "crates/da-cli/examples/gold_graph_all_waves.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "gold_graph_wave",
+        "src_path": "crates/da-cli/examples/gold_graph_wave.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "graph_task_suite",
+        "src_path": "crates/da-cli/examples/graph_task_suite.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "grobid_stage_tape",
+        "src_path": "crates/da-cli/examples/grobid_stage_tape.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "inventory_fp",
+        "src_path": "crates/da-cli/examples/inventory_fp.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "java_free_vertical_slice",
+        "src_path": "crates/da-cli/examples/java_free_vertical_slice.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "layout_bakeoff",
+        "src_path": "crates/da-cli/examples/layout_bakeoff.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "materialization_hot_path_profile",
+        "src_path": "crates/da-cli/examples/materialization_hot_path_profile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "materialization_profile",
+        "src_path": "crates/da-cli/examples/materialization_profile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "materialize_index_bench",
+        "src_path": "crates/da-cli/examples/materialize_index_bench.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_acceptance_package",
+        "src_path": "crates/da-cli/examples/native_acceptance_package.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_body_accounting_shadow",
+        "src_path": "crates/da-cli/examples/native_body_accounting_shadow.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_body_character_probe",
+        "src_path": "crates/da-cli/examples/native_body_character_probe.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_body_order_lineage_probe",
+        "src_path": "crates/da-cli/examples/native_body_order_lineage_probe.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_body_uncertainty_split_probe",
+        "src_path": "crates/da-cli/examples/native_body_uncertainty_split_probe.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_content_receipt",
+        "src_path": "crates/da-cli/examples/native_content_receipt.rs",
+        "required_features": [
+          "pdf-classifier",
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_core_profile",
+        "src_path": "crates/da-cli/examples/native_core_profile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_core_smp",
+        "src_path": "crates/da-cli/examples/native_core_smp.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_corpus_acceptance",
+        "src_path": "crates/da-cli/examples/native_corpus_acceptance.rs",
+        "required_features": [
+          "pdf-classifier",
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_corpus_resource_same_n",
+        "src_path": "crates/da-cli/examples/native_corpus_resource_same_n.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_corpus_rollback_rehearsal",
+        "src_path": "crates/da-cli/examples/native_corpus_rollback_rehearsal.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_exclusion_recovery",
+        "src_path": "crates/da-cli/examples/native_exclusion_recovery.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_family_gate_rehearsal",
+        "src_path": "crates/da-cli/examples/native_family_gate_rehearsal.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_family_parity",
+        "src_path": "crates/da-cli/examples/native_family_parity.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_family_promotion_rehearsal",
+        "src_path": "crates/da-cli/examples/native_family_promotion_rehearsal.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_fulltext_composition_shadow",
+        "src_path": "crates/da-cli/examples/native_fulltext_composition_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_fulltext_corpus_shadow",
+        "src_path": "crates/da-cli/examples/native_fulltext_corpus_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_java_disabled_smoke",
+        "src_path": "crates/da-cli/examples/native_java_disabled_smoke.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_java_work",
+        "src_path": "crates/da-cli/examples/native_java_work.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_resource_same_n",
+        "src_path": "crates/da-cli/examples/native_resource_same_n.rs",
+        "required_features": [
+          "pdf-classifier",
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_retirement_readiness",
+        "src_path": "crates/da-cli/examples/native_retirement_readiness.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_route_e2e",
+        "src_path": "crates/da-cli/examples/native_route_e2e.rs",
+        "required_features": [
+          "pdf-classifier",
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "native_route_recovery",
+        "src_path": "crates/da-cli/examples/native_route_recovery.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "native_visual_heads_shadow",
+        "src_path": "crates/da-cli/examples/native_visual_heads_shadow.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "ontology_acceptance",
+        "src_path": "crates/da-cli/examples/ontology_acceptance.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "ontology_contract_audit",
+        "src_path": "crates/da-cli/examples/ontology_contract_audit.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "ontology_endpoint_canary",
+        "src_path": "crates/da-cli/examples/ontology_endpoint_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "ontology_v2_convergence_canary",
+        "src_path": "crates/da-cli/examples/ontology_v2_convergence_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "ordered_mutation_canary",
+        "src_path": "crates/da-cli/examples/ordered_mutation_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "p5_shadow_join",
+        "src_path": "crates/da-cli/examples/p5_shadow_join.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "parse_batch_budget_shadow",
+        "src_path": "crates/da-cli/examples/parse_batch_budget_shadow.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "parse_compat_baseline",
+        "src_path": "crates/da-cli/examples/parse_compat_baseline.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "parse_learning_ablation",
+        "src_path": "crates/da-cli/examples/parse_learning_ablation.rs",
+        "required_features": [
+          "learning-evaluation"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "parse_learning_corpus_freeze",
+        "src_path": "crates/da-cli/examples/parse_learning_corpus_freeze.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "parse_learning_cycle",
+        "src_path": "crates/da-cli/examples/parse_learning_cycle.rs",
+        "required_features": [
+          "learning-evaluation"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "parse_policy_ablation",
+        "src_path": "crates/da-cli/examples/parse_policy_ablation.rs",
+        "required_features": [
+          "learning-evaluation"
+        ]
+      },
+      {
+        "package": "da-cli",
+        "name": "pipeline_acceptance",
+        "src_path": "crates/da-cli/examples/pipeline_acceptance.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "pipeline_cache_profile",
+        "src_path": "crates/da-cli/examples/pipeline_cache_profile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "pipeline_figures",
+        "src_path": "crates/da-cli/examples/pipeline_figures.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "pipeline_finalize",
+        "src_path": "crates/da-cli/examples/pipeline_finalize.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "pipeline_ledger_audit",
+        "src_path": "crates/da-cli/examples/pipeline_ledger_audit.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "pipeline_metrics_profile",
+        "src_path": "crates/da-cli/examples/pipeline_metrics_profile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "pipeline_semantic",
+        "src_path": "crates/da-cli/examples/pipeline_semantic.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "prompt_eval",
+        "src_path": "crates/da-cli/examples/prompt_eval.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "prompt_eval_inference",
+        "src_path": "crates/da-cli/examples/prompt_eval_inference.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "prompt_eval_scored",
+        "src_path": "crates/da-cli/examples/prompt_eval_scored.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "prompt_optimizer_readiness",
+        "src_path": "crates/da-cli/examples/prompt_optimizer_readiness.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "python_archive_audit",
+        "src_path": "crates/da-cli/examples/python_archive_audit.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "rest_batch_asset_shadow",
+        "src_path": "crates/da-cli/examples/rest_batch_asset_shadow.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "retrieval_benchmark",
+        "src_path": "crates/da-cli/examples/retrieval_benchmark.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "revision_graph_canary",
+        "src_path": "crates/da-cli/examples/revision_graph_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "revision_readiness_canary",
+        "src_path": "crates/da-cli/examples/revision_readiness_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "rust_pipeline_acceptance",
+        "src_path": "crates/da-cli/examples/rust_pipeline_acceptance.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "samyama_hot_path_profile",
+        "src_path": "crates/da-cli/examples/samyama_hot_path_profile.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "scholarly_evidence_canary",
+        "src_path": "crates/da-cli/examples/scholarly_evidence_canary.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "sona_policy_training",
+        "src_path": "crates/da-cli/examples/sona_policy_training.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "stage_ablation_report",
+        "src_path": "crates/da-cli/examples/stage_ablation_report.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "suggest_whitelist",
+        "src_path": "crates/da-cli/examples/suggest_whitelist.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "tex_source_inspect",
+        "src_path": "crates/da-cli/examples/tex_source_inspect.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "vertical_scientific_path",
+        "src_path": "crates/da-cli/examples/vertical_scientific_path.rs",
+        "required_features": []
+      },
+      {
+        "package": "da-cli",
+        "name": "visual_positive_fixture_run",
+        "src_path": "crates/da-cli/examples/visual_positive_fixture_run.rs",
+        "required_features": [
+          "pdf-layout"
+        ]
+      },
+      {
+        "package": "kg-storage",
+        "name": "remote_graph_probe",
+        "src_path": "crates/kg-storage/examples/remote_graph_probe.rs",
+        "required_features": []
+      },
+      {
+        "package": "kg-storage",
+        "name": "snapshot_identity_probe",
+        "src_path": "crates/kg-storage/examples/snapshot_identity_probe.rs",
+        "required_features": [
+          "samyama"
+        ]
+      }
+    ]
+  },
+  "rlib_duplication": {
+    "rlib_file_count": 1238,
+    "distinct_crate_count": 397,
+    "duplication_factor": 3.1184,
+    "unique_inode_count": 1238,
+    "note": "rlib files vs distinct crates: the same crate is compiled once per feature/flag configuration."
+  },
+  "example_binaries": {
+    "binary_count": 0,
+    "unique_inode_count": 0,
+    "duplication_factor": null,
+    "target_path": "target/debug/examples",
+    "note": "target/debug/examples is empty on the current tree: the build surface was already reclaimed at M515 closeout (target 54GB -> 5.8GB). The 1801 example binaries recorded by the S01 plan are a historical observation, not reproducible now; see historical_reference."
+  },
+  "historical_reference": {
+    "example_binaries_before_reclaim": 1801,
+    "provenance": "516-01-PLAN.md T02 (drafted from a pre-reclaim tree)",
+    "reproducible_on_current_tree": false,
+    "reason": "target/debug/examples and target/debug/deps executables were pruned by the M515 reclaim; rebuilding the full multi-feature example surface would recreate the exact target growth S01 bounds and is deferred to T02/T06."
+  },
+  "static_build_surface": {
+    "common_sets": {
+      "default": {
+        "requested_features": [],
+        "enabled_example_targets": 82
+      },
+      "pdf-layout": {
+        "requested_features": [
+          "pdf-layout"
+        ],
+        "enabled_example_targets": 100
+      },
+      "pdf-layout+pdf-classifier": {
+        "requested_features": [
+          "pdf-classifier",
+          "pdf-layout"
+        ],
+        "enabled_example_targets": 105
+      },
+      "learning-evaluation": {
+        "requested_features": [
+          "learning-evaluation"
+        ],
+        "enabled_example_targets": 85
+      },
+      "samyama": {
+        "requested_features": [
+          "samyama"
+        ],
+        "enabled_example_targets": 83
+      },
+      "all-features": {
+        "requested_features": [
+          "learning-evaluation",
+          "pdf-classifier",
+          "pdf-layout",
+          "samyama"
+        ],
+        "enabled_example_targets": 109
+      }
+    },
+    "distinct_example_targets": 109,
+    "total_link_operations_across_common_sets": 564,
+    "note": "Reproducible static baseline. The un-gated targets re-link under every feature set and are the duplication driver; T02 must reduce per-target link count (consolidation) or per-binary cost (dev-profile trim)."
+  },
+  "plan_reconciliation": {
+    "plan_sources": 108,
+    "measured_top_level_sources": 108,
+    "sources_match": true,
+    "plan_feature_gated_targets": 25,
+    "measured_feature_gated_targets": 27,
+    "feature_gated_match": false,
+    "note": "cargo metadata is authoritative. The measured 27 gated targets (vs the plan's 25) are the number T02 and T06 must use. Four targets require pdf-layout+pdf-classifier together."
+  },
+  "comparison_contract": {
+    "primary_reproducible_baseline": "static_build_surface.common_sets[*].enabled_example_targets and total_link_operations_across_common_sets",
+    "historical_binary_baseline": 1801,
+    "live_binary_baseline": {
+      "binary_count": 0,
+      "unique_inode_count": 0,
+      "reason": "target/debug/examples reclaimed before this slice ran"
+    },
+    "how_t02_should_compare": "recompute static_build_surface after the Cargo.toml change; the per-set and total enabled-target counts must drop while example_sources.count is unchanged",
+    "how_t06_should_compare": "after the full default and pdf-layout builds, record target size and wall time next to disk.target_total_bytes and this baseline"
+  },
+  "disk": {
+    "filesystem_free_bytes": 44196536320,
+    "filesystem_total_bytes": 258906374144,
+    "target_total_bytes": 9208589624,
+    "target_debug_bytes": 9191636035,
+    "target_debug_deps_bytes": 5989283134
+  },
+  "self_checks": [
+    {
+      "check": "missing_dir_returns_zero",
+      "ok": true
+    },
+    {
+      "check": "rlib_name_parser",
+      "ok": true
+    },
+    {
+      "check": "sources_present",
+      "ok": true
+    },
+    {
+      "check": "targets_present",
+      "ok": true
+    },
+    {
+      "check": "gated_subset_of_targets",
+      "ok": true
+    },
+    {
+      "check": "distinct_crates_positive",
+      "ok": true
+    }
+  ]
+}
