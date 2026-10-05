@@ -162,15 +162,14 @@ fn envelope_is_diagnostic_only_with_the_five_locks_closed() {
 }
 
 #[test]
-fn corpus_is_three_documents_and_202_pages_bound_to_the_route_receipt() {
+fn corpus_is_three_documents_and_202_pages_bound_to_the_java_reference() {
     let receipt = receipt();
     assert_eq!(receipt.corpus.document_count, 3);
     assert_eq!(receipt.corpus.page_denominator, 202);
     assert_eq!(receipt.corpus.documents.len(), 3);
 
     let route = route();
-    let route_documents: Vec<_> = route
-        .documents
+    let reference: Vec<_> = reference_documents()
         .iter()
         .map(|document| (document.id.clone(), document.sha256.clone(), document.pages))
         .collect();
@@ -181,8 +180,8 @@ fn corpus_is_three_documents_and_202_pages_bound_to_the_route_receipt() {
         .map(|document| (document.id.clone(), document.sha256.clone(), document.pages))
         .collect();
     assert_eq!(
-        same_n_documents, route_documents,
-        "the same-n corpus is exactly the T03 route corpus"
+        same_n_documents, reference,
+        "the same-n corpus is exactly the Java-reference corpus"
     );
     assert_eq!(
         receipt.limits, route.limits,

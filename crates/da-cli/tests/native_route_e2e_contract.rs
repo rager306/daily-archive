@@ -160,7 +160,7 @@ fn boundary() -> RouteBoundaryInput {
 }
 
 fn corpus() -> RouteDeclaredCorpus {
-    let block = yaml(LAYOUT)["corpus"].clone();
+    let block = yaml(LAYOUT)["native_route_corpus"].clone();
     RouteDeclaredCorpus {
         corpus_id: block["id"].as_str().expect("a corpus id").to_owned(),
         document_count: block["corpus_n"].as_u64().expect("a document count"),
@@ -337,16 +337,20 @@ fn no_required_family_is_out_of_scope() {
 }
 
 #[test]
-fn the_population_holds_three_documents_and_the_202_page_denominator() {
+fn the_population_holds_twelve_documents_and_the_381_page_denominator() {
     let parsed = receipt();
-    assert_eq!(parsed.documents.len(), 3, "the slice pins three documents");
+    assert_eq!(
+        parsed.documents.len(),
+        12,
+        "the expanded route corpus pins twelve documents"
+    );
     assert_eq!(parsed.populations.len(), 1);
     let population = &parsed.populations[0];
     assert_eq!(population.population, RoutePopulationId::NativeRoute);
-    assert_eq!(population.document_count, 3);
-    assert_eq!(population.page_denominator, 202);
+    assert_eq!(population.document_count, 12);
+    assert_eq!(population.page_denominator, 381);
     let declared = corpus();
-    assert_eq!(declared.page_denominator, 202);
+    assert_eq!(declared.page_denominator, 381);
     let pinned: Vec<&str> = declared.documents.iter().map(|d| d.id.as_str()).collect();
     for document in &parsed.documents {
         assert!(

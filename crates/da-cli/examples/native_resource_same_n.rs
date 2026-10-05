@@ -55,7 +55,7 @@ use da_parse::{
     GrobidHttpBackend, GrobidProfile, JavaInvocationCounter, ParseBackend, ParseBackendRequest,
 };
 use serde_yaml::Value;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
@@ -361,27 +361,39 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
     };
     let declaration_binding: CarrierBinding = route.declaration.clone();
 
-    let documents: Vec<SameNDocumentIdentity> = declaration
+    // The same-n comparison is defined over the document set that carries a
+    // Java reference measurement: the S02 corridor. S03/T01 expanded the route
+    // corpus to a superset, and a document with no Java reference cannot enter a
+    // same-n comparison (`SAME_N_MISMATCH_HARD_FAILURE`). The reference set is
+    // therefore the corpus authority here, not `declaration.documents`.
+    let work_bytes = fs::read(args.root.join(SAME_N_REFERENCE_WORK_REL))?;
+    let work_digest = sha256_hex(&work_bytes);
+    let (reference_documents, work) = parse_java_work(&work_bytes)?;
+
+    // The reference set must be a subset of the declared route corpus: a same-n
+    // comparison over a document the route does not declare is a different
+    // corpus, so it would be a silent mismatch rather than a measurement.
+    let declared_ids: BTreeSet<&str> = declaration
         .documents
         .iter()
-        .map(|document| SameNDocumentIdentity {
-            id: document.id.clone(),
-            source_pdf: document.source_pdf.clone(),
-            sha256: document.sha256.clone(),
-            pages: document.pages,
-        })
+        .map(|document| document.id.as_str())
         .collect();
+    for reference in &reference_documents {
+        if !declared_ids.contains(reference.id.as_str()) {
+            return Err(format!(
+                "same-n reference document {} is not in the declared route corpus",
+                reference.id
+            )
+            .into());
+        }
+    }
+
+    let documents: Vec<SameNDocumentIdentity> = reference_documents.clone();
     let corpus = SameNCorpusBinding {
         document_count: documents.len() as u64,
         page_denominator: documents.iter().map(|document| document.pages).sum(),
         documents: documents.clone(),
     };
-
-    // ── pinned same-n reference rows ──────────────────────────────────────
-    let work_bytes = fs::read(args.root.join(SAME_N_REFERENCE_WORK_REL))?;
-    let work_digest = sha256_hex(&work_bytes);
-    let (reference_documents, work) = parse_java_work(&work_bytes)?;
-    require_same_n(&documents, &reference_documents)?;
 
     let budget_bytes = fs::read(args.root.join(SAME_N_REFERENCE_BUDGET_REL))?;
     require_budget_row_is_not_same_n(&budget_bytes)?;

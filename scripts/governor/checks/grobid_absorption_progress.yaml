@@ -561,14 +561,16 @@ native_route_e2e:
     fingerprint_fields: [profile, consolidateHeader, consolidateCitations, teiCoordinates]
     forbidden_profile: rich
   # Corpus identity by pointer; the counts are the declared requirement and are
-  # recomputed from the pinned documents (3 documents / 202 pages).
+  # recomputed from the pinned documents (12 documents / 381 pages). The route
+  # corpus is its own DATA block (D543): the layout token-donor `corpus.documents`
+  # stays byte-unchanged at 3/202.
   corpus:
     manifest: data/parse/layout_bakeoff.yaml
-    pointer: corpus.documents
-    count_pointer: corpus.corpus_n
-    page_denominator_pointer: corpus.page_denominator
-    document_count: 3
-    page_denominator: 202
+    pointer: native_route_corpus.documents
+    count_pointer: native_route_corpus.corpus_n
+    page_denominator_pointer: native_route_corpus.page_denominator
+    document_count: 12
+    page_denominator: 381
   # Prospective operational ceiling, frozen before any S06 measurement (D509).
   limit_policy:
     state: frozen
@@ -596,7 +598,7 @@ native_route_e2e:
           kind: content_carrier
         - path: crates/da-parse/tests/fixtures/preserved/provenance.yaml
           kind: oracle_pins
-      value: "sha256:d26473aac960fd8cd4df40c457c35192836ea8d5ef76fb3558088a17bfa3f17b"
+      value: "sha256:7e49372de845a745c562d97cd4faec7afc34a5615c44b0609e3580a32aae09c0"
     ceiling_metric_source:
       manifest: data/parse/comparison_contract.yaml
       pointer: batch_budget_ceilings.metrics

@@ -100,9 +100,9 @@ fn boundary() -> NativeRouteBoundary {
 /// The declaration spells each pinned identity as `id`.
 fn declared_document_ids() -> Vec<String> {
     let yaml: serde_yaml::Value = serde_yaml::from_str(LAYOUT_BAKEOFF).unwrap();
-    yaml["corpus"]["documents"]
+    yaml["native_route_corpus"]["documents"]
         .as_sequence()
-        .expect("corpus.documents")
+        .expect("native_route_corpus.documents")
         .iter()
         .map(|document| document["id"].as_str().unwrap().to_owned())
         .collect()
@@ -637,7 +637,7 @@ fn an_unknown_document_id_is_refused_by_name_and_an_empty_list_admits_nothing() 
 
     // The pinned corpus pointer resolves and every declared id is admitted.
     let pinned = declared_document_ids();
-    assert_eq!(pinned.len(), 3, "the declaration pins three documents");
+    assert_eq!(pinned.len(), 12, "the declaration pins twelve documents");
     for id in &pinned {
         assert!(
             classify_route_input(&spec(Some(PDF_BYTES), &pinned, id)).is_ok(),

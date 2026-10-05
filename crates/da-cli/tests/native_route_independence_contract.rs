@@ -75,7 +75,7 @@ fn committed_artifact_is_reproducible_from_carriers() {
 fn committed_axis_replays_from_the_declared_corpus_and_the_emission_manifest() {
     let layout: serde_yaml::Value =
         serde_yaml::from_str(LAYOUT).expect("the slice declaration parses");
-    let declared = &layout["corpus"];
+    let declared = &layout["native_route_corpus"];
 
     // Rebuild the axis from the committed route receipt + emission manifest and
     // require the committed bytes to match the rebuild exactly.

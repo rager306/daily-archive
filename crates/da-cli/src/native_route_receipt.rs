@@ -67,7 +67,7 @@ pub const ROUTE_DECLARATION_MANIFEST_REL: &str = DECLARATION_MANIFEST_REL;
 /// Pointer to the slice declaration block inside the declaration carrier.
 pub const ROUTE_DECLARATION_POINTER: &str = "java_free_vertical_slice";
 /// Pointer to the pinned corpus documents.
-pub const ROUTE_CORPUS_POINTER: &str = "corpus.documents";
+pub const ROUTE_CORPUS_POINTER: &str = "native_route_corpus.documents";
 /// Repository-relative carrier that names the frozen metric dictionary.
 pub const ROUTE_LIMIT_MANIFEST_REL: &str = "data/parse/comparison_contract.yaml";
 /// Pointer to the frozen metric dictionary inside the limit carrier.

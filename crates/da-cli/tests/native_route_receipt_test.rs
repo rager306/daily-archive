@@ -386,7 +386,7 @@ fn out_of_slice_reason(stage: &str) -> String {
 
 /// The declared corpus, rebuilt from the committed declaration bytes.
 fn declared_route_corpus() -> RouteDeclaredCorpus {
-    let block = yaml(LAYOUT)["corpus"].clone();
+    let block = yaml(LAYOUT)["native_route_corpus"].clone();
     let documents = block["documents"]
         .as_sequence()
         .expect("corpus.documents is a sequence")
@@ -573,12 +573,12 @@ fn committed_route_receipt_replays_from_the_committed_carriers() {
     // The corpus pin, re-derived from the committed declaration.
     let corpus = declared_route_corpus();
     assert_eq!(
-        corpus.document_count, 3,
-        "the declared corpus is three documents"
+        corpus.document_count, 12,
+        "the declared route corpus is twelve documents"
     );
     assert_eq!(
-        corpus.page_denominator, 202,
-        "the declared denominator is 202 pages"
+        corpus.page_denominator, 381,
+        "the declared denominator is 381 pages"
     );
     assert_eq!(receipt.documents.len(), corpus.documents.len());
 
@@ -919,8 +919,7 @@ fn committed_resource_receipt_replays_from_the_committed_carriers() {
     );
     assert_eq!(receipt.corpus.document_count, 3);
     assert_eq!(receipt.corpus.page_denominator, 202);
-    let route_documents: Vec<(String, String, u64)> = route
-        .documents
+    let reference: Vec<(String, String, u64)> = reference_documents()
         .iter()
         .map(|document| (document.id.clone(), document.sha256.clone(), document.pages))
         .collect();
@@ -931,8 +930,8 @@ fn committed_resource_receipt_replays_from_the_committed_carriers() {
         .map(|document| (document.id.clone(), document.sha256.clone(), document.pages))
         .collect();
     assert_eq!(
-        resource_documents, route_documents,
-        "the same-n corpus is exactly the route corpus"
+        resource_documents, reference,
+        "the same-n corpus is exactly the Java-reference corpus"
     );
 
     // Populations are closed, fully bound to the corpus, and never pooled.
@@ -1143,8 +1142,8 @@ fn the_governor_rule_and_both_receipts_agree_on_the_committed_data() {
     assert_eq!(gov.corpus.pointer, ROUTE_CORPUS_POINTER);
     assert_eq!(gov.corpus.document_count, corpus.document_count);
     assert_eq!(gov.corpus.page_denominator, corpus.page_denominator);
-    assert_eq!(gov.corpus.document_count, 3);
-    assert_eq!(gov.corpus.page_denominator, 202);
+    assert_eq!(gov.corpus.document_count, 12);
+    assert_eq!(gov.corpus.page_denominator, 381);
 
     // Expected claim values agree with both artifacts.
     assert_eq!(gov.expected.claim_scope, CLAIM_SCOPE_DIAGNOSTIC_ONLY);

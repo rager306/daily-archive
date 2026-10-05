@@ -195,7 +195,7 @@ fn out_of_slice_reason(stage: &str) -> String {
 // ─────────────────────────── corpus ───────────────────────────
 
 fn corpus() -> RouteDeclaredCorpus {
-    let block = yaml(LAYOUT)["corpus"].clone();
+    let block = yaml(LAYOUT)["native_route_corpus"].clone();
     let documents = block["documents"]
         .as_sequence()
         .expect("corpus.documents is a sequence")
@@ -332,7 +332,7 @@ fn populations() -> Vec<RoutePopulationInput> {
         ("native_route_documents", "floor", corpus.document_count),
         ("native_route_pages", "floor", corpus.page_denominator),
         ("native_route_java_calls", "ceiling", 0),
-        ("native_route_unmeasured_stages", "ceiling", 24),
+        ("native_route_unmeasured_stages", "ceiling", 96),
         ("native_route_unclassified_families", "ceiling", 0),
     ];
     let metrics = route_metrics
@@ -412,17 +412,17 @@ fn the_builder_emits_a_well_formed_receipt_and_the_validator_accepts_it() {
     let receipt = receipt();
     assert_eq!(receipt.schema_version, NATIVE_ROUTE_RECEIPT_SCHEMA_VERSION);
     assert_eq!(receipt.declaration.pointer, "java_free_vertical_slice");
-    assert_eq!(receipt.documents.len(), 3, "one row per declared document");
+    assert_eq!(receipt.documents.len(), 12, "one row per declared document");
     assert_eq!(receipt.documents[0].stages.len(), cascade_stages().len());
     assert_eq!(
         receipt.documents[0].families.len(),
         ROUTE_FAMILY_ORDER.len()
     );
     assert_eq!(receipt.populations.len(), 1);
-    assert_eq!(receipt.populations[0].document_count, 3);
-    assert_eq!(receipt.populations[0].page_denominator, 202);
+    assert_eq!(receipt.populations[0].document_count, 12);
+    assert_eq!(receipt.populations[0].page_denominator, 381);
     assert_eq!(receipt.locks.len(), REQUIRED_LOCKS.len());
-    assert_eq!(receipt.residuals.unmeasured_stages, 24);
+    assert_eq!(receipt.residuals.unmeasured_stages, 96);
     assert_eq!(receipt.residuals.unclassified_families, 0);
     assert_eq!(
         receipt.residuals.body.plane_preservation, "not_assessable",
@@ -977,7 +977,7 @@ fn a_document_sha_drift_is_refused_by_the_builder() {
 #[test]
 fn a_corpus_pin_drift_is_refused_by_the_builder() {
     let mut corpus = corpus();
-    corpus.page_denominator = 201;
+    corpus.page_denominator = 380;
     let error = build(
         &corpus,
         &boundary(),
@@ -991,8 +991,8 @@ fn a_corpus_pin_drift_is_refused_by_the_builder() {
     assert_eq!(
         error,
         RouteReceiptError::CorpusPinDrift {
-            expected: 202,
-            found: 201
+            expected: 381,
+            found: 380
         }
     );
 }

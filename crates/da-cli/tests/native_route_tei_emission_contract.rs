@@ -89,7 +89,7 @@ fn schema() -> serde_yaml::Value {
 /// order.  This is the committed carrier the emission identity is recomputed
 /// against.
 fn declared_documents(layout: &serde_yaml::Value) -> BTreeMap<String, String> {
-    layout["corpus"]["documents"]
+    layout["native_route_corpus"]["documents"]
         .as_sequence()
         .expect("corpus.documents is a sequence")
         .iter()
@@ -201,7 +201,7 @@ fn audit(
     let corpus = artifact["corpus"]
         .as_object()
         .ok_or(EmissionAuditRefusal::CorpusDrift)?;
-    let declared = layout["corpus"]
+    let declared = layout["native_route_corpus"]
         .as_mapping()
         .ok_or(EmissionAuditRefusal::CorpusDrift)?;
     let declared_id = declared
@@ -357,7 +357,7 @@ fn committed_artifact_recomputes_its_identity_and_guard_from_committed_carriers(
     // The declaration's own digest is the config fingerprint every document
     // claims; the declaration's pinned digest is the source identity.
     assert_eq!(
-        layout["corpus"]["documents"]
+        layout["native_route_corpus"]["documents"]
             .as_sequence()
             .expect("declared documents")
             .len(),
@@ -486,11 +486,11 @@ fn refuses_a_guard_drift_past_the_individual_fields() {
 #[test]
 fn refuses_a_corpus_drift_from_the_declaration() {
     assert_eq!(
-        mutated(|a| a["corpus"]["document_count"] = json!(4)),
+        mutated(|a| a["corpus"]["document_count"] = json!(13)),
         EmissionAuditRefusal::CorpusDrift
     );
     assert_eq!(
-        mutated(|a| a["corpus"]["page_denominator"] = json!(201)),
+        mutated(|a| a["corpus"]["page_denominator"] = json!(380)),
         EmissionAuditRefusal::CorpusDrift
     );
     assert_eq!(
