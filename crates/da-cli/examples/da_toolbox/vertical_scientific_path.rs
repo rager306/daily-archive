@@ -91,7 +91,7 @@ struct PolicyReceipt {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+pub async fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("vertical_scientific_path");
     let args = Args::parse();
     let positive = run_case("positive", &args.positive_pdf, &args.positive_id, None).await?;

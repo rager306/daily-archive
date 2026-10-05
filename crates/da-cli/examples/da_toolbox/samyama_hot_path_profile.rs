@@ -66,7 +66,7 @@ struct Report {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+pub async fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("samyama_hot_path_profile");
     let args = Args::parse();
 

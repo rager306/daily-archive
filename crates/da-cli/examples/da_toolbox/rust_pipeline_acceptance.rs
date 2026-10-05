@@ -71,7 +71,7 @@ struct Report {
     report_sha256: String,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("rust_pipeline_acceptance");
     let args = Args::parse();
     let boundary: BoundaryAudit = read_json(&args.boundary)?;

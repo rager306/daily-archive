@@ -111,7 +111,7 @@ struct Report {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+pub async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     let _guard = da_cli::logging::init_pipeline_logging("prompt_eval_inference");
     let args = Args::parse();

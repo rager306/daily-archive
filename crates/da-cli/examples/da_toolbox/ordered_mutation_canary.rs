@@ -24,7 +24,7 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+pub async fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("ordered_mutation_canary");
     let args = Args::parse();
     let repo_root = std::env::current_dir()?.canonicalize()?;

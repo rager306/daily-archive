@@ -95,7 +95,7 @@ fn load_preds_file(path: &PathBuf) -> Vec<PredictedEntity> {
     out
 }
 
-fn main() {
+pub fn main() {
     let _log_guard = da_cli::logging::init_pipeline_logging("inventory_fp");
     let mut args = std::env::args().skip(1);
     let paper_id = args.next().unwrap_or_else(|| "2603.21520".to_string());

@@ -79,7 +79,7 @@ struct Report {
     report_sha256: String,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("retrieval_benchmark");
     let args = Args::parse();
     let policy: Policy =

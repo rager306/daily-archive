@@ -992,5 +992,159 @@
       "check": "distinct_crates_positive",
       "ok": true
     }
-  ]
+  ],
+  "t02_consolidation": {
+    "lever_applied": "runner_consolidation",
+    "mechanism": "27 un-gated example runners referenced by no test/script/doc were folded into one multi-command runner example `da_toolbox` (crates/da-cli/examples/da_toolbox.rs). Each former example is preserved verbatim under crates/da-cli/examples/da_toolbox/ and is reachable as `cargo run -p da-cli --example da_toolbox -- <name> [args...]`; args are re-dispatched to a child of the same binary so each program's own arg parsing is unchanged.",
+    "runner_target": "da_toolbox",
+    "consolidated_examples": [
+      "acap_aggregate.rs",
+      "acap_project_pipeline_layers.rs",
+      "analyze_figure.rs",
+      "article_metadata_audit.rs",
+      "catalog_drift_stats.rs",
+      "catalog_reconcile.rs",
+      "concept_cluster_canary.rs",
+      "detect_figures.rs",
+      "entity_resolution_canary.rs",
+      "extract_probe.rs",
+      "gold_graph_all_waves.rs",
+      "inventory_fp.rs",
+      "materialization_hot_path_profile.rs",
+      "materialize_index_bench.rs",
+      "ordered_mutation_canary.rs",
+      "pipeline_acceptance.rs",
+      "prompt_eval_inference.rs",
+      "prompt_eval_scored.rs",
+      "python_archive_audit.rs",
+      "retrieval_benchmark.rs",
+      "rust_pipeline_acceptance.rs",
+      "samyama_hot_path_profile.rs",
+      "scholarly_evidence_canary.rs",
+      "sona_policy_training.rs",
+      "stage_ablation_report.rs",
+      "tex_source_inspect.rs",
+      "vertical_scientific_path.rs"
+    ],
+    "source_accounting": {
+      "sources_deleted": 0,
+      "consolidated_into_modules": 27,
+      "top_level_example_sources_before": 108,
+      "top_level_example_sources_after": 82,
+      "total_rs_under_examples_before": 111,
+      "total_rs_under_examples_after": 112,
+      "note": "source files are relocated, not deleted: the 27 example programs under crates/da-cli/examples/ were moved into crates/da-cli/examples/da_toolbox/ and remain reachable as subcommands. One new top-level source (da_toolbox.rs, the runner) was added, so the total .rs count under crates/*/examples is 111 -> 112. No example was deleted.",
+      "runner_source_added": 1
+    },
+    "example_targets_before": 109,
+    "example_targets_after": 83,
+    "static_build_surface_before": {
+      "common_sets": {
+        "default": {
+          "requested_features": [],
+          "enabled_example_targets": 82
+        },
+        "pdf-layout": {
+          "requested_features": [
+            "pdf-layout"
+          ],
+          "enabled_example_targets": 100
+        },
+        "pdf-layout+pdf-classifier": {
+          "requested_features": [
+            "pdf-classifier",
+            "pdf-layout"
+          ],
+          "enabled_example_targets": 105
+        },
+        "learning-evaluation": {
+          "requested_features": [
+            "learning-evaluation"
+          ],
+          "enabled_example_targets": 85
+        },
+        "samyama": {
+          "requested_features": [
+            "samyama"
+          ],
+          "enabled_example_targets": 83
+        },
+        "all-features": {
+          "requested_features": [
+            "learning-evaluation",
+            "pdf-classifier",
+            "pdf-layout",
+            "samyama"
+          ],
+          "enabled_example_targets": 109
+        }
+      },
+      "distinct_example_targets": 109,
+      "total_link_operations_across_common_sets": 564
+    },
+    "static_build_surface_after": {
+      "common_sets": {
+        "default": {
+          "requested_features": [],
+          "enabled_example_targets": 56
+        },
+        "pdf-layout": {
+          "requested_features": [
+            "pdf-layout"
+          ],
+          "enabled_example_targets": 74
+        },
+        "pdf-layout+pdf-classifier": {
+          "requested_features": [
+            "pdf-classifier",
+            "pdf-layout"
+          ],
+          "enabled_example_targets": 79
+        },
+        "learning-evaluation": {
+          "requested_features": [
+            "learning-evaluation"
+          ],
+          "enabled_example_targets": 59
+        },
+        "samyama": {
+          "requested_features": [
+            "samyama"
+          ],
+          "enabled_example_targets": 57
+        },
+        "all-features": {
+          "requested_features": [
+            "learning-evaluation",
+            "pdf-classifier",
+            "pdf-layout",
+            "samyama"
+          ],
+          "enabled_example_targets": 83
+        }
+      },
+      "distinct_example_targets": 83,
+      "total_link_operations_across_common_sets": 408
+    },
+    "reduction": {
+      "example_targets_removed": 26,
+      "link_operations_removed": 156,
+      "link_operations_percent": 27.66
+    },
+    "profile_lever": {
+      "applied": false,
+      "reason": "dependency debuginfo is already stripped at the T01 baseline ([profile.dev.package.\"*\"] debug = false). Setting [profile.dev] debug = false would also remove workspace-crate line tables from the `da` binary and tests, reversing the documented M515 DX decision, with no target-count effect; not applied."
+    },
+    "feature_gating_lever": {
+      "applied": false,
+      "reason": "cargo metadata shows every source-level feature-gated example already declares its required-features, so there is no un-declared gated target to move. The 82 un-gated targets are deliberately default-buildable (manifest comments: 'must build in the default feature set'); gating them would break the named gate provisioning and recorded contracts."
+    },
+    "evidence": {
+      "compile": "gsd_exec a5fb0988-fb9d-4f49-96bf-7d4806e1baa5 cargo check -p da-cli --example da_toolbox exit 0",
+      "clippy": "gsd_exec 2d2f5394-11cf-4f76-8910-a1306499b30e cargo clippy -p da-cli --example da_toolbox --no-deps -- -D warnings exit 0",
+      "link_and_smoke": "gsd_exec 33b5404a-583c-4091-8f0a-baafb51adadd build + dispatch smoke exit 0",
+      "feature_matrix_gate": "gsd_exec 70c2898e-26b5-4dea-bc94-12277426f19c cargo check -p da-cli --features pdf-classifier --examples exit 0",
+      "inventory_test": "gsd_exec 05cb1a92-dc70-4688-a34a-94bfb949a57d pytest scripts/tests/test_absorption_test_inventory.py 14 passed"
+    }
+  }
 }

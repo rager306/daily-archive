@@ -81,7 +81,7 @@ struct AllWavesReport {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+pub async fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("gold_graph_all_waves");
     let args = Args::parse();
     kg_storage::refuse_persistence_path_from_env()?;

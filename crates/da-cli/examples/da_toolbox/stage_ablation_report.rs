@@ -128,7 +128,7 @@ struct StageAblationReport {
     report_sha256: String,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("stage_ablation_report");
     let args = Args::parse();
     let cache: CacheProfile = read_json(&args.cache_profile)?;

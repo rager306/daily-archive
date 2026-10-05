@@ -124,7 +124,7 @@ fn split_by_document(
     (pick(train_ids), pick(validation_ids))
 }
 
-fn main() -> anyhow::Result<()> {
+pub fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     // ADR-052: a composition root owns the subscriber and must HOLD the guard, or file
     // logging silently stops when it drops.

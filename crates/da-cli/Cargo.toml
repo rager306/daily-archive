@@ -267,8 +267,18 @@ required-features = ["learning-evaluation"]
 [[example]]
 name = "parse_learning_corpus_freeze"
 
+# M516/S01/T02: bounded example build surface. Twenty-seven un-gated example
+# runners that nothing else referenced were folded into this single
+# multi-command runner under `examples/da_toolbox/`, so building examples
+# produces one statically linked binary for them instead of twenty-seven. Each
+# former example is preserved verbatim under `examples/da_toolbox/<name>.rs`
+# and stays reachable as a subcommand:
+#   cargo run -p da-cli --example da_toolbox -- <name> [args...]
+# The `sona_policy_training` example is one of the folded runners; it is no
+# longer a standalone `[[example]]` target.
 [[example]]
-name = "sona_policy_training"
+name = "da_toolbox"
+path = "examples/da_toolbox.rs"
 
 # S07/T03 (M514-1lss2s): closed train → persist → reload → independent-eval
 # cycle emitter. Same offline-evaluation feature as its ablation siblings; it

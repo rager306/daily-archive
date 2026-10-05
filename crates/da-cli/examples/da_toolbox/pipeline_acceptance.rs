@@ -100,7 +100,7 @@ struct Report {
     report_sha256: String,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("pipeline_acceptance");
     let args = Args::parse();
     let ledger: StageLedger = read_json(&args.stage_ledger)?;

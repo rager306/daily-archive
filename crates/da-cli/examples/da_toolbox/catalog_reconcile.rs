@@ -27,7 +27,7 @@ struct Args {
     rebuild_index: bool,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("catalog_reconcile");
     let args = Args::parse();
     let report = CatalogReconcileUseCase::new(FilesystemCatalogInventory::new(&args.catalog_root))

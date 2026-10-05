@@ -42,7 +42,7 @@ struct Args {
     report: PathBuf,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("scholarly_evidence_canary");
     let args = Args::parse();
     let repo_root = std::env::current_dir()?.canonicalize()?;

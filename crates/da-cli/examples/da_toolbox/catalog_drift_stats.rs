@@ -20,7 +20,7 @@ struct Args {
     output: PathBuf,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("catalog_drift_stats");
     let args = Args::parse();
     let input = std::fs::read(&args.run_report)

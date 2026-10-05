@@ -1,8 +1,9 @@
-//! Project required pre-materialization ACAP layers from an existing multi-wave
-//! materialization artifact, then emit the corpus aggregate (post-S07 product wave).
+//! Project canonical corpus ACAP aggregate from an existing multi-wave
+//! materialization artifact (M371/S07/T03).
 //!
-//! No graph writes, no D127 unlock. Reuses PipelineStageAssuranceUseCase +
-//! CorpusAssuranceUseCase over durable evidence only.
+//! No graph writes, no D127 unlock. Reads policy YAML + materialization JSON,
+//! upgrades legacy per-article layers from paper-level `replay_mutations`, and
+//! emits `artifacts/article_context/assurance_report.json`.
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -12,11 +13,10 @@ use clap::Parser;
 use da_application::corpus_assurance::{
     CorpusArticleContribution, CorpusAssuranceInput, CorpusAssuranceUseCase, CorpusPolicyLayer,
 };
-use da_application::pipeline_stage_assurance::{
-    PipelineStageAssuranceInput, PipelineStageAssuranceUseCase, StageArtifactLineage,
-    StageGraphCounts, StageMaterializationReplay, digest_hex, replay_from_family_counts,
+use da_domain::{
+    ACAP_AGGREGATE_REPORT_SCHEMA_VERSION, ArticleAssuranceReport, ContentDigest,
+    MutationFamilyObservation, ReplayObservation,
 };
-use da_domain::{ACAP_AGGREGATE_REPORT_SCHEMA_VERSION, ContentDigest};
 use serde::Deserialize;
 
 const MAX_POLICY_BYTES: u64 = 4 * 1024 * 1024;
@@ -77,41 +77,11 @@ struct WaveBody {
 
 #[derive(Deserialize)]
 struct PaperBody {
+    #[allow(dead_code)]
     paper_id: String,
-    source_sha256: String,
-    artifacts: ArtifactsBody,
-    first: FirstBody,
+    assurance: ArticleAssuranceReport,
     #[serde(default)]
     replay_mutations: Option<MutationCountersJson>,
-    #[serde(default)]
-    import_eligible: Option<bool>,
-}
-
-#[derive(Deserialize)]
-struct ArtifactsBody {
-    parse: String,
-    extract: String,
-    embed: String,
-}
-
-#[derive(Deserialize, Default)]
-struct FirstBody {
-    #[serde(default)]
-    sections: u64,
-    #[serde(default)]
-    references: u64,
-    #[serde(default)]
-    citations: u64,
-    #[serde(default)]
-    entities: u64,
-    #[serde(default)]
-    mentions: u64,
-    #[serde(default)]
-    found_in: u64,
-    #[serde(default)]
-    evidence_bundles: u64,
-    #[serde(default)]
-    claims: u64,
 }
 
 #[derive(Deserialize, Clone)]
@@ -141,39 +111,28 @@ struct FamilyJson {
 }
 
 impl MutationCountersJson {
-    fn to_replay(&self) -> da_domain::ReplayObservation {
-        replay_from_family_counts(
-            (
-                self.node.attempted,
-                self.node.applied,
-                self.node.unchanged,
-                self.node.rejected,
-            ),
-            (
-                self.property.attempted,
-                self.property.applied,
-                self.property.unchanged,
-                self.property.rejected,
-            ),
-            (
-                self.edge.attempted,
-                self.edge.applied,
-                self.edge.unchanged,
-                self.edge.rejected,
-            ),
-            (
-                self.vector.attempted,
-                self.vector.applied,
-                self.vector.unchanged,
-                self.vector.rejected,
-            ),
-            self.unobserved_operations,
-        )
+    fn to_replay_observation(&self) -> ReplayObservation {
+        ReplayObservation {
+            node: family(&self.node),
+            property: family(&self.property),
+            edge: family(&self.edge),
+            vector: family(&self.vector),
+            unobserved_operations: self.unobserved_operations,
+        }
     }
 }
 
-fn main() -> Result<()> {
-    let _log_guard = da_cli::logging::init_pipeline_logging("acap_project_pipeline_layers");
+fn family(f: &FamilyJson) -> MutationFamilyObservation {
+    MutationFamilyObservation {
+        attempted: f.attempted,
+        applied: f.applied,
+        unchanged: f.unchanged,
+        rejected: f.rejected,
+    }
+}
+
+pub fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("acap_aggregate");
     let args = Args::parse();
     let repo_root = std::env::current_dir()?.canonicalize()?;
     let policy_path = resolve(&repo_root, &args.policy);
@@ -202,56 +161,25 @@ fn main() -> Result<()> {
         .with_context(|| format!("parse {}", mat_path.display()))?;
 
     let mut articles = Vec::new();
-    let mut pass_articles = 0_u64;
-    let mut fail_articles = 0_u64;
+    let mut upgraded = 0_u64;
     for wave in &root.materialization.waves {
         for paper in &wave.papers {
-            let lineage = StageArtifactLineage {
-                source_sha256: digest_hex(&paper.source_sha256)
-                    .map_err(|e| anyhow!("{} source_sha256: {e}", paper.paper_id))?,
-                parse_sha256: digest_hex(&paper.artifacts.parse)
-                    .map_err(|e| anyhow!("{} parse: {e}", paper.paper_id))?,
-                extract_sha256: digest_hex(&paper.artifacts.extract)
-                    .map_err(|e| anyhow!("{} extract: {e}", paper.paper_id))?,
-                embed_sha256: digest_hex(&paper.artifacts.embed)
-                    .map_err(|e| anyhow!("{} embed: {e}", paper.paper_id))?,
+            let needs_upgrade = paper
+                .assurance
+                .layer_results
+                .iter()
+                .any(|layer| layer.replay_observation.is_none());
+            let replay_upgrade = if needs_upgrade {
+                paper.replay_mutations.as_ref().map(|m| {
+                    upgraded += 1;
+                    m.to_replay_observation()
+                })
+            } else {
+                None
             };
-            let first = StageGraphCounts {
-                sections: paper.first.sections,
-                references: paper.first.references,
-                citations: paper.first.citations,
-                entities: paper.first.entities,
-                mentions: paper.first.mentions,
-                found_in: paper.first.found_in,
-                evidence_bundles: paper.first.evidence_bundles,
-                claims: paper.first.claims,
-            };
-            let materialization_replay =
-                paper
-                    .replay_mutations
-                    .as_ref()
-                    .map(|m| StageMaterializationReplay {
-                        observation: m.to_replay(),
-                    });
-            let input = PipelineStageAssuranceInput {
-                article_id: paper.paper_id.clone(),
-                policy_sha256: policy_sha.clone(),
-                lineage,
-                first,
-                materialization_replay,
-                d127_unlock_count: 0,
-                import_eligible: paper.import_eligible.unwrap_or(false),
-            };
-            let report = PipelineStageAssuranceUseCase::evaluate(input)
-                .map_err(|e| anyhow!("{} stage assurance: {e}", paper.paper_id))?;
-            match report.verdict {
-                da_domain::AssuranceVerdict::Pass => pass_articles += 1,
-                da_domain::AssuranceVerdict::Fail => fail_articles += 1,
-                da_domain::AssuranceVerdict::NoClaim => {}
-            }
             articles.push(CorpusArticleContribution {
-                report,
-                replay_upgrade: None, // already embedded in materialization layer
+                report: paper.assurance.clone(),
+                replay_upgrade,
             });
         }
     }
@@ -264,46 +192,36 @@ fn main() -> Result<()> {
         "materialization_artifact".into()
     };
 
-    let corpus = CorpusAssuranceUseCase::aggregate(CorpusAssuranceInput {
+    let input = CorpusAssuranceInput {
         policy_sha256: policy_sha,
         pipeline_revision,
         source_artifact_sha256: source_sha,
         policy_layers,
         articles,
         import_eligible: false,
-    })
-    .map_err(|e| anyhow!("corpus aggregate: {e}"))?;
+    };
+    let report = CorpusAssuranceUseCase::aggregate(input)
+        .map_err(|error| anyhow!("aggregate failed: {error}"))?;
 
-    let json = serde_json::to_vec_pretty(&corpus)?;
+    let json = serde_json::to_vec_pretty(&report)?;
     atomic_write(&report_path, &json)?;
 
     println!(
-        "acap_project_pipeline_layers schema={} articles={} pass_articles={} fail_articles={} corpus_verdict={:?} hard_failures={} required_absent={} import_eligible=false report={}",
+        "acap_aggregate schema={} articles={} verdict={:?} hard_failures={} required_absent={} upgraded_replay={} import_eligible=false report={}",
         ACAP_AGGREGATE_REPORT_SCHEMA_VERSION,
-        corpus.article_count,
-        pass_articles,
-        fail_articles,
-        corpus.verdict,
-        corpus.aggregate.hard_failures.len(),
-        corpus
+        report.article_count,
+        report.verdict,
+        report.aggregate.hard_failures.len(),
+        report
             .aggregate
             .hard_failures
             .iter()
             .filter(|code| code.starts_with("required_layer_absent:"))
             .count(),
+        upgraded,
         display_path(&repo_root, &report_path),
     );
-    for layer in &corpus.layer_results {
-        eprintln!(
-            "  layer {} status={:?} pass={} fail={} hard={}",
-            layer.layer_id,
-            layer.status,
-            layer.pass_articles,
-            layer.fail_articles,
-            layer.hard_failures.len()
-        );
-    }
-    for code in corpus.aggregate.hard_failures.iter().take(20) {
+    for code in report.aggregate.hard_failures.iter().take(20) {
         eprintln!("  hard_failure: {code}");
     }
     Ok(())

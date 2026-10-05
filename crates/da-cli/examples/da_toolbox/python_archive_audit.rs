@@ -35,7 +35,7 @@ struct Report {
     report_sha256: String,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("python_archive_audit");
     let args = Args::parse();
 

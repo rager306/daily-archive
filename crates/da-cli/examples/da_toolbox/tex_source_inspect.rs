@@ -22,7 +22,7 @@ struct Args {
     report: PathBuf,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("tex_source_inspect");
     let args = Args::parse();
     let archive = FilesystemTexArchive::new(&args.archive, &args.inventory);

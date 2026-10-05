@@ -10,7 +10,7 @@ use da_cli::catalog_materialize::load_paper_parse_and_extraction;
 use da_ports::extractor::Extractor;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+pub async fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("extract_probe");
     let paper_id = std::env::args()
         .nth(1)

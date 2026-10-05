@@ -108,7 +108,7 @@ struct Report {
     report_sha256: String,
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("prompt_eval_scored");
     let args = Args::parse();
     let fixture_bytes = std::fs::read(&args.fixtures)?;

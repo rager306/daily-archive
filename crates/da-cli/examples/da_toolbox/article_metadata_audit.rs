@@ -110,7 +110,7 @@ fn has_checksum(value: &serde_json::Value) -> bool {
         .unwrap_or(false)
 }
 
-fn main() -> Result<()> {
+pub fn main() -> Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("article_metadata_audit");
     let args = Args::parse();
 
