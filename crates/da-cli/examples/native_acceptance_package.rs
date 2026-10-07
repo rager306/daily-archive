@@ -332,7 +332,28 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
 
     // ── frozen reference: contract, pins and the executed probe ────────────
     let schema_bytes = read_bytes(root, PACKAGE_SCHEMA_REL)?;
-    let contract: serde_json::Value = serde_yaml::from_slice(&schema_bytes)?;
+    let mut contract: serde_json::Value = serde_yaml::from_slice(&schema_bytes)?;
+    // ── S05: bind the recorded required-scope downgrades into the contract ──
+    // The frozen schema declares the required families; the parity ledger records
+    // which of them cannot be measured on a frozen corpus. Merge that registry into
+    // the contract the evaluator reads, so the T02 evaluator and the governor read
+    // one registry rather than two. A missing registry is fatal: the family would
+    // silently stay `threshold_pending` and the downgrade would be lost.
+    let compatibility_bytes = read_bytes(root, PACKAGE_COMPATIBILITY_REL)?;
+    let compatibility: serde_yaml::Value = serde_yaml::from_slice(&compatibility_bytes)?;
+    let downgrades = compatibility["parity_ledger"]["required_scope_downgrades"].clone();
+    if !downgrades.is_mapping() {
+        return Err(
+            "the parity ledger lost the required_scope_downgrades registry; the recorded \
+             downgrades cannot be merged into the contract"
+                .into(),
+        );
+    }
+    let downgrades_json = serde_json::to_value(&downgrades)?;
+    contract["required_scope"]
+        .as_object_mut()
+        .ok_or("the contract declares no required_scope object")?
+        .insert("downgrades".to_owned(), downgrades_json);
     let pins_bytes = read_bytes(root, PACKAGE_REFERENCE_PINS_REL)?;
     let pins_value: serde_json::Value = serde_json::from_slice(&pins_bytes)?;
     let probe_bytes = read_bytes(root, PACKAGE_REFERENCE_PROBE_REL)?;
@@ -431,8 +452,6 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
     let h20_state = remainder_state(NAMED_GAP_H20)?;
     let h21_state = remainder_state(NAMED_GAP_H21)?;
 
-    let compatibility_bytes = read_bytes(root, PACKAGE_COMPATIBILITY_REL)?;
-    let compatibility: serde_yaml::Value = serde_yaml::from_slice(&compatibility_bytes)?;
     let named_gaps = compatibility["parity_ledger"]["named_gaps"]
         .as_sequence()
         .ok_or("the parity ledger carries no named_gaps")?;
@@ -607,12 +626,24 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         .as_array()
         .map(|values| values.len() as u64)
         .unwrap_or(0);
+    // A family resolved by a recorded downgrade emits `required_family_downgrade`,
+    // not `threshold_pending_family`; only an unresolved family stays pending.
+    let downgrade_records = contract["required_scope"]["downgrades"]["records"]
+        .as_object()
+        .ok_or("the merged contract carries no downgrade records")?;
+    let downgrade_gate_count = downgrade_records.len() as u64;
     let pending_family_gate_count = contract["required_scope"]["families"]
         .as_array()
         .map(|families| {
             families
                 .iter()
-                .filter(|family| family["state"].as_str() == Some("threshold_pending"))
+                .filter(|family| {
+                    family["state"].as_str() == Some("threshold_pending")
+                        && !family["family_id"]
+                            .as_str()
+                            .map(|family_id| downgrade_records.contains_key(family_id))
+                            .unwrap_or(false)
+                })
                 .count() as u64
         })
         .unwrap_or(0);
@@ -620,6 +651,7 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         evidence: evidence.clone(),
         threshold_gate_count,
         pending_family_gate_count,
+        downgrade_gate_count,
         body_residual: vec![BODY_TOKEN.to_owned()],
         db_canonical_requirement_ids: strings(&PACKAGE_DB_CANONICAL_REQUIREMENT_IDS),
     };
@@ -630,7 +662,8 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
 
     Ok(format!(
         "acceptance package `{}`: {} evidence carriers bound, {} mandatory gates ({} threshold, \
-         {} body-axis, {} threshold_pending family, {} named/extra), {} blocking gates, \
+         {} body-axis, {} threshold_pending family, {} downgraded family, {} named/extra), \
+         {} blocking gates, \
          s09_authorized={} basis={} gsd_lifecycle_authorizes={} human_release_recorded={}; \
          attribution declared={:?} db_only={:?} binding_only={:?} status={}; canonical run",
         package.schema_version,
@@ -639,7 +672,12 @@ fn run(args: &Args) -> Result<String, Box<dyn Error>> {
         threshold_gate_count,
         1,
         pending_family_gate_count,
-        package.mandatory_gates.len() as u64 - threshold_gate_count - 1 - pending_family_gate_count,
+        downgrade_gate_count,
+        package.mandatory_gates.len() as u64
+            - threshold_gate_count
+            - 1
+            - pending_family_gate_count
+            - downgrade_gate_count,
         package.blocking_gates.len(),
         package.authorization.s09_authorized,
         package.authorization.basis,
@@ -1013,6 +1051,7 @@ fn synthetic_fixtures() -> (AcceptancePackageInput, AcceptancePackageExpectation
         evidence,
         threshold_gate_count: 1,
         pending_family_gate_count: 1,
+        downgrade_gate_count: 0,
         body_residual: vec![BODY_TOKEN.to_owned()],
         db_canonical_requirement_ids: strings(&["R1", "R2"]),
     };

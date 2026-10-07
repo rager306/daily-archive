@@ -13,10 +13,10 @@ use da_cli::native_acceptance_package::{
     AcceptanceGate, AcceptancePackageExpectation, DEFAULT_ACCEPTANCE_PACKAGE_ARTIFACT_REL,
     GATE_STATE_VOCABULARY, GrobidRetirementAcceptancePackage, JAVA_CPU_GATE_ID,
     LEARNING_DISPOSITION_GATE_ID, NAMED_GAP_H20, NAMED_GAP_H21, NAMED_GAP_LEARNING_RUVLLM_ABLATION,
-    PACKAGE_BODY_RESIDUAL_REL, PACKAGE_DB_CANONICAL_REQUIREMENT_IDS, PACKAGE_EVIDENCE_CARRIERS,
-    PACKAGE_NATIVE_MEASUREMENT_REL, PACKAGE_REFERENCE_PINS_REL, PACKAGE_REFERENCE_PROBE_REL,
-    PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_SCHEMA_REL, RESOURCE_PAIR_GATE_KIND, gate_blocks_s09,
-    validate_acceptance_package,
+    PACKAGE_BODY_RESIDUAL_REL, PACKAGE_COMPATIBILITY_REL, PACKAGE_DB_CANONICAL_REQUIREMENT_IDS,
+    PACKAGE_EVIDENCE_CARRIERS, PACKAGE_NATIVE_MEASUREMENT_REL, PACKAGE_REFERENCE_PINS_REL,
+    PACKAGE_REFERENCE_PROBE_REL, PACKAGE_RESOURCE_RECEIPT_REL, PACKAGE_SCHEMA_REL,
+    RESOURCE_PAIR_GATE_KIND, gate_blocks_s09, validate_acceptance_package,
 };
 use da_cli::native_family_receipt::{CarrierBinding, sha256_prefixed};
 use da_cli::native_resource_same_n::SAME_N_ABSENCE_REASON_VOCABULARY;
@@ -209,10 +209,28 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         "the contract declares twelve pending families"
     );
 
+    // S05 (M516-th0oby): every declared pending family is resolved by a recorded
+    // `not_applicable` downgrade in the parity ledger, so no
+    // `threshold_pending_family` gate survives: the twelve emit as
+    // `required_family_downgrade`/`not_applicable` and no longer block S09.
+    let compatibility: serde_yaml::Value =
+        serde_yaml::from_slice(&read(&root, PACKAGE_COMPATIBILITY_REL)?)?;
+    let downgrade_gate_count =
+        compatibility["parity_ledger"]["required_scope_downgrades"]["records"]
+            .as_mapping()
+            .ok_or("parity_ledger.required_scope_downgrades.records")?
+            .len() as u64;
+    assert_eq!(
+        downgrade_gate_count, 12,
+        "the parity ledger records twelve required-scope downgrades"
+    );
+    let pending_family_gate_count = 0u64;
+
     let expectation = AcceptancePackageExpectation {
         evidence: evidence.clone(),
         threshold_gate_count,
         pending_family_gate_count,
+        downgrade_gate_count,
         body_residual: vec!["p1_localization_uncertain".to_owned()],
         db_canonical_requirement_ids: PACKAGE_DB_CANONICAL_REQUIREMENT_IDS
             .iter()
@@ -271,7 +289,7 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
     for kind in [
         "threshold",
         "body_axis",
-        "threshold_pending_family",
+        "required_family_downgrade",
         "named_gap",
         "learning_disposition",
         "resource_pair",
@@ -610,6 +628,15 @@ fn acceptance_package_is_canonical_and_names_every_gate() -> Result<(), Box<dyn 
         &package,
         &drifted,
         "PendingFamilyCountDrift",
+    )?;
+
+    let mut drifted = expectation.clone();
+    drifted.downgrade_gate_count = downgrade_gate_count - 1;
+    expect_refusal(
+        "downgrade_count_drift",
+        &package,
+        &drifted,
+        "DowngradeCountDrift",
     )?;
 
     // A redaction leak must be refused by the serializer itself.

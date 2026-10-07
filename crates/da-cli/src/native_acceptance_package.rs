@@ -152,10 +152,11 @@ pub const POINTER_BUDGET_EXECUTED_POPULATION: &str = "executed_population";
 /// The closed gate-kind vocabulary. `resource_pair` types a measured same-n
 /// Java resource reference; `resource_absence` is retained for the typed-absence
 /// form the receipt used before the pair was measured.
-pub const GATE_KIND_VOCABULARY: [&str; 8] = [
+pub const GATE_KIND_VOCABULARY: [&str; 9] = [
     "threshold",
     "body_axis",
     "threshold_pending_family",
+    "required_family_downgrade",
     "named_gap",
     "learning_disposition",
     "resource_pair",
@@ -164,20 +165,29 @@ pub const GATE_KIND_VOCABULARY: [&str; 8] = [
 ];
 /// The closed gate-state vocabulary. It is the T02 gate-state vocabulary plus
 /// the typed absence states the named gaps, the learning disposition and the
-/// resource comparison contribute.
-pub const GATE_STATE_VOCABULARY: [&str; 9] = [
+/// resource comparison contribute, and `not_applicable`, the recorded
+/// required-family downgrade state.
+pub const GATE_STATE_VOCABULARY: [&str; 10] = [
     "met",
     "unmet",
     "not_comparable",
     "threshold_pending",
+    "not_applicable",
     "not_assessable",
     "not_observed",
     "typed_refusal",
     "pending",
     "accepted_residual",
 ];
-/// The states under which a required gate does **not** block S09.
-pub const GATE_NON_BLOCKING_STATES: [&str; 2] = ["met", "accepted_residual"];
+/// The states under which a required gate does **not** block S09. `not_applicable`
+/// is a recorded decision (M516-th0oby/S05), never a measurement: a downgraded
+/// family carries no fabricated threshold and must not block S09.
+pub const GATE_NON_BLOCKING_STATES: [&str; 3] = ["met", "not_applicable", "accepted_residual"];
+
+/// The gate kind a recorded required-family downgrade carries (M516-th0oby/S05).
+pub const REQUIRED_FAMILY_DOWNGRADE_GATE_KIND: &str = "required_family_downgrade";
+/// The non-blocking gate state a recorded required-family downgrade carries.
+pub const NOT_APPLICABLE_GATE_STATE: &str = "not_applicable";
 
 /// The frozen-threshold policy state the T02 evaluation must carry.
 pub const EVALUATION_THRESHOLD_POLICY_FROZEN: &str = "frozen";
@@ -442,6 +452,8 @@ pub enum AcceptancePackageError {
     ThresholdCountDrift { expected: u64, found: u64 },
     /// The pending-family gate count disagrees with the expectation.
     PendingFamilyCountDrift { expected: u64, found: u64 },
+    /// The recorded-downgrade gate count disagrees with the expectation.
+    DowngradeCountDrift { expected: u64, found: u64 },
     /// The declared blocking set disagrees with the gate ledger.
     BlockingSetDrift { detail: String },
     /// The package authorized S09 while a blocking gate exists.
@@ -789,8 +801,11 @@ pub struct AcceptancePackageExpectation {
     pub evidence: Vec<CarrierBinding>,
     /// The number of threshold gates the evaluation must carry.
     pub threshold_gate_count: u64,
-    /// The number of `threshold_pending` family gates.
+    /// The number of `threshold_pending_family` gates that no recorded
+    /// downgrade resolved.
     pub pending_family_gate_count: u64,
+    /// The number of `required_family_downgrade` gates (recorded downgrades).
+    pub downgrade_gate_count: u64,
     /// The body residual tokens that must survive verbatim.
     pub body_residual: Vec<String>,
     /// The DB-canonical requirement ids the attribution must agree with.
@@ -1350,6 +1365,15 @@ fn gate_from_evaluation_gate(
                 gate.family_id.clone().unwrap_or_default()
             ),
         ),
+        REQUIRED_FAMILY_DOWNGRADE_GATE_KIND => (
+            sources.schema.clone(),
+            format!(
+                "family `{}` is not measurable on the frozen corpus and is resolved by the recorded \
+                 downgrade decision: {}",
+                gate.family_id.clone().unwrap_or_default(),
+                gate.evidence,
+            ),
+        ),
         other => {
             return Err(AcceptancePackageError::UnknownGateKind {
                 kind: other.to_owned(),
@@ -1665,6 +1689,17 @@ pub fn validate_acceptance_package(
         return Err(AcceptancePackageError::PendingFamilyCountDrift {
             expected: expectation.pending_family_gate_count,
             found: pending_gates,
+        });
+    }
+    let downgrade_gates = package
+        .mandatory_gates
+        .iter()
+        .filter(|gate| gate.kind == REQUIRED_FAMILY_DOWNGRADE_GATE_KIND)
+        .count() as u64;
+    if downgrade_gates != expectation.downgrade_gate_count {
+        return Err(AcceptancePackageError::DowngradeCountDrift {
+            expected: expectation.downgrade_gate_count,
+            found: downgrade_gates,
         });
     }
 

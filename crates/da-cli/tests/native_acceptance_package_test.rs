@@ -81,7 +81,8 @@ fn expectation(
         da_cli::native_acceptance_package::AcceptancePackageExpectation {
             evidence: committed_carrier_pins(root)?,
             threshold_gate_count: 3,
-            pending_family_gate_count: 12,
+            pending_family_gate_count: 0,
+            downgrade_gate_count: 12,
             body_residual: vec![BODY_RESIDUAL_TOKEN.to_owned()],
             db_canonical_requirement_ids: PACKAGE_DB_CANONICAL_REQUIREMENT_IDS
                 .iter()

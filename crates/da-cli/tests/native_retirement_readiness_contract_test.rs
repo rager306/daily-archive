@@ -30,8 +30,11 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The sixteen required, non-clear gates the committed S08 ledger carries today.
-const LIVE_BLOCKING_GATE_COUNT: usize = 16;
+/// The four required, non-clear gates the committed S08 ledger carries after
+/// M516-th0oby/S05 downgraded the twelve unmeasurable required families. The
+/// remaining blockers are the body axis, the ruVLLM named gap, the frozen
+/// external-holdout decision and the S07 measured-no-gain disposition.
+const LIVE_BLOCKING_GATE_COUNT: usize = 4;
 /// The fifteen `required_scope.families` the committed schema declares.
 const LIVE_REQUIRED_FAMILY_COUNT: usize = 15;
 
@@ -366,29 +369,18 @@ fn readiness_receipt_is_canonical_and_records_the_blocked_state() -> Result<(), 
             .iter()
             .all(|row| !row.in_plan && !row.switched)
     );
-    // M515/S02: all three frozen thresholds now resolve `met`, so the three
-    // families they bind — preservation (native fulltext composition), extraction
-    // micro (reference segmentation) and extraction weakest stratum (header
-    // composition) — are refused by the global human gate rather than by a family
-    // gate. Every other planned family still names its gate(s).
-    let met_families = [
-        "parse.component.native_fulltext_composition_shadow",
-        "stage.reference_segmentation",
-        "stage.header_composition",
-    ];
+    // M515/S02 met the three families the frozen thresholds bind. M516-th0oby/S05
+    // then recorded a `not_applicable` downgrade for the twelve remaining required
+    // families: a downgrade is non-blocking, so every planned family now carries
+    // an empty blocking set. The global refusal comes from the human release gate
+    // and the four named/disposition gates, none of which names a required family.
     for row in &receipt.family_plan {
-        if met_families.contains(&row.family_id.as_str()) {
-            assert!(
-                row.blocking_gates.is_empty(),
-                "the met family `{}` must not name a blocking gate",
-                row.family_id
-            );
-        } else {
-            assert!(
-                !row.blocking_gates.is_empty(),
-                "every other planned family must name the gate(s) blocking it"
-            );
-        }
+        assert!(
+            row.blocking_gates.is_empty(),
+            "family `{}` must not name a blocking gate: every required family is either a met \
+             threshold or a recorded not_applicable downgrade",
+            row.family_id
+        );
     }
 
     // ── the frozen M513 package still awaits the human decision ───────────
@@ -434,7 +426,9 @@ fn readiness_receipt_is_canonical_and_records_the_blocked_state() -> Result<(), 
     )?;
 
     let mut m = receipt.clone();
-    m.family_plan[0].blocking_gates.clear();
+    m.family_plan[0]
+        .blocking_gates
+        .push("required_scope.synthetic".to_owned());
     expect_refusal(
         "plan_blocking_drift",
         &m,
