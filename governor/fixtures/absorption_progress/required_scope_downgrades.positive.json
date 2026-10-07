@@ -1,0 +1,592 @@
+[
+  {
+    "available": true,
+    "declaration": {
+      "disposition_vocabulary": [
+        "not_applicable"
+      ],
+      "reason_vocabulary_ref": "parity_measurement.outside_reason_vocabulary",
+      "records": {
+        "dialect.teiCoordinates": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "Coordinate emission is an opt-in wire dialect flag on the request, not an artefact of the parse itself; the frozen corpus records TEI output rather than request shape, so the dialect surface has no measured denominator on a frozen corpus.",
+          "reason": "dialect_flag_surface"
+        },
+        "rest.health": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The health endpoint reports service liveness as a JSON surface with no scholarly content, so there is no frozen-corpus byte to score and a measured threshold would be fabricated rather than observed.",
+          "reason": "rest_transport_surface"
+        },
+        "rest.isalive": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The is-alive probe is a transport liveness signal, not a parse-stage artefact: a frozen document corpus carries no HTTP transport byte to compare, so the frozen-corpus parity lane has no denominator and the family is downgraded rather than assigned a false threshold.",
+          "reason": "rest_transport_surface"
+        },
+        "rest.processFulltextDocument": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The frozen corpus scores TEI content, not the HTTP request/response dialect of this endpoint: the fulltext content itself is measured by the native fulltext stage families, and the REST transport surface has no frozen-corpus denominator.",
+          "reason": "rest_transport_surface"
+        },
+        "rest.processHeaderDocument": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "Header content is measured by stage.header_composition, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded instead of double-counted as a content measurement.",
+          "reason": "rest_transport_surface"
+        },
+        "rest.processReferences": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "Reference content is measured by stage.reference_segmentation, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded rather than measured against a denominator it does not have.",
+          "reason": "rest_transport_surface"
+        },
+        "rest.version": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The version endpoint is a build-identity probe; the frozen corpus stores document bytes and holds no version payload, so the family cannot be measured on it and is recorded as a downgrade.",
+          "reason": "rest_transport_surface"
+        },
+        "stage.bibliographic_consolidation": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "Bibliographic consolidation is a Java-side request profile surface: the frozen corpus scores scholarly content, not consolidation flag behaviour, so the family has no frozen-corpus denominator to measure.",
+          "reason": "java_side_profile_surface"
+        },
+        "stage.document_segmentation": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The segmentation lane is not admitted into the measured runner path for this milestone, so the frozen corpus carries no segmentation denominator; the family is recorded as downgraded rather than left as an unstated pending threshold.",
+          "reason": "lane_not_admitted_in_measurement"
+        },
+        "stage.figure_table_formula": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The visual lane is not admitted into the measurement, so figures, tables and formulas have no frozen-corpus denominator; the family is downgraded by decision rather than measured against a population the corpus does not contain.",
+          "reason": "visual_lane_not_admitted_in_measurement"
+        },
+        "stage.pdfalto_layout": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The pdfalto layout stage runs on the PDF before TEI composition; the frozen corpus scores the composed TEI, so the pre-composition layout output is not represented and cannot be measured on that corpus.",
+          "reason": "pdf_input_stage_not_in_tei_composition"
+        },
+        "stage.tei_lift": {
+          "decision_ref": "D551",
+          "disposition": "not_applicable",
+          "owner": "M516-th0oby/S05",
+          "rationale": "The TEI lift stage is not in the measured runner path, so there is no frozen-corpus execution to measure; the family is recorded as downgraded instead of assigned a threshold that was never observed.",
+          "reason": "not_in_measured_runner_path"
+        }
+      },
+      "required_record_fields": [
+        "owner",
+        "reason",
+        "decision_ref",
+        "rationale"
+      ]
+    },
+    "declaration_manifest": "data/parse/grobid_compatibility.yaml",
+    "declaration_manifest_present": true,
+    "declaration_pointer": "parity_ledger.required_scope_downgrades",
+    "errors": [],
+    "families_manifest": "data/parse/absorption_progress.schema.yaml",
+    "families_manifest_present": true,
+    "families_pointer": "required_scope.families",
+    "gate_ledger": [
+      {
+        "blocks_s09": false,
+        "detail": "measured preservation.occurrence_conservation on series [corpus_id=holdout-partition-610-531-79, profile=structural, oracle=da-cli compact non-validating scan over the composed emission (the structural validating oracle is the dev-only da-parse test), source_revision=sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275] from artifacts/parse_compat/native_corpus_acceptance.json in the pinned reference artifacts/parse_compat/absorption_progress_reference_pins.json",
+        "evidence": {
+          "manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
+          "pointer": "documents",
+          "revision_sha256": "sha256:e00f458cccab71c22ba86c5a644002a862166bf47e4b8255c084697e2ee182a6"
+        },
+        "evidence_needed": "measure `preservation.occurrence_conservation` in the frozen candidate series and resolve threshold `preservation_micro_occurrence` against the pinned reference",
+        "family_id": "parse.component.native_fulltext_composition_shadow",
+        "gate_id": "threshold.preservation_micro_occurrence",
+        "kind": "threshold",
+        "metric_id": "preservation.occurrence_conservation",
+        "required": true,
+        "state": "met"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "measured extraction.native_capability_recall on series [corpus_id=holdout-partition-610-531-79, profile=structural, oracle=da-cli compact non-validating scan over the composed emission (the structural validating oracle is the dev-only da-parse test), source_revision=sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275] from artifacts/parse_compat/native_corpus_acceptance.json in the pinned reference artifacts/parse_compat/absorption_progress_reference_pins.json",
+        "evidence": {
+          "manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
+          "pointer": "documents",
+          "revision_sha256": "sha256:e00f458cccab71c22ba86c5a644002a862166bf47e4b8255c084697e2ee182a6"
+        },
+        "evidence_needed": "measure `extraction.native_capability_recall` in the frozen candidate series and resolve threshold `extraction_micro_occurrence` against the pinned reference",
+        "family_id": "stage.reference_segmentation",
+        "gate_id": "threshold.extraction_micro_occurrence",
+        "kind": "threshold",
+        "metric_id": "extraction.native_capability_recall",
+        "required": true,
+        "state": "met"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "measured extraction.native_capability_recall on series [corpus_id=holdout-partition-610-531-79, profile=structural, oracle=da-cli compact non-validating scan over the composed emission (the structural validating oracle is the dev-only da-parse test), source_revision=sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275] from artifacts/parse_compat/native_corpus_acceptance.json in the pinned reference artifacts/parse_compat/absorption_progress_reference_pins.json",
+        "evidence": {
+          "manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
+          "pointer": "documents",
+          "revision_sha256": "sha256:e00f458cccab71c22ba86c5a644002a862166bf47e4b8255c084697e2ee182a6"
+        },
+        "evidence_needed": "measure `extraction.native_capability_recall` in the frozen candidate series and resolve threshold `extraction_weakest_family` against the pinned reference",
+        "family_id": "stage.header_composition",
+        "gate_id": "threshold.extraction_weakest_family",
+        "kind": "threshold",
+        "metric_id": "extraction.native_capability_recall",
+        "required": true,
+        "state": "met"
+      },
+      {
+        "blocks_s09": true,
+        "detail": "body-axis residual not_assessable is not assessable from the frozen local corpus; evidence carrier artifacts/parse_compat/native_body_uncertainty_split.json",
+        "evidence": {
+          "manifest": "artifacts/parse_compat/native_body_uncertainty_split.json",
+          "pointer": "aggregate",
+          "revision_sha256": "sha256:478054d5bd36d6d59057d53f4ba6ddbc21ccfb5578241fd081b595c6c877d69b"
+        },
+        "evidence_needed": "an independent body-localization oracle that decides `p1_localization_uncertain` on the frozen corpus",
+        "gate_id": "body_axis.body_not_assessable",
+        "kind": "body_axis",
+        "reason": "p1_localization_uncertain",
+        "required": true,
+        "state": "not_assessable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `rest.isalive` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The is-alive probe is a transport liveness signal, not a parse-stage artefact: a frozen document corpus carries no HTTP transport byte to compare, so the frozen-corpus parity lane has no denominator and the family is downgraded rather than assigned a false threshold.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `rest.isalive` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.isalive` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The is-alive probe is a transport liveness signal, not a parse-stage artefact: a frozen document corpus carries no HTTP transport byte to compare, so the frozen-corpus parity lane has no denominator and the family is downgraded rather than assigned a false threshold.",
+        "family_id": "rest.isalive",
+        "gate_id": "required_scope.rest.isalive",
+        "kind": "required_family_downgrade",
+        "reason": "rest_transport_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `rest.health` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The health endpoint reports service liveness as a JSON surface with no scholarly content, so there is no frozen-corpus byte to score and a measured threshold would be fabricated rather than observed.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `rest.health` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.health` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The health endpoint reports service liveness as a JSON surface with no scholarly content, so there is no frozen-corpus byte to score and a measured threshold would be fabricated rather than observed.",
+        "family_id": "rest.health",
+        "gate_id": "required_scope.rest.health",
+        "kind": "required_family_downgrade",
+        "reason": "rest_transport_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `rest.version` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The version endpoint is a build-identity probe; the frozen corpus stores document bytes and holds no version payload, so the family cannot be measured on it and is recorded as a downgrade.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `rest.version` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.version` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The version endpoint is a build-identity probe; the frozen corpus stores document bytes and holds no version payload, so the family cannot be measured on it and is recorded as a downgrade.",
+        "family_id": "rest.version",
+        "gate_id": "required_scope.rest.version",
+        "kind": "required_family_downgrade",
+        "reason": "rest_transport_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `rest.processFulltextDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The frozen corpus scores TEI content, not the HTTP request/response dialect of this endpoint: the fulltext content itself is measured by the native fulltext stage families, and the REST transport surface has no frozen-corpus denominator.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `rest.processFulltextDocument` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.processFulltextDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The frozen corpus scores TEI content, not the HTTP request/response dialect of this endpoint: the fulltext content itself is measured by the native fulltext stage families, and the REST transport surface has no frozen-corpus denominator.",
+        "family_id": "rest.processFulltextDocument",
+        "gate_id": "required_scope.rest.processFulltextDocument",
+        "kind": "required_family_downgrade",
+        "reason": "rest_transport_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `rest.processHeaderDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Header content is measured by stage.header_composition, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded instead of double-counted as a content measurement.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `rest.processHeaderDocument` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.processHeaderDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Header content is measured by stage.header_composition, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded instead of double-counted as a content measurement.",
+        "family_id": "rest.processHeaderDocument",
+        "gate_id": "required_scope.rest.processHeaderDocument",
+        "kind": "required_family_downgrade",
+        "reason": "rest_transport_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `rest.processReferences` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Reference content is measured by stage.reference_segmentation, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded rather than measured against a denominator it does not have.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `rest.processReferences` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.processReferences` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Reference content is measured by stage.reference_segmentation, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded rather than measured against a denominator it does not have.",
+        "family_id": "rest.processReferences",
+        "gate_id": "required_scope.rest.processReferences",
+        "kind": "required_family_downgrade",
+        "reason": "rest_transport_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `dialect.teiCoordinates` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Coordinate emission is an opt-in wire dialect flag on the request, not an artefact of the parse itself; the frozen corpus records TEI output rather than request shape, so the dialect surface has no measured denominator on a frozen corpus.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `dialect.teiCoordinates` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `dialect.teiCoordinates` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Coordinate emission is an opt-in wire dialect flag on the request, not an artefact of the parse itself; the frozen corpus records TEI output rather than request shape, so the dialect surface has no measured denominator on a frozen corpus.",
+        "family_id": "dialect.teiCoordinates",
+        "gate_id": "required_scope.dialect.teiCoordinates",
+        "kind": "required_family_downgrade",
+        "reason": "dialect_flag_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `stage.pdfalto_layout` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The pdfalto layout stage runs on the PDF before TEI composition; the frozen corpus scores the composed TEI, so the pre-composition layout output is not represented and cannot be measured on that corpus.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `stage.pdfalto_layout` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.pdfalto_layout` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The pdfalto layout stage runs on the PDF before TEI composition; the frozen corpus scores the composed TEI, so the pre-composition layout output is not represented and cannot be measured on that corpus.",
+        "family_id": "stage.pdfalto_layout",
+        "gate_id": "required_scope.stage.pdfalto_layout",
+        "kind": "required_family_downgrade",
+        "reason": "pdf_input_stage_not_in_tei_composition",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `stage.document_segmentation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The segmentation lane is not admitted into the measured runner path for this milestone, so the frozen corpus carries no segmentation denominator; the family is recorded as downgraded rather than left as an unstated pending threshold.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `stage.document_segmentation` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.document_segmentation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The segmentation lane is not admitted into the measured runner path for this milestone, so the frozen corpus carries no segmentation denominator; the family is recorded as downgraded rather than left as an unstated pending threshold.",
+        "family_id": "stage.document_segmentation",
+        "gate_id": "required_scope.stage.document_segmentation",
+        "kind": "required_family_downgrade",
+        "reason": "lane_not_admitted_in_measurement",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `stage.figure_table_formula` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The visual lane is not admitted into the measurement, so figures, tables and formulas have no frozen-corpus denominator; the family is downgraded by decision rather than measured against a population the corpus does not contain.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `stage.figure_table_formula` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.figure_table_formula` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The visual lane is not admitted into the measurement, so figures, tables and formulas have no frozen-corpus denominator; the family is downgraded by decision rather than measured against a population the corpus does not contain.",
+        "family_id": "stage.figure_table_formula",
+        "gate_id": "required_scope.stage.figure_table_formula",
+        "kind": "required_family_downgrade",
+        "reason": "visual_lane_not_admitted_in_measurement",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `stage.bibliographic_consolidation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Bibliographic consolidation is a Java-side request profile surface: the frozen corpus scores scholarly content, not consolidation flag behaviour, so the family has no frozen-corpus denominator to measure.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `stage.bibliographic_consolidation` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.bibliographic_consolidation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Bibliographic consolidation is a Java-side request profile surface: the frozen corpus scores scholarly content, not consolidation flag behaviour, so the family has no frozen-corpus denominator to measure.",
+        "family_id": "stage.bibliographic_consolidation",
+        "gate_id": "required_scope.stage.bibliographic_consolidation",
+        "kind": "required_family_downgrade",
+        "reason": "java_side_profile_surface",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "family `stage.tei_lift` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The TEI lift stage is not in the measured runner path, so there is no frozen-corpus execution to measure; the family is recorded as downgraded instead of assigned a threshold that was never observed.",
+        "evidence": {
+          "manifest": "data/parse/absorption_progress.schema.yaml",
+          "pointer": "required_scope.families",
+          "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
+        },
+        "evidence_needed": "family `stage.tei_lift` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.tei_lift` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The TEI lift stage is not in the measured runner path, so there is no frozen-corpus execution to measure; the family is recorded as downgraded instead of assigned a threshold that was never observed.",
+        "family_id": "stage.tei_lift",
+        "gate_id": "required_scope.stage.tei_lift",
+        "kind": "required_family_downgrade",
+        "reason": "not_in_measured_runner_path",
+        "required": true,
+        "state": "not_applicable"
+      },
+      {
+        "blocks_s09": true,
+        "detail": "capability `learning.ruvllm_ablation` has no Java donor (`no_java_donor`); decision_ref D471",
+        "evidence": {
+          "manifest": "data/parse/grobid_compatibility.yaml",
+          "pointer": "parity_ledger.named_gaps",
+          "revision_sha256": "sha256:0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec"
+        },
+        "evidence_needed": "a Java donor for `learning.ruvllm_ablation` or an explicit scope decision (D471)",
+        "gate_id": "named_gap_learning_ruvllm_ablation",
+        "kind": "named_gap",
+        "reason": "D471:no_java_donor",
+        "required": true,
+        "state": "typed_refusal"
+      },
+      {
+        "blocks_s09": true,
+        "detail": "the frozen external holdout package and the human release decision remain pending (H20)",
+        "evidence": {
+          "manifest": "doc/review/grobid-absorption-followup.json",
+          "pointer": "stages",
+          "revision_sha256": "sha256:ca21023ff6786c024bd97c0beb4d44527bf3be67c6e6376db8659ef239ba0aa8"
+        },
+        "evidence_needed": "a recorded human release decision: named reviewer, explicit decision and passing quality/cost/rights gates",
+        "gate_id": "h20_frozen_external_holdout_decision",
+        "kind": "human_release",
+        "reason": "H20",
+        "required": true,
+        "state": "pending"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "the revision-label residual is an accepted residual, not a closed gate (H21)",
+        "evidence": {
+          "manifest": "artifacts/parse_compat/grobid_retirement_release_decision_package.json",
+          "pointer": "remainders",
+          "revision_sha256": "sha256:f4ff294193a41c42988aaa135ec1b728f04603c6a585365c97a2d82869f0aa9a"
+        },
+        "evidence_needed": "close the revision-label residual or record owner acceptance",
+        "gate_id": "h21_revision_label_residual",
+        "kind": "named_gap",
+        "reason": "H21",
+        "required": true,
+        "state": "accepted_residual"
+      },
+      {
+        "blocks_s09": true,
+        "detail": "the S07 learning candidate returned `measured_no_gain` over the frozen corpus",
+        "evidence": {
+          "manifest": "artifacts/parse_learning/candidate_cycle.json",
+          "pointer": "outcome",
+          "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+        },
+        "evidence_needed": "a learning candidate that achieves a same-n gain over the frozen corpus",
+        "gate_id": "learning.s07_measured_no_gain",
+        "kind": "learning_disposition",
+        "reason": "measured_no_gain",
+        "required": true,
+        "state": "unmet"
+      },
+      {
+        "blocks_s09": false,
+        "detail": "the Java resource axis is a measured same-n pair: java_latency_ms 64611 ms (maximum over the 531 measurable documents) is bound to the same-n carrier crates/da-parse/tests/fixtures/holdout/provenance.yaml; D510 container-wide Java CPU is re-scoped by D531 to this same-n reference pair",
+        "evidence": {
+          "manifest": "artifacts/parse_compat/native_corpus_resource_same_n.json",
+          "pointer": "reference_metrics",
+          "revision_sha256": "sha256:a616f2f87e4e58161c515c182c9984b6f02ef07c5b5839f73dd9d5d4a0437288"
+        },
+        "evidence_needed": "",
+        "gate_id": "resource.container_java_cpu",
+        "kind": "resource_pair",
+        "required": true,
+        "state": "met"
+      }
+    ],
+    "gate_ledger_manifest": "artifacts/parse_compat/grobid_retirement_acceptance_package.json",
+    "gate_ledger_manifest_present": true,
+    "gate_ledger_pointer": "mandatory_gates",
+    "records": {
+      "dialect.teiCoordinates": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "Coordinate emission is an opt-in wire dialect flag on the request, not an artefact of the parse itself; the frozen corpus records TEI output rather than request shape, so the dialect surface has no measured denominator on a frozen corpus.",
+        "reason": "dialect_flag_surface"
+      },
+      "rest.health": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The health endpoint reports service liveness as a JSON surface with no scholarly content, so there is no frozen-corpus byte to score and a measured threshold would be fabricated rather than observed.",
+        "reason": "rest_transport_surface"
+      },
+      "rest.isalive": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The is-alive probe is a transport liveness signal, not a parse-stage artefact: a frozen document corpus carries no HTTP transport byte to compare, so the frozen-corpus parity lane has no denominator and the family is downgraded rather than assigned a false threshold.",
+        "reason": "rest_transport_surface"
+      },
+      "rest.processFulltextDocument": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The frozen corpus scores TEI content, not the HTTP request/response dialect of this endpoint: the fulltext content itself is measured by the native fulltext stage families, and the REST transport surface has no frozen-corpus denominator.",
+        "reason": "rest_transport_surface"
+      },
+      "rest.processHeaderDocument": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "Header content is measured by stage.header_composition, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded instead of double-counted as a content measurement.",
+        "reason": "rest_transport_surface"
+      },
+      "rest.processReferences": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "Reference content is measured by stage.reference_segmentation, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded rather than measured against a denominator it does not have.",
+        "reason": "rest_transport_surface"
+      },
+      "rest.version": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The version endpoint is a build-identity probe; the frozen corpus stores document bytes and holds no version payload, so the family cannot be measured on it and is recorded as a downgrade.",
+        "reason": "rest_transport_surface"
+      },
+      "stage.bibliographic_consolidation": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "Bibliographic consolidation is a Java-side request profile surface: the frozen corpus scores scholarly content, not consolidation flag behaviour, so the family has no frozen-corpus denominator to measure.",
+        "reason": "java_side_profile_surface"
+      },
+      "stage.document_segmentation": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The segmentation lane is not admitted into the measured runner path for this milestone, so the frozen corpus carries no segmentation denominator; the family is recorded as downgraded rather than left as an unstated pending threshold.",
+        "reason": "lane_not_admitted_in_measurement"
+      },
+      "stage.figure_table_formula": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The visual lane is not admitted into the measurement, so figures, tables and formulas have no frozen-corpus denominator; the family is downgraded by decision rather than measured against a population the corpus does not contain.",
+        "reason": "visual_lane_not_admitted_in_measurement"
+      },
+      "stage.pdfalto_layout": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The pdfalto layout stage runs on the PDF before TEI composition; the frozen corpus scores the composed TEI, so the pre-composition layout output is not represented and cannot be measured on that corpus.",
+        "reason": "pdf_input_stage_not_in_tei_composition"
+      },
+      "stage.tei_lift": {
+        "decision_ref": "D551",
+        "disposition": "not_applicable",
+        "owner": "M516-th0oby/S05",
+        "rationale": "The TEI lift stage is not in the measured runner path, so there is no frozen-corpus execution to measure; the family is recorded as downgraded instead of assigned a threshold that was never observed.",
+        "reason": "not_in_measured_runner_path"
+      }
+    },
+    "required_families": [
+      {
+        "family_id": "rest.isalive",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "rest.health",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "rest.version",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "rest.processFulltextDocument",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "rest.processHeaderDocument",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "rest.processReferences",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "dialect.teiCoordinates",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "stage.pdfalto_layout",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "stage.document_segmentation",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "stage.header_composition",
+        "measurement_identity": "measured_by_corpus_parity"
+      },
+      {
+        "family_id": "stage.reference_segmentation",
+        "measurement_identity": "measured_by_corpus_parity"
+      },
+      {
+        "family_id": "stage.figure_table_formula",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "stage.bibliographic_consolidation",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "stage.tei_lift",
+        "measurement_identity": "outside_corpus_parity"
+      },
+      {
+        "family_id": "parse.component.native_fulltext_composition_shadow",
+        "measurement_identity": "measured_by_corpus_parity"
+      }
+    ]
+  }
+]

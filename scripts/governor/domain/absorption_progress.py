@@ -80,6 +80,7 @@ __all__ = [
     "NATIVE_FAMILY_VIOLATION_LABELS",
     "NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS",
     "NATIVE_ROUTE_VIOLATION_LABELS",
+    "REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS",
     "RETIREMENT_READINESS_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
     "SEMANTIC_CORRECTNESS_VIOLATION_LABELS",
@@ -315,6 +316,29 @@ ACCEPTANCE_PACKAGE_VIOLATION_LABELS = frozenset(
         "acceptance_package_rollback_without_byte_identity",
         "acceptance_package_recompute_statement_drift",
         "acceptance_package_independence_statement_drift",
+    }
+)
+
+#: The required-scope downgrade half's closed label set (M516-th0oby/S05/T04).
+#: S05/T01 recorded the 12 pending required-scope families as `not_applicable`
+#: downgrades in the parity ledger, and S05/T03 carried each one into the
+#: mandatory gate ledger as a non-blocking `required_family_downgrade` gate. A
+#: downgrade is a *disposition*, never a measurement (D550), so a downgraded
+#: family must never be reported as measured. Publishing the registry without a
+#: sibling governor half would let an unjustified or misapplied downgrade read as
+#: a resolved family (R141), so this half makes it auditable: a downgrade gate
+#: with no recorded owner, a record the ledger never applies, a record naming a
+#: family the required scope does not contain, a downgrade targeting a family the
+#: frozen corpus *does* measure, and a record missing its reason/owner/decision/
+#: rationale are each a typed, fail-closed finding. Findings are drift-visible
+#: and never block (D492/D550).
+REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS = frozenset(
+    {
+        "required_scope_downgrade_gate_without_record",
+        "required_scope_downgrade_record_without_gate",
+        "required_scope_downgrade_unknown_family",
+        "required_scope_downgrade_for_measured_family",
+        "required_scope_downgrade_record_incomplete",
     }
 )
 

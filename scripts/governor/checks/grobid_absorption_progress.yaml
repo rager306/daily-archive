@@ -1037,9 +1037,15 @@ acceptance_package:
     product_coverage_effect: none
     thresholds: not_accepted
     authorization_basis: human_release_decision_required
-    gate_state_vocabulary: [met, unmet, not_comparable, threshold_pending, not_assessable, not_observed, typed_refusal, pending, accepted_residual]
-    non_blocking_states: [met, accepted_residual]
-    gate_kind_vocabulary: [threshold, body_axis, threshold_pending_family, named_gap, learning_disposition, resource_pair, resource_absence, human_release]
+    # S05/T04: `not_applicable` is the recorded required-scope downgrade state and
+    # `required_family_downgrade` is its gate kind (T02/T03). `measured_states` is
+    # the strict subset that counts as a measurement: a recorded downgrade is a
+    # disposition, never a measurement, so it must be absent from this list even
+    # though it is non-blocking.
+    gate_state_vocabulary: [met, unmet, not_comparable, threshold_pending, not_assessable, not_observed, typed_refusal, pending, accepted_residual, not_applicable]
+    non_blocking_states: [met, accepted_residual, not_applicable]
+    measured_states: [met, accepted_residual]
+    gate_kind_vocabulary: [threshold, body_axis, threshold_pending_family, named_gap, learning_disposition, resource_pair, resource_absence, human_release, required_family_downgrade]
     required_gate_ids:
       - threshold.preservation_micro_occurrence
       - threshold.extraction_micro_occurrence
@@ -1160,7 +1166,9 @@ retirement_readiness:
   gate_ledger:
     manifest: artifacts/parse_compat/grobid_retirement_acceptance_package.json
     pointer: mandatory_gates
-    non_blocking_states: [met, accepted_residual]
+    # S05/T04: a recorded `required_family_downgrade` gate carries state
+    # `not_applicable`; like `met`/`accepted_residual` it does not block S09.
+    non_blocking_states: [met, accepted_residual, not_applicable]
   # The five carriers the receipt must bind by path + pointer + sha256. The reader
   # recomputes each sha256 from the committed bytes, so a dropped, unbound or
   # duplicate binding fails closed while the rule never restates a digest.
@@ -1208,20 +1216,11 @@ retirement_readiness:
       - stage.bibliographic_consolidation
       - stage.tei_lift
       - parse.component.native_fulltext_composition_shadow
+    # S05/T03/T04: the 12 required-scope families resolved by a recorded
+    # `not_applicable` downgrade left the blocking set, so the exact set is now
+    # the one open body gate plus the three remaining named gaps.
     required_blocking_gate_ids:
       - body_axis.body_not_assessable
-      - required_scope.rest.isalive
-      - required_scope.rest.health
-      - required_scope.rest.version
-      - required_scope.rest.processFulltextDocument
-      - required_scope.rest.processHeaderDocument
-      - required_scope.rest.processReferences
-      - required_scope.dialect.teiCoordinates
-      - required_scope.stage.pdfalto_layout
-      - required_scope.stage.document_segmentation
-      - required_scope.stage.figure_table_formula
-      - required_scope.stage.bibliographic_consolidation
-      - required_scope.stage.tei_lift
       - named_gap_learning_ruvllm_ablation
       - h20_frozen_external_holdout_decision
       - learning.s07_measured_no_gain
@@ -1344,15 +1343,91 @@ semantic_correctness:
     - threshold_accepted
     - pinned_aggregate_rewritten
 
+# ── Required-scope downgrade half (M516-th0oby/S05/T04) ────────────────────
+# S05/T01 declared the 12 pending required-scope families as recorded
+# `not_applicable` downgrades in the parity ledger
+# (`data/parse/grobid_compatibility.yaml#parity_ledger.required_scope_downgrades`),
+# each carrying an owner, a reason from the seven-reason outside-corpus-parity
+# vocabulary, a decision reference and a rationale. S05/T03 carried every one of
+# those downgrades through the mandatory gate ledger as a non-blocking
+# `required_family_downgrade` gate, shrinking the S09 blocking set from sixteen
+# to four without changing the gate count or the gate ids. This sibling half
+# makes the registry auditable rather than merely applied.
+#
+# Why it exists (R141): a recorded downgrade is a *decision*, not a measurement
+# (D550). Without this half a gate could be downgraded with no recorded owner, a
+# record could exist that the ledger never applies, a record could name a family
+# the required scope does not contain, a recorded downgrade could target a family
+# the frozen corpus *does* measure, or a record could be missing its reason,
+# owner, decision reference or rationale -- every one of which would otherwise
+# pass unseen. The half reads the same registry the runtime reads and never
+# counts a recorded downgrade as a measurement.
+#
+# Severity: this block registers no dimension and no severity -- it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks
+# (D492/D550).
+required_scope_downgrades:
+  schema_version: required-scope-downgrades-rule.v1
+  declaration:
+    manifest: data/parse/grobid_compatibility.yaml
+    pointer: parity_ledger.required_scope_downgrades
+  # The S08 gate ledger the registry must be applied by: a record the ledger does
+  # not carry, or a gate that claims a downgrade with no record, fails closed.
+  gate_ledger:
+    manifest: artifacts/parse_compat/grobid_retirement_acceptance_package.json
+    pointer: mandatory_gates
+  # The required-scope family authority: the T01 schema's family table, whose
+  # `measurement_identity` distinguishes a family the frozen corpus measures from
+  # one a recorded downgrade may cover. A record may never target a family whose
+  # identity is the measured token.
+  families:
+    manifest: data/parse/absorption_progress.schema.yaml
+    pointer: required_scope.families
+    measured_identity: measured_by_corpus_parity
+  # The closed vocabulary: a downgrade gate is exactly this kind and this state,
+  # its record must carry all four fields, its disposition must be the declared
+  # one, and its reason must come from the existing seven-reason vocabulary.
+  expected:
+    gate_kind: required_family_downgrade
+    gate_state: not_applicable
+    dispositions: [not_applicable]
+    required_record_fields: [owner, reason, decision_ref, rationale]
+    reason_vocabulary: [rest_transport_surface, dialect_flag_surface, pdf_input_stage_not_in_tei_composition, lane_not_admitted_in_measurement, visual_lane_not_admitted_in_measurement, java_side_profile_surface, not_in_measured_runner_path]
+  # The closed vocabulary of adapter labels this half may emit. Kept separate from
+  # the halves above so each stays separately governable. The literal set lives in
+  # `scripts/governor/domain/absorption_progress.py`.
+  violations:
+    - required_scope_downgrade_gate_without_record
+    - required_scope_downgrade_record_without_gate
+    - required_scope_downgrade_unknown_family
+    - required_scope_downgrade_for_measured_family
+    - required_scope_downgrade_record_incomplete
+  fixtures:
+    positive:
+      id: required_scope_downgrades_clean
+      path: governor/fixtures/absorption_progress/required_scope_downgrades.positive.json
+      expect: clean
+    negative:
+      id: required_scope_downgrades_broken
+      path: governor/fixtures/absorption_progress/required_scope_downgrades.negative.json
+      expect:
+        require_violations:
+          - required_scope_downgrade_gate_without_record
+          - required_scope_downgrade_record_without_gate
+          - required_scope_downgrade_unknown_family
+          - required_scope_downgrade_for_measured_family
+          - required_scope_downgrade_record_incomplete
+
 # Enforcement points that must keep existing. The rule reads these files as text;
 # it never executes them.
 source_markers:
   domain_validator:
     path: scripts/governor/domain/absorption_progress.py
-    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS, NATIVE_CONTENT_VIOLATION_LABELS, NATIVE_ROUTE_VIOLATION_LABELS, NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS, ACCEPTANCE_PACKAGE_VIOLATION_LABELS, RETIREMENT_READINESS_VIOLATION_LABELS, SEMANTIC_CORRECTNESS_VIOLATION_LABELS]
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS, NATIVE_CONTENT_VIOLATION_LABELS, NATIVE_ROUTE_VIOLATION_LABELS, NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS, ACCEPTANCE_PACKAGE_VIOLATION_LABELS, RETIREMENT_READINESS_VIOLATION_LABELS, SEMANTIC_CORRECTNESS_VIOLATION_LABELS, REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS]
   adapter_oracle:
     path: scripts/governor/adapters/absorption_progress_reader.py
-    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped, _native_content_receipt_violations, read_native_content_receipt, native_content_oracle_absence_only, native_content_group_partition_untyped, _native_route_violations, read_native_route_e2e, native_route_receipt_stale, native_route_limit_tuned_after_scoring, native_route_resource_pair_unbound, native_route_stage_outside_slice_counted, _native_route_independence_violations, read_native_route_independence, native_route_independence_receipt_stale, native_route_independence_unbound_denominator, native_route_independence_lock_opened, _semantic_correctness_violations, read_semantic_correctness, receipt_stale, corpus_pointer_mismatch, per_document_reason_missing, placeholder_header_read_as_populated, pinned_aggregate_rewritten, _acceptance_package_violations, read_acceptance_package, acceptance_package_carrier_stale, acceptance_package_threshold_unbound, acceptance_package_mandatory_gate_dropped, acceptance_package_rollback_without_byte_identity, acceptance_package_pooled_resource_claim, _retirement_readiness_violations, read_retirement_readiness, retirement_readiness_carrier_stale, retirement_readiness_human_decision_claimed_without_record, retirement_readiness_family_switched_with_blocking_gate, retirement_readiness_goal_marked_met]
+    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped, _native_content_receipt_violations, read_native_content_receipt, native_content_oracle_absence_only, native_content_group_partition_untyped, _native_route_violations, read_native_route_e2e, native_route_receipt_stale, native_route_limit_tuned_after_scoring, native_route_resource_pair_unbound, native_route_stage_outside_slice_counted, _native_route_independence_violations, read_native_route_independence, native_route_independence_receipt_stale, native_route_independence_unbound_denominator, native_route_independence_lock_opened, _semantic_correctness_violations, read_semantic_correctness, receipt_stale, corpus_pointer_mismatch, per_document_reason_missing, placeholder_header_read_as_populated, pinned_aggregate_rewritten, _acceptance_package_violations, read_acceptance_package, acceptance_package_carrier_stale, acceptance_package_threshold_unbound, acceptance_package_mandatory_gate_dropped, acceptance_package_rollback_without_byte_identity, acceptance_package_pooled_resource_claim, _retirement_readiness_violations, read_retirement_readiness, retirement_readiness_carrier_stale, retirement_readiness_human_decision_claimed_without_record, retirement_readiness_family_switched_with_blocking_gate, retirement_readiness_goal_marked_met, _required_scope_downgrades_violations, read_required_scope_downgrades, required_scope_downgrade_gate_without_record, required_scope_downgrade_record_without_gate, required_scope_downgrade_unknown_family, required_scope_downgrade_for_measured_family, required_scope_downgrade_record_incomplete]
   acceptance_audit:
     path: crates/da-cli/tests/native_acceptance_package_test.rs
     required_patterns: [native_acceptance_package_audit, committed_carrier_pins, acceptance_package_gate_ledger, acceptance_package_refuses, p1_localization_uncertain, s09_authorized]

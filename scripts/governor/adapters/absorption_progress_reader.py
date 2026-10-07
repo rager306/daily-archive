@@ -93,6 +93,7 @@ from governor.domain.absorption_progress import (
     NATIVE_FAMILY_VIOLATION_LABELS,
     NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
+    REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS,
     RETIREMENT_READINESS_VIOLATION_LABELS,
     SEMANTIC_CORRECTNESS_VIOLATION_LABELS,
     THRESHOLD_CANDIDATES_VIOLATION_LABELS,
@@ -155,6 +156,7 @@ _RULE_KEYS = (
     "native_route_independence",
     "threshold_candidates",
     "semantic_correctness",
+    "required_scope_downgrades",
     "acceptance_package",
     "retirement_readiness",
 )
@@ -1984,6 +1986,120 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    def read_required_scope_downgrades(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the recorded required-scope downgrade registry and its ledger.
+
+        The half this governs is the S05 downgrade registry: the 12 pending
+        required-scope families recorded `not_applicable` with an owner, a reason
+        from the closed seven-reason vocabulary, a decision reference and a
+        rationale (S05/T01), each carried through the mandatory gate ledger as a
+        non-blocking `required_family_downgrade` gate (S05/T03). The rule names
+        only *where* the registry, the gate ledger and the required-scope family
+        authority live; nothing about the records is restated, so the rule cannot
+        drift from the artifact it governs.
+
+        ``None`` means the rule does not govern a downgrade half. Otherwise a
+        bundle carrying the parsed registry block, its ``records`` mapping, the
+        resolved required-scope family list (with each family's
+        ``measurement_identity``) and the resolved ``mandatory_gates`` list from
+        the acceptance package. ``available`` is True only when the registry
+        declaration resolves -- a tree without that authority is *absence*, not a
+        violation, and an unreadable registry under a resolvable declaration is a
+        claim with no evidence the oracle reports through the ledger mismatch.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("required_scope_downgrades")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        gate_rule = rule.get("gate_ledger")
+        gate_rule = gate_rule if isinstance(gate_rule, dict) else {}
+        gate_manifest = _text(gate_rule.get("manifest"))
+        gate_pointer = _text(gate_rule.get("pointer"))
+
+        families_rule = rule.get("families")
+        families_rule = families_rule if isinstance(families_rule, dict) else {}
+        families_manifest = _text(families_rule.get("manifest"))
+        families_pointer = _text(families_rule.get("pointer"))
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "declaration": None,
+            "records": None,
+            "families_manifest": families_manifest,
+            "families_pointer": families_pointer,
+            "families_manifest_present": bool(
+                families_manifest and self.path_exists(families_manifest)
+            ),
+            "required_families": None,
+            "gate_ledger_manifest": gate_manifest,
+            "gate_ledger_pointer": gate_pointer,
+            "gate_ledger_manifest_present": bool(
+                gate_manifest and self.path_exists(gate_manifest)
+            ),
+            "gate_ledger": None,
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["available"] = True
+                bundle["declaration"] = block
+                records = block.get("records")
+                bundle["records"] = records if isinstance(records, dict) else None
+
+        # The required-scope family authority is the T01 schema's family table:
+        # its `measurement_identity` is what separates a family the frozen corpus
+        # measures from one a recorded downgrade may cover.
+        families_doc = self.read_yaml(families_manifest) if families_manifest else None
+        if (
+            families_doc is None
+            and families_manifest
+            and self.path_exists(families_manifest)
+        ):
+            bundle["errors"].append("families_unreadable")
+        if isinstance(families_doc, dict):
+            resolved = _resolve_declared_pointer(families_doc, families_pointer)
+            if isinstance(resolved, list):
+                bundle["required_families"] = [
+                    {
+                        "family_id": _text(entry.get("family_id")),
+                        "measurement_identity": _text(
+                            entry.get("measurement_identity")
+                        ),
+                    }
+                    for entry in resolved
+                    if isinstance(entry, dict)
+                ]
+
+        # The S08 gate ledger is the authority the registry is applied against, so
+        # a record may not exist without the gate it authorises, nor vice versa.
+        gate_doc = self.read_json(gate_manifest) if gate_manifest else None
+        if gate_doc is None and gate_manifest and self.path_exists(gate_manifest):
+            bundle["errors"].append("gate_ledger_unreadable")
+        if isinstance(gate_doc, dict):
+            resolved = _resolve_declared_pointer(gate_doc, gate_pointer)
+            bundle["gate_ledger"] = resolved if isinstance(resolved, list) else None
+
+        return bundle
+
     @staticmethod
     def _acceptance_rollback_view(
         document: Any, rule: dict[str, Any]
@@ -2130,6 +2246,11 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
     )
     missing.extend(_threshold_candidates_vocabulary(contract.get("threshold_candidates")))
     missing.extend(_semantic_correctness_vocabulary(contract.get("semantic_correctness")))
+    missing.extend(
+        _required_scope_downgrades_vocabulary(
+            contract.get("required_scope_downgrades")
+        )
+    )
     missing.extend(_acceptance_package_vocabulary(contract.get("acceptance_package")))
     missing.extend(_retirement_readiness_vocabulary(contract.get("retirement_readiness")))
     return missing
@@ -2842,6 +2963,80 @@ def _semantic_correctness_vocabulary(block: Any) -> list[str]:
         missing.append("semantic_correctness.violations")
     return missing
 
+def _required_scope_downgrades_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``required_scope_downgrades`` fields absent or unusable.
+
+    Without these the half cannot tell a recorded downgrade from a bare gate
+    state: it needs to know where the registry lives, which gate ledger it must
+    agree with, which family authority settles "required" from "measured", the
+    closed disposition set, the four record fields, the seven-reason vocabulary
+    and the closed label set. The declared label set must be exactly the domain's
+    literal set -- a label the oracle can emit must be registered, and a
+    registered label must be one the oracle can emit -- so an unregistered
+    emission is a data/implementation mismatch rather than a silent finding. The
+    caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["required_scope_downgrades"]
+    missing: list[str] = []
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("required_scope_downgrades.declaration")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"required_scope_downgrades.declaration.{key}")
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("required_scope_downgrades.declaration.manifest.path")
+
+    gate = block.get("gate_ledger")
+    if not isinstance(gate, dict):
+        missing.append("required_scope_downgrades.gate_ledger")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(gate.get(key)) is None:
+                missing.append(f"required_scope_downgrades.gate_ledger.{key}")
+        if not _is_relative_path(gate.get("manifest")):
+            missing.append("required_scope_downgrades.gate_ledger.manifest.path")
+
+    families = block.get("families")
+    if not isinstance(families, dict):
+        missing.append("required_scope_downgrades.families")
+    else:
+        for key in ("manifest", "pointer", "measured_identity"):
+            if _text(families.get(key)) is None:
+                missing.append(f"required_scope_downgrades.families.{key}")
+        if not _is_relative_path(families.get("manifest")):
+            missing.append("required_scope_downgrades.families.manifest.path")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("required_scope_downgrades.expected")
+    else:
+        for key in ("gate_kind", "gate_state"):
+            if _text(expected.get(key)) is None:
+                missing.append(f"required_scope_downgrades.expected.{key}")
+        for key in ("dispositions", "required_record_fields", "reason_vocabulary"):
+            if not _text_list(expected.get(key)):
+                missing.append(f"required_scope_downgrades.expected.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS):
+        missing.append("required_scope_downgrades.violations")
+
+    fixtures = block.get("fixtures")
+    if not isinstance(fixtures, dict):
+        missing.append("required_scope_downgrades.fixtures")
+    else:
+        for polarity in ("positive", "negative"):
+            spec = fixtures.get(polarity)
+            if not isinstance(spec, dict) or not _is_relative_path(spec.get("path")):
+                missing.append(
+                    f"required_scope_downgrades.fixtures.{polarity}.path"
+                )
+    return missing
+
 def _acceptance_package_vocabulary(block: Any) -> list[str]:
     """Dotted names of ``acceptance_package`` fields absent or unusable.
 
@@ -3382,6 +3577,7 @@ def absorption_progress_violations(
     _native_route_independence_violations_into(contract, observations, violations)
     _threshold_candidates_violations_into(contract, observations, violations)
     _semantic_correctness_violations_into(contract, observations, violations)
+    _required_scope_downgrades_violations_into(contract, observations, violations)
     _acceptance_package_violations_into(contract, observations, violations)
     _retirement_readiness_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
@@ -3761,6 +3957,21 @@ def _semantic_correctness_violations_into(
         _semantic_correctness_violations(
             contract,
             observations.get("semantic_correctness")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+def _required_scope_downgrades_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the required-scope downgrade labels carried by the observations."""
+    violations.update(
+        _required_scope_downgrades_violations(
+            contract,
+            observations.get("required_scope_downgrades")
             if isinstance(observations, dict)
             else None,
         )
@@ -6316,6 +6527,106 @@ def _semantic_correctness_violations(contract: Any, evidence: Any) -> set[str]:
             and _text(links.get("scope_reason")) != empty_scope
         ):
             _add("empty_targets_presented_as_pass")
+
+    return violations
+
+def _required_scope_downgrades_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a required-scope downgrade the registry and ledger do not agree on.
+
+    The shape R141 forbids is a *recorded downgrade that is not a decision*: a
+    gate carrying `required_family_downgrade`/`not_applicable` with no recorded
+    owner, a record the gate ledger never applies, a record naming a family the
+    required scope does not contain, a recorded downgrade targeting a family the
+    frozen corpus *does* measure, or a record missing its reason, owner, decision
+    reference or rationale. A downgrade is a disposition, never a measurement
+    (D550), so the two sides must agree exactly and a downgrade must never stand
+    in for a measured family. Concretely:
+
+    * ``gate_without_record`` -- a ledger gate claims a recorded downgrade the
+      registry does not contain;
+    * ``record_without_gate`` -- a registry record the ledger never carries as a
+      downgrade gate, so the downgrade was declared but not applied;
+    * ``unknown_family`` -- a record names a family the required scope does not
+      contain;
+    * ``for_measured_family`` -- a record targets a family whose
+      ``measurement_identity`` is the measured token, i.e. a family the frozen
+      corpus measures and that may not be downgraded;
+    * ``record_incomplete`` -- a record is not a mapping, its disposition is
+      outside the closed disposition set, its reason is outside the seven-reason
+      vocabulary, or one of the four required fields is absent or empty.
+
+    ``set()`` (empty) means clean. A missing or absent-evidence bundle is
+    *unverified*, never clean and never refuted: a tree that does not carry the
+    registry authority is silence, not compliance.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("required_scope_downgrades")
+    if not isinstance(rule, dict):
+        return violations
+
+    expected = rule.get("expected") if isinstance(rule.get("expected"), dict) else {}
+    gate_kind = _text(expected.get("gate_kind"))
+    gate_state = _text(expected.get("gate_state"))
+    dispositions = set(_text_list(expected.get("dispositions")))
+    required_fields = _text_list(expected.get("required_record_fields"))
+    reason_vocabulary = set(_text_list(expected.get("reason_vocabulary")))
+    families_rule = rule.get("families") if isinstance(rule.get("families"), dict) else {}
+    measured_identity = _text(families_rule.get("measured_identity"))
+
+    # The required-scope family authority: family id -> measurement identity.
+    family_index: dict[Optional[str], Optional[str]] = {}
+    families = evidence.get("required_families")
+    if isinstance(families, list):
+        for entry in families:
+            if isinstance(entry, dict):
+                family_index[_text(entry.get("family_id"))] = _text(
+                    entry.get("measurement_identity")
+                )
+
+    records = evidence.get("records")
+    records = records if isinstance(records, dict) else {}
+    gates = evidence.get("gate_ledger")
+    gates = gates if isinstance(gates, list) else []
+
+    # A downgrade gate is exactly the declared kind *and* the declared state; a
+    # gate that is not both is not claiming a recorded downgrade.
+    ledger_families: set[Optional[str]] = set()
+    for gate in gates:
+        if not isinstance(gate, dict):
+            continue
+        if _text(gate.get("kind")) == gate_kind and _text(gate.get("state")) == gate_state:
+            ledger_families.add(_text(gate.get("family_id")))
+
+    # Every gate that claims a downgrade must have a record behind it.
+    for family_id in ledger_families:
+        if family_id not in records:
+            violations.add("required_scope_downgrade_gate_without_record")
+
+    # Every record must be applied by the ledger, name a required family that is
+    # not measured, and carry all four fields with a typed disposition and reason.
+    for family_id, record in records.items():
+        if family_id not in ledger_families:
+            violations.add("required_scope_downgrade_record_without_gate")
+        if family_id not in family_index:
+            violations.add("required_scope_downgrade_unknown_family")
+            continue
+        if measured_identity is not None and family_index.get(family_id) == measured_identity:
+            violations.add("required_scope_downgrade_for_measured_family")
+        if not isinstance(record, dict):
+            violations.add("required_scope_downgrade_record_incomplete")
+            continue
+        if _text(record.get("disposition")) not in dispositions:
+            violations.add("required_scope_downgrade_record_incomplete")
+        if _text(record.get("reason")) not in reason_vocabulary:
+            violations.add("required_scope_downgrade_record_incomplete")
+        for field in required_fields:
+            if _text(record.get(field)) is None:
+                violations.add("required_scope_downgrade_record_incomplete")
+                break
 
     return violations
 

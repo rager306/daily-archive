@@ -189,8 +189,10 @@ def test_live_receipt_binds_every_required_family_and_gate(
     declared_gates = set(live_receipt["authorization"]["blocking_gates"])
     assert declared_gates == set(expected["required_blocking_gate_ids"])
     # M515/S03: the Java resource gate is a measured same-n pair (`resource_pair`
-    # / `met`), so it left the blocking set (17 -> 16).
-    assert len(declared_gates) == 16
+    # / `met`), so it left the blocking set (17 -> 16). S05/T03/T04 resolved the
+    # 12 required-scope families as recorded `not_applicable` downgrades, so the
+    # exact set is now the body-axis gate plus the three named gaps (16 -> 4).
+    assert len(declared_gates) == 4
 
 def test_live_body_residual_is_verbatim(live_receipt: dict) -> None:
     assert live_receipt["body_residual"]["token"] == "p1_localization_uncertain"

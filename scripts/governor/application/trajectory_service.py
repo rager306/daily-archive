@@ -3027,6 +3027,19 @@ class TrajectoryService:
             # (MEM1948: a sibling half not listed here is inert). Absence of the
             # declaration authority stays silence, not compliance.
             "semantic_correctness": reader.read_semantic_correctness(contract),
+            # S05/T04 (M516-th0oby): the required-scope downgrade registry records
+            # the 12 pending required-scope families as `not_applicable` decisions
+            # and the gate ledger applies each one as a non-blocking
+            # `required_family_downgrade` gate. A downgrade is a disposition, never
+            # a measurement (D550). The reader resolves the registry, the
+            # required-scope family authority (whose `measurement_identity`
+            # separates a measured family from a downgraded one) and the gate
+            # ledger into observations, so the pure oracle can refuse a gate with
+            # no record, a record the ledger never applies, a record naming an
+            # unknown family, a downgrade targeting a measured family and a record
+            # missing its reason/owner/decision/rationale. Absence of the registry
+            # authority stays silence, not compliance (MEM1948).
+            "required_scope_downgrades": reader.read_required_scope_downgrades(contract),
             # S08/T06: the acceptance package is the artifact that binds every S08
             # carrier and names every mandatory gate with a computed
             # `s09_authorized`. Publishing it without a sibling governor half would

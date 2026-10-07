@@ -169,9 +169,11 @@ def test_live_package_names_every_gate_and_recomputes_authorization(
     # T04 (M515/S02): both extraction thresholds now resolve `met`, so their
     # gates left the blocking set (19 -> 17). T03 (M515/S03) derived the Java
     # resource gate as a measured `resource_pair`/`met`, dropping it from the
-    # blocking set (17 -> 16). S09 remains unauthorized on the body-axis and
-    # required-scope gates.
-    assert len(declared) == 16
+    # blocking set (17 -> 16). S05/T03/T04 then resolved the 12 required-scope
+    # families as recorded `required_family_downgrade`/`not_applicable` gates, so
+    # the blocking set is now exactly the body-axis gate plus the three named
+    # gaps (16 -> 4). S09 remains unauthorized on that set.
+    assert len(declared) == 4
 
     authorization = live_package["authorization"]
     assert authorization["s09_authorized"] is False
