@@ -94,6 +94,7 @@ from governor.domain.absorption_progress import (
     NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
     RETIREMENT_READINESS_VIOLATION_LABELS,
+    SEMANTIC_CORRECTNESS_VIOLATION_LABELS,
     THRESHOLD_CANDIDATES_VIOLATION_LABELS,
     contract_thresholds,
     missing_contract_vocabulary,
@@ -153,6 +154,7 @@ _RULE_KEYS = (
     "native_route_e2e",
     "native_route_independence",
     "threshold_candidates",
+    "semantic_correctness",
     "acceptance_package",
     "retirement_readiness",
 )
@@ -215,6 +217,28 @@ def canonical_json_digest(value: Any) -> Optional[str]:
     except (TypeError, ValueError):
         return None
     return f"sha256:{hashlib.sha256(blob).hexdigest()}"
+
+
+def _reference_bindings_digest(bindings: list[dict[str, Any]]) -> Optional[str]:
+    """The tab-canonical ``sha256:`` digest the composer stamps on a binding list.
+
+    The S04 semantic-correctness receipt binds its corpus with the composer's
+    own ``bindings_digest``: one line per reference binding, ``id`` TAB ``path``
+    TAB ``sha256`` LF, hashed as raw bytes. That is deliberately *not* a canonical
+    JSON digest, so the reader mirrors the producer's encoding exactly and
+    compares it against ``corpus.documents_digest`` rather than re-encoding it
+    and always reporting a stale receipt (D545's mirror-the-producer rule). The
+    independent row-level identity is checked separately, with
+    :func:`canonical_json_digest`.
+    """
+    canonical = "".join(
+        f"{binding.get('id')}\t{binding.get('path')}\t{binding.get('sha256')}\n"
+        for binding in bindings
+        if _text(binding.get("id"))
+        and _text(binding.get("path"))
+        and _text(binding.get("sha256"))
+    )
+    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
 
 class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
@@ -1533,6 +1557,131 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    def read_semantic_correctness(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the S04 semantic-correctness receipt and its committed carriers.
+
+        The half this governs is the T01 receipt that runs H14 (XML
+        well-formedness) and H15 (bibliography id/target integrity) over the
+        expanded 12-document native route corpus and publishes a *per-document*
+        reason pair instead of one aggregate verdict. The rule names only *where*
+        the receipt, the committed emission envelope and the reference corpus
+        declaration live; nothing about the receipt contents is restated, so the
+        rule cannot drift from the artifact it governs.
+
+        ``None`` means the rule does not govern a semantic-correctness half.
+        Otherwise a bundle carrying the receipt document (with its recomputed
+        ``sha256``), the committed emission envelope (with its recomputed
+        ``sha256`` and declared document count), the reference bindings resolved
+        from the layout declaration (with the tab-canonical corpus digest the
+        composer stamps and the independent canonical-JSON row identity), and the
+        committed route corpus identity (id, document count, page denominator).
+        ``available`` is True only when the declaration authority resolves; a tree
+        that does not carry it is *absence*, not a violation, but an unreadable
+        *receipt* under a resolvable declaration is a claim with no evidence and
+        the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("semantic_correctness")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        receipt_rule = rule.get("receipt")
+        receipt_rule = receipt_rule if isinstance(receipt_rule, dict) else {}
+        receipt_path = _text(receipt_rule.get("path"))
+
+        emission_rule = rule.get("emission")
+        emission_rule = emission_rule if isinstance(emission_rule, dict) else {}
+        emission_path = _text(emission_rule.get("path"))
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_sha256": (
+                self.file_sha256(declaration_manifest) if declaration_manifest else None
+            ),
+            "declaration": None,
+            "reference_bindings": None,
+            "reference_document_count": None,
+            "reference_documents_digest": None,
+            "reference_bindings_identity": None,
+            "corpus_id": None,
+            "corpus_document_count": None,
+            "corpus_page_denominator": None,
+            "receipt_path": receipt_path,
+            "receipt_exists": bool(receipt_path and self.path_exists(receipt_path)),
+            "receipt_sha256": self.file_sha256(receipt_path) if receipt_path else None,
+            "receipt": None,
+            "emission_path": emission_path,
+            "emission_exists": bool(emission_path and self.path_exists(emission_path)),
+            "emission_sha256": self.file_sha256(emission_path) if emission_path else None,
+            "emission_document_count": None,
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            documents = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(documents, list):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bindings = [
+                    {
+                        "id": _text(entry.get("id")),
+                        "path": _text(entry.get("path")),
+                        "sha256": _text(entry.get("sha256")),
+                    }
+                    for entry in documents
+                    if isinstance(entry, dict)
+                ]
+                bindings = [
+                    binding
+                    for binding in bindings
+                    if binding["id"] and binding["path"] and binding["sha256"]
+                ]
+                bundle["reference_bindings"] = bindings
+                bundle["reference_document_count"] = len(bindings)
+                bundle["reference_documents_digest"] = _reference_bindings_digest(bindings)
+                bundle["reference_bindings_identity"] = canonical_json_digest(
+                    [
+                        {
+                            "document_id": binding["id"],
+                            "reference_sha256": binding["sha256"],
+                        }
+                        for binding in bindings
+                    ]
+                )
+                corpus_block = manifest.get("native_route_corpus")
+                if isinstance(corpus_block, dict):
+                    bundle["corpus_id"] = _text(corpus_block.get("id"))
+                    bundle["corpus_document_count"] = _count(corpus_block.get("corpus_n"))
+                    bundle["corpus_page_denominator"] = _count(
+                        corpus_block.get("page_denominator")
+                    )
+                bundle["available"] = True
+
+        bundle["receipt"] = self.read_json(receipt_path) if receipt_path else None
+        if bundle["receipt"] is None and bundle["receipt_exists"]:
+            bundle["errors"].append("receipt_unreadable")
+
+        emission = self.read_json(emission_path) if emission_path else None
+        if emission is None and bundle["emission_exists"]:
+            bundle["errors"].append("emission_unreadable")
+        elif isinstance(emission, dict):
+            documents = emission.get("documents")
+            if isinstance(documents, list):
+                bundle["emission_document_count"] = len(documents)
+
+        return bundle
+
     def read_acceptance_package(self, contract: Any) -> Optional[dict[str, Any]]:
         """Resolve the S08 acceptance package and every carrier it binds.
 
@@ -1980,6 +2129,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
         _native_route_independence_vocabulary(contract.get("native_route_independence"))
     )
     missing.extend(_threshold_candidates_vocabulary(contract.get("threshold_candidates")))
+    missing.extend(_semantic_correctness_vocabulary(contract.get("semantic_correctness")))
     missing.extend(_acceptance_package_vocabulary(contract.get("acceptance_package")))
     missing.extend(_retirement_readiness_vocabulary(contract.get("retirement_readiness")))
     return missing
@@ -2607,6 +2757,91 @@ def _threshold_candidates_vocabulary(block: Any) -> list[str]:
         missing.append("threshold_candidates.violations")
     return missing
 
+def _semantic_correctness_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``semantic_correctness`` fields absent or unusable.
+
+    Without these the half cannot tell a declared-and-evidenced semantic receipt
+    from a claim with no receipt: it needs the declaration carrier, the receipt
+    and emission paths with their schema versions, the corpus pointers, the
+    envelope expectations, the closed reason vocabularies and the closed label
+    set. The declared label set must be exactly the domain's literal set -- a
+    label the oracle can emit must be registered, and a registered label must be
+    one the oracle can emit -- so an unregistered emission is a
+    data/implementation mismatch rather than a silent finding.
+    """
+    if not isinstance(block, dict):
+        return ["semantic_correctness"]
+    missing: list[str] = []
+
+    if _text(block.get("schema_version")) is None:
+        missing.append("semantic_correctness.schema_version")
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("semantic_correctness.declaration")
+    else:
+        for key in ("manifest", "pointer"):
+            if _text(declaration.get(key)) is None:
+                missing.append(f"semantic_correctness.declaration.{key}")
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("semantic_correctness.declaration.manifest.path")
+
+    for key in ("receipt", "emission"):
+        entry = block.get(key)
+        if not isinstance(entry, dict):
+            missing.append(f"semantic_correctness.{key}")
+            continue
+        if _text(entry.get("path")) is None:
+            missing.append(f"semantic_correctness.{key}.path")
+        elif not _is_relative_path(entry.get("path")):
+            missing.append(f"semantic_correctness.{key}.path")
+        if _text(entry.get("schema_version")) is None:
+            missing.append(f"semantic_correctness.{key}.schema_version")
+        if entry.get("required") is not True:
+            missing.append(f"semantic_correctness.{key}.required")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("semantic_correctness.expected")
+    else:
+        for key in (
+            "claim_scope",
+            "product_coverage_effect",
+            "thresholds",
+            "aggregate_verdict",
+            "corpus_pointer",
+            "reference_pointer",
+            "composer_accepted_token",
+            "all_required_targets_resolved_token",
+            "placeholder_disposition_token",
+            "header_placeholder_scope",
+            "empty_targets_scope",
+        ):
+            if _text(expected.get(key)) is None:
+                missing.append(f"semantic_correctness.expected.{key}")
+        if not _is_relative_path(expected.get("corpus_pointer")):
+            missing.append("semantic_correctness.expected.corpus_pointer")
+        if not _is_relative_path(expected.get("reference_pointer")):
+            missing.append("semantic_correctness.expected.reference_pointer")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict) or not locks:
+            missing.append("semantic_correctness.expected.locks")
+        for key in (
+            "well_formedness_reasons",
+            "well_formedness_prefixes",
+            "bibliography_target_reasons",
+            "bibliography_target_prefixes",
+            "emission_family_scope_reasons",
+            "reference_links_scope_reasons",
+        ):
+            if not _text_list(expected.get(key)):
+                missing.append(f"semantic_correctness.expected.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(SEMANTIC_CORRECTNESS_VIOLATION_LABELS):
+        missing.append("semantic_correctness.violations")
+    return missing
+
 def _acceptance_package_vocabulary(block: Any) -> list[str]:
     """Dotted names of ``acceptance_package`` fields absent or unusable.
 
@@ -3146,6 +3381,7 @@ def absorption_progress_violations(
     _native_route_violations_into(contract, observations, violations)
     _native_route_independence_violations_into(contract, observations, violations)
     _threshold_candidates_violations_into(contract, observations, violations)
+    _semantic_correctness_violations_into(contract, observations, violations)
     _acceptance_package_violations_into(contract, observations, violations)
     _retirement_readiness_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
@@ -3510,6 +3746,21 @@ def _threshold_candidates_violations_into(
         _threshold_candidates_violations(
             contract,
             observations.get("threshold_candidates")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+def _semantic_correctness_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the semantic-correctness receipt labels carried by the observations."""
+    violations.update(
+        _semantic_correctness_violations(
+            contract,
+            observations.get("semantic_correctness")
             if isinstance(observations, dict)
             else None,
         )
@@ -5825,6 +6076,247 @@ def _threshold_candidates_violations(contract: Any, evidence: Any) -> set[str]:
                 stale()
     if pinned and seen != set(pinned):
         stale()
+    return violations
+
+def _closed_reason(value: str, allowed: set[str], prefixes: tuple[str, ...]) -> bool:
+    """Whether ``value`` is a closed token: an allowed literal or a prefixed one.
+
+    The semantic receipt's reason vocabulary is closed (``emission_parsed_well_
+    formed``, ``all_required_targets_resolved``, ``no_required_targets_declared``,
+    a ``composer_typed_refusal:<class>`` and an ``unresolved_required_targets:<n>``
+    form). A prefixed token needs a non-empty suffix: an empty ``<class>`` or
+    ``<n>`` is a missing reason wearing a prefix, not a closed one.
+    """
+    if value in allowed:
+        return True
+    return any(
+        isinstance(prefix, str)
+        and prefix
+        and value.startswith(prefix)
+        and len(value) > len(prefix)
+        for prefix in prefixes
+    )
+
+
+def _semantic_correctness_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a semantic-correctness claim the receipt does not evidence.
+
+    The half owns availability, digest and drift; it never restates the receipt's
+    per-document verdicts (the receipt owns those). Concretely:
+
+    * ``receipt_absent`` -- the declaration resolves but the receipt is absent,
+      unreadable, or names another schema version, so there is a claim and no
+      matching evidence;
+    * ``receipt_stale`` -- the receipt no longer binds the committed bytes: its
+      corpus tab digest is not the digest of the reference bindings, its emission
+      ``sha256`` does not match the committed emission envelope, or its row-level
+      reference identity (canonical JSON over the ``(document_id,
+      reference_sha256)`` projection) differs from the committed layout bindings;
+    * ``corpus_pointer_mismatch`` -- the receipt names another corpus pointer,
+      reference pointer, corpus id or page denominator than the committed
+      declaration;
+    * ``document_count_mismatch`` -- the receipt's declared count, population
+      count, row count, emission scope count or emission document count is not the
+      committed reference population;
+    * ``per_document_reason_missing`` -- a row carries no closed well-formedness
+      or bibliography-target reason (or its emitted scope reason is absent or
+      outside the closed vocabulary), so the per-document table is incomplete;
+    * ``empty_targets_presented_as_pass`` -- a composer row with zero required
+      targets is presented as ``all_required_targets_resolved``, or an emitted
+      reference-link ledger that declares zero local targets is presented as
+      having declared targets;
+    * ``placeholder_header_read_as_populated`` -- an emitted header disclosed as a
+      typed absence is read as populated;
+    * ``lock_opened`` -- a promotion lock the receipt never relaxes is open or
+      absent;
+    * ``threshold_accepted`` -- the envelope widened past diagnostic-only: the
+      claim scope, the product-coverage effect or the threshold state is not the
+      declared one;
+    * ``pinned_aggregate_rewritten`` -- the receipt collapsed the per-document
+      table into an aggregate verdict instead of the declared
+      ``no_aggregate_verdict``.
+
+    ``set()`` (empty) means clean. A tree without the declaration authority is
+    *unverified*, never clean and never refuted.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("semantic_correctness")
+    if not isinstance(rule, dict):
+        return violations
+
+    def _mapping(value: Any) -> dict[str, Any]:
+        return value if isinstance(value, dict) else {}
+
+    def _add(label: str) -> None:
+        violations.add(label)
+
+    receipt_rule = _mapping(rule.get("receipt"))
+    expected = _mapping(rule.get("expected"))
+    locks_rule = _mapping(expected.get("locks"))
+
+    receipt = evidence.get("receipt")
+    required = receipt_rule.get("required") is True
+    if not isinstance(receipt, dict):
+        if evidence.get("receipt_exists") is True or required:
+            _add("receipt_absent")
+        return violations
+    if _text(receipt.get("schema_version")) != _text(receipt_rule.get("schema_version")):
+        _add("receipt_absent")
+        return violations
+
+    # The envelope: diagnostic-only, no product coverage, thresholds not accepted
+    # and every promotion lock closed. Any widening is one class of claim.
+    if _text(receipt.get("claim_scope")) != _text(expected.get("claim_scope")):
+        _add("threshold_accepted")
+    if _text(receipt.get("product_coverage_effect")) != _text(
+        expected.get("product_coverage_effect")
+    ):
+        _add("threshold_accepted")
+    if _text(receipt.get("thresholds")) != _text(expected.get("thresholds")):
+        _add("threshold_accepted")
+    locks = receipt.get("locks")
+    if not isinstance(locks, dict):
+        _add("lock_opened")
+    else:
+        for key, want in locks_rule.items():
+            if str(locks.get(key)) != str(want):
+                _add("lock_opened")
+
+    # The receipt owns no aggregate verdict: the per-document reasons are the
+    # point, so an aggregate token is the one-verdict collapse this half refuses.
+    population = _mapping(receipt.get("population"))
+    if _text(population.get("aggregate_verdict")) != _text(
+        expected.get("aggregate_verdict")
+    ):
+        _add("pinned_aggregate_rewritten")
+
+    # The corpus identity and its pointers.
+    corpus = _mapping(receipt.get("corpus"))
+    if _text(corpus.get("corpus_pointer")) != _text(expected.get("corpus_pointer")):
+        _add("corpus_pointer_mismatch")
+    if _text(corpus.get("reference_pointer")) != _text(
+        expected.get("reference_pointer")
+    ):
+        _add("corpus_pointer_mismatch")
+    if _text(corpus.get("id")) != _text(evidence.get("corpus_id")):
+        _add("corpus_pointer_mismatch")
+    if _count(corpus.get("page_denominator")) != _count(
+        evidence.get("corpus_page_denominator")
+    ):
+        _add("corpus_pointer_mismatch")
+
+    declared_count = _count(evidence.get("corpus_document_count"))
+    reference_count = _count(evidence.get("reference_document_count"))
+    if _count(corpus.get("document_count")) != declared_count:
+        _add("document_count_mismatch")
+    if _count(population.get("documents")) != declared_count:
+        _add("document_count_mismatch")
+
+    rows = receipt.get("documents")
+    rows = rows if isinstance(rows, list) else []
+    if len(rows) != reference_count:
+        _add("document_count_mismatch")
+
+    emission_scope = _mapping(receipt.get("native_route_emission_scope"))
+    scope_rows = emission_scope.get("documents")
+    scope_rows = scope_rows if isinstance(scope_rows, list) else []
+    emission_count = _count(evidence.get("emission_document_count"))
+    if _count(emission_scope.get("document_count")) != emission_count:
+        _add("document_count_mismatch")
+    if len(scope_rows) != emission_count:
+        _add("document_count_mismatch")
+
+    # The receipt must still bind the committed bytes: the composer's tab-canonical
+    # corpus digest, the emission envelope's sha256, and the independent row-level
+    # reference identity.
+    if _text(corpus.get("documents_digest")) != _text(
+        evidence.get("reference_documents_digest")
+    ):
+        _add("receipt_stale")
+    if _text(emission_scope.get("sha256")) != _text(evidence.get("emission_sha256")):
+        _add("receipt_stale")
+    receipt_identity = canonical_json_digest(
+        [
+            {
+                "document_id": _text(row.get("document_id")),
+                "reference_sha256": _text(row.get("reference_sha256")),
+            }
+            for row in rows
+            if isinstance(row, dict)
+        ]
+    )
+    if (
+        receipt_identity is not None
+        and evidence.get("reference_bindings_identity") is not None
+        and receipt_identity != evidence.get("reference_bindings_identity")
+    ):
+        _add("receipt_stale")
+
+    # The per-document reason table. Every row must carry a closed reason pair;
+    # an empty target population may never be dressed as a resolved pass.
+    wf_reasons = set(_text_list(expected.get("well_formedness_reasons")))
+    wf_prefixes = tuple(_text_list(expected.get("well_formedness_prefixes")))
+    bt_reasons = set(_text_list(expected.get("bibliography_target_reasons")))
+    bt_prefixes = tuple(_text_list(expected.get("bibliography_target_prefixes")))
+    accepted_token = _text(expected.get("composer_accepted_token"))
+    all_resolved_token = _text(expected.get("all_required_targets_resolved_token"))
+    for row in rows:
+        if not isinstance(row, dict):
+            _add("per_document_reason_missing")
+            continue
+        composer = _mapping(row.get("composer"))
+        well_formedness = _text(composer.get("well_formedness_reason"))
+        bibliography = _text(composer.get("bibliography_target_reason"))
+        if well_formedness is None or not _closed_reason(
+            well_formedness, wf_reasons, wf_prefixes
+        ):
+            _add("per_document_reason_missing")
+        if bibliography is None or not _closed_reason(
+            bibliography, bt_reasons, bt_prefixes
+        ):
+            _add("per_document_reason_missing")
+        ledger = _mapping(composer.get("ledger"))
+        if (
+            _text(composer.get("outcome")) == accepted_token
+            and _count(ledger.get("required_targets")) == 0
+            and bibliography == all_resolved_token
+        ):
+            _add("empty_targets_presented_as_pass")
+
+    # The emitted scope section: a typed-absence header may never read as
+    # populated, and a zero-declared-target ledger may never read as declared.
+    family_reasons = set(_text_list(expected.get("emission_family_scope_reasons")))
+    links_reasons = set(_text_list(expected.get("reference_links_scope_reasons")))
+    placeholder_token = _text(expected.get("placeholder_disposition_token"))
+    header_scope = _text(expected.get("header_placeholder_scope"))
+    empty_scope = _text(expected.get("empty_targets_scope"))
+    for row in scope_rows:
+        if not isinstance(row, dict):
+            _add("per_document_reason_missing")
+            continue
+        header = _mapping(row.get("header"))
+        if _text(header.get("disposition")) == placeholder_token and _text(
+            header.get("scope_reason")
+        ) != header_scope:
+            _add("placeholder_header_read_as_populated")
+        for family in ("header", "references", "body"):
+            scope_reason = _text(_mapping(row.get(family)).get("scope_reason"))
+            if scope_reason is None or scope_reason not in family_reasons:
+                _add("per_document_reason_missing")
+        links = _mapping(row.get("reference_links"))
+        if _text(links.get("scope_reason")) not in links_reasons:
+            _add("per_document_reason_missing")
+        if (
+            _count(links.get("required_targets")) == 0
+            and _count(links.get("target_occurrences")) == 0
+            and _text(links.get("scope_reason")) != empty_scope
+        ):
+            _add("empty_targets_presented_as_pass")
+
     return violations
 
 def _acceptance_package_violations(contract: Any, evidence: Any) -> set[str]:

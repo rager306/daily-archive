@@ -3010,6 +3010,23 @@ class TrajectoryService:
             # never observed. Absence of the declaration authority stays silence,
             # not compliance.
             "threshold_candidates": reader.read_threshold_candidates(contract),
+            # S04/T03 (M516-th0oby): the semantic-correctness receipt runs H14
+            # (XML well-formedness) and H15 (bibliography id/target integrity)
+            # over the expanded 12-document native route corpus and publishes a
+            # closed per-document reason pair instead of one aggregate verdict.
+            # Publishing it without a sibling half would let the artifact's mere
+            # existence read as progress (R141), so the reader resolves the
+            # receipt, the committed emission envelope and the reference corpus
+            # declaration — recomputing the receipt's corpus digest, the emission
+            # sha256 and the independent row-level reference identity from the
+            # committed bytes. The pure oracle then refuses a receipt that is
+            # absent or stale, bound to another corpus, missing a per-document
+            # reason, presenting an empty target population as resolved, reading
+            # the typed-absence header as populated, opening a lock, accepting a
+            # threshold or collapsing the table into an aggregate verdict
+            # (MEM1948: a sibling half not listed here is inert). Absence of the
+            # declaration authority stays silence, not compliance.
+            "semantic_correctness": reader.read_semantic_correctness(contract),
             # S08/T06: the acceptance package is the artifact that binds every S08
             # carrier and names every mandatory gate with a computed
             # `s09_authorized`. Publishing it without a sibling governor half would

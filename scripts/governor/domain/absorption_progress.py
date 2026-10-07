@@ -82,6 +82,7 @@ __all__ = [
     "NATIVE_ROUTE_VIOLATION_LABELS",
     "RETIREMENT_READINESS_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
+    "SEMANTIC_CORRECTNESS_VIOLATION_LABELS",
     "THRESHOLD_CANDIDATES_VIOLATION_LABELS",
     "THRESHOLD_DIRECTIONS",
     "comparability_key",
@@ -415,6 +416,36 @@ THRESHOLD_CANDIDATES_VIOLATION_LABELS = frozenset(
         "threshold_accepted",
         "comparability_without_shared_identity",
         "unbound_candidate_denominator",
+    }
+)
+
+#: The semantic-correctness half's closed label set (M516-th0oby/S04/T03). The
+#: S04 receipt publishes, per document, a closed well-formedness reason and a
+#: closed bibliography-target reason over the expanded 12-document native route
+#: corpus, plus a native-route-emission scope section that discloses the
+#: placeholder header and the zero-declared-target reference links as named scope
+#: reasons rather than as a pass. Publishing that receipt without a sibling
+#: governor half would let the artifact's mere existence read as progress (R141),
+#: so this half makes it auditable. It owns *availability, digest and drift* and
+#: deliberately does not restate the receipt's per-document verdicts (the receipt
+#: owns those): a receipt that is absent, stale, bound to another corpus,
+#: missing a per-document reason, presenting an empty target population as
+#: resolved, reading a typed-absence header as populated, opening a promotion
+#: lock, accepting a threshold, or collapsing the per-document table into one
+#: aggregate verdict is each a typed, fail-closed finding. Findings are
+#: drift-visible and never block (D492).
+SEMANTIC_CORRECTNESS_VIOLATION_LABELS = frozenset(
+    {
+        "receipt_absent",
+        "receipt_stale",
+        "corpus_pointer_mismatch",
+        "document_count_mismatch",
+        "per_document_reason_missing",
+        "empty_targets_presented_as_pass",
+        "placeholder_header_read_as_populated",
+        "lock_opened",
+        "threshold_accepted",
+        "pinned_aggregate_rewritten",
     }
 )
 
