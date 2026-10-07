@@ -34,7 +34,9 @@
 //!   with the recorded decision, else [`REFUSAL_PACKAGE_STATUS_UNKNOWN`];
 //! * all five locks must be present and exactly as declared, else
 //!   [`REFUSAL_OPEN_LOCK`];
-//! * every `required` gate of a family must be `met` or `accepted_residual`;
+//! * every `required` gate of a family must be `met`, `accepted_residual` or
+//!   `not_applicable` (a recorded downgrade is a decision, not a measurement,
+//!   but it does not block);
 //!   anything else is [`REFUSAL_FAMILY_GATE_BLOCKS`] (family gate) or
 //!   [`REFUSAL_REQUIRED_GATE_BLOCKS`] (a required gate without a family);
 //! * the S08 package pin must be declared and current, else
@@ -49,8 +51,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 use crate::native_acceptance::{
-    MandatoryGate, NATIVE_ACCEPTANCE_OPEN_LOCK_VALUES, NATIVE_ACCEPTANCE_PRODUCT_COVERAGE_EFFECT,
-    NativeAcceptanceEvaluation, REFUSAL_OPEN_LOCK,
+    MandatoryGate, NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE, NATIVE_ACCEPTANCE_OPEN_LOCK_VALUES,
+    NATIVE_ACCEPTANCE_PRODUCT_COVERAGE_EFFECT, NativeAcceptanceEvaluation, REFUSAL_OPEN_LOCK,
 };
 
 /// Schema version of the emitted authorization document.
@@ -84,9 +86,15 @@ pub const RETIREMENT_REQUIRED_LOCKS: [(&str, &str); 5] = [
     ("graph_write", "forbidden"),
 ];
 
-/// Required gate states that do **not** block a family. Everything else blocks:
-/// a state the gate does not recognise cannot be a pass.
-pub const RETIREMENT_NON_BLOCKING_GATE_STATES: [&str; 2] = ["met", "accepted_residual"];
+/// Required gate states that do **not** block a family: `met` and
+/// `accepted_residual` are measurements, `not_applicable` is a recorded
+/// downgrade. Everything else blocks: a state the gate does not recognise
+/// cannot be a pass.
+pub const RETIREMENT_NON_BLOCKING_GATE_STATES: [&str; 3] = [
+    "met",
+    "accepted_residual",
+    NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE,
+];
 
 /// The closed human release decision vocabulary (mirrors the Governor's
 /// `external_holdout_package` rule).
@@ -117,9 +125,9 @@ pub const REFUSAL_HUMAN_DECISION_NOT_RECORDED: &str = "human_decision_not_record
 pub const REFUSAL_PROSE_DOES_NOT_AUTHORIZE: &str = "prose_does_not_authorize";
 /// The caller derived authorization from a GSD lifecycle state.
 pub const REFUSAL_LIFECYCLE_STATE_AUTHORIZES: &str = "lifecycle_state_authorizes";
-/// A required gate that names a family is not `met` / `accepted_residual`.
+/// A required gate that names a family is not a non-blocking state.
 pub const REFUSAL_FAMILY_GATE_BLOCKS: &str = "family_gate_blocks";
-/// A required gate without a family is not `met` / `accepted_residual`.
+/// A required gate without a family is not a non-blocking state.
 pub const REFUSAL_REQUIRED_GATE_BLOCKS: &str = "required_gate_blocks";
 /// The declared package pin does not match the package bytes.
 pub const REFUSAL_PACKAGE_PIN_STALE: &str = "package_pin_stale";
@@ -489,14 +497,15 @@ fn gate_clears(gate: &MandatoryGate) -> bool {
 }
 
 fn gate_refusal(gate: &MandatoryGate) -> RetirementRefusal {
+    let non_blocking = RETIREMENT_NON_BLOCKING_GATE_STATES.join(", ");
     let detail = match &gate.reason {
         Some(reason) if !is_blank(reason) => format!(
-            "required gate `{}` is `{}` (`{reason}`); it must be `met` or `accepted_residual`",
+            "required gate `{}` is `{}` (`{reason}`); it must be one of the non-blocking states [{non_blocking}]",
             gate.gate_id,
             gate.state.trim()
         ),
         _ => format!(
-            "required gate `{}` is `{}`; it must be `met` or `accepted_residual`",
+            "required gate `{}` is `{}`; it must be one of the non-blocking states [{non_blocking}]",
             gate.gate_id,
             gate.state.trim()
         ),

@@ -473,6 +473,199 @@ fn score_number_and_pointer_resolution_mirror_the_domain_rule() {
     assert!(resolve_pointer(&document, "values[threshold_id=b").is_none());
 }
 
+// ── recorded required-scope downgrades (M516-th0oby/S05, D548/D551) ──────────
+
+const COMPATIBILITY: &str = "data/parse/grobid_compatibility.yaml";
+
+/// The committed required-scope downgrade registry, read from the parity
+/// ledger. The package example merges this same block into
+/// `contract.required_scope.downgrades`; the tests assemble it here so they
+/// exercise the committed records instead of a hand-written copy.
+fn downgrade_registry() -> Value {
+    read_yaml_json(COMPATIBILITY)["parity_ledger"]["required_scope_downgrades"].clone()
+}
+
+fn pending_family_ids(contract: &Value) -> Vec<String> {
+    contract["required_scope"]["families"]
+        .as_array()
+        .expect("families")
+        .iter()
+        .filter(|entry| entry["state"] == "threshold_pending")
+        .map(|entry| entry["family_id"].as_str().expect("family id").to_string())
+        .collect()
+}
+
+fn downgraded_input() -> NativeAcceptanceInput {
+    let mut input = good_input();
+    input.contract["required_scope"]["downgrades"] = downgrade_registry();
+    input
+}
+
+fn set_downgrade_field(input: &mut NativeAcceptanceInput, family: &str, field: &str, value: Value) {
+    input.contract["required_scope"]["downgrades"]["records"][family][field] = value;
+}
+
+#[test]
+fn a_recorded_downgrade_emits_a_not_applicable_gate_and_never_a_measurement() {
+    let input = downgraded_input();
+    let evaluation = evaluate_ok(&input);
+
+    // The three thresholds are untouched: a downgrade is not a measurement.
+    assert_eq!(evaluation.thresholds.len(), 3);
+    for verdict in &evaluation.thresholds {
+        assert_eq!(verdict.verdict, "met");
+    }
+
+    let pending = pending_family_ids(&input.contract);
+    assert_eq!(
+        pending.len(),
+        12,
+        "the committed schema declares twelve pending families"
+    );
+    assert!(
+        NATIVE_ACCEPTANCE_GATE_STATE_VOCABULARY.contains(&NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE),
+        "the gate state vocabulary must declare `not_applicable`"
+    );
+
+    let registry = downgrade_registry();
+    let records = registry["records"].as_object().expect("records");
+    assert_eq!(records.len(), 12);
+    let mut registered: Vec<String> = records.keys().cloned().collect();
+    registered.sort();
+    let mut expected = pending.clone();
+    expected.sort();
+    assert_eq!(
+        registered, expected,
+        "the registry must cover exactly the pending families"
+    );
+
+    let downgrade_gates: Vec<&MandatoryGate> = evaluation
+        .gates
+        .iter()
+        .filter(|gate| gate.kind == NATIVE_ACCEPTANCE_REQUIRED_FAMILY_DOWNGRADE_KIND)
+        .collect();
+    assert_eq!(downgrade_gates.len(), 12);
+    assert!(
+        evaluation
+            .gates
+            .iter()
+            .all(|gate| gate.kind != "threshold_pending_family"),
+        "no family may stay at `threshold_pending` once it carries a recorded downgrade"
+    );
+
+    for gate in &downgrade_gates {
+        let family = gate.family_id.as_deref().expect("family id");
+        assert_eq!(gate.gate_id, format!("required_scope.{family}"));
+        assert_eq!(gate.state, NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE);
+        assert!(gate.required);
+        let record = &records[family];
+        assert_eq!(gate.reason.as_deref(), record["reason"].as_str());
+        let owner = record["owner"].as_str().expect("owner");
+        let decision = record["decision_ref"].as_str().expect("decision_ref");
+        assert!(
+            gate.evidence.contains(owner) && gate.evidence.contains(decision),
+            "gate `{}` evidence must name the recorded owner `{owner}` and decision `{decision}`: {}",
+            gate.gate_id,
+            gate.evidence
+        );
+    }
+
+    // The gate count and the required-scope gate ids do not move.
+    assert_eq!(evaluation.gates.len(), 3 + 1 + 12);
+    for family in &pending {
+        let expected_id = format!("required_scope.{family}");
+        assert!(
+            downgrade_gates
+                .iter()
+                .any(|gate| gate.gate_id == expected_id),
+            "the ledger lost the `{expected_id}` gate"
+        );
+    }
+}
+
+#[test]
+fn malformed_downgrade_records_are_refused_by_name() {
+    // A clean recorded downgrade is admitted first, so each refusal below is
+    // caused by the one mutation and not by the fixture.
+    evaluate_ok(&downgraded_input());
+
+    // 1. owner blank.
+    let mut input = downgraded_input();
+    set_downgrade_field(&mut input, "rest.isalive", "owner", json!(""));
+    assert_refusal(&input, REFUSAL_DOWNGRADE_WITHOUT_OWNER);
+
+    // 2. reason blank.
+    let mut input = downgraded_input();
+    set_downgrade_field(&mut input, "rest.isalive", "reason", json!(""));
+    assert_refusal(&input, REFUSAL_DOWNGRADE_WITHOUT_REASON);
+
+    // 3. reason outside the existing pending-reason vocabulary.
+    let mut input = downgraded_input();
+    set_downgrade_field(
+        &mut input,
+        "rest.isalive",
+        "reason",
+        json!("made_up_reason"),
+    );
+    assert_refusal(&input, REFUSAL_DOWNGRADE_UNKNOWN_REASON);
+
+    // 4. decision_ref blank.
+    let mut input = downgraded_input();
+    set_downgrade_field(&mut input, "rest.isalive", "decision_ref", json!(""));
+    assert_refusal(&input, REFUSAL_DOWNGRADE_WITHOUT_DECISION);
+
+    // 5. rationale blank.
+    let mut input = downgraded_input();
+    set_downgrade_field(&mut input, "rest.isalive", "rationale", json!(""));
+    assert_refusal(&input, REFUSAL_DOWNGRADE_WITHOUT_RATIONALE);
+
+    // 6. a family outside required_scope.families.
+    let mut input = downgraded_input();
+    let valid = input.contract["required_scope"]["downgrades"]["records"]["rest.isalive"].clone();
+    input.contract["required_scope"]["downgrades"]["records"]["stage.not_declared"] = valid;
+    assert_refusal(&input, REFUSAL_DOWNGRADE_UNKNOWN_FAMILY);
+
+    // 7. a family the corpus measures.
+    let mut input = downgraded_input();
+    let valid = input.contract["required_scope"]["downgrades"]["records"]["rest.isalive"].clone();
+    input.contract["required_scope"]["downgrades"]["records"]["stage.header_composition"] = valid;
+    assert_refusal(&input, REFUSAL_DOWNGRADE_FOR_MEASURED_FAMILY);
+
+    // 8. a disposition outside the declared vocabulary.
+    let mut input = downgraded_input();
+    set_downgrade_field(
+        &mut input,
+        "rest.isalive",
+        "disposition",
+        json!("accepted_residual"),
+    );
+    assert_refusal(&input, REFUSAL_DOWNGRADE_UNKNOWN_DISPOSITION);
+}
+
+#[test]
+fn an_absent_downgrade_block_stays_backward_compatible() {
+    // The committed schema carries no `required_scope.downgrades`, so every
+    // pending family keeps the blocking `threshold_pending` gate.
+    let input = good_input();
+    assert!(
+        input.contract["required_scope"].get("downgrades").is_none(),
+        "the frozen schema must not carry a downgrade block"
+    );
+    let evaluation = evaluate_ok(&input);
+    let pending_gates = evaluation
+        .gates
+        .iter()
+        .filter(|gate| gate.kind == "threshold_pending_family")
+        .count();
+    assert_eq!(pending_gates, 12);
+    assert!(
+        evaluation
+            .gates
+            .iter()
+            .all(|gate| gate.kind != NATIVE_ACCEPTANCE_REQUIRED_FAMILY_DOWNGRADE_KIND)
+    );
+}
+
 #[test]
 fn the_evaluator_carries_no_threshold_literal_and_no_runtime_side_channel() {
     let source = read_text("crates/da-parse/src/native_acceptance.rs");

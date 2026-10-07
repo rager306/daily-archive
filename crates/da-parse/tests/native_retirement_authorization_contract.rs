@@ -13,14 +13,15 @@
 //! `da-parse --tests` gate compiles it in the default feature set.
 
 use da_parse::{
-    HumanReleaseRecord, MandatoryGate, NativeAcceptanceEvaluation, PackageBinding,
-    REFUSAL_FAMILY_GATE_BLOCKS, REFUSAL_HUMAN_DECISION_NOT_RECORDED,
-    REFUSAL_HUMAN_REVIEWER_UNNAMED, REFUSAL_LIFECYCLE_STATE_AUTHORIZES, REFUSAL_OPEN_LOCK,
-    REFUSAL_PACKAGE_ABSENT, REFUSAL_PACKAGE_PIN_STALE, REFUSAL_PACKAGE_STATUS_UNKNOWN,
-    REFUSAL_PROSE_DOES_NOT_AUTHORIZE, REFUSAL_REQUIRED_GATE_BLOCKS,
-    RETIREMENT_AUTHORIZATION_REFUSAL_VOCABULARY, RETIREMENT_AUTHORIZATION_REFUSED,
-    RETIREMENT_BASIS_HUMAN_RELEASE_REQUIRED, RETIREMENT_CLAIM_SCOPE_BLOCKED,
-    RETIREMENT_HUMAN_DECISION_RECORDED_TOKENS, RETIREMENT_HUMAN_DECISION_VOCABULARY,
+    HumanReleaseRecord, MandatoryGate, NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE,
+    NativeAcceptanceEvaluation, PackageBinding, REFUSAL_FAMILY_GATE_BLOCKS,
+    REFUSAL_HUMAN_DECISION_NOT_RECORDED, REFUSAL_HUMAN_REVIEWER_UNNAMED,
+    REFUSAL_LIFECYCLE_STATE_AUTHORIZES, REFUSAL_OPEN_LOCK, REFUSAL_PACKAGE_ABSENT,
+    REFUSAL_PACKAGE_PIN_STALE, REFUSAL_PACKAGE_STATUS_UNKNOWN, REFUSAL_PROSE_DOES_NOT_AUTHORIZE,
+    REFUSAL_REQUIRED_GATE_BLOCKS, RETIREMENT_AUTHORIZATION_REFUSAL_VOCABULARY,
+    RETIREMENT_AUTHORIZATION_REFUSED, RETIREMENT_BASIS_HUMAN_RELEASE_REQUIRED,
+    RETIREMENT_CLAIM_SCOPE_BLOCKED, RETIREMENT_HUMAN_DECISION_RECORDED_TOKENS,
+    RETIREMENT_HUMAN_DECISION_VOCABULARY, RETIREMENT_NON_BLOCKING_GATE_STATES,
     RETIREMENT_PACKAGE_STATUS_AUTHORIZED, RETIREMENT_REQUIRED_LOCKS, RetirementAuthorizationInput,
     authorize_native_retirement, sha256_hex,
 };
@@ -196,6 +197,74 @@ fn refusal_vocabulary_is_closed_and_unique() {
     for token in RETIREMENT_HUMAN_DECISION_RECORDED_TOKENS {
         assert!(RETIREMENT_HUMAN_DECISION_VOCABULARY.contains(&token));
     }
+}
+
+#[test]
+fn not_applicable_is_a_declared_non_blocking_gate_state() {
+    // A recorded required-family downgrade carries `not_applicable`; the
+    // authorization must treat it as non-blocking, or the twelve downgraded
+    // families would keep S09 unretirable.
+    assert!(
+        RETIREMENT_NON_BLOCKING_GATE_STATES.contains(&NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE),
+        "`not_applicable` must be a non-blocking gate state"
+    );
+}
+
+#[test]
+fn a_recorded_downgrade_family_gate_does_not_block() {
+    // With every gate in a non-blocking state and an otherwise clean human
+    // record, the downgraded family gate does not stop authorization.
+    let mut input = authorized_input();
+    input.evaluation.gates[1].state = NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE.to_string();
+    let out = authorize_native_retirement(&input);
+    assert!(out.s09_authorized, "{:?}", out.refusals);
+    assert!(out.blocking_gates.is_empty(), "{:?}", out.blocking_gates);
+    let family = out
+        .families
+        .iter()
+        .find(|family| family.family_id == FAMILY_HEADER)
+        .expect("header family cell");
+    assert!(
+        family.blocking_gates.is_empty(),
+        "{:?}",
+        family.blocking_gates
+    );
+    assert!(family.authorized);
+}
+
+#[test]
+fn a_downgraded_family_does_not_block_while_the_overall_gate_stays_refused() {
+    // The downgrade removes the family from the blocking set even when another
+    // refusal (an unnamed reviewer and a pending decision) keeps the overall
+    // gate refused; no family may switch while the gate is refused.
+    let mut input = authorized_input();
+    input.evaluation.gates[1].state = NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE.to_string();
+    input.human_release.reviewer = None;
+    input.human_release.decision = "pending".to_string();
+    input.human_release.package_status = "pending_human_review".to_string();
+    let out = authorize_native_retirement(&input);
+    assert!(!out.s09_authorized);
+    assert!(
+        !out.blocking_gates
+            .iter()
+            .any(|gate| gate == "required_scope.stage.header_composition"),
+        "{:?}",
+        out.blocking_gates
+    );
+    let family = out
+        .families
+        .iter()
+        .find(|family| family.family_id == FAMILY_HEADER)
+        .expect("header family cell");
+    assert!(
+        family.blocking_gates.is_empty(),
+        "{:?}",
+        family.blocking_gates
+    );
+    assert!(
+        !family.authorized,
+        "no family may switch while the gate is refused"
+    );
 }
 
 #[test]

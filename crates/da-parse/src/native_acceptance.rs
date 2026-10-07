@@ -31,7 +31,10 @@
 //! `not_comparable` / `threshold_pending`) plus a mandatory-gate ledger that
 //! names every unmet gate: the three threshold gates, the body-axis
 //! `not_assessable` / `p1_localization_uncertain` residual, and every
-//! schema-declared `threshold_pending` required family. The ledger is derived
+//! schema-declared `threshold_pending` required family — either as a
+//! `threshold_pending_family` gate or, when the contract carries a recorded
+//! `required_scope.downgrades` record, as a `required_family_downgrade`
+//! `not_applicable` gate naming the recorded decision. The ledger is derived
 //! from `required_scope.families` in the supplied contract document, so the
 //! family list is read by pointer and never restated in code.
 
@@ -51,15 +54,17 @@ pub const NATIVE_ACCEPTANCE_PRODUCT_COVERAGE_EFFECT: &str = "none";
 /// Per-threshold verdict vocabulary.
 pub const NATIVE_ACCEPTANCE_VERDICT_VOCABULARY: [&str; 4] =
     ["met", "unmet", "not_comparable", "threshold_pending"];
-/// Mandatory-gate state vocabulary: threshold verdicts plus the body-axis
-/// residual, which is `not_assessable` because the frozen local corpus cannot
-/// decide it.
-pub const NATIVE_ACCEPTANCE_GATE_STATE_VOCABULARY: [&str; 5] = [
+/// Mandatory-gate state vocabulary: threshold verdicts, the body-axis residual
+/// (`not_assessable` because the frozen local corpus cannot decide it) and the
+/// recorded downgrade state (`not_applicable`, a decision rather than a
+/// measurement).
+pub const NATIVE_ACCEPTANCE_GATE_STATE_VOCABULARY: [&str; 6] = [
     "met",
     "unmet",
     "not_comparable",
     "threshold_pending",
     "not_assessable",
+    "not_applicable",
 ];
 /// Direction vocabulary (the schema declares the same two values).
 pub const NATIVE_ACCEPTANCE_DIRECTION_VOCABULARY: [&str; 2] = ["at_least", "at_most"];
@@ -76,6 +81,12 @@ pub const NATIVE_ACCEPTANCE_OPEN_LOCK_VALUES: [&str; 7] =
 pub const NATIVE_ACCEPTANCE_REQUIRED_STATE: &str = "required";
 /// A family state that carries no threshold and cannot pass.
 pub const NATIVE_ACCEPTANCE_THRESHOLD_PENDING_STATE: &str = "threshold_pending";
+/// The gate state a recorded required-family downgrade carries. The family
+/// stays required; only the gate disposition is downgraded, and a downgrade is
+/// never counted as a measurement (M516-th0oby/S05, D548/D551).
+pub const NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE: &str = "not_applicable";
+/// Gate kind carried by a recorded required-family downgrade.
+pub const NATIVE_ACCEPTANCE_REQUIRED_FAMILY_DOWNGRADE_KIND: &str = "required_family_downgrade";
 /// The body-axis gate id; the residual below stays named, not renamed.
 pub const NATIVE_ACCEPTANCE_BODY_AXIS_GATE_ID: &str = "body_axis.body_not_assessable";
 
@@ -100,6 +111,22 @@ pub const REFUSAL_UNNAMED_GATE: &str = "unnamed_gate";
 pub const REFUSAL_DROPPED_EXCLUSION: &str = "dropped_exclusion";
 pub const REFUSAL_UNNAMED_EXCLUSION: &str = "unnamed_exclusion";
 pub const REFUSAL_OPEN_LOCK: &str = "open_lock";
+/// A recorded downgrade names no owner.
+pub const REFUSAL_DOWNGRADE_WITHOUT_OWNER: &str = "downgrade_without_owner";
+/// A recorded downgrade names no reason.
+pub const REFUSAL_DOWNGRADE_WITHOUT_REASON: &str = "downgrade_without_reason";
+/// A recorded downgrade reason is outside the pending-reason vocabulary.
+pub const REFUSAL_DOWNGRADE_UNKNOWN_REASON: &str = "downgrade_unknown_reason";
+/// A recorded downgrade names no decision_ref.
+pub const REFUSAL_DOWNGRADE_WITHOUT_DECISION: &str = "downgrade_without_decision";
+/// A recorded downgrade names no rationale.
+pub const REFUSAL_DOWNGRADE_WITHOUT_RATIONALE: &str = "downgrade_without_rationale";
+/// A recorded downgrade targets a family outside `required_scope.families`.
+pub const REFUSAL_DOWNGRADE_UNKNOWN_FAMILY: &str = "downgrade_unknown_family";
+/// A recorded downgrade targets a family the corpus measures.
+pub const REFUSAL_DOWNGRADE_FOR_MEASURED_FAMILY: &str = "downgrade_for_measured_family";
+/// A recorded downgrade disposition is outside its declared vocabulary.
+pub const REFUSAL_DOWNGRADE_UNKNOWN_DISPOSITION: &str = "downgrade_unknown_disposition";
 
 // ── typed not-comparable reasons ────────────────────────────────────────────
 
@@ -298,7 +325,8 @@ pub struct ThresholdVerdict {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MandatoryGate {
     pub gate_id: String,
-    /// `threshold` | `body_axis` | `threshold_pending_family`.
+    /// `threshold` | `body_axis` | `threshold_pending_family` |
+    /// `required_family_downgrade`.
     pub kind: String,
     pub state: String,
     pub required: bool,
@@ -429,6 +457,172 @@ fn is_blank(value: &str) -> bool {
     value.trim().is_empty()
 }
 
+/// A recorded `not_applicable` downgrade for one required family the frozen
+/// corpus cannot measure (M516-th0oby/S05, D548/D551). The record is read from
+/// `required_scope.downgrades.records` in the supplied contract; an absent
+/// block means no downgrades and stays backward compatible.
+#[derive(Debug, Clone)]
+struct DowngradeRecord {
+    disposition: String,
+    owner: String,
+    reason: String,
+    decision_ref: String,
+    rationale: String,
+}
+
+/// Read the recorded required-scope downgrade registry from the contract.
+///
+/// The block is optional: absent or null means no downgrades (backward
+/// compatible). When present it must be a registry object carrying a `records`
+/// map, and every record must name a declared `threshold_pending` family, carry
+/// a disposition from the declared vocabulary and the four mandatory fields,
+/// and carry a reason from the contract's existing pending-reason vocabulary. A
+/// malformed record is fatal rather than silently leaving a family at
+/// `threshold_pending`.
+fn read_required_scope_downgrades(
+    contract_object: &serde_json::Map<String, Value>,
+    family_states: &BTreeMap<String, String>,
+) -> Result<BTreeMap<String, DowngradeRecord>, NativeAcceptanceRefusal> {
+    let Some(scope) = contract_object
+        .get("required_scope")
+        .and_then(Value::as_object)
+    else {
+        return Ok(BTreeMap::new());
+    };
+    let Some(downgrades) = scope.get("downgrades") else {
+        return Ok(BTreeMap::new());
+    };
+    if downgrades.is_null() {
+        return Ok(BTreeMap::new());
+    }
+    let downgrades = downgrades.as_object().ok_or_else(|| {
+        NativeAcceptanceRefusal::new(
+            REFUSAL_DOWNGRADE_UNKNOWN_FAMILY,
+            "required_scope.downgrades is present but is not a downgrade registry object",
+        )
+    })?;
+    let records = downgrades
+        .get("records")
+        .and_then(Value::as_object)
+        .ok_or_else(|| {
+            NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_UNKNOWN_FAMILY,
+                "required_scope.downgrades carries no `records` map; a present registry must name its families",
+            )
+        })?;
+    let disposition_vocabulary: Vec<&str> = downgrades
+        .get("disposition_vocabulary")
+        .and_then(Value::as_array)
+        .map(|values| values.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    // The reason vocabulary is the one the schema already declares beside the
+    // pending families; the registry reaches it by pointer, so the evaluator
+    // reads it here instead of copying the seven tokens.
+    let reason_vocabulary: Vec<&str> = scope
+        .get("pending_reason_vocabulary")
+        .and_then(Value::as_array)
+        .map(|values| values.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+
+    let mut parsed: BTreeMap<String, DowngradeRecord> = BTreeMap::new();
+    for (family_id, record) in records {
+        match family_states.get(family_id.as_str()).map(String::as_str) {
+            None => {
+                return Err(NativeAcceptanceRefusal::new(
+                    REFUSAL_DOWNGRADE_UNKNOWN_FAMILY,
+                    format!(
+                        "downgrade targets family `{family_id}`, which is outside required_scope.families"
+                    ),
+                ));
+            }
+            Some(NATIVE_ACCEPTANCE_REQUIRED_STATE) => {
+                return Err(NativeAcceptanceRefusal::new(
+                    REFUSAL_DOWNGRADE_FOR_MEASURED_FAMILY,
+                    format!(
+                        "family `{family_id}` is measured by corpus parity and may not carry a downgrade"
+                    ),
+                ));
+            }
+            Some(_) => {}
+        }
+        let Some(record) = record.as_object() else {
+            return Err(NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_WITHOUT_OWNER,
+                format!("downgrade for `{family_id}` is not a record object; it names no owner"),
+            ));
+        };
+        let disposition = record
+            .get("disposition")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .trim();
+        if !disposition_vocabulary.contains(&disposition) {
+            return Err(NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_UNKNOWN_DISPOSITION,
+                format!(
+                    "downgrade for `{family_id}` declares disposition `{disposition}`, outside the declared vocabulary [{}]",
+                    disposition_vocabulary.join(", ")
+                ),
+            ));
+        }
+        let field = |name: &str| -> String {
+            record
+                .get(name)
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        };
+        let owner = field("owner");
+        if owner.is_empty() {
+            return Err(NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_WITHOUT_OWNER,
+                format!("downgrade for `{family_id}` names no owner"),
+            ));
+        }
+        let reason = field("reason");
+        if reason.is_empty() {
+            return Err(NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_WITHOUT_REASON,
+                format!("downgrade for `{family_id}` names no reason"),
+            ));
+        }
+        if !reason_vocabulary.contains(&reason.as_str()) {
+            return Err(NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_UNKNOWN_REASON,
+                format!(
+                    "downgrade for `{family_id}` declares reason `{reason}`, outside the existing pending-reason vocabulary"
+                ),
+            ));
+        }
+        let decision_ref = field("decision_ref");
+        if decision_ref.is_empty() {
+            return Err(NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_WITHOUT_DECISION,
+                format!("downgrade for `{family_id}` names no decision_ref"),
+            ));
+        }
+        let rationale = field("rationale");
+        if rationale.is_empty() {
+            return Err(NativeAcceptanceRefusal::new(
+                REFUSAL_DOWNGRADE_WITHOUT_RATIONALE,
+                format!("downgrade for `{family_id}` names no rationale"),
+            ));
+        }
+        parsed.insert(
+            family_id.clone(),
+            DowngradeRecord {
+                disposition: disposition.to_string(),
+                owner,
+                reason,
+                decision_ref,
+                rationale,
+            },
+        );
+    }
+    Ok(parsed)
+}
+
 /// Evaluate a candidate against the frozen contract and build the typed
 /// mandatory-gate ledger. Fails closed on every shape that would allow a false
 /// pass.
@@ -545,6 +739,12 @@ pub fn evaluate_native_acceptance(
         }
         family_states.insert(family_id, state);
     }
+
+    // ── recorded downgrades, read by pointer from the contract ───────────────
+    // A family may only leave `threshold_pending` through a valid recorded
+    // downgrade; a malformed record is fatal rather than a silent
+    // not-applicable.
+    let downgrades = read_required_scope_downgrades(contract_object, &family_states)?;
 
     // ── per-threshold evaluation ─────────────────────────────────────────────
     let thresholds = policy
@@ -840,19 +1040,41 @@ pub fn evaluate_native_acceptance(
     });
 
     for (family_id, reason) in &pending_families {
-        gates.push(MandatoryGate {
-            gate_id: format!("required_scope.{family_id}"),
-            kind: "threshold_pending_family".to_string(),
-            state: NATIVE_ACCEPTANCE_THRESHOLD_PENDING_STATE.to_string(),
-            required: true,
-            family_id: Some(family_id.clone()),
-            metric_id: None,
-            reason: reason.clone(),
-            evidence: format!(
-                "family `{family_id}` has no measurable frozen-corpus mechanism; \
-                 a threshold here would be a false pass"
-            ),
-        });
+        if let Some(record) = downgrades.get(family_id) {
+            // A recorded downgrade keeps the same gate id and the same count,
+            // but carries the decision instead of a fabricated threshold.
+            gates.push(MandatoryGate {
+                gate_id: format!("required_scope.{family_id}"),
+                kind: NATIVE_ACCEPTANCE_REQUIRED_FAMILY_DOWNGRADE_KIND.to_string(),
+                state: NATIVE_ACCEPTANCE_NOT_APPLICABLE_STATE.to_string(),
+                required: true,
+                family_id: Some(family_id.clone()),
+                metric_id: None,
+                reason: Some(record.reason.clone()),
+                evidence: format!(
+                    "family `{family_id}` is recorded `{disposition}` on the frozen corpus by {owner} \
+                     (decision {decision}); {rationale}",
+                    disposition = record.disposition,
+                    owner = record.owner,
+                    decision = record.decision_ref,
+                    rationale = record.rationale,
+                ),
+            });
+        } else {
+            gates.push(MandatoryGate {
+                gate_id: format!("required_scope.{family_id}"),
+                kind: "threshold_pending_family".to_string(),
+                state: NATIVE_ACCEPTANCE_THRESHOLD_PENDING_STATE.to_string(),
+                required: true,
+                family_id: Some(family_id.clone()),
+                metric_id: None,
+                reason: reason.clone(),
+                evidence: format!(
+                    "family `{family_id}` has no measurable frozen-corpus mechanism; \
+                     a threshold here would be a false pass"
+                ),
+            });
+        }
     }
 
     Ok(NativeAcceptanceEvaluation {
