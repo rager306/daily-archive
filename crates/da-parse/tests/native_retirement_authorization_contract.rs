@@ -7,7 +7,8 @@
 //! closed vocabulary. The live half then reads the committed S08 gate ledger
 //! and the committed human release record and asserts the exact typed reasons
 //! for the refusal that must exist today (`reviewer=null`, `decision=pending`,
-//! sixteen blocking gates).
+//! four blocking gates). The twelve `required_scope` families carry a recorded
+//! `required_family_downgrade` / `not_applicable` downgrade and do not block.
 //!
 //! The test is deliberately ungated (no `#![cfg(feature = ...)]`): the
 //! `da-parse --tests` gate compiles it in the default feature set.
@@ -42,8 +43,16 @@ const FAMILY_HEADER: &str = "stage.header_composition";
 const SYNTHETIC_PIN: &str =
     "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-/// The sixteen required, non-clear gates the committed S08 ledger carries today.
-const LIVE_BLOCKING_GATE_COUNT: usize = 16;
+/// The four required, non-clear gates the committed S08 ledger blocks on today.
+/// The twelve `required_scope` families do not appear here: they carry a
+/// recorded `required_family_downgrade` / `not_applicable` downgrade. Pinning
+/// the ids (not only the count) makes any future carrier drift name the gate.
+const LIVE_BLOCKING_GATE_IDS: [&str; 4] = [
+    "body_axis.body_not_assessable",
+    "named_gap_learning_ruvllm_ablation",
+    "h20_frozen_external_holdout_decision",
+    "learning.s07_measured_no_gain",
+];
 /// The fifteen `required_scope.families` the committed schema declares.
 const LIVE_REQUIRED_FAMILY_COUNT: usize = 15;
 
@@ -598,11 +607,18 @@ fn live_pending_record_is_refused_with_the_exact_typed_reasons() -> Result<(), B
     assert!(!out.human_reviewer_named);
     assert!(!out.human_decision_recorded);
     assert!(!out.lifecycle_state_authorizes);
+    let mut blocking = out.blocking_gates.clone();
+    blocking.sort();
+    let mut expected_blocking: Vec<String> = LIVE_BLOCKING_GATE_IDS
+        .iter()
+        .map(|gate_id| (*gate_id).to_string())
+        .collect();
+    expected_blocking.sort();
     assert_eq!(
-        out.blocking_gates.len(),
-        LIVE_BLOCKING_GATE_COUNT,
-        "{:?}",
-        out.blocking_gates
+        blocking, expected_blocking,
+        "the live blocking set is exactly the four undowngraded required gates; \
+         a twelfth `required_family_downgrade`/`not_applicable` gate here would \
+         mean a recorded downgrade regressed into a blocking state"
     );
     assert_eq!(out.families.len(), LIVE_REQUIRED_FAMILY_COUNT);
     assert!(out.families.iter().all(|family| !family.authorized));
@@ -610,7 +626,6 @@ fn live_pending_record_is_refused_with_the_exact_typed_reasons() -> Result<(), B
     for expected in [
         REFUSAL_HUMAN_REVIEWER_UNNAMED,
         REFUSAL_HUMAN_DECISION_NOT_RECORDED,
-        REFUSAL_FAMILY_GATE_BLOCKS,
         REFUSAL_REQUIRED_GATE_BLOCKS,
     ] {
         assert!(
@@ -622,6 +637,12 @@ fn live_pending_record_is_refused_with_the_exact_typed_reasons() -> Result<(), B
         REFUSAL_PACKAGE_PIN_STALE,
         REFUSAL_PACKAGE_ABSENT,
         REFUSAL_OPEN_LOCK,
+        // The family-no-longer-blocking case: the twelve `required_scope`
+        // families carry a recorded `required_family_downgrade`/`not_applicable`
+        // downgrade, so no family gate may surface a refusal any more. The four
+        // undowngraded blocking gates carry no `family_id` and refuse as
+        // `required_gate_blocks` instead.
+        REFUSAL_FAMILY_GATE_BLOCKS,
     ] {
         assert!(
             !observed.contains(&unexpected),
