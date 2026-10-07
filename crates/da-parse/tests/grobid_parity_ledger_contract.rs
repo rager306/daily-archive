@@ -548,3 +548,223 @@ fn absent_disposition_census_is_total_and_prints_the_human_register() {
         "report must print the per-row disposition"
     );
 }
+
+// --------------------------------------------------------------------------
+// Required-scope downgrade registry (M516-th0oby/S05, D548/D551). One test per
+// invariant group: each first proves the clean carrier is silent, then tampers
+// exactly one entry in memory so a regression names the rule that broke.
+// --------------------------------------------------------------------------
+
+/// (a) Totality: the registry covers exactly the 12 `scope: required` rows the
+/// corpus declares `outside_corpus_parity` and contains nothing else. A single
+/// missing key must be refused by name, so silent non-coverage is impossible.
+#[test]
+fn required_scope_downgrades_are_total_over_the_outside_corpus_families() {
+    let root = root();
+    let errors = pl::check_required_scope_downgrades(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .required_scope_downgrades
+        .as_mut()
+        .expect("registry present")
+        .records
+        .remove("rest.isalive");
+    let tampered = pl::check_required_scope_downgrades(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("`rest.isalive` has no downgrade record")),
+        "dropping one key must be refused by name: {tampered:?}"
+    );
+}
+
+/// (a) Partition: an unknown family is refused, and a required family the
+/// corpus does measure may never be downgraded (a downgrade must not displace a
+/// measurement).
+#[test]
+fn only_an_outside_corpus_required_family_may_carry_a_downgrade() {
+    let root = root();
+    let errors = pl::check_required_scope_downgrades(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    let mut doc = pl::load(&root);
+    let record = doc
+        .parity_ledger
+        .required_scope_downgrades
+        .as_ref()
+        .expect("registry present")
+        .records
+        .get("rest.isalive")
+        .expect("record present")
+        .clone();
+
+    let mut doc_with_measured = doc.clone();
+    doc_with_measured
+        .parity_ledger
+        .required_scope_downgrades
+        .as_mut()
+        .expect("registry present")
+        .records
+        .insert("stage.header_composition".to_string(), record.clone());
+    let tampered = pl::check_required_scope_downgrades(&doc_with_measured);
+    assert!(
+        tampered.iter().any(|error| error.contains(
+            "`stage.header_composition` is measured by corpus parity and may not carry a downgrade"
+        )),
+        "a measured family must never be downgraded: {tampered:?}"
+    );
+
+    doc.parity_ledger
+        .required_scope_downgrades
+        .as_mut()
+        .expect("registry present")
+        .records
+        .insert("stage.invented_family".to_string(), record);
+    let tampered = pl::check_required_scope_downgrades(&doc);
+    assert!(
+        tampered.iter().any(|error| error
+            .contains("`stage.invented_family` is not an outside-corpus required family")),
+        "an unknown family must be refused by name: {tampered:?}"
+    );
+}
+
+/// (b)-(d) The disposition and reason come from the declared closed
+/// vocabularies, and every mandatory field is present and non-empty. The reason
+/// vocabulary is reached by pointer, so redirecting it is refused too.
+#[test]
+fn required_scope_downgrades_use_the_declared_vocabulary_and_carry_every_field() {
+    let root = root();
+    let errors = pl::check_required_scope_downgrades(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    fn mutate(doc: &mut pl::CompatibilityDocument, field: &str, value: &str) {
+        let record = doc
+            .parity_ledger
+            .required_scope_downgrades
+            .as_mut()
+            .expect("registry present")
+            .records
+            .get_mut("rest.isalive")
+            .expect("record present");
+        match field {
+            "disposition" => record.disposition = value.to_string(),
+            "reason" => record.reason = value.to_string(),
+            "owner" => record.owner = value.to_string(),
+            "decision_ref" => record.decision_ref = value.to_string(),
+            "rationale" => record.rationale = value.to_string(),
+            other => panic!("unknown field `{other}`"),
+        }
+    }
+
+    for (field, value, token) in [
+        (
+            "disposition",
+            "invented_disposition",
+            "is not in the declared downgrade disposition vocabulary",
+        ),
+        (
+            "reason",
+            "invented_reason",
+            "is not in the declared downgrade reason vocabulary",
+        ),
+        ("owner", "   ", "`rest.isalive` has empty `owner`"),
+        ("reason", "   ", "`rest.isalive` has empty `reason`"),
+        (
+            "decision_ref",
+            "   ",
+            "`rest.isalive` has empty `decision_ref`",
+        ),
+        ("rationale", "   ", "`rest.isalive` has empty `rationale`"),
+    ] {
+        let mut doc = pl::load(&root);
+        mutate(&mut doc, field, value);
+        let tampered = pl::check_required_scope_downgrades(&doc);
+        assert!(
+            tampered.iter().any(|error| error.contains(token)),
+            "field `{field}` must be refused by `{token}`: {tampered:?}"
+        );
+    }
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .required_scope_downgrades
+        .as_mut()
+        .expect("registry present")
+        .reason_vocabulary_ref = "somewhere.else".to_string();
+    let tampered = pl::check_required_scope_downgrades(&doc);
+    assert!(
+        tampered.iter().any(|error| error.contains("must point at")),
+        "a redirected reason vocabulary must be refused: {tampered:?}"
+    );
+}
+
+/// A downgrade cannot disagree with the row it downgrades: the reason is the
+/// family's declared outside-corpus reason, not a free rewrite of it.
+#[test]
+fn a_required_scope_downgrade_cannot_contradict_its_row_reason() {
+    let root = root();
+    let errors = pl::check_required_scope_downgrades(&pl::load(&root));
+    assert!(errors.is_empty(), "{}", report(&errors));
+
+    let mut doc = pl::load(&root);
+    doc.parity_ledger
+        .required_scope_downgrades
+        .as_mut()
+        .expect("registry present")
+        .records
+        .get_mut("rest.isalive")
+        .expect("record present")
+        .reason = "dialect_flag_surface".to_string();
+    let tampered = pl::check_required_scope_downgrades(&doc);
+    assert!(
+        tampered
+            .iter()
+            .any(|error| error.contains("disagrees with the row reason")),
+        "a record that rewrites the row reason must be refused: {tampered:?}"
+    );
+}
+
+/// Aggregate downgrade gate: run every check at once, print the 12-record
+/// register with `--nocapture`, and assert the frozen census: exactly the 12
+/// outside-corpus required families, all `not_applicable`.
+#[test]
+fn required_scope_downgrade_census_is_total_and_prints_the_register() {
+    let outcome = pl::evaluate(&root());
+    println!("{}", outcome.report);
+    assert!(outcome.errors.is_empty(), "{}", report(&outcome.errors));
+
+    let doc = pl::load(&root());
+    let registry = doc
+        .parity_ledger
+        .required_scope_downgrades
+        .as_ref()
+        .expect("registry declared");
+    println!(
+        "required-scope downgrade register ({} records):",
+        registry.records.len()
+    );
+    for (family, record) in &registry.records {
+        println!(
+            "  {family} -> {} / {} owner={} decision_ref={}",
+            record.disposition, record.reason, record.owner, record.decision_ref
+        );
+    }
+    assert_eq!(
+        registry.records.len(),
+        12,
+        "the downgrade register is total over the 12 outside-corpus required families"
+    );
+    assert!(
+        registry
+            .records
+            .values()
+            .all(|record| record.disposition == pl::REQUIRED_SCOPE_DISPOSITION_NOT_APPLICABLE),
+        "every record is not_applicable"
+    );
+    assert!(
+        outcome.report.contains("required-scope downgrades:"),
+        "report must print the downgrade register"
+    );
+}

@@ -2991,6 +2991,142 @@ parity_ledger:
   - learning.ruvllm_ablation
   - learning.sona_trajectory
   - learning.microlora_ewc
+  # ------------------------------------------------------------------------
+  # Required-scope downgrade registry (M516-th0oby/S05, D548/D551).
+  #
+  # The 12 `scope: required` rows the frozen corpus declares
+  # `outside_corpus_parity` have no measurable frozen-corpus mechanism, so each
+  # is resolved by a recorded `not_applicable` downgrade that names an owner, a
+  # reason from the single existing outside-corpus vocabulary, a decision
+  # reference (D551; D548 carries the downgrade semantics and is superseded on
+  # placement) and a rationale. The block is total over exactly those 12
+  # families: the family stays `required` with `state: threshold_pending`, and
+  # only the gate disposition is downgraded. Judged fail-closed by
+  # crates/da-parse/tests/parity_ledger/mod.rs.
+  #
+  # `reason_vocabulary_ref` is a pointer, not a copy: the seven reasons already
+  # live once in `parity_measurement.outside_reason_vocabulary`.
+  # ------------------------------------------------------------------------
+  required_scope_downgrades:
+    disposition_vocabulary: [not_applicable]
+    required_record_fields: [owner, reason, decision_ref, rationale]
+    reason_vocabulary_ref: parity_measurement.outside_reason_vocabulary
+    records:
+      rest.isalive:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: rest_transport_surface
+        decision_ref: D551
+        rationale: >-
+          The is-alive probe is a transport liveness signal, not a parse-stage
+          artefact: a frozen document corpus carries no HTTP transport byte to
+          compare, so the frozen-corpus parity lane has no denominator and the
+          family is downgraded rather than assigned a false threshold.
+      rest.health:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: rest_transport_surface
+        decision_ref: D551
+        rationale: >-
+          The health endpoint reports service liveness as a JSON surface with
+          no scholarly content, so there is no frozen-corpus byte to score and
+          a measured threshold would be fabricated rather than observed.
+      rest.version:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: rest_transport_surface
+        decision_ref: D551
+        rationale: >-
+          The version endpoint is a build-identity probe; the frozen corpus
+          stores document bytes and holds no version payload, so the family
+          cannot be measured on it and is recorded as a downgrade.
+      rest.processFulltextDocument:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: rest_transport_surface
+        decision_ref: D551
+        rationale: >-
+          The frozen corpus scores TEI content, not the HTTP request/response
+          dialect of this endpoint: the fulltext content itself is measured by
+          the native fulltext stage families, and the REST transport surface
+          has no frozen-corpus denominator.
+      rest.processHeaderDocument:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: rest_transport_surface
+        decision_ref: D551
+        rationale: >-
+          Header content is measured by stage.header_composition, while this
+          row is the REST transport surface; the frozen corpus carries no
+          request/response dialect byte, so the transport family is downgraded
+          instead of double-counted as a content measurement.
+      rest.processReferences:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: rest_transport_surface
+        decision_ref: D551
+        rationale: >-
+          Reference content is measured by stage.reference_segmentation, while
+          this row is the REST transport surface; the frozen corpus carries no
+          request/response dialect byte, so the transport family is downgraded
+          rather than measured against a denominator it does not have.
+      dialect.teiCoordinates:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: dialect_flag_surface
+        decision_ref: D551
+        rationale: >-
+          Coordinate emission is an opt-in wire dialect flag on the request,
+          not an artefact of the parse itself; the frozen corpus records TEI
+          output rather than request shape, so the dialect surface has no
+          measured denominator on a frozen corpus.
+      stage.pdfalto_layout:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: pdf_input_stage_not_in_tei_composition
+        decision_ref: D551
+        rationale: >-
+          The pdfalto layout stage runs on the PDF before TEI composition; the
+          frozen corpus scores the composed TEI, so the pre-composition layout
+          output is not represented and cannot be measured on that corpus.
+      stage.document_segmentation:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: lane_not_admitted_in_measurement
+        decision_ref: D551
+        rationale: >-
+          The segmentation lane is not admitted into the measured runner path
+          for this milestone, so the frozen corpus carries no segmentation
+          denominator; the family is recorded as downgraded rather than left
+          as an unstated pending threshold.
+      stage.figure_table_formula:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: visual_lane_not_admitted_in_measurement
+        decision_ref: D551
+        rationale: >-
+          The visual lane is not admitted into the measurement, so figures,
+          tables and formulas have no frozen-corpus denominator; the family is
+          downgraded by decision rather than measured against a population the
+          corpus does not contain.
+      stage.bibliographic_consolidation:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: java_side_profile_surface
+        decision_ref: D551
+        rationale: >-
+          Bibliographic consolidation is a Java-side request profile surface:
+          the frozen corpus scores scholarly content, not consolidation flag
+          behaviour, so the family has no frozen-corpus denominator to measure.
+      stage.tei_lift:
+        disposition: not_applicable
+        owner: M516-th0oby/S05
+        reason: not_in_measured_runner_path
+        decision_ref: D551
+        rationale: >-
+          The TEI lift stage is not in the measured runner path, so there is
+          no frozen-corpus execution to measure; the family is recorded as
+          downgraded instead of assigned a threshold that was never observed.
   denominators:
     capabilities: 38
     scope:

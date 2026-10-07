@@ -80,6 +80,25 @@ pub const DISPOSITION_IN_HORIZON_PROJECT_NATIVE: &str = "in_horizon_project_nati
 /// explicitly not claimed rather than silently unimplemented.
 pub const NAMED_GAP_REASON_NO_DONOR: &str = "project_native_no_grobid_donor";
 
+/// The one disposition a required-scope downgrade may carry (M516-th0oby/S05,
+/// D548/D551). The family stays `required`; only the gate disposition is
+/// downgraded to not-applicable against the frozen corpus.
+///
+/// This shared module is compiled into two test binaries and only the contract
+/// binary names this const; `allow(dead_code)` keeps the declaration vocabulary
+/// in one place instead of duplicating it per binary.
+#[allow(dead_code)]
+pub const REQUIRED_SCOPE_DISPOSITION_NOT_APPLICABLE: &str = "not_applicable";
+
+/// Pointer to the single existing seven-reason outside-corpus vocabulary the
+/// required-scope downgrade registry reuses instead of copying.
+pub const REQUIRED_SCOPE_REASON_VOCABULARY_POINTER: &str =
+    "parity_measurement.outside_reason_vocabulary";
+
+/// The mandatory non-empty fields every downgrade record must carry.
+pub const REQUIRED_SCOPE_RECORD_FIELDS: [&str; 4] =
+    ["owner", "reason", "decision_ref", "rationale"];
+
 // --------------------------------------------------------------------------
 // Data model
 // --------------------------------------------------------------------------
@@ -148,6 +167,14 @@ pub struct ParityLedger {
     /// Ordered subset of the `in_horizon_project_native` keys (S05, D478/D479).
     #[serde(default)]
     pub horizon_order: Vec<String>,
+    /// Required-scope downgrade registry (M516-th0oby/S05, D548/D551): a
+    /// recorded `not_applicable` fate for every required family the frozen
+    /// corpus declares `outside_corpus_parity`. `#[serde(default)]` is
+    /// mandatory: without it the mutation matrix cannot deserialize a clone
+    /// whose sub-block was tampered away, and the new DATA would be silently
+    /// ignored rather than judged.
+    #[serde(default)]
+    pub required_scope_downgrades: Option<RequiredScopeDowngrades>,
 }
 
 /// The pinned S02 measurement: two content-addressed files, the identity and
@@ -253,6 +280,35 @@ pub struct AbsentDispositionVocabulary {
 pub struct AbsentDisposition {
     pub disposition: String,
     pub reason: String,
+    pub rationale: String,
+}
+
+/// Closed registry of required-scope downgrades (M516-th0oby/S05, D548/D551).
+/// `disposition_vocabulary` and `required_record_fields` are inline; the seven
+/// reasons are reached by `reason_vocabulary_ref` so they are never copied a
+/// second time.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RequiredScopeDowngrades {
+    #[serde(default)]
+    pub disposition_vocabulary: Vec<String>,
+    #[serde(default)]
+    pub required_record_fields: Vec<String>,
+    #[serde(default)]
+    pub reason_vocabulary_ref: String,
+    /// Present iff the sub-block is absent from DATA; `#[serde(default)]` keeps
+    /// the mutation matrix deserializing clones whose registry was removed.
+    #[serde(default)]
+    pub records: BTreeMap<String, RequiredScopeDowngrade>,
+}
+
+/// A recorded `not_applicable` fate for one required family the frozen corpus
+/// cannot measure (M516-th0oby/S05, D548/D551). Keys are family ids.
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RequiredScopeDowngrade {
+    pub disposition: String,
+    pub owner: String,
+    pub reason: String,
+    pub decision_ref: String,
     pub rationale: String,
 }
 
@@ -1199,6 +1255,181 @@ pub fn check_absent_dispositions(doc: &CompatibilityDocument) -> Vec<String> {
     errors
 }
 
+/// Fail-closed check for the required-scope downgrade registry (M516-th0oby/S05,
+/// D548/D551).
+///
+/// The 12 `scope: required` rows the frozen corpus declares
+/// `outside_corpus_parity` are resolved by a recorded `not_applicable`
+/// downgrade, not by a measurement. The registry is total over exactly those 12
+/// families: a missing record, a record for a measured family, an unknown
+/// family, an empty mandatory field, a reason outside the single existing
+/// outside-corpus vocabulary, or a disposition outside the declared vocabulary
+/// is an error rather than a silent pass.
+pub fn check_required_scope_downgrades(doc: &CompatibilityDocument) -> Vec<String> {
+    let mut errors = Vec::new();
+    let ledger = &doc.parity_ledger;
+
+    let Some(registry) = ledger.required_scope_downgrades.as_ref() else {
+        errors.push("required_scope_downgrades is not declared".to_string());
+        return errors;
+    };
+
+    // (a) The expected set is exactly the required rows the corpus declares
+    // outside its parity; the measured required rows are the forbidden set.
+    let outside: BTreeSet<&str> = ledger
+        .rows
+        .iter()
+        .filter(|row| row.scope == "required")
+        .filter(|row| {
+            row.measurement
+                .as_ref()
+                .is_some_and(|link| link.state == OUTSIDE_CORPUS_PARITY)
+        })
+        .map(|row| row.capability.as_str())
+        .collect();
+    let measured: BTreeSet<&str> = ledger
+        .rows
+        .iter()
+        .filter(|row| row.scope == "required")
+        .filter(|row| {
+            row.measurement
+                .as_ref()
+                .is_some_and(|link| link.state == MEASURED_BY_CORPUS_PARITY)
+        })
+        .map(|row| row.capability.as_str())
+        .collect();
+
+    let actual: BTreeSet<&str> = registry.records.keys().map(String::as_str).collect();
+    for family in outside.difference(&actual) {
+        errors.push(format!("`{family}` has no downgrade record"));
+    }
+    for key in actual.difference(&outside) {
+        if measured.contains(key) {
+            errors.push(format!(
+                "`{key}` is measured by corpus parity and may not carry a downgrade"
+            ));
+        } else {
+            errors.push(format!("`{key}` is not an outside-corpus required family"));
+        }
+    }
+
+    // (b) the disposition vocabulary is closed and non-empty.
+    let dispositions: BTreeSet<&str> = registry
+        .disposition_vocabulary
+        .iter()
+        .map(String::as_str)
+        .collect();
+    if dispositions.is_empty() {
+        errors.push("required_scope_downgrades.disposition_vocabulary is not declared".to_string());
+    }
+
+    // (c) the reason vocabulary is the single existing outside-corpus list,
+    // reached by pointer so the seven reasons are never copied a second time.
+    if registry.reason_vocabulary_ref.trim() != REQUIRED_SCOPE_REASON_VOCABULARY_POINTER {
+        errors.push(format!(
+            "required_scope_downgrades.reason_vocabulary_ref `{}` must point at `{REQUIRED_SCOPE_REASON_VOCABULARY_POINTER}`",
+            registry.reason_vocabulary_ref
+        ));
+    }
+    let reasons: BTreeSet<&str> = match ledger.parity_measurement.as_ref() {
+        Some(measurement) => measurement
+            .outside_reason_vocabulary
+            .iter()
+            .map(String::as_str)
+            .collect(),
+        None => {
+            errors.push(
+                "required_scope_downgrades reuses an absent parity_measurement block".to_string(),
+            );
+            BTreeSet::new()
+        }
+    };
+
+    // (d) the record contract names its mandatory fields.
+    let known_fields: BTreeSet<&str> = [
+        "disposition",
+        "owner",
+        "reason",
+        "decision_ref",
+        "rationale",
+    ]
+    .into_iter()
+    .collect();
+    if registry.required_record_fields.is_empty() {
+        errors.push("required_scope_downgrades.required_record_fields is not declared".to_string());
+    }
+    for field in &registry.required_record_fields {
+        if !known_fields.contains(field.as_str()) {
+            errors.push(format!(
+                "required_scope_downgrades.required_record_fields names unknown field `{field}`"
+            ));
+        }
+    }
+    for required in REQUIRED_SCOPE_RECORD_FIELDS {
+        if !registry
+            .required_record_fields
+            .iter()
+            .any(|field| field == required)
+        {
+            errors.push(format!(
+                "required_scope_downgrades.required_record_fields is missing `{required}`"
+            ));
+        }
+    }
+
+    for (family, record) in &registry.records {
+        // (e) the disposition is drawn from the declared vocabulary.
+        if !dispositions.contains(record.disposition.as_str()) {
+            errors.push(format!(
+                "`{family}` disposition `{}` is not in the declared downgrade disposition vocabulary",
+                record.disposition
+            ));
+        }
+        // (f) the reason is drawn from the single outside-corpus vocabulary.
+        if !reasons.contains(record.reason.as_str()) {
+            errors.push(format!(
+                "`{family}` reason `{}` is not in the declared downgrade reason vocabulary",
+                record.reason
+            ));
+        }
+        // (g) every declared mandatory field is present and non-empty.
+        for field in &registry.required_record_fields {
+            if let Some(value) = downgrade_field(record, field.as_str())
+                && value.trim().is_empty()
+            {
+                errors.push(format!("`{family}` has empty `{field}`"));
+            }
+        }
+        // (h) the record cannot contradict the row it downgrades.
+        if let Some(row) = ledger.rows.iter().find(|row| &row.capability == family)
+            && let Some(link) = row.measurement.as_ref()
+            && link.state == OUTSIDE_CORPUS_PARITY
+            && let Some(row_reason) = link.reason.as_ref()
+            && &record.reason != row_reason
+        {
+            errors.push(format!(
+                "`{family}` downgrade reason `{}` disagrees with the row reason `{row_reason}`",
+                record.reason
+            ));
+        }
+    }
+
+    errors
+}
+
+/// Resolve one declared record field by name; unknown names are reported once
+/// by the vocabulary check and never panic here.
+fn downgrade_field<'a>(record: &'a RequiredScopeDowngrade, name: &str) -> Option<&'a str> {
+    match name {
+        "disposition" => Some(record.disposition.as_str()),
+        "owner" => Some(record.owner.as_str()),
+        "reason" => Some(record.reason.as_str()),
+        "decision_ref" => Some(record.decision_ref.as_str()),
+        "rationale" => Some(record.rationale.as_str()),
+        _ => None,
+    }
+}
+
 /// Locks are unchanged (D127 / ADR-076 §14).
 pub fn check_locks(doc: &CompatibilityDocument) -> Vec<String> {
     let mut errors = Vec::new();
@@ -1667,6 +1898,10 @@ pub fn evaluate_document(root: &Path, doc: CompatibilityDocument) -> Outcome {
     // and the single named gap. Appended last so no existing check is
     // reordered or weakened.
     errors.extend(check_absent_dispositions(&doc));
+    // M516-th0oby/S05 (D548/D551): the recorded `not_applicable` downgrade for
+    // every required family the frozen corpus cannot measure. Appended so no
+    // existing check is reordered or weakened.
+    errors.extend(check_required_scope_downgrades(&doc));
     Outcome {
         report: render_report(&doc),
         errors,
@@ -1742,6 +1977,21 @@ pub fn render_report(doc: &CompatibilityDocument) -> String {
             None => {
                 let _ = writeln!(out, "    {} -> {}", gap.capability, gap.reason);
             }
+        }
+    }
+    let _ = writeln!(out, "  required-scope downgrades:");
+    match ledger.required_scope_downgrades.as_ref() {
+        Some(registry) => {
+            for (family, record) in &registry.records {
+                let _ = writeln!(
+                    out,
+                    "    {} -> {} owner={} reason={} decision_ref={}",
+                    family, record.disposition, record.owner, record.reason, record.decision_ref
+                );
+            }
+        }
+        None => {
+            let _ = writeln!(out, "    <not declared>");
         }
     }
     let _ = writeln!(out, "  denominators: {:?}", ledger.denominators);
