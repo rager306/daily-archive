@@ -17,12 +17,20 @@
 //! pure projection (`ClassProfile`, `measure_document_class_profiles`, …); only
 //! the composer invocation is kept here and shared by both example runners and
 //! the integration test through `#[path]`.
+//!
+//! Because `#[path]`-sharing compiles this module once per including target and
+//! each target measures through a different subset of it (an example runner's
+//! threshold measurement uses one entry point, the semantic receipt another, a
+//! class-parity reproduction test neither), a per-target dead-code warning is
+//! expected rather than a defect.
+#![allow(dead_code)]
 
 use da_cli::native_class_parity::{NATIVE_COMPOSITION_REFUSED, probe_admissions};
 use da_cli::native_composition_measurement::{AdmittedBand, MeasurementError, ProbeSource};
 use da_parse::{
-    FulltextCompositionIdentity, GROBID_HTTP_BACKEND_ID, NativeFulltextCompositionInput,
-    NativeFulltextCompositionOutcome, TeiEnvelope, TeiIdentity, compose_native_fulltext,
+    FulltextCompositionIdentity, GROBID_HTTP_BACKEND_ID, NativeFulltextCompositionError,
+    NativeFulltextCompositionInput, NativeFulltextCompositionOutcome, NativeFulltextManifest,
+    TeiEnvelope, TeiIdentity, compose_native_fulltext,
 };
 
 /// Compose one document's admitted band with the quarantine shadow API this
@@ -68,5 +76,95 @@ pub fn compose_native_document(
         NativeFulltextCompositionOutcome::Rejected { error, .. } => Err(MeasurementError::new(
             format!("{NATIVE_COMPOSITION_REFUSED}: {error:?}"),
         )),
+    }
+}
+
+/// The typed outcome of one composed document: the composer's manifest (with the
+/// `reference_links` ledger), or the typed refusal class.
+///
+/// `compose_native_document` above collapses a refusal into an opaque
+/// [`MeasurementError`] string; the semantic-correctness receipt needs the
+/// composer's own typed class and its ledger, so it measures through this
+/// function instead. Both share the same input construction. The manifest is
+/// boxed so the accepted variant does not dwarf the refusal variant.
+pub enum NativeCompositionMeasurement {
+    /// The composer accepted the document; the manifest carries the ledger.
+    Accepted {
+        /// The composer's manifest, including `reference_links`.
+        manifest: Box<NativeFulltextManifest>,
+    },
+    /// The composer refused the document; `class` is the typed variant token.
+    Refused {
+        /// The typed refusal class token (never a free-form message).
+        class: &'static str,
+    },
+}
+
+/// Compose one document and keep the composer's typed refusal class and manifest.
+pub fn compose_native_document_typed(
+    profile_fingerprint: &str,
+    config_fingerprint: &str,
+    source: &ProbeSource,
+    admitted: &AdmittedBand,
+    source_tei_xml: &str,
+) -> NativeCompositionMeasurement {
+    let input = NativeFulltextCompositionInput {
+        java_fulltext: TeiEnvelope::new(
+            source_tei_xml.as_bytes(),
+            TeiIdentity::new(GROBID_HTTP_BACKEND_ID, profile_fingerprint.to_string()),
+        ),
+        identity: FulltextCompositionIdentity {
+            source_sha256: source.sha256.clone(),
+            profile_fingerprint: profile_fingerprint.to_string(),
+            config_fingerprint: config_fingerprint.to_string(),
+        },
+        header: admitted.header.clone(),
+        references: admitted.references.clone(),
+        segmentation: None,
+        figure: None,
+        table: None,
+        formula: None,
+        admissions: probe_admissions(&source.sha256),
+        s17_lineage: None,
+    };
+    match compose_native_fulltext(input) {
+        NativeFulltextCompositionOutcome::Accepted(candidate) => {
+            NativeCompositionMeasurement::Accepted {
+                manifest: Box::new(candidate.manifest),
+            }
+        }
+        NativeFulltextCompositionOutcome::Rejected { error, .. } => {
+            NativeCompositionMeasurement::Refused {
+                class: composition_refusal_class(&error),
+            }
+        }
+    }
+}
+
+/// The typed variant token of a composer refusal, spelled once.
+fn composition_refusal_class(error: &NativeFulltextCompositionError) -> &'static str {
+    use NativeFulltextCompositionError as E;
+    match error {
+        E::InvalidIdentity(_) => "InvalidIdentity",
+        E::WrongBackend => "WrongBackend",
+        E::Oversized { .. } => "Oversized",
+        E::MissingAdmission(_) => "MissingAdmission",
+        E::StaleAdmission(_) => "StaleAdmission",
+        E::InvalidAdmission(_) => "InvalidAdmission",
+        E::InvalidSchema(_) => "InvalidSchema",
+        E::MalformedXml => "MalformedXml",
+        E::ForbiddenExternalEntity => "ForbiddenExternalEntity",
+        E::DuplicateId => "DuplicateId",
+        E::UnbalancedXml => "UnbalancedXml",
+        E::AmbiguousSplice(_) => "AmbiguousSplice",
+        E::BibliographyDomainMismatch(_) => "BibliographyDomainMismatch",
+        E::BibliographyKeyCollision(_) => "BibliographyKeyCollision",
+        E::UnresolvedBibliographyTarget(_) => "UnresolvedBibliographyTarget",
+        E::InconservableBibliographyChild(_) => "InconservableBibliographyChild",
+        E::SemanticFieldLoss { .. } => "SemanticFieldLoss",
+        E::ComposedOutputNotWellFormed(_) => "ComposedOutputNotWellFormed",
+        E::InvalidUtf8 => "InvalidUtf8",
+        E::ChangedReadingOrder => "ChangedReadingOrder",
+        E::ArtifactDigestMismatch { .. } => "ArtifactDigestMismatch",
     }
 }

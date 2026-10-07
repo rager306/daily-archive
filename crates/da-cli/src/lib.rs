@@ -114,6 +114,15 @@ pub mod native_route_independence;
 // feature set; the ungated example `native_route_threshold_candidates` drives the
 // shared measurement modules against the route corpus's reference TEI.
 pub mod native_route_threshold_candidates;
+// S04/T01 (M516-th0oby): the per-document semantic-correctness receipt over the
+// expanded 12-document route corpus. It publishes the composer's H14
+// well-formedness and H15 bibliography-target facts as one closed reason pair per
+// document, and separately discloses the native route emission's placeholder
+// header / typed-absence / zero-declared-targets scope. It never reads composer
+// identifiers in `src` (D381): the composer measurement lives in the example/test
+// plane. Pure std/serde/serde_yaml/serde_json/sha2, so it and its contract test
+// compile in the default feature set.
+pub mod native_route_semantic_receipt;
 // S06/T06 (M514-1lss2s): same-n resource comparison receipt. It reuses the S04
 // envelope (`native_family_receipt`) and the T03 freeze binding
 // (`native_route_receipt`), pairs every native metric with a pinned measured
