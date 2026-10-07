@@ -451,25 +451,17 @@ fn smoke_receipt_is_canonical_and_records_the_live_refusal() -> Result<(), Box<d
     // M515/S02: all three frozen thresholds resolve `met`, so the preservation
     // family and the two extraction families (reference segmentation, header
     // composition) are refused by the global human gate rather than by a family
-    // gate. Every other selected family still names its blocking gate.
-    let met_families = [
-        SYNTHETIC_FAMILY_PRESERVATION,
-        "stage.reference_segmentation",
-        SYNTHETIC_FAMILY_HEADER,
-    ];
+    // gate. M516-th0oby/S05 then recorded a `required_family_downgrade`
+    // (`not_applicable`) for the twelve remaining required families, so they are
+    // non-blocking too. Every selected family is now refused by the global human
+    // gate, and none may name a family blocking gate: the four blocking gates
+    // carry no `family_id`.
     for row in &receipt.selection {
-        if met_families.contains(&row.family_id.as_str()) {
-            assert!(
-                row.blocking_gates.is_empty(),
-                "the met family `{}` must not name a blocking gate",
-                row.family_id
-            );
-        } else {
-            assert!(
-                !row.blocking_gates.is_empty(),
-                "every other refused family must name the gate(s) blocking it"
-            );
-        }
+        assert!(
+            row.blocking_gates.is_empty(),
+            "family `{}` must be refused by the global human gate, not a family gate",
+            row.family_id
+        );
     }
 
     // ── named mutations are all refused ───────────────────────────────────
@@ -546,7 +538,9 @@ fn smoke_receipt_is_canonical_and_records_the_live_refusal() -> Result<(), Box<d
     )?;
 
     let mut m = receipt.clone();
-    m.selection[0].blocking_gates.clear();
+    m.selection[0]
+        .blocking_gates
+        .push("required_scope.rest.isalive.blocking".to_owned());
     expect_refusal(
         "selection_blocking_drift",
         &m,
