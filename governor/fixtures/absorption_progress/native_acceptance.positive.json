@@ -7,7 +7,7 @@
   "package_schema_version": "grobid-retirement-acceptance-package.v1",
   "package_path": "artifacts/parse_compat/grobid_retirement_acceptance_package.json",
   "package_exists": true,
-  "package_sha256": "sha256:84241b2606681bc81ba7c25325f622a1af14a5d7c3c461879e01e4be790c10d8",
+  "package_sha256": "sha256:e29e54fafb3d9c95c7423a04d1acaa9ab95d587f01eaff58d83fd5760443cb03",
   "package": {
    "schema_version": "grobid-retirement-acceptance-package.v1",
    "claim_scope": "diagnostic_only",
@@ -34,7 +34,7 @@
     {
      "manifest": "artifacts/parse_compat/native_corpus_rollback_rehearsal.json",
      "pointer": "corpus_claim",
-     "revision_sha256": "sha256:ba1e18ab8b8761bc7dd546ba269fa38e8a456b5eeac90b5a5a8db9e4572ef381"
+     "revision_sha256": "sha256:b9bc5fa2e34eb66b5a26a0ad89bf8952c7c19e0b28d3edb9f2e46dc365bb3e09"
     },
     {
      "manifest": "artifacts/parse_compat/absorption_progress_reference_pins.json",
@@ -59,7 +59,7 @@
     {
      "manifest": "crates/da-parse/src/native_acceptance.rs",
      "pointer": "evaluate_native_acceptance",
-     "revision_sha256": "sha256:4d2797486295aefaa8143ee8e67dc4f39e5ce7043ad3cb109564dcba8458c9ac"
+     "revision_sha256": "sha256:b0ffa9264d35c10dadba2193d63bdf7fafe4f49e749fcdbc77a12c30a06e5c4c"
     },
     {
      "manifest": "artifacts/parse_compat/grobid_retirement_release_decision_package.json",
@@ -69,7 +69,7 @@
     {
      "manifest": "data/parse/grobid_compatibility.yaml",
      "pointer": "parity_ledger.named_gaps",
-     "revision_sha256": "sha256:de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03"
+     "revision_sha256": "sha256:0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec"
     },
     {
      "manifest": "doc/review/grobid-absorption-followup.json",
@@ -90,6 +90,41 @@
      "manifest": "artifacts/parse_compat/parse_batch_budget_live.json",
      "pointer": "executed_population",
      "revision_sha256": "sha256:fa13b1fb4921177aade374ea002b1a85889ae816f79992083cbf6be371d2461d"
+    },
+    {
+     "manifest": "artifacts/parse_learning/candidate_cycle.json",
+     "pointer": "reward_definition_sha256",
+     "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+    },
+    {
+     "manifest": "artifacts/parse_learning/candidate_cycle.json",
+     "pointer": "conservation",
+     "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+    },
+    {
+     "manifest": "artifacts/parse_learning/candidate_cycle.json",
+     "pointer": "contamination_assessment",
+     "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+    },
+    {
+     "manifest": "artifacts/parse_learning/candidate_cycle.json",
+     "pointer": "validation_gap",
+     "revision_sha256": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64"
+    },
+    {
+     "manifest": "artifacts/parse_learning/learning_corpus.json",
+     "pointer": "reward_definition",
+     "revision_sha256": "sha256:b5ebfb5f91b214c6eab777da16651f81036ae5189b6e2beea7ced980acb5aaab"
+    },
+    {
+     "manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
+     "pointer": "gaps",
+     "revision_sha256": "sha256:e00f458cccab71c22ba86c5a644002a862166bf47e4b8255c084697e2ee182a6"
+    },
+    {
+     "manifest": "artifacts/parse_compat/java_free_vertical_slice.json",
+     "pointer": "guard",
+     "revision_sha256": "sha256:2806d8b836f998c339c2975ceafa059b2fc8d51644bce95e1aafee7ccfb34457"
     }
    ],
    "evaluation": {
@@ -205,195 +240,195 @@
     },
     {
      "gate_id": "required_scope.rest.isalive",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `rest.isalive` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `rest.isalive` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The is-alive probe is a transport liveness signal, not a parse-stage artefact: a frozen document corpus carries no HTTP transport byte to compare, so the frozen-corpus parity lane has no denominator and the family is downgraded rather than assigned a false threshold.",
      "family_id": "rest.isalive",
      "reason": "rest_transport_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.isalive` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `rest.isalive` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.isalive` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The is-alive probe is a transport liveness signal, not a parse-stage artefact: a frozen document corpus carries no HTTP transport byte to compare, so the frozen-corpus parity lane has no denominator and the family is downgraded rather than assigned a false threshold.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.rest.health",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `rest.health` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `rest.health` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The health endpoint reports service liveness as a JSON surface with no scholarly content, so there is no frozen-corpus byte to score and a measured threshold would be fabricated rather than observed.",
      "family_id": "rest.health",
      "reason": "rest_transport_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.health` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `rest.health` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.health` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The health endpoint reports service liveness as a JSON surface with no scholarly content, so there is no frozen-corpus byte to score and a measured threshold would be fabricated rather than observed.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.rest.version",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `rest.version` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `rest.version` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The version endpoint is a build-identity probe; the frozen corpus stores document bytes and holds no version payload, so the family cannot be measured on it and is recorded as a downgrade.",
      "family_id": "rest.version",
      "reason": "rest_transport_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.version` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `rest.version` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.version` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The version endpoint is a build-identity probe; the frozen corpus stores document bytes and holds no version payload, so the family cannot be measured on it and is recorded as a downgrade.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.rest.processFulltextDocument",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `rest.processFulltextDocument` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `rest.processFulltextDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The frozen corpus scores TEI content, not the HTTP request/response dialect of this endpoint: the fulltext content itself is measured by the native fulltext stage families, and the REST transport surface has no frozen-corpus denominator.",
      "family_id": "rest.processFulltextDocument",
      "reason": "rest_transport_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.processFulltextDocument` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `rest.processFulltextDocument` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.processFulltextDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The frozen corpus scores TEI content, not the HTTP request/response dialect of this endpoint: the fulltext content itself is measured by the native fulltext stage families, and the REST transport surface has no frozen-corpus denominator.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.rest.processHeaderDocument",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `rest.processHeaderDocument` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `rest.processHeaderDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Header content is measured by stage.header_composition, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded instead of double-counted as a content measurement.",
      "family_id": "rest.processHeaderDocument",
      "reason": "rest_transport_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.processHeaderDocument` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `rest.processHeaderDocument` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.processHeaderDocument` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Header content is measured by stage.header_composition, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded instead of double-counted as a content measurement.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.rest.processReferences",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `rest.processReferences` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `rest.processReferences` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Reference content is measured by stage.reference_segmentation, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded rather than measured against a denominator it does not have.",
      "family_id": "rest.processReferences",
      "reason": "rest_transport_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.processReferences` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `rest.processReferences` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `rest.processReferences` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Reference content is measured by stage.reference_segmentation, while this row is the REST transport surface; the frozen corpus carries no request/response dialect byte, so the transport family is downgraded rather than measured against a denominator it does not have.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.dialect.teiCoordinates",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `dialect.teiCoordinates` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `dialect.teiCoordinates` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Coordinate emission is an opt-in wire dialect flag on the request, not an artefact of the parse itself; the frozen corpus records TEI output rather than request shape, so the dialect surface has no measured denominator on a frozen corpus.",
      "family_id": "dialect.teiCoordinates",
      "reason": "dialect_flag_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `dialect.teiCoordinates` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `dialect.teiCoordinates` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `dialect.teiCoordinates` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Coordinate emission is an opt-in wire dialect flag on the request, not an artefact of the parse itself; the frozen corpus records TEI output rather than request shape, so the dialect surface has no measured denominator on a frozen corpus.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.stage.pdfalto_layout",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `stage.pdfalto_layout` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `stage.pdfalto_layout` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The pdfalto layout stage runs on the PDF before TEI composition; the frozen corpus scores the composed TEI, so the pre-composition layout output is not represented and cannot be measured on that corpus.",
      "family_id": "stage.pdfalto_layout",
      "reason": "pdf_input_stage_not_in_tei_composition",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.pdfalto_layout` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `stage.pdfalto_layout` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.pdfalto_layout` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The pdfalto layout stage runs on the PDF before TEI composition; the frozen corpus scores the composed TEI, so the pre-composition layout output is not represented and cannot be measured on that corpus.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.stage.document_segmentation",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `stage.document_segmentation` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `stage.document_segmentation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The segmentation lane is not admitted into the measured runner path for this milestone, so the frozen corpus carries no segmentation denominator; the family is recorded as downgraded rather than left as an unstated pending threshold.",
      "family_id": "stage.document_segmentation",
      "reason": "lane_not_admitted_in_measurement",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.document_segmentation` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `stage.document_segmentation` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.document_segmentation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The segmentation lane is not admitted into the measured runner path for this milestone, so the frozen corpus carries no segmentation denominator; the family is recorded as downgraded rather than left as an unstated pending threshold.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.stage.figure_table_formula",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `stage.figure_table_formula` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `stage.figure_table_formula` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The visual lane is not admitted into the measurement, so figures, tables and formulas have no frozen-corpus denominator; the family is downgraded by decision rather than measured against a population the corpus does not contain.",
      "family_id": "stage.figure_table_formula",
      "reason": "visual_lane_not_admitted_in_measurement",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.figure_table_formula` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `stage.figure_table_formula` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.figure_table_formula` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The visual lane is not admitted into the measurement, so figures, tables and formulas have no frozen-corpus denominator; the family is downgraded by decision rather than measured against a population the corpus does not contain.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.stage.bibliographic_consolidation",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `stage.bibliographic_consolidation` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `stage.bibliographic_consolidation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Bibliographic consolidation is a Java-side request profile surface: the frozen corpus scores scholarly content, not consolidation flag behaviour, so the family has no frozen-corpus denominator to measure.",
      "family_id": "stage.bibliographic_consolidation",
      "reason": "java_side_profile_surface",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.bibliographic_consolidation` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `stage.bibliographic_consolidation` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.bibliographic_consolidation` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); Bibliographic consolidation is a Java-side request profile surface: the frozen corpus scores scholarly content, not consolidation flag behaviour, so the family has no frozen-corpus denominator to measure.",
+     "blocks_s09": false
     },
     {
      "gate_id": "required_scope.stage.tei_lift",
-     "kind": "threshold_pending_family",
-     "state": "threshold_pending",
+     "kind": "required_family_downgrade",
+     "state": "not_applicable",
      "required": true,
      "evidence": {
       "manifest": "data/parse/absorption_progress.schema.yaml",
       "pointer": "required_scope.families",
       "revision_sha256": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a"
      },
-     "detail": "family `stage.tei_lift` has no measurable frozen-corpus mechanism; a threshold here would be a false pass",
+     "detail": "family `stage.tei_lift` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The TEI lift stage is not in the measured runner path, so there is no frozen-corpus execution to measure; the family is recorded as downgraded instead of assigned a threshold that was never observed.",
      "family_id": "stage.tei_lift",
      "reason": "not_in_measured_runner_path",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.tei_lift` and a reference-derived threshold",
-     "blocks_s09": true
+     "evidence_needed": "family `stage.tei_lift` is not measurable on the frozen corpus and is resolved by the recorded downgrade decision: family `stage.tei_lift` is recorded `not_applicable` on the frozen corpus by M516-th0oby/S05 (decision D551); The TEI lift stage is not in the measured runner path, so there is no frozen-corpus execution to measure; the family is recorded as downgraded instead of assigned a threshold that was never observed.",
+     "blocks_s09": false
     },
     {
      "gate_id": "named_gap_learning_ruvllm_ablation",
@@ -403,7 +438,7 @@
      "evidence": {
       "manifest": "data/parse/grobid_compatibility.yaml",
       "pointer": "parity_ledger.named_gaps",
-      "revision_sha256": "sha256:de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03"
+      "revision_sha256": "sha256:0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec"
      },
      "detail": "capability `learning.ruvllm_ablation` has no Java donor (`no_java_donor`); decision_ref D471",
      "reason": "D471:no_java_donor",
@@ -477,66 +512,6 @@
      "evidence_needed": "an independent body-localization oracle that decides `p1_localization_uncertain` on the frozen corpus"
     },
     {
-     "gate_id": "required_scope.rest.isalive",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.isalive` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.rest.health",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.health` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.rest.version",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.version` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.rest.processFulltextDocument",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.processFulltextDocument` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.rest.processHeaderDocument",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.processHeaderDocument` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.rest.processReferences",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `rest.processReferences` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.dialect.teiCoordinates",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `dialect.teiCoordinates` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.stage.pdfalto_layout",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.pdfalto_layout` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.stage.document_segmentation",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.document_segmentation` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.stage.figure_table_formula",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.figure_table_formula` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.stage.bibliographic_consolidation",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.bibliographic_consolidation` and a reference-derived threshold"
-    },
-    {
-     "gate_id": "required_scope.stage.tei_lift",
-     "state": "threshold_pending",
-     "evidence_needed": "provide a measurable frozen-corpus mechanism for family `stage.tei_lift` and a reference-derived threshold"
-    },
-    {
      "gate_id": "named_gap_learning_ruvllm_ablation",
      "state": "typed_refusal",
      "evidence_needed": "a Java donor for `learning.ruvllm_ablation` or an explicit scope decision (D471)"
@@ -604,7 +579,7 @@
     "carrier_digest_algorithm": "sha256",
     "canonicalization": "sha256 over the raw committed bytes of each carrier manifest, read at its repository-relative path; no normalization, no re-serialization, no corpus-derived input",
     "self_canonicalization": "sha256 over the exact committed bytes of the acceptance package artifact at its repository-relative path, before any parse",
-    "carrier_count": 14,
+    "carrier_count": 21,
     "committed_bytes_only": true,
     "corpus_derived_pins": false,
     "recompute_surfaces": [
@@ -631,6 +606,13 @@
     ],
     "same_generator_rule": "a producer whose generator identity equals the candidate's generator identity is same-generator and must fail independence; a different label does not make a same-generator producer independent",
     "series_identity_rule": "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority",
+    "series_identity": {
+     "verdict": "same_series",
+     "candidate_fingerprint": "sha256:c5a9d938f31660452032b4d9b86a4e8bebb621f93ae7d0a57bb28ed12778f161",
+     "reference_fingerprint": "sha256:c5a9d938f31660452032b4d9b86a4e8bebb621f93ae7d0a57bb28ed12778f161",
+     "rule": "a candidate whose series fingerprint equals the frozen reference series is the same series; a same-series candidate can evidence conservation, not independent non-inferiority",
+     "basis": "conservation_of_frozen_reference_series"
+    },
     "judges": [
      {
       "manifest": "crates/da-application/src/native_family_promotion_gate.rs",
@@ -650,7 +632,7 @@
      }
     ],
     "command": "cargo test -p da-application --test promotion_qualification",
-    "limitation": "The preservation candidate currently equals the frozen reference series, so the measured result is conservation of the same series, not an independent non-inferiority comparison. The series-identity verdict is re-resolved by M515/S06; this package records the linkage and claims no independence.",
+    "limitation": "The candidate is measured on the frozen reference series; the recorded series-identity verdict is `same_series`, so the measured result is conservation of the frozen reference series. This package claims no independent non-inferiority.",
     "statement": "The candidate carrier is judged against the named independence mechanisms below; a same-generator/different-label producer fails independence, and the recorded limitation is stated rather than waived."
    },
    "redaction": {
@@ -719,22 +701,52 @@
    {
     "manifest": "artifacts/parse_compat/parse_batch_budget_live.json",
     "pointer": "executed_population"
+   },
+   {
+    "manifest": "artifacts/parse_learning/candidate_cycle.json",
+    "pointer": "reward_definition_sha256"
+   },
+   {
+    "manifest": "artifacts/parse_learning/candidate_cycle.json",
+    "pointer": "conservation"
+   },
+   {
+    "manifest": "artifacts/parse_learning/candidate_cycle.json",
+    "pointer": "contamination_assessment"
+   },
+   {
+    "manifest": "artifacts/parse_learning/candidate_cycle.json",
+    "pointer": "validation_gap"
+   },
+   {
+    "manifest": "artifacts/parse_learning/learning_corpus.json",
+    "pointer": "reward_definition"
+   },
+   {
+    "manifest": "artifacts/parse_compat/native_corpus_acceptance.json",
+    "pointer": "gaps"
+   },
+   {
+    "manifest": "artifacts/parse_compat/java_free_vertical_slice.json",
+    "pointer": "guard"
    }
   ],
   "carrier_sha256": {
    "artifacts/parse_compat/native_corpus_acceptance.json": "sha256:e00f458cccab71c22ba86c5a644002a862166bf47e4b8255c084697e2ee182a6",
    "artifacts/parse_compat/native_corpus_resource_same_n.json": "sha256:a616f2f87e4e58161c515c182c9984b6f02ef07c5b5839f73dd9d5d4a0437288",
-   "artifacts/parse_compat/native_corpus_rollback_rehearsal.json": "sha256:ba1e18ab8b8761bc7dd546ba269fa38e8a456b5eeac90b5a5a8db9e4572ef381",
+   "artifacts/parse_compat/native_corpus_rollback_rehearsal.json": "sha256:b9bc5fa2e34eb66b5a26a0ad89bf8952c7c19e0b28d3edb9f2e46dc365bb3e09",
    "artifacts/parse_compat/absorption_progress_reference_pins.json": "sha256:2befd08dd8b095a6e8e6ea17e6b73e92e78e282ab98cbad64c4727218d6fe158",
    "artifacts/parse_compat/external_holdout_release_probe.json": "sha256:a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275",
    "data/parse/absorption_progress.schema.yaml": "sha256:4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a",
-   "crates/da-parse/src/native_acceptance.rs": "sha256:4d2797486295aefaa8143ee8e67dc4f39e5ce7043ad3cb109564dcba8458c9ac",
+   "crates/da-parse/src/native_acceptance.rs": "sha256:b0ffa9264d35c10dadba2193d63bdf7fafe4f49e749fcdbc77a12c30a06e5c4c",
    "artifacts/parse_compat/grobid_retirement_release_decision_package.json": "sha256:f4ff294193a41c42988aaa135ec1b728f04603c6a585365c97a2d82869f0aa9a",
-   "data/parse/grobid_compatibility.yaml": "sha256:de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03",
+   "data/parse/grobid_compatibility.yaml": "sha256:0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec",
    "doc/review/grobid-absorption-followup.json": "sha256:ca21023ff6786c024bd97c0beb4d44527bf3be67c6e6376db8659ef239ba0aa8",
    "artifacts/parse_learning/candidate_cycle.json": "sha256:9e557691d00dcf42d992ccd83eddf7d5bbf2fff198f3f5de6e18db1869ca7a64",
    "artifacts/parse_compat/native_body_uncertainty_split.json": "sha256:478054d5bd36d6d59057d53f4ba6ddbc21ccfb5578241fd081b595c6c877d69b",
-   "artifacts/parse_compat/parse_batch_budget_live.json": "sha256:fa13b1fb4921177aade374ea002b1a85889ae816f79992083cbf6be371d2461d"
+   "artifacts/parse_compat/parse_batch_budget_live.json": "sha256:fa13b1fb4921177aade374ea002b1a85889ae816f79992083cbf6be371d2461d",
+   "artifacts/parse_learning/learning_corpus.json": "sha256:b5ebfb5f91b214c6eab777da16651f81036ae5189b6e2beea7ced980acb5aaab",
+   "artifacts/parse_compat/java_free_vertical_slice.json": "sha256:2806d8b836f998c339c2975ceafa059b2fc8d51644bce95e1aafee7ccfb34457"
   },
   "reference_path": "artifacts/parse_compat/absorption_progress_reference_pins.json",
   "reference_pointer": "values",
@@ -810,7 +822,7 @@
    "documents_byte_identical": 610,
    "refusals": []
   },
-  "rollback_sha256": "sha256:ba1e18ab8b8761bc7dd546ba269fa38e8a456b5eeac90b5a5a8db9e4572ef381",
+  "rollback_sha256": "sha256:b9bc5fa2e34eb66b5a26a0ad89bf8952c7c19e0b28d3edb9f2e46dc365bb3e09",
   "resource_path": "artifacts/parse_compat/native_corpus_resource_same_n.json",
   "resource": {
    "schema_version": "native-corpus-resource-same-n.v1",
