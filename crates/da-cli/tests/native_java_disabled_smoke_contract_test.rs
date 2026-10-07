@@ -35,8 +35,12 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The sixteen required, non-clear gates the committed S08 ledger carries today.
-const LIVE_BLOCKING_GATE_COUNT: usize = 16;
+/// The four required, non-clear gates the committed S08 ledger carries today.
+///
+/// M516-th0oby/S05 recorded the twelve unmeasurable `required_scope` families as
+/// `required_family_downgrade`/`not_applicable` downgrades and shrank the
+/// blocking set from sixteen to the four gates that still block.
+const LIVE_BLOCKING_GATE_COUNT: usize = 4;
 /// The fifteen `required_scope.families` the committed schema declares.
 const LIVE_REQUIRED_FAMILY_COUNT: usize = 15;
 
