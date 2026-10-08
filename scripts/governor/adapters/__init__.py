@@ -18,6 +18,12 @@ from governor.adapters.feature_gated_coverage import (
     build_feature_gated_coverage,
     observe_feature_gated_coverage,
 )
+from governor.adapters.declaration_sync_gap import (
+    DeclarationGap,
+    DeclarationSyncGap,
+    build_declaration_sync_gap,
+    observe_declaration_sync_gap,
+)
 from governor.adapters.git_reader import GitReader
 from governor.adapters.yaml_rule_repository import YAMLRuleRepository
 
@@ -25,6 +31,8 @@ __all__ = [
     "ClippyReport",
     "ClippyScanner",
     "ClippyWarning",
+    "DeclarationGap",
+    "DeclarationSyncGap",
     "FeatureGatedCoverage",
     "FilesystemAbsorptionProgressReader",
     "FilesystemADRRepository",
@@ -36,8 +44,10 @@ __all__ = [
     "GitReader",
     "YAMLRuleRepository",
     "absorption_progress_violations",
+    "build_declaration_sync_gap",
     "build_feature_gated_coverage",
     "effective_progress_contract",
     "missing_progress_vocabulary",
+    "observe_declaration_sync_gap",
     "observe_feature_gated_coverage",
 ]
