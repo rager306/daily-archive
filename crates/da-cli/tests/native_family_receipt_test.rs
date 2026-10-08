@@ -109,6 +109,12 @@ const GOV_CHECK: &str =
 /// The frozen acceptance manifest that pins the holdout reference TEI, the
 /// independent oracle for the added route documents.
 const ACCEPTANCE_MANIFEST: &str = include_str!("../../../data/parse/acceptance_manifest.yaml");
+/// The repository-relative path of the acceptance manifest carrier.
+const ACCEPTANCE_MANIFEST_REL: &str = "data/parse/acceptance_manifest.yaml";
+/// The pointer under which that carrier pins the holdout reference TEI: the
+/// added route documents' independent oracle, extending the preserved-provenance
+/// pins.
+const HOLDOUT_REFERENCE_TEI_POINTER: &str = "external_holdout_contract.release_probe.reference_tei";
 
 // ─────────────────────────── DATA mirrors ───────────────────────────
 
@@ -238,6 +244,68 @@ fn oracle_pins() -> BTreeMap<String, (String, String)> {
         );
     }
     pins
+}
+
+/// Verify the receipt's added oracle documents are exactly the bytes the
+/// acceptance-manifest `reference_tei` carrier pins. The carrier extends the
+/// preserved-provenance oracle over the declared corpus documents the preserved
+/// fixtures do not cover, so those documents must be pinned here by normalized
+/// identity, path and digest -- never trusted from the receipt. A carrier the
+/// receipt reads no bytes from is refused rather than accepted as decorative.
+/// Returns the first disagreement, or `None` when the carrier is bound.
+fn holdout_reference_tei_binding_error(
+    manifest: &str,
+    receipt: &NativeFamilyReceipt,
+) -> Option<String> {
+    let rows = match serde_yaml::from_str::<AcceptanceManifest>(manifest) {
+        Ok(parsed) => parsed.external_holdout_contract.release_probe.reference_tei,
+        Err(error) => return Some(format!("the acceptance manifest does not parse: {error}")),
+    };
+    let pins: BTreeMap<String, &AcceptanceReferenceTei> = rows
+        .iter()
+        .map(|row| (normalize_document_identity(&row.article_id), row))
+        .collect();
+    let preserved: BTreeSet<String> = provenance()
+        .fixtures
+        .iter()
+        .map(|fixture| normalize_document_identity(&fixture.id))
+        .collect();
+    let mut covered = 0usize;
+    for document in &receipt.oracle.documents {
+        let key = normalize_document_identity(&document.document_id);
+        if preserved.contains(&key) {
+            continue;
+        }
+        let pin = match pins.get(&key) {
+            Some(pin) => pin,
+            None => {
+                return Some(format!(
+                    "the receipt oracle document `{}` is not pinned by the holdout reference TEI carrier",
+                    document.document_id
+                ));
+            }
+        };
+        if document.fixture_path != pin.path {
+            return Some(format!(
+                "the receipt fixture path `{}` for `{}` disagrees with the acceptance manifest pin `{}`",
+                document.fixture_path, document.document_id, pin.path
+            ));
+        }
+        let pin_sha256 = pin.sha256.strip_prefix("sha256:").unwrap_or(&pin.sha256);
+        if document.sha256 != pin_sha256 {
+            return Some(format!(
+                "the receipt fixture digest for `{}` disagrees with the acceptance manifest pin",
+                document.document_id
+            ));
+        }
+        covered += 1;
+    }
+    if covered == 0 {
+        return Some(
+            "the receipt carries no added oracle document, so the holdout reference TEI carrier is unread".to_owned(),
+        );
+    }
+    None
 }
 
 fn probe_population() -> ProbePopulation {
@@ -594,10 +662,19 @@ fn the_governor_rule_and_the_receipts_agree_on_the_committed_data() {
     );
 
     // Every carrier the rule names must be a pin one of the receipts carries.
+    // The holdout reference TEI carrier extends the preserved-provenance oracle
+    // over the added route documents, so it is admitted only once the receipt's
+    // added oracle documents are proven to be exactly the bytes the acceptance
+    // manifest pins.
+    let holdout_binding = holdout_reference_tei_binding_error(ACCEPTANCE_MANIFEST, &receipt);
+    assert_eq!(
+        holdout_binding, None,
+        "the holdout reference TEI carrier does not bind the receipt: {holdout_binding:?}"
+    );
     let carriers = yaml_at(&block, &["carriers"])
         .as_sequence()
         .expect("the rule declares carriers");
-    assert_eq!(carriers.len(), 5);
+    assert_eq!(carriers.len(), 6);
     for carrier in carriers {
         let path = carrier
             .get("path")
@@ -629,6 +706,7 @@ fn the_governor_rule_and_the_receipts_agree_on_the_committed_data() {
                 exclusion.baseline.manifest.as_str(),
                 exclusion.baseline.pointer.as_str(),
             ),
+            (ACCEPTANCE_MANIFEST_REL, HOLDOUT_REFERENCE_TEI_POINTER),
         ];
         assert!(
             named.iter().any(
@@ -765,6 +843,66 @@ fn the_governor_rule_and_the_receipts_agree_on_the_committed_data() {
             "the negative fixture omits {label:?}"
         );
     }
+}
+
+#[test]
+fn a_holdout_reference_tei_carrier_requires_committed_pins() {
+    let receipt = parity_receipt();
+
+    // Positive control: the committed manifest binds the receipt's nine added
+    // oracle documents by identity, path and digest.
+    assert_eq!(
+        holdout_reference_tei_binding_error(ACCEPTANCE_MANIFEST, &receipt),
+        None
+    );
+
+    // Negative: a substituted reference-TEI digest cannot pass as its own.
+    let substituted = ACCEPTANCE_MANIFEST.replace(
+        "sha256:11c46c00dc4b97b47c9591356d29eedd888e467d0d042fa104d2583ee6f3bb55",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    );
+    assert_ne!(substituted, ACCEPTANCE_MANIFEST);
+    let error = holdout_reference_tei_binding_error(&substituted, &receipt)
+        .expect("a substituted holdout reference-TEI pin must be refused");
+    assert!(
+        error.contains("1409.0473"),
+        "the refusal must name the substituted document: {error}"
+    );
+
+    // Negative: a dropped reference-TEI row leaves the receipt's added document
+    // unpinned and is refused.
+    let mut manifest: serde_yaml::Value =
+        serde_yaml::from_str(ACCEPTANCE_MANIFEST).expect("the acceptance manifest parses");
+    manifest["external_holdout_contract"]["release_probe"]["reference_tei"]
+        .as_sequence_mut()
+        .expect("the acceptance manifest pins reference_tei")
+        .retain(|row| {
+            row.get("article_id").and_then(serde_yaml::Value::as_str) != Some("1409.0473")
+        });
+    let dropped = serde_yaml::to_string(&manifest).expect("the mutated manifest serializes");
+    let error = holdout_reference_tei_binding_error(&dropped, &receipt)
+        .expect("a dropped holdout reference-TEI row must be refused");
+    assert!(
+        error.contains("1409.0473"),
+        "the refusal must name the unpinned document: {error}"
+    );
+
+    // Negative: a carrier the receipt reads no bytes from is decorative, not a
+    // proof, so it is refused rather than accepted.
+    let mut stripped = receipt.clone();
+    stripped.oracle.documents.retain(|document| {
+        let key = normalize_document_identity(&document.document_id);
+        provenance()
+            .fixtures
+            .iter()
+            .any(|fixture| normalize_document_identity(&fixture.id) == key)
+    });
+    let error = holdout_reference_tei_binding_error(ACCEPTANCE_MANIFEST, &stripped)
+        .expect("a carrier the receipt does not read must be refused");
+    assert!(
+        error.contains("unread"),
+        "the refusal must explain the unread carrier: {error}"
+    );
 }
 
 fn population_of(
