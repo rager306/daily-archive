@@ -1,0 +1,262 @@
+{
+  "schema_version": "tooling-evaluation.v1",
+  "milestone": "M516-th0oby",
+  "slice": "S06",
+  "task": "T05",
+  "title": "Measure the profiler and SIMD candidates on our hot paths",
+  "recorded_at": "2026-10-08",
+  "verdict_vocabulary": ["adopt", "defer", "reject"],
+  "adoption_out_of_scope": true,
+  "summary": "An available sampling profiler (perf 6.8.12) was run on one named hot path, the native scalar CRF core of the parse route. The measured bound is data-structure / pointer-chasing (BTreeMap key search ~24.6% of self time, sparse_weight reads), not a dense contiguous numeric kernel, and the hardware counters show low branch and L1 miss rates with a latency component (IPC 1.53, backend-idle 12.2%). Per-candidate verdicts: hotpath-rs = defer (the profiler's distinctive async/lock/channel signal was not measurable on a synchronous CPU path); fearless-simd = reject for the identified hot paths (no dense numeric loop; the dominant cost is BTreeMap/sparse lookups that vectorization cannot address). No dependency was added to any manifest and Cargo.lock is untouched.",
+  "knowledge_base_sources": [
+    {
+      "candidate_id": "hotpath-rs",
+      "path": "/root/vault/knowledge/hotpath-profiler-analysis.md",
+      "source": "https://github.com/pawurb/hotpath-rs",
+      "note": "Adjacent knowledge base entry describing hotpath 0.28 (feature-gated Rust profiler + TUI + Prometheus + MCP)."
+    },
+    {
+      "candidate_id": "fearless-simd",
+      "path": "/root/vault/knowledge/rust-simd-2026.md",
+      "source": "https://shnatsel.github.io/state-of-simd-rust-2026/",
+      "note": "Adjacent knowledge base entry describing the 2026 SIMD ladder and fearless-simd 1.0 (stable, Sep 2026)."
+    }
+  ],
+  "hot_paths": [
+    {
+      "id": "parse-route-native-crf-core",
+      "name": "Parse route / native scalar CRF core",
+      "entry_point": "da_domain::scalar_crf::viterbi_decode + da_domain::scalar_crf::map_input",
+      "files": [
+        "crates/da-domain/src/scalar_crf.rs",
+        "crates/da-cli/src/native_core_profile.rs",
+        "crates/da-cli/examples/native_core_profile.rs"
+      ],
+      "why_hot": "The native CRF decode runs once per segmentation span over frozen Wapiti models; the in-process receipt attributes 97% of the four measured phases to viterbi_decode for the fulltext family. It is the compute kernel of the native parse route shadow (ADR-076).",
+      "existing_instrumentation": "None at function level. The Java parse route carries a per-call tracing span (crates/da-parse/src/parser.rs:131, name=\"grobid_parse\", ADR-052) and the native core carries an in-process observational phase receipt (native_core_profile.rs) with wall-clock shares only.",
+      "measured": true,
+      "measurement_ref": "perf-stat-1",
+      "measurement_refs": ["perf-stat-1", "perf-record-1"]
+    },
+    {
+      "id": "replay-materialization",
+      "name": "Replay and materialization path",
+      "entry_point": "da_application::ExtractionUseCase::materialize_extracted",
+      "files": ["crates/da-application/src/extraction.rs"],
+      "why_hot": "Always-run side-effect boundary after a verified cache hit; writes Entity nodes and MENTIONS/FOUND_IN edges to the HOT graph store in a per-entity loop (crates/da-application/src/extraction.rs:168-260).",
+      "existing_instrumentation": "No dedicated span. The outer extract_from_parsed span (crates/da-application/src/extraction.rs:123, name=\"extract\") times the extractor call and the materialization together, so the two halves are not separated.",
+      "measured": false,
+      "measurement_note": "Not profiled in this task: no hermetic in-memory runner for this path exists in the example surface (no da-cli example uses MockGraphStore). Named as worth instrumenting; a profile is the measurement that would inform a hotpath-rs adoption for this surface."
+    },
+    {
+      "id": "embedding-call",
+      "name": "Embedding call",
+      "entry_point": "kg_embeddings::fd_api::FdApiEmbedder::embed / embed_batch",
+      "files": ["crates/kg-embeddings/src/fd_api.rs"],
+      "why_hot": "Called once per entity/section enrichment against the fd_api bge-m3 HTTP service; latency is dominated by the remote round trip, not local math.",
+      "existing_instrumentation": "None. kg-* crates intentionally carry zero tracing dependency (AGENTS.md logging section), so the HTTP boundary is only visible to da-adapters/da-application callers.",
+      "measured": false,
+      "measurement_note": "Not profiled in this task: the call is network-bound against an external service (http://127.0.0.1:8000) and is not a hermetic CPU target."
+    }
+  ],
+  "measurement": {
+    "instrument": {
+      "name": "perf",
+      "version": "6.8.12",
+      "kind": "sampling profiler with hardware performance counters",
+      "available_on_host": true,
+      "kernel_perf_event_paranoid": 4,
+      "note": "perf is the sampling profiler already available on the host; it measures what the existing stage-level tracing spans cannot: function-level attribution and hardware counters. It is used here as the measurement instrument because adopting a new profiler dependency is out of scope for this task."
+    },
+    "host": {
+      "cpu_model": "AMD EPYC Processor (with IBPB)",
+      "logical_cores": 12,
+      "isa_extensions_present": ["sse4_2", "avx", "avx2"],
+      "avx512_present": false
+    },
+    "profiled_hot_path_id": "parse-route-native-crf-core",
+    "workload": {
+      "runner": "target/debug/examples/native_core_profile",
+      "rows_per_family": 512,
+      "families": 8,
+      "models": "frozen synthetic Wapiti models (crates/da-parse/tests/fixtures/native_*_synthetic.wapiti)",
+      "hermetic": true,
+      "network_used": false
+    },
+    "runs": [
+      {
+        "id": "perf-stat-1",
+        "command": "perf stat -e task-clock,cycles,instructions,branches,branch-misses,cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,stalled-cycles-frontend,stalled-cycles-backend -- target/debug/examples/native_core_profile --artifact /tmp/m516_perf_ncp.json --rows 512",
+        "exit_code": 0,
+        "evidence_id": "gsd_exec:721a3b40-06cd-405c-bcde-49cc3ad735b4",
+        "duration_ms": 15224
+      },
+      {
+        "id": "perf-record-1",
+        "command": "perf record -F 999 -g -o /tmp/m516_perf.data -- target/debug/examples/native_core_profile --artifact /tmp/m516_perf_ncp.json --rows 256 && perf report --stdio -i /tmp/m516_perf.data --no-children --sort symbol",
+        "exit_code": 0,
+        "evidence_id": "gsd_exec:6068ab61-038f-4315-a63b-13d581237455",
+        "duration_ms": 11746
+      }
+    ],
+    "counters": {
+      "cpus_utilized": 0.999,
+      "task_clock_ms": 15074.72,
+      "cycles": 34802668994,
+      "instructions": 53381985541,
+      "ipc": 1.53,
+      "stalled_cycles_per_instruction": 0.08,
+      "branches": 10641916588,
+      "branch_misses": 30260037,
+      "branch_miss_pct": 0.28,
+      "cache_references": 385178448,
+      "cache_misses": 58716789,
+      "cache_miss_pct_of_references": 15.24,
+      "l1_dcache_loads": 38483510675,
+      "l1_dcache_load_misses": 24286499,
+      "l1_dcache_load_miss_pct": 0.06,
+      "stalled_cycles_frontend": 644793479,
+      "stalled_cycles_frontend_pct": 1.85,
+      "stalled_cycles_backend": 4246990763,
+      "stalled_cycles_backend_pct": 12.20
+    },
+    "counter_caveat": "11 hardware events were multiplexed at roughly 40% per-counter coverage, so absolute counts are scaled estimates; IPC is a within-group ratio and the branch/cache/L1 percentages are ratios, so the qualitative bound (compute vs memory vs data-structure) is robust.",
+    "symbol_attribution_self_pct": [
+      {"symbol": "alloc::collections::btree::search::find_key_index (inlined into da-domain)", "self_pct": 16.65, "kind": "data-structure"},
+      {"symbol": "da_domain::scalar_crf::viterbi_decode", "self_pct": 14.40, "kind": "compute"},
+      {"symbol": "core::slice::Iter<u32>::next (serde_yaml)", "self_pct": 11.44, "kind": "setup/parse"},
+      {"symbol": "core::iter::adapters::Enumerate::next (serde_yaml)", "self_pct": 9.99, "kind": "setup/parse"},
+      {"symbol": "alloc::collections::btree::search::search_tree (inlined into da-domain)", "self_pct": 5.54, "kind": "data-structure"},
+      {"symbol": "core::result::Result<u32, CrfModelError>::branch", "self_pct": 3.02, "kind": "control-flow"},
+      {"symbol": "core::option::Option<f64>::unwrap_or", "self_pct": 2.79, "kind": "control-flow"},
+      {"symbol": "core::option::Option<u32>::ok_or", "self_pct": 2.67, "kind": "control-flow"},
+      {"symbol": "alloc::collections::btree::map::BTreeMap<u32, f64>::get", "self_pct": 2.40, "kind": "data-structure"},
+      {"symbol": "core::slice::Iter<f64>::next (da-domain)", "self_pct": 2.32, "kind": "iteration"},
+      {"symbol": "da_domain::scalar_crf::sparse_weight", "self_pct": 2.28, "kind": "sparse-read"},
+      {"symbol": "alloc::vec::Vec<u32> into_iter (da-domain)", "self_pct": 2.05, "kind": "iteration"}
+    ],
+    "attribution_groups": {
+      "btree_map_search_pct": 24.59,
+      "viterbi_decode_self_pct": 14.40,
+      "serde_yaml_setup_pct": 21.43,
+      "sparse_weight_pct": 2.28
+    },
+    "measured_bound": {
+      "classification": "data-structure / latency, not dense numeric compute",
+      "evidence": "The single largest self-time consumers are BTreeMap key search (find_key_index 16.65% + search_tree 5.54% + BTreeMap<u32,f64>::get 2.40% = 24.59%), which is pointer-chasing over a sparse map (CrfModel.weights: BTreeMap<usize, f64>, scalar_crf.rs:27) plus the per-call rebuild of a BTreeMap<&str, usize> lookup in map_input (scalar_crf.rs:342). viterbi_decode arithmetic is 14.40% self. Branch misses are 0.28% and L1-dcache misses 0.06%, so the cost is not memory-bandwidth and not branch misprediction; backend-idle 12.20% and IPC 1.53 indicate a dependency/latency component inside the lookup chains.",
+      "off_cpu_measured": false,
+      "off_cpu_note": "The profiled workload is synchronous and single-threaded (0.999 CPUs utilized); there is no async wait, Mutex contention, or channel queue depth on this path, so off-CPU attribution was not applicable here."
+    },
+    "what_existing_instrumentation_did_not_measure": [
+      "Function-level attribution inside a stage: the ADR-052 tracing spans record per-stage wall time (grobid_parse, extract, batch_ingest) but cannot say which functions consume it. perf attributed BTreeMap key search at 24.59%, viterbi_decode at 14.40% and sparse_weight at 2.28% - the tracing layer collapses all of these into one span duration.",
+      "Compute-vs-memory bound: tracing has no hardware-counter notion, so it cannot distinguish a compute-bound loop from a memory-bound or data-structure-bound one. perf supplied IPC 1.53, branch-miss 0.28%, L1-dcache miss 0.06% and backend-idle 12.20%, which is what classifies the bound as data-structure/latency rather than dense compute.",
+      "Setup vs steady state: perf attributed 21.43% of samples to serde_yaml model/manifest parsing, which is one-time setup inside the profile process; a stage span would blend that into the stage's single duration."
+    ]
+  },
+  "candidates": [
+    {
+      "id": "hotpath-rs",
+      "name": "hotpath-rs 0.28",
+      "kind": "feature-gated Rust profiler (functions/allocations/CPU/async channels/locks/SQL/HTTP/IO/Tokio) with TUI, Prometheus and an MCP server",
+      "source": "https://github.com/pawurb/hotpath-rs",
+      "knowledge_base_ref": "/root/vault/knowledge/hotpath-profiler-analysis.md",
+      "verdict": "defer",
+      "verdict_scope": "the hot paths identified above",
+      "measured_basis": [
+        "The one hot path that was profiled is synchronous and single-threaded (0.999 CPUs utilized, no async wait, no lock contention, no channel pressure). perf measured a data-structure-bound CPU loop, which is exactly the surface where hotpath-rs's distinctive features (async wait vs CPU attribution, Mutex/RwLock wait time and contention, mpsc queue depth, Tokio worker scheduling, SQL attribution) would report nothing.",
+        "hotpath-rs's SQL mode targets sqlx and Diesel; neither is present in the workspace (grep of Cargo.toml files finds no sqlx/Diesel), so that feature is inert here.",
+        "The existing tracing substrate already records per-stage wall-clock durations with semantic identity (ADR-052) and the governor already consumes gsd_exec evidence; the unmeasured delta is contention/off-CPU attribution, not raw duration.",
+        "The hosted hotpath Cloud option is rejected on egress grounds (no external egress); only the local TUI/static-report/MCP modes would be considered."
+      ],
+      "what_it_would_add_over_measured_instrumentation": [
+        "Off-CPU async wait vs CPU-bound attribution that perf cannot separate by semantic unit (task/channel/lock).",
+        "Per-Mutex/RwLock wait time and contention - relevant because the Samyama HOT store and batch pipeline use locks and channels.",
+        "Live mpsc channel queue depth and Tokio worker scheduling.",
+        "An MCP endpoint an agent can query live, complementing the governor's static evidence store."
+      ],
+      "decision_changing_measurement": "Profile a live long-running async path - `da serve-graph` (crates/kg-storage RemoteGraphStore read plane) under concurrent `da graph-ping`, or `da batch-ingest` over the catalog - and measure the fraction of wall time spent in off-CPU async wait or Mutex/RwLock contention that is invisible to the existing tracing spans. If that fraction is material (working threshold: >= 5% of wall time attributable to a named lock or channel, or a queue depth that grows under load), adopt with that measurement as justification; if the wait/contention fraction is negligible, close the candidate as not-justified.",
+      "rejected_alternatives": [
+        "adopt now - rejected: it would add optional dependencies plus a runtime metrics server before any measurement shows the async/lock/channel signal the tool uniquely exposes."
+      ],
+      "guardrails": [
+        "Adopting is out of scope for this task; no feature flag, dependency, or server was added.",
+        "Any future adoption must stay local (no egress to hotpath Cloud) and be feature-gated so the production build keeps zero instrumentation overhead."
+      ]
+    },
+    {
+      "id": "fearless-simd",
+      "name": "fearless-simd 1.0 (stable, September 2026)",
+      "kind": "portable SIMD library: safe access to intrinsics generic over vector width, with multiversioning",
+      "source": "https://shnatsel.github.io/state-of-simd-rust-2026/",
+      "knowledge_base_ref": "/root/vault/knowledge/rust-simd-2026.md",
+      "verdict": "reject",
+      "verdict_scope": "the currently identified hot paths (parse-route native CRF core, replay/materialization, embedding call)",
+      "reason": "No profiled hot path is dense numeric compute. On the one path that was profiled, the measured bound is data-structure and pointer-chasing: BTreeMap key search is 24.59% of self time (find_key_index + search_tree + BTreeMap<u32,f64>::get) and the decoder reads sparse weights (scalar_crf.rs sparse_weight -> CrfModel.weights: BTreeMap<usize, f64>, 2.28% self), while viterbi_decode arithmetic is 14.40% self with 0.28% branch misses and 0.06% L1-dcache misses. Portable SIMD vectorizes dense contiguous numeric loops; it cannot vectorize BTreeMap lookups or sparse weight reads, so it does not address the measured bottleneck. The two unprofiled paths are also not dense compute: the replay/materialization path is graph-store I/O and the embedding call is an HTTP round trip to fd_api. The project's own gate already encodes the same conclusion: crate::layout_runtime::gate_simd_candidate refuses MeasuredRetained unless a dense numeric kernel with semantic equality and repeated CPU improvement is proven, and the committed artifacts/parse_compat/native_core_profile.json disposition is measured_rejected with selection_forbidden=true and pgo_disposition=not_adopted.",
+      "measured_basis": {
+        "ipc": 1.53,
+        "branch_miss_pct": 0.28,
+        "l1_dcache_load_miss_pct": 0.06,
+        "stalled_cycles_backend_pct": 12.20,
+        "btree_map_search_pct": 24.59,
+        "viterbi_decode_self_pct": 14.40,
+        "sparse_weight_pct": 2.28,
+        "avx512_present": false,
+        "note": "Even though AVX2 is present, the harness measured a data-structure-bound loop, not a dense arithmetic loop."
+      },
+      "reopen_condition": "A measured dense contiguous numeric kernel would reopen the candidate: profile a loop whose self time is dominated by contiguous f32/f64 or integer arithmetic (not map lookups) and show it is a material share of a hot path, then build a bounded scalar-vs-SIMD candidate that passes a semantic-equality oracle plus a repeated CPU-improvement measurement through gate_simd_candidate before any selection. No such loop exists in the profiled surface today.",
+      "rejected_alternatives": [
+        "adopt now - rejected: adds a dependency with no measured basis on any identified hot path.",
+        "vectorize the viterbi_decode loop speculatively - rejected: profiling before vectorization shows the loop's cost is dominated by BTreeMap/sparse lookups, not arithmetic, so vectorization would not move the measured bottleneck.",
+        "attribute the workload as memory-bandwidth bound - rejected: L1-dcache load misses are 0.06%, so the cost is not bandwidth; it is lookup dependency latency."
+      ],
+      "standards_context": {
+        "isa_ladder": "scalar -> autovectorization -> portable SIMD -> raw intrinsics",
+        "avx2_note": "AVX2 is partly emulated on many x86 parts and ~15% of x86 CPUs in 2026 lack it; the host has avx/avx2 and no avx512.",
+        "math_note": "The knowledge base notes autovectorization for float is largely a no-go on stable and recommends profiling first, which this task did."
+      }
+    }
+  ],
+  "guardrails": {
+    "dependencies_added": [],
+    "manifests_modified": [],
+    "lockfile": {
+      "path": "Cargo.lock",
+      "sha256_before": "2de8f02a99ce4364118721215c85442710819d144080c697bef05c327e5ac17a",
+      "sha256_after": "2de8f02a99ce4364118721215c85442710819d144080c697bef05c327e5ac17a",
+      "untouched": true
+    },
+    "root_manifest": {
+      "path": "Cargo.toml",
+      "sha256_before": "0d1f7e15630c2c6d96098ce818e56e6303ca1bb219b7a70848ae89b710539949",
+      "sha256_after": "0d1f7e15630c2c6d96098ce818e56e6303ca1bb219b7a70848ae89b710539949",
+      "untouched": true
+    },
+    "manifests_combined_sha256_after": "1a113b30fde90d1a52fc8299e5f8be3eb8ccd54e1875a533c4d89e139f15d83a",
+    "workspace_manifests_unchanged": true,
+    "selection_forbidden_preserved": true,
+    "import_eligible": false
+  },
+  "diagnostics": {
+    "how_to_reproduce": [
+      "cargo build -p da-cli --example native_core_profile",
+      "perf stat -e cycles,instructions,branches,branch-misses,cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,stalled-cycles-frontend,stalled-cycles-backend -- target/debug/examples/native_core_profile --artifact /tmp/native_core_profile.json --rows 512",
+      "perf record -F 999 -g -o /tmp/native_core.data -- target/debug/examples/native_core_profile --artifact /tmp/native_core_profile.json --rows 256",
+      "perf report --stdio -i /tmp/native_core.data --no-children --sort symbol"
+    ],
+    "note": "The example writes the committed artifact path by default; pass --artifact to a temp path so artifacts/parse_compat/native_core_profile.json is not rewritten."
+  },
+  "next_actions": [
+    {
+      "finding": "map_input rebuilds a BTreeMap<&str, usize> lookup over the whole observation table on every call (crates/da-domain/src/scalar_crf.rs:342), and CrfModel.weights is a BTreeMap<usize, f64> read sparsely (crates/da-domain/src/scalar_crf.rs:27, sparse_weight). The profile attributes 24.59% of self time to BTreeMap search.",
+      "opportunity": "A data-structure change (prebuilt/SortedVec or hash index, hoisted out of the per-call rebuild) is the measured lever on this hot path - no new dependency required. da-domain is functionally frozen and any change requires its own proof/slice; this is recorded as a finding, not adopted here."
+    },
+    {
+      "finding": "materialize_extracted has no dedicated span; the outer extract span times extractor and materialization together.",
+      "opportunity": "Add an inner tracing span around the materialization loop so the replay/materialization path becomes measurable without a new profiler."
+    },
+    {
+      "finding": "hotpath-rs's distinctive signal (async wait / lock contention / channel depth) is unmeasured.",
+      "opportunity": "Profile the live async pipeline as specified in the decision_changing_measurement before any adoption decision."
+    }
+  ]
+}

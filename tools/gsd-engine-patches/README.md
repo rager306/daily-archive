@@ -44,6 +44,15 @@ M516-th0oby (S05/T03 twice, S05 closeout once) with the identical failure finger
 
 **What the patch changes:**
 
+- `database-maintenance-fence.js`: `PROJECTION_CLAIM_RETRY_MS` 5 → 25 and
+  `PROJECTION_CLAIM_MAX_ATTEMPTS` 1_000 → 2_400, so the claim budget becomes **60 s instead of 5 s**.
+  Contention here is transient (measured: the claim frees in milliseconds), so a 5 s budget turned
+  ordinary overlap into a fatal projection failure on paths that never consult the transient
+  classifier. The one that stopped auto-mode on M516/S06 was the task-completion summary projection:
+  `task-completion-compatibility-adapter.js` re-wraps whatever `renderTaskSummary` threw as a plain
+  `Error("Task completion summary projection failed: ...")`, and `auto.js` then classifies the stop as
+  `failed` because the reason contains "fail". Widening the wait fixes that path without touching any
+  control flow.
 - `projection-root-errors.js`: adds `PROJECTION_CONTENTION_TIMEOUT =
   /projection mutation remains fenced after the contention timeout/i` and returns `true` for
   it, so the fence error classifies as `projection-lock-transient` and
@@ -52,7 +61,7 @@ M516-th0oby (S05/T03 twice, S05 closeout once) with the identical failure finger
   notified, and **skipped for that tick** instead of cancelling the unit. The unit hard
   timeout remains the backstop for a lock that never clears.
 
-**Verified after patching** (`node --check` on both files plus a behaviour probe):
+**Verified after patching** (`node --check` on the patched files plus a behaviour probe):
 
 | probe | before | after |
 |-------|--------|-------|

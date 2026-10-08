@@ -14,6 +14,7 @@ if (dirs.length === 0) {
 }
 
 const MARK_ROOT = "PROJECTION_CONTENTION_TIMEOUT";
+const MARK_FENCE = "LOCAL PATCH (daily-archive): 5s was too short";
 const MARK_GUARD = "LOCAL PATCH (daily-archive)";
 
 let changed = 0;
@@ -60,6 +61,44 @@ for (const dir of dirs) {
     changed++;
   } else {
     console.log(`already patched ${rootPath}`);
+  }
+
+  // ---- 1b. database-maintenance-fence.js: wait longer before declaring contention ----
+  // The claim budget was 1000 x 5ms = 5s. Contention here is transient (measured: the claim frees
+  // in milliseconds), so a 5s budget turns ordinary overlap into a fatal projection failure on
+  // paths that do not consult the transient classifier -- e.g. the task-completion summary
+  // projection, which stops auto-mode outright. 25ms x 2400 = 60s of patience.
+  const fencePath = join(dir, "database-maintenance-fence.js");
+  if (existsSync(fencePath)) {
+    let fence = readFileSync(fencePath, "utf8");
+    if (!fence.includes(MARK_FENCE)) {
+      const retryAnchor = "const PROJECTION_CLAIM_RETRY_MS = 5;";
+      const attemptsAnchor = "const PROJECTION_CLAIM_MAX_ATTEMPTS = 1_000;";
+      if (!fence.includes(retryAnchor) || !fence.includes(attemptsAnchor)) {
+        console.error(`SKIP ${fencePath}: constant anchors not found`);
+        process.exitCode = 1;
+      } else {
+        fence = fence.replace(
+          retryAnchor,
+          "// LOCAL PATCH (daily-archive): 5s was too short for transient cross-process contention.\n" +
+            "const PROJECTION_CLAIM_RETRY_MS = 25;",
+        );
+        fence = fence.replace(
+          attemptsAnchor,
+          "// LOCAL PATCH (daily-archive): 25ms x 2400 = 60s of patience.\n" +
+            "const PROJECTION_CLAIM_MAX_ATTEMPTS = 2_400;",
+        );
+        copyFileSync(fencePath, `${fencePath}.pre-projection-lock-patch`);
+        writeFileSync(fencePath, fence);
+        console.log(`patched ${fencePath}`);
+        changed++;
+      }
+    } else {
+      console.log(`already patched ${fencePath}`);
+    }
+  } else {
+    console.error(`SKIP ${dir}: database-maintenance-fence.js not found`);
+    process.exitCode = 1;
   }
 
   // ---- 2. auto-timers.js: do not cancel the unit on transient contention ----
