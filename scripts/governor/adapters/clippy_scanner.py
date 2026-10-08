@@ -66,6 +66,10 @@ class ClippyScanner:
     # Pattern: warning: <message>\n  --> <file>:<line>:<col>
     WARNING_RE = re.compile(r"^warning:\s*(.+)$")
     LOCATION_RE = re.compile(r"^\s*-->\s*(.+?):(\d+):\d+")
+    # `= note: #[warn(dead_code)] on by default` is how a lint id reaches the
+    # capture. It is what turns `dead_code` from a message-shape guess into an
+    # authoritative filter for the scorecard's dead-code rule.
+    LINT_RE = re.compile(r"#\[(?:warn|deny|allow)\(([A-Za-z_][A-Za-z0-9_]*)\)")
 
     def __init__(self, project_root: Path):
         self.root = project_root
@@ -102,28 +106,39 @@ class ClippyScanner:
         i = 0
         while i < len(lines):
             msg_match = self.WARNING_RE.match(lines[i])
-            if msg_match:
-                message = msg_match.group(1).strip()
-                # Next non-empty line should have --> path:line:col
-                for j in range(i + 1, min(i + 5, len(lines))):
-                    loc_match = self.LOCATION_RE.match(lines[j])
-                    if loc_match:
-                        file_path = loc_match.group(1)
-                        line_no = int(loc_match.group(2))
-                        # Filter out vendor-source warnings.
-                        if self._is_our_code(file_path):
-                            warnings.append(
-                                ClippyWarning(
-                                    crate=crate,
-                                    file=file_path,
-                                    line=line_no,
-                                    message=message,
-                                )
-                            )
-                        break
-                i = j + 1 if loc_match else i + 1
-            else:
+            if not msg_match:
                 i += 1
+                continue
+            message = msg_match.group(1).strip()
+            # Everything up to the next `warning:` belongs to this warning. The
+            # location and the `#[warn(<lint>)]` note both live in that block, so
+            # the block boundary is the only reliable scope for either.
+            file_path = None
+            line_no = None
+            lint = ""
+            j = i + 1
+            while j < len(lines) and not self.WARNING_RE.match(lines[j]):
+                loc_match = self.LOCATION_RE.match(lines[j])
+                if loc_match and file_path is None:
+                    file_path = loc_match.group(1)
+                    line_no = int(loc_match.group(2))
+                if not lint:
+                    lint_match = self.LINT_RE.search(lines[j])
+                    if lint_match:
+                        lint = lint_match.group(1)
+                j += 1
+            # Filter out vendor-source warnings.
+            if file_path and line_no is not None and self._is_our_code(file_path):
+                warnings.append(
+                    ClippyWarning(
+                        crate=crate,
+                        file=file_path,
+                        line=line_no,
+                        message=message,
+                        lint=lint,
+                    )
+                )
+            i = j
         return warnings
 
     def _is_our_code(self, file_path: str) -> bool:
@@ -131,5 +146,9 @@ class ClippyScanner:
         # Normalize path.
         if "vendor-source" in file_path or "/samyama" in file_path:
             return False
-        # Our crates live under crates/{crate-name}/src/.
-        return "/crates/" in file_path and "/src/" in file_path
+        # Cargo emits workspace-relative paths (`crates/da-x/src/lib.rs`), but a
+        # capture from another working directory may carry an absolute prefix.
+        # Both must match, otherwise our own warnings are filtered out and the
+        # scan reports a false clean.
+        normalized = "/" + file_path.lstrip("/")
+        return "/crates/" in normalized and "/src/" in normalized

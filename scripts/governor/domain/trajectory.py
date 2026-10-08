@@ -65,6 +65,11 @@ class TrajectoryReport:
     # M513 C3 left pending). An empty list means the C3 process gates are still
     # in force, which is the fail-closed default.
     active_policy: list[dict] = field(default_factory=list)
+    # M516-th0oby/S06: the numeric scorecard. Three axes (measurability,
+    # declaration synchronisation, feature-gated coverage) with their values and
+    # definitions, plus the five governor improvements. Serialized so a session
+    # reads the numbers from the report rather than inferring them from prose.
+    scorecard: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -77,4 +82,5 @@ class TrajectoryReport:
             "next_actions": self.next_actions,
             "milestone_context": self.milestone_context,
             "active_policy": self.active_policy,
+            "scorecard": self.scorecard,
         }

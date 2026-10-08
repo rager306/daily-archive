@@ -246,6 +246,9 @@ def main() -> int:
         json_path = project_root / "artifacts" / "project-trajectory" / "trajectory-report.json"
 
     # Console summary.
+    # M516-th0oby/S06: the numeric scorecard prints first, so a session reads the
+    # three axis values and the five improvement statuses before any flag prose.
+    _print_scorecard(report.scorecard)
     n_flags = len(report.drift_flags)
     n_violations = report.reverse_adr_audit_details.get("violations_count", 0)
     print(
@@ -568,6 +571,9 @@ def _validate_yaml(rule_repo) -> int:
 def _check_dead_code(scanner) -> int:
     """Run cargo clippy per-crate and surface warnings from our code."""
     report = scanner.scan_all()
+    # Persist the capture so the preflight scorecard can read a scan it did not pay
+    # for on every iteration; a scan nobody can reuse is a scan nobody runs.
+    _write_dead_code_cache(scanner.root, report)
     if not report.has_warnings:
         print(
             f"Dead-code scan PASS: {report.crates_clean}/{report.crates_scanned} "
@@ -582,6 +588,51 @@ def _check_dead_code(scanner) -> int:
             rel = rel[rel.index("/crates/") + 1 :]
         print(f"  [{w.crate}] {rel}:{w.line} :: {w.message}")
     return 1
+
+
+def _write_dead_code_cache(root, report) -> None:
+    """Write the clippy capture next to the trajectory report for reuse.
+
+    The scorecard reads this file when `scorecard.dead_code.enabled` is false, so
+    an explicit `governor --check-dead-code` turns the improvement from
+    `not_measured` into a real number without making every preflight pay for a
+    cargo scan. A write failure is swallowed: housekeeping must not break the run.
+    """
+    from datetime import datetime, timezone
+
+    try:
+        out = Path(root) / "artifacts" / "project-trajectory"
+        out.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "crates_scanned": report.crates_scanned,
+            "crates_clean": report.crates_clean,
+            "warnings": [w.to_dict() for w in report.warnings],
+        }
+        (out / "dead-code.json").write_text(
+            json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+        )
+    except OSError:
+        pass
+
+
+def _print_scorecard(scorecard) -> None:
+    """Print the three axes and the five improvements as the first lines read."""
+    if not isinstance(scorecard, dict):
+        return
+    axes = scorecard.get("axes") or []
+    improvements = scorecard.get("improvements") or []
+    if not axes and not improvements:
+        return
+    print("scorecard:")
+    for entry in axes:
+        print(f"  axis {entry.get('axis')}: {entry.get('value')} — {entry.get('definition')}")
+    for entry in improvements:
+        status = entry.get("status", "?")
+        print(
+            f"  improvement {entry.get('name')}: {entry.get('value')} "
+            f"[{status}] — {entry.get('definition')}"
+        )
 
 
 def _self_test() -> int:

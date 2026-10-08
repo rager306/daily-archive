@@ -131,6 +131,39 @@ journal_markers:
 # a complete reconciliation.
 doctor_baseline_path: scripts/governor/checks/gsd_doctor_baseline.json
 
+# M516-th0oby/S06 scorecard improvements — DATA for the four rules that sit beside
+# the three numeric axes. Thresholds live here so the value that fires and the
+# definition it is compared against cannot drift apart, and `signals` is the
+# closed vocabulary the oracle may emit (an undeclared signal is a contract/code
+# disagreement, not a silent pass).
+#
+# `dead_code.enabled` defaults to false on purpose: `cargo clippy` across all 12
+# crates costs minutes, and preflight runs on every iteration. The scan is opt-in
+# (or served from the `governor --check-dead-code` cache), so a slow instrument
+# never becomes a tax on every run; when it has not run the scorecard says
+# `not_measured` instead of reporting a false clean.
+scorecard:
+  momentum:
+    # a close older than this many days, with commits landed since it, is drift
+    max_days_since_close: 7
+    # and at least this many commits must have landed (0 => any commit counts)
+    max_commits_since_close: 0
+  readme:
+    # the required README gate section, matched as a heading substring
+    required_section: "Next gate"
+  dead_code:
+    enabled: false
+    max_findings: 0
+  coverage_delta:
+    max_untested_sources: 0
+    # the pathspec scanned for source files added since the last close
+    pathspec: crates
+  signals:
+    - scorecard_momentum_drift
+    - scorecard_readme_gate_missing
+    - scorecard_dead_code
+    - scorecard_coverage_delta
+
 # Signals that mean work in progress was destroyed rather than merely leaking
 # disk. They are reported as `high`, the rest as `medium`. This key controls
 # severity only: escalating the control plane to a `blocked` verdict would need an

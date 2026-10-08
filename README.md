@@ -488,6 +488,15 @@ scripts/                # verify_rust_architecture.sh
 
 ## Next gate (trajectory enforcement)
 
+**Active milestone: M516-th0oby** — installs the numeric three-axis scorecard
+(measurability, declaration synchronisation, feature-gated coverage) and the
+governor improvements (git-aware momentum, README gate reference, dead-code scan,
+test coverage delta). The scorecard prints as the first lines of
+`python3 -m governor --phase preflight`, so progress and regression are read as
+numbers rather than inferred from prose. The governor rule
+`scorecard_readme_gate_missing` fails when this section stops naming the active
+milestone.
+
 Architecture is crystallized on the Rust onion (ADR-040 Samyama +
 ADR-050 kg-* universal crates). Hexagonal guardrail
 (scripts/verify_rust_architecture.sh) enforces da-domain <- da-ports <-

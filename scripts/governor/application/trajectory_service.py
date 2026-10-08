@@ -2192,6 +2192,15 @@ class TrajectoryService:
             else []
         )
 
+        # M516-th0oby/S06: the numeric scorecard (three axes with their values and
+        # definitions) plus the four remaining governor improvements. The axes are
+        # informational numbers a session reads first; the four rules emit medium
+        # drift flags when their deliberately-bad case is present. Momentum and the
+        # README gate reference live here rather than in `_build_drift_flags`, so
+        # each signal has exactly one owner.
+        scorecard, scorecard_flags = self._build_scorecard()
+        drift_flags.extend(scorecard_flags)
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -2210,6 +2219,7 @@ class TrajectoryService:
             next_actions=next_actions,
             milestone_context=milestone_ctx,
             active_policy=active_policy,
+            scorecard=scorecard,
         )
 
     def _build_dimensions(self) -> list[Dimension]:
@@ -5803,6 +5813,291 @@ class TrajectoryService:
             for finding in evaluate(contract, observations)
         ]
 
+    # ── M516-th0oby/S06: numeric scorecard + governor improvements ──────────
+    #
+    # Three axes answer "how far has the milestone come" as numbers; four rules
+    # answer "did the tree regress" as findings. Both are exposed through the same
+    # preflight surface so one command prints everything, and the thresholds and
+    # signal vocabulary live in `gsd_control_plane.yaml#scorecard` (DATA) rather
+    # than in this service.
+
+    def _scorecard_contract(self) -> dict:
+        """The `scorecard` DATA block; an absent/malformed block is an empty policy."""
+        path = self.root / "scripts/governor/checks/gsd_control_plane.yaml"
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            return {}
+        block = data.get("scorecard") if isinstance(data, dict) else None
+        return block if isinstance(block, dict) else {}
+
+    def _active_milestone_id(self) -> str | None:
+        """The active milestone from the planning projection, or None.
+
+        The README gate rule compares its `Next gate` section against this id; an
+        unavailable projection degrades the rule to a section-presence check
+        rather than silently passing on a stale reference.
+        """
+        try:
+            return self.gsd_planning_reader.read().current_milestone_id
+        except Exception:
+            return None
+
+    def _read_dead_code_cache(self):
+        """Warnings cached by `governor --check-dead-code`, or None when absent.
+
+        The clippy scan is minutes across 12 crates, so preflight reads the cache
+        the explicit flag wrote instead of paying that cost on every iteration. An
+        absent cache yields `not_measured`, never a false clean.
+        """
+        path = self.root / "artifacts/project-trajectory/dead-code.json"
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        rows = data.get("warnings") if isinstance(data, dict) else None
+        if not isinstance(rows, list):
+            return None
+        from governor.adapters import ClippyWarning
+
+        warnings = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            warnings.append(
+                ClippyWarning(
+                    crate=str(row.get("crate", "?")),
+                    file=str(row.get("file", "?")),
+                    line=int(row.get("line", 0) or 0),
+                    message=str(row.get("message", "")),
+                    lint=str(row.get("lint", "")),
+                )
+            )
+        return warnings
+
+    def _scorecard_axis_unavailable(self, axis: str, error: Exception) -> DriftFlag:
+        return DriftFlag(
+            flag="scorecard_axis_unavailable",
+            severity="medium",
+            evidence=f"{axis} axis could not be computed: {type(error).__name__}: {error}",
+            dimension="scorecard",
+        )
+
+    def _build_scorecard(self) -> tuple[dict, list[DriftFlag]]:
+        """Build the three axes and the five improvements, plus their findings.
+
+        Fail-closed per axis: an axis that cannot be computed is named in the
+        scorecard as unavailable and reported as a medium flag, never omitted into
+        a silent green. The four rules emit one medium flag when their
+        deliberately-bad case is present; the fifth improvement is the feature-
+        gated axis, exposed as a number with its zero-executing targets named.
+        """
+        from governor.adapters import (
+            observe_declaration_sync_gap,
+            observe_feature_gated_coverage,
+            observe_measurability_axis,
+        )
+        from governor.adapters.improvement_reader import (
+            observe_coverage,
+            observe_momentum,
+            read_readme,
+        )
+        from governor.checks.governor_improvements import (
+            coverage_delta_finding,
+            coverage_delta_observation,
+            dead_code_finding,
+            dead_code_observation,
+            dead_code_warnings,
+            feature_gated_observation,
+            momentum_finding,
+            momentum_observation,
+            readme_gate_finding,
+            readme_observation,
+        )
+
+        contract = self._scorecard_contract()
+        flags: list[DriftFlag] = []
+        axes: list[dict] = []
+        improvements: list = []
+
+        def _add_axis(detail: dict, value: str, lines: list[str]) -> None:
+            axes.append(
+                {
+                    "axis": detail["axis"],
+                    "value": value,
+                    "definition": detail["definition"],
+                    "lines": lines,
+                    "detail": detail,
+                }
+            )
+
+        # ── axis 1: measurability = measured / mandatory gates ───────────────
+        try:
+            axis = observe_measurability_axis(self.root)
+            detail = axis.to_dict()
+            _add_axis(
+                detail,
+                f"{detail['measured_gates']}/{detail['mandatory_gates']} "
+                f"({detail['ratio'] * 100:.1f}%)",
+                axis.render_lines(),
+            )
+        except Exception as error:
+            flags.append(self._scorecard_axis_unavailable("measurability", error))
+
+        # ── axis 2: declaration synchronisation = gap count ─────────────────
+        try:
+            axis = observe_declaration_sync_gap(self.root)
+            detail = axis.to_dict()
+            _add_axis(detail, f"{detail['gap_count']} gaps", axis.render_lines())
+        except Exception as error:
+            flags.append(self._scorecard_axis_unavailable("declaration_sync_gap", error))
+
+        # ── axis 3: feature-gated coverage = executed / gated ───────────────
+        fg_executed = 0
+        fg_gated = 0
+        zero_names: list[str] = []
+        try:
+            axis = observe_feature_gated_coverage(self.root)
+            detail = axis.to_dict()
+            fg_executed = detail["executed_targets"]
+            fg_gated = detail["gated_targets"]
+            zero_names = list(detail["zero_executing_targets"])
+            _add_axis(
+                detail,
+                f"{fg_executed}/{fg_gated} ({detail['ratio'] * 100:.1f}%)",
+                axis.render_lines(),
+            )
+        except Exception as error:
+            flags.append(self._scorecard_axis_unavailable("feature_gated_coverage", error))
+
+        # ── improvement 1: git-aware momentum ───────────────────────────────
+        momentum_cfg = contract.get("momentum") or {}
+        max_days = int(momentum_cfg.get("max_days_since_close", 7))
+        max_commits = int(momentum_cfg.get("max_commits_since_close", 0))
+        momentum_obs = observe_momentum(self.root, self.git_reader)
+        momentum_finding_obj = momentum_finding(
+            commits_since_close=momentum_obs.commits_since_close,
+            days_since_close=momentum_obs.days_since_close,
+            max_days_since_close=max_days,
+            max_commits_since_close=max_commits,
+        )
+        improvements.append(
+            momentum_observation(
+                commits_since_close=momentum_obs.commits_since_close,
+                days_since_close=momentum_obs.days_since_close,
+                last_close=momentum_obs.last_close,
+                max_days_since_close=max_days,
+                max_commits_since_close=max_commits,
+                finding=momentum_finding_obj,
+            )
+        )
+
+        # ── improvement 2: README gate reference ─────────────────────────────
+        readme_cfg = contract.get("readme") or {}
+        required_section = str(readme_cfg.get("required_section", "Next gate"))
+        active_milestone = self._active_milestone_id()
+        readme_text = read_readme(self.root)
+        readme_finding_obj = readme_gate_finding(
+            readme_text=readme_text,
+            required_section=required_section,
+            active_milestone_id=active_milestone,
+        )
+        improvements.append(
+            readme_observation(
+                readme_text=readme_text,
+                required_section=required_section,
+                active_milestone_id=active_milestone,
+                finding=readme_finding_obj,
+            )
+        )
+
+        # ── improvement 3: dead-code scan ────────────────────────────────────
+        dead_cfg = contract.get("dead_code") or {}
+        max_dead = int(dead_cfg.get("max_findings", 0))
+        dead_warnings = None
+        dead_note = ""
+        if bool(dead_cfg.get("enabled", False)):
+            try:
+                from governor.adapters import ClippyScanner
+
+                scan = ClippyScanner(self.root).scan_all()
+                dead_warnings = scan.warnings
+                dead_note = f"scanned {scan.crates_scanned} crate(s)"
+            except Exception as error:
+                dead_warnings = None
+                dead_note = f"scan failed: {type(error).__name__}: {error}"
+        else:
+            cached = self._read_dead_code_cache()
+            if cached is not None:
+                dead_warnings = cached
+                dead_note = "from `governor --check-dead-code` cache"
+        dead_scanned = dead_warnings is not None
+        dead_finding_obj = (
+            dead_code_finding(dead_warnings or [], max_findings=max_dead)
+            if dead_scanned
+            else None
+        )
+        improvements.append(
+            dead_code_observation(
+                scanned=dead_scanned,
+                findings=len(dead_code_warnings(dead_warnings or [])),
+                finding=dead_finding_obj,
+                note=dead_note,
+            )
+        )
+
+        # ── improvement 4: test coverage delta ───────────────────────────────
+        coverage_cfg = contract.get("coverage_delta") or {}
+        max_untested = int(coverage_cfg.get("max_untested_sources", 0))
+        pathspec = str(coverage_cfg.get("pathspec", "crates"))
+        coverage_obs = observe_coverage(
+            self.root,
+            self.git_reader,
+            since_date=momentum_obs.since_date,
+            pathspec=pathspec,
+        )
+        coverage_finding_obj = coverage_delta_finding(
+            list(coverage_obs.untested), max_untested_sources=max_untested
+        )
+        improvements.append(
+            coverage_delta_observation(
+                new_sources=len(coverage_obs.new_sources),
+                uncovered=len(coverage_obs.untested),
+                finding=coverage_finding_obj,
+                since_label=coverage_obs.since_date or "no close date",
+            )
+        )
+
+        # ── improvement 5: feature-gated coverage (the axis as an improvement) ─
+        improvements.append(
+            feature_gated_observation(
+                executed=fg_executed,
+                gated=fg_gated,
+                zero_executing=zero_names,
+            )
+        )
+
+        for finding in (
+            momentum_finding_obj,
+            readme_finding_obj,
+            dead_finding_obj,
+            coverage_finding_obj,
+        ):
+            if finding is not None:
+                flags.append(
+                    DriftFlag(
+                        flag=finding.signal,
+                        severity=finding.severity,
+                        evidence=finding.evidence,
+                        dimension="scorecard",
+                    )
+                )
+
+        return {
+            "axes": axes,
+            "improvements": [obs.to_dict() for obs in improvements],
+        }, flags
+
     def _build_drift_flags(self, audit_report, dimensions) -> list[DriftFlag]:
         flags: list[DriftFlag] = []
         if audit_report.has_blocking:
@@ -5813,46 +6108,13 @@ class TrajectoryService:
                     evidence=f"{audit_report.violations_count} violation(s) found",
                 )
             )
-        # Check if next gate is documented in README
-        readme = self.root / "README.md"
-        if readme.exists():
-            text = readme.read_text(encoding="utf-8", errors="replace")
-            if "Next gate" not in text and "next gate" not in text.lower():
-                flags.append(
-                    DriftFlag(
-                        flag="missing_next_gate",
-                        severity="medium",
-                        evidence="README.md does not contain 'Next gate' section",
-                    )
-                )
-        # Check for stale milestone (no closeout > 7 days with commits).
-        if self.git_reader and self.git_reader.is_repo():
-            from datetime import datetime, timedelta
-
-            cutoff = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-            recent_commits = self.git_reader.commits_since_date(cutoff)
-            if recent_commits > 0:
-                # Check if any milestone was closed in the last 7 days.
-                gsd_dir = self.root / ".gsd" / "phases"
-                recent_closeout = False
-                if gsd_dir.exists():
-                    for ms_dir in gsd_dir.iterdir():
-                        summary = ms_dir / f"{ms_dir.name.split('-')[0]}-SUMMARY.md"
-                        if summary.exists():
-                            stat = summary.stat()
-                            import time
-                            age_days = (time.time() - stat.st_mtime) / 86400
-                            if age_days < 7:
-                                recent_closeout = True
-                                break
-                if not recent_closeout:
-                    flags.append(
-                        DriftFlag(
-                            flag="stale_milestone",
-                            severity="medium",
-                            evidence=f"{recent_commits} commits in last 7 days but no milestone closeout",
-                        )
-                    )
+        # M516-th0oby/S06: the README gate reference and the git-aware momentum
+        # rule used to live here as `missing_next_gate` (phrase presence only) and
+        # `stale_milestone` (fixed 7-day window over any SUMMARY mtime). Both are
+        # now `_build_scorecard`'s improvements, where the section must name the
+        # active milestone and the window is measured from the newest
+        # milestone-level close. They are not duplicated here, so each signal has
+        # exactly one owner.
         flags.extend(self._check_gsd_planning_projection())
         return flags
 
