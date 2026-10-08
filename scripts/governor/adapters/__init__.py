@@ -24,6 +24,12 @@ from governor.adapters.declaration_sync_gap import (
     build_declaration_sync_gap,
     observe_declaration_sync_gap,
 )
+from governor.adapters.measurability_axis import (
+    MandatoryGate,
+    MeasurabilityAxis,
+    build_measurability_axis,
+    observe_measurability_axis,
+)
 from governor.adapters.git_reader import GitReader
 from governor.adapters.yaml_rule_repository import YAMLRuleRepository
 
@@ -42,12 +48,16 @@ __all__ = [
     "FilesystemMilestoneReader",
     "GatedTarget",
     "GitReader",
+    "MandatoryGate",
+    "MeasurabilityAxis",
     "YAMLRuleRepository",
     "absorption_progress_violations",
     "build_declaration_sync_gap",
     "build_feature_gated_coverage",
+    "build_measurability_axis",
     "effective_progress_contract",
     "missing_progress_vocabulary",
     "observe_declaration_sync_gap",
     "observe_feature_gated_coverage",
+    "observe_measurability_axis",
 ]
