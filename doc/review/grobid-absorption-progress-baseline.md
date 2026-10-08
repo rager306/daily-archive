@@ -20,7 +20,7 @@
 |---|---|---|---|
 | frozen probe (источник чисел) | `artifacts/parse_compat/external_holdout_release_probe.json` | `a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275` | `external-holdout-release-probe.v1` |
 | reference pins (независимый floor, не кандидат) | `artifacts/parse_compat/absorption_progress_reference_pins.json` | `2befd08dd8b095a6e8e6ea17e6b73e92e78e282ab98cbad64c4727218d6fe158` | `absorption-progress-reference-pins.v1` |
-| baseline scorecard (кандидат) | `artifacts/parse_compat/absorption_progress_baseline.json` | `cc6eb1e9e9524d1df8b9cd02142eee742e61bddc736e40bd75dacbc5f515e29a` | `absorption-progress.v1` |
+| baseline scorecard (кандидат) | `artifacts/parse_compat/absorption_progress_baseline.json` | `742bcc8733820875e0977e2dc4f7ce9b7c79f94c13b6e3bdb8bd3bdcd014c52b` | `absorption-progress.v1` |
 | контракт (схема, T01/T02) | `data/parse/absorption_progress.schema.yaml` | `4ed78e34cb5863cf0fcbf6c09fed1351e1bb722659c73b881a36b1a16317641a` | — |
 | rule DATA (T04/T03) | `scripts/governor/checks/grobid_absorption_progress.yaml` | `ddfd918331cac1ec2312b674f2d61751753bd74dbbac53aba2f166d66df9abbe` | `grobid-absorption-progress.v1` |
 | доменный валидатор (T01/T02) | `scripts/governor/domain/absorption_progress.py` | `8c3702bfefa97d893730d60f12c9fac19c2f54e8c1a68efbc19a8bf5d0ab8a19` | — |
@@ -265,11 +265,11 @@ attestation: актор, способный переписать scorecard, evid
 
 | носитель | sha256 |
 |---|---|
-| `doc/review/M513-S07-release-decision-package.md` | `e6aa03ccbcafd09d02c48e504e35883891196cba3b27bc261ae8f83da8ec5ad7` |
+| `doc/review/M513-S07-release-decision-package.md` | `e6a0af6f7126fcc85a82d9dfbeb9b4257dfe6dea69422dd9091092ca234a0ca7` |
 | `doc/review/HUMAN-REVIEW-TEMPLATE.md` | `05fc2461db2bc8ea0cc0b090ff326646c1ed80b97cc5177290afa2604701ce91` |
-| `artifacts/parse_compat/grobid_retirement_release_decision_package.json` | `f4ff294193a41c42988aaa135ec1b728f04603c6a585365c97a2d82869f0aa9a` |
+| `artifacts/parse_compat/grobid_retirement_release_decision_package.json` | `60a7e47c035af2f9e6934c1c104f0624fe852d663e05d1a8c35c098a758229b9` |
 | `data/parse/acceptance_manifest.yaml` | `4d1c55ea9dd873b4aada48aa964609395f59e8a726bdf42c65d2b0f36865ca06` |
-| `data/parse/grobid_compatibility.yaml` | `de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03` |
+| `data/parse/grobid_compatibility.yaml` | `0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec` |
 | `data/parse/holdout_manifests.yaml` | `ef91d3c25c7d91dda2654471140fd41fcae8e1ed87e7094ad24c31fef2b64a39` |
 | `artifacts/parse_compat/external_holdout_release_probe.json` | `a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275` |
 

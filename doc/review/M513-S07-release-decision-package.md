@@ -28,7 +28,7 @@ marker-delimited блоками и объявлены контрактом
 |---|---|---|---|
 | `parity_measurement` | `artifacts/parse_compat/external_holdout_release_probe.json` | `a937da95ef987dffdcde46b998e98549fe247999e50986e1b0627a6f485d8275` | `external-holdout-release-probe.v1` |
 | `parity_readable_report` | `doc/review/grobid-parity-report.md` | `93c5326f411b37542907d4e1bdfa8368cc72f7b7a0dae204a1c6be7d3d18d7aa` | `grobid-parity-report.md` |
-| `parity_ledger_and_remainders` | `data/parse/grobid_compatibility.yaml` | `de50c48ab8539dbc559bb077e4913e83656f5ecb47d5bd03f6b721cfb004fe03` | `grobid-compatibility.v1` |
+| `parity_ledger_and_remainders` | `data/parse/grobid_compatibility.yaml` | `0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec` | `grobid-compatibility.v1` |
 | `resource_ceilings` | `artifacts/parse_compat/parse_batch_budget_live.json` | `fa13b1fb4921177aade374ea002b1a85889ae816f79992083cbf6be371d2461d` | `parse-batch-budget-live.v1` |
 | `rollback_rehearsal` | `artifacts/parse_compat/native_family_promotion_rehearsal.json` | `e7407fdf83a95d458e3daee7bd857fdb3f8aa3514996f544964ee266213f48c8` | `native-family-promotion-rehearsal.v1` |
 | `rollback_release_readiness` | `doc/review/grobid-rollback-readiness.md` | `b1ee13878e68ffffa81f5c0ef2eb289a2cd813f103233d2bad5662ee3d6cea9c` | `grobid-rollback-readiness.md` |
