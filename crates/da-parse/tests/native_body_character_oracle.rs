@@ -643,6 +643,53 @@ fn content_in_the_plane_but_not_in_the_body_is_a_region_gap_not_content_loss() {
 }
 
 #[test]
+fn a_region_gap_is_not_plane_loss_and_a_plane_deficit_still_is() {
+    // Two directions, each published through the full classifier. A P2 body
+    // region-assignment gap must never be reported as P1 plane text loss, and a
+    // genuine plane deficit must still fail preservation and raise D498.
+    let full = "alpha beta\ngamma delta";
+    let plane = plane_from_text("region-gap-not-loss", full);
+    let native = native_body_prefix(&plane, 2).expect("the prefix body assembles");
+    let region = classify_body_coverage(
+        "region-gap-not-loss",
+        &native,
+        &BodyUnitInventory::from_text(full, rung()),
+        &oracle_for(full),
+        &BodyUnitInventory::from_text(full, rung()),
+        &independent_provenance(),
+        &body_scope(),
+        &oracle_scope(),
+    )
+    .expect("independent oracle adjudicates");
+    assert_eq!(region.alignment.unresolved_from_plane, 0);
+    assert!(region.alignment.in_plane_not_in_body > 0);
+    assert_eq!(
+        region.plane_verdict.verdict,
+        BodyCoverageVerdict::GranularityOnly
+    );
+    assert_eq!(region.plane_verdict.reason, BodyGapReason::Matched);
+    assert!(matches!(
+        region.body_verdict.reason,
+        BodyGapReason::P2RegionAssignmentGap { .. }
+    ));
+    assert_ne!(region.verdict, BodyCoverageVerdict::ContentLoss);
+    assert!(!region.d498_reopen_required);
+
+    let deficit = gap_for("plane-deficit-still-loss", "alpha gamma", "alpha beta");
+    assert_eq!(deficit.alignment.unresolved_from_plane, 1);
+    assert_eq!(
+        deficit.plane_verdict.verdict,
+        BodyCoverageVerdict::ContentLoss
+    );
+    assert_eq!(
+        deficit.plane_verdict.reason,
+        BodyGapReason::P1NativeTextAbsent { missing_units: 1 }
+    );
+    assert_eq!(deficit.verdict, BodyCoverageVerdict::ContentLoss);
+    assert!(deficit.d498_reopen_required);
+}
+
+#[test]
 fn a_plane_absent_occurrence_is_not_recounted_as_a_body_deficit() {
     // `gamma` is absent from the plane (P1) and from the body; `beta` is present
     // in the plane but absent from the body (P2). The occurrence-conserving

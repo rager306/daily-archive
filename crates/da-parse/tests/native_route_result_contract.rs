@@ -19,7 +19,11 @@ use sha2::{Digest, Sha256};
 
 const GROBID_COMPATIBILITY: &str = include_str!("../../../data/parse/grobid_compatibility.yaml");
 const LAYOUT_BAKEOFF: &str = include_str!("../../../data/parse/layout_bakeoff.yaml");
-const S05_RECEIPT: &str =
+/// The committed native content receipt: the complete declared route corpus
+/// (`data/parse/layout_bakeoff.yaml#native_route_corpus.documents`), not the
+/// frozen three-document S05 slice. The S05 residual shape is reproduced by the
+/// `Fixture` below, independently of this carrier.
+const CONTENT_RECEIPT: &str =
     include_str!("../../../artifacts/parse_compat/native_content_receipt.json");
 const ROUTE_RESULT_SURFACE: &str = include_str!("../src/native_route_result.rs");
 
@@ -107,6 +111,35 @@ fn boundary() -> NativeRouteBoundary {
         out_of_slice,
         lane_ids,
     }
+}
+
+/// The declared route corpus documents, resolved by the slice's own
+/// `corpus_binding.pointer` rather than restated here. Returns
+/// `(id, sha256, pages)` in declared order.
+fn declared_route_documents() -> Vec<(String, String, u64)> {
+    let yaml: serde_yaml::Value = serde_yaml::from_str(LAYOUT_BAKEOFF).unwrap();
+    let binding = &yaml["java_free_vertical_slice"]["corpus_binding"];
+    let pointer = binding["pointer"]
+        .as_str()
+        .expect("java_free_vertical_slice.corpus_binding.pointer is a string");
+    let mut node = &yaml;
+    for segment in pointer.split('.') {
+        node = &node[segment];
+    }
+    node.as_sequence()
+        .expect("the declared route corpus is a sequence")
+        .iter()
+        .map(|document| {
+            (
+                document["id"].as_str().expect("document id").to_owned(),
+                document["sha256"]
+                    .as_str()
+                    .expect("document sha256")
+                    .to_owned(),
+                document["pages"].as_u64().expect("document pages"),
+            )
+        })
+        .collect()
 }
 
 // ──────────────────────────── fixture plane (S03) ──────────────────────────
@@ -475,7 +508,8 @@ fn every_family_carries_exactly_one_in_vocabulary_disposition() {
 #[test]
 fn body_axis_reproduces_the_recorded_s05_residual() {
     // The aggregate's body axis on the fixture inventories is the S05 residual
-    // shape: presence proven, localization not, nothing absent.
+    // shape: presence proven, localization not, nothing absent. This is the
+    // frozen residual reproduced from the fixture, independent of any carrier.
     let fixture = Fixture::new();
     let result = fixture.build();
     assert!(
@@ -498,16 +532,77 @@ fn body_axis_reproduces_the_recorded_s05_residual() {
         }
         other => panic!("expected a measured body axis, got {other:?}"),
     }
+}
 
-    // Replay the recorded S05 bytes: feeding the recorded counts back through
-    // the same classifier reproduces the recorded verdict tokens byte-for-byte.
-    let recorded: Value = serde_json::from_str(S05_RECEIPT).expect("the S05 receipt parses");
-    let matrix = recorded["populations"][0]["matrix"]
+// ───────────────────────── declared corpus receipt ─────────────────────────
+
+#[test]
+fn declared_corpus_receipt_covers_the_expanded_route_corpus() {
+    // The committed receipt measures the expanded route corpus, not the frozen
+    // three-document S05 slice, and it must name exactly the declared corpus,
+    // pinned id/sha256/pages in declared order.
+    let declared = declared_route_documents();
+    assert!(
+        declared.len() > 3,
+        "the declared route corpus must be the expanded corpus, found {}",
+        declared.len()
+    );
+    let receipt: Value = serde_json::from_str(CONTENT_RECEIPT).expect("the receipt parses");
+    let population = &receipt["populations"][0];
+    assert_eq!(
+        population["document_count"].as_u64().unwrap() as usize,
+        declared.len(),
+        "the population must declare every corpus document"
+    );
+    assert_eq!(
+        receipt["partition"]["declared_document_count"]
+            .as_u64()
+            .unwrap() as usize,
+        declared.len(),
+        "the partition must declare every corpus document"
+    );
+    let matrix = population["matrix"]
         .as_array()
-        .expect("the S05 receipt carries a matrix");
-    assert_eq!(matrix.len(), 3, "the frozen slice holds three documents");
+        .expect("the receipt carries a matrix");
+    assert_eq!(
+        matrix.len(),
+        declared.len(),
+        "one measured row per declared document"
+    );
+    for (row, (id, sha256, pages)) in matrix.iter().zip(&declared) {
+        assert_eq!(row["id"].as_str().unwrap(), id, "declared order differs");
+        assert_eq!(
+            row["sha256"].as_str().unwrap(),
+            sha256,
+            "document pin differs"
+        );
+        assert_eq!(row["pages"].as_u64().unwrap(), *pages, "page count differs");
+        // The row's group evidence names the same document: the partition is
+        // total over the declared corpus, not a re-sliced subset.
+        assert_eq!(row["group"]["document_id"].as_str().unwrap(), id);
+    }
+}
+
+#[test]
+fn receipt_plane_and_body_region_axes_reclassify_from_their_own_inputs() {
+    // The receipt publishes two axes per document. The P1 plane axis
+    // (`plane_*` + `oracle_units` + `native_plane_units`) is reclassified with
+    // the plane classifier only; the P2 body-region axis is read from its own
+    // fields. The plane classifier's reason is never compared to the recorded
+    // body reason: that field can carry a P2 region-assignment gap the plane
+    // classifier cannot produce.
+    let receipt: Value = serde_json::from_str(CONTENT_RECEIPT).expect("the receipt parses");
+    let matrix = receipt["populations"][0]["matrix"]
+        .as_array()
+        .expect("the receipt carries a matrix");
+    assert!(matrix.len() > 3, "the receipt is the expanded corpus");
+
+    let mut region_absent = 0usize;
     for row in matrix {
+        let document_id = row["id"].as_str().unwrap();
         let body = &row["body"];
+
+        // ── P1 plane axis: reconstructed from the plane fields only ──
         let localization = BodyPlaneLocalization {
             method: BODY_ALIGNMENT_METHOD.to_owned(),
             oracle_units: body["oracle_units"].as_u64().unwrap() as usize,
@@ -524,24 +619,65 @@ fn body_axis_reproduces_the_recorded_s05_residual() {
                 .unwrap() as usize,
             absent_from_plane: body["plane_absent_units"].as_u64().unwrap() as usize,
         };
-        let verdict = classify_body_plane(&localization);
-        let route_verdict: NativeRouteBodyVerdict = verdict.verdict.into();
-        let route_reason = NativeRouteBodyGapReason::from(&verdict.reason);
+        let plane = classify_body_plane(&localization);
+        let route_verdict: NativeRouteBodyVerdict = plane.verdict.into();
         assert_eq!(
             route_verdict.token(),
             body["plane_preservation"].as_str().unwrap(),
-            "recorded plane verdict differs"
+            "{document_id}: recorded plane verdict differs"
         );
         assert_eq!(
-            route_reason.token(),
-            body["body_reason"].as_str().unwrap(),
-            "recorded body reason differs"
+            plane.d498_reopen_required,
+            body["plane_d498_reopen_required"].as_bool().unwrap(),
+            "{document_id}: recorded plane D498 flag differs"
         );
-        assert_eq!(
-            localization.absent_from_plane,
-            body["plane_absent_units"].as_u64().unwrap() as usize
+        assert!(
+            matches!(
+                plane.reason,
+                BodyGapReason::Matched
+                    | BodyGapReason::OracleEmpty
+                    | BodyGapReason::P1NativeTextAbsent { .. }
+                    | BodyGapReason::P1LocalizationUncertain { .. }
+            ),
+            "{document_id}: the plane classifier left the P1 reason domain"
         );
+
+        // ── P2 body-region axis: a measured region or a typed region gap ──
+        let body_token_count = body["body_token_count"].as_u64().unwrap();
+        let body_region = body["body_region"].as_str().unwrap();
+        let body_reason = body["body_reason"].as_str().unwrap();
+        if body_token_count == 0 {
+            region_absent += 1;
+            // An absent body region is a P2 region-assignment gap. It is not a
+            // plane text loss: the plane axis must not be rewritten into loss
+            // to explain the missing region.
+            assert_eq!(body_reason, "p2_region_assignment_gap", "{document_id}");
+            assert_eq!(body_region, "not_assessable", "{document_id}");
+            assert_eq!(
+                body["plane_absent_units"].as_u64().unwrap(),
+                0,
+                "{document_id}"
+            );
+            assert_ne!(
+                body["plane_preservation"].as_str().unwrap(),
+                "content_loss",
+                "{document_id}: an absent body region was called plane text loss"
+            );
+            assert!(
+                !body["plane_d498_reopen_required"].as_bool().unwrap(),
+                "{document_id}: an absent body region raised the plane D498 obligation"
+            );
+        } else {
+            assert_ne!(
+                body_reason, "p2_region_assignment_gap",
+                "{document_id}: a measured region carries the region-absent fallback"
+            );
+        }
     }
+    assert!(
+        region_absent >= 1,
+        "the expanded corpus contains a region-absent document, so the regression is non-vacuous"
+    );
 }
 
 // ─────────────────────────── serde and determinism ─────────────────────────
