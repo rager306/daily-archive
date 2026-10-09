@@ -161,9 +161,16 @@ pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
 };
 pub use stage_invariants::{
-    GRAPH_MATERIALIZATION_NEVER_SKIPPED_BY_COMPUTE_CACHE, NAMED_STAGE_INVARIANTS,
-    StageInvariantObservation, StageInvariantViolation, evaluate_stage_invariant,
-    stage_invariant_is_named,
+    AUTHORITATIVE_FALSE, CANDIDATE_NOT_AUTHORITATIVE, CANDIDATE_NOT_GRAPH_TRUTH, D127_FALSE,
+    DATA_POLICY_BOUND, DERIVED_NOT_AUTHORITATIVE, DispositionKind, EVIDENCE_REQUIRED,
+    GRAPH_MATERIALIZATION_NEVER_SKIPPED_BY_COMPUTE_CACHE, IMPLEMENTATION_AND_CONFIG_IN_CACHE_KEY,
+    IMPORT_ELIGIBLE_FALSE, MODEL_AND_DIMENSIONS_BOUND, NAMED_STAGE_INVARIANTS, NO_NAN,
+    OUTPUT_SCHEMA_BOUND, PACKAGE_DIGEST_BOUND, PARSER_PROFILE_IN_CONFIG_FINGERPRINT,
+    POLICY_DIGEST_BOUND, REPLAY_IDEMPOTENT, REPORT_LINEAGE_BOUND, SOURCE_CHECKSUM_IN_CACHE_KEY,
+    STAGE_INVARIANT_DISPOSITIONS_SCHEMA_VERSION, StageInvariantDisposition,
+    StageInvariantDispositions, StageInvariantFacts, StageInvariantObservation,
+    StageInvariantViolation, TYPED_MISSINGNESS, UNKNOWN_INVARIANT_REASON, evaluate_stage_invariant,
+    stage_invariant_is_named, validate_stage_invariant_dispositions,
 };
 pub use tex_source::{
     BibtexCandidate, ProviderDenominator, TEX_ANALYSIS_SCHEMA_VERSION, TexAnalysisError,
@@ -648,5 +655,94 @@ mod serde_roundtrip_tests {
             let back: PromotionState = serde_json::from_str(&json).unwrap();
             assert_eq!(*state, back);
         }
+    }
+
+    // ── stage_invariants.rs (S08/T01) ──
+
+    #[test]
+    fn roundtrip_stage_invariant_facts() {
+        roundtrip_json(&StageInvariantFacts {
+            import_eligible: Some(false),
+            d127_unlock_count: Some(0),
+            replay_net_writes: Some(0),
+            authoritative: Some(false),
+            graph_truth_boundary: Some(false),
+            vectors_all_finite: Some(true),
+            missingness_typed: Some(true),
+            model_id: Some("bge-m3".into()),
+            dimensions: Some(1024),
+            output_schema_fingerprint: Some("schema:v1".into()),
+            configuration_fingerprint: Some("config:v1".into()),
+            cache_key_fields: vec!["source_sha256".into()],
+            evidence_keys: ["policy_digest".to_string()].into_iter().collect(),
+        });
+    }
+
+    #[test]
+    fn roundtrip_stage_invariant_facts_default() {
+        // The all-absent default is the fail-closed shape and must roundtrip.
+        roundtrip_json(&StageInvariantFacts::default());
+    }
+
+    #[test]
+    fn roundtrip_stage_invariant_observation() {
+        roundtrip_json(&StageInvariantObservation::new(
+            "extraction_materialization",
+            StageCacheMode::GraphMaterialize,
+            true,
+        ));
+    }
+
+    #[test]
+    fn roundtrip_stage_invariant_violation() {
+        roundtrip_json(&StageInvariantViolation {
+            invariant: "import_eligible_false".into(),
+            stage_id: "parse".into(),
+            reason: "import_eligible_not_false".into(),
+        });
+    }
+
+    #[test]
+    fn roundtrip_disposition_kind_all_variants() {
+        roundtrip_json(&DispositionKind::Checked);
+        roundtrip_json(&DispositionKind::Downgraded);
+    }
+
+    #[test]
+    fn roundtrip_stage_invariant_dispositions() {
+        use std::collections::BTreeMap;
+        let mut records = BTreeMap::new();
+        records.insert(
+            "evidence_required".to_string(),
+            StageInvariantDisposition {
+                disposition: DispositionKind::Checked,
+                check_id: Some("evidence_required".into()),
+                owner: None,
+                reason: None,
+                decision_ref: None,
+                rationale: None,
+            },
+        );
+        records.insert(
+            "readonly_policy".to_string(),
+            StageInvariantDisposition {
+                disposition: DispositionKind::Downgraded,
+                check_id: None,
+                owner: Some("M516-th0oby/S08".into()),
+                reason: Some("review_only_commitment".into()),
+                decision_ref: Some("D556".into()),
+                rationale: Some("no runtime predicate exists today".into()),
+            },
+        );
+        let mut reason_vocabulary = BTreeMap::new();
+        reason_vocabulary.insert(
+            "review_only_commitment".to_string(),
+            "review adjudicates it".to_string(),
+        );
+        roundtrip_json(&StageInvariantDispositions {
+            schema_version: STAGE_INVARIANT_DISPOSITIONS_SCHEMA_VERSION.into(),
+            reason_vocabulary,
+            records,
+        });
     }
 }

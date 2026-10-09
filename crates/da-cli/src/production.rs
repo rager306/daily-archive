@@ -16,7 +16,7 @@ use da_application::{
     FigureAnalysisStage, FigureContextStage, FigureRevisionIdentity, FigureSectionLocator,
     MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
 };
-use da_domain::{AcapAdmissionPolicy, PipelineStageLedger, StageIdRegistry};
+use da_domain::{AcapAdmissionPolicy, StageIdRegistry};
 use da_parse::{GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
 use da_ports::multimodal_llm::{ModelRouteDescriptor, ModelWireProtocol, MultimodalLlmPort};
@@ -235,8 +235,10 @@ pub fn parse_materialization_time(
 }
 
 pub fn embedded_stage_registry() -> Result<Arc<StageIdRegistry>, String> {
-    let ledger: PipelineStageLedger = serde_yaml::from_str(PIPELINE_LEDGER_YAML)
-        .map_err(|error| format!("parse embedded pipeline ledger: {error}"))?;
+    let ledger = da_adapters::pipeline_ledger::parse_pipeline_stage_ledger(
+        PIPELINE_LEDGER_YAML.as_bytes(),
+        "embedded pipeline ledger",
+    )?;
     Ok(Arc::new(ledger.registry()?))
 }
 

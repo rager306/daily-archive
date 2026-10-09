@@ -2,23 +2,76 @@
 
 use std::path::Path;
 
-use da_domain::pipeline_ledger::PipelineStageLedger;
+use da_domain::pipeline_ledger::{PipelineStageContract, PipelineStageLedger};
+use da_domain::stage_invariants::{
+    StageInvariantDispositions, validate_stage_invariant_dispositions,
+};
+use serde::Deserialize;
 
-pub fn load_pipeline_stage_ledger(path: &Path) -> Result<PipelineStageLedger, String> {
-    let metadata = std::fs::metadata(path)
-        .map_err(|error| format!("stat pipeline ledger {}: {error}", path.display()))?;
-    if !metadata.is_file() || metadata.len() > 1024 * 1024 {
-        return Err(format!(
-            "pipeline ledger {} is not a bounded file",
-            path.display()
-        ));
-    }
-    let bytes = std::fs::read(path)
-        .map_err(|error| format!("read pipeline ledger {}: {error}", path.display()))?;
-    let ledger: PipelineStageLedger = serde_yaml::from_slice(&bytes)
-        .map_err(|error| format!("parse pipeline ledger {}: {error}", path.display()))?;
+/// The on-disk ledger declaration: the ledger proper plus the disposition
+/// registry for every `hard_invariants` name. `deny_unknown_fields` makes a
+/// typo in either block a load-time error, not a silent default.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PipelineStageLedgerFile {
+    schema_version: String,
+    stages: Vec<PipelineStageContract>,
+    import_eligible: bool,
+    #[serde(default)]
+    stage_invariant_dispositions: StageInvariantDispositions,
+}
+
+/// Parse a ledger from already-read bytes, refusing undeclared invariants.
+///
+/// This is the single parse path: it validates the ledger itself and then
+/// validates that every declared `hard_invariants` name has an honest
+/// disposition (D554). An invariant declared with no disposition record — or a
+/// `checked` record pointing at an unknown executable check — fails here, so it
+/// can never reach the registry.
+pub fn parse_pipeline_stage_ledger(
+    bytes: &[u8],
+    origin: &str,
+) -> Result<PipelineStageLedger, String> {
+    let file: PipelineStageLedgerFile = serde_yaml::from_slice(bytes)
+        .map_err(|error| format!("parse pipeline ledger {origin}: {error}"))?;
+    let ledger = PipelineStageLedger {
+        schema_version: file.schema_version,
+        stages: file.stages,
+        import_eligible: file.import_eligible,
+    };
     ledger.validate()?;
+    validate_stage_invariant_dispositions(&ledger, &file.stage_invariant_dispositions)?;
     Ok(ledger)
+}
+
+/// Read and validate the pipeline stage ledger from a bounded file.
+pub fn load_pipeline_stage_ledger(path: &Path) -> Result<PipelineStageLedger, String> {
+    let bytes = read_bounded(path, "pipeline ledger")?;
+    parse_pipeline_stage_ledger(&bytes, &path.display().to_string())
+}
+
+/// Read the `stage_invariant_dispositions` block from the ledger DATA file.
+///
+/// The dispositions share the ledger file (one source of truth); this returns
+/// the parsed block without validating it, so callers can prove the parity of
+/// `checked` records against the executable registry.
+pub fn load_stage_invariant_dispositions(
+    path: &Path,
+) -> Result<StageInvariantDispositions, String> {
+    let bytes = read_bounded(path, "stage invariant dispositions")?;
+    let file: PipelineStageLedgerFile = serde_yaml::from_slice(&bytes)
+        .map_err(|error| format!("parse pipeline ledger {}: {error}", path.display()))?;
+    Ok(file.stage_invariant_dispositions)
+}
+
+/// Bounded read: refuse a directory, a missing file, or an oversized file.
+fn read_bounded(path: &Path, label: &str) -> Result<Vec<u8>, String> {
+    let metadata = std::fs::metadata(path)
+        .map_err(|error| format!("stat {label} {}: {error}", path.display()))?;
+    if !metadata.is_file() || metadata.len() > 1024 * 1024 {
+        return Err(format!("{label} {} is not a bounded file", path.display()));
+    }
+    std::fs::read(path).map_err(|error| format!("read {label} {}: {error}", path.display()))
 }
 
 #[cfg(test)]

@@ -270,3 +270,262 @@ stages:
     failure_class: terminal_policy_or_not_found
     conditional: false
     graph_truth_boundary: false
+stage_invariant_dispositions:
+  schema_version: stage-invariant-dispositions.v1
+  reason_vocabulary:
+    review_only_commitment: "The invariant is a design commitment a human reviewer must adjudicate, and the pipeline emits no runtime fact that can decide it."
+    evidence_not_yet_emitted: "The pipeline does not yet emit the durable evidence the invariant would need to be computed on a run."
+    declaration_bound_at_load_time: "The invariant is fixed by the ledger or registry declaration when it is loaded, so it is enforced by declaration validation rather than per-run computation."
+  records:
+    graph_materialization_never_skipped_by_compute_cache:
+      disposition: checked
+      check_id: graph_materialization_never_skipped_by_compute_cache
+    import_eligible_false:
+      disposition: checked
+      check_id: import_eligible_false
+    D127_false:
+      disposition: checked
+      check_id: D127_false
+    candidate_not_authoritative:
+      disposition: checked
+      check_id: candidate_not_authoritative
+    authoritative_false:
+      disposition: checked
+      check_id: authoritative_false
+    derived_not_authoritative:
+      disposition: checked
+      check_id: derived_not_authoritative
+    candidate_not_graph_truth:
+      disposition: checked
+      check_id: candidate_not_graph_truth
+    replay_idempotent:
+      disposition: checked
+      check_id: replay_idempotent
+    no_nan:
+      disposition: checked
+      check_id: no_nan
+    typed_missingness:
+      disposition: checked
+      check_id: typed_missingness
+    output_schema_bound:
+      disposition: checked
+      check_id: output_schema_bound
+    model_and_dimensions_bound:
+      disposition: checked
+      check_id: model_and_dimensions_bound
+    source_checksum_in_cache_key:
+      disposition: checked
+      check_id: source_checksum_in_cache_key
+    implementation_and_config_in_cache_key:
+      disposition: checked
+      check_id: implementation_and_config_in_cache_key
+    parser_profile_in_config_fingerprint:
+      disposition: checked
+      check_id: parser_profile_in_config_fingerprint
+    policy_digest_bound:
+      disposition: checked
+      check_id: policy_digest_bound
+    package_digest_bound:
+      disposition: checked
+      check_id: package_digest_bound
+    report_lineage_bound:
+      disposition: checked
+      check_id: report_lineage_bound
+    data_policy_bound:
+      disposition: checked
+      check_id: data_policy_bound
+    evidence_required:
+      disposition: checked
+      check_id: evidence_required
+    network_requires_explicit_authorization:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "Acquisition authorisation is an operator decision recorded in a run override, so no pipeline stage emits a durable boolean to evaluate."
+    atomic_publication:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "No stage currently emits a durable publication-transaction record, so atomicity cannot be observed on a run."
+    versionless_lookup_preserves_versioned_provenance:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "The catalog resolver returns provenance only for versioned filenames, so a versionless fallback carries no durable evidence to assert preservation."
+    readiness_not_claimed:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Readiness is a derived report field, not an emitted stage artifact, so a claim-vs-no-claim predicate has no fact to read."
+    revision_section_grounding:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Figure context grounding is stored inside the candidate payload and never surfaced as a per-run groundedness observation."
+    schema_registry_bound:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: declaration_bound_at_load_time
+      decision_ref: D556
+      rationale: "The figure schema registry identity is fixed by the DATA prompt registry at load, so no per-run observation carries it."
+    model_route_bound:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: declaration_bound_at_load_time
+      decision_ref: D556
+      rationale: "The model route is resolved from the DATA model registry at composition, and the pipeline records no route-identity fact per stage."
+    candidate_only_fidelity:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "Fidelity of a candidate payload is a review judgement over the emitted artifact, and no numeric predicate is emitted."
+    typed_findings:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Table and equation findings are emitted as typed values, but no stage observation aggregates a typed-findings flag."
+    paper_is_versionless_work:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: declaration_bound_at_load_time
+      decision_ref: D556
+      rationale: "Paper-as-work identity is a domain declaration fixed by the locator, so no run emits a fact asserting it."
+    mutable_content_owned_by_revision:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Revision ownership is enforced by the materialization API contract rather than by an emitted per-run observation."
+    exact_source_vids:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Source VIDs are computed inside materialization, and the stage does not return a facts object carrying them."
+    section_ordinal_grounding:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "The section ordinal is stored in the materialized node, not returned as an observation the evaluator can read."
+    grounding_never_invented:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "Whether a span was invented rather than excerpted is a review judgement, and the pipeline emits no provenance predicate for it."
+    batch_equals_single:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Batch and single ingest paths are separate surfaces, and no stage observation compares the two runs."
+    candidate_signal_only:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "Candidate-only signalling is declared in the stage contract, and no runtime observation asserts the signal boundary."
+    revision_owned:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Summary revision ownership is a declaration on the artifact, and no run emits a revision-ownership boolean."
+    data_driven_roles:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: declaration_bound_at_load_time
+      decision_ref: D556
+      rationale: "Roles are data fixed by the ledger declaration at load time, not a per-run computed fact."
+    no_llm_authority:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "There is no executable fact that distinguishes an LLM-derived value from an authoritative one at runtime."
+    revision_scoped:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Revision scoping is enforced by query construction, and the pipeline does not emit a scope predicate."
+    deterministic_configuration:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: declaration_bound_at_load_time
+      decision_ref: D556
+      rationale: "Configuration determinism is a property of the load-time declaration, not an observed run fact."
+    candidate_only_until_verified:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "Verification promotion is a governance process outside the pipeline, and no run observation records it."
+    no_self_confirm:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "A report cannot observe that it did not confirm itself, so this needs an external reviewer rather than a runtime predicate."
+    atomic_evidence:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Evidence writes are atomic by adapter implementation, and no durable per-run atomicity record is emitted."
+    hard_failures_separate_from_scores:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "The assurance report keeps hard failures and scores in separate fields, but no stage emits that separation as a fact."
+    exact_lineage:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Lineage digests are bound inside the report structure and are not surfaced as an observation the evaluator reads."
+    no_claim_for_missing_evidence:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Missing-evidence no-claim is a report-rendering rule, and no stage emitter publishes a claim flag to check."
+    exact_derivation_continuity:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Derivation continuity is asserted by the checkpoint package structure, and no per-run observation carries it."
+    readonly_policy:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "Read-only query policy is enforced by the store mode rather than by an emitted predicate."
+    revision_selection_explicit:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Explicit revision selection is a query-construction rule, and no run observation records which revision was chosen."
+    evidence_vids_returned:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: evidence_not_yet_emitted
+      decision_ref: D556
+      rationale: "Returned evidence VIDs are computed at query time and are not persisted as a stage observation."
+    no_hidden_fallback:
+      disposition: downgraded
+      owner: M516-th0oby/S08
+      reason: review_only_commitment
+      decision_ref: D556
+      rationale: "There is no emitted fact distinguishing an explicit result from a hidden fallback, so this remains a review commitment."
