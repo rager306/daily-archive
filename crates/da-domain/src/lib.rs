@@ -41,6 +41,7 @@ pub mod figure_geometry;
 pub mod finalize;
 pub mod fsm_policy;
 pub mod graph_tasks;
+pub mod hard_metrics;
 pub mod healing;
 pub mod html_headings;
 pub mod hypergraph;
@@ -144,6 +145,11 @@ pub use figure_candidate::{FigureCandidate, FigureCandidateError, figure_candida
 pub use figure_context::{
     ArticleSummaryContext, FigureContextError, FigureReferenceExcerpt, FigureSectionContext,
     FigureSectionRelation, FigureSemanticContext,
+};
+pub use hard_metrics::{
+    MetricCoverage, cache_lineage_exactness, checksum_lineage_coverage,
+    evidence_grounding_coverage, ontology_conformance, semantic_task_pass_rate,
+    typed_missingness_coverage,
 };
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
