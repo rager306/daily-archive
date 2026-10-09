@@ -1,11 +1,16 @@
 """Declaration synchronisation gap axis: gap count, named gaps, negative cases.
 
 The axis exists because the DATA and the code can disagree silently: a policy
-declares a hard metric no code computes, a stage lists an invariant nothing
-checks, or a prompt registry binds a task with no task entry. These tests pin
-the three predicates with inline fixtures, so they never depend on the real
+declares a hard metric no code computes, a stage lists an invariant with no
+disposition, or a prompt registry binds a task with no task entry. These tests
+pin the three predicates with inline fixtures, so they never depend on the real
 tree's current membership, and one asserts the regression direction directly:
 adding a declared hard metric without an implementation adds exactly one gap.
+
+Class B is disposition-driven: an invariant is covered when
+``data/ontology/pipeline_stage_contracts.yaml`` carries a well-formed
+``stage_invariant_dispositions`` record for it, never by the incidental
+appearance of its name in some other file.
 """
 
 from __future__ import annotations
@@ -13,6 +18,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
 from governor.adapters.declaration_sync_gap import (
     HARD_METRIC_WITHOUT_COMPUTATION,
@@ -40,17 +46,32 @@ def _write_metrics(root: Path, body: str) -> None:
     _write(root, _METRIC_PATH, f"metric_definitions:\n{body}")
 
 
-def _write_stages(root: Path, invariants: list[str]) -> None:
-    items = "\n".join(f"    - {name}" for name in invariants)
-    _write(
-        root,
-        _STAGE_PATH,
-        "schema_version: pipeline-stage-contracts.v1\n"
-        "stages:\n"
-        "  - id: materialize\n"
-        "    hard_invariants:\n"
-        f"{items}\n",
-    )
+def _write_stages(
+    root: Path,
+    invariants: list[str],
+    dispositions: dict | None = None,
+    *,
+    include_dispositions: bool = True,
+) -> None:
+    """Write the stage declaration, optionally without the dispositions block.
+
+    ``dispositions=None`` writes an empty ``records`` mapping so a caller that
+    only cares about the declared names still produces a loadable fixture; pass
+    a mapping to cover names, or ``include_dispositions=False`` to exercise the
+    fail-closed path for a missing block.
+    """
+    declaration: dict = {
+        "schema_version": "pipeline-stage-contracts.v1",
+        "stages": [
+            {"id": "materialize", "hard_invariants": list(invariants)},
+        ],
+    }
+    if include_dispositions:
+        declaration["stage_invariant_dispositions"] = {
+            "schema_version": "stage-invariant-dispositions.v1",
+            "records": dispositions or {},
+        }
+    _write(root, _STAGE_PATH, yaml.safe_dump(declaration, sort_keys=False))
 
 
 def _write_prompt_registry(
@@ -136,82 +157,119 @@ def test_adding_a_hard_metric_without_implementation_increases_count_by_one(
     }
 
 
-# ── class B: stage hard invariant without a check ────────────────────────────
+# ── class B: stage hard invariant without a disposition record ───────────────
 
 
-def test_invariant_referenced_by_a_governor_check_is_not_a_gap(tmp_path: Path):
+def test_checked_disposition_covers_an_invariant_with_no_token_anywhere(
+    tmp_path: Path,
+):
+    """A well-formed `checked` record is the mapping, not a token elsewhere."""
     _base(tmp_path)
-    _write_stages(tmp_path, ["replay_idempotent"])
-    _write(
+    _write_stages(
         tmp_path,
-        "scripts/governor/checks/acap_runtime_control_plane.yaml",
-        "evidence_obligation: replay_idempotent\n",
+        ["replay_idempotent"],
+        dispositions={
+            "replay_idempotent": {
+                "disposition": "checked",
+                "check_id": "replay_idempotent",
+            }
+        },
     )
     axis = _gap(tmp_path)
     assert axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK) == ()
     assert axis.declared_for(STAGE_INVARIANT_WITHOUT_CHECK) == 1
 
 
-def test_invariant_referenced_only_by_a_test_is_a_mapping(tmp_path: Path):
+def test_downgraded_disposition_with_owner_and_reason_is_covered(tmp_path: Path):
     _base(tmp_path)
-    _write_stages(tmp_path, ["no_nan"])
-    _write(
+    _write_stages(
         tmp_path,
-        "crates/da-adapters/tests/embedding.rs",
-        "// invariant: no_nan\nfn rejects_non_finite_input() {}\n",
+        ["network_requires_explicit_authorization"],
+        dispositions={
+            "network_requires_explicit_authorization": {
+                "disposition": "downgraded",
+                "owner": "M516/S08",
+                "reason": "review_only_commitment",
+            }
+        },
     )
     axis = _gap(tmp_path)
     assert axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK) == ()
 
 
-def test_invariant_without_any_check_is_named(tmp_path: Path):
+def test_declared_invariant_without_a_disposition_record_is_named(tmp_path: Path):
     _base(tmp_path)
-    _write_stages(tmp_path, ["candidate_not_graph_truth"])
+    _write_stages(tmp_path, ["candidate_not_graph_truth"], dispositions={})
     axis = _gap(tmp_path)
     gaps = axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK)
     assert [g.name for g in gaps] == ["candidate_not_graph_truth"]
     assert gaps[0].declared_in == _STAGE_PATH
+    assert "no stage_invariant_dispositions record" in gaps[0].detail
 
 
-def test_substring_is_not_a_mapping(tmp_path: Path):
-    """`exact_lineage` inside `exact_lineage_and_policy_locks` is not a check.
-
-    A substring scan would hide the decorative name this axis exists to expose.
-    """
+def test_checked_record_without_a_check_id_is_a_gap(tmp_path: Path):
     _base(tmp_path)
-    _write_stages(tmp_path, ["exact_lineage"])
-    _write(
+    _write_stages(
         tmp_path,
-        "crates/da-parse/tests/callout_matching_oracle.rs",
-        "fn exact_lineage_and_policy_locks() {}\n",
+        ["no_nan"],
+        dispositions={"no_nan": {"disposition": "checked"}},
     )
     axis = _gap(tmp_path)
-    assert _names(axis, STAGE_INVARIANT_WITHOUT_CHECK) == {"exact_lineage"}
+    gaps = axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK)
+    assert [g.name for g in gaps] == ["no_nan"]
+    assert "check_id" in gaps[0].detail
 
 
-def test_production_only_mention_is_not_a_check(tmp_path: Path):
-    """A name in production src is not a mapping to a check."""
+def test_downgraded_record_without_owner_or_reason_is_a_gap(tmp_path: Path):
     _base(tmp_path)
-    _write_stages(tmp_path, ["derived_not_authoritative"])
-    _write(
+    _write_stages(
         tmp_path,
-        "crates/da-application/src/readiness.rs",
-        "let derived_not_authoritative = true;\n",
+        ["evidence_not_yet_emitted"],
+        dispositions={"evidence_not_yet_emitted": {"disposition": "downgraded"}},
     )
     axis = _gap(tmp_path)
-    assert _names(axis, STAGE_INVARIANT_WITHOUT_CHECK) == {"derived_not_authoritative"}
+    gaps = axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK)
+    assert [g.name for g in gaps] == ["evidence_not_yet_emitted"]
+    assert "owner and reason" in gaps[0].detail
+
+
+def test_unknown_disposition_is_a_gap(tmp_path: Path):
+    _base(tmp_path)
+    _write_stages(
+        tmp_path,
+        ["typed_missingness"],
+        dispositions={"typed_missingness": {"disposition": "ignored"}},
+    )
+    axis = _gap(tmp_path)
+    assert _names(axis, STAGE_INVARIANT_WITHOUT_CHECK) == {"typed_missingness"}
+
+
+def test_adding_a_declared_invariant_without_a_record_adds_one_gap(tmp_path: Path):
+    """The regression direction: a new declared invariant is exactly +1 gap."""
+    _base(tmp_path)
+    _write_stages(
+        tmp_path,
+        ["first_inv"],
+        dispositions={"first_inv": {"disposition": "checked", "check_id": "first_inv"}},
+    )
+    before = _gap(tmp_path).count
+    _write_stages(
+        tmp_path,
+        ["first_inv", "second_inv"],
+        dispositions={"first_inv": {"disposition": "checked", "check_id": "first_inv"}},
+    )
+    after = _gap(tmp_path)
+    assert after.count == before + 1
+    assert _names(after, STAGE_INVARIANT_WITHOUT_CHECK) == {"second_inv"}
 
 
 def test_distinct_invariants_are_deduplicated(tmp_path: Path):
     _base(tmp_path)
-    _write_stages(tmp_path, ["replay_idempotent"])
-    # Same name declared by a second stage must not double-count.
-    _write(
+    # Same name declared twice must not double-count.
+    _write_stages(
         tmp_path,
-        _STAGE_PATH,
-        "stages:\n"
-        "  - id: a\n    hard_invariants: [replay_idempotent]\n"
-        "  - id: b\n    hard_invariants: [replay_idempotent]\n",
+        ["replay_idempotent", "replay_idempotent"],
+        dispositions={},
     )
     axis = _gap(tmp_path)
     assert axis.declared_for(STAGE_INVARIANT_WITHOUT_CHECK) == 1
@@ -298,20 +356,50 @@ def test_malformed_metric_declaration_fails_loudly(tmp_path: Path):
         _gap(tmp_path)
 
 
+def test_missing_dispositions_block_fails_loudly(tmp_path: Path):
+    """A stage file with no dispositions block must raise, not read as zero gaps."""
+    _base(tmp_path)
+    _write_stages(
+        tmp_path,
+        ["replay_idempotent"],
+        include_dispositions=False,
+    )
+    with pytest.raises(ValueError):
+        _gap(tmp_path)
+
+
+def test_malformed_dispositions_records_fails_loudly(tmp_path: Path):
+    """A non-mapping `records` block must raise rather than vacuously pass."""
+    _base(tmp_path)
+    _write(
+        tmp_path,
+        _STAGE_PATH,
+        "schema_version: pipeline-stage-contracts.v1\n"
+        "stages:\n"
+        "  - id: materialize\n"
+        "    hard_invariants: [replay_idempotent]\n"
+        "stage_invariant_dispositions:\n"
+        "  schema_version: stage-invariant-dispositions.v1\n"
+        "  records: []\n",
+    )
+    with pytest.raises(ValueError):
+        _gap(tmp_path)
+
+
 # ── real tree ────────────────────────────────────────────────────────────────
 
 
 def test_real_tree_reports_a_nonzero_count_and_names_the_known_gaps():
-    """On the live tree the axis is non-zero and names reader-checkable gaps.
+    """On the live tree class B reads zero and class C still names `critic`.
 
-    `checksum_lineage_coverage` is one of CONTEXT G2's unimplemented hard
-    metrics; `critic` is CONTEXT G5's binding with no registered task.
+    Every one of the 52 declared stage hard invariants carries a disposition
+    record, so class B has no gaps. Class A's membership is owned by T05, so
+    this test does not pin it; class C is unchanged.
     """
     axis = observe_declaration_sync_gap()
     assert axis.count > 0
-    metric_names = _names(axis, HARD_METRIC_WITHOUT_COMPUTATION)
-    assert "checksum_lineage_coverage" in metric_names
-    assert "semantic_task_pass_rate" in metric_names
+    assert axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK) == ()
+    assert axis.declared_for(STAGE_INVARIANT_WITHOUT_CHECK) == 52
     assert "critic" in _names(axis, PROMPT_FORM_WITHOUT_REGISTRY_ENTRY)
     # The count is exactly the sum of the per-class gaps.
     assert axis.count == sum(
@@ -328,8 +416,6 @@ def test_real_tree_reports_a_nonzero_count_and_names_the_known_gaps():
 
 def test_real_tree_metric_gaps_are_a_subset_of_the_declared_hard_metrics():
     """Every named metric gap is genuinely declared kind: hard."""
-    import yaml
-
     axis = observe_declaration_sync_gap()
     root = Path(__file__).resolve().parent.parent.parent
     declarations = yaml.safe_load((root / _METRIC_PATH).read_text(encoding="utf-8"))

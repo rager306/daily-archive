@@ -18,14 +18,15 @@ enforcement counterparts:
    ``ontology_conformance``, ``cache_lineage_exactness``,
    ``semantic_task_pass_rate``).
 
-2. **Stage hard invariants without a mapping to a check.**
+2. **Stage hard invariants without a disposition.**
    ``data/ontology/pipeline_stage_contracts.yaml`` attaches ``hard_invariants``
-   to each stage. ``crates/da-domain/src/pipeline_ledger.rs`` validates only
-   that the list is non-empty, so the names are decorative until something
-   *checks* them (CONTEXT G3). A distinct invariant name is mapped when it
-   appears as a whole token in a check surface — a governor check DATA file, a
-   governor check oracle, the governor trajectory service, or a Rust test
-   source. An unmapped name is a gap.
+   to each stage and carries a ``stage_invariant_dispositions.records`` block
+   that covers every declared name (CONTEXT G3). A distinct invariant name is
+   covered when its record is well formed: ``checked`` with a non-empty
+   ``check_id``, or ``downgraded`` with a non-empty ``owner`` and ``reason``.
+   A declared name with no record, or a record shaped neither way, is a gap.
+   The block is a required input, so a missing or malformed one raises rather
+   than letting the axis report a vacuous zero.
 
 3. **Prompt call forms without a resolvable registry entry.**
    ``data/ontology/prompt_tasks.yaml`` is the prompt-task registry. Its
@@ -68,14 +69,6 @@ _PROMPT_REGISTRY = "data/ontology/prompt_tasks.yaml"
 
 #: Where a hard metric's production computation would live.
 _METRIC_COMPUTATION_SURFACES: tuple[str, ...] = ("crates/*/src/**/*.rs",)
-
-#: Where an invariant name becomes a *check* rather than a string.
-_INVARIANT_CHECK_SURFACES: tuple[str, ...] = (
-    "scripts/governor/checks/**/*.yaml",
-    "scripts/governor/adapters/checks/**/*.py",
-    "scripts/governor/application/trajectory_service.py",
-    "crates/*/tests/**/*.rs",
-)
 
 #: Gap class identifiers, stable for the machine-readable payload.
 HARD_METRIC_WITHOUT_COMPUTATION = "hard_metric_without_computation"
@@ -202,21 +195,79 @@ def _distinct_invariants(root: Path) -> list[str]:
     return sorted(names)
 
 
-def _invariant_gaps(
-    root: Path, surfaces: Sequence[tuple[Path, str]]
-) -> tuple[list[str], list[DeclarationGap]]:
-    declared = _distinct_invariants(root)
-    gaps = [
-        DeclarationGap(
-            STAGE_INVARIANT_WITHOUT_CHECK,
-            name,
-            _STAGE_DECLARATION,
-            f"stage hard invariant {name!r} is declared but occurs in no check "
-            "surface (governor check DATA/oracles or Rust tests), so nothing checks it",
+def _invariant_dispositions(root: Path) -> dict:
+    """The ``stage_invariant_dispositions.records`` mapping, required to exist.
+
+    Refusing a missing or non-mapping block keeps the axis fail-closed: without
+    it a fresh declaration file would silently read as zero gaps.
+    """
+    block = _load_yaml(root, _STAGE_DECLARATION).get("stage_invariant_dispositions")
+    if not isinstance(block, dict):
+        raise ValueError(
+            f"{_STAGE_DECLARATION} has no stage_invariant_dispositions mapping; "
+            "every declared hard invariant must carry a checked or downgraded disposition"
         )
-        for name in declared
-        if not _contains_token(surfaces, name)
-    ]
+    records = block.get("records")
+    if not isinstance(records, dict):
+        raise ValueError(
+            f"{_STAGE_DECLARATION} stage_invariant_dispositions.records must be a mapping"
+        )
+    return records
+
+
+def _disposition_gap_reason(record: object) -> str | None:
+    """``None`` when ``record`` well-formedly covers its invariant, else the cause."""
+    if not isinstance(record, dict):
+        return f"disposition record is not a mapping, got {type(record).__name__}"
+    disposition = record.get("disposition")
+    if disposition == "checked":
+        check_id = record.get("check_id")
+        if isinstance(check_id, str) and check_id.strip():
+            return None
+        return "disposition 'checked' carries no non-empty check_id"
+    if disposition == "downgraded":
+        owner = record.get("owner")
+        reason = record.get("reason")
+        if (
+            isinstance(owner, str)
+            and owner.strip()
+            and isinstance(reason, str)
+            and reason.strip()
+        ):
+            return None
+        return "disposition 'downgraded' carries no non-empty owner and reason"
+    return f"disposition {disposition!r} is neither 'checked' nor 'downgraded'"
+
+
+def _invariant_gaps(root: Path) -> tuple[list[str], list[DeclarationGap]]:
+    declared = _distinct_invariants(root)
+    records = _invariant_dispositions(root)
+    gaps: list[DeclarationGap] = []
+    for name in declared:
+        record = records.get(name)
+        if record is None:
+            gaps.append(
+                DeclarationGap(
+                    STAGE_INVARIANT_WITHOUT_CHECK,
+                    name,
+                    _STAGE_DECLARATION,
+                    f"stage hard invariant {name!r} is declared but has no "
+                    "stage_invariant_dispositions record, so nothing checks or "
+                    "downgrades it",
+                )
+            )
+            continue
+        cause = _disposition_gap_reason(record)
+        if cause is not None:
+            gaps.append(
+                DeclarationGap(
+                    STAGE_INVARIANT_WITHOUT_CHECK,
+                    name,
+                    _STAGE_DECLARATION,
+                    f"stage hard invariant {name!r} has a malformed disposition "
+                    f"record: {cause}",
+                )
+            )
     return declared, gaps
 
 
@@ -274,7 +325,7 @@ class DeclarationSyncGap:
             "definition": (
                 "number of declarations the DATA makes that the code does not enforce: "
                 "a hard metric with no production computation, a stage hard invariant "
-                "with no mapping to a check, and a prompt call form with no resolvable "
+                "with no disposition, and a prompt call form with no resolvable "
                 "registry entry. The goal is zero."
             ),
             "root": self.root,
@@ -299,7 +350,7 @@ class DeclarationSyncGap:
         ]
         labels = {
             HARD_METRIC_WITHOUT_COMPUTATION: "hard metrics without a production computation",
-            STAGE_INVARIANT_WITHOUT_CHECK: "stage invariants without a check",
+            STAGE_INVARIANT_WITHOUT_CHECK: "stage invariants without a disposition",
             PROMPT_FORM_WITHOUT_REGISTRY_ENTRY: "prompt call forms without a registry entry",
         }
         for gap_class in _GAP_CLASS_ORDER:
@@ -327,10 +378,9 @@ def build_declaration_sync_gap(root: Path) -> DeclarationSyncGap:
             f"{root} has no crates/ directory; refusing to report a vacuous zero-gap axis"
         )
     metric_surfaces = _read_surfaces(_surface_files(root, _METRIC_COMPUTATION_SURFACES))
-    invariant_surfaces = _read_surfaces(_surface_files(root, _INVARIANT_CHECK_SURFACES))
 
     declared_metrics, metric_gaps = _metric_gaps(root, metric_surfaces)
-    declared_invariants, invariant_gaps = _invariant_gaps(root, invariant_surfaces)
+    declared_invariants, invariant_gaps = _invariant_gaps(root)
     declared_prompts, prompt_gaps = _prompt_gaps(root)
 
     gaps = tuple(metric_gaps + invariant_gaps + prompt_gaps)
