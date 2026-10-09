@@ -68,11 +68,19 @@ cmp <dir-a>/profile.json artifacts/parse_compat/native_core_profile.json
 | redaction: нет token text, нет байт `.wapiti`, нет физических путей и hostname | артефакт не несёт payload |
 | аллокаторные дельты стабильны между прогонами, иначе typed unstable-состояние без чисел | измерение аллокаций честное (нестабильность не превращается в число) |
 
-Измеренный результат на момент S08 (артефакт
-`artifacts/parse_compat/native_core_profile.json`, 11831 байт,
-sha256 `3543b10aad8b8583c35bc6f0efc87d462ca271b890681fc209fbb9bae13f17a8`):
-все 8 семейств дают `dense_numeric_kernel_found=true` (плотная фаза `viterbi_decode` перекрывает
-DATA-порог 0.25), `optimization_state=measured_rejected`, `selection_forbidden=true`,
+Артефакт `artifacts/parse_compat/native_core_profile.json` (11804 байта,
+sha256 `fca2516dfe12abdd5626e2d43f8300e4fadf7fdc69a1fb71067ae89c635ce6651`) несёт
+**декларацию**: `dense_numeric_kernel_found=true` выводится из закрытого DATA-объявления
+(`eligible_phases` + `phase_kinds`: `work_kind=numeric` и `contiguous_numeric_arrays=true`), а не
+из измеренной доли фазы. Измеренная доля (`viterbi_decode` в example-harness существенно выше
+порога 0.25) и решение по DATA-порогу остаются в receipt как наблюдательные
+(`observations.families[].measured_dense_numeric_kernel`) и намеренно не входят в байты
+артефакта: доля, пересекающая порог между двумя прогонами, не должна читаться как два разных
+утверждения. Это и есть детерминизм проекции: раньше `dense_numeric_kernel_found`,
+`dense_phase`, `dense_rule_reason_key`, `optimization_state` и `optimization_reason` зависели от
+измеренной доли, и два прохода с долей по разные стороны порога давали разные байты
+(`ArtifactReplayDiverged`).
+Все 8 семейств дают `optimization_state=measured_rejected`, `selection_forbidden=true`,
 `pgo_disposition=not_adopted`, `h05_closure=not_claimed`. **Ничего не адоптировано**: оптимизация
 не реализовывалась, кандидат не измерялся, `da-domain::scalar_crf` не тронут, поэтому измеренный
 hot spot (пересборка `BTreeMap` и `Vec<Vec<&str>>` в `map_input` на каждом вызове) остаётся
@@ -288,7 +296,7 @@ cargo run -p da-cli --example native_core_profile            # --rows N меня
 | `manifest_binding` | `data/parse/comparison_contract.yaml` — источник порогов и словарей |
 | `profile` | процедура: `warmup_iterations`, `repetitions`, `percentile_ranks`, `throughput_units`, единицы аллокатора и private scratch, `scalar_oracle: required`, `selection_forbidden: true` |
 | `phases[]` | четыре фазы ядра с `work_kind`/`storage`/`contiguous_numeric_arrays`/`sparse_weight_reads` |
-| `families[]` | по семье: sha256 и размер модели, `rows`/`positions`/`matched_observations`, `scalar_oracle_digest`, `semantic_digest`, `cpu_only`, `subprocess_io_included`, scratch capacity/high-water, `dense_numeric_kernel_found`, `dense_phase`, `optimization_state`, `optimization_reason` |
+| `families[]` | по семье: sha256 и размер модели, `rows`/`positions`/`matched_observations`, `scalar_oracle_digest`, `semantic_digest`, `cpu_only`, `subprocess_io_included`, scratch capacity/high-water, `dense_numeric_kernel_found`/`dense_phase`/`dense_rule_reason_key` (детерминированная **декларация** из DATA, не измеренная доля), `optimization_state`, `optimization_reason` |
 | `allocator` | `state: stable` + `allocations`/`allocated_bytes` (дельта между инжектированными снапшотами); нестабильный replay → `state: unstable` **без чисел** |
 | `rule` | `dense-contiguous-numeric-phase`: `share_metric`, `threshold`, `requires_contiguous_numeric_arrays`, `eligible_phases`, `outcome_when_unmet` |
 | `disposition` | closed verdict: `dense_numeric_kernel_found`, `dense_phase`, `optimization_state`, `optimization_reason`, `selection_forbidden`, `pgo_disposition` |
@@ -394,9 +402,11 @@ cargo run -p da-cli --example native_route_recovery     # --root . --artifact <r
 
 ## (e) Названные пробелы
 
-1. **Dense numeric kernel найден, но не адоптирован.** DATA-правило
+1. **Dense numeric kernel найден (по декларации), но не адоптирован.** DATA-правило
    `dense-contiguous-numeric-phase` (порог 0.25, допустимая фаза `viterbi_decode`, обязательные
-   contiguous numeric array) даёт `dense_numeric_kernel_found=true`, поэтому закрытая диспозиция —
+   contiguous numeric array) объявляет `dense_numeric_kernel_found=true`; измеренное решение по
+   доле (`evaluate_dense_numeric_kernel`) хранится наблюдательно и не входит в артефакт, поэтому
+   закрытая диспозиция артефакта —
    `measured_rejected`, а не `not_applicable`. Это rejection в смысле «кандидат не реализован и не
    измерялся» (`candidate=none_implemented`), и его **нельзя** читать как утверждение о
    SIMD-пригодности декодера: декодер читает разреженную weight-map. `measured_retained`

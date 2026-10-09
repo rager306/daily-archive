@@ -23,8 +23,8 @@ use da_cli::layout_runtime::{
 };
 use da_cli::native_core_profile::{
     AllocatorObservation, AllocatorSnapshot, NATIVE_CORE_PHASES, NativeCoreFamilySpec,
-    NativeCoreProfileOptions, PHASE_VITERBI_DECODE, evaluate_dense_numeric_kernel,
-    load_qualification_from_manifest, profile_native_core,
+    NativeCoreProfileOptions, PHASE_VITERBI_DECODE, dense_numeric_kernel_declaration,
+    evaluate_dense_numeric_kernel, load_qualification_from_manifest, profile_native_core,
 };
 use da_domain::scalar_crf::{CrfModel, map_input, viterbi_decode};
 use std::cell::Cell;
@@ -410,4 +410,109 @@ fn allocator_observation_is_typed_and_stability_gated() {
         serde_json::from_slice(&stable_receipt.artifact_json_bytes().expect("bytes"))
             .expect("artifact json");
     assert_eq!(stable_json["allocator"]["state"], "stable");
+}
+
+/// The previously flaky artifact fields were `dense_numeric_kernel_found`,
+/// `dense_phase`, `dense_rule_reason_key`, `optimization_state` and
+/// `optimization_reason`, every one derived from the measured phase share
+/// crossing the DATA threshold. This test drives the measurement axis across the
+/// threshold on both sides and proves the emitted artifact never follows it.
+#[test]
+fn artifact_decision_is_a_declaration_and_never_follows_the_measured_share() {
+    let data = load_qualification_from_manifest(MANIFEST).expect("qualification block");
+    let rule = &data.dense_numeric_kernel_rule;
+
+    let shares_at = |viterbi: f64| {
+        let mut shares: BTreeMap<String, f64> = NATIVE_CORE_PHASES
+            .iter()
+            .map(|phase| (phase.to_string(), 0.0))
+            .collect();
+        shares.insert(PHASE_VITERBI_DECODE.to_string(), viterbi);
+        shares
+    };
+
+    // Measurement axis: the DATA threshold is real, so a share below it and one
+    // above it are two different measured decisions.
+    let measured_below = evaluate_dense_numeric_kernel(rule, &shares_at(0.10));
+    let measured_above = evaluate_dense_numeric_kernel(rule, &shares_at(0.90));
+    assert!(
+        !measured_below.found,
+        "0.10 < 0.25 must not find the kernel"
+    );
+    assert!(measured_above.found, "0.90 >= 0.25 must find the kernel");
+    assert_ne!(measured_below.reason_key, measured_above.reason_key);
+
+    // Artifact axis: the declaration is identical on either side of the
+    // threshold, so a straddling measurement cannot move the emitted bytes.
+    let declared = dense_numeric_kernel_declaration(rule);
+    assert!(declared.found);
+    assert_eq!(declared.phase.as_deref(), Some(PHASE_VITERBI_DECODE));
+    assert_eq!(declared.reason_key, "declared_contiguous_numeric_phase");
+    assert_eq!(declared, dense_numeric_kernel_declaration(rule));
+
+    let specs = families();
+    let mut snapshot = stable_snapshot();
+    let receipt =
+        profile_native_core(&data, &specs, &options(&data), &mut snapshot).expect("profile");
+    let baseline = receipt.artifact_json_bytes().expect("artifact bytes");
+    let emitted: serde_json::Value = serde_json::from_slice(&baseline).expect("artifact json");
+    for family in emitted["families"].as_array().expect("families") {
+        assert_eq!(family["dense_numeric_kernel_found"], true);
+        assert_eq!(family["dense_phase"].as_str(), Some(PHASE_VITERBI_DECODE));
+        assert_eq!(
+            family["dense_rule_reason_key"].as_str(),
+            Some("declared_contiguous_numeric_phase")
+        );
+    }
+
+    // Force the measured decision to either side of the threshold and show the
+    // artifact is unmoved; with the old shared field this emitted two distinct
+    // byte strings (the `ArtifactReplayDiverged` the gate saw).
+    let mut moved = receipt.clone();
+    for (index, family) in moved.families.iter_mut().enumerate() {
+        family.measured_dense_numeric_kernel = if index % 2 == 0 {
+            measured_below.clone()
+        } else {
+            measured_above.clone()
+        };
+    }
+    assert_eq!(
+        moved.artifact_json_bytes().expect("artifact bytes"),
+        baseline,
+        "the emitted artifact must be independent of the measured share"
+    );
+}
+
+/// The slice-end architecture gate saw this contract fail intermittently under
+/// the default parallel test threads because two internal passes could straddle
+/// the DATA threshold. Re-profiling repeatedly on that same default thread
+/// configuration exercises the exact path: every artifact must be identical and
+/// none may fail with `ArtifactReplayDiverged`.
+#[test]
+fn repeated_profiles_are_byte_identical_under_default_threads() {
+    let data = load_qualification_from_manifest(MANIFEST).expect("qualification block");
+    let specs = families();
+    let options = options(&data);
+    let mut reference: Option<Vec<u8>> = None;
+    for iteration in 0..16 {
+        let mut first_snapshot = stable_snapshot();
+        let first = profile_native_core(&data, &specs, &options, &mut first_snapshot)
+            .unwrap_or_else(|error| panic!("iteration {iteration} first pass: {error}"));
+        let mut second_snapshot = stable_snapshot();
+        let second = profile_native_core(&data, &specs, &options, &mut second_snapshot)
+            .unwrap_or_else(|error| panic!("iteration {iteration} second pass: {error}"));
+        let bytes = first.artifact_json_bytes().expect("artifact bytes");
+        assert_eq!(
+            bytes,
+            second.artifact_json_bytes().expect("artifact bytes"),
+            "iteration {iteration}: independent profiles diverged"
+        );
+        match &reference {
+            Some(expected) => assert_eq!(
+                &bytes, expected,
+                "iteration {iteration}: artifact diverged across repeated profiles"
+            ),
+            None => reference = Some(bytes),
+        }
+    }
 }

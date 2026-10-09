@@ -5,7 +5,7 @@
 //! `Vec<Vec<&str>>` view of every input row, while `da-domain` was declared
 //! "not to be optimized without separate proof". This module is that proof
 //! surface. It measures the native CRF core on frozen synthetic Wapiti models,
-//! derives `dense_numeric_kernel_found` from a DATA threshold, and turns the
+//! derives `dense_numeric_kernel_found` from the DATA declaration, and turns the
 //! measurement into a *closed* disposition through
 //! [`crate::layout_runtime::gate_simd_candidate`]. Nothing here adopts,
 //! selects, promotes, or splices an optimization: `da-domain` is untouched,
@@ -34,6 +34,19 @@
 //! [`NativeCoreProfileArtifact`] — the bytes written to
 //! `artifacts/parse_compat/native_core_profile.json` — so that two independent
 //! profiles of the same frozen models are byte-identical.
+//!
+//! The dense-numeric-kernel decision exists on two axes, and only one of them
+//! is an artifact input:
+//!
+//! * [`dense_numeric_kernel_declaration`] reads the closed DATA declaration
+//!   (eligible phase, numeric work, declared-contiguous storage). It is the
+//!   decision the artifact carries, so a measured share can never move the
+//!   emitted bytes;
+//! * [`evaluate_dense_numeric_kernel`] additionally applies the DATA
+//!   `threshold` to the *measured* phase share. Its result is honest
+//!   measurement evidence, retained per family under `observations`, but it is
+//!   never a byte-identity input: a share that happens to straddle `threshold`
+//!   between two passes must not read as two different claims.
 //!
 //! Allocation deltas come from an *injected* snapshot closure. This module
 //! never installs a global allocator; the counting allocator lives in the
@@ -609,8 +622,14 @@ pub struct DenseNumericKernelDecision {
     pub reason_key: String,
 }
 
-/// Evaluate the DATA rule: an eligible phase must be numeric work over declared
-/// contiguous storage *and* reach the DATA threshold share.
+/// Evaluate the DATA rule against a *measured* phase-share map: an eligible
+/// phase must be numeric work over declared contiguous storage *and* reach the
+/// DATA `threshold` share.
+///
+/// This is the measurement axis. Its `found` sign can legitimately differ
+/// between two passes whose measured shares straddle `threshold`, so its result
+/// is retained as observational evidence and never projected into the emitted
+/// artifact — use [`dense_numeric_kernel_declaration`] for the artifact.
 pub fn evaluate_dense_numeric_kernel(
     rule: &DenseNumericKernelRule,
     shares: &BTreeMap<String, f64>,
@@ -653,6 +672,44 @@ pub fn evaluate_dense_numeric_kernel(
             phase: None,
             reason_key: "no_contiguous_numeric_phase_declared".to_string(),
         },
+    }
+}
+
+/// Decide dense-numeric-kernel presence from the closed DATA declaration alone.
+///
+/// An eligible phase qualifies when its `phase_kinds` entry declares numeric
+/// work over declared-contiguous storage. Both inputs are frozen DATA, so this
+/// decision cannot depend on a measured phase share and two profiles of the
+/// same frozen models always agree — which is exactly what
+/// `profile_native_core`'s byte-identity assertion needs.
+///
+/// The measured companion [`evaluate_dense_numeric_kernel`] applies the DATA
+/// `threshold` to the measured share and is retained in the observational
+/// receipt. Keeping the two separate is the point: the artifact names a
+/// declaration, and the measurement stays a measurement.
+pub fn dense_numeric_kernel_declaration(
+    rule: &DenseNumericKernelRule,
+) -> DenseNumericKernelDecision {
+    for phase in &rule.eligible_phases {
+        let Some(kind) = rule.phase_kinds.get(phase) else {
+            continue;
+        };
+        if kind.work_kind != WORK_KIND_NUMERIC {
+            continue;
+        }
+        if rule.requires_contiguous_numeric_arrays && !kind.contiguous_numeric_arrays {
+            continue;
+        }
+        return DenseNumericKernelDecision {
+            found: true,
+            phase: Some(phase.clone()),
+            reason_key: "declared_contiguous_numeric_phase".to_string(),
+        };
+    }
+    DenseNumericKernelDecision {
+        found: false,
+        phase: None,
+        reason_key: "no_contiguous_numeric_phase_declared".to_string(),
     }
 }
 
@@ -1026,7 +1083,11 @@ pub struct FamilyProfile {
     pub positions: usize,
     pub matched_observations: usize,
     pub characterization: CpuKernelCharacterization,
-    pub decision: DenseNumericKernelDecision,
+    /// Observational: the rule evaluated against the *measured* phase share.
+    /// Retained as evidence and excluded from the emitted artifact. The
+    /// artifact decision is the single DATA declaration computed once by
+    /// [`profile_native_core`] (see [`dense_numeric_kernel_declaration`]).
+    pub measured_dense_numeric_kernel: DenseNumericKernelDecision,
     pub disposition: NativeCoreDisposition,
     /// Observational: nanoseconds per phase, warmup passes excluded.
     pub phase_nanos: BTreeMap<String, u128>,
@@ -1041,6 +1102,10 @@ pub struct NativeCoreFamilyObservations {
     pub throughput_units_per_second: u64,
     pub phase_nanos: BTreeMap<String, u128>,
     pub phase_share_basis_points: BTreeMap<String, u64>,
+    /// The measured-share rule evaluation, kept here so the declaration the
+    /// artifact carries and the measurement it does not carry are both on the
+    /// record.
+    pub measured_dense_numeric_kernel: DenseNumericKernelDecision,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1102,6 +1167,7 @@ fn profile_family(
     data: &NativeCoreQualificationData,
     spec: &NativeCoreFamilySpec,
     options: &NativeCoreProfileOptions,
+    declared: &DenseNumericKernelDecision,
 ) -> Result<FamilyProfile, NativeCoreProfileError> {
     let rendered = rendered_len(&spec.rows);
     let scratch_capacity = rendered.max(1);
@@ -1179,8 +1245,9 @@ fn profile_family(
     }
 
     let shares = share_fraction(&totals);
-    let decision = evaluate_dense_numeric_kernel(&data.dense_numeric_kernel_rule, &shares);
-    let disposition = gate_disposition(data, &decision, characterization.selection_forbidden)?;
+    let measured_dense_numeric_kernel =
+        evaluate_dense_numeric_kernel(&data.dense_numeric_kernel_rule, &shares);
+    let disposition = gate_disposition(data, declared, characterization.selection_forbidden)?;
 
     Ok(FamilyProfile {
         family: spec.family.clone(),
@@ -1190,42 +1257,11 @@ fn profile_family(
         positions: dry_positions.len(),
         matched_observations,
         characterization,
-        decision,
+        measured_dense_numeric_kernel,
         disposition,
         phase_nanos: nanos_to_string_map(&totals),
         phase_share_basis_points: share_basis_points(&totals),
     })
-}
-
-fn aggregate_decision(families: &[FamilyProfile]) -> DenseNumericKernelDecision {
-    let found = families
-        .iter()
-        .filter(|family| family.decision.found)
-        .max_by_key(|family| {
-            family
-                .phase_share_basis_points
-                .get(PHASE_VITERBI_DECODE)
-                .copied()
-                .unwrap_or(0)
-        });
-    match found {
-        Some(family) => DenseNumericKernelDecision {
-            found: true,
-            phase: family.decision.phase.clone(),
-            reason_key: "eligible_phase_at_or_above_threshold".to_string(),
-        },
-        None => DenseNumericKernelDecision {
-            found: false,
-            phase: None,
-            reason_key: if families.iter().any(|family| {
-                family.decision.reason_key == "no_eligible_phase_at_or_above_threshold"
-            }) {
-                "no_eligible_phase_at_or_above_threshold".to_string()
-            } else {
-                "no_contiguous_numeric_phase_declared".to_string()
-            },
-        },
-    }
 }
 
 /// Profile every family twice and return the receipt.
@@ -1233,7 +1269,9 @@ fn aggregate_decision(families: &[FamilyProfile]) -> DenseNumericKernelDecision 
 /// The two passes exist so the allocator observation is a *replay* comparison,
 /// not a single sample: equal deltas yield numbers, disagreeing deltas yield a
 /// typed unstable state. The artifact projection of both passes must be
-/// byte-identical or the call fails loudly instead of emitting a flaky claim.
+/// byte-identical or the call fails loudly instead of emitting a flaky claim;
+/// that is why it carries [`dense_numeric_kernel_declaration`] rather than the
+/// measured multi-pass decision.
 pub fn profile_native_core(
     data: &NativeCoreQualificationData,
     specs: &[NativeCoreFamilySpec],
@@ -1249,13 +1287,18 @@ pub fn profile_native_core(
         });
     }
 
+    // One declaration for every family: the rule is global DATA, so the
+    // artifact decision is computed once, outside the measured region, and can
+    // never be a function of a family's timing.
+    let declared = dense_numeric_kernel_declaration(&data.dense_numeric_kernel_rule);
+
     let mut passes: Vec<Vec<FamilyProfile>> = Vec::with_capacity(2);
     let mut deltas: Vec<AllocatorSnapshot> = Vec::with_capacity(2);
     for _ in 0..2 {
         let before = snapshot();
         let mut families = Vec::with_capacity(specs.len());
         for spec in specs {
-            families.push(profile_family(data, spec, options)?);
+            families.push(profile_family(data, spec, options, &declared)?);
         }
         let after = snapshot();
         passes.push(families);
@@ -1295,13 +1338,13 @@ excluded from the emitted artifact and from every acceptance denominator"
                 throughput_units_per_second: family.characterization.throughput_units_per_second,
                 phase_nanos: family.phase_nanos.clone(),
                 phase_share_basis_points: family.phase_share_basis_points.clone(),
+                measured_dense_numeric_kernel: family.measured_dense_numeric_kernel.clone(),
             })
             .collect(),
     };
-    let aggregate = aggregate_decision(&first);
     let disposition = gate_disposition(
         data,
-        &aggregate,
+        &declared,
         first
             .iter()
             .all(|family| family.disposition.selection_forbidden),
