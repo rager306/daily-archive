@@ -72,6 +72,7 @@ pub mod scholarly_evidence;
 pub mod section_summary_policy;
 pub mod source;
 pub mod source_import_fsm;
+pub mod stage_invariants;
 pub mod structural_elements;
 pub mod summaries_llm;
 pub mod table_fidelity;
@@ -158,6 +159,11 @@ pub use promotion::{
 };
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
+};
+pub use stage_invariants::{
+    GRAPH_MATERIALIZATION_NEVER_SKIPPED_BY_COMPUTE_CACHE, NAMED_STAGE_INVARIANTS,
+    StageInvariantObservation, StageInvariantViolation, evaluate_stage_invariant,
+    stage_invariant_is_named,
 };
 pub use tex_source::{
     BibtexCandidate, ProviderDenominator, TEX_ANALYSIS_SCHEMA_VERSION, TexAnalysisError,
