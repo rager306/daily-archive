@@ -583,14 +583,121 @@ fn declared_corpus_receipt_covers_the_expanded_route_corpus() {
     }
 }
 
+/// The closed P1/P2 body verdict vocabulary recorded in the content receipt.
+/// Mirrors `crates/da-cli/src/native_content_receipt.rs#CONTENT_BODY_VERDICT_VOCABULARY`.
+const CONTENT_BODY_VERDICT_VOCABULARY: [&str; 3] =
+    ["granularity_only", "content_loss", "not_assessable"];
+
+/// The closed body-gap reason vocabulary recorded in the content receipt.
+/// Mirrors `crates/da-cli/src/native_content_receipt.rs#CONTENT_BODY_REASON_VOCABULARY`.
+const CONTENT_BODY_REASON_VOCABULARY: [&str; 10] = [
+    "matched",
+    "p1_native_text_absent",
+    "p1_localization_uncertain",
+    "p2_region_assignment_gap",
+    "p2_localization_uncertain",
+    "scope_mismatch",
+    "scope_join_mismatch",
+    "normalization_mismatch",
+    "oracle_empty",
+    "population_incomplete",
+];
+
+/// The reason tokens that are P1 plane outcomes. When the combined body axis
+/// carries one of them, the recorded body region equals the P1 plane verdict by
+/// the combined classifier's published contract.
+fn is_p1_plane_reason(reason: &str) -> bool {
+    matches!(
+        reason,
+        "p1_native_text_absent" | "p1_localization_uncertain"
+    )
+}
+
+/// Whether a `(body_region, body_reason)` pair is one the committed combined
+/// body classifier can publish. The table is the classifier's published
+/// contract, established from the type definitions, not an oracle built through
+/// the classifier under test.
+fn body_axis_pair_is_possible(verdict: &str, reason: &str) -> bool {
+    matches!(
+        (verdict, reason),
+        ("not_assessable", "scope_mismatch")
+            | ("not_assessable", "normalization_mismatch")
+            | ("not_assessable", "scope_join_mismatch")
+            | ("content_loss", "p1_native_text_absent")
+            | ("not_assessable", "p1_localization_uncertain")
+            | ("not_assessable", "oracle_empty")
+            | ("not_assessable", "p2_region_assignment_gap")
+            | ("not_assessable", "p2_localization_uncertain")
+            | ("granularity_only", "matched")
+    )
+}
+
+/// Validate one measured row's body axis against the receipt's closed
+/// vocabulary and the combined classifier's verdict/reason consistency.
+///
+/// The receipt publishes the combined body verdict and reason, not the
+/// occurrence-conserving alignment, so this is a vocabulary and consistency
+/// audit — not a full semantic replay of the body-region classifier, which
+/// would need inputs the receipt does not carry.
+///
+/// The zero-token fallback is bound here: a region the lane never assembled is
+/// the P2 region-assignment gap, so a zero-token row must be
+/// `not_assessable` / `p2_region_assignment_gap`. A non-empty region is a
+/// classifier outcome and may legitimately carry that same token as a genuine
+/// partial gap.
+fn body_axis_contract_error(document_id: &str, body: &Value) -> Result<(), String> {
+    let region = body["body_region"]
+        .as_str()
+        .ok_or_else(|| format!("{document_id}: body_region is not a string"))?;
+    let reason = body["body_reason"]
+        .as_str()
+        .ok_or_else(|| format!("{document_id}: body_reason is not a string"))?;
+    let token_count = body["body_token_count"]
+        .as_u64()
+        .ok_or_else(|| format!("{document_id}: body_token_count is not an integer"))?;
+    if !CONTENT_BODY_VERDICT_VOCABULARY.contains(&region) {
+        return Err(format!(
+            "{document_id}: `{region}` is not a body verdict token"
+        ));
+    }
+    if !CONTENT_BODY_REASON_VOCABULARY.contains(&reason) {
+        return Err(format!(
+            "{document_id}: `{reason}` is not a body reason token"
+        ));
+    }
+    if !body_axis_pair_is_possible(region, reason) {
+        return Err(format!(
+            "{document_id}: the body verdict `{region}` cannot carry the reason `{reason}`"
+        ));
+    }
+    // The combined classifier returns the plane verdict whenever the plane axis
+    // is not clean, so a P1 reason implies the recorded region equals the P1
+    // plane verdict. This compares two recorded fields, not a replay.
+    if is_p1_plane_reason(reason) {
+        let plane = body["plane_preservation"].as_str().unwrap_or("");
+        if region != plane {
+            return Err(format!(
+                "{document_id}: the P1 reason `{reason}` disagrees with the recorded region `{region}`"
+            ));
+        }
+    }
+    // An absent body region is the region-assignment gap, never a plane reason.
+    if token_count == 0 && (region != "not_assessable" || reason != "p2_region_assignment_gap") {
+        return Err(format!(
+            "{document_id}: a zero-token body region must be `not_assessable` / `p2_region_assignment_gap`, found `{region}` / `{reason}`"
+        ));
+    }
+    Ok(())
+}
+
 #[test]
 fn receipt_plane_and_body_region_axes_reclassify_from_their_own_inputs() {
     // The receipt publishes two axes per document. The P1 plane axis
     // (`plane_*` + `oracle_units` + `native_plane_units`) is reclassified with
-    // the plane classifier only; the P2 body-region axis is read from its own
-    // fields. The plane classifier's reason is never compared to the recorded
-    // body reason: that field can carry a P2 region-assignment gap the plane
-    // classifier cannot produce.
+    // the plane classifier only; the P2 body-region axis is audited from its
+    // own recorded fields for closed vocabulary and verdict/reason consistency.
+    // The receipt does not carry the occurrence-conserving alignment, so the
+    // body axis is audited, not semantically replayed.
     let receipt: Value = serde_json::from_str(CONTENT_RECEIPT).expect("the receipt parses");
     let matrix = receipt["populations"][0]["matrix"]
         .as_array()
@@ -642,7 +749,10 @@ fn receipt_plane_and_body_region_axes_reclassify_from_their_own_inputs() {
             "{document_id}: the plane classifier left the P1 reason domain"
         );
 
-        // ── P2 body-region axis: a measured region or a typed region gap ──
+        // ── P2 body-region axis: vocabulary + consistency, never a replay ──
+        if let Err(error) = body_axis_contract_error(document_id, body) {
+            panic!("{error}");
+        }
         let body_token_count = body["body_token_count"].as_u64().unwrap();
         let body_region = body["body_region"].as_str().unwrap();
         let body_reason = body["body_reason"].as_str().unwrap();
@@ -667,16 +777,91 @@ fn receipt_plane_and_body_region_axes_reclassify_from_their_own_inputs() {
                 !body["plane_d498_reopen_required"].as_bool().unwrap(),
                 "{document_id}: an absent body region raised the plane D498 obligation"
             );
-        } else {
-            assert_ne!(
-                body_reason, "p2_region_assignment_gap",
-                "{document_id}: a measured region carries the region-absent fallback"
-            );
         }
+        // A non-empty region is a classifier outcome: it may carry a genuine
+        // partial P2 region-assignment gap, so no blanket exclusion applies.
     }
     assert!(
         region_absent >= 1,
         "the expanded corpus contains a region-absent document, so the regression is non-vacuous"
+    );
+
+    // ── explicit regression: the original region-absent document ──
+    // Document 1203.2295 is the row the P1/P2 split was written for (row index
+    // 10 of the frozen receipt). It must stay a *P2* region-assignment gap with
+    // an *uncertain, not absent* P1 plane: the plane axis saw characters it
+    // could not localize, so the zero body-token row is a region gap, not a
+    // plane text loss. Named individually so `region_absent >= 1` alone cannot
+    // stand in for the binding regression.
+    let named = matrix
+        .iter()
+        .find(|row| row["id"].as_str() == Some("1203.2295"))
+        .expect("the expanded corpus carries the original region-absent document 1203.2295");
+    let named_body = &named["body"];
+    assert_eq!(
+        named_body["body_token_count"].as_u64().unwrap(),
+        0,
+        "1203.2295 must carry a zero-token body region"
+    );
+    assert_eq!(
+        named_body["body_region"].as_str().unwrap(),
+        "not_assessable"
+    );
+    assert_eq!(
+        named_body["body_reason"].as_str().unwrap(),
+        "p2_region_assignment_gap",
+        "1203.2295 must record a P2 region-assignment gap, not a P1 plane reason"
+    );
+    // Uncertain-not-absent P1: characters present, nothing absent, no D498.
+    assert_eq!(
+        named_body["plane_absent_units"].as_u64().unwrap(),
+        0,
+        "1203.2295 must be a P1 uncertainty, not a P1 absence"
+    );
+    assert_eq!(
+        named_body["plane_preservation"].as_str().unwrap(),
+        "not_assessable"
+    );
+    assert_ne!(
+        named_body["plane_preservation"].as_str().unwrap(),
+        "content_loss",
+        "an absent body region must not be reclassified as plane text loss"
+    );
+    assert!(!named_body["plane_d498_reopen_required"].as_bool().unwrap());
+
+    // ── negative mutations: in-memory only, never a measured receipt edit ──
+    // Each mutation starts from the named measured row and must be refused by
+    // the auditor, so an unknown token or a valid-but-inconsistent pair cannot
+    // survive the audit.
+    let measured = named["body"].clone();
+
+    let mut unknown_reason = measured.clone();
+    unknown_reason["body_reason"] = Value::String("not_a_body_reason".to_owned());
+    assert!(
+        body_axis_contract_error("1203.2295", &unknown_reason).is_err(),
+        "an unknown body reason token must be refused"
+    );
+
+    let mut unknown_verdict = measured.clone();
+    unknown_verdict["body_region"] = Value::String("not_a_body_verdict".to_owned());
+    assert!(
+        body_axis_contract_error("1203.2295", &unknown_verdict).is_err(),
+        "an unknown body verdict token must be refused"
+    );
+
+    let mut inconsistent_pair = measured.clone();
+    inconsistent_pair["body_region"] = Value::String("granularity_only".to_owned());
+    inconsistent_pair["body_reason"] = Value::String("p2_region_assignment_gap".to_owned());
+    assert!(
+        body_axis_contract_error("1203.2295", &inconsistent_pair).is_err(),
+        "a valid-but-inconsistent verdict/reason pair must be refused"
+    );
+
+    let mut swapped_fallback = measured.clone();
+    swapped_fallback["body_reason"] = Value::String("p1_localization_uncertain".to_owned());
+    assert!(
+        body_axis_contract_error("1203.2295", &swapped_fallback).is_err(),
+        "a zero-token region carrying a P1 reason must be refused"
     );
 }
 
