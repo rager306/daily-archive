@@ -249,6 +249,11 @@ pub async fn run_journey_content(
     }
     .map_err(|error| error.to_string())?;
 
+    // The runtime ACAP admission gate reads the single DATA declaration, not a
+    // hardcoded canonical default. da-cli owns the infrastructure load (R138)
+    // and hands one policy value to every orchestrator it composes below.
+    let acap_policy = crate::production::load_acap_admission_policy_from_env()?;
+
     let retry_after = (chrono::Utc::now() + chrono::Duration::minutes(10)).to_rfc3339();
     let grobid_profile = ports_profile();
     let parse_stage = Arc::new(
@@ -311,6 +316,7 @@ pub async fn run_journey_content(
 
     let mut orchestrator =
         PipelineOrchestrator::new(cache.clone(), clock.clone(), stage_registry.clone())
+            .with_acap_policy(acap_policy.clone())
             .with_executor("parse", parse_stage.clone())
             .map_err(|error| error.to_string())?
             .with_executor("revision_materialization", revision_stage.clone())
@@ -690,6 +696,7 @@ pub async fn run_journey_content(
                 .map_err(|error| format!("figure mini topology: {error}"))?;
             let mini_orchestrator =
                 PipelineOrchestrator::new(cache.clone(), clock.clone(), stage_registry.clone())
+                    .with_acap_policy(acap_policy.clone())
                     .with_executor("parse", parse_stage.clone())
                     .map_err(|error| error.to_string())?
                     .with_executor("figure_detect", detection_stage.clone())

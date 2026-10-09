@@ -16,7 +16,7 @@ use da_application::{
     FigureAnalysisStage, FigureContextStage, FigureRevisionIdentity, FigureSectionLocator,
     MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
 };
-use da_domain::{PipelineStageLedger, StageIdRegistry};
+use da_domain::{AcapAdmissionPolicy, PipelineStageLedger, StageIdRegistry};
 use da_parse::{GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
 use da_ports::multimodal_llm::{ModelRouteDescriptor, ModelWireProtocol, MultimodalLlmPort};
@@ -28,6 +28,19 @@ use sha2::{Digest, Sha256};
 
 const PIPELINE_LEDGER_YAML: &str =
     include_str!("../../../data/ontology/pipeline_stage_contracts.yaml");
+
+/// Environment override for the single ACAP admission declaration path.
+///
+/// When unset, the bundled repo-relative declaration is used (see
+/// [`ACAP_POLICY_REL`]); the override lets an operator point the runtime at a
+/// staged copy without recompiling.
+pub const ACAP_POLICY_ENV: &str = "DA_ACAP_POLICY";
+
+/// Repo-relative path of the single ACAP admission declaration (the ordered
+/// `fsm.states` plus the `admission` block). Resolved against the build-time
+/// workspace root, mirroring [`crate::gold_graph`]'s bundled-policy resolver,
+/// so `da` reads the one declaration regardless of the process CWD.
+const ACAP_POLICY_REL: &str = "scripts/governor/checks/article_context_assurance.yaml";
 
 /// Historical baseline model identity for the Java GROBID transport
 /// (`grobid/grobid:0.9.0-crf`, the D204/D321 baseline).
@@ -225,6 +238,28 @@ pub fn embedded_stage_registry() -> Result<Arc<StageIdRegistry>, String> {
     let ledger: PipelineStageLedger = serde_yaml::from_str(PIPELINE_LEDGER_YAML)
         .map_err(|error| format!("parse embedded pipeline ledger: {error}"))?;
     Ok(Arc::new(ledger.registry()?))
+}
+
+/// Load the runtime ACAP admission policy from the single DATA declaration.
+///
+/// `DA_ACAP_POLICY` overrides the path; otherwise the bundled repo-relative
+/// [`ACAP_POLICY_REL`] is resolved against the build-time workspace root (run
+/// `da` from the repo root, or from anywhere in the checkout). The declaration
+/// is read through the strict `da_adapters::acap_policy` loader, so this is
+/// infrastructure loading DATA (R138) while `da-application` executes the pure
+/// `da_domain::AcapAdmissionPolicy` value.
+///
+/// Fail closed: a missing, unreadable, oversized, malformed or weakened
+/// declaration is an error and there is **no** canonical-default fallback —
+/// the runtime must read the declaration or refuse to admit a stage.
+pub fn load_acap_admission_policy_from_env() -> Result<Arc<AcapAdmissionPolicy>, String> {
+    let path = match std::env::var(ACAP_POLICY_ENV) {
+        Ok(value) if !value.trim().is_empty() => PathBuf::from(value),
+        _ => Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(ACAP_POLICY_REL),
+    };
+    da_adapters::acap_policy::load_acap_admission_policy(&path).map(Arc::new)
 }
 
 /// Derive an exact revision context from a versioned local PDF filename.
@@ -482,8 +517,13 @@ pub fn compose_multimodal_production(
     let composition =
         MultimodalComposition::canonical(&context.stage_registry, "production-multimodal-v1")
             .map_err(|error| format!("canonical multimodal topology: {error}"))?;
+    // The runtime admission gate reads the single ACAP declaration (loaded
+    // once from DATA, never a hardcoded default). Fail closed: an unreadable
+    // declaration refuses to compose rather than admitting on a weaker gate.
+    let acap_policy = load_acap_admission_policy_from_env()?;
     let orchestrator =
         PipelineOrchestrator::new(cache, context.clock.clone(), context.stage_registry.clone())
+            .with_acap_policy(acap_policy)
             .with_executor("grobid_parse", parse_stage)
             .map_err(|error| format!("register parse executor: {error}"))?
             .with_executor("figure_detect", figures_stage)
