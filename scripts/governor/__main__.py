@@ -1031,6 +1031,12 @@ def _run_architecture_gate(args) -> int:
     steps = architecture_gate_steps(bool(getattr(args, "quick", False)))
     log_dir = _architecture_gate_log_dir(root)
 
+    #: Number of failing steps, NOT a boolean. The summary line subtracts it
+    #: from the step count, so a two-failure run that stored `1` reported
+    #: `22/23 passed` while the tree was 21/23 (recorded run: 23 steps, 21 OK,
+    #: 2 FAIL). The timeout branch is a failure too: it increments this counter
+    #: and the separate ``timed_out`` counter, so the passed fraction excludes
+    #: it and the ``N timed out`` suffix still names timeouts specifically.
     failed = 0
     timed_out = 0
     for index, (name, cmd, timeout_s) in enumerate(steps, start=1):
@@ -1051,7 +1057,7 @@ def _run_architecture_gate(args) -> int:
                 log_dir=log_dir,
                 timed_out=True,
             )
-            failed = 1
+            failed += 1
             timed_out += 1
             continue
         if result.returncode == 0:
@@ -1068,7 +1074,7 @@ def _run_architecture_gate(args) -> int:
             log_dir=log_dir,
             timed_out=False,
         )
-        failed = 1
+        failed += 1
 
     print(f"\n  architecture gate steps: {len(steps) - failed}/{len(steps)} passed, "
           f"{timed_out} timed out")

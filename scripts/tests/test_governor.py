@@ -9934,3 +9934,118 @@ def test_serialized_report_marks_only_authentic_informational_notes():
         DriftFlag("gsd_control_plane_unknown_probe", "low", "unrelated low signal")
     )
     assert unrelated["informational"] is False
+
+
+# ── architecture gate: failure counting ──────────────────────────────────────
+#
+# `_run_architecture_gate` previously stored a boolean `failed = 1`, but the
+# summary line subtracts that value from the step count. A recorded run with 23
+# steps, 21 OK and 2 FAIL therefore printed `22/23 passed`. These tests drive the
+# runner with a mocked `subprocess.run`, so the real 23-step cargo gate is never
+# started and the outcome is fully deterministic.
+
+def _install_deterministic_architecture_gate(monkeypatch, tmp_path, outcomes):
+    """Point the gate at `outcomes` (one of ok/fail/timeout per step).
+
+    Returns the ``governor.__main__`` module with a fake ``architecture_gate_steps``
+    and a fake ``subprocess.run``. ``tmp_path`` is the gate log directory, so a
+    failure's persisted capture is observable without touching ``target/``.
+    """
+    import governor.__main__ as gov
+
+    steps = [(f"step {i}", ["cargo", "noop"], 60) for i, _ in enumerate(outcomes)]
+    monkeypatch.setattr(gov, "architecture_gate_steps", lambda quick=False: steps)
+    monkeypatch.setenv(gov._ARCHITECTURE_GATE_LOG_ENV, str(tmp_path))
+
+    queue = list(outcomes)
+
+    class _Completed:
+        def __init__(self, returncode, stdout="", stderr=""):
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    def fake_run(cmd, **_kwargs):
+        outcome = queue.pop(0)
+        if outcome == "timeout":
+            raise subprocess.TimeoutExpired(cmd, 60, output="partial capture")
+        if outcome == "fail":
+            return _Completed(1, stdout="test gate::case ... FAILED\n")
+        assert outcome == "ok", outcome
+        return _Completed(0, stdout="ok\n")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    return gov
+
+
+def test_architecture_gate_summary_counts_each_failure(monkeypatch, capsys, tmp_path):
+    """Two failing steps out of three must report `1/3 passed`, not `2/3`."""
+    gov = _install_deterministic_architecture_gate(
+        monkeypatch, tmp_path, ["ok", "fail", "fail"]
+    )
+
+    class _Args:
+        quick = False
+
+    rc = gov._run_architecture_gate(_Args())
+    out = capsys.readouterr().out
+    assert "architecture gate steps: 1/3 passed, 0 timed out" in out
+    assert rc == 2
+    assert "ARCHITECTURE GATE: FAIL" in out
+    # Both failing steps persist their own capture (diagnostics stay intact).
+    assert len(sorted(tmp_path.glob("*.stdout.log"))) == 2
+    assert len(sorted(tmp_path.glob("*.stderr.log"))) == 2
+
+
+def test_architecture_gate_counts_failure_and_timeout_together(
+    monkeypatch, capsys, tmp_path
+):
+    """A timeout is a failing step: it moves the passed count AND the timeout count."""
+    gov = _install_deterministic_architecture_gate(
+        monkeypatch, tmp_path, ["ok", "fail", "timeout"]
+    )
+
+    class _Args:
+        quick = False
+
+    rc = gov._run_architecture_gate(_Args())
+    out = capsys.readouterr().out
+    assert "architecture gate steps: 1/3 passed, 1 timed out" in out
+    assert rc == 2
+    assert "ARCHITECTURE GATE: FAIL" in out
+    assert "TIMEOUT" in out
+
+
+def test_architecture_gate_all_pass_reports_full_and_zero_exit(
+    monkeypatch, capsys, tmp_path
+):
+    """A green gate reports every step passed and returns 0."""
+    gov = _install_deterministic_architecture_gate(
+        monkeypatch, tmp_path, ["ok", "ok", "ok"]
+    )
+
+    class _Args:
+        quick = False
+
+    rc = gov._run_architecture_gate(_Args())
+    out = capsys.readouterr().out
+    assert "architecture gate steps: 3/3 passed, 0 timed out" in out
+    assert rc == 0
+    assert "ARCHITECTURE GATE: PASS" in out
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_architecture_gate_reports_the_recorded_21_of_23(monkeypatch, capsys, tmp_path):
+    """The recorded run (23 steps, 21 OK, 2 FAIL) must report `21/23`, not `22/23`."""
+    outcomes = ["ok"] * 21 + ["fail"] * 2
+    gov = _install_deterministic_architecture_gate(monkeypatch, tmp_path, outcomes)
+
+    class _Args:
+        quick = False
+
+    rc = gov._run_architecture_gate(_Args())
+    out = capsys.readouterr().out
+    assert "architecture gate steps: 21/23 passed, 0 timed out" in out
+    assert "22/23" not in out
+    assert rc == 2
+    assert "ARCHITECTURE GATE: FAIL" in out
