@@ -150,6 +150,68 @@ metric_definitions:
     unit: ratio
     formula: grounded_information_units / context_tokens
 
+# Disposition registry for the `kind: hard` metrics above (M516/S08/T05).
+# The declaration-synchronisation axis reads THIS block, not a bare token scan:
+# every declared hard metric must either name the production symbol that
+# computes it (`computed`) or carry an owner + reason for not being computed
+# (`downgraded`). A missing or malformed record is a gap; the block itself is a
+# required input, so a file without it raises rather than reporting a vacuous
+# zero. `no_production_denominator` is the vocabulary a future downgrade must
+# draw from when a metric has no typed evidence yielding a real denominator
+# (ADR-055: missing evidence is `no_claim`, never a pass).
+metric_dispositions:
+  schema_version: metric-dispositions.v1
+  reason_vocabulary:
+    no_production_denominator: >-
+      The metric has no typed production evidence that yields a real
+      denominator on a run, so computing it would fake a 100% pass.
+  records:
+    required_field_retention:
+      disposition: computed
+      computation: da-domain::assurance::required_field_retention
+    byte_conservation:
+      disposition: computed
+      computation: da-domain::assurance::evaluate_hard_failures
+      note: >-
+        The per-layer hard-failure surface emits byte_conservation:<field> for
+        every ConservationObservation whose hard_failure() is true.
+    checksum_lineage_coverage:
+      disposition: computed
+      computation: da-domain::hard_metrics::checksum_lineage_coverage
+    typed_missingness_coverage:
+      disposition: computed
+      computation: da-domain::hard_metrics::typed_missingness_coverage
+    evidence_grounding_coverage:
+      disposition: computed
+      computation: da-domain::hard_metrics::evidence_grounding_coverage
+    ontology_conformance:
+      disposition: computed
+      computation: da-domain::hard_metrics::ontology_conformance
+    replay_net_writes:
+      disposition: computed
+      computation: da-domain::assurance::evaluate_hard_failures
+      note: >-
+        Emitted as replay_net_writes:<n> from the authoritative
+        ReplayObservation (applied writes) or the legacy WriteDelta projection.
+    replay_observation_integrity:
+      disposition: computed
+      computation: da-domain::assurance::integrity_passes
+      note: >-
+        The authoritative ACAP hard gate for physical replay integrity;
+        evaluate_hard_failures records replay_observation_integrity:<cause>.
+    d127_unlock_count:
+      disposition: computed
+      computation: da-application::assurance::count_d127_unlocks
+      note: >-
+        Counts graph nodes whose import_eligible property is true; nonzero is a
+        hard failure until explicit user authorization (D127).
+    cache_lineage_exactness:
+      disposition: computed
+      computation: da-domain::hard_metrics::cache_lineage_exactness
+    semantic_task_pass_rate:
+      disposition: computed
+      computation: da-domain::hard_metrics::semantic_task_pass_rate
+
 layers:
   - id: source
     state: source_verified

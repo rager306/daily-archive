@@ -7,10 +7,13 @@ pin the three predicates with inline fixtures, so they never depend on the real
 tree's current membership, and one asserts the regression direction directly:
 adding a declared hard metric without an implementation adds exactly one gap.
 
-Class B is disposition-driven: an invariant is covered when
+Class A and class B are both disposition-driven: a hard metric is covered when
+``scripts/governor/checks/article_context_assurance.yaml`` carries a
+well-formed ``metric_dispositions`` record whose symbol resolves in
+``crates/*/src``, and an invariant is covered when
 ``data/ontology/pipeline_stage_contracts.yaml`` carries a well-formed
-``stage_invariant_dispositions`` record for it, never by the incidental
-appearance of its name in some other file.
+``stage_invariant_dispositions`` record for it -- never by the incidental
+appearance of a name in some other file.
 """
 
 from __future__ import annotations
@@ -42,8 +45,49 @@ def _write(root: Path, rel: str, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def _write_metrics(root: Path, body: str) -> None:
-    _write(root, _METRIC_PATH, f"metric_definitions:\n{body}")
+def _write_metrics(
+    root: Path,
+    body: str,
+    dispositions: dict | None = None,
+    *,
+    include_dispositions: bool = True,
+) -> None:
+    """Write the metric declaration, optionally without the dispositions block.
+
+    ``dispositions=None`` writes an empty ``records`` mapping so a caller that
+    only cares about the declared metrics still produces a loadable fixture;
+    pass a mapping to cover metrics, or ``include_dispositions=False`` to
+    exercise the fail-closed path for a missing block.
+    """
+    declaration = f"metric_definitions:\n{body}"
+    if not declaration.endswith("\n"):
+        declaration += "\n"
+    if include_dispositions:
+        block = {
+            "schema_version": "metric-dispositions.v1",
+            "reason_vocabulary": {
+                "no_production_denominator": (
+                    "The metric has no typed production evidence that yields a "
+                    "real denominator."
+                ),
+            },
+            "records": dispositions or {},
+        }
+        declaration += yaml.safe_dump({"metric_dispositions": block}, sort_keys=False)
+    _write(root, _METRIC_PATH, declaration)
+
+
+def _computed(computation: str) -> dict:
+    return {"disposition": "computed", "computation": computation}
+
+
+def _write_computation_surface(root: Path, symbol: str) -> None:
+    """A production-looking Rust file carrying ``symbol`` as a whole token."""
+    _write(
+        root,
+        "crates/da-domain/src/hard_metrics.rs",
+        f"pub fn {symbol}() {{ /* production computation */ }}\n",
+    )
 
 
 def _write_stages(
@@ -91,10 +135,14 @@ def _write_prompt_registry(
     )
 
 
-def _base(root: Path, metrics: str = "  a_hard: {kind: hard}\n") -> None:
+def _base(
+    root: Path,
+    metrics: str = "  a_hard: {kind: hard}\n",
+    dispositions: dict | None = None,
+) -> None:
     """A minimal valid declaration tree with an (empty) crates/ directory."""
     (root / "crates").mkdir(parents=True, exist_ok=True)
-    _write_metrics(root, metrics)
+    _write_metrics(root, metrics, dispositions)
     _write_stages(root, [])
     _write_prompt_registry(root, [], [])
 
@@ -107,29 +155,104 @@ def _names(axis, gap_class: str) -> set[str]:
     return {g.name for g in axis.gaps_for(gap_class)}
 
 
-# ── class A: hard metric without a production computation ────────────────────
+# ── class A: hard metric without a disposition record ────────────────────────
 
 
-def test_hard_metric_computed_in_production_is_not_a_gap(tmp_path: Path):
-    _base(tmp_path, metrics="  retained_required_fields: {kind: hard}\n")
-    _write(
+def test_computed_metric_whose_symbol_resolves_is_not_a_gap(tmp_path: Path):
+    """A `computed` record is covered only when its symbol is in crates/*/src."""
+    _base(
         tmp_path,
-        "crates/da-application/src/report.rs",
-        "fn compute() { let _ = \"retained_required_fields\"; }\n",
+        metrics="  required_field_retention: {kind: hard}\n",
+        dispositions={
+            "required_field_retention": _computed(
+                "da-domain::assurance::required_field_retention"
+            )
+        },
     )
+    _write_computation_surface(tmp_path, "required_field_retention")
     axis = _gap(tmp_path)
     assert axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION) == ()
     assert axis.declared_for(HARD_METRIC_WITHOUT_COMPUTATION) == 1
 
 
-def test_hard_metric_without_production_computation_is_named(tmp_path: Path):
-    _base(tmp_path, metrics="  checksum_lineage_coverage: {kind: hard}\n")
+def test_computed_metric_whose_symbol_does_not_resolve_is_named(tmp_path: Path):
+    _base(
+        tmp_path,
+        metrics="  checksum_lineage_coverage: {kind: hard}\n",
+        dispositions={
+            "checksum_lineage_coverage": _computed(
+                "da-domain::hard_metrics::no_such_symbol_anywhere"
+            )
+        },
+    )
     axis = _gap(tmp_path)
     gaps = axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION)
     assert len(gaps) == 1
     assert gaps[0].name == "checksum_lineage_coverage"
     assert gaps[0].declared_in == _METRIC_PATH
-    assert "no code computes it" in gaps[0].detail
+    assert "no_such_symbol_anywhere" in gaps[0].detail
+
+
+def test_downgraded_metric_with_owner_and_reason_is_covered(tmp_path: Path):
+    _base(
+        tmp_path,
+        metrics="  needs_real_denominator: {kind: hard}\n",
+        dispositions={
+            "needs_real_denominator": {
+                "disposition": "downgraded",
+                "owner": "M516-th0oby/S08",
+                "reason": "no_production_denominator",
+                "decision_ref": "D556",
+            }
+        },
+    )
+    axis = _gap(tmp_path)
+    assert axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION) == ()
+
+
+def test_declared_hard_metric_without_a_record_is_named(tmp_path: Path):
+    _base(tmp_path, metrics="  checksum_lineage_coverage: {kind: hard}\n")
+    axis = _gap(tmp_path)
+    gaps = axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION)
+    assert [g.name for g in gaps] == ["checksum_lineage_coverage"]
+    assert gaps[0].declared_in == _METRIC_PATH
+    assert "no metric_dispositions record" in gaps[0].detail
+
+
+def test_computed_record_without_a_computation_is_a_gap(tmp_path: Path):
+    _base(
+        tmp_path,
+        metrics="  checksum_lineage_coverage: {kind: hard}\n",
+        dispositions={"checksum_lineage_coverage": {"disposition": "computed"}},
+    )
+    axis = _gap(tmp_path)
+    gaps = axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION)
+    assert [g.name for g in gaps] == ["checksum_lineage_coverage"]
+    assert "no non-empty computation" in gaps[0].detail
+
+
+def test_downgraded_metric_without_owner_or_reason_is_a_gap(tmp_path: Path):
+    _base(
+        tmp_path,
+        metrics="  checksum_lineage_coverage: {kind: hard}\n",
+        dispositions={"checksum_lineage_coverage": {"disposition": "downgraded"}},
+    )
+    axis = _gap(tmp_path)
+    gaps = axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION)
+    assert [g.name for g in gaps] == ["checksum_lineage_coverage"]
+    assert "owner and reason" in gaps[0].detail
+
+
+def test_unknown_metric_disposition_is_a_gap(tmp_path: Path):
+    _base(
+        tmp_path,
+        metrics="  checksum_lineage_coverage: {kind: hard}\n",
+        dispositions={"checksum_lineage_coverage": {"disposition": "ignored"}},
+    )
+    axis = _gap(tmp_path)
+    assert _names(axis, HARD_METRIC_WITHOUT_COMPUTATION) == {
+        "checksum_lineage_coverage"
+    }
 
 
 def test_diagnostic_metric_is_outside_the_axis(tmp_path: Path):
@@ -139,22 +262,23 @@ def test_diagnostic_metric_is_outside_the_axis(tmp_path: Path):
     assert axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION) == ()
 
 
-def test_adding_a_hard_metric_without_implementation_increases_count_by_one(
+def test_adding_a_hard_metric_without_a_record_adds_exactly_one_gap(
     tmp_path: Path,
 ):
     """The regression direction: a new declared hard metric is exactly +1 gap."""
-    _base(tmp_path, metrics="  first_metric: {kind: hard}\n")
+    covered = {"first_metric": _computed("da-domain::hard_metrics::first_metric")}
+    _base(tmp_path, metrics="  first_metric: {kind: hard}\n", dispositions=covered)
+    _write_computation_surface(tmp_path, "first_metric")
     before = _gap(tmp_path).count
     _base(
         tmp_path,
         metrics="  first_metric: {kind: hard}\n  second_metric: {kind: hard}\n",
+        dispositions=covered,
     )
+    _write_computation_surface(tmp_path, "first_metric")
     after = _gap(tmp_path)
     assert after.count == before + 1
-    assert _names(after, HARD_METRIC_WITHOUT_COMPUTATION) == {
-        "first_metric",
-        "second_metric",
-    }
+    assert _names(after, HARD_METRIC_WITHOUT_COMPUTATION) == {"second_metric"}
 
 
 # ── class B: stage hard invariant without a disposition record ───────────────
@@ -356,6 +480,33 @@ def test_malformed_metric_declaration_fails_loudly(tmp_path: Path):
         _gap(tmp_path)
 
 
+def test_missing_metric_dispositions_block_fails_loudly(tmp_path: Path):
+    """A metric file with no dispositions block must raise, not read as zero."""
+    (tmp_path / "crates").mkdir()
+    _write(tmp_path, _METRIC_PATH, "metric_definitions:\n  a: {kind: hard}\n")
+    _write_stages(tmp_path, [])
+    _write_prompt_registry(tmp_path, [], [])
+    with pytest.raises(ValueError):
+        _gap(tmp_path)
+
+
+def test_malformed_metric_disposition_records_fails_loudly(tmp_path: Path):
+    """A non-mapping `records` block must raise rather than vacuously pass."""
+    (tmp_path / "crates").mkdir()
+    _write(
+        tmp_path,
+        _METRIC_PATH,
+        "metric_definitions:\n  a: {kind: hard}\n"
+        "metric_dispositions:\n"
+        "  schema_version: metric-dispositions.v1\n"
+        "  records: []\n",
+    )
+    _write_stages(tmp_path, [])
+    _write_prompt_registry(tmp_path, [], [])
+    with pytest.raises(ValueError):
+        _gap(tmp_path)
+
+
 def test_missing_dispositions_block_fails_loudly(tmp_path: Path):
     """A stage file with no dispositions block must raise, not read as zero gaps."""
     _base(tmp_path)
@@ -389,34 +540,27 @@ def test_malformed_dispositions_records_fails_loudly(tmp_path: Path):
 # ── real tree ────────────────────────────────────────────────────────────────
 
 
-def test_real_tree_reports_a_nonzero_count_and_names_the_known_gaps():
-    """On the live tree class B reads zero and class C still names `critic`.
+def test_real_tree_class_a_and_b_read_zero_and_class_c_names_only_critic():
+    """On the live tree every hard metric is disposed and only `critic` is open.
 
-    Every one of the 52 declared stage hard invariants carries a disposition
-    record, so class B has no gaps. Class A's membership is owned by T05, so
-    this test does not pin it; class C is unchanged.
+    All eleven declared hard metrics carry a resolving `computed` record, so
+    class A has no gaps; all 52 declared stage hard invariants carry a
+    disposition record, so class B has none; the prompt registry still binds the
+    unregistered `critic` form, so the total is exactly one.
     """
     axis = observe_declaration_sync_gap()
-    assert axis.count > 0
+    assert axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION) == ()
     assert axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK) == ()
+    assert _names(axis, PROMPT_FORM_WITHOUT_REGISTRY_ENTRY) == {"critic"}
+    assert axis.count == 1
+    assert axis.declared_for(HARD_METRIC_WITHOUT_COMPUTATION) == 11
     assert axis.declared_for(STAGE_INVARIANT_WITHOUT_CHECK) == 52
-    assert "critic" in _names(axis, PROMPT_FORM_WITHOUT_REGISTRY_ENTRY)
-    # The count is exactly the sum of the per-class gaps.
-    assert axis.count == sum(
-        len(axis.gaps_for(cls))
-        for cls in (
-            HARD_METRIC_WITHOUT_COMPUTATION,
-            STAGE_INVARIANT_WITHOUT_CHECK,
-            PROMPT_FORM_WITHOUT_REGISTRY_ENTRY,
-        )
-    )
     rendered = axis.render_lines()
     assert rendered and "declaration synchronisation:" in rendered[0]
 
 
-def test_real_tree_metric_gaps_are_a_subset_of_the_declared_hard_metrics():
-    """Every named metric gap is genuinely declared kind: hard."""
-    axis = observe_declaration_sync_gap()
+def test_real_tree_every_declared_hard_metric_carries_a_disposition_record():
+    """The registry covers exactly the declared hard metrics, no more, no less."""
     root = Path(__file__).resolve().parent.parent.parent
     declarations = yaml.safe_load((root / _METRIC_PATH).read_text(encoding="utf-8"))
     hard_names = {
@@ -424,4 +568,5 @@ def test_real_tree_metric_gaps_are_a_subset_of_the_declared_hard_metrics():
         for name, spec in declarations["metric_definitions"].items()
         if isinstance(spec, dict) and spec.get("kind") == "hard"
     }
-    assert _names(axis, HARD_METRIC_WITHOUT_COMPUTATION) <= hard_names
+    records = declarations["metric_dispositions"]["records"]
+    assert set(records) == hard_names

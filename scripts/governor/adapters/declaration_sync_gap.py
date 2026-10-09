@@ -8,15 +8,17 @@ individually rather than aggregated, so the figure is actionable.
 Three independent declaration surfaces are reconciled against their
 enforcement counterparts:
 
-1. **Hard metrics without a production computation.** ``scripts/governor/checks/
+1. **Hard metrics without a disposition.** ``scripts/governor/checks/
    article_context_assurance.yaml`` declares ``metric_definitions`` and marks
-   some ``kind: hard``. A hard metric is "computed" when its name appears as a
-   whole token in production Rust sources (``crates/*/src``). A declared hard
-   metric that appears nowhere in production is a gap: the policy asserts a
-   1.0 gate that no code produces (CONTEXT G2 — ``checksum_lineage_coverage``,
-   ``typed_missingness_coverage``, ``evidence_grounding_coverage``,
-   ``ontology_conformance``, ``cache_lineage_exactness``,
-   ``semantic_task_pass_rate``).
+   some ``kind: hard``, plus a ``metric_dispositions.records`` block that covers
+   every declared hard metric (CONTEXT G2). A ``computed`` record is covered
+   when its ``computation`` names a symbol that occurs as a whole token in
+   production Rust sources (``crates/*/src``); a ``downgraded`` record is
+   covered when it carries a non-empty ``owner`` and ``reason``. A declared hard
+   metric with no record, or a malformed one, is a gap: the policy asserts a 1.0
+   gate that no code produces and no owner has downgraded. The block is a
+   required input, so a missing or malformed one raises rather than letting the
+   axis report a vacuous zero.
 
 2. **Stage hard invariants without a disposition.**
    ``data/ontology/pipeline_stage_contracts.yaml`` attaches ``hard_invariants``
@@ -166,19 +168,89 @@ def _hard_metric_names(root: Path) -> list[str]:
     return names
 
 
+def _metric_dispositions(root: Path) -> dict:
+    """The ``metric_dispositions.records`` mapping, required to exist.
+
+    Refusing a missing or non-mapping block keeps the axis fail-closed: without
+    it a fresh declaration file would silently read as zero gaps.
+    """
+    block = _load_yaml(root, _METRIC_DECLARATION).get("metric_dispositions")
+    if not isinstance(block, dict):
+        raise ValueError(
+            f"{_METRIC_DECLARATION} has no metric_dispositions mapping; every "
+            "declared hard metric must carry a computed or downgraded disposition"
+        )
+    records = block.get("records")
+    if not isinstance(records, dict):
+        raise ValueError(
+            f"{_METRIC_DECLARATION} metric_dispositions.records must be a mapping"
+        )
+    return records
+
+
+def _metric_disposition_gap_reason(
+    record: object, surfaces: Sequence[tuple[Path, str]]
+) -> str | None:
+    """``None`` when ``record`` well-formedly covers its metric, else the cause."""
+    if not isinstance(record, dict):
+        return f"metric disposition record is not a mapping, got {type(record).__name__}"
+    disposition = record.get("disposition")
+    if disposition == "computed":
+        computation = record.get("computation")
+        if not isinstance(computation, str) or not computation.strip():
+            return "disposition 'computed' carries no non-empty computation"
+        symbol = computation.rsplit("::", 1)[-1].strip()
+        if not symbol:
+            return f"computation {computation!r} has no trailing '::' symbol"
+        if not _contains_token(surfaces, symbol):
+            return (
+                f"disposition 'computed' names {symbol!r}, but it occurs in no "
+                "production Rust source (crates/*/src)"
+            )
+        return None
+    if disposition == "downgraded":
+        owner = record.get("owner")
+        reason = record.get("reason")
+        if (
+            isinstance(owner, str)
+            and owner.strip()
+            and isinstance(reason, str)
+            and reason.strip()
+        ):
+            return None
+        return "disposition 'downgraded' carries no non-empty owner and reason"
+    return f"disposition {disposition!r} is neither 'computed' nor 'downgraded'"
+
+
 def _metric_gaps(root: Path, surfaces: Sequence[tuple[Path, str]]) -> tuple[list[str], list[DeclarationGap]]:
     declared = _hard_metric_names(root)
-    gaps = [
-        DeclarationGap(
-            HARD_METRIC_WITHOUT_COMPUTATION,
-            name,
-            _METRIC_DECLARATION,
-            f"metric {name!r} is declared kind: hard but its name occurs in no "
-            "production Rust source (crates/*/src), so no code computes it",
-        )
-        for name in declared
-        if not _contains_token(surfaces, name)
-    ]
+    records = _metric_dispositions(root)
+    gaps: list[DeclarationGap] = []
+    for name in declared:
+        record = records.get(name)
+        if record is None:
+            gaps.append(
+                DeclarationGap(
+                    HARD_METRIC_WITHOUT_COMPUTATION,
+                    name,
+                    _METRIC_DECLARATION,
+                    f"hard metric {name!r} is declared but has no "
+                    "metric_dispositions record, so nothing computes or "
+                    "downgrades it",
+                )
+            )
+            continue
+        cause = _metric_disposition_gap_reason(record, surfaces)
+        if cause is not None:
+            gaps.append(
+                DeclarationGap(
+                    HARD_METRIC_WITHOUT_COMPUTATION,
+                    name,
+                    _METRIC_DECLARATION,
+                    f"hard metric {name!r} has a malformed metric disposition "
+                    f"record: {cause}",
+                )
+            )
     return declared, gaps
 
 
@@ -324,9 +396,9 @@ class DeclarationSyncGap:
             "axis": "declaration_sync_gap",
             "definition": (
                 "number of declarations the DATA makes that the code does not enforce: "
-                "a hard metric with no production computation, a stage hard invariant "
-                "with no disposition, and a prompt call form with no resolvable "
-                "registry entry. The goal is zero."
+                "a hard metric with no computed-or-downgraded disposition, a stage "
+                "hard invariant with no disposition, and a prompt call form with no "
+                "resolvable registry entry. The goal is zero."
             ),
             "root": self.root,
             "gap_count": self.count,
