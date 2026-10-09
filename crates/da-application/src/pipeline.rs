@@ -5,7 +5,8 @@
 //! LLM, JAR and filesystem adapters are injected through ports.
 
 use da_domain::{
-    AdmissionDecision, ArticleContextState, StageCacheMode, StageIdRegistry, admit_stage_transition,
+    AcapAdmissionPolicy, AdmissionDecision, ArticleContextState, StageCacheMode, StageIdRegistry,
+    acap_skip_reason_for, admit_stage_transition_with_policy,
 };
 use da_ports::clock::Clock;
 use da_ports::pipeline_cache::{
@@ -96,6 +97,13 @@ pub struct PipelineOrchestrator {
     cache: Arc<dyn PipelineCache>,
     clock: Arc<dyn Clock>,
     stage_registry: Arc<StageIdRegistry>,
+    /// The ACAP admission policy the runtime executes. Defaults to
+    /// [`AcapAdmissionPolicy::canonical`] (the pinned DATA semantics) so
+    /// existing call sites keep their behavior; production wires the policy
+    /// loaded from the single DATA declaration with [`Self::with_acap_policy`].
+    /// The governor reads the same declaration through its admission rule, so
+    /// both sides resolve one truth.
+    acap_policy: Arc<AcapAdmissionPolicy>,
     executors: HashMap<String, Arc<dyn PipelineStageExecutor>>,
 }
 
@@ -109,8 +117,18 @@ impl PipelineOrchestrator {
             cache,
             clock,
             stage_registry,
+            acap_policy: Arc::new(AcapAdmissionPolicy::canonical()),
             executors: HashMap::new(),
         }
+    }
+
+    /// Replace the default canonical ACAP admission policy with one loaded from
+    /// the single DATA declaration (`article_context_assurance.yaml#admission`
+    /// plus the ordered `fsm.states`). R138: infrastructure loads the DATA
+    /// (`da-adapters`), the application executes the pure domain value.
+    pub fn with_acap_policy(mut self, policy: Arc<AcapAdmissionPolicy>) -> Self {
+        self.acap_policy = policy;
+        self
     }
 
     fn canonical_stage_id(&self, raw: &str) -> Result<String, PipelineOrchestratorError> {
@@ -192,7 +210,18 @@ impl PipelineOrchestrator {
                 let evidence_ref = prior_evidence
                     .clone()
                     .unwrap_or_else(|| source_entry_evidence(&source).unwrap_or_default());
-                admit_stage_transition(prior_state, target, &evidence_ref)
+                // The runtime executes the loaded policy value (not a hardcoded
+                // canonical one) and derives the typed forward-skip reason, so
+                // an admitted forward layer skip carries the reason the
+                // declaration's `skip_requires_typed_reason` rule requires.
+                let skip_reason = acap_skip_reason_for(&self.acap_policy, prior_state, target);
+                admit_stage_transition_with_policy(
+                    &self.acap_policy,
+                    prior_state,
+                    target,
+                    &evidence_ref,
+                    skip_reason.as_deref(),
+                )
             });
             if let Some(decision) = &admission {
                 if !decision.admitted {
@@ -237,6 +266,9 @@ impl PipelineOrchestrator {
                     stage = %canonical_stage_id,
                     resolved_from = resolved_from.as_deref().unwrap_or(""),
                     evidence_ref = %decision.evidence_ref,
+                    // Typed skip reason for an admitted forward layer skip;
+                    // empty for an adjacent move, a repeat or the failure sink.
+                    skip_reason = decision.skip_reason.as_deref().unwrap_or(""),
                     event = "pipeline_stage_admitted"
                 );
                 prior_state = target_state;
@@ -1824,6 +1856,168 @@ mod tests {
                 );
             }
         }
+    }
+
+    // ── S07 T05: the runtime executes the DATA-loaded admission policy ──
+
+    /// Load the single declared ACAP admission policy from the DATA file.
+    /// `da-adapters` is a dev-dependency, so the loader is available to unit
+    /// tests (R138: infrastructure loads, the application executes the value).
+    fn data_acap_policy() -> Arc<AcapAdmissionPolicy> {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join("scripts/governor/checks/article_context_assurance.yaml");
+        Arc::new(
+            da_adapters::acap_policy::load_acap_admission_policy(&path)
+                .expect("the project ACAP declaration must load"),
+        )
+    }
+
+    #[tokio::test]
+    async fn acap_loaded_policy_admits_forward_skip_with_typed_reason() {
+        // parse (Parsed) -> summary (Summarized) is a forward layer skip. The
+        // orchestrator must execute the policy loaded from DATA and record the
+        // derived typed skip reason on the admitted decision, so the run record
+        // can satisfy the declaration's skip_requires_typed_reason rule.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_acap_policy(data_acap_policy())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&pipeline(), source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(report.completed, "the forward-skip pipeline completes");
+        assert_eq!(report.stages.len(), 2);
+        let entry = report.stages[0]
+            .admission
+            .as_ref()
+            .expect("entry admission");
+        assert!(entry.admitted);
+        assert_eq!(entry.skip_reason, None, "entry is not a forward skip");
+        let skip = report.stages[1]
+            .admission
+            .as_ref()
+            .expect("summary admission");
+        assert!(
+            skip.admitted,
+            "forward skip is admitted under the loaded policy"
+        );
+        assert!(skip.error.is_none());
+        assert_eq!(
+            skip.skip_reason.as_deref(),
+            Some("acap_skip:Parsed->Summarized"),
+            "the admitted forward skip records the derived typed reason"
+        );
+        assert_eq!(summary.calls(), 1);
+    }
+
+    #[tokio::test]
+    async fn acap_loaded_policy_blocks_mid_fsm_entry() {
+        // Starting at summary (Summarized) is above the declared entry states
+        // (source_registered/source_verified/parsed): the loaded policy blocks
+        // the entry with a typed illegal_transition before the executor runs.
+        let cache = Arc::new(MemoryCache::default());
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let mid_fsm = PipelineBuilder::new("acap-mid-fsm-entry")
+            .step("summary", "summary", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_acap_policy(data_acap_policy())
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&mid_fsm, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        let decision = report.stages[0]
+            .admission
+            .as_ref()
+            .expect("mid-FSM entry carries an admission decision");
+        assert!(!decision.admitted);
+        let error = decision.error.as_ref().expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(summary.calls(), 0, "blocked entry must not execute");
+    }
+
+    #[test]
+    fn acap_loaded_policy_blocks_forward_skip_without_typed_reason() {
+        // The orchestrator derives the reason for every forward skip, so this
+        // fail-closed path is unreachable through `run`; the test pins the
+        // runtime contract `run` calls, proving the declaration's
+        // skip_requires_typed_reason is enforced when the reason is absent.
+        let policy = data_acap_policy();
+        let decision = admit_stage_transition_with_policy(
+            &policy,
+            Some(ArticleContextState::Parsed),
+            ArticleContextState::Summarized,
+            "test-key-parse",
+            None,
+        );
+        assert!(!decision.admitted);
+        let error = decision.error.as_ref().expect("typed error");
+        assert_eq!(error.error_class(), "admission:missing_skip_reason");
+    }
+
+    #[tokio::test]
+    async fn acap_orchestrator_executes_injected_policy_not_canonical() {
+        // Injection proof: a policy whose declared order puts Summarized before
+        // Parsed makes parse -> summary a regression, while the canonical policy
+        // admits it as a forward skip. A blocked, executor-free run therefore
+        // proves `run` executes the injected value rather than the hardcoded
+        // canonical policy.
+        let mut order = da_domain::ACAP_FSM_ORDER.to_vec();
+        let parsed = order
+            .iter()
+            .position(|state| *state == ArticleContextState::Parsed)
+            .expect("Parsed is in the declared order");
+        let summarized = order
+            .iter()
+            .position(|state| *state == ArticleContextState::Summarized)
+            .expect("Summarized is in the declared order");
+        order.swap(parsed, summarized);
+        let injected = Arc::new(
+            AcapAdmissionPolicy::new(
+                order,
+                [ArticleContextState::Parsed].into_iter().collect(),
+                ArticleContextState::FailedVisible,
+                da_domain::AcapForwardRule::MonotoneSubset,
+                true,
+                true,
+                true,
+            )
+            .expect("a complete permutation is a valid policy"),
+        );
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_acap_policy(injected)
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&pipeline(), source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(
+            !report.completed,
+            "the injected order makes parse -> summary a regression"
+        );
+        let error = report.stages[1]
+            .admission
+            .as_ref()
+            .expect("summary admission")
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(summary.calls(), 0, "the regressed stage must not execute");
     }
 
     #[tokio::test]
