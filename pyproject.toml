@@ -34,3 +34,11 @@ dev = [
 # verification command that omits the prefix dies at collection instead of
 # reporting the governance assertions it was meant to run.
 pythonpath = ["scripts"]
+# Root the per-run tmp tree (`pytest-of-<user>/`) inside the repo instead of the
+# system /tmp: the governor gate's pytest steps (and any manual run) then leave
+# their scratch under `target/pytest`, which is gitignored with `target/` and
+# reclaimed by `governor hygiene`/`closeout` retention instead of silently
+# accumulating gigabytes in the shared /tmp. pytest keeps only the three most
+# recent run directories; the path is absolute so `basetemp` does not depend on
+# the invocation cwd.
+basetemp = "/root/daily-archive/target/pytest-tmp"

@@ -45,6 +45,23 @@ fsm:
   failure_transition_from: "*"
   failure_transition_to: failed_visible
   retry_requires_same_semantic_key: true
+
+# Single declaration of the runtime ACAP admission semantics (S07). The
+# runtime reads this block through the pure da-domain AcapAdmissionPolicy value
+# (loaded from DATA by da-adapters::load_acap_admission_policy and executed by
+# PipelineOrchestrator); the governor reads the same file in
+# `_acap_admission_violations`. Layer order/rank is the ordered `fsm.states`
+# list above -- this block must not duplicate it. The strict adjacent
+# `fsm.transitions` table is retained as a declaration of the canonical
+# one-lineage chain, not as the runtime admission rule: stage-subset pipelines
+# legitimately skip layers forward (monotone subset). One truth, read by both.
+admission:
+  semantics_version: acap-admission-v1
+  entry_states: [source_registered, source_verified, parsed]
+  forward_rule: monotone_subset
+  same_layer_repeat: allowed
+  failure_sink: failed_visible
+  evidence_required: true
   skip_requires_typed_reason: true
 
 metric_definitions:
