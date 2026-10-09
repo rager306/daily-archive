@@ -4,6 +4,7 @@
 //! write graph truth. Producers live behind ports; application use cases build
 //! reports from already-observed stage results.
 
+use crate::acap_policy::{AcapAdmissionPolicy, AcapForwardRule};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -204,6 +205,9 @@ pub enum TransitionAdmissionCode {
     TerminalSink,
     /// Admission was requested without a durable evidence reference.
     MissingEvidence,
+    /// An admitted forward layer skip carried no typed skip reason while the
+    /// declaration requires one.
+    MissingSkipReason,
 }
 
 impl TransitionAdmissionCode {
@@ -214,6 +218,7 @@ impl TransitionAdmissionCode {
             Self::MissingEntryState => "missing_entry_state",
             Self::TerminalSink => "terminal_sink",
             Self::MissingEvidence => "missing_evidence",
+            Self::MissingSkipReason => "missing_skip_reason",
         }
     }
 }
@@ -279,6 +284,12 @@ pub struct AdmissionDecision {
     /// Typed refusal when `admitted == false`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TransitionAdmissionError>,
+    /// Typed skip reason carried by an admitted forward layer skip. Set from
+    /// the policy-derived reason ([`acap_skip_reason_for`]) so a run report can
+    /// satisfy the declaration's `skip_requires_typed_reason` rule; `None` for
+    /// an adjacent move, a same-layer repeat, a failure sink or a refusal.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skip_reason: Option<String>,
 }
 
 impl AdmissionDecision {
@@ -287,6 +298,21 @@ impl AdmissionDecision {
             admitted: true,
             evidence_ref: evidence_ref.into(),
             error: None,
+            skip_reason: None,
+        }
+    }
+
+    /// Admitted decision that also carries the typed skip reason for a forward
+    /// layer skip.
+    pub fn admitted_with_skip_reason(
+        evidence_ref: impl Into<String>,
+        skip_reason: Option<String>,
+    ) -> Self {
+        Self {
+            admitted: true,
+            evidence_ref: evidence_ref.into(),
+            error: None,
+            skip_reason,
         }
     }
 
@@ -296,6 +322,7 @@ impl AdmissionDecision {
             admitted: false,
             evidence_ref,
             error: Some(error),
+            skip_reason: None,
         }
     }
 }
@@ -349,10 +376,47 @@ pub fn admit_stage_transition(
     target: ArticleContextState,
     evidence_ref: &str,
 ) -> AdmissionDecision {
-    use ArticleContextState::*;
+    // Compatibility wrapper: the runtime executed these semantics before the
+    // declaration existed. It derives the typed skip reason exactly as the
+    // policy declaration requires, so existing callers and tests keep their
+    // outcome while the decision itself is now policy-driven.
+    let policy = AcapAdmissionPolicy::canonical();
+    let skip_reason = acap_skip_reason_for(&policy, prior, target);
+    admit_stage_transition_with_policy(&policy, prior, target, evidence_ref, skip_reason.as_deref())
+}
+
+/// ACAP runtime admission driven by an [`AcapAdmissionPolicy`] value.
+///
+/// This is the one function that implements the declared admission semantics
+/// (`article_context_assurance.yaml#admission` plus the ordered `fsm.states`);
+/// the governor mirrors it in `_acap_admission_violations` and the shared
+/// parity vectors assert both sides agree. Order of the fail-closed checks:
+///
+/// 1. a non-empty durable `evidence_ref` is required when the policy says so
+///    ([`TransitionAdmissionCode::MissingEntryState`] on a run entry,
+///    [`TransitionAdmissionCode::MissingEvidence`] otherwise);
+/// 2. a prior state equal to the declared failure sink is terminal
+///    ([`TransitionAdmissionCode::TerminalSink`]);
+/// 3. the failure sink is reachable from any state;
+/// 4. a run entry (`prior == None`) is admitted only from a declared entry
+///    state, else [`TransitionAdmissionCode::IllegalTransition`];
+/// 5. forward progress is admitted, and a forward layer skip requires a
+///    non-empty typed `skip_reason` when the declaration requires one, else
+///    [`TransitionAdmissionCode::MissingSkipReason`]; a regression is
+///    [`TransitionAdmissionCode::IllegalTransition`].
+///
+/// Pure domain value — no I/O, no graph truth.
+pub fn admit_stage_transition_with_policy(
+    policy: &AcapAdmissionPolicy,
+    prior: Option<ArticleContextState>,
+    target: ArticleContextState,
+    evidence_ref: &str,
+    skip_reason: Option<&str>,
+) -> AdmissionDecision {
     use TransitionAdmissionCode::*;
-    let from = prior.unwrap_or(SourceRegistered);
-    if evidence_ref.trim().is_empty() {
+    let from = prior.unwrap_or(ArticleContextState::SourceRegistered);
+
+    if policy.evidence_required() && evidence_ref.trim().is_empty() {
         let (code, reason) = match prior {
             None => (
                 MissingEntryState,
@@ -371,30 +435,30 @@ pub fn admit_stage_transition(
             target,
         ));
     }
-    if prior == Some(FailedVisible) {
+
+    if prior == Some(policy.failure_sink()) {
         return AdmissionDecision::blocked(TransitionAdmissionError::new(
             TerminalSink,
-            "prior state is FailedVisible, a terminal ACAP sink: no stage may follow a failure disposition",
+            "prior state is the declared ACAP failure sink: no stage may follow a failure disposition",
             evidence_ref.to_string(),
-            FailedVisible,
+            policy.failure_sink(),
             target,
         ));
     }
-    if target == FailedVisible {
+
+    if target == policy.failure_sink() {
         return AdmissionDecision::admitted(evidence_ref.to_string());
     }
+
     match prior {
         None => {
-            // Entry stage: only the first FSM layers may start a run. A run
-            // that begins mid-FSM (e.g. first step = summarized) fails closed
-            // instead of default-admitting (Q3 guardrail).
-            if target <= Parsed {
+            if policy.entry_states().contains(&target) {
                 AdmissionDecision::admitted(evidence_ref.to_string())
             } else {
                 AdmissionDecision::blocked(TransitionAdmissionError::new(
                     IllegalTransition,
                     format!(
-                        "{target:?} is not a valid entry stage: runs must start from the first ACAP FSM layers (source_registered/source_verified/parsed) with durable source evidence"
+                        "{target:?} is not a declared ACAP entry state: runs must start from a declared entry state with durable source evidence"
                     ),
                     evidence_ref.to_string(),
                     from,
@@ -402,22 +466,73 @@ pub fn admit_stage_transition(
                 ))
             }
         }
-        Some(prior) => {
-            if target >= prior {
-                AdmissionDecision::admitted(evidence_ref.to_string())
-            } else {
-                AdmissionDecision::blocked(TransitionAdmissionError::new(
-                    IllegalTransition,
-                    format!(
-                        "{prior:?} -> {target:?} regresses the ACAP FSM: stage-subset pipelines may skip layers forward but never move backward"
-                    ),
-                    evidence_ref.to_string(),
-                    prior,
-                    target,
-                ))
+        Some(prior) => match (policy.rank(prior), policy.rank(target)) {
+            (Some(prior_rank), Some(target_rank)) => {
+                let forward_progress = match policy.forward_rule() {
+                    AcapForwardRule::MonotoneSubset => target_rank > prior_rank,
+                };
+                let forward_skip = policy.is_forward_skip(prior, target);
+                if forward_skip
+                    && policy.skip_requires_typed_reason()
+                    && skip_reason.is_none_or(|reason| reason.trim().is_empty())
+                {
+                    return AdmissionDecision::blocked(TransitionAdmissionError::new(
+                        MissingSkipReason,
+                        format!(
+                            "{prior:?} -> {target:?} skips ACAP layers forward and requires a typed skip reason"
+                        ),
+                        evidence_ref.to_string(),
+                        prior,
+                        target,
+                    ));
+                }
+                let same_layer_repeat = target_rank == prior_rank && policy.same_layer_repeat();
+                if forward_progress || same_layer_repeat {
+                    AdmissionDecision::admitted_with_skip_reason(
+                        evidence_ref.to_string(),
+                        skip_reason.map(str::to_string),
+                    )
+                } else {
+                    AdmissionDecision::blocked(TransitionAdmissionError::new(
+                        IllegalTransition,
+                        format!(
+                            "{prior:?} -> {target:?} regresses the ACAP FSM: stage-subset pipelines may skip layers forward but never move backward"
+                        ),
+                        evidence_ref.to_string(),
+                        prior,
+                        target,
+                    ))
+                }
             }
-        }
+            _ => AdmissionDecision::blocked(TransitionAdmissionError::new(
+                IllegalTransition,
+                format!(
+                    "{prior:?} -> {target:?} is not representable in the declared ACAP state order"
+                ),
+                evidence_ref.to_string(),
+                prior,
+                target,
+            )),
+        },
     }
+}
+
+/// The typed skip reason for a forward layer skip from `prior` to `target`,
+/// e.g. `acap_skip:Parsed->Summarized`. `None` when there is no prior state, the
+/// move is not a forward layer skip, or `target` is the declared failure sink
+/// (a failure disposition is not a layer skip).
+pub fn acap_skip_reason_for(
+    policy: &AcapAdmissionPolicy,
+    prior: Option<ArticleContextState>,
+    target: ArticleContextState,
+) -> Option<String> {
+    let prior = prior?;
+    if target == policy.failure_sink() {
+        return None;
+    }
+    policy
+        .is_forward_skip(prior, target)
+        .then(|| format!("acap_skip:{prior:?}->{target:?}"))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -883,6 +998,7 @@ pub fn corpus_report_digest(report: &CorpusAssuranceReport) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::acap_policy::ACAP_FSM_ORDER;
     use proptest::prelude::*;
 
     fn layer() -> LayerAssuranceResult {
@@ -1458,5 +1574,372 @@ mod tests {
             "key:parse-v1",
         );
         assert!(sink.admitted, "any state may reach the failure sink");
+    }
+
+    // ── S07 T02: policy-driven ACAP admission gate ──
+
+    /// One shared parity-vector row, mirroring
+    /// `governor/fixtures/acap_runtime_control_plane/admission_parity.vectors.json`.
+    /// T03 asserts the JSON; this pins the same ten cases by hand.
+    struct AcapParityCase {
+        case: &'static str,
+        prior: Option<ArticleContextState>,
+        target: ArticleContextState,
+        evidence_ref: &'static str,
+        skip_reason: Option<&'static str>,
+        admitted: bool,
+        code: Option<&'static str>,
+    }
+
+    fn acap_parity_cases() -> Vec<AcapParityCase> {
+        use ArticleContextState::*;
+        vec![
+            AcapParityCase {
+                case: "entry_parsed",
+                prior: None,
+                target: Parsed,
+                evidence_ref: "source:sha256:pdf-v1",
+                skip_reason: None,
+                admitted: true,
+                code: None,
+            },
+            AcapParityCase {
+                case: "entry_mid_fsm",
+                prior: None,
+                target: Summarized,
+                evidence_ref: "source:sha256:pdf-v1",
+                skip_reason: None,
+                admitted: false,
+                code: Some("illegal_transition"),
+            },
+            AcapParityCase {
+                case: "entry_no_evidence",
+                prior: None,
+                target: Parsed,
+                evidence_ref: "",
+                skip_reason: None,
+                admitted: false,
+                code: Some("missing_entry_state"),
+            },
+            AcapParityCase {
+                case: "forward_skip",
+                prior: Some(Parsed),
+                target: Summarized,
+                evidence_ref: "test-key-parse",
+                skip_reason: Some("acap_skip:Parsed->Summarized"),
+                admitted: true,
+                code: None,
+            },
+            AcapParityCase {
+                case: "forward_skip_no_reason",
+                prior: Some(Parsed),
+                target: Summarized,
+                evidence_ref: "test-key-parse",
+                skip_reason: None,
+                admitted: false,
+                code: Some("missing_skip_reason"),
+            },
+            AcapParityCase {
+                case: "same_layer_repeat",
+                prior: Some(Parsed),
+                target: Parsed,
+                evidence_ref: "test-key-parse",
+                skip_reason: None,
+                admitted: true,
+                code: None,
+            },
+            AcapParityCase {
+                case: "failure_sink",
+                prior: Some(Parsed),
+                target: FailedVisible,
+                evidence_ref: "test-key-parse",
+                skip_reason: None,
+                admitted: true,
+                code: None,
+            },
+            AcapParityCase {
+                case: "regression",
+                prior: Some(Summarized),
+                target: Parsed,
+                evidence_ref: "test-key-summary",
+                skip_reason: None,
+                admitted: false,
+                code: Some("illegal_transition"),
+            },
+            AcapParityCase {
+                case: "missing_evidence",
+                prior: Some(Parsed),
+                target: Summarized,
+                evidence_ref: "",
+                skip_reason: None,
+                admitted: false,
+                code: Some("missing_evidence"),
+            },
+            AcapParityCase {
+                case: "terminal_sink",
+                prior: Some(FailedVisible),
+                target: Parsed,
+                evidence_ref: "test-key-failure",
+                skip_reason: None,
+                admitted: false,
+                code: Some("terminal_sink"),
+            },
+        ]
+    }
+
+    #[test]
+    fn acap_policy_gate_matches_the_ten_parity_cases_by_hand() {
+        let policy = AcapAdmissionPolicy::canonical();
+        for case in acap_parity_cases() {
+            let decision = admit_stage_transition_with_policy(
+                &policy,
+                case.prior,
+                case.target,
+                case.evidence_ref,
+                case.skip_reason,
+            );
+            assert_eq!(
+                decision.admitted, case.admitted,
+                "case {} admitted",
+                case.case
+            );
+            assert_eq!(
+                decision.error.as_ref().map(|error| error.code.as_str()),
+                case.code,
+                "case {} code",
+                case.case
+            );
+            assert_eq!(
+                decision.admitted,
+                decision.error.is_none(),
+                "case {} error presence",
+                case.case
+            );
+            assert_eq!(
+                decision.evidence_ref, case.evidence_ref,
+                "case {} evidence",
+                case.case
+            );
+        }
+    }
+
+    #[test]
+    fn acap_skip_reason_for_derives_typed_reason_for_forward_layer_skips() {
+        let policy = AcapAdmissionPolicy::canonical();
+        use ArticleContextState::*;
+        assert_eq!(
+            acap_skip_reason_for(&policy, Some(Parsed), Summarized),
+            Some("acap_skip:Parsed->Summarized".to_string())
+        );
+        // An adjacent move, a same-layer repeat and a regression are not skips.
+        assert_eq!(
+            acap_skip_reason_for(&policy, Some(Parsed), Structured),
+            None
+        );
+        assert_eq!(acap_skip_reason_for(&policy, Some(Parsed), Parsed), None);
+        assert_eq!(
+            acap_skip_reason_for(&policy, Some(Summarized), Parsed),
+            None
+        );
+        // A run entry has no prior state, and the failure sink is a disposition.
+        assert_eq!(acap_skip_reason_for(&policy, None, Parsed), None);
+        assert_eq!(
+            acap_skip_reason_for(&policy, Some(Parsed), FailedVisible),
+            None
+        );
+    }
+
+    #[test]
+    fn acap_compat_wrapper_derives_reason_and_keeps_forward_skip_admitted() {
+        let admitted = admit_stage_transition(
+            Some(ArticleContextState::Parsed),
+            ArticleContextState::Summarized,
+            "key:parse-v1",
+        );
+        assert!(admitted.admitted);
+        assert_eq!(
+            admitted.skip_reason.as_deref(),
+            Some("acap_skip:Parsed->Summarized")
+        );
+        // The same move without a derived reason fails closed on the new code.
+        let policy = AcapAdmissionPolicy::canonical();
+        let blocked = admit_stage_transition_with_policy(
+            &policy,
+            Some(ArticleContextState::Parsed),
+            ArticleContextState::Summarized,
+            "key:parse-v1",
+            None,
+        );
+        assert!(!blocked.admitted);
+        assert!(blocked.skip_reason.is_none());
+        assert_eq!(
+            blocked.error.unwrap().code,
+            TransitionAdmissionCode::MissingSkipReason
+        );
+    }
+
+    #[test]
+    fn acap_same_layer_repeat_is_policy_controlled() {
+        use ArticleContextState::*;
+        let repeat_allowed = AcapAdmissionPolicy::canonical();
+        let admitted = admit_stage_transition_with_policy(
+            &repeat_allowed,
+            Some(Parsed),
+            Parsed,
+            "key:parse-v1",
+            None,
+        );
+        assert!(admitted.admitted);
+        assert!(admitted.error.is_none());
+        // A declaration that forbids same-layer repeats blocks them.
+        let strict = AcapAdmissionPolicy::new(
+            ACAP_FSM_ORDER.to_vec(),
+            [SourceRegistered, SourceVerified, Parsed]
+                .into_iter()
+                .collect(),
+            FailedVisible,
+            AcapForwardRule::MonotoneSubset,
+            false,
+            true,
+            true,
+        )
+        .expect("valid declaration");
+        let repeat_blocked =
+            admit_stage_transition_with_policy(&strict, Some(Parsed), Parsed, "key:parse-v1", None);
+        assert!(!repeat_blocked.admitted);
+        assert_eq!(
+            repeat_blocked.error.unwrap().code,
+            TransitionAdmissionCode::IllegalTransition
+        );
+    }
+
+    #[test]
+    fn acap_entry_states_come_from_the_policy_not_enum_order() {
+        use ArticleContextState::*;
+        // Declare only `parsed` as an entry state; enum Ord would have admitted
+        // `source_registered` too, so this proves the decision reads the policy.
+        let parsed_only = AcapAdmissionPolicy::new(
+            ACAP_FSM_ORDER.to_vec(),
+            [Parsed].into_iter().collect(),
+            FailedVisible,
+            AcapForwardRule::MonotoneSubset,
+            true,
+            true,
+            true,
+        )
+        .expect("valid declaration");
+        let blocked = admit_stage_transition_with_policy(
+            &parsed_only,
+            None,
+            SourceRegistered,
+            "source:sha256:abc",
+            None,
+        );
+        assert!(!blocked.admitted);
+        assert_eq!(
+            blocked.error.unwrap().code,
+            TransitionAdmissionCode::IllegalTransition
+        );
+        assert!(
+            admit_stage_transition_with_policy(
+                &parsed_only,
+                None,
+                Parsed,
+                "source:sha256:abc",
+                None
+            )
+            .admitted
+        );
+        // The canonical declaration still admits `source_registered`.
+        let canonical = AcapAdmissionPolicy::canonical();
+        assert!(
+            admit_stage_transition_with_policy(
+                &canonical,
+                None,
+                SourceRegistered,
+                "source:sha256:abc",
+                None
+            )
+            .admitted
+        );
+    }
+
+    #[test]
+    fn acap_failure_sink_is_policy_declared_and_terminal() {
+        use ArticleContextState::*;
+        let policy = AcapAdmissionPolicy::canonical();
+        assert!(
+            admit_stage_transition_with_policy(
+                &policy,
+                Some(Parsed),
+                FailedVisible,
+                "key:parse-v1",
+                None
+            )
+            .admitted
+        );
+        assert_eq!(
+            admit_stage_transition_with_policy(
+                &policy,
+                Some(FailedVisible),
+                Parsed,
+                "key:failed",
+                None
+            )
+            .error
+            .unwrap()
+            .code,
+            TransitionAdmissionCode::TerminalSink
+        );
+    }
+
+    #[test]
+    fn acap_missing_evidence_precedes_skip_reason_check() {
+        use ArticleContextState::*;
+        let policy = AcapAdmissionPolicy::canonical();
+        let decision =
+            admit_stage_transition_with_policy(&policy, Some(Parsed), Summarized, "", None);
+        assert_eq!(
+            decision.error.unwrap().code,
+            TransitionAdmissionCode::MissingEvidence
+        );
+        let entry = admit_stage_transition_with_policy(&policy, None, Parsed, "  ", None);
+        assert_eq!(
+            entry.error.unwrap().code,
+            TransitionAdmissionCode::MissingEntryState
+        );
+    }
+
+    #[test]
+    fn acap_skip_reason_and_code_are_part_of_the_serialized_surface() {
+        let decision = AdmissionDecision::admitted_with_skip_reason(
+            "key:parse-v1",
+            Some("acap_skip:Parsed->Summarized".to_string()),
+        );
+        crate::roundtrip_json(&decision);
+        let json = serde_json::to_string(&decision).unwrap();
+        assert!(
+            json.contains("\"skip_reason\":\"acap_skip:Parsed->Summarized\""),
+            "{json}"
+        );
+        assert_eq!(
+            TransitionAdmissionCode::MissingSkipReason.as_str(),
+            "missing_skip_reason"
+        );
+        crate::roundtrip_json(&TransitionAdmissionCode::MissingSkipReason);
+        // A refusal carries no skip reason and omits the field when serialized.
+        let blocked = AdmissionDecision::blocked(TransitionAdmissionError::new(
+            TransitionAdmissionCode::MissingSkipReason,
+            "no typed skip reason",
+            "key:parse-v1",
+            ArticleContextState::Parsed,
+            ArticleContextState::Summarized,
+        ));
+        assert!(blocked.skip_reason.is_none());
+        crate::roundtrip_json(&blocked);
+        let json = serde_json::to_string(&blocked).unwrap();
+        // The top-level field is omitted; the code value `missing_skip_reason`
+        // is a different token, so match on the quoted field name.
+        assert!(!json.contains("\"skip_reason\""), "{json}");
     }
 }

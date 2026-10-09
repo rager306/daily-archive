@@ -7,6 +7,7 @@
 //! ADR-038 §2: 5-module schema (A-E), 18 relation types.
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
+pub mod acap_policy;
 pub mod acquisition_batch;
 pub mod agent;
 pub mod agent_manifest;
@@ -83,6 +84,7 @@ pub mod vocabulary;
 pub mod xy_cut;
 pub mod yaml_schema_adapter;
 
+pub use acap_policy::{ACAP_FSM_ORDER, AcapAdmissionPolicy, AcapForwardRule};
 pub use agent::{
     AgentAdmissionDecision, AgentAdmissionError, AgentBudget, AgentBudgetError, AgentClaim,
     AgentFailureCode, AgentGroundingError, AgentQueryEvidence, AgentState, ContextBundle,
@@ -99,8 +101,9 @@ pub use assurance::{
     AssuranceVerdict, BoundaryMode, ConservationObservation, ContentDigest, CorpusAggregateMetrics,
     CorpusAssuranceReport, CorpusLayerResult, CorpusLayerStatus, CountObservation,
     LayerAssuranceResult, MissingnessReason, MutationFamilyObservation, ReplayObservation,
-    TransitionAdmissionCode, TransitionAdmissionError, WriteDelta, admit_stage_transition,
-    admit_transition, corpus_report_digest,
+    TransitionAdmissionCode, TransitionAdmissionError, WriteDelta, acap_skip_reason_for,
+    admit_stage_transition, admit_stage_transition_with_policy, admit_transition,
+    corpus_report_digest,
 };
 pub use citation_identity::{
     AmbiguousCitationReason, CitationEntry, CitationOccurrence, CitationTarget, CitationWorkLink,
