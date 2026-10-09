@@ -48,6 +48,8 @@ from governor.adapters.checks.prompt_normative_contract import (
 )
 from governor.application.trajectory_service import (
     TrajectoryService,
+    _acap_fsm_decision,
+    _bind_acap_admission_policy,
     _boundary_positional_violations,
     _candidate_contract_flags,
     _license_provenance_violations,
@@ -2276,6 +2278,7 @@ locks:
   promotion_explicit_transitions: 3
 admission:
   fsm_policy: scripts/governor/checks/article_context_assurance.yaml
+  parity_fixture: governor/fixtures/acap_runtime_control_plane/admission_parity.vectors.json
   record_contract:
     required_fields: [stage_id, admitted, evidence_ref, disposition, from_state, to_state]
     dispositions: [executed, cache_hit, failed]
@@ -2288,7 +2291,7 @@ admission:
       id: admission_violations
       path: governor/fixtures/acap_runtime_control_plane/admission_illegal.negative.json
       expect:
-        require_violations: [illegal_transition, denied_without_reason, missing_evidence_ref, admitted_with_error, import_leak]
+        require_violations: [illegal_transition, missing_skip_reason, denied_without_reason, missing_evidence_ref, admitted_with_error, import_leak]
 promotion:
   record_contract:
     required_fields: [decision_id, transition, verifier, reviewer, promoter, evidence_refs, sink_len, explicit_transitions, import_eligible]
@@ -2347,6 +2350,23 @@ source_markers:
     _write(root / "scripts/governor/checks/article_context_assurance.yaml", """schema_version: article-context-assurance.v1
 fsm:
   initial_state: source_registered
+  terminal_states: [accepted_checkpoint, failed_visible]
+  states:
+    - source_registered
+    - source_verified
+    - parsed
+    - structured
+    - extracted
+    - evidence_linked
+    - embedded
+    - materialized
+    - enriched
+    - resolved
+    - summarized
+    - finalized
+    - task_accepted
+    - accepted_checkpoint
+    - failed_visible
   transitions:
     - [source_registered, source_verified]
     - [source_verified, parsed]
@@ -2361,6 +2381,17 @@ fsm:
     - [summarized, finalized]
     - [finalized, task_accepted]
     - [task_accepted, accepted_checkpoint]
+  failure_transition_from: "*"
+  failure_transition_to: failed_visible
+  retry_requires_same_semantic_key: true
+admission:
+  semantics_version: acap-admission-v1
+  entry_states: [source_registered, source_verified, parsed]
+  forward_rule: monotone_subset
+  same_layer_repeat: allowed
+  failure_sink: failed_visible
+  evidence_required: true
+  skip_requires_typed_reason: true
 """)
     _write(root / "governor/fixtures/acap_runtime_control_plane/admission_legal.positive.json", json.dumps([
         {"stage_id": "acquisition", "admitted": True,
@@ -2372,9 +2403,13 @@ fsm:
     ]))
     _write(root / "governor/fixtures/acap_runtime_control_plane/admission_illegal.negative.json", json.dumps([
         {"violation": "illegal_transition", "record": {
-            "stage_id": "summary", "admitted": False, "evidence_ref": "",
-            "disposition": "failed", "from_state": "source_registered",
-            "to_state": "summarized", "error_class": "admission:illegal_transition"}},
+            "stage_id": "summary", "admitted": False, "evidence_ref": "test-key-summary",
+            "disposition": "failed", "from_state": "summarized",
+            "to_state": "parsed", "error_class": "admission:illegal_transition"}},
+        {"violation": "missing_skip_reason", "record": {
+            "stage_id": "summary", "admitted": True, "evidence_ref": "test-key-parse",
+            "disposition": "executed", "from_state": "parsed",
+            "to_state": "summarized"}},
         {"violation": "denied_without_reason", "record": {
             "stage_id": "checkpoint", "admitted": False, "evidence_ref": "",
             "disposition": "failed", "from_state": "task_accepted",
@@ -2390,6 +2425,38 @@ fsm:
             "stage_id": "summary", "admitted": True, "evidence_ref": "test-key-resolution",
             "disposition": "executed", "from_state": "embedded", "to_state": "materialized",
             "import_eligible": True}},
+    ]))
+    _write(root / "governor/fixtures/acap_runtime_control_plane/admission_parity.vectors.json", json.dumps([
+        {"case": "entry_parsed", "prior": None, "target": "parsed",
+         "evidence_ref": "source:sha256:pdf-v1", "skip_reason": None,
+         "admitted": True, "code": None},
+        {"case": "entry_mid_fsm", "prior": None, "target": "summarized",
+         "evidence_ref": "source:sha256:pdf-v1", "skip_reason": None,
+         "admitted": False, "code": "illegal_transition"},
+        {"case": "entry_no_evidence", "prior": None, "target": "parsed",
+         "evidence_ref": "", "skip_reason": None,
+         "admitted": False, "code": "missing_entry_state"},
+        {"case": "forward_skip", "prior": "parsed", "target": "summarized",
+         "evidence_ref": "test-key-parse", "skip_reason": "acap_skip:Parsed->Summarized",
+         "admitted": True, "code": None},
+        {"case": "forward_skip_no_reason", "prior": "parsed", "target": "summarized",
+         "evidence_ref": "test-key-parse", "skip_reason": None,
+         "admitted": False, "code": "missing_skip_reason"},
+        {"case": "same_layer_repeat", "prior": "parsed", "target": "parsed",
+         "evidence_ref": "test-key-parse", "skip_reason": None,
+         "admitted": True, "code": None},
+        {"case": "failure_sink", "prior": "parsed", "target": "failed_visible",
+         "evidence_ref": "test-key-parse", "skip_reason": None,
+         "admitted": True, "code": None},
+        {"case": "regression", "prior": "summarized", "target": "parsed",
+         "evidence_ref": "test-key-summary", "skip_reason": None,
+         "admitted": False, "code": "illegal_transition"},
+        {"case": "missing_evidence", "prior": "parsed", "target": "summarized",
+         "evidence_ref": "", "skip_reason": None,
+         "admitted": False, "code": "missing_evidence"},
+        {"case": "terminal_sink", "prior": "failed_visible", "target": "parsed",
+         "evidence_ref": "test-key-failure", "skip_reason": None,
+         "admitted": False, "code": "terminal_sink"},
     ]))
     _write(root / "governor/fixtures/acap_runtime_control_plane/promotion_authority.positive.json", json.dumps([
         {"decision_id": "gold-3", "transition": "promoted",
@@ -2560,6 +2627,56 @@ def test_acap_runtime_control_plane_pass_on_clean_fixtures():
     service.root = _make_root()
     _write_acap_runtime_control_plane_contract(service.root)
     assert service._check_acap_runtime_control_plane() == []
+
+
+def test_acap_runtime_control_plane_parity_vectors_agree_with_governor_rule():
+    """The shared oracle must agree with the governor rule on every case."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    policy = yaml.safe_load(
+        (service.root / "scripts/governor/checks/article_context_assurance.yaml").read_text()
+    )
+    bound = _bind_acap_admission_policy(policy)
+    assert bound is not None, "the shipped declaration must bind"
+    vectors = json.loads(
+        (service.root / "governor/fixtures/acap_runtime_control_plane/admission_parity.vectors.json").read_text()
+    )
+    assert len(vectors) == 10
+    for vector in vectors:
+        decided, code = _acap_fsm_decision(
+            bound,
+            vector["prior"],
+            vector["target"],
+            vector["evidence_ref"],
+            vector["skip_reason"],
+        )
+        assert decided == vector["admitted"], vector["case"]
+        assert code == vector["code"], vector["case"]
+
+
+def test_acap_runtime_control_plane_parity_mismatch_is_flagged():
+    """A vector the governor rule does not reproduce names its case."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    path = (
+        service.root
+        / "governor/fixtures/acap_runtime_control_plane/admission_parity.vectors.json"
+    )
+    vectors = json.loads(path.read_text())
+    for vector in vectors:
+        if vector["case"] == "forward_skip":
+            vector["admitted"] = False
+    _write(path, json.dumps(vectors))
+    flags = service._check_acap_runtime_control_plane()
+    mismatch = [
+        f
+        for f in flags
+        if f.flag == "acap_runtime_control_plane_admission_parity_mismatch"
+    ]
+    assert len(mismatch) == 1
+    assert "forward_skip" in mismatch[0].evidence
 
 def test_acap_runtime_control_plane_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)

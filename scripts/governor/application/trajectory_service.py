@@ -309,16 +309,122 @@ def _promotion_qualification_violations(package: dict, contract: dict) -> set[st
     return violations
 
 
-def _acap_admission_violations(record: dict, contract: dict, transitions: set) -> set[str]:
+def _bind_acap_admission_policy(policy: dict) -> dict | None:
+    """Bind the single ACAP admission declaration to a pure policy value.
+
+    The declaration is `article_context_assurance.yaml`: the ordered
+    `fsm.states` list plus the top-level `admission` block. Mirrors the strict
+    `da-adapters::load_acap_admission_policy` loader and
+    `AcapAdmissionPolicy::new`: a declaration that omits or weakens the block,
+    names an unknown `forward_rule` / `same_layer_repeat`, disagrees with the
+    `fsm` failure sink, or names an undeclared entry state returns `None` (the
+    caller flags it high). No I/O and no YAML parsing here — the caller reads
+    the file.
+    """
+    if not isinstance(policy, dict):
+        return None
+    fsm = policy.get("fsm")
+    admission = policy.get("admission")
+    if not isinstance(fsm, dict) or not isinstance(admission, dict):
+        return None
+    raw_order = fsm.get("states")
+    if not isinstance(raw_order, list) or not raw_order:
+        return None
+    order = [str(state) for state in raw_order]
+    if len(set(order)) != len(order):
+        return None
+    rank = {state: index for index, state in enumerate(order)}
+    raw_entries = admission.get("entry_states")
+    if not isinstance(raw_entries, list) or not raw_entries:
+        return None
+    entries = [str(state) for state in raw_entries]
+    if any(state not in rank for state in entries):
+        return None
+    failure_sink = admission.get("failure_sink")
+    if not isinstance(failure_sink, str) or failure_sink not in rank:
+        return None
+    if fsm.get("failure_transition_to") != failure_sink:
+        return None
+    if admission.get("forward_rule") != "monotone_subset":
+        return None
+    same_layer_repeat = admission.get("same_layer_repeat")
+    if same_layer_repeat == "allowed":
+        same_layer_repeat = True
+    elif same_layer_repeat == "forbidden":
+        same_layer_repeat = False
+    else:
+        return None
+    if admission.get("evidence_required") is not True:
+        return None
+    skip_requires_typed_reason = admission.get("skip_requires_typed_reason")
+    if not isinstance(skip_requires_typed_reason, bool):
+        return None
+    return {
+        "order": order,
+        "rank": rank,
+        "entry_states": set(entries),
+        "failure_sink": failure_sink,
+        "forward_rule": "monotone_subset",
+        "same_layer_repeat": bool(same_layer_repeat),
+        "evidence_required": True,
+        "skip_requires_typed_reason": skip_requires_typed_reason,
+    }
+
+
+def _acap_fsm_decision(
+    policy: dict,
+    prior: str | None,
+    target: str,
+    evidence_ref: str,
+    skip_reason: str | None,
+) -> tuple[bool, str | None]:
+    """Mirror `admit_stage_transition_with_policy` exactly (pure, no I/O).
+
+    Returns `(admitted, code_or_None)` and is the one place the admission
+    semantics live on the governor side; `_acap_admission_violations` and the
+    parity-vector check both call it. The fail-closed order matches the Rust
+    domain function in `crates/da-domain/src/assurance.rs`: durable evidence,
+    terminal sink, failure sink reachability, run-entry legality, then
+    monotone forward progress with the declared skip-reason rule.
+    """
+    if policy["evidence_required"] and not str(evidence_ref or "").strip():
+        return (False, "missing_entry_state") if prior is None else (False, "missing_evidence")
+    if prior == policy["failure_sink"]:
+        return False, "terminal_sink"
+    if target == policy["failure_sink"]:
+        return True, None
+    if prior is None:
+        return (True, None) if target in policy["entry_states"] else (False, "illegal_transition")
+    prior_rank = policy["rank"].get(prior)
+    target_rank = policy["rank"].get(target)
+    if prior_rank is None or target_rank is None:
+        return False, "illegal_transition"
+    if (
+        target_rank > prior_rank + 1
+        and policy["skip_requires_typed_reason"]
+        and not str(skip_reason or "").strip()
+    ):
+        return False, "missing_skip_reason"
+    if target_rank > prior_rank or (
+        target_rank == prior_rank and policy["same_layer_repeat"]
+    ):
+        return True, None
+    return False, "illegal_transition"
+
+
+def _acap_admission_violations(record: dict, contract: dict, policy: dict | None) -> set[str]:
     """Return violation codes for one ACAP runtime admission record (PIR-014).
 
-    Mirrors `ArticleContextState::admit_transition` + `can_transition_to` in
-    `crates/da-domain/src/assurance.rs`: an admitted stage must carry a
-    durable evidence reference and a declared forward FSM transition; a
+    The decision comes from the single ACAP admission policy
+    (`_acap_fsm_decision`), not a strict-adjacency copy: monotone forward
+    progress, legal forward layer skips carrying the declared typed reason, a
+    failure sink reachable from any state, and a terminal sink no stage may
+    follow. An admitted stage must carry a durable evidence reference; a
     blocked record must carry the typed `admission:<code>` error class; a
     cache hit keeps its durable cache-key sha256; D127 keeps
-    `import_eligible` false. An illegal mid-FSM jump fails closed even when a
-    durable cached output exists for the target stage.
+    `import_eligible` false. A record whose `admitted` disagrees with the
+    declared decision is flagged. Mirrors `admit_stage_transition_with_policy`
+    in `crates/da-domain/src/assurance.rs`.
     """
     violations: set[str] = set()
     req = set((contract.get("record_contract") or {}).get("required_fields", []))
@@ -334,10 +440,23 @@ def _acap_admission_violations(record: dict, contract: dict, transitions: set) -
     allowed = set((contract.get("record_contract") or {}).get("dispositions", []))
     if allowed and disposition not in allowed:
         violations.add("invalid_disposition")
-    from_state = str(record.get("from_state") or "")
-    to_state = str(record.get("to_state") or "")
-    if transitions and (from_state, to_state) not in transitions:
-        violations.add("illegal_transition")
+
+    # The decision is the declared policy, read from the same file the
+    # runtime reads. An empty `from_state` is the run-entry case (`prior is
+    # None`).
+    if policy is not None:
+        prior = str(record.get("from_state") or "").strip() or None
+        decision_admitted, code = _acap_fsm_decision(
+            policy,
+            prior,
+            str(record.get("to_state") or ""),
+            record.get("evidence_ref") or "",
+            record.get("skip_reason"),
+        )
+        if not decision_admitted and code:
+            violations.add(code)
+        if admitted is not decision_admitted:
+            violations.add("admission_mismatch")
 
     if admitted is True:
         evidence_ref = record.get("evidence_ref")
@@ -3905,24 +4024,74 @@ class TrajectoryService:
                 flag=name, severity=severity, evidence=evidence, dimension=dimension,
             ))
 
-        # Admission legality depends on the canonical ACAP FSM transition
-        # table. Fail closed: an unreadable policy means no transition is
-        # declared, so every from/to pair is illegal.
-        transitions: set = set()
+        # Admission semantics come from the single ACAP admission policy
+        # declaration (the same file the runtime reads: ordered fsm.states +
+        # admission block). Fail closed: a missing or malformed declaration is
+        # a high flag, never a defaulted rule.
+        admission_policy: dict | None = None
         fsm_policy = str((contract.get("admission") or {}).get("fsm_policy", ""))
-        if fsm_policy:
-            fsm_path = self.root / fsm_policy
-            if fsm_path.is_file():
+        fsm_path = self.root / fsm_policy if fsm_policy else None
+        if fsm_path is not None and fsm_path.is_file():
+            try:
+                policy_data = yaml.safe_load(fsm_path.read_text(encoding="utf-8")) or {}
+            except (OSError, yaml.YAMLError) as error:
+                _flag("acap_runtime_control_plane_admission_policy_invalid",
+                      f"cannot load ACAP admission policy {fsm_path}: {error}")
+            else:
+                admission_policy = _bind_acap_admission_policy(policy_data)
+                if admission_policy is None:
+                    _flag(
+                        "acap_runtime_control_plane_admission_policy_invalid",
+                        f"ACAP admission policy {fsm_path} has no valid admission "
+                        "declaration (ordered fsm.states + admission block)",
+                    )
+        else:
+            _flag(
+                "acap_runtime_control_plane_admission_policy_invalid",
+                f"ACAP admission policy missing: {fsm_policy or '<unset>'}",
+            )
+
+        # The shared parity oracle pins that this rule and the runtime derive
+        # the same admit/block decision and the same typed code for every case.
+        parity_fixture = str((contract.get("admission") or {}).get("parity_fixture", ""))
+        if parity_fixture and admission_policy is not None:
+            parity_path = self.root / parity_fixture
+            if not parity_path.is_file():
+                _flag("acap_runtime_control_plane_fixture_missing",
+                      f"admission parity fixture missing: {parity_path}")
+            else:
                 try:
-                    policy = yaml.safe_load(fsm_path.read_text(encoding="utf-8")) or {}
-                    for transition in ((policy.get("fsm") or {}).get("transitions") or []):
-                        if isinstance(transition, list) and len(transition) == 2:
-                            transitions.add((str(transition[0]), str(transition[1])))
-                except (OSError, yaml.YAMLError):
-                    pass
+                    vectors = json.loads(parity_path.read_text(encoding="utf-8"))
+                except (ValueError, OSError) as error:
+                    _flag("acap_runtime_control_plane_fixture_invalid",
+                          f"admission parity fixture unreadable: {error}")
+                else:
+                    if not isinstance(vectors, list) or not vectors:
+                        _flag("acap_runtime_control_plane_fixture_invalid",
+                              "admission parity fixture must be a non-empty JSON array")
+                    else:
+                        for vector in vectors:
+                            if not isinstance(vector, dict):
+                                continue
+                            case = str(vector.get("case", "?"))
+                            decided, code = _acap_fsm_decision(
+                                admission_policy,
+                                vector.get("prior"),
+                                str(vector.get("target") or ""),
+                                vector.get("evidence_ref") or "",
+                                vector.get("skip_reason"),
+                            )
+                            expected_admitted = bool(vector.get("admitted"))
+                            if decided != expected_admitted or code != vector.get("code"):
+                                _flag(
+                                    "acap_runtime_control_plane_admission_parity_mismatch",
+                                    f"parity case {case}: governor decided "
+                                    f"admitted={decided} code={code!r}, oracle expects "
+                                    f"admitted={expected_admitted} code={vector.get('code')!r}",
+                                )
 
         planes = [
-            ("admission", _acap_admission_violations, transitions),
+            ("admission", _acap_admission_violations, admission_policy),
             ("promotion", _acap_promotion_authority_violations, None),
             ("scheduler", _acap_scheduler_violations, None),
             ("replay", _acap_replay_violations, None),
