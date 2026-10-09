@@ -3,6 +3,7 @@
 //! ADR-037 §2: Adapters implement Ports using infrastructure.
 //! ADR-040 §1: Samyama Graph (Tier 1) + external services.
 
+pub mod acap_policy;
 pub mod agent_memory;
 pub mod agent_read_plane;
 pub mod anthropic_llm;
@@ -62,6 +63,7 @@ pub mod region_text;
 #[cfg(feature = "pdf-classifier")]
 pub use region_text::PdfInspectorRegionText;
 
+pub use acap_policy::load_acap_admission_policy;
 pub use agent_read_plane::{RemoteAgentReadPlane, result_ref};
 pub use anthropic_llm::AnthropicLlmClient;
 pub use anthropic_multimodal::{
