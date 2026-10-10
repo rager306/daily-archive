@@ -58,7 +58,7 @@ struct InferenceExecution {
 
 #[derive(Clone, Deserialize)]
 struct InferenceLineage {
-    task_id: String,
+    prompt_id: String,
     model: String,
     latency_ms: u64,
     input_tokens: Option<u64>,
@@ -168,7 +168,7 @@ pub fn main() -> Result<()> {
                     let replica = FrozenPromptOutputReplica {
                         producer_id: format!(
                             "{}:{}",
-                            execution.lineage.model, execution.lineage.task_id
+                            execution.lineage.model, execution.lineage.prompt_id
                         ),
                         schema_valid: true,
                         claims,

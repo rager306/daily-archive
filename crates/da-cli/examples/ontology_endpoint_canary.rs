@@ -24,6 +24,9 @@ use da_domain::{
         PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
         ResolvedModelBinding,
     },
+    prompt_registry::{
+        PROMPT_REGISTRY_SCHEMA_VERSION, PromptEntryKind, PromptRegistry, PromptRegistryEntry,
+    },
     vid,
 };
 use da_ports::graph_store::DirectGraphStore;
@@ -91,13 +94,17 @@ impl PromptExecutionPort for FixedSummary {
         Ok(PromptExecutionResponse {
             lineage: PromptExecutionLineage {
                 run_id: request.run_id,
-                task_id: request.task.task_id.clone(),
+                prompt_id: request.task.task_id.clone(),
+                prompt_version: request.task.version.clone(),
+                prompt_sha256: request.task.template_sha256().unwrap(),
                 task_spec_sha256: request.task.spec_sha256().unwrap(),
                 rendered_prompt_sha256: ContentDigest::of_text("canary-prompt"),
                 output_schema_sha256: request.output_schema.sha256().unwrap(),
                 route_policy_sha256: ContentDigest::of_text("canary-route"),
                 endpoint_sha256: ContentDigest::of_text("canary-endpoint"),
                 model_binding_sha256: request.resolved_model.sha256().unwrap(),
+                inference_config_sha256: ContentDigest::of_text("canary-inference"),
+                context_bundle_sha256: ContentDigest::of_bytes(&request.input_bytes),
                 provider: "fixed-ontology-canary".into(),
                 model: "fixed".into(),
                 input_sha256: ContentDigest::of_bytes(&request.input_bytes),
@@ -160,6 +167,25 @@ fn summary_contracts() -> (
     )
 }
 
+fn summary_prompt_registry(task: &PromptTaskSpec, schema: &PromptOutputSchema) -> PromptRegistry {
+    PromptRegistry {
+        schema_version: PROMPT_REGISTRY_SCHEMA_VERSION.into(),
+        registry_id: "ontology-endpoint-canary-registry".into(),
+        d127_import_eligible: false,
+        entries: vec![PromptRegistryEntry {
+            prompt_id: task.task_id.clone(),
+            prompt_version: task.version.clone(),
+            kind: PromptEntryKind::Task,
+            // Recomputed from the canary contracts, never hand-picked, so the
+            // registry agrees with the local task/schema by construction.
+            prompt_sha256: task.template_sha256().unwrap(),
+            schema_ref: schema.output_schema_id.clone(),
+            schema_sha256: schema.sha256().unwrap(),
+            source_ref: "data/ontology/prompt_tasks.yaml#article_summary".into(),
+        }],
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("ontology_endpoint_canary");
@@ -216,6 +242,7 @@ async fn main() -> Result<()> {
     let enrich = EnrichUseCase::from_shared(Arc::new(FixedOpenAlex), direct_store.clone());
     let first = enrich.enrich_by_arxiv_id(paper_id).await?;
     let (summary_task, summary_route, summary_model, summary_schema) = summary_contracts();
+    let summary_registry = summary_prompt_registry(&summary_task, &summary_schema);
     let summary = SummaryUseCase::new(
         direct_store.clone(),
         Arc::new(FixedSummary),
@@ -223,6 +250,7 @@ async fn main() -> Result<()> {
         summary_route,
         summary_model,
         summary_schema,
+        summary_registry,
     )?;
     summary
         .generate_summaries(paper_id, paper, &parsed(paper_id))

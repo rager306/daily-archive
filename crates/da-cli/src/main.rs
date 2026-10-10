@@ -405,6 +405,18 @@ enum Commands {
         from_yaml: bool,
     },
 
+    /// Resolve a prompt by id and version and print its bound schema and fingerprint.
+    /// Read-only: prints the resolved registry entry as `key=value` lines and
+    /// exits non-zero when the `(id, version)` pair does not resolve.
+    PromptRegistry {
+        /// Prompt id (e.g. `article_summary`).
+        #[arg(long)]
+        id: String,
+        /// Prompt version (e.g. `summary.v1`).
+        #[arg(long)]
+        version: String,
+    },
+
     /// Print the cross-reference registry as a markdown table.
     CrossRefs,
 
@@ -858,6 +870,9 @@ fn main() {
                 println!("# Node schemas (ADR-040 §11.1)\n");
                 print!("{}", da_domain::schema::render_node_types_table());
             }
+        }
+        Commands::PromptRegistry { id, version } => {
+            print_prompt_registry_entry(&id, &version);
         }
         Commands::CrossRefs => {
             println!("# Cross-reference registry (ADR-045 Wave F)\n");
@@ -1716,6 +1731,58 @@ async fn revision_query(
     }
 }
 
+/// Resolve a prompt by `(id, version)` from the DATA prompt registry and
+/// print its bound schema and fingerprint as stable `key=value` lines.
+///
+/// Read-only surface: nothing here writes a graph, a cache, or DATA. A load
+/// failure or an unresolved pair aborts the command with a non-zero exit so a
+/// caller can distinguish "resolved" from "not registered".
+fn print_prompt_registry_entry(prompt_id: &str, prompt_version: &str) {
+    use da_adapters::{
+        prompt_registry::load_prompt_registry, prompt_task_registry::load_prompt_task_registry,
+    };
+    let task_registry_path = std::env::var("DA_PROMPT_TASK_REGISTRY")
+        .unwrap_or_else(|_| "data/ontology/prompt_tasks.yaml".into());
+    let prompt_registry_path = std::env::var("DA_PROMPT_REGISTRY")
+        .unwrap_or_else(|_| "data/ontology/prompt_registry.yaml".into());
+    let task_registry = match load_prompt_task_registry(std::path::Path::new(&task_registry_path)) {
+        Ok(task_registry) => task_registry,
+        Err(error) => {
+            eprintln!("❌ prompt task registry failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    let registry = match load_prompt_registry(
+        std::path::Path::new(&prompt_registry_path),
+        &task_registry,
+        std::path::Path::new("."),
+    ) {
+        Ok(registry) => registry,
+        Err(error) => {
+            eprintln!("❌ prompt registry failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    let entry = match registry.resolve(prompt_id, prompt_version) {
+        Ok(entry) => entry,
+        Err(error) => {
+            eprintln!("❌ {error}");
+            std::process::exit(1);
+        }
+    };
+    let kind = match entry.kind {
+        da_domain::prompt_registry::PromptEntryKind::Task => "task",
+        da_domain::prompt_registry::PromptEntryKind::MetaPrompt => "meta_prompt",
+    };
+    println!("prompt_id={}", entry.prompt_id);
+    println!("prompt_version={}", entry.prompt_version);
+    println!("kind={kind}");
+    println!("prompt_sha256={}", entry.prompt_sha256.as_str());
+    println!("schema_ref={}", entry.schema_ref);
+    println!("schema_sha256={}", entry.schema_sha256.as_str());
+    println!("source_ref={}", entry.source_ref);
+}
+
 async fn summarize_paper(
     paper_id: &str,
     snapshot: Option<&std::path::Path>,
@@ -1725,6 +1792,7 @@ async fn summarize_paper(
         model_registry::{load_model_registry, validate_prompt_model_bindings},
         openai_compatible_llm::OpenAiCompatibleLlmClient,
         prompt_execution::TextPromptExecutionAdapter,
+        prompt_registry::load_prompt_registry,
         prompt_task_registry::load_prompt_task_registry,
     };
     use da_application::SummaryUseCase;
@@ -1784,7 +1852,23 @@ async fn summarize_paper(
     let registry = match load_prompt_task_registry(std::path::Path::new(&registry_path)) {
         Ok(registry) => registry,
         Err(error) => {
-            eprintln!("❌ prompt registry failed: {error}");
+            eprintln!("❌ prompt task registry failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    // Bind the local task/schema contracts to the unified prompt registry
+    // (S09). The registry is required: a fail-open (no registry) summary is
+    // not representable, so a load error aborts the command.
+    let prompt_registry_path = std::env::var("DA_PROMPT_REGISTRY")
+        .unwrap_or_else(|_| "data/ontology/prompt_registry.yaml".into());
+    let prompt_registry = match load_prompt_registry(
+        std::path::Path::new(&prompt_registry_path),
+        &registry,
+        std::path::Path::new("."),
+    ) {
+        Ok(prompt_registry) => prompt_registry,
+        Err(error) => {
+            eprintln!("❌ unified prompt registry failed: {error}");
             std::process::exit(1);
         }
     };
@@ -1838,6 +1922,7 @@ async fn summarize_paper(
         route,
         resolved_model,
         output_schema,
+        prompt_registry,
     )
     .expect("summary prompt composition failed");
     let result = use_case
