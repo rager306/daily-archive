@@ -345,6 +345,56 @@ prompt_contract:
   raw_provider_payload_in_logs: false
   output_must_validate_before_materialization: true
 
+# Disposition registry for the declared prompt lineage fields (M516/S09/T05).
+# The declaration-synchronisation axis reads THIS block, not a bare token scan:
+# a `recorded` field must occur as a whole token in
+# crates/da-domain/src/prompt_optimization.rs, and a `downgraded` field must
+# name an owner and a reason_vocabulary entry.
+prompt_lineage_dispositions:
+  schema_version: prompt-lineage-dispositions.v1
+  reason_vocabulary:
+    not_recorded_on_lineage: >-
+      The field is declared as required lineage, but the runtime
+      PromptExecutionLineage does not carry it as a named field, so no call
+      record can bind it.
+  records:
+    prompt_id:
+      disposition: recorded
+      field: prompt_id
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    prompt_version:
+      disposition: recorded
+      field: prompt_version
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    prompt_sha256:
+      disposition: recorded
+      field: prompt_sha256
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    context_bundle_sha256:
+      disposition: recorded
+      field: context_bundle_sha256
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    provider:
+      disposition: recorded
+      field: provider
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    model:
+      disposition: recorded
+      field: model
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    inference_config_sha256:
+      disposition: recorded
+      field: inference_config_sha256
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    output_schema_sha256:
+      disposition: recorded
+      field: output_schema_sha256
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+    output_sha256:
+      disposition: recorded
+      field: output_sha256
+      surface: da-domain::prompt_optimization::PromptExecutionLineage
+
 optimizer_admission:
   candidate_only: true
   auto_promote: false

@@ -2,10 +2,12 @@
 
 The axis exists because the DATA and the code can disagree silently: a policy
 declares a hard metric no code computes, a stage lists an invariant with no
-disposition, or a prompt registry binds a task with no task entry. These tests
-pin the three predicates with inline fixtures, so they never depend on the real
-tree's current membership, and one asserts the regression direction directly:
-adding a declared hard metric without an implementation adds exactly one gap.
+disposition, a prompt declaration binds a call form that neither its ``tasks[]``
+nor the unified prompt registry can resolve, or a declared prompt lineage field
+has no disposition record. These tests pin the four predicates with inline
+fixtures, so they never depend on the real tree's current membership, and two
+assert the regression direction directly: adding a declared hard metric or a
+declared lineage field without a record adds exactly one gap.
 
 Class A and class B are both disposition-driven: a hard metric is covered when
 ``scripts/governor/checks/article_context_assurance.yaml`` carries a
@@ -13,7 +15,14 @@ well-formed ``metric_dispositions`` record whose symbol resolves in
 ``crates/*/src``, and an invariant is covered when
 ``data/ontology/pipeline_stage_contracts.yaml`` carries a well-formed
 ``stage_invariant_dispositions`` record for it -- never by the incidental
-appearance of a name in some other file.
+appearance of a name in some other file. Class C resolves a bound call form
+against the union of ``prompt_tasks.yaml`` ``tasks[]`` and ``prompt_registry.yaml``
+``entries[].prompt_id``. Class D is disposition-driven too: a declared
+``prompt_contract.required_lineage_fields`` entry is covered when
+``prompt_lineage_dispositions.records`` carries a ``recorded`` record whose
+``field`` occurs as a whole token in
+``crates/da-domain/src/prompt_optimization.rs``, or a ``downgraded`` record
+with an owner and a reason.
 """
 
 from __future__ import annotations
@@ -26,6 +35,7 @@ import yaml
 from governor.adapters.declaration_sync_gap import (
     HARD_METRIC_WITHOUT_COMPUTATION,
     PROMPT_FORM_WITHOUT_REGISTRY_ENTRY,
+    PROMPT_LINEAGE_FIELD_WITHOUT_RECORD,
     STAGE_INVARIANT_WITHOUT_CHECK,
     build_declaration_sync_gap,
     observe_declaration_sync_gap,
@@ -34,6 +44,23 @@ from governor.adapters.declaration_sync_gap import (
 _METRIC_PATH = "scripts/governor/checks/article_context_assurance.yaml"
 _STAGE_PATH = "data/ontology/pipeline_stage_contracts.yaml"
 _PROMPT_PATH = "data/ontology/prompt_tasks.yaml"
+_PROMPT_ENTRY_PATH = "data/ontology/prompt_registry.yaml"
+_LINEAGE_SURFACE = "crates/da-domain/src/prompt_optimization.rs"
+
+#: The nine fields ``article_context_assurance.yaml`` declares and T01 recorded
+#: on ``PromptExecutionLineage`` -- the surface token scan the default fixture
+#: must satisfy.
+_LINEAGE_FIELDS = [
+    "prompt_id",
+    "prompt_version",
+    "prompt_sha256",
+    "context_bundle_sha256",
+    "provider",
+    "model",
+    "inference_config_sha256",
+    "output_schema_sha256",
+    "output_sha256",
+]
 
 
 # ── fixtures ─────────────────────────────────────────────────────────────────
@@ -51,19 +78,24 @@ def _write_metrics(
     dispositions: dict | None = None,
     *,
     include_dispositions: bool = True,
+    lineage_fields: list[str] | None = None,
+    lineage_records: dict | None = None,
+    include_lineage: bool = True,
 ) -> None:
-    """Write the metric declaration, optionally without the dispositions block.
+    """Write the metric declaration with its hard-metric and lineage registries.
 
-    ``dispositions=None`` writes an empty ``records`` mapping so a caller that
-    only cares about the declared metrics still produces a loadable fixture;
-    pass a mapping to cover metrics, or ``include_dispositions=False`` to
-    exercise the fail-closed path for a missing block.
+    ``dispositions=None`` writes an empty ``metric_dispositions.records`` mapping
+    so a caller that only cares about the declared metrics still produces a
+    loadable fixture; pass a mapping to cover metrics, or
+    ``include_dispositions=False`` to exercise the fail-closed path for a missing
+    block. ``lineage_fields`` / ``lineage_records`` mirror that for the prompt
+    lineage declaration, which lives in the same file (class D).
     """
-    declaration = f"metric_definitions:\n{body}"
-    if not declaration.endswith("\n"):
-        declaration += "\n"
+    declaration = yaml.safe_load(f"metric_definitions:\n{body}")
+    if not isinstance(declaration, dict):
+        declaration = {}
     if include_dispositions:
-        block = {
+        declaration["metric_dispositions"] = {
             "schema_version": "metric-dispositions.v1",
             "reason_vocabulary": {
                 "no_production_denominator": (
@@ -73,8 +105,20 @@ def _write_metrics(
             },
             "records": dispositions or {},
         }
-        declaration += yaml.safe_dump({"metric_dispositions": block}, sort_keys=False)
-    _write(root, _METRIC_PATH, declaration)
+    if include_lineage:
+        declaration["prompt_contract"] = {
+            "required_lineage_fields": list(lineage_fields or []),
+        }
+        declaration["prompt_lineage_dispositions"] = {
+            "schema_version": "prompt-lineage-dispositions.v1",
+            "reason_vocabulary": {
+                "not_recorded_on_lineage": (
+                    "The runtime lineage does not carry the field."
+                ),
+            },
+            "records": lineage_records or {},
+        }
+    _write(root, _METRIC_PATH, yaml.safe_dump(declaration, sort_keys=False))
 
 
 def _computed(computation: str) -> dict:
@@ -87,6 +131,16 @@ def _write_computation_surface(root: Path, symbol: str) -> None:
         root,
         "crates/da-domain/src/hard_metrics.rs",
         f"pub fn {symbol}() {{ /* production computation */ }}\n",
+    )
+
+
+def _write_lineage_surface(root: Path, fields: list[str] | None = None) -> None:
+    """The Rust type that must carry every declared lineage field as a token."""
+    body = "\n".join(f"    pub {field}: String," for field in (fields or _LINEAGE_FIELDS))
+    _write(
+        root,
+        _LINEAGE_SURFACE,
+        f"pub struct PromptExecutionLineage {{\n{body}\n}}\n",
     )
 
 
@@ -119,20 +173,40 @@ def _write_stages(
 
 
 def _write_prompt_registry(
-    root: Path, task_ids: list[str], binding_keys: list[str]
+    root: Path,
+    task_ids: list[str],
+    binding_keys: list[str],
+    registry_ids: list[str] | None = None,
 ) -> None:
-    tasks = "\n".join(f"  - task_id: {task_id}" for task_id in task_ids) or "  []"
-    bindings = "\n".join(f"    {key}: [PR-001]" for key in binding_keys) or "    {}"
-    _write(
-        root,
-        _PROMPT_PATH,
-        "schema_version: prompt-task-registry.v1\n"
-        "prompt_contract:\n"
-        "  task_rule_bindings:\n"
-        f"{bindings}\n"
-        "tasks:\n"
-        f"{tasks}\n",
-    )
+    """Write the prompt-task declaration and the unified entry registry.
+
+    ``registry_ids`` is the meta-prompt entry surface
+    (``data/ontology/prompt_registry.yaml``); it defaults to ``task_ids`` so a
+    form declared as both a task and a registry entry stays resolvable.
+    """
+    if registry_ids is None:
+        registry_ids = list(task_ids)
+    declaration = {
+        "schema_version": "prompt-task-registry.v1",
+        "prompt_contract": {
+            "task_rule_bindings": {key: ["PR-001"] for key in binding_keys},
+        },
+        "tasks": [{"task_id": task_id} for task_id in task_ids],
+    }
+    _write(root, _PROMPT_PATH, yaml.safe_dump(declaration, sort_keys=False))
+    registry = {
+        "schema_version": "prompt-registry.v1",
+        "registry_id": "test-registry",
+        "entries": [
+            {
+                "prompt_id": prompt_id,
+                "prompt_version": "1",
+                "source_ref": f"data/prompts/{prompt_id}.md",
+            }
+            for prompt_id in registry_ids
+        ],
+    }
+    _write(root, _PROMPT_ENTRY_PATH, yaml.safe_dump(registry, sort_keys=False))
 
 
 def _base(
@@ -145,6 +219,7 @@ def _base(
     _write_metrics(root, metrics, dispositions)
     _write_stages(root, [])
     _write_prompt_registry(root, [], [])
+    _write_lineage_surface(root)
 
 
 def _gap(root: Path):
@@ -423,6 +498,221 @@ def test_prompt_binding_key_with_a_task_resolves(tmp_path: Path):
     assert axis.declared_for(PROMPT_FORM_WITHOUT_REGISTRY_ENTRY) == 1
 
 
+def test_prompt_binding_key_resolves_via_the_entry_registry(tmp_path: Path):
+    """`critic` is a meta prompt: no ``tasks[]`` entry, but a registry entry."""
+    _base(tmp_path)
+    _write_prompt_registry(
+        tmp_path,
+        task_ids=[],
+        binding_keys=["critic"],
+        registry_ids=["critic"],
+    )
+    axis = _gap(tmp_path)
+    assert axis.gaps_for(PROMPT_FORM_WITHOUT_REGISTRY_ENTRY) == ()
+    assert axis.declared_for(PROMPT_FORM_WITHOUT_REGISTRY_ENTRY) == 1
+
+
+def test_missing_prompt_entry_registry_fails_loudly(tmp_path: Path):
+    """A missing unified registry is a required-input failure, not a free 0."""
+    (tmp_path / "crates").mkdir(parents=True)
+    _write_metrics(tmp_path, "  a_hard: {kind: hard}\n")
+    _write_stages(tmp_path, [])
+    _write_lineage_surface(tmp_path)
+    _write(
+        tmp_path,
+        _PROMPT_PATH,
+        "schema_version: prompt-task-registry.v1\n"
+        "prompt_contract:\n"
+        "  task_rule_bindings: {article_summary: [PR-001]}\n"
+        "tasks:\n"
+        "  - task_id: article_summary\n",
+    )
+    with pytest.raises(FileNotFoundError):
+        _gap(tmp_path)
+
+
+def test_malformed_prompt_entry_registry_fails_loudly(tmp_path: Path):
+    _base(tmp_path)
+    _write(
+        tmp_path,
+        _PROMPT_ENTRY_PATH,
+        "schema_version: prompt-registry.v1\nentries: {not: a-list}\n",
+    )
+    with pytest.raises(ValueError):
+        _gap(tmp_path)
+
+
+# ── class D: declared prompt lineage field without a disposition record ───────
+
+
+def test_recorded_lineage_field_resolving_in_the_surface_is_covered(tmp_path: Path):
+    _base(tmp_path)
+    _write_lineage_surface(tmp_path, ["prompt_id"])
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["prompt_id"],
+        lineage_records={
+            "prompt_id": {"disposition": "recorded", "field": "prompt_id"}
+        },
+    )
+    axis = _gap(tmp_path)
+    assert axis.gaps_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD) == ()
+    assert axis.declared_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD) == 1
+
+
+def test_declared_lineage_field_without_a_record_is_named(tmp_path: Path):
+    _base(tmp_path)
+    _write_metrics(tmp_path, "  a_hard: {kind: hard}\n", lineage_fields=["prompt_id"])
+    axis = _gap(tmp_path)
+    gaps = axis.gaps_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD)
+    assert [g.name for g in gaps] == ["prompt_id"]
+    assert gaps[0].declared_in == _METRIC_PATH
+    assert "no prompt_lineage_dispositions record" in gaps[0].detail
+
+
+def test_recorded_lineage_field_naming_an_absent_symbol_is_malformed(tmp_path: Path):
+    _base(tmp_path)
+    _write_lineage_surface(tmp_path, ["prompt_id"])
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["prompt_id"],
+        lineage_records={
+            "prompt_id": {"disposition": "recorded", "field": "no_such_field"}
+        },
+    )
+    axis = _gap(tmp_path)
+    gaps = axis.gaps_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD)
+    assert [g.name for g in gaps] == ["prompt_id"]
+    assert "no_such_field" in gaps[0].detail
+
+
+def test_recorded_lineage_field_without_a_field_is_malformed(tmp_path: Path):
+    _base(tmp_path)
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["prompt_id"],
+        lineage_records={"prompt_id": {"disposition": "recorded"}},
+    )
+    axis = _gap(tmp_path)
+    gaps = axis.gaps_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD)
+    assert [g.name for g in gaps] == ["prompt_id"]
+    assert "no non-empty field" in gaps[0].detail
+
+
+def test_downgraded_lineage_field_with_owner_and_reason_is_covered(tmp_path: Path):
+    _base(tmp_path)
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["some_future_field"],
+        lineage_records={
+            "some_future_field": {
+                "disposition": "downgraded",
+                "owner": "M516-th0oby/S09",
+                "reason": "not_recorded_on_lineage",
+            }
+        },
+    )
+    axis = _gap(tmp_path)
+    assert axis.gaps_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD) == ()
+
+
+def test_downgraded_lineage_field_without_owner_or_reason_is_a_gap(tmp_path: Path):
+    _base(tmp_path)
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["prompt_id"],
+        lineage_records={"prompt_id": {"disposition": "downgraded"}},
+    )
+    axis = _gap(tmp_path)
+    gaps = axis.gaps_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD)
+    assert [g.name for g in gaps] == ["prompt_id"]
+    assert "owner and reason" in gaps[0].detail
+
+
+def test_unknown_lineage_disposition_is_a_gap(tmp_path: Path):
+    _base(tmp_path)
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["prompt_id"],
+        lineage_records={"prompt_id": {"disposition": "ignored"}},
+    )
+    axis = _gap(tmp_path)
+    assert _names(axis, PROMPT_LINEAGE_FIELD_WITHOUT_RECORD) == {"prompt_id"}
+
+
+def test_adding_a_declared_lineage_field_without_a_record_adds_one_gap(tmp_path: Path):
+    """The regression direction: a new declared lineage field is exactly +1 gap."""
+    _base(tmp_path)
+    covered = {
+        "prompt_id": {
+            "disposition": "downgraded",
+            "owner": "M516-th0oby/S09",
+            "reason": "not_recorded_on_lineage",
+        }
+    }
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["prompt_id"],
+        lineage_records=covered,
+    )
+    before = _gap(tmp_path).count
+    _write_metrics(
+        tmp_path,
+        "  a_hard: {kind: hard}\n",
+        lineage_fields=["prompt_id", "second_field"],
+        lineage_records=covered,
+    )
+    after = _gap(tmp_path)
+    assert after.count == before + 1
+    assert _names(after, PROMPT_LINEAGE_FIELD_WITHOUT_RECORD) == {"second_field"}
+
+
+def test_missing_prompt_lineage_dispositions_block_fails_loudly(tmp_path: Path):
+    """A declared lineage field with no block must raise, not read as covered."""
+    _base(tmp_path)
+    _write(
+        tmp_path,
+        _METRIC_PATH,
+        "metric_definitions:\n"
+        "  a_hard: {kind: hard}\n"
+        "metric_dispositions:\n"
+        "  schema_version: metric-dispositions.v1\n"
+        "  records: {}\n"
+        "prompt_contract:\n"
+        "  required_lineage_fields: [prompt_id]\n",
+    )
+    with pytest.raises(ValueError):
+        _gap(tmp_path)
+
+
+def test_malformed_prompt_lineage_dispositions_records_fails_loudly(tmp_path: Path):
+    """A non-mapping `records` block must raise rather than vacuously pass."""
+    _base(tmp_path)
+    _write(
+        tmp_path,
+        _METRIC_PATH,
+        "metric_definitions:\n"
+        "  a_hard: {kind: hard}\n"
+        "metric_dispositions:\n"
+        "  schema_version: metric-dispositions.v1\n"
+        "  records: {}\n"
+        "prompt_contract:\n"
+        "  required_lineage_fields: [prompt_id]\n"
+        "prompt_lineage_dispositions:\n"
+        "  schema_version: prompt-lineage-dispositions.v1\n"
+        "  records: []\n",
+    )
+    with pytest.raises(ValueError):
+        _gap(tmp_path)
+
+
 # ── aggregate ────────────────────────────────────────────────────────────────
 
 
@@ -439,6 +729,7 @@ def test_aggregate_count_sums_the_classes_and_names_each_gap(tmp_path: Path):
     assert data["gaps_by_class"][HARD_METRIC_WITHOUT_COMPUTATION]["gaps"] == 1
     assert data["gaps_by_class"][STAGE_INVARIANT_WITHOUT_CHECK]["gaps"] == 2
     assert data["gaps_by_class"][PROMPT_FORM_WITHOUT_REGISTRY_ENTRY]["gaps"] == 1
+    assert data["gaps_by_class"][PROMPT_LINEAGE_FIELD_WITHOUT_RECORD]["gaps"] == 0
     assert {g["name"] for g in data["gaps"]} == {
         "hard_unbuilt",
         "decorative_a",
@@ -453,6 +744,7 @@ def test_render_lines_state_the_count_and_the_classes(tmp_path: Path):
     rendered = "\n".join(axis.render_lines())
     assert "declaration synchronisation: 1 gaps" in rendered
     assert "hard metrics without a production computation: 1/1 unmapped" in rendered
+    assert "prompt lineage fields without a disposition record: 0/0 unmapped" in rendered
     assert "hard_unbuilt" in rendered
 
 
@@ -540,21 +832,30 @@ def test_malformed_dispositions_records_fails_loudly(tmp_path: Path):
 # ── real tree ────────────────────────────────────────────────────────────────
 
 
-def test_real_tree_class_a_and_b_read_zero_and_class_c_names_only_critic():
-    """On the live tree every hard metric is disposed and only `critic` is open.
+def test_real_tree_all_declaration_classes_read_zero_and_critic_resolves():
+    """On the live tree every declaration is disposed and `critic` resolves.
 
-    All eleven declared hard metrics carry a resolving `computed` record, so
-    class A has no gaps; all 52 declared stage hard invariants carry a
-    disposition record, so class B has none; the prompt registry still binds the
-    unregistered `critic` form, so the total is exactly one.
+    All eleven declared hard metrics carry a resolving `computed` record
+    (class A 0/11); all 52 declared stage hard invariants carry a disposition
+    (class B 0/52); each of the three `task_rule_bindings` keys resolves -- the
+    meta-prompt `critic` through `prompt_registry.yaml`, where it has no
+    `tasks[]` entry (class C 0/3); and all nine declared lineage fields carry a
+    resolving `recorded` record (class D 0/9).
     """
+    root = Path(__file__).resolve().parent.parent.parent
+    prompt = yaml.safe_load((root / _PROMPT_PATH).read_text(encoding="utf-8"))
+    assert "critic" in prompt["prompt_contract"]["task_rule_bindings"]
+
     axis = observe_declaration_sync_gap()
     assert axis.gaps_for(HARD_METRIC_WITHOUT_COMPUTATION) == ()
     assert axis.gaps_for(STAGE_INVARIANT_WITHOUT_CHECK) == ()
-    assert _names(axis, PROMPT_FORM_WITHOUT_REGISTRY_ENTRY) == {"critic"}
-    assert axis.count == 1
+    assert axis.gaps_for(PROMPT_FORM_WITHOUT_REGISTRY_ENTRY) == ()
+    assert axis.gaps_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD) == ()
+    assert axis.count == 0
     assert axis.declared_for(HARD_METRIC_WITHOUT_COMPUTATION) == 11
     assert axis.declared_for(STAGE_INVARIANT_WITHOUT_CHECK) == 52
+    assert axis.declared_for(PROMPT_FORM_WITHOUT_REGISTRY_ENTRY) == 3
+    assert axis.declared_for(PROMPT_LINEAGE_FIELD_WITHOUT_RECORD) == 9
     rendered = axis.render_lines()
     assert rendered and "declaration synchronisation:" in rendered[0]
 
@@ -570,3 +871,12 @@ def test_real_tree_every_declared_hard_metric_carries_a_disposition_record():
     }
     records = declarations["metric_dispositions"]["records"]
     assert set(records) == hard_names
+
+
+def test_real_tree_every_declared_lineage_field_carries_a_record():
+    """The lineage registry covers exactly the declared fields, no more, no less."""
+    root = Path(__file__).resolve().parent.parent.parent
+    declarations = yaml.safe_load((root / _METRIC_PATH).read_text(encoding="utf-8"))
+    declared = set(declarations["prompt_contract"]["required_lineage_fields"])
+    records = declarations["prompt_lineage_dispositions"]["records"]
+    assert set(records) == declared

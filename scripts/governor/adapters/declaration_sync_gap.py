@@ -5,7 +5,7 @@ The second axis of the M516 scorecard answers a single question with a number:
 number's goal is zero, so a regression is an increase, and every gap is named
 individually rather than aggregated, so the figure is actionable.
 
-Three independent declaration surfaces are reconciled against their
+Four independent declaration surfaces are reconciled against their
 enforcement counterparts:
 
 1. **Hard metrics without a disposition.** ``scripts/governor/checks/
@@ -31,19 +31,30 @@ enforcement counterparts:
    than letting the axis report a vacuous zero.
 
 3. **Prompt call forms without a resolvable registry entry.**
-   ``data/ontology/prompt_tasks.yaml`` is the prompt-task registry. Its
-   ``prompt_contract.task_rule_bindings`` keys are prompt-bearing task forms;
-   ``crates/da-adapters/src/prompt_task_registry.rs`` validates that each
-   binding *value* resolves to a rule, but never that each binding *key*
-   resolves to a ``tasks[]`` entry. A binding key with no registered task is a
-   gap (CONTEXT G5 — ``critic``).
+   ``data/ontology/prompt_tasks.yaml`` declares ``prompt_contract.
+   task_rule_bindings`` and its ``tasks[]`` entries; ``data/ontology/
+   prompt_registry.yaml`` is the unified registry whose ``entries[].prompt_id``
+   also names resolvable prompt forms (the file-based meta-prompt surface). A
+   binding key that resolves in neither is a gap. Both declaration files are
+   required inputs, so a missing one raises rather than letting the axis report
+   a vacuous zero.
+
+4. **Declared prompt lineage fields without a disposition record.**
+   ``scripts/governor/checks/article_context_assurance.yaml`` declares
+   ``prompt_contract.required_lineage_fields``; a ``prompt_lineage_dispositions.
+   records`` block must cover each one with either a ``recorded`` record whose
+   ``field`` occurs as a whole token in ``crates/da-domain/src/
+   prompt_optimization.rs`` or a ``downgraded`` record with a non-empty
+   ``owner`` and ``reason``. A declared field with no record, or a malformed
+   record, is a gap. A missing or malformed block raises rather than letting the
+   axis report a vacuous zero.
 
 Whole-token matching is deliberate: a substring scan would count
 ``exact_lineage`` inside the test name ``exact_lineage_and_policy_locks`` as a
 mapping, hiding exactly the decorative names this axis exists to expose.
 
-The three declaration files are required inputs. A missing one raises, so the
-axis can never report a vacuous ``0`` green by scanning nothing, and a missing
+The declaration files are required inputs. A missing one raises, so the axis
+can never report a vacuous ``0`` green by scanning nothing, and a missing
 ``crates/`` directory raises for the same reason.
 """
 
@@ -67,20 +78,26 @@ __all__ = [
 #: Declaration sources, relative to the repository root.
 _METRIC_DECLARATION = "scripts/governor/checks/article_context_assurance.yaml"
 _STAGE_DECLARATION = "data/ontology/pipeline_stage_contracts.yaml"
-_PROMPT_REGISTRY = "data/ontology/prompt_tasks.yaml"
+_PROMPT_TASK_DECLARATION = "data/ontology/prompt_tasks.yaml"
+_PROMPT_ENTRY_REGISTRY = "data/ontology/prompt_registry.yaml"
 
 #: Where a hard metric's production computation would live.
 _METRIC_COMPUTATION_SURFACES: tuple[str, ...] = ("crates/*/src/**/*.rs",)
+
+#: The single Rust type that must carry every declared prompt lineage field.
+_PROMPT_LINEAGE_SURFACE = "crates/da-domain/src/prompt_optimization.rs"
 
 #: Gap class identifiers, stable for the machine-readable payload.
 HARD_METRIC_WITHOUT_COMPUTATION = "hard_metric_without_computation"
 STAGE_INVARIANT_WITHOUT_CHECK = "stage_invariant_without_check"
 PROMPT_FORM_WITHOUT_REGISTRY_ENTRY = "prompt_form_without_registry_entry"
+PROMPT_LINEAGE_FIELD_WITHOUT_RECORD = "prompt_lineage_field_without_record"
 
 _GAP_CLASS_ORDER = (
     HARD_METRIC_WITHOUT_COMPUTATION,
     STAGE_INVARIANT_WITHOUT_CHECK,
     PROMPT_FORM_WITHOUT_REGISTRY_ENTRY,
+    PROMPT_LINEAGE_FIELD_WITHOUT_RECORD,
 )
 
 
@@ -344,29 +361,160 @@ def _invariant_gaps(root: Path) -> tuple[list[str], list[DeclarationGap]]:
 
 
 def _prompt_gaps(root: Path) -> tuple[list[str], list[DeclarationGap]]:
-    registry = _load_yaml(root, _PROMPT_REGISTRY)
-    tasks = registry.get("tasks") or []
+    declaration = _load_yaml(root, _PROMPT_TASK_DECLARATION)
+    tasks = declaration.get("tasks") or []
     task_ids = {
         str(task.get("task_id"))
         for task in tasks
         if isinstance(task, dict) and task.get("task_id")
     }
-    contract = registry.get("prompt_contract") or {}
+    contract = declaration.get("prompt_contract") or {}
     bindings = contract.get("task_rule_bindings") or {}
     if not isinstance(bindings, dict):
-        raise ValueError(f"{_PROMPT_REGISTRY} task_rule_bindings must be a mapping")
+        raise ValueError(
+            f"{_PROMPT_TASK_DECLARATION} task_rule_bindings must be a mapping"
+        )
+    entries = _load_yaml(root, _PROMPT_ENTRY_REGISTRY).get("entries")
+    if not isinstance(entries, list):
+        raise ValueError(f"{_PROMPT_ENTRY_REGISTRY} entries must be a list")
+    resolvable = set(task_ids)
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"{_PROMPT_ENTRY_REGISTRY} entry must be a mapping, got "
+                f"{type(entry).__name__}"
+            )
+        prompt_id = entry.get("prompt_id")
+        if not isinstance(prompt_id, str) or not prompt_id.strip():
+            raise ValueError(
+                f"{_PROMPT_ENTRY_REGISTRY} entry has no non-empty prompt_id"
+            )
+        resolvable.add(prompt_id)
     declared = sorted(str(key) for key in bindings)
     gaps = [
         DeclarationGap(
             PROMPT_FORM_WITHOUT_REGISTRY_ENTRY,
             name,
-            _PROMPT_REGISTRY,
+            _PROMPT_TASK_DECLARATION,
             f"prompt call form {name!r} is bound in task_rule_bindings but has no "
-            "tasks[] entry, so the registry cannot resolve it",
+            "tasks[] entry in prompt_tasks.yaml and no prompt_registry.yaml "
+            "entry, so the registry cannot resolve it",
         )
         for name in declared
-        if name not in task_ids
+        if name not in resolvable
     ]
+    return declared, gaps
+
+
+def _required_lineage_fields(root: Path) -> list[str]:
+    contract = _load_yaml(root, _METRIC_DECLARATION).get("prompt_contract")
+    if not isinstance(contract, dict):
+        raise ValueError(f"{_METRIC_DECLARATION} has no prompt_contract mapping")
+    fields = contract.get("required_lineage_fields")
+    if not isinstance(fields, list):
+        raise ValueError(
+            f"{_METRIC_DECLARATION} prompt_contract.required_lineage_fields must be a list"
+        )
+    names: list[str] = []
+    for field in fields:
+        if not isinstance(field, str) or not field.strip():
+            raise ValueError(
+                f"{_METRIC_DECLARATION} required_lineage_fields entries must be "
+                "non-empty strings"
+            )
+        if field not in names:
+            names.append(field)
+    return names
+
+
+def _prompt_lineage_dispositions(root: Path) -> dict:
+    """The ``prompt_lineage_dispositions.records`` mapping, required to exist.
+
+    Refusing a missing or non-mapping block keeps the axis fail-closed: without
+    it a declared lineage field would silently read as covered.
+    """
+    block = _load_yaml(root, _METRIC_DECLARATION).get("prompt_lineage_dispositions")
+    if not isinstance(block, dict):
+        raise ValueError(
+            f"{_METRIC_DECLARATION} has no prompt_lineage_dispositions mapping; "
+            "every declared lineage field must carry a recorded or downgraded disposition"
+        )
+    records = block.get("records")
+    if not isinstance(records, dict):
+        raise ValueError(
+            f"{_METRIC_DECLARATION} prompt_lineage_dispositions.records must be a mapping"
+        )
+    return records
+
+
+def _prompt_lineage_record_gap_reason(
+    record: object, surfaces: Sequence[tuple[Path, str]]
+) -> str | None:
+    """``None`` when ``record`` well-formedly covers its field, else the cause."""
+    if not isinstance(record, dict):
+        return (
+            "prompt lineage disposition record is not a mapping, got "
+            f"{type(record).__name__}"
+        )
+    disposition = record.get("disposition")
+    if disposition == "recorded":
+        field = record.get("field")
+        if not isinstance(field, str) or not field.strip():
+            return "disposition 'recorded' carries no non-empty field"
+        symbol = field.rsplit("::", 1)[-1].strip()
+        if not symbol:
+            return f"field {field!r} has no trailing '::' symbol"
+        if not _contains_token(surfaces, symbol):
+            return (
+                f"disposition 'recorded' names {symbol!r}, but it occurs in "
+                f"{_PROMPT_LINEAGE_SURFACE}"
+            )
+        return None
+    if disposition == "downgraded":
+        owner = record.get("owner")
+        reason = record.get("reason")
+        if (
+            isinstance(owner, str)
+            and owner.strip()
+            and isinstance(reason, str)
+            and reason.strip()
+        ):
+            return None
+        return "disposition 'downgraded' carries no non-empty owner and reason"
+    return f"disposition {disposition!r} is neither 'recorded' nor 'downgraded'"
+
+
+def _prompt_lineage_gaps(
+    root: Path, surfaces: Sequence[tuple[Path, str]]
+) -> tuple[list[str], list[DeclarationGap]]:
+    declared = _required_lineage_fields(root)
+    records = _prompt_lineage_dispositions(root)
+    gaps: list[DeclarationGap] = []
+    for name in declared:
+        record = records.get(name)
+        if record is None:
+            gaps.append(
+                DeclarationGap(
+                    PROMPT_LINEAGE_FIELD_WITHOUT_RECORD,
+                    name,
+                    _METRIC_DECLARATION,
+                    f"lineage field {name!r} is declared but has no "
+                    "prompt_lineage_dispositions record, so nothing records or "
+                    "downgrades it",
+                )
+            )
+            continue
+        cause = _prompt_lineage_record_gap_reason(record, surfaces)
+        if cause is not None:
+            gaps.append(
+                DeclarationGap(
+                    PROMPT_LINEAGE_FIELD_WITHOUT_RECORD,
+                    name,
+                    _METRIC_DECLARATION,
+                    f"lineage field {name!r} has a malformed prompt lineage "
+                    f"disposition record: {cause}",
+                )
+            )
     return declared, gaps
 
 
@@ -397,8 +545,9 @@ class DeclarationSyncGap:
             "definition": (
                 "number of declarations the DATA makes that the code does not enforce: "
                 "a hard metric with no computed-or-downgraded disposition, a stage "
-                "hard invariant with no disposition, and a prompt call form with no "
-                "resolvable registry entry. The goal is zero."
+                "hard invariant with no disposition, a prompt call form with no "
+                "resolvable registry entry, and a declared prompt lineage field with "
+                "no recorded-or-downgraded disposition. The goal is zero."
             ),
             "root": self.root,
             "gap_count": self.count,
@@ -424,6 +573,7 @@ class DeclarationSyncGap:
             HARD_METRIC_WITHOUT_COMPUTATION: "hard metrics without a production computation",
             STAGE_INVARIANT_WITHOUT_CHECK: "stage invariants without a disposition",
             PROMPT_FORM_WITHOUT_REGISTRY_ENTRY: "prompt call forms without a registry entry",
+            PROMPT_LINEAGE_FIELD_WITHOUT_RECORD: "prompt lineage fields without a disposition record",
         }
         for gap_class in _GAP_CLASS_ORDER:
             gaps = self.gaps_for(gap_class)
@@ -438,7 +588,7 @@ class DeclarationSyncGap:
 
 
 def build_declaration_sync_gap(root: Path) -> DeclarationSyncGap:
-    """Compute the axis for ``root`` against the three declaration surfaces.
+    """Compute the axis for ``root`` against the four declaration surfaces.
 
     Raises ``FileNotFoundError`` when ``root`` has no ``crates/`` directory or a
     required declaration file is missing: an empty scan would otherwise report a
@@ -450,16 +600,21 @@ def build_declaration_sync_gap(root: Path) -> DeclarationSyncGap:
             f"{root} has no crates/ directory; refusing to report a vacuous zero-gap axis"
         )
     metric_surfaces = _read_surfaces(_surface_files(root, _METRIC_COMPUTATION_SURFACES))
+    lineage_surfaces = _read_surfaces(
+        _surface_files(root, (_PROMPT_LINEAGE_SURFACE,))
+    )
 
     declared_metrics, metric_gaps = _metric_gaps(root, metric_surfaces)
     declared_invariants, invariant_gaps = _invariant_gaps(root)
     declared_prompts, prompt_gaps = _prompt_gaps(root)
+    declared_fields, lineage_gaps = _prompt_lineage_gaps(root, lineage_surfaces)
 
-    gaps = tuple(metric_gaps + invariant_gaps + prompt_gaps)
+    gaps = tuple(metric_gaps + invariant_gaps + prompt_gaps + lineage_gaps)
     declared_totals = {
         HARD_METRIC_WITHOUT_COMPUTATION: len(declared_metrics),
         STAGE_INVARIANT_WITHOUT_CHECK: len(declared_invariants),
         PROMPT_FORM_WITHOUT_REGISTRY_ENTRY: len(declared_prompts),
+        PROMPT_LINEAGE_FIELD_WITHOUT_RECORD: len(declared_fields),
     }
     return DeclarationSyncGap(root=str(root), gaps=gaps, declared_totals=declared_totals)
 
