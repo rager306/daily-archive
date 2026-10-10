@@ -137,9 +137,19 @@ impl FigureAnalysisUseCase {
         prompt_lineage
             .validate()
             .map_err(FigureAnalysisUseCaseError::RouteCapability)?;
-        if prompt_lineage.task_id != "figure_analysis" {
+        // The figure stage has no PromptRegistry injected yet, so the registry
+        // binding that S09 added for summaries does not apply here; the full
+        // figure registry binding is S10 scope. Until then the admission check
+        // still requires a resolvable prompt identity and a non-empty version
+        // rather than an id-only string compare.
+        if prompt_lineage.prompt_id != "figure_analysis" {
             return Err(FigureAnalysisUseCaseError::RouteCapability(
                 "figure prompt lineage task mismatch".into(),
+            ));
+        }
+        if prompt_lineage.prompt_version.trim().is_empty() {
+            return Err(FigureAnalysisUseCaseError::RouteCapability(
+                "figure prompt lineage version is empty".into(),
             ));
         }
         let structured_output = response.structured_output;
@@ -746,13 +756,17 @@ mod tests {
                 latency_ms: 12,
                 prompt_lineage: Some(PromptExecutionLineage {
                     run_id: "figure-test".into(),
-                    task_id: "figure_analysis".into(),
+                    prompt_id: "figure_analysis".into(),
+                    prompt_version: "figure-analysis-grounded-v2".into(),
+                    prompt_sha256: ContentDigest::of_text("prompt"),
                     task_spec_sha256: ContentDigest::of_text("task"),
                     rendered_prompt_sha256: ContentDigest::of_text("prompt"),
                     output_schema_sha256: ContentDigest::of_text("schema"),
                     route_policy_sha256: ContentDigest::of_text("route"),
                     endpoint_sha256: ContentDigest::of_text("endpoint"),
                     model_binding_sha256: ContentDigest::of_text("binding"),
+                    inference_config_sha256: ContentDigest::of_text("inference"),
+                    context_bundle_sha256: ContentDigest::of_text("context"),
                     provider: "fixed".into(),
                     model: "resolved-vision".into(),
                     input_sha256: ContentDigest::of_text("input"),

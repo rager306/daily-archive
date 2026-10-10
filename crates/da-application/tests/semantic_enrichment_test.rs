@@ -8,6 +8,9 @@ use da_domain::{
         PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
         ResolvedModelBinding,
     },
+    prompt_registry::{
+        PROMPT_REGISTRY_SCHEMA_VERSION, PromptEntryKind, PromptRegistry, PromptRegistryEntry,
+    },
     vid,
 };
 use da_ports::{
@@ -25,6 +28,8 @@ use common::mock_graph_store::MockGraphStore;
 struct FixedPrompt {
     section_path: &'static str,
     fail: bool,
+    /// Return a lineage whose template fingerprint disagrees with the registry.
+    tamper_prompt_sha256: bool,
 }
 #[async_trait]
 impl PromptExecutionPort for FixedPrompt {
@@ -36,15 +41,24 @@ impl PromptExecutionPort for FixedPrompt {
             return Err(PromptExecutionError::Provider("bounded failure".into()));
         }
         let output=serde_json::to_vec(&serde_json::json!({"abstract_summary":"Grounded summary.","section_summaries":[{"path_id":self.section_path,"title":"Introduction","summary":"Grounded section candidate."}],"methods":[{"name":"GEPA","description":"candidate","how_used":"candidate"}],"datasets":[{"name":"ARC","description":"candidate"}],"metrics":[{"name":"Accuracy","value":"89%","baseline":"83%"}],"quantitative_results":"89%","limitations":"fixture","reproducibility":{"score":4,"justification":"fixture"},"tags":["candidate"]})).unwrap();
+        let prompt_sha256 = if self.tamper_prompt_sha256 {
+            ContentDigest::of_text("tampered-template")
+        } else {
+            request.task.template_sha256().unwrap()
+        };
         let lineage = PromptExecutionLineage {
             run_id: request.run_id,
-            task_id: request.task.task_id.clone(),
+            prompt_id: request.task.task_id.clone(),
+            prompt_version: request.task.version.clone(),
+            prompt_sha256,
             task_spec_sha256: request.task.spec_sha256().unwrap(),
             rendered_prompt_sha256: ContentDigest::of_text("rendered"),
             output_schema_sha256: request.output_schema.sha256().unwrap(),
             route_policy_sha256: ContentDigest::of_text("route-bytes"),
             endpoint_sha256: ContentDigest::of_text("endpoint"),
             model_binding_sha256: request.resolved_model.sha256().unwrap(),
+            inference_config_sha256: ContentDigest::of_text("inference"),
+            context_bundle_sha256: ContentDigest::of_bytes(&request.input_bytes),
             provider: "fixed".into(),
             model: "fixed-model".into(),
             input_sha256: ContentDigest::of_bytes(&request.input_bytes),
@@ -107,6 +121,24 @@ fn contracts() -> (
         },
     )
 }
+fn prompt_registry(task: &PromptTaskSpec, schema: &PromptOutputSchema) -> PromptRegistry {
+    PromptRegistry {
+        schema_version: PROMPT_REGISTRY_SCHEMA_VERSION.into(),
+        registry_id: "test-prompt-registry".into(),
+        d127_import_eligible: false,
+        entries: vec![PromptRegistryEntry {
+            prompt_id: task.task_id.clone(),
+            prompt_version: task.version.clone(),
+            kind: PromptEntryKind::Task,
+            // Computed from the same test contracts, never hand-picked, so the
+            // happy-path lineage binds and a tampered record is refused.
+            prompt_sha256: task.template_sha256().unwrap(),
+            schema_ref: schema.output_schema_id.clone(),
+            schema_sha256: schema.sha256().unwrap(),
+            source_ref: "data/ontology/prompt_tasks.yaml#article_summary".into(),
+        }],
+    }
+}
 async fn setup() -> (MockGraphStore, u64) {
     let store = MockGraphStore::new();
     let paper = store.create_node("Paper").await.unwrap();
@@ -142,9 +174,18 @@ fn parsed() -> ParsedArticle {
 }
 fn use_case(store: &MockGraphStore, prompt: FixedPrompt) -> SummaryUseCase {
     let (t, r, m, s) = contracts();
-    SummaryUseCase::new(Arc::new(store.clone()), Arc::new(prompt), t, r, m, s)
-        .unwrap()
-        .with_clock(Arc::new(FixedClock::from_timestamp(1_700_000_000)))
+    let registry = prompt_registry(&t, &s);
+    SummaryUseCase::new(
+        Arc::new(store.clone()),
+        Arc::new(prompt),
+        t,
+        r,
+        m,
+        s,
+        registry,
+    )
+    .unwrap()
+    .with_clock(Arc::new(FixedClock::from_timestamp(1_700_000_000)))
 }
 
 #[tokio::test]
@@ -155,6 +196,7 @@ async fn lineage_bound_candidates_are_nonretrieval_and_never_create_semantic_ent
         FixedPrompt {
             section_path: "1",
             fail: false,
+            tamper_prompt_sha256: false,
         },
     )
     .generate_summaries("2507.19457", paper, &parsed())
@@ -203,6 +245,7 @@ async fn unresolved_section_fails_before_any_graph_mutation() {
         FixedPrompt {
             section_path: "missing",
             fail: false,
+            tamper_prompt_sha256: false,
         },
     )
     .generate_summaries("2507.19457", paper, &parsed())
@@ -219,6 +262,7 @@ async fn provider_failure_is_visible_and_writes_nothing() {
         FixedPrompt {
             section_path: "1",
             fail: true,
+            tamper_prompt_sha256: false,
         },
     )
     .generate_summaries("2507.19457", paper, &parsed())
@@ -226,4 +270,85 @@ async fn provider_failure_is_visible_and_writes_nothing() {
     .unwrap_err();
     assert!(error.to_string().contains("bounded failure"));
     assert!(store.get_nodes_by_label("Summary").await.is_empty());
+}
+#[tokio::test]
+async fn tampered_lineage_is_refused_at_the_write_seam() {
+    let (store, paper) = setup().await;
+    let error = use_case(
+        &store,
+        FixedPrompt {
+            section_path: "1",
+            fail: false,
+            tamper_prompt_sha256: true,
+        },
+    )
+    .generate_summaries("2507.19457", paper, &parsed())
+    .await
+    .unwrap_err();
+    let message = error.to_string();
+    assert!(
+        message.contains("summary execution lineage refused"),
+        "refusal must name the summary write seam: {message}"
+    );
+    assert!(
+        message.contains("fingerprint mismatch") && message.contains("article_summary"),
+        "refusal must carry the typed reason and prompt id: {message}"
+    );
+    assert!(
+        store.get_nodes_by_label("Summary").await.is_empty(),
+        "a lineage the registry refuses must not write a Summary candidate"
+    );
+}
+#[test]
+fn construction_refuses_a_registry_that_disagrees_with_the_contract() {
+    let store = MockGraphStore::new();
+    let (t, r, m, s) = contracts();
+
+    // The registry declares the task at a version the local contract does not use.
+    let mut drifted_version = prompt_registry(&t, &s);
+    drifted_version.entries[0].prompt_version = "v2".into();
+    let error = SummaryUseCase::new(
+        Arc::new(store.clone()),
+        Arc::new(FixedPrompt {
+            section_path: "1",
+            fail: false,
+            tamper_prompt_sha256: false,
+        }),
+        t.clone(),
+        r.clone(),
+        m.clone(),
+        s.clone(),
+        drifted_version,
+    )
+    .err()
+    .expect("a registry with an unregistered version must fail construction");
+    assert!(
+        error.to_string().contains("does not resolve"),
+        "an unregistered version must be refused at construction: {error}"
+    );
+
+    // The registry resolves the version but records a fingerprint the contract disagrees with.
+    let mut drifted_fingerprint = prompt_registry(&t, &s);
+    drifted_fingerprint.entries[0].prompt_sha256 = ContentDigest::of_text("tampered-template");
+    let error = SummaryUseCase::new(
+        Arc::new(store.clone()),
+        Arc::new(FixedPrompt {
+            section_path: "1",
+            fail: false,
+            tamper_prompt_sha256: false,
+        }),
+        t,
+        r,
+        m,
+        s,
+        drifted_fingerprint,
+    )
+    .err()
+    .expect("a registry with a drifted fingerprint must fail construction");
+    assert!(
+        error
+            .to_string()
+            .contains("disagrees with the local task/schema contract"),
+        "a drifted fingerprint must be refused at construction: {error}"
+    );
 }

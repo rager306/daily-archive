@@ -5,9 +5,12 @@
 
 use std::{collections::BTreeMap, sync::Arc};
 
-use da_domain::prompt_optimization::{
-    PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
-    ResolvedModelBinding,
+use da_domain::{
+    prompt_optimization::{
+        PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
+        ResolvedModelBinding,
+    },
+    prompt_registry::{PromptRegistry, bind_lineage_to_registry},
 };
 use da_ports::{
     Clock, SystemClock,
@@ -25,6 +28,7 @@ pub struct SummaryUseCase {
     prompt_route: PromptRoutePolicy,
     resolved_model: ResolvedModelBinding,
     output_schema: PromptOutputSchema,
+    prompt_registry: PromptRegistry,
     clock: Arc<dyn Clock>,
 }
 #[derive(Debug, Deserialize, Default)]
@@ -115,6 +119,7 @@ impl SummaryUseCase {
         prompt_route: PromptRoutePolicy,
         resolved_model: ResolvedModelBinding,
         output_schema: PromptOutputSchema,
+        prompt_registry: PromptRegistry,
     ) -> anyhow::Result<Self> {
         prompt_task.validate().map_err(anyhow::Error::msg)?;
         prompt_route.validate().map_err(anyhow::Error::msg)?;
@@ -127,6 +132,31 @@ impl SummaryUseCase {
         {
             anyhow::bail!("summary prompt task route/schema contract mismatch");
         }
+        // Fail closed at construction: the registry must resolve the local task
+        // contract by (prompt_id, prompt_version) and its recorded fingerprints
+        // must be recomputed from the local contracts, so a registry that has
+        // drifted from the task or schema cannot be injected at all.
+        prompt_registry
+            .validate()
+            .map_err(|error| anyhow::Error::msg(error.to_string()))?;
+        let entry = prompt_registry
+            .resolve(&prompt_task.task_id, &prompt_task.version)
+            .map_err(|error| {
+                anyhow::anyhow!(
+                    "summary prompt registry does not resolve {}@{}: {error}",
+                    prompt_task.task_id,
+                    prompt_task.version
+                )
+            })?;
+        if entry.prompt_sha256 != prompt_task.template_sha256().map_err(anyhow::Error::msg)?
+            || entry.schema_sha256 != output_schema.sha256().map_err(anyhow::Error::msg)?
+        {
+            anyhow::bail!(
+                "summary prompt registry entry {}@{} disagrees with the local task/schema contract",
+                prompt_task.task_id,
+                prompt_task.version
+            );
+        }
         Ok(Self {
             graph_store,
             prompt_executor,
@@ -134,6 +164,7 @@ impl SummaryUseCase {
             prompt_route,
             resolved_model,
             output_schema,
+            prompt_registry,
             clock: Arc::new(SystemClock),
         })
     }
@@ -172,9 +203,8 @@ impl SummaryUseCase {
             })
             .await?;
         response.lineage.validate().map_err(anyhow::Error::msg)?;
-        if response.lineage.task_id != self.prompt_task.task_id {
-            anyhow::bail!("summary execution lineage task mismatch");
-        }
+        bind_lineage_to_registry(&response.lineage, &self.prompt_registry)
+            .map_err(|error| anyhow::anyhow!("summary execution lineage refused: {error}"))?;
         let structured: StructuredSummary = serde_json::from_slice(&response.output_bytes)?;
         self.materialize_candidates(paper_id, paper_node_id, &structured, &response.lineage)
             .await?;
@@ -202,9 +232,8 @@ impl SummaryUseCase {
         lineage: &PromptExecutionLineage,
     ) -> anyhow::Result<()> {
         lineage.validate().map_err(anyhow::Error::msg)?;
-        if lineage.task_id != self.prompt_task.task_id {
-            anyhow::bail!("summary graph write lineage task mismatch");
-        }
+        bind_lineage_to_registry(lineage, &self.prompt_registry)
+            .map_err(|error| anyhow::anyhow!("summary graph write lineage refused: {error}"))?;
         let mut sections = Vec::with_capacity(summary.section_summaries.len());
         for candidate in &summary.section_summaries {
             let section = self
@@ -256,7 +285,7 @@ impl SummaryUseCase {
             )
             .await?;
         }
-        tracing::info!(event="summary_candidates_materialized",paper_id,task_id=%lineage.task_id,run_id=%lineage.run_id,section_candidates=summary.section_summaries.len(),semantic_entities_ignored=summary.methods.len()+summary.datasets.len()+summary.metrics.len(),retrieval_eligible=false,authoritative=false,import_eligible=false,"Generative summary candidates materialized");
+        tracing::info!(event="summary_candidates_materialized",paper_id,prompt_id=%lineage.prompt_id,run_id=%lineage.run_id,section_candidates=summary.section_summaries.len(),semantic_entities_ignored=summary.methods.len()+summary.datasets.len()+summary.metrics.len(),retrieval_eligible=false,authoritative=false,import_eligible=false,"Generative summary candidates materialized");
         Ok(())
     }
     async fn upsert_summary_node(
@@ -284,7 +313,7 @@ impl SummaryUseCase {
             ("source_label", source_label.into()),
             ("source_id", source_id.into()),
             ("method", "prompt_candidate".into()),
-            ("prompt_task_id", lineage.task_id.clone()),
+            ("prompt_task_id", lineage.prompt_id.clone()),
             ("prompt_run_id", lineage.run_id.clone()),
             (
                 "prompt_task_sha256",
