@@ -47,6 +47,17 @@ impl PromptTaskSpec {
             .map(|b| ContentDigest::of_bytes(&b))
             .map_err(|e| e.to_string())
     }
+    /// Deterministic fingerprint of the executable template pair.
+    ///
+    /// Distinct from [`Self::spec_sha256`], which covers the whole task spec
+    /// (route, bounds, eval suite): this digest covers only the bytes that
+    /// reach the provider, so a prompt-registry entry can bind it.
+    pub fn template_sha256(&self) -> Result<ContentDigest, String> {
+        self.validate()?;
+        serde_json::to_vec(&(&self.system_template, &self.user_template))
+            .map(|b| ContentDigest::of_bytes(&b))
+            .map_err(|e| e.to_string())
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -151,13 +162,20 @@ impl PromptOutputSchema {
 #[serde(deny_unknown_fields)]
 pub struct PromptExecutionLineage {
     pub run_id: String,
-    pub task_id: String,
+    pub prompt_id: String,
+    pub prompt_version: String,
+    /// Fingerprint of the executed template/meta-prompt (registry binding).
+    pub prompt_sha256: ContentDigest,
     pub task_spec_sha256: ContentDigest,
     pub rendered_prompt_sha256: ContentDigest,
     pub output_schema_sha256: ContentDigest,
     pub route_policy_sha256: ContentDigest,
     pub endpoint_sha256: ContentDigest,
     pub model_binding_sha256: ContentDigest,
+    /// Deterministic digest over generation settings + resolved model identity.
+    pub inference_config_sha256: ContentDigest,
+    /// Digest of the bound context bundle actually sent as input.
+    pub context_bundle_sha256: ContentDigest,
     pub provider: String,
     pub model: String,
     pub input_sha256: ContentDigest,
@@ -175,7 +193,8 @@ impl PromptExecutionLineage {
     pub fn validate(&self) -> Result<(), String> {
         if [
             self.run_id.as_str(),
-            self.task_id.as_str(),
+            self.prompt_id.as_str(),
+            self.prompt_version.as_str(),
             self.provider.as_str(),
             self.model.as_str(),
         ]
@@ -524,6 +543,34 @@ mod tests {
         let mut bad = task.clone();
         bad.optimizer_enabled = true;
         assert!(bad.validate().is_err());
+    }
+
+    #[test]
+    fn task_template_sha256_covers_only_the_template_pair() {
+        let task = PromptTaskSpec {
+            task_id: "summary".into(),
+            version: "v1".into(),
+            system_template: "system".into(),
+            user_template: "{text}".into(),
+            output_schema_id: "schema".into(),
+            route_policy_id: "anthropic".into(),
+            temperature_milli: 300,
+            max_output_tokens: 1000,
+            eval_suite_id: "summary-v1".into(),
+            optimizer_enabled: false,
+        };
+        let template = task.template_sha256().unwrap();
+        assert_eq!(template, task.template_sha256().unwrap());
+        // Distinct from the whole-spec fingerprint.
+        assert_ne!(template, task.spec_sha256().unwrap());
+        // A template edit moves the fingerprint.
+        let mut edited = task.clone();
+        edited.user_template = "different {text}".into();
+        assert_ne!(template, edited.template_sha256().unwrap());
+        // A non-template spec edit does not.
+        let mut retuned = task;
+        retuned.temperature_milli = 500;
+        assert_eq!(template, retuned.template_sha256().unwrap());
     }
 
     // ── PIR-015: prompt surface → shared promotion protocol adapter ──

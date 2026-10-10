@@ -1,0 +1,45 @@
+# Unified prompt / meta-prompt registry (ADR-055, D557).
+#
+# Resolves a prompt-bearing form by `(prompt_id, prompt_version)` to its bound
+# schema and provenance, for BOTH inline-template prompt tasks and file-based
+# meta-prompt agents.
+#
+# Fingerprints are deliberately NOT pinned here: the da-adapters loader computes
+# `prompt_sha256` / `schema_sha256` from the referenced source bytes at load time
+# (D418 recompute-from-source), so a prompt edit cannot leave a stale fingerprint
+# behind. This file is strict DATA — no executable strings.
+#
+#   kind: task        -> an inline-template prompt task registered in
+#                        data/ontology/prompt_tasks.yaml.
+#                        schema_ref is an `output_schema_id`; provenance
+#                        (source_ref) is derived as
+#                        data/ontology/prompt_tasks.yaml#<task_id>.
+#   kind: meta_prompt -> a file-based meta-prompt agent. `source_ref` and
+#                        `schema_ref` are repo-relative paths, and
+#                        `prompt_version` must equal the bound agent manifest's
+#                        `agent_version` (data/agents/<prompt_id>/manifest.yaml),
+#                        whose `prompt.system_file` must equal `source_ref`.
+#
+# Locks stay closed: candidate-only, `d127_import_eligible` is false.
+schema_version: prompt-registry.v1
+registry_id: prompt-registry
+d127_import_eligible: false
+entries:
+  - prompt_id: article_summary
+    prompt_version: summary.v1
+    kind: task
+    schema_ref: article-summary.v1
+  - prompt_id: figure_analysis
+    prompt_version: figure-analysis.v3
+    kind: task
+    schema_ref: figure-analysis-candidate.v1
+  - prompt_id: critic
+    prompt_version: "1.0.0"
+    kind: meta_prompt
+    source_ref: data/prompts/critic/system.v1.md
+    schema_ref: data/schemas/agent.schema.yaml
+  - prompt_id: summarizer
+    prompt_version: "1.0.0"
+    kind: meta_prompt
+    source_ref: data/prompts/summarizer/system.v1.md
+    schema_ref: data/schemas/agent.schema.yaml

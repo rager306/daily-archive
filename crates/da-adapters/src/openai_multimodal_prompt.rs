@@ -242,9 +242,25 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
                 .collect::<Vec<_>>(),
         ))
         .map_err(|e| PromptExecutionError::Contract(e.to_string()))?;
+        let inference_config_sha256 = ContentDigest::of_bytes(
+            &serde_json::to_vec(&(
+                request.task.temperature_milli,
+                request.task.max_output_tokens,
+                request.route.route_policy_id.as_str(),
+                request.resolved_model.model_name.as_str(),
+                request.resolved_model.protocol.as_str(),
+            ))
+            .map_err(|e| PromptExecutionError::Contract(e.to_string()))?,
+        );
+        let context_bundle_sha256 = ContentDigest::of_bytes(&request.input_bytes);
         let lineage = PromptExecutionLineage {
             run_id: request.run_id,
-            task_id: request.task.task_id.clone(),
+            prompt_id: request.task.task_id.clone(),
+            prompt_version: request.task.version.clone(),
+            prompt_sha256: request
+                .task
+                .template_sha256()
+                .map_err(PromptExecutionError::Contract)?,
             task_spec_sha256: request
                 .task
                 .spec_sha256()
@@ -263,6 +279,8 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
                 .resolved_model
                 .sha256()
                 .map_err(PromptExecutionError::Contract)?,
+            inference_config_sha256,
+            context_bundle_sha256,
             provider: request.resolved_model.provider,
             model: request.resolved_model.model_name,
             input_sha256: ContentDigest::of_bytes(&input_identity),
@@ -277,7 +295,7 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
             import_eligible: false,
         };
         lineage.validate().map_err(PromptExecutionError::Contract)?;
-        tracing::info!(event="multimodal_prompt_execution_complete",run_id=%lineage.run_id,task_id=%lineage.task_id,model=%lineage.model,image_sha256=%request.media[0].sha256,input_tokens=lineage.input_tokens,output_tokens=lineage.output_tokens,latency_ms=lineage.latency_ms,authoritative=false,import_eligible=false,"Multimodal prompt execution completed");
+        tracing::info!(event="multimodal_prompt_execution_complete",run_id=%lineage.run_id,prompt_id=%lineage.prompt_id,model=%lineage.model,image_sha256=%request.media[0].sha256,input_tokens=lineage.input_tokens,output_tokens=lineage.output_tokens,latency_ms=lineage.latency_ms,authoritative=false,import_eligible=false,"Multimodal prompt execution completed");
         Ok(PromptExecutionResponse {
             output_bytes,
             lineage,
@@ -420,6 +438,12 @@ mod tests {
         assert_eq!(response.lineage.input_tokens, 20);
         assert_eq!(response.lineage.output_tokens, 6);
         assert!(!response.lineage.authoritative && !response.lineage.import_eligible);
+        assert_eq!(response.lineage.prompt_id, "figure_analysis");
+        assert_eq!(response.lineage.prompt_version, "v1");
+        assert_ne!(
+            response.lineage.prompt_sha256,
+            response.lineage.task_spec_sha256
+        );
         server.await.unwrap();
     }
     #[tokio::test]

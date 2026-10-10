@@ -61,6 +61,7 @@ pub mod pipeline_metrics;
 pub mod process;
 pub mod promotion;
 pub mod prompt_optimization;
+pub mod prompt_registry;
 pub mod relation;
 pub mod revision_classification;
 pub mod revision_readiness;
@@ -162,6 +163,10 @@ pub use pipeline_ledger::{
 };
 pub use promotion::{
     ActorId, EvidenceRef, PromotionCandidate, PromotionError, PromotionKind, PromotionState,
+};
+pub use prompt_registry::{
+    PROMPT_REGISTRY_SCHEMA_VERSION, PromptEntryKind, PromptLineageBindingError, PromptRegistry,
+    PromptRegistryEntry, PromptRegistryError, bind_lineage_to_registry,
 };
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
@@ -593,6 +598,53 @@ mod serde_roundtrip_tests {
             deployed: false,
             import_eligible: false,
         });
+    }
+
+    #[test]
+    fn roundtrip_prompt_registry() {
+        use crate::prompt_registry::{
+            PROMPT_REGISTRY_SCHEMA_VERSION, PromptEntryKind, PromptRegistry, PromptRegistryEntry,
+        };
+        roundtrip_json(&PromptRegistry {
+            schema_version: PROMPT_REGISTRY_SCHEMA_VERSION.into(),
+            registry_id: "prompt-registry".into(),
+            d127_import_eligible: false,
+            entries: vec![
+                PromptRegistryEntry {
+                    prompt_id: "article_summary".into(),
+                    prompt_version: "v1".into(),
+                    kind: PromptEntryKind::Task,
+                    prompt_sha256: ContentDigest::of_text("template"),
+                    schema_ref: "article-summary.v1".into(),
+                    schema_sha256: ContentDigest::of_text("schema"),
+                    source_ref: "data/ontology/prompt_tasks.yaml#article_summary".into(),
+                },
+                PromptRegistryEntry {
+                    prompt_id: "critic".into(),
+                    prompt_version: "1.0.0".into(),
+                    kind: PromptEntryKind::MetaPrompt,
+                    prompt_sha256: ContentDigest::of_text("critic-prompt"),
+                    schema_ref: "data/schemas/agent.schema.yaml".into(),
+                    schema_sha256: ContentDigest::of_text("agent-schema"),
+                    source_ref: "data/prompts/critic/system.v1.md".into(),
+                },
+            ],
+        });
+    }
+
+    #[test]
+    fn roundtrip_prompt_entry_kind_all_variants() {
+        use crate::prompt_registry::PromptEntryKind;
+        let kinds = [PromptEntryKind::Task, PromptEntryKind::MetaPrompt];
+        for kind in &kinds {
+            let json = serde_json::to_string(kind).unwrap();
+            let back: PromptEntryKind = serde_json::from_str(&json).unwrap();
+            assert_eq!(*kind, back);
+        }
+        assert_eq!(
+            serde_json::to_string(&PromptEntryKind::MetaPrompt).unwrap(),
+            "\"meta_prompt\""
+        );
     }
 
     #[test]

@@ -155,6 +155,21 @@ impl PromptTaskRegistry {
             .find(|x| x.task_id == id)
             .ok_or_else(|| format!("prompt task {id} not registered"))
     }
+    /// Resolve a task by identity AND version, fail-closed.
+    ///
+    /// The unified prompt registry binds `(prompt_id, prompt_version)`; an id
+    /// that resolves only at another version must not be accepted, so a wrong
+    /// version is refused and the message names the registered version.
+    pub fn task_versioned(&self, id: &str, version: &str) -> Result<&PromptTaskSpec, String> {
+        let task = self.task(id)?;
+        if task.version != version {
+            return Err(format!(
+                "prompt task {id} is registered at version {} not {version}",
+                task.version
+            ));
+        }
+        Ok(task)
+    }
     pub fn route(&self, id: &str) -> Result<&PromptRoutePolicy, String> {
         self.routes
             .iter()
@@ -312,6 +327,17 @@ mod tests {
         assert!(r.output_schema(&task.output_schema_id).is_ok());
         assert_eq!(r.sha256().unwrap(), r.sha256().unwrap());
     }
+    #[test]
+    fn task_versioned_accepts_registered_version_and_refuses_drift() {
+        let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/ontology/prompt_tasks.yaml");
+        let r = load_prompt_task_registry(&p).unwrap();
+        let task = r.task_versioned("article_summary", "summary.v1").unwrap();
+        assert_eq!(task.task_id, "article_summary");
+        let error = r.task_versioned("article_summary", "v9").unwrap_err();
+        assert!(error.contains("summary.v1"), "{error}");
+        assert!(r.task_versioned("no_such_prompt", "v1").is_err());
+    }
+
     #[test]
     fn unknown_field_and_enabled_optimizer_fail() {
         let p = std::env::temp_dir().join(format!("prompt-registry-{}.yaml", std::process::id()));

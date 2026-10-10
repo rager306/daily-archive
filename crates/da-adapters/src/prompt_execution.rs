@@ -214,9 +214,25 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
             &serde_json::to_vec(&request.route)
                 .map_err(|e| PromptExecutionError::Contract(e.to_string()))?,
         );
+        let inference_config_sha256 = ContentDigest::of_bytes(
+            &serde_json::to_vec(&(
+                request.task.temperature_milli,
+                request.task.max_output_tokens,
+                request.route.route_policy_id.as_str(),
+                request.resolved_model.model_name.as_str(),
+                request.resolved_model.protocol.as_str(),
+            ))
+            .map_err(|e| PromptExecutionError::Contract(e.to_string()))?,
+        );
+        let context_bundle_sha256 = ContentDigest::of_bytes(&request.input_bytes);
         let lineage = PromptExecutionLineage {
             run_id: request.run_id,
-            task_id: request.task.task_id.clone(),
+            prompt_id: request.task.task_id.clone(),
+            prompt_version: request.task.version.clone(),
+            prompt_sha256: request
+                .task
+                .template_sha256()
+                .map_err(PromptExecutionError::Contract)?,
             task_spec_sha256: request
                 .task
                 .spec_sha256()
@@ -232,6 +248,8 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
                 .resolved_model
                 .sha256()
                 .map_err(PromptExecutionError::Contract)?,
+            inference_config_sha256,
+            context_bundle_sha256,
             provider: self.llm.provider_id().into(),
             model,
             input_sha256: ContentDigest::of_bytes(&input_identity),
@@ -246,7 +264,7 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
             import_eligible: false,
         };
         lineage.validate().map_err(PromptExecutionError::Contract)?;
-        tracing::info!(event="prompt_execution_complete",run_id=%lineage.run_id,task_id=%lineage.task_id,provider=%lineage.provider,model=%lineage.model,input_tokens=lineage.input_tokens,output_tokens=lineage.output_tokens,latency_ms=lineage.latency_ms,authoritative=false,import_eligible=false,"Prompt execution completed");
+        tracing::info!(event="prompt_execution_complete",run_id=%lineage.run_id,prompt_id=%lineage.prompt_id,provider=%lineage.provider,model=%lineage.model,input_tokens=lineage.input_tokens,output_tokens=lineage.output_tokens,latency_ms=lineage.latency_ms,authoritative=false,import_eligible=false,"Prompt execution completed");
         Ok(PromptExecutionResponse {
             output_bytes,
             lineage,
@@ -462,6 +480,13 @@ mod tests {
         assert_eq!(r.lineage.model, "model-v1");
         assert_eq!(r.lineage.input_tokens, 10);
         assert!(!r.lineage.authoritative && !r.lineage.import_eligible);
+        assert_eq!(r.lineage.prompt_id, "summary");
+        assert_eq!(r.lineage.prompt_version, "v1");
+        assert_eq!(r.lineage.prompt_sha256, task().template_sha256().unwrap());
+        assert_eq!(
+            r.lineage.context_bundle_sha256,
+            ContentDigest::of_bytes(b"input")
+        );
         assert_ne!(
             r.lineage.output_schema_sha256,
             ContentDigest::of_text("schema")
