@@ -128,6 +128,20 @@ pub mod native_route_threshold_candidates;
 // and its contract test compile in the default feature set. Every threshold stays
 // `not_accepted`; every promotion lock stays closed.
 pub mod independent_preservation_candidate;
+// S12/T01 (M516-th0oby): the release-readiness receipt. It projects the three
+// quality / cost / rights release gates declared in
+// `data/parse/acceptance_manifest.yaml#release_decision_package`, recomputing
+// every evidence sha256 from the committed bytes (never copying a declared
+// digest), carries the pending human decision (reviewer null / decision pending)
+// and the machine-authorization verdict verbatim (`s09_authorized = false`, the
+// five locks closed), and binds the S03 / S05 / S10 / S11 milestone evidence by
+// path + pointer + sha256. It is a projection, not an authority:
+// `claim_scope = release_readiness_preparation_only`, `product_coverage_effect =
+// none`, `thresholds = not_accepted`, `nothing_here_authorizes_a_release = true`.
+// It reuses the S04 envelope (`native_family_receipt`), and is pure
+// std/serde/serde_yaml/serde_json/sha2, so it and its contract test compile in
+// the default feature set (no `pdf-layout`, no `pdf-classifier`).
+pub mod release_readiness_receipt;
 // S04/T01 (M516-th0oby): the per-document semantic-correctness receipt over the
 // expanded 12-document route corpus. It publishes the composer's H14
 // well-formedness and H15 bibliography-target facts as one closed reason pair per
