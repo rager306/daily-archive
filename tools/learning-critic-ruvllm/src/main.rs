@@ -1,47 +1,113 @@
-//! CLI: run the deterministic ruVLLM reflection critic over the embedded
-//! redacted sample cases and emit parse-learning-ablation.v1 observations
-//! JSON (rows + provenance) for the offline evaluator.
+//! CLI:
+//! `derive-cases` — TEI paths -> redacted structural critic cases (JSON).
+//! `observe`      — cases JSON -> parse-learning-ablation.v1 observations.
 
 use learning_critic_ruvllm::{CriticCase, RuvllmReflectionCritic, identity_digest};
+use serde::Serialize;
 use sha2::{Digest, Sha256};
+use std::path::PathBuf;
 
-const E2E_CORPUS_IDENTITY: &str = "learning-critic-e2e.sample-corpus.v1";
-
-fn well_formed_subject() -> String {
-    [
-        "sections: 7; references: 41; figures: 3; tables: 2",
-        "reading_order: linear; heading_depth_max: 3",
-        "abstract_present: true; acknowledgements_present: true",
-        "author_block: parsed; affiliation_present: true",
-    ]
-    .join("\n")
+fn sha256_file(path: &std::path::Path) -> anyhow::Result<String> {
+    let bytes = std::fs::read(path)?;
+    Ok(hex::encode(Sha256::digest(&bytes)))
 }
 
-fn degraded_subject() -> String {
-    ["sections: 7 ((unclosed", "  references: 41", "\tfigures: 3", "abstract_present: false"].join("\n")
+/// Redacted structural summary: tag-count profile only — no TEI bytes,
+/// no text content cross this boundary (the redaction barrier).
+fn derive_subject(tei: &str) -> String {
+    let count = |tag: &str| tei.matches(&format!("<{tag}")).count();
+    format!(
+        "sections: {}; references: {}; figures: {}; tables: {}; formulas: {}; \
+         abstract_present: {}; funding_present: {}; notes: {}; \
+         keywords: {}; language_set: {}",
+        count("<div"),
+        count("<biblStruct"),
+        count("<figure"),
+        count("<table"),
+        count("<formula"),
+        count("<abstract") > 0,
+        count("<funding") > 0,
+        count("<note"),
+        count("<keywords") > 0,
+        count("xml:lang") > 0,
+    )
 }
 
-fn embedded_cases(corpus: &str) -> Vec<CriticCase> {
-    vec![
-        CriticCase { case_id: "e2e-well-formed".into(), corpus: corpus.into(), order: 0, subject: well_formed_subject() },
-        CriticCase { case_id: "e2e-degraded".into(), corpus: corpus.into(), order: 1, subject: degraded_subject() },
-    ]
+fn derive_cases(tei_paths: &[PathBuf], corpus_id: &str) -> anyhow::Result<Vec<CriticCase>> {
+    let corpus = identity_digest(corpus_id);
+    let mut file_digests = Vec::new();
+    for p in tei_paths {
+        file_digests.push(sha256_file(p)?);
+    }
+    // Corpus digest binds the ordered file digest list.
+    let corpus = identity_digest(&format!("{corpus_id}:{}", file_digests.join(",")));
+    let mut cases = Vec::new();
+    for (order, p) in tei_paths.iter().enumerate() {
+        let tei = std::fs::read_to_string(p)?;
+        let stem = p
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("doc")
+            .to_string();
+        cases.push(CriticCase {
+            case_id: format!("frozen-{stem}"),
+            corpus: corpus.clone(),
+            order: order as u32,
+            subject: derive_subject(&tei),
+        });
+    }
+    Ok(cases)
 }
 
 fn main() -> anyhow::Result<()> {
-    let corpus = identity_digest(E2E_CORPUS_IDENTITY);
-    let critic = RuvllmReflectionCritic::new();
-    let cases = embedded_cases(&corpus);
-    let mut rows = Vec::new();
-    for case in &cases {
-        rows.push(critic.observe(case)?);
+    let args: Vec<String> = std::env::args().collect();
+    match args.get(1).map(String::as_str) {
+        Some("derive-cases") => {
+            let mut tei = Vec::new();
+            let mut corpus_id = String::from("frozen-oracle.v1");
+            let mut i = 2;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--tei" => { i += 1; tei.push(PathBuf::from(&args[i])); }
+                    "--corpus-id" => { i += 1; corpus_id = args[i].clone(); }
+                    other => anyhow::bail!("unexpected arg {other}"),
+                }
+                i += 1;
+            }
+            if tei.is_empty() { anyhow::bail!("no --tei paths given"); }
+            let cases = derive_cases(&tei, &corpus_id)?;
+            println!("{}", serde_json::to_string_pretty(&cases)?);
+        }
+        Some("observe") => {
+            let mut cases_path = None;
+            let mut i = 2;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--cases" => { i += 1; cases_path = Some(PathBuf::from(&args[i])); }
+                    other => anyhow::bail!("unexpected arg {other}"),
+                }
+                i += 1;
+            }
+            let cases: Vec<CriticCase> = serde_json::from_str(
+                &std::fs::read_to_string(
+                    cases_path.ok_or_else(|| anyhow::anyhow!("--cases <json> required"))?,
+                )?,
+            )?;
+            let critic = RuvllmReflectionCritic::new();
+            let corpus = cases.first().map(|c| c.corpus.clone()).unwrap_or_default();
+            let mut rows = Vec::new();
+            for case in &cases {
+                rows.push(critic.observe(case)?);
+            }
+            let doc = serde_json::json!({
+                "schema": "parse-learning-ablation.v1",
+                "corpus": corpus,
+                "observations": rows,
+                "provenance": critic.provenance(&corpus),
+            });
+            println!("{}", serde_json::to_string_pretty(&doc)?);
+        }
+        other => anyhow::bail!("usage: {other:?} derive-cases|observe"), 
     }
-    let out = serde_json::json!({
-        "schema": "parse-learning-ablation.v1",
-        "corpus": corpus,
-        "observations": rows,
-        "provenance": critic.provenance(&corpus),
-    });
-    println!("{}", serde_json::to_string_pretty(&out)?);
     Ok(())
 }
