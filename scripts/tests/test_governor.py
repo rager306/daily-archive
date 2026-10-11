@@ -46,6 +46,10 @@ from governor.adapters.checks.prompt_normative_contract import (
     missing_normative_vocabulary,
     prompt_normative_violations,
 )
+from governor.adapters.checks.governed_process_record import (
+    consult_violations,
+    load_lineage_resolver,
+)
 from governor.application.trajectory_service import (
     TrajectoryService,
     _acap_fsm_decision,
@@ -2804,6 +2808,358 @@ def test_acap_runtime_control_plane_ledger_layers_mismatch_is_flagged():
     evidence = " ".join(f.evidence for f in missing)
     assert "revision_materialization" in evidence, evidence
     assert "candidate_materialization" in evidence, evidence
+
+_GOVERNED_RECORD_CONTRACT = "scripts/governor/checks/governed_process_record.yaml"
+_GOVERNED_RECORD_FIXTURES = "governor/fixtures/governed_process_record"
+_GOVERNED_POLICY_REGISTRY = "data/policies/registry.yaml"
+_GOVERNED_PROMPT_REGISTRY = "data/ontology/prompt_registry.yaml"
+_GOVERNED_PROMPT_TASKS = "data/ontology/prompt_tasks.yaml"
+
+
+def _governed_record_fingerprints(root: Path) -> dict:
+    """The live fingerprints the temp prompt registry resolves figure_analysis to."""
+    resolver = load_lineage_resolver(root, _GOVERNED_PROMPT_REGISTRY, _GOVERNED_PROMPT_TASKS)
+    resolved = resolver("figure_analysis", "figure-analysis.v3")
+    assert resolved is not None, "the temp registry must resolve figure_analysis@figure-analysis.v3"
+    return resolved
+
+
+def _write_governed_process_record_contract(root: Path) -> Path:
+    """Write the governed-process-record contract + live DATA + fixtures into a temp root.
+
+    The positive fixture is built from the temp DATA's own resolved fingerprints
+    (the same recompute-from-source the check performs), so the temp root proves
+    the check machinery without hand-inventing a green record.
+    """
+    _write(root / _GOVERNED_POLICY_REGISTRY, """schema_version: v2
+adr_ref: ADR-074
+consult_status:
+  parse_pdf_consults: [grammar_route, profile_route]
+  empty_native_unknown_point: [concurrency_tune, retry_policy, summary_depth]
+  native_rules_not_consulted: [batch_admission]
+  later: [head_fallback, visual_bundle, critic_sample]
+""")
+    _write(root / _GOVERNED_PROMPT_TASKS, """schema_version: prompt-task-registry.v1
+optimizer_enabled: false
+output_schemas:
+  - output_schema_id: figure-analysis-candidate.v1
+    schema:
+      type: object
+      additionalProperties: false
+      required: [description]
+      properties:
+        description: {type: string, minLength: 1}
+tasks:
+  - task_id: figure_analysis
+    version: figure-analysis.v3
+    system_template: Analyze the supplied scientific figure and caption.
+    user_template: 'Analyze the attached figure using: {grounded_context}'
+    output_schema_id: figure-analysis-candidate.v1
+    route_policy_id: ninerouter-figure-primary
+    temperature_milli: 0
+    max_output_tokens: 8192
+    eval_suite_id: figure-analysis-eval.v1
+    optimizer_enabled: false
+""")
+    _write(root / _GOVERNED_PROMPT_REGISTRY, """schema_version: prompt-registry.v1
+registry_id: prompt-registry
+d127_import_eligible: false
+entries:
+  - prompt_id: figure_analysis
+    prompt_version: figure-analysis.v3
+    kind: task
+    schema_ref: figure-analysis-candidate.v1
+""")
+    fingerprints = _governed_record_fingerprints(root)
+
+    def record(**overrides):
+        base = {
+            "article_id": "2507.19457",
+            "policy_decisions": [
+                {
+                    "decision_point": "profile_route",
+                    "resolved_value": "structural",
+                    "policy_source": "native",
+                    "policy_hash": "native",
+                }
+            ],
+            "admissions": [{"stage_id": "parse", "admitted": True, "code": "admitted"}],
+            "prompt_lineages": [
+                {
+                    "prompt_id": "figure_analysis",
+                    "prompt_version": "figure-analysis.v3",
+                    "prompt_sha256": fingerprints["prompt_sha256"],
+                    "schema_sha256": fingerprints["schema_sha256"],
+                }
+            ],
+            "import_eligible": False,
+        }
+        base.update(overrides)
+        return base
+
+    _write(
+        root / _GOVERNED_RECORD_FIXTURES / "record_legal.positive.json",
+        json.dumps([record()]),
+    )
+    _write(
+        root / _GOVERNED_RECORD_FIXTURES / "record_illegal.negative.json",
+        json.dumps([
+            {
+                "violation": "consult_violation",
+                "record": record(policy_decisions=[
+                    {"decision_point": "profile_route", "resolved_value": "structural",
+                     "policy_source": "native", "policy_hash": "native"},
+                    {"decision_point": "summary_depth", "resolved_value": "later",
+                     "policy_source": "native", "policy_hash": "native"},
+                ]),
+            },
+            {
+                "violation": "lineage_violation",
+                "record": record(prompt_lineages=[{
+                    "prompt_id": "figure_analysis",
+                    "prompt_version": "figure-analysis.v3",
+                    "prompt_sha256": "0" * 64,
+                    "schema_sha256": fingerprints["schema_sha256"],
+                }]),
+            },
+            {
+                "violation": "admission_violation",
+                "record": record(admissions=[
+                    {"stage_id": "visual_bundle", "admitted": True, "code": "visual_bundle"},
+                ]),
+            },
+            {"violation": "lock_leak", "record": record(import_eligible=True)},
+        ]),
+    )
+    _write(
+        root / _GOVERNED_RECORD_FIXTURES / "consult_oracle.vectors.json",
+        json.dumps([
+            {"case": "profile_route_only", "consulted": ["profile_route"],
+             "expect_violations": []},
+            {"case": "later_summary_depth", "consulted": ["profile_route", "summary_depth"],
+             "expect_violations": ["consult_violation"]},
+            {"case": "unregistered_head_fallback", "consulted": ["head_fallback"],
+             "expect_violations": ["consult_violation"]},
+            {"case": "empty_consult", "consulted": [],
+             "expect_violations": ["consult_violation"]},
+        ]),
+    )
+
+    _write(root / "crates/da-domain/src/governed_process_record.rs",
+           "pub struct GovernedProcessRecord; // GOVERNED_ADMISSION_CODES ImportEligibleUnlock\n")
+    _write(root / "crates/da-application/src/article_load.rs",
+           "pub struct LoadContentOutcome { governed_process_record: Option<()> }\n")
+    _write(root / "crates/da-cli/src/load_journey.rs",
+           "fn governed_process_record() {}\n")
+    _write(root / "crates/da-cli/tests/governed_process_record_test.rs",
+           "// governed_process_record corpus_grobid_profile_decision_from_yaml parse_pdf_consults\n")
+
+    contract = root / _GOVERNED_RECORD_CONTRACT
+    _write(contract, """schema_version: governed-process-record.v1
+policy_id: governed-process-record
+dimension: governed_process_record
+severity: high
+locks:
+  import_eligible: false
+  forbidden_decision_points: [import_eligible, auto_promote, deployed, graph_write, production_route]
+policy:
+  registry_path: data/policies/registry.yaml
+  consult_status_key: consult_status
+  allowed_consult_key: parse_pdf_consults
+prompt:
+  registry_path: data/ontology/prompt_registry.yaml
+  task_registry_path: data/ontology/prompt_tasks.yaml
+admission:
+  closed_codes: [admitted, blocked, skipped]
+fixtures:
+  positive:
+    id: legal_record
+    path: governor/fixtures/governed_process_record/record_legal.positive.json
+    expect: clean
+  negative:
+    id: record_violations
+    path: governor/fixtures/governed_process_record/record_illegal.negative.json
+    expect:
+      require_violations: [consult_violation, lineage_violation, admission_violation, lock_leak]
+oracle:
+  path: governor/fixtures/governed_process_record/consult_oracle.vectors.json
+source_markers:
+  record_value:
+    path: crates/da-domain/src/governed_process_record.rs
+    required_patterns: [GovernedProcessRecord, GOVERNED_ADMISSION_CODES, ImportEligibleUnlock]
+  record_attachment:
+    path: crates/da-application/src/article_load.rs
+    required_patterns: [governed_process_record]
+  journey_seam:
+    path: crates/da-cli/src/load_journey.rs
+    required_patterns: [governed_process_record]
+  runtime_proof:
+    path: crates/da-cli/tests/governed_process_record_test.rs
+    required_patterns: [governed_process_record, corpus_grobid_profile_decision_from_yaml, parse_pdf_consults]
+""")
+    return contract
+
+
+def _governed_record_flags(service) -> list:
+    return service._check_governed_process_record()
+
+
+def test_governed_process_record_pass_on_clean_fixtures():
+    """Positive + negative fixtures, the oracle and the markers satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    assert _governed_record_flags(service) == []
+
+
+def test_governed_process_record_oracle_agrees_with_governor_rule():
+    """The shared consult oracle must agree with the governor rule on every case."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    registry = yaml.safe_load(
+        (service.root / _GOVERNED_POLICY_REGISTRY).read_text(encoding="utf-8")
+    )
+    status = registry["consult_status"]
+    allowed = {str(name) for name in status["parse_pdf_consults"]}
+    forbidden = set()
+    for key, names in status.items():
+        if key != "parse_pdf_consults":
+            forbidden.update(str(name) for name in names)
+    vectors = json.loads(
+        (service.root / _GOVERNED_RECORD_FIXTURES / "consult_oracle.vectors.json").read_text()
+    )
+    assert vectors, "the oracle must carry cases"
+    for vector in vectors:
+        observed = consult_violations(vector["consulted"], allowed, forbidden)
+        assert observed == set(vector["expect_violations"]), vector["case"]
+
+
+def test_governed_process_record_oracle_mismatch_is_flagged():
+    """A vector the governor rule does not reproduce names its case."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    path = service.root / _GOVERNED_RECORD_FIXTURES / "consult_oracle.vectors.json"
+    vectors = json.loads(path.read_text())
+    for vector in vectors:
+        if vector["case"] == "profile_route_only":
+            vector["expect_violations"] = ["consult_violation"]
+    _write(path, json.dumps(vectors))
+    flags = _governed_record_flags(service)
+    mismatch = [f for f in flags if f.flag == "governed_process_record_oracle_mismatch"]
+    assert len(mismatch) == 1
+    assert "profile_route_only" in mismatch[0].evidence
+
+
+def test_governed_process_record_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    (service.root / _GOVERNED_RECORD_FIXTURES / "record_illegal.negative.json").unlink()
+    flags = _governed_record_flags(service)
+    missing = [f for f in flags if f.flag == "governed_process_record_fixture_missing"]
+    assert len(missing) == 1
+    assert "negative" in missing[0].evidence
+
+
+def test_governed_process_record_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    path = service.root / _GOVERNED_RECORD_FIXTURES / "record_legal.positive.json"
+    records = json.loads(path.read_text())
+    records[0]["import_eligible"] = True
+    _write(path, json.dumps(records))
+    flags = _governed_record_flags(service)
+    leak = [f for f in flags if f.flag == "governed_process_record_lock_leak"]
+    assert len(leak) == 1
+    assert "lock_leak" in leak[0].evidence
+
+
+def test_governed_process_record_lineage_fingerprint_mismatch_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    path = service.root / _GOVERNED_RECORD_FIXTURES / "record_legal.positive.json"
+    records = json.loads(path.read_text())
+    records[0]["prompt_lineages"][0]["prompt_sha256"] = "0" * 64
+    _write(path, json.dumps(records))
+    flags = _governed_record_flags(service)
+    lineage = [f for f in flags if f.flag == "governed_process_record_lineage_violation"]
+    assert len(lineage) == 1
+    assert "lineage_violation" in lineage[0].evidence
+
+
+def test_governed_process_record_negative_fixture_must_trigger_labelled_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    path = service.root / _GOVERNED_RECORD_FIXTURES / "record_illegal.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "lock_leak":
+            record["record"]["import_eligible"] = False
+    _write(path, json.dumps(records))
+    flags = _governed_record_flags(service)
+    invalid = [f for f in flags if f.flag == "governed_process_record_fixture_invalid"]
+    assert any("lock_leak" in f.evidence for f in invalid)
+
+
+def test_governed_process_record_negative_fixture_must_cover_required_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    path = service.root / _GOVERNED_RECORD_FIXTURES / "record_illegal.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "lock_leak"]
+    _write(path, json.dumps(records))
+    flags = _governed_record_flags(service)
+    invalid = [f for f in flags if f.flag == "governed_process_record_fixture_invalid"]
+    assert any("lock_leak" in f.evidence for f in invalid)
+
+
+def test_governed_process_record_weakened_contract_fails_closed():
+    """Removing the allowed-consult key fails closed rather than reading green."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    contract = _write_governed_process_record_contract(service.root)
+    payload = yaml.safe_load(contract.read_text())
+    del payload["policy"]["allowed_consult_key"]
+    contract.write_text(yaml.safe_dump(payload, sort_keys=False))
+    flags = _governed_record_flags(service)
+    invalid = [f for f in flags if f.flag == "governed_process_record_invalid"]
+    assert invalid, [f.flag for f in flags]
+    assert "allowed_consult_key" in invalid[0].evidence
+
+
+def test_governed_process_record_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    _write(service.root / _GOVERNED_RECORD_CONTRACT, "{bad yaml: [")
+    flags = _governed_record_flags(service)
+    assert flags[0].flag == "governed_process_record_invalid"
+
+
+def test_governed_process_record_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_governed_process_record_contract(service.root)
+    _write(service.root / "crates/da-domain/src/governed_process_record.rs", "pub struct X;\n")
+    flags = _governed_record_flags(service)
+    marker = [f for f in flags if f.flag == "governed_process_record_source_marker_missing"]
+    assert len(marker) == 1
+    assert "record_value" in marker[0].evidence
+
+
+def test_governed_process_record_is_wired_into_build_report():
+    """A rule that is implemented but never invoked is a dead rule."""
+    import inspect
+
+    source = inspect.getsource(TrajectoryService.build_report)
+    assert "_check_governed_process_record()" in source
+
 
 def _write_html_structure_contract(root: Path) -> Path:
     """Write the HTML structure honesty contract + fixtures into a temp root."""
@@ -7367,6 +7723,18 @@ def _run_all_tests() -> int:
         test_acap_runtime_control_plane_invalid_yaml_is_flagged,
         test_acap_runtime_control_plane_forbidden_orchestrator_match_is_flagged,
         test_acap_runtime_control_plane_ledger_layers_mismatch_is_flagged,
+        test_governed_process_record_pass_on_clean_fixtures,
+        test_governed_process_record_oracle_agrees_with_governor_rule,
+        test_governed_process_record_oracle_mismatch_is_flagged,
+        test_governed_process_record_missing_fixture_is_flagged,
+        test_governed_process_record_positive_fixture_must_be_clean,
+        test_governed_process_record_lineage_fingerprint_mismatch_is_flagged,
+        test_governed_process_record_negative_fixture_must_trigger_labelled_violations,
+        test_governed_process_record_negative_fixture_must_cover_required_violations,
+        test_governed_process_record_weakened_contract_fails_closed,
+        test_governed_process_record_invalid_yaml_is_flagged,
+        test_governed_process_record_source_marker_missing_is_flagged,
+        test_governed_process_record_is_wired_into_build_report,
         test_html_structure_honesty_pass_on_clean_fixtures,
         test_html_structure_honesty_missing_fixture_is_flagged,
         test_html_structure_honesty_positive_fixture_must_have_full_identity,

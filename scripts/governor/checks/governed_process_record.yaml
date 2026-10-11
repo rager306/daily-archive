@@ -1,0 +1,63 @@
+schema_version: governed-process-record.v1
+policy_id: governed-process-record
+dimension: governed_process_record
+severity: high
+anchor: ADR-055, D127, D237, D418, R093, R118, R142
+# The record is candidate-only: D127 / ADR-055 keep import_eligible false, and
+# no lock name (import_eligible / auto_promote / deployed / graph_write /
+# production_route) may ever be consulted as an FSM decision point.
+locks:
+  import_eligible: false
+  forbidden_decision_points: [import_eligible, auto_promote, deployed, graph_write, production_route]
+# The allowed / forbidden consult sets are DERIVED from the live policy registry
+# (never duplicated here): allowed = consult_status[allowed_consult_key],
+# forbidden = the union of every other list in consult_status.
+policy:
+  registry_path: data/policies/registry.yaml
+  consult_status_key: consult_status
+  allowed_consult_key: parse_pdf_consults
+# The prompt lineage is resolved against the live unified registry by
+# recomputing the fingerprints from source (D418 recompute-from-source).
+prompt:
+  registry_path: data/ontology/prompt_registry.yaml
+  task_registry_path: data/ontology/prompt_tasks.yaml
+# The closed admission-code set derived from the S07 typed AdmissionDecision.
+admission:
+  closed_codes: [admitted, blocked, skipped]
+fixtures:
+  positive:
+    id: legal_record
+    path: governor/fixtures/governed_process_record/record_legal.positive.json
+    expect: clean
+  negative:
+    id: record_violations
+    path: governor/fixtures/governed_process_record/record_illegal.negative.json
+    expect:
+      require_violations: [consult_violation, lineage_violation, admission_violation, lock_leak]
+# The shared cross-language consult oracle: the Rust half
+# (crates/da-adapters/tests/governed_process_record_oracle.rs) and the Python
+# half assert the same predicate over the same cases, against the same live
+# DATA, so a divergence fails a named case.
+oracle:
+  path: governor/fixtures/governed_process_record/consult_oracle.vectors.json
+source_markers:
+  record_value:
+    path: crates/da-domain/src/governed_process_record.rs
+    required_patterns:
+    - GovernedProcessRecord
+    - GOVERNED_ADMISSION_CODES
+    - ImportEligibleUnlock
+  record_attachment:
+    path: crates/da-application/src/article_load.rs
+    required_patterns:
+    - governed_process_record
+  journey_seam:
+    path: crates/da-cli/src/load_journey.rs
+    required_patterns:
+    - governed_process_record
+  runtime_proof:
+    path: crates/da-cli/tests/governed_process_record_test.rs
+    required_patterns:
+    - governed_process_record
+    - corpus_grobid_profile_decision_from_yaml
+    - parse_pdf_consults

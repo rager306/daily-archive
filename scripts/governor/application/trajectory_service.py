@@ -2177,6 +2177,13 @@ class TrajectoryService:
         # D127 and the optimizer auto-promote lock intact (M399 S04 T02).
         drift_flags.extend(self._check_acap_runtime_control_plane())
 
+        # S10: governed-process record — one driven request's DATA route
+        # decision, per-stage admission codes and registry-bound prompt lineage
+        # are one typed record; the positive/negative fixtures, the shared
+        # consult oracle and the live policy/prompt registries keep the record
+        # check and the runtime deriving from one truth (ADR-055, D127).
+        drift_flags.extend(self._check_governed_process_record())
+
         # PIR-018: visual candidate graph lineage contract — positive/negative
         # committed FigureCandidate fixtures keep every visual candidate bound
         # to a PaperRevision VID and revision-scoped Section VID with SHA-256
@@ -4212,6 +4219,275 @@ class TrajectoryService:
                                 "acap_runtime_control_plane_ledger_layers_missing",
                                 f"residual stage {stage_id} must not declare acap_layer",
                             )
+        return flags
+
+    def _check_governed_process_record(self) -> list[DriftFlag]:
+        """Evaluate the governed-process-record contract (S10, ADR-055).
+
+        Reads `scripts/governor/checks/governed_process_record.yaml` (DATA) and
+        validates the committed positive/negative `GovernedProcessRecord`
+        fixtures against the SAME live DATA the runtime reads: the allowed /
+        forbidden consult set is derived from `data/policies/registry.yaml`
+        `consult_status` (never duplicated in the check YAML), the prompt
+        lineage is resolved against `data/ontology/prompt_registry.yaml` +
+        `prompt_tasks.yaml` by recomputing the fingerprints from source, and
+        the closed admission-code set plus the D127 lock set are the contract's
+        declaration. The positive fixture (the record the runtime actually
+        produced) must be clean; every negative record must trigger exactly its
+        labelled violation and every required violation must appear somewhere
+        (a future edit that removes a negative case is flagged); the shared
+        `consult_oracle.vectors.json` must agree with the governor rule on every
+        case; and the Rust enforcement points must keep the named typed guards.
+        """
+        from governor.adapters.checks.governed_process_record import (
+            consult_violations,
+            governed_process_record_violations,
+            load_lineage_resolver,
+            resolve_consult_sets,
+        )
+
+        path = self.root / "scripts/governor/checks/governed_process_record.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="governed_process_record_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="governed_process_record",
+            )]
+        flags: list[DriftFlag] = []
+        dimension = str(contract.get("dimension", "governed_process_record"))
+        severity = str(contract.get("severity", "high"))
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # Violation token -> governor flag family.
+        token_flags = {
+            "consult_violation": "governed_process_record_consult_violation",
+            "lineage_violation": "governed_process_record_lineage_violation",
+            "admission_violation": "governed_process_record_admission_violation",
+            "lock_leak": "governed_process_record_lock_leak",
+        }
+
+        # The live policy registry is the single truth for the allowed / forbidden
+        # consult sets. A missing path, block, key or a malformed set fails closed.
+        policy = contract.get("policy") or {}
+        registry_rel = str(policy.get("registry_path", ""))
+        consult_status_key = str(policy.get("consult_status_key", ""))
+        allowed_consult_key = str(policy.get("allowed_consult_key", ""))
+        if not registry_rel or not consult_status_key or not allowed_consult_key:
+            _flag(
+                "governed_process_record_invalid",
+                "contract must declare policy.registry_path, policy.consult_status_key "
+                "and policy.allowed_consult_key (the allowed-consult set is derived "
+                "from live DATA, never duplicated)",
+            )
+            return flags
+        registry_path = self.root / registry_rel
+        allowed: set[str] = set()
+        forbidden: set[str] = set()
+        if not registry_path.is_file():
+            _flag(
+                "governed_process_record_invalid",
+                f"live policy registry missing: {registry_path}",
+            )
+        else:
+            try:
+                registry_doc = yaml.safe_load(registry_path.read_text(encoding="utf-8")) or {}
+            except (OSError, yaml.YAMLError) as error:
+                _flag(
+                    "governed_process_record_invalid",
+                    f"cannot load live policy registry {registry_path}: {error}",
+                )
+            else:
+                consult_status = registry_doc.get(consult_status_key)
+                if not isinstance(consult_status, dict):
+                    _flag(
+                        "governed_process_record_invalid",
+                        f"{registry_rel} has no {consult_status_key} block",
+                    )
+                else:
+                    try:
+                        allowed, forbidden = resolve_consult_sets(
+                            consult_status, allowed_consult_key
+                        )
+                    except ValueError as error:
+                        _flag("governed_process_record_invalid", str(error))
+
+        # The live prompt registry resolves each lineage by recomputing the
+        # fingerprints from source, the same way the da-adapters loader does.
+        prompt = contract.get("prompt") or {}
+        prompt_registry_rel = str(prompt.get("registry_path", ""))
+        task_registry_rel = str(prompt.get("task_registry_path", ""))
+        if not prompt_registry_rel or not task_registry_rel:
+            _flag(
+                "governed_process_record_invalid",
+                "contract must declare prompt.registry_path and prompt.task_registry_path",
+            )
+        resolve_lineage = load_lineage_resolver(
+            self.root, prompt_registry_rel, task_registry_rel
+        )
+
+        admission = contract.get("admission") or {}
+        closed_codes = admission.get("closed_codes")
+        if not isinstance(closed_codes, list) or not closed_codes:
+            _flag(
+                "governed_process_record_invalid",
+                "contract must declare a non-empty admission.closed_codes set",
+            )
+            closed_codes = []
+
+        locks = contract.get("locks") or {}
+        forbidden_locks = locks.get("forbidden_decision_points")
+        if not isinstance(forbidden_locks, list) or not forbidden_locks:
+            _flag(
+                "governed_process_record_invalid",
+                "contract must declare a non-empty locks.forbidden_decision_points set",
+            )
+            forbidden_locks = []
+
+        # The shared consult oracle: the governor rule and the committed vectors
+        # must agree on every case, so a divergence names the failing case.
+        oracle_rel = str((contract.get("oracle") or {}).get("path", ""))
+        if oracle_rel:
+            oracle_path = self.root / oracle_rel
+            if not oracle_path.is_file():
+                _flag(
+                    "governed_process_record_fixture_missing",
+                    f"consult oracle missing: {oracle_path}",
+                )
+            else:
+                try:
+                    vectors = json.loads(oracle_path.read_text(encoding="utf-8"))
+                except (ValueError, OSError) as error:
+                    _flag(
+                        "governed_process_record_fixture_invalid",
+                        f"consult oracle unreadable: {error}",
+                    )
+                else:
+                    if not isinstance(vectors, list) or not vectors:
+                        _flag(
+                            "governed_process_record_fixture_invalid",
+                            "consult oracle must be a non-empty JSON array",
+                        )
+                    else:
+                        for vector in vectors:
+                            if not isinstance(vector, dict):
+                                continue
+                            case = str(vector.get("case", "?"))
+                            observed = consult_violations(
+                                vector.get("consulted") or [], allowed, forbidden
+                            )
+                            expected = {
+                                str(token)
+                                for token in (vector.get("expect_violations") or [])
+                            }
+                            if observed != expected:
+                                _flag(
+                                    "governed_process_record_oracle_mismatch",
+                                    f"consult oracle case {case}: governor decided "
+                                    f"{sorted(observed)}, oracle expects {sorted(expected)}",
+                                )
+
+        fixtures = contract.get("fixtures") or {}
+        for kind in ("positive", "negative"):
+            spec = fixtures.get(kind) or {}
+            fixture_path = self.root / str(spec.get("path", ""))
+            if not fixture_path.is_file():
+                _flag(
+                    "governed_process_record_fixture_missing",
+                    f"{kind} fixture missing: {fixture_path}",
+                )
+                continue
+            try:
+                records = json.loads(fixture_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag(
+                    "governed_process_record_fixture_invalid",
+                    f"{kind} fixture unreadable: {error}",
+                )
+                continue
+            if not isinstance(records, list) or not records:
+                _flag(
+                    "governed_process_record_fixture_invalid",
+                    f"{kind} fixture must be a non-empty JSON array",
+                )
+                continue
+            if kind == "positive":
+                for record in records:
+                    violations = governed_process_record_violations(
+                        record,
+                        allowed_consults=allowed,
+                        forbidden_consults=forbidden,
+                        closed_codes=closed_codes,
+                        forbidden_locks=forbidden_locks,
+                        resolve_lineage=resolve_lineage,
+                    )
+                    for token in sorted(violations):
+                        _flag(
+                            token_flags.get(token, "governed_process_record_invalid"),
+                            f"positive fixture {spec.get('id')} must be clean, "
+                            f"got {token}",
+                        )
+            else:
+                observed_tokens: set[str] = set()
+                mismatches: list[str] = []
+                for record in records:
+                    if not isinstance(record, dict):
+                        mismatches.append("<non-object>: not a labelled record")
+                        continue
+                    label = str(record.get("violation", "unnamed"))
+                    payload = record.get("record")
+                    violations = governed_process_record_violations(
+                        payload,
+                        allowed_consults=allowed,
+                        forbidden_consults=forbidden,
+                        closed_codes=closed_codes,
+                        forbidden_locks=forbidden_locks,
+                        resolve_lineage=resolve_lineage,
+                    )
+                    observed_tokens.update(violations)
+                    if label not in violations:
+                        mismatches.append(
+                            f"{label}: expected to trigger {label}, got {sorted(violations)}"
+                        )
+                if mismatches:
+                    _flag(
+                        "governed_process_record_fixture_invalid",
+                        f"negative fixture {spec.get('id')} records do not trigger "
+                        f"their labelled violations: {'; '.join(mismatches)}",
+                    )
+                require = list((spec.get("expect") or {}).get("require_violations", []))
+                missing_required = [v for v in require if v not in observed_tokens]
+                if missing_required:
+                    _flag(
+                        "governed_process_record_fixture_invalid",
+                        f"negative fixture {spec.get('id')} missing required violation "
+                        f"coverage: {missing_required}",
+                    )
+
+        # Source markers: the Rust enforcement points must stay present.
+        for marker_key, entry in (contract.get("source_markers") or {}).items():
+            marker_path = self.root / str(entry.get("path", ""))
+            if not marker_path.is_file():
+                _flag(
+                    "governed_process_record_source_marker_missing",
+                    f"{marker_key} source missing: {marker_path}",
+                )
+                continue
+            text = marker_path.read_text(errors="replace")
+            missing = [p for p in entry.get("required_patterns", []) if p not in text]
+            if missing:
+                _flag(
+                    "governed_process_record_source_marker_missing",
+                    f"{marker_key} source missing enforcement markers: {missing}",
+                )
         return flags
 
     def _check_visual_candidates_require_graph_lineage(self) -> list[DriftFlag]:
