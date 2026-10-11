@@ -105,7 +105,21 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
     }
 
     /// Ensure-only (and dry-run) path — no graph writes.
+    ///
+    /// Run-mode contract (ADR-056 §2.5.1 W8): inline paths fail closed when
+    /// the policy asks for `enqueue`/`worker` — those modes have their own
+    /// entry points and never silently degrade to inline execution.
     pub fn run(&self, locator_raw: &str, policy: &AcquisitionPolicy) -> LoadReport {
+        if policy.run_mode != da_domain::LoadRunMode::Inline {
+            let (mut report, _) = self.run_through_ensure(locator_raw, policy);
+            report.errors.push(format!(
+                "run_mode={:?} requires run_enqueue (graph queue); run() is inline-only",
+                policy.run_mode
+            ));
+            report.ok = false;
+            report.seal_digest();
+            return report;
+        }
         let (mut report, _ensure_ok) = self.run_through_ensure(locator_raw, policy);
         if policy.stages.includes_ingest() && !policy.dry_run {
             report.stages.push(StageStatus {
@@ -137,6 +151,10 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
     }
 
     /// Full load path: ensure then optional content pipeline.
+    ///
+    /// Run-mode contract (ADR-056 §2.5.1 W8): inline paths fail closed when
+    /// the policy asks for `enqueue`/`worker` — use [`Self::run_enqueue`] /
+    /// the scheduler worker instead of a silent inline degradation.
     pub async fn run_with_content<P: LoadContentPipeline + ?Sized>(
         &self,
         locator_raw: &str,
@@ -144,6 +162,16 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
         content: Option<&P>,
         snapshot_output: Option<&Path>,
     ) -> LoadReport {
+        if policy.run_mode != da_domain::LoadRunMode::Inline {
+            let (mut report, _) = self.run_through_ensure(locator_raw, policy);
+            report.errors.push(format!(
+                "run_mode={:?} requires run_enqueue (graph queue); run_with_content is inline-only",
+                policy.run_mode
+            ));
+            report.ok = false;
+            report.seal_digest();
+            return report;
+        }
         let started = Instant::now();
         let (mut report, ensure_ok) = self.run_through_ensure(locator_raw, policy);
 
@@ -365,7 +393,7 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
             .await
     }
 
-    fn run_through_ensure(
+    pub(crate) fn run_through_ensure(
         &self,
         locator_raw: &str,
         policy: &AcquisitionPolicy,

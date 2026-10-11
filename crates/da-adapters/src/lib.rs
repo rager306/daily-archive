@@ -25,6 +25,7 @@ pub mod layout_donors;
 #[cfg(feature = "pdf-layout")]
 pub mod layout_visual;
 pub mod lexicon_loader;
+pub mod local_path_acquisition;
 pub mod memory_pipeline_cache;
 pub mod negative_memory;
 pub use figure_quote_policy::load_figure_quote_policy;
@@ -91,6 +92,7 @@ pub use layout_visual::{
     VisualObservation, VisualPrimitive, VisualPrimitiveKind, VisualPrimitiveState, VisualProvider,
 };
 pub use lexicon_loader::{FilesystemLexiconLoader, MAX_LEXICON_BYTES};
+pub use local_path_acquisition::{LOCAL_MANIFEST_SCHEMA, LocalManifest, LocalPathAcquisition};
 pub use scalar_crf_loader::FilesystemCrfModelLoader;
 
 pub use openalex_adapter::OpenAlexHttpAdapter;

@@ -78,6 +78,8 @@ pub enum AcquisitionError {
     MissingAsset(String),
     #[error("checksum conflict: {0}")]
     ChecksumConflict(String),
+    #[error("invalid acquisition manifest: {0}")]
+    InvalidManifest(String),
     #[error("unknown source_code (not in registry): {0}")]
     UnknownSourceCode(String),
     #[error("acquisition infrastructure: {0}")]

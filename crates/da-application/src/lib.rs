@@ -6,6 +6,7 @@
 
 pub mod agent_run;
 pub mod article_load;
+pub mod article_load_queue;
 pub mod artifact_stage;
 pub mod assurance;
 pub mod candidate_materialization_stage;
@@ -32,6 +33,7 @@ pub use article_load::{
     ArticleLoadError, ArticleLoadUseCase, LoadContentOutcome, LoadContentPipeline,
     LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome,
 };
+pub use article_load_queue::{enqueue_remaining_load_stages, load_stage_task_types};
 pub use artifact_stage::ArtifactPayloadStage;
 pub use assurance::{
     MaterializationAssuranceUseCase, MaterializationReadback, MaterializationReplayObservation,
