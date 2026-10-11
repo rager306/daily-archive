@@ -16,6 +16,7 @@ use da_application::{
     FigureAnalysisStage, FigureContextStage, FigureRevisionIdentity, FigureSectionLocator,
     MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
 };
+use da_domain::prompt_registry::PromptRegistry;
 use da_domain::{AcapAdmissionPolicy, StageIdRegistry};
 use da_parse::{GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
@@ -350,6 +351,10 @@ pub struct MultimodalProductionSettings {
     pub analysis_prompt_fingerprint: String,
     /// Output schema fingerprint for the figure analysis stage.
     pub analysis_schema_fingerprint: String,
+    /// Unified prompt registry (S10): the DATA-declared prompt/meta-prompt
+    /// registry the figure analysis stage binds every call's lineage against
+    /// (fail-closed, S09 strict loader).
+    pub prompt_registry: PromptRegistry,
 }
 
 impl MultimodalProductionSettings {
@@ -382,6 +387,7 @@ impl MultimodalProductionSettings {
             context_output_schema,
             analysis_prompt_fingerprint: resolve_analysis_prompt_fingerprint()?,
             analysis_schema_fingerprint: resolve_analysis_schema_fingerprint()?,
+            prompt_registry: load_unified_prompt_registry()?,
         })
     }
 
@@ -543,6 +549,35 @@ pub fn compose_multimodal_production(
     })
 }
 
+/// Unified prompt registry (S10): resolve the DATA-declared prompt registry
+/// once via the S09 strict loader. `DA_PROMPT_REGISTRY` (default
+/// `data/ontology/prompt_registry.yaml`) and `DA_PROMPT_TASK_REGISTRY`
+/// (default `data/ontology/prompt_tasks.yaml`) resolve relative paths against
+/// the workspace root (`env!("CARGO_MANIFEST_DIR")/../..`), so the loader
+/// works both from the repo root (operators) and from the crate dir (cargo
+/// test). Fail closed: any load or resolution error aborts the caller.
+pub fn load_unified_prompt_registry() -> Result<PromptRegistry, String> {
+    use da_adapters::{
+        prompt_registry::load_prompt_registry, prompt_task_registry::load_prompt_task_registry,
+    };
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let resolve = |value: &str| {
+        let path = PathBuf::from(value);
+        if path.is_absolute() || path.exists() {
+            path
+        } else {
+            root.join(path)
+        }
+    };
+    let task_registry_path = std::env::var("DA_PROMPT_TASK_REGISTRY")
+        .unwrap_or_else(|_| "data/ontology/prompt_tasks.yaml".into());
+    let registry_path = std::env::var("DA_PROMPT_REGISTRY")
+        .unwrap_or_else(|_| "data/ontology/prompt_registry.yaml".into());
+    let task_registry = load_prompt_task_registry(&resolve(&task_registry_path))
+        .map_err(|error| error.to_string())?;
+    load_prompt_registry(&resolve(&registry_path), &task_registry, &root)
+}
+
 /// Build the per-image figure analysis executor for a detected artifact.
 ///
 /// The stage binds the model route, prompt, schema registry and output schema
@@ -553,12 +588,17 @@ pub fn figure_analysis_stage_for(
     settings: &MultimodalProductionSettings,
     image: da_ports::multimodal_llm::MultimodalImage,
 ) -> FigureAnalysisStage {
-    let stage = FigureAnalysisStage::new(settings.model.clone(), image, &settings.retry_after)
-        .with_context_dependency("context")
-        .with_contract_versions(
-            &settings.analysis_prompt_fingerprint,
-            &settings.analysis_schema_fingerprint,
-        );
+    let stage = FigureAnalysisStage::new(
+        settings.model.clone(),
+        image,
+        &settings.retry_after,
+        settings.prompt_registry.clone(),
+    )
+    .with_context_dependency("context")
+    .with_contract_versions(
+        &settings.analysis_prompt_fingerprint,
+        &settings.analysis_schema_fingerprint,
+    );
     let neg_dir = std::env::var("DA_NEGATIVE_MEMORY_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("data/agent_memory/negatives"));
@@ -923,6 +963,8 @@ mod tests {
             context_output_schema: "FigureSemanticContext@serde-v2-summary-provenance".into(),
             analysis_prompt_fingerprint: "prompt-fixture-sha".into(),
             analysis_schema_fingerprint: "schema-fixture-sha".into(),
+            prompt_registry: super::load_unified_prompt_registry()
+                .expect("DATA prompt registry loads"),
         }
     }
 

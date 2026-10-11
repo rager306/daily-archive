@@ -55,6 +55,7 @@ use da_application::{
     PipelineOrchestrator, PipelineRunReport, StageDisposition, embedding_fingerprint,
 };
 use da_domain::figure_analysis::FigureQuotePolicy;
+use da_domain::prompt_registry::PromptRegistry;
 use da_domain::{LoadCacheRecord, StageCacheMode, StageIdRegistry};
 use da_parse::GrobidProfile;
 use da_ports::clock::Clock;
@@ -75,6 +76,9 @@ pub struct FigureBranchSettings {
     pub prompt_fingerprint: String,
     pub schema_fingerprint: String,
     pub context_schema: String,
+    /// Required unified prompt registry (S10): the figure analysis stage
+    /// binds every call's lineage to this registry, fail closed.
+    pub prompt_registry: PromptRegistry,
 }
 
 /// Injectable production ports for the journey composition.
@@ -206,6 +210,7 @@ pub fn resolve_figure_branch_from_env() -> Option<FigureBranchSettings> {
         prompt_fingerprint: settings.analysis_prompt_fingerprint.clone(),
         schema_fingerprint: settings.analysis_schema_fingerprint.clone(),
         context_schema: settings.context_output_schema.clone(),
+        prompt_registry: settings.prompt_registry.clone(),
     })
 }
 
@@ -672,6 +677,7 @@ pub async fn run_journey_content(
                         sha256: artifact.asset_sha256.clone(),
                     },
                     &retry_after,
+                    branch.prompt_registry.clone(),
                 )
                 .with_context_dependency("context")
                 .with_contract_versions(&branch.prompt_fingerprint, &branch.schema_fingerprint)

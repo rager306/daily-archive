@@ -829,7 +829,30 @@ async fn journey_tables_without_detector_fails_closed_at_composition() {
 
 // ── M409 S03: per-image figure branch ───────────────────────────────────────
 
-struct FakeLlm;
+/// The REAL DATA prompt registry via the S09 strict loader plus the resolved
+/// `figure_analysis` entry, so the fake emits fingerprints the loader computed
+/// (never hand-picked) and the journey's happy path binds. Test CWD is the
+/// crate dir, so the loader resolves DATA paths against the workspace root.
+fn figure_branch_registry() -> (
+    da_domain::prompt_registry::PromptRegistry,
+    da_domain::prompt_registry::PromptRegistryEntry,
+) {
+    let registry = da_cli::production::load_unified_prompt_registry()
+        .expect("DATA prompt registry loads from the workspace root");
+    let entry = registry
+        .resolve("figure_analysis", "figure-analysis.v3")
+        .expect("figure_analysis@figure-analysis.v3 is declared in DATA")
+        .clone();
+    (registry, entry)
+}
+
+struct FakeLlm {
+    /// Template digest the fake records for its call. The happy path copies
+    /// the REAL registry entry digest; the tampered path shifts it so the
+    /// registry binding must refuse the call.
+    prompt_sha256: da_domain::ContentDigest,
+    output_schema_sha256: da_domain::ContentDigest,
+}
 
 #[async_trait]
 impl da_ports::multimodal_llm::MultimodalLlmPort for FakeLlm {
@@ -903,10 +926,10 @@ impl da_ports::multimodal_llm::MultimodalLlmPort for FakeLlm {
                 run_id: sha(1),
                 prompt_id: "figure_analysis".into(),
                 prompt_version: "figure-analysis.v3".into(),
-                prompt_sha256: da_domain::ContentDigest::of_text(&sha(5)),
+                prompt_sha256: self.prompt_sha256.clone(),
                 task_spec_sha256: da_domain::ContentDigest::of_text(&sha(5)),
                 rendered_prompt_sha256: da_domain::ContentDigest::of_text(&sha(6)),
-                output_schema_sha256: da_domain::ContentDigest::of_text(&sha(7)),
+                output_schema_sha256: self.output_schema_sha256.clone(),
                 route_policy_sha256: da_domain::ContentDigest::of_text(&sha(8)),
                 endpoint_sha256: da_domain::ContentDigest::of_text(&sha(9)),
                 model_binding_sha256: da_domain::ContentDigest::of_text(&sha(10)),
@@ -1070,11 +1093,19 @@ async fn journey_with_figures_runs_per_image_branch() {
         embedder: Arc::new(FakeEmbedder),
         detector: Some(Arc::new(FigureDetector)),
     };
+    // S10: the fake emits the REAL registry-bound fingerprints for
+    // figure_analysis@figure-analysis.v3 (computed by the loader) and the
+    // branch carries the same registry, so the happy path binds lineage.
+    let (registry, entry) = figure_branch_registry();
     let branch = da_cli::load_journey::FigureBranchSettings {
-        model: Arc::new(FakeLlm),
-        prompt_fingerprint: sha(5),
-        schema_fingerprint: sha(6),
+        model: Arc::new(FakeLlm {
+            prompt_sha256: entry.prompt_sha256.clone(),
+            output_schema_sha256: entry.schema_sha256.clone(),
+        }),
+        prompt_fingerprint: entry.prompt_sha256.as_str().to_string(),
+        schema_fingerprint: entry.schema_sha256.as_str().to_string(),
         context_schema: "FigureSemanticContext@serde-v2-summary-provenance".into(),
+        prompt_registry: registry,
     };
     let pdf_dir = tempdir("pdf-fig");
     let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
@@ -1143,5 +1174,75 @@ async fn journey_with_figures_runs_per_image_branch() {
         query_count(&store, "MATCH (t:TableCandidate) RETURN count(t) AS tabs").await,
         1,
         "no duplicate table candidates"
+    );
+}
+
+#[tokio::test]
+async fn journey_with_figures_refuses_tampered_prompt_lineage() {
+    // S10 closes the S09 deferral: the per-image figure branch binds every
+    // call's lineage to the DATA registry. A model that records a template
+    // fingerprint the registry never declared must fail the whole journey
+    // closed — no FigureCandidate materializes from unbindable evidence.
+    unsafe {
+        std::env::set_var(
+            "DA_FIGURE_QUOTE_POLICY",
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../data/ontology/figure_quote_policy.yaml")
+                .to_string_lossy()
+                .to_string(),
+        );
+    }
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache_dir = tempdir("cache-fig-tampered");
+    let cache = Arc::new(FilePipelineCache::new(cache_dir.clone()));
+    let ports = JourneyPorts {
+        parser: Arc::new(FigureParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+        detector: Some(Arc::new(FigureDetector)),
+    };
+    let (registry, entry) = figure_branch_registry();
+    let branch = da_cli::load_journey::FigureBranchSettings {
+        model: Arc::new(FakeLlm {
+            prompt_sha256: da_domain::ContentDigest::of_text("tampered-template"),
+            output_schema_sha256: entry.schema_sha256.clone(),
+        }),
+        prompt_fingerprint: entry.prompt_sha256.as_str().to_string(),
+        schema_fingerprint: entry.schema_sha256.as_str().to_string(),
+        context_schema: "FigureSemanticContext@serde-v2-summary-provenance".into(),
+        prompt_registry: registry,
+    };
+    let pdf_dir = tempdir("pdf-fig-tampered");
+    let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
+    std::fs::write(&pdf_path, b"%PDF-fixture").expect("pdf fixture");
+
+    let error = da_cli::load_journey::run_journey_content(
+        &ports,
+        &store,
+        cache,
+        clock(),
+        ledger_registry(),
+        PAPER_ID,
+        &pdf_path,
+        source(),
+        "arxiv",
+        1,
+        manifestations(),
+        true,
+        true,
+        true,
+        Some(branch),
+        None,
+    )
+    .await
+    .expect_err("tampered prompt lineage must fail the journey closed");
+    assert!(
+        error.contains("figure mini run"),
+        "the refusal must surface as a failed figure analysis run: {error}"
+    );
+    assert_eq!(
+        query_count(&store, "MATCH (f:FigureCandidate) RETURN count(f) AS figs").await,
+        0,
+        "no FigureCandidate materializes from lineage the registry cannot bind: {error}"
     );
 }

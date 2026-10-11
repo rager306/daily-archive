@@ -109,7 +109,9 @@ pub async fn main() -> Result<()> {
         sha256: image_sha256,
     };
     let retry_after = (Utc::now() + Duration::minutes(10)).to_rfc3339();
-    let mut analysis_stage = FigureAnalysisStage::new(model, image, retry_after)
+    let prompt_registry =
+        da_cli::production::load_unified_prompt_registry().map_err(anyhow::Error::msg)?;
+    let mut analysis_stage = FigureAnalysisStage::new(model, image, retry_after, prompt_registry)
         .with_context_dependency("analysis_context")
         .with_planned_schema(&context)
         .map_err(anyhow::Error::msg)?;

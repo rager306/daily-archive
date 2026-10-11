@@ -9,6 +9,7 @@ use da_domain::{
     FigureChartPayload, FigurePhotoPayload, FigureScaleBar, FigureSchemaSelection,
     FigureSemanticContext, FigureTablePayload, FigureTypeClassification, FigureTypedPayload,
     VisualAnalysisType,
+    prompt_registry::{PromptLineageBindingError, PromptRegistry, bind_lineage_to_registry},
 };
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort, MultimodalLlmRequest,
@@ -29,14 +30,19 @@ pub struct FigureAnalysisUseCase {
     model: Arc<dyn MultimodalLlmPort>,
     classifier: FigureClassifyUseCase,
     schemas: FigureSchemaService,
+    /// Required registry (S10): fail-open is not representable — a figure
+    /// analysis call must resolve its `(prompt_id, prompt_version)` and its
+    /// recorded fingerprints against the registry that produced the call.
+    prompt_registry: PromptRegistry,
 }
 
 impl FigureAnalysisUseCase {
-    pub fn new(model: Arc<dyn MultimodalLlmPort>) -> Self {
+    pub fn new(model: Arc<dyn MultimodalLlmPort>, prompt_registry: PromptRegistry) -> Self {
         Self {
             model,
             classifier: FigureClassifyUseCase::bundled().expect("bundled figure type labels"),
             schemas: FigureSchemaService::bundled().expect("bundled figure schemas"),
+            prompt_registry,
         }
     }
 
@@ -44,12 +50,20 @@ impl FigureAnalysisUseCase {
         model: Arc<dyn MultimodalLlmPort>,
         classifier: FigureClassifyUseCase,
         schemas: FigureSchemaService,
+        prompt_registry: PromptRegistry,
     ) -> Self {
         Self {
             model,
             classifier,
             schemas,
+            prompt_registry,
         }
+    }
+
+    /// Registry bound to this use case. Callers that assemble a governed
+    /// process record read the same value the admission gate used.
+    pub fn prompt_registry(&self) -> &PromptRegistry {
+        &self.prompt_registry
     }
 
     pub fn prompt_sha256() -> String {
@@ -137,21 +151,13 @@ impl FigureAnalysisUseCase {
         prompt_lineage
             .validate()
             .map_err(FigureAnalysisUseCaseError::RouteCapability)?;
-        // The figure stage has no PromptRegistry injected yet, so the registry
-        // binding that S09 added for summaries does not apply here; the full
-        // figure registry binding is S10 scope. Until then the admission check
-        // still requires a resolvable prompt identity and a non-empty version
-        // rather than an id-only string compare.
-        if prompt_lineage.prompt_id != "figure_analysis" {
-            return Err(FigureAnalysisUseCaseError::RouteCapability(
-                "figure prompt lineage task mismatch".into(),
-            ));
-        }
-        if prompt_lineage.prompt_version.trim().is_empty() {
-            return Err(FigureAnalysisUseCaseError::RouteCapability(
-                "figure prompt lineage version is empty".into(),
-            ));
-        }
+        // Fail closed against the injected registry: the recorded
+        // `(prompt_id, prompt_version)` must resolve and the recorded template
+        // and output-schema fingerprints must equal the registered ones. This
+        // closes the S09 deferral — the figure stage no longer accepts a
+        // self-declared lineage the registry cannot resolve.
+        bind_lineage_to_registry(prompt_lineage, &self.prompt_registry)
+            .map_err(FigureAnalysisUseCaseError::PromptLineage)?;
         let structured_output = response.structured_output;
         let mut draft = map_structured_to_draft(&structured_output, &classification)?;
         surface_panel_count(&classification, &mut draft.findings);
@@ -193,13 +199,11 @@ impl FigureAnalysisUseCase {
                 resolved_model: response.resolved_model,
                 prompt_id: prompt_lineage.prompt_id.clone(),
                 prompt_version: prompt_lineage.prompt_version.clone(),
-                prompt_sha256: Self::prompt_sha256(),
-                // Prefer DATA schema digest; fall back to lineage if empty.
-                output_schema_sha256: if selected_schema_sha.len() == 64 {
-                    selected_schema_sha
-                } else {
-                    prompt_lineage.output_schema_sha256.as_str().into()
-                },
+                // Registry-bound fingerprints: the same values the admission
+                // gate resolved, so a downstream record scan can re-check them
+                // against the registry without re-consulting the model route.
+                prompt_sha256: prompt_lineage.prompt_sha256.as_str().into(),
+                output_schema_sha256: prompt_lineage.output_schema_sha256.as_str().into(),
                 schema_id: selection.schema_id.clone(),
                 stage1_visual_type: classification.visual_type.as_wire().into(),
                 prompt_task_sha256: prompt_lineage.task_spec_sha256.as_str().into(),
@@ -677,6 +681,8 @@ pub enum FigureAnalysisUseCaseError {
     ImageContextMismatch { image: String, context: String },
     #[error("model route capability mismatch: {0}")]
     RouteCapability(String),
+    #[error("figure prompt lineage refused by prompt registry: {0}")]
+    PromptLineage(#[from] PromptLineageBindingError),
 }
 
 #[cfg(test)]
@@ -691,11 +697,39 @@ mod tests {
         ImageMediaType, ModelRouteDescriptor, MultimodalLlmResponse, MultimodalLlmResult,
     };
 
+    /// Registry that resolves the default `FakeModel` lineage. The fingerprints
+    /// are the digests the fake actually emits, so the happy path binds and a
+    /// tampered lineage is refused — never hand-picked constants.
+    fn test_registry() -> PromptRegistry {
+        PromptRegistry {
+            schema_version: da_domain::prompt_registry::PROMPT_REGISTRY_SCHEMA_VERSION.into(),
+            registry_id: "figure-test-registry".into(),
+            d127_import_eligible: false,
+            entries: vec![da_domain::prompt_registry::PromptRegistryEntry {
+                prompt_id: "figure_analysis".into(),
+                prompt_version: "figure-analysis-grounded-v2".into(),
+                kind: da_domain::prompt_registry::PromptEntryKind::Task,
+                prompt_sha256: ContentDigest::of_text("prompt"),
+                schema_ref: "figure-analysis-candidate.v1".into(),
+                schema_sha256: ContentDigest::of_text("schema"),
+                source_ref: "data/ontology/prompt_tasks.yaml#figure_analysis".into(),
+            }],
+        }
+    }
+
+    fn test_use_case(model: Arc<FakeModel>) -> FigureAnalysisUseCase {
+        FigureAnalysisUseCase::new(model, test_registry())
+    }
+
     struct FakeModel {
         output: serde_json::Value,
         route: ModelRouteDescriptor,
         last_schema_id_hint: std::sync::Mutex<Option<String>>,
         last_user_context: std::sync::Mutex<Option<String>>,
+        lineage_prompt_id: String,
+        lineage_prompt_version: String,
+        lineage_prompt_sha256: ContentDigest,
+        lineage_output_schema_sha256: ContentDigest,
     }
 
     impl FakeModel {
@@ -705,7 +739,27 @@ mod tests {
                 route,
                 last_schema_id_hint: std::sync::Mutex::new(None),
                 last_user_context: std::sync::Mutex::new(None),
+                lineage_prompt_id: "figure_analysis".into(),
+                lineage_prompt_version: "figure-analysis-grounded-v2".into(),
+                lineage_prompt_sha256: ContentDigest::of_text("prompt"),
+                lineage_output_schema_sha256: ContentDigest::of_text("schema"),
             }
+        }
+
+        /// Emit a lineage that disagrees with [`test_registry`] so the
+        /// registry binding is exercised on its refusal path.
+        fn with_lineage(
+            mut self,
+            prompt_id: &str,
+            prompt_version: &str,
+            prompt_sha256: &str,
+            output_schema_sha256: &str,
+        ) -> Self {
+            self.lineage_prompt_id = prompt_id.into();
+            self.lineage_prompt_version = prompt_version.into();
+            self.lineage_prompt_sha256 = ContentDigest::of_text(prompt_sha256);
+            self.lineage_output_schema_sha256 = ContentDigest::of_text(output_schema_sha256);
+            self
         }
     }
 
@@ -758,12 +812,12 @@ mod tests {
                 latency_ms: 12,
                 prompt_lineage: Some(PromptExecutionLineage {
                     run_id: "figure-test".into(),
-                    prompt_id: "figure_analysis".into(),
-                    prompt_version: "figure-analysis-grounded-v2".into(),
-                    prompt_sha256: ContentDigest::of_text("prompt"),
+                    prompt_id: self.lineage_prompt_id.clone(),
+                    prompt_version: self.lineage_prompt_version.clone(),
+                    prompt_sha256: self.lineage_prompt_sha256.clone(),
                     task_spec_sha256: ContentDigest::of_text("task"),
                     rendered_prompt_sha256: ContentDigest::of_text("prompt"),
-                    output_schema_sha256: ContentDigest::of_text("schema"),
+                    output_schema_sha256: self.lineage_output_schema_sha256.clone(),
                     route_policy_sha256: ContentDigest::of_text("route"),
                     endpoint_sha256: ContentDigest::of_text("endpoint"),
                     model_binding_sha256: ContentDigest::of_text("binding"),
@@ -868,7 +922,7 @@ mod tests {
         // Panel text often exists only in the figure caption; the caption is
         // grounded context (context_adds) and must be citable verbatim.
         let fake = Arc::new(FakeModel::new(output("GEPA flowchart"), route()));
-        let analysis = FigureAnalysisUseCase::new(fake)
+        let analysis = test_use_case(fake)
             .analyze(image(), &context())
             .await
             .unwrap();
@@ -879,7 +933,7 @@ mod tests {
     #[tokio::test]
     async fn prompt_names_caption_and_carries_no_numeric_cap() {
         let fake = Arc::new(FakeModel::new(output("mutates prompts"), route()));
-        FigureAnalysisUseCase::new(fake.clone())
+        test_use_case(fake.clone())
             .analyze(image(), &context())
             .await
             .unwrap();
@@ -902,7 +956,7 @@ mod tests {
     #[tokio::test]
     async fn grounded_candidate_keeps_route_and_authority_provenance() {
         let fake = Arc::new(FakeModel::new(output("mutates prompts"), route()));
-        let analysis = FigureAnalysisUseCase::new(fake.clone())
+        let analysis = test_use_case(fake.clone())
             .analyze(image(), &context())
             .await
             .unwrap();
@@ -914,8 +968,18 @@ mod tests {
             fake.last_schema_id_hint.lock().unwrap().as_deref(),
             Some("diagram_analysis")
         );
-        // Provenance carries DATA schema digest (64 hex), not the fake lineage "schema" text.
+        // Provenance carries the registry-bound lineage fingerprint (64 hex),
+        // so a record scan can re-check it against the registry entry.
         assert_eq!(analysis.provenance.output_schema_sha256.len(), 64);
+        assert_eq!(analysis.provenance.prompt_id, "figure_analysis");
+        assert_eq!(
+            analysis.provenance.prompt_version,
+            "figure-analysis-grounded-v2"
+        );
+        assert_eq!(
+            analysis.provenance.prompt_sha256,
+            ContentDigest::of_text("prompt").as_str()
+        );
         assert_eq!(analysis.provenance.schema_id, "diagram_analysis");
         assert_eq!(analysis.provenance.stage1_visual_type, "flowchart");
     }
@@ -937,7 +1001,7 @@ mod tests {
             "confidence": 0.8
         });
         let fake = Arc::new(FakeModel::new(chart_output, route()));
-        let analysis = FigureAnalysisUseCase::new(fake.clone())
+        let analysis = test_use_case(fake.clone())
             .analyze(image(), &ctx)
             .await
             .unwrap();
@@ -976,7 +1040,7 @@ mod tests {
             fake.last_schema_id_hint.lock().unwrap().as_deref(),
             Some("chart_extraction")
         );
-        let (_, selection) = FigureAnalysisUseCase::new(fake).plan_schema(&ctx).unwrap();
+        let (_, selection) = test_use_case(fake).plan_schema(&ctx).unwrap();
         assert_eq!(selection.schema_id, "chart_extraction");
     }
 
@@ -994,7 +1058,7 @@ mod tests {
             "confidence": 0.7
         });
         let fake = Arc::new(FakeModel::new(table_output, route()));
-        let analysis = FigureAnalysisUseCase::new(fake.clone())
+        let analysis = test_use_case(fake.clone())
             .analyze(image(), &ctx)
             .await
             .unwrap();
@@ -1035,7 +1099,7 @@ mod tests {
             "confidence": 0.75
         });
         let fake = Arc::new(FakeModel::new(photo_output, route()));
-        let analysis = FigureAnalysisUseCase::new(fake.clone())
+        let analysis = test_use_case(fake.clone())
             .analyze(image(), &ctx)
             .await
             .unwrap();
@@ -1079,10 +1143,7 @@ mod tests {
             "confidence": 0.6
         });
         let fake = Arc::new(FakeModel::new(shot_output, route()));
-        let analysis = FigureAnalysisUseCase::new(fake)
-            .analyze(image(), &ctx)
-            .await
-            .unwrap();
+        let analysis = test_use_case(fake).analyze(image(), &ctx).await.unwrap();
         assert_eq!(analysis.visual_type, VisualAnalysisType::Screenshot);
         assert!(analysis.components.is_empty());
         match analysis.typed_payload.as_ref() {
@@ -1097,10 +1158,7 @@ mod tests {
 
     #[tokio::test]
     async fn plan_schema_flowchart_caption_selects_diagram_analysis() {
-        let uc = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
-            output("mutates prompts"),
-            route(),
-        )));
+        let uc = test_use_case(Arc::new(FakeModel::new(output("mutates prompts"), route())));
         let (class, selection) = uc.plan_schema(&context()).unwrap();
         assert_eq!(class.visual_type, VisualAnalysisType::Flowchart);
         assert_eq!(selection.schema_id, "diagram_analysis");
@@ -1112,10 +1170,7 @@ mod tests {
         let mut ctx = context();
         ctx.caption = "Figure 3(a-c): Overview of the algorithm candidate proposal loop".into();
         let fake = Arc::new(FakeModel::new(output("mutates prompts"), route()));
-        let analysis = FigureAnalysisUseCase::new(fake)
-            .analyze(image(), &ctx)
-            .await
-            .unwrap();
+        let analysis = test_use_case(fake).analyze(image(), &ctx).await.unwrap();
         assert!(
             analysis.findings.iter().any(|f| f == "panel_count=3"),
             "compound caption must surface panel_count: {:?}",
@@ -1130,13 +1185,10 @@ mod tests {
 
     #[tokio::test]
     async fn single_panel_analyze_does_not_add_panel_count() {
-        let analysis = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
-            output("mutates prompts"),
-            route(),
-        )))
-        .analyze(image(), &context())
-        .await
-        .unwrap();
+        let analysis = test_use_case(Arc::new(FakeModel::new(output("mutates prompts"), route())))
+            .analyze(image(), &context())
+            .await
+            .unwrap();
         assert!(
             !analysis
                 .findings
@@ -1147,16 +1199,13 @@ mod tests {
 
     #[tokio::test]
     async fn requested_model_aliases_get_distinct_candidate_ids() {
-        let first = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
-            output("mutates prompts"),
-            route(),
-        )))
-        .analyze(image(), &context())
-        .await
-        .unwrap();
+        let first = test_use_case(Arc::new(FakeModel::new(output("mutates prompts"), route())))
+            .analyze(image(), &context())
+            .await
+            .unwrap();
         let mut aliased_route = route();
         aliased_route.model = "another-requested-alias".into();
-        let second = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
+        let second = test_use_case(Arc::new(FakeModel::new(
             output("mutates prompts"),
             aliased_route,
         )))
@@ -1172,7 +1221,7 @@ mod tests {
 
     #[tokio::test]
     async fn ungrounded_quote_and_image_mismatch_are_rejected() {
-        let use_case = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
+        let use_case = test_use_case(Arc::new(FakeModel::new(
             output("invented unsupported quote"),
             route(),
         )));
@@ -1188,6 +1237,94 @@ mod tests {
         assert!(matches!(
             use_case.analyze(wrong, &context()).await,
             Err(FigureAnalysisUseCaseError::ImageContextMismatch { .. })
+        ));
+    }
+
+    // ── S10: registry binding refuses a self-declared lineage ──
+
+    #[tokio::test]
+    async fn tampered_lineage_fingerprint_is_refused() {
+        let fake = Arc::new(
+            FakeModel::new(output("mutates prompts"), route()).with_lineage(
+                "figure_analysis",
+                "figure-analysis-grounded-v2",
+                "tampered",
+                "schema",
+            ),
+        );
+        let error = test_use_case(fake)
+            .analyze(image(), &context())
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            FigureAnalysisUseCaseError::PromptLineage(
+                PromptLineageBindingError::FingerprintMismatch { .. }
+            )
+        ));
+    }
+
+    #[tokio::test]
+    async fn lineage_version_not_registered_is_refused() {
+        let fake = Arc::new(
+            FakeModel::new(output("mutates prompts"), route()).with_lineage(
+                "figure_analysis",
+                "figure-analysis.v9",
+                "prompt",
+                "schema",
+            ),
+        );
+        let error = test_use_case(fake)
+            .analyze(image(), &context())
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            FigureAnalysisUseCaseError::PromptLineage(
+                PromptLineageBindingError::VersionMismatch { .. }
+            )
+        ));
+    }
+
+    #[tokio::test]
+    async fn lineage_schema_fingerprint_mismatch_is_refused() {
+        let fake = Arc::new(
+            FakeModel::new(output("mutates prompts"), route()).with_lineage(
+                "figure_analysis",
+                "figure-analysis-grounded-v2",
+                "prompt",
+                "other-schema",
+            ),
+        );
+        let error = test_use_case(fake)
+            .analyze(image(), &context())
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            FigureAnalysisUseCaseError::PromptLineage(
+                PromptLineageBindingError::SchemaMismatch { .. }
+            )
+        ));
+    }
+
+    #[tokio::test]
+    async fn lineage_unresolved_prompt_id_is_refused() {
+        let fake = Arc::new(
+            FakeModel::new(output("mutates prompts"), route()).with_lineage(
+                "no_such_prompt",
+                "v1",
+                "prompt",
+                "schema",
+            ),
+        );
+        let error = test_use_case(fake)
+            .analyze(image(), &context())
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            FigureAnalysisUseCaseError::PromptLineage(PromptLineageBindingError::Unresolved { .. })
         ));
     }
 }

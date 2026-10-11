@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use da_domain::FigureSemanticContext;
 use da_domain::figure_analysis::FigureQuotePolicy;
 use da_domain::negative_memory::{AdmitKey, admit_claim};
+use da_domain::prompt_registry::PromptRegistry;
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort,
 };
@@ -98,6 +99,9 @@ pub struct FigureAnalysisStage {
     quote_policy: Option<FigureQuotePolicy>,
     /// Optional negative-memory gate (M457). None = no records = allow.
     negatives: Option<Arc<dyn NegativeMemoryPort>>,
+    /// Required prompt registry (S10). The stage forwards it to the use case so
+    /// every figure call binds its lineage to the registry that produced it.
+    prompt_registry: PromptRegistry,
 }
 
 impl FigureAnalysisStage {
@@ -122,6 +126,7 @@ impl FigureAnalysisStage {
         model: Arc<dyn MultimodalLlmPort>,
         image: MultimodalImage,
         retry_after: impl Into<String>,
+        prompt_registry: PromptRegistry,
     ) -> Self {
         let route = model.route();
         Self {
@@ -132,6 +137,7 @@ impl FigureAnalysisStage {
             selected_schema: None,
             quote_policy: None,
             negatives: None,
+            prompt_registry,
             contract: StageContract {
                 stage_id: "figure_analysis".into(),
                 implementation_fingerprint:
@@ -182,7 +188,7 @@ impl FigureAnalysisStage {
         mut self,
         context: &FigureSemanticContext,
     ) -> Result<Self, FigureAnalysisUseCaseError> {
-        let use_case = FigureAnalysisUseCase::new(self.model.clone());
+        let use_case = FigureAnalysisUseCase::new(self.model.clone(), self.prompt_registry.clone());
         let (classification, selection) = use_case.plan_schema(context)?;
         self.selected_schema = Some((
             selection.schema_id,
@@ -260,7 +266,7 @@ impl PipelineStageExecutor for FigureAnalysisStage {
                 });
             }
         }
-        let analysis = FigureAnalysisUseCase::new(self.model.clone())
+        let analysis = FigureAnalysisUseCase::new(self.model.clone(), self.prompt_registry.clone())
             .analyze(self.image.clone(), &context)
             .await
             .map_err(|error| map_error(error, &self.retry_after))?;
@@ -548,6 +554,37 @@ mod tests {
         }
     }
 
+    /// Registry that resolves the default `FakeModel` lineage. The fingerprints
+    /// are the digests the fake actually emits (`prompt`/`schema` texts), so the
+    /// happy path binds and a tampered lineage is refused — never hand-picked
+    /// constants.
+    fn test_registry() -> PromptRegistry {
+        PromptRegistry {
+            schema_version: da_domain::prompt_registry::PROMPT_REGISTRY_SCHEMA_VERSION.into(),
+            registry_id: "figure-stage-test-registry".into(),
+            d127_import_eligible: false,
+            entries: vec![da_domain::prompt_registry::PromptRegistryEntry {
+                prompt_id: "figure_analysis".into(),
+                prompt_version: "figure-analysis-grounded-v2".into(),
+                kind: da_domain::prompt_registry::PromptEntryKind::Task,
+                prompt_sha256: ContentDigest::of_text("prompt"),
+                schema_ref: "figure-analysis-candidate.v1".into(),
+                schema_sha256: ContentDigest::of_text("schema"),
+                source_ref: "data/ontology/prompt_tasks.yaml#figure_analysis".into(),
+            }],
+        }
+    }
+
+    /// Every test stage binds the same resolving registry, mirroring the
+    /// production wiring where the stage constructor requires it.
+    fn test_stage(
+        model: Arc<dyn MultimodalLlmPort>,
+        image: MultimodalImage,
+        retry_after: impl Into<String>,
+    ) -> FigureAnalysisStage {
+        FigureAnalysisStage::new(model, image, retry_after, test_registry())
+    }
+
     #[tokio::test]
     async fn canonical_context_source_stage_is_content_addressed() {
         let stage = FigureContextArtifactStage::new(context()).unwrap();
@@ -571,12 +608,12 @@ mod tests {
 
     #[test]
     fn quote_policy_advances_cache_identity() {
-        let bare = FigureAnalysisStage::new(
+        let bare = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
         );
-        let windowed = FigureAnalysisStage::new(
+        let windowed = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
@@ -598,7 +635,7 @@ mod tests {
 
     #[tokio::test]
     async fn metadata_carries_measured_quote_stats() {
-        let stage = FigureAnalysisStage::new(
+        let stage = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
@@ -616,7 +653,7 @@ mod tests {
 
     #[tokio::test]
     async fn stage_emits_non_authoritative_candidate() {
-        let stage = FigureAnalysisStage::new(
+        let stage = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
@@ -629,7 +666,7 @@ mod tests {
 
     #[tokio::test]
     async fn timeout_becomes_retryable_stage_failure() {
-        let stage = FigureAnalysisStage::new(
+        let stage = test_stage(
             Arc::new(FakeModel { fail: true }),
             image(),
             "2026-08-08T01:00:00Z",
@@ -642,12 +679,12 @@ mod tests {
 
     #[test]
     fn route_image_prompt_and_schema_are_in_cache_contract() {
-        let before = FigureAnalysisStage::new(
+        let before = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
         );
-        let after = FigureAnalysisStage::new(
+        let after = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
@@ -671,7 +708,7 @@ mod tests {
 
     #[test]
     fn configuration_fingerprint_binds_schema_registry_identity() {
-        let stage = FigureAnalysisStage::new(
+        let stage = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
@@ -711,14 +748,14 @@ mod tests {
         let mut plot_ctx = context();
         plot_ctx.caption =
             "Figure 2: Performance comparison scatter plot of accuracy vs rollouts".into();
-        let flowchart = FigureAnalysisStage::new(
+        let flowchart = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
         )
         .with_planned_schema(&flowchart_ctx)
         .expect("plan flowchart");
-        let plot = FigureAnalysisStage::new(
+        let plot = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
@@ -790,7 +827,7 @@ mod tests {
             "t".into(),
         );
         let spy = Arc::new(SpyModel(std::sync::atomic::AtomicBool::new(false)));
-        let stage = FigureAnalysisStage::new(spy.clone(), image(), "2026-08-08T01:00:00Z")
+        let stage = test_stage(spy.clone(), image(), "2026-08-08T01:00:00Z")
             .with_negatives(Arc::new(FakeNeg(vec![rec])));
         let req = StageExecutionRequest {
             article_id: "2507.19457".into(),
@@ -826,7 +863,7 @@ mod tests {
             None,
             "t".into(),
         );
-        let stage = FigureAnalysisStage::new(
+        let stage = test_stage(
             Arc::new(FakeModel { fail: false }),
             image(),
             "2026-08-08T01:00:00Z",
