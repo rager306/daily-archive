@@ -123,6 +123,22 @@ impl RuVectorBridge {
         Ok(fused)
     }
 
+    /// RRF fusion followed by a reranking stage (ADR-073).
+    ///
+    /// The fused list is identical to [`Self::hybrid_rrf`]; `reranker` then
+    /// re-scores it with evidence the rank fusion cannot see (e.g. graph
+    /// proximity, see [`crate::rerank`]). Passing
+    /// [`crate::rerank::IdentityReranker`] reproduces `hybrid_rrf` exactly.
+    pub fn hybrid_rrf_with_reranker(
+        &self,
+        dense: &[RankedItem],
+        lexical: &[RankedItem],
+        reranker: &dyn crate::rerank::Reranker,
+    ) -> Result<Vec<RankedItem>, BridgeError> {
+        let fused = self.hybrid_rrf(dense, lexical)?;
+        Ok(reranker.rerank(&fused))
+    }
+
     /// Personalized PageRank over a plain CSR topology (feature-gated).
     ///
     /// - Empty topology returns `Ok(vec![])`.
