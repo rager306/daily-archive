@@ -114,6 +114,20 @@ pub mod native_route_independence;
 // feature set; the ungated example `native_route_threshold_candidates` drives the
 // shared measurement modules against the route corpus's reference TEI.
 pub mod native_route_threshold_candidates;
+// S11/T01 (M516-th0oby): the independent preservation candidate. It reads the
+// committed carriers and derives a candidate series whose fingerprint differs
+// from the frozen reference (the route corpus's own four keys, with the
+// measurement oracle the release probe evaluates — not the route-axis Java-guard
+// oracle), resolves the three frozen thresholds against it (honestly
+// `not_comparable` / `mixed_scope_comparison`, because the measured population
+// differs), and retains the earlier conservation result as its own disclosed
+// record bound by path + pointer + sha256. It reuses the S06 identity primitive
+// (`native_acceptance_package`), the S03 value types
+// (`native_route_threshold_candidates`) and the S04 envelope
+// (`native_family_receipt`), and is std/serde/serde_yaml/serde_json/sha2, so it
+// and its contract test compile in the default feature set. Every threshold stays
+// `not_accepted`; every promotion lock stays closed.
+pub mod independent_preservation_candidate;
 // S04/T01 (M516-th0oby): the per-document semantic-correctness receipt over the
 // expanded 12-document route corpus. It publishes the composer's H14
 // well-formedness and H15 bibliography-target facts as one closed reason pair per
