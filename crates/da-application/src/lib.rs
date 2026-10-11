@@ -83,6 +83,7 @@ pub mod navigation_stage;
 pub mod parse_grammar;
 pub mod parse_policy_table;
 pub mod parse_policy_observation;
+pub mod parse_policy_artifact;
 pub use parse_policy_table::{
     ObservationSplit, PolicyObservation, TableLearnConfig, TableLearnError, learn_decision_table,
     table_accuracy, table_mean_reward,

@@ -19,6 +19,21 @@ pub fn grobid_profile_from_route(route: ProfileRoute) -> GrobidProfile {
     }
 }
 
+/// Env-gated candidate learned table loader (ADR-074).
+///
+/// `DA_LEARNED_POLICY_TABLE` names a candidate table artifact. When set and
+/// valid, the consult answers covered buckets with a `Learned` stamp; when
+/// unset, missing, or invalid, the consult fail-opens to the native DATA rules.
+/// This is deliberately an env opt-in: a learned table is never production by
+/// default, matching the candidate-only contract.
+fn load_learned_table_env() -> Option<da_domain::fsm_policy::LearnedDecisionTable> {
+    let path = std::env::var("DA_LEARNED_POLICY_TABLE").ok()?;
+    if path.trim().is_empty() {
+        return None;
+    }
+    da_application::parse_policy_artifact::load_learned_table(std::path::Path::new(&path)).ok()
+}
+
 fn policy_registry_path() -> PathBuf {
     std::env::var("DA_POLICY_REGISTRY")
         .map(PathBuf::from)
@@ -52,10 +67,39 @@ pub fn corpus_grobid_parser() -> da_parse::GrobidParser {
 /// YAML-in consult used by tests and by [`consult_corpus_grobid_profile`].
 pub fn consult_corpus_grobid_profile_from_yaml(yaml: &str) -> GrobidProfile {
     let host: Option<&dyn FsmPolicyPort> = None;
-    match resolve_parse_profile(yaml, host, &corpus_features()) {
+    match resolve_parse_profile_with_learned(yaml, host, &corpus_features(), load_learned_table_env())
+    {
         Ok(d) => grobid_profile_from_route(d.profile),
         Err(_) => GrobidProfile::structural(),
     }
+}
+
+/// Consult profile_route with an optional candidate learned table. A covered
+/// bucket answers with a `Learned` stamp; otherwise the native path answers.
+/// Kept beside [`resolve_parse_profile`] so the pure application helper stays
+/// table-agnostic and this CLI boundary owns the artifact.
+pub fn resolve_parse_profile_with_learned(
+    yaml: &str,
+    host: Option<&dyn FsmPolicyPort>,
+    features: &ArticleFeatures,
+    learned: Option<da_domain::fsm_policy::LearnedDecisionTable>,
+) -> Result<ParseProfileDecision, da_ports::fsm_policy::FsmPolicyError> {
+    use da_application::fsm_policy_consult::consult_with_fallback;
+    use da_domain::fsm_policy::DecisionPoint;
+    let registry = da_domain::fsm_policy::PolicyRegistry::from_yaml_str(yaml)
+        .map_err(|e| da_ports::fsm_policy::FsmPolicyError::Load(e.to_string()))?;
+    let mut native = da_application::fsm_policy_fallback::NativeFallbackPolicy::new(registry);
+    if let Some(table) = learned {
+        native = native
+            .with_learned_table(table)
+            .map_err(|e| da_ports::fsm_policy::FsmPolicyError::Load(e.to_string()))?;
+    }
+    let decision = consult_with_fallback(Some(&native), yaml, DecisionPoint::ProfileRoute, features)?;
+    Ok(ParseProfileDecision {
+        profile: decision.profile.unwrap_or(ProfileRoute::Structural),
+        policy_hash: decision.id.source.hash_stamp().to_string(),
+        source: decision.id.source,
+    })
 }
 
 /// Full profile_route decision (profile + policy hash + source), not just the
