@@ -97,6 +97,16 @@ impl GrammarRoute {
             Self::GrobidStructural => 2,
         }
     }
+
+    /// Inverse of [`GrammarRoute::as_str`] for learned-table values.
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "page_outline" => Some(Self::PageOutline),
+            "xy_cut" => Some(Self::XyCut),
+            "grobid_structural" => Some(Self::GrobidStructural),
+            _ => None,
+        }
+    }
 }
 
 /// Java GROBID REST profile (ADR-076 profile_route). Not FSM grammar_profile.
@@ -169,14 +179,29 @@ impl Admission {
             _ => None,
         }
     }
+
+    /// Inverse of [`Admission::as_str`] for learned-table values.
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "accept" => Some(Self::Accept),
+            "defer" => Some(Self::Defer),
+            "skip" => Some(Self::Skip),
+            _ => None,
+        }
+    }
 }
 
-/// Who produced the decision — native fallback or a versioned WASM artifact.
+/// Who produced the decision — native fallback, a versioned WASM artifact, or a
+/// candidate learned decision table (ADR-074 candidate-only learning).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum PolicySource {
     Native,
     Wasm { sha256: String },
+    /// A candidate learned decision table. The stamp is the table content
+    /// digest so a trajectory can replay the exact learned artifact. A
+    /// `Learned` stamp never means production-active: promotion is explicit.
+    Learned { table_sha256: String },
 }
 
 impl PolicySource {
@@ -184,7 +209,13 @@ impl PolicySource {
         match self {
             Self::Native => "native",
             Self::Wasm { sha256 } => sha256,
+            Self::Learned { table_sha256 } => table_sha256,
         }
+    }
+
+    /// True only for a candidate learned artifact (never production-active).
+    pub fn is_learned(&self) -> bool {
+        matches!(self, Self::Learned { .. })
     }
 }
 
@@ -422,6 +453,165 @@ pub fn batch_admission_native(features: &ArticleFeatures, cfg: &BatchAdmissionNa
     Admission::Accept
 }
 
+/// Deterministic feature bucket a learned decision cell is keyed on.
+///
+/// Training and consult MUST call this same function: a cell written under one
+/// bucketing is otherwise unreachable at runtime. Buckets are deliberately
+/// coarse (four page bands, bookmark presence, four quality bands, domain) so a
+/// small corpus can fill cells without sparsity.
+pub fn feature_bucket(point: DecisionPoint, features: &ArticleFeatures) -> String {
+    let pages = match features.page_count {
+        0 => "0",
+        1..=49 => "1_49",
+        50..=199 => "50_199",
+        _ => "200_plus",
+    };
+    let bookmarks = if features.toc_bookmarks == 0 { "0" } else { "1" };
+    let quality = match features.quality_milli() {
+        i32::MIN..=199 => "lt200",
+        200..=399 => "200_399",
+        400..=699 => "400_699",
+        _ => "ge700",
+    };
+    let domain = {
+        let trimmed = features.domain.trim();
+        if trimmed.is_empty() {
+            "_"
+        } else {
+            trimmed
+        }
+    };
+    format!("{point};p={pages};b={bookmarks};q={quality};d={domain}", point = point.as_str())
+}
+
+/// A candidate learned decision table (ADR-074 candidate-only learning).
+///
+/// The table maps a [`feature_bucket`] key to a closed decision code. It is
+/// DATA-shaped: content-digested, replayable, and never production-active. A
+/// consult that resolves through this table stamps
+/// [`PolicySource::Learned`]; promotion stays explicit and out of band.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LearnedDecisionTable {
+    pub schema_version: String,
+    /// `DecisionPoint::as_str()` this table answers.
+    pub decision_point: String,
+    /// Bucketing identity so a reader can see which function produced the keys.
+    pub bucket_spec: String,
+    /// Content digest of `cells`; also the [`PolicySource::Learned`] stamp.
+    pub table_sha256: String,
+    /// bucket key -> closed decision code (e.g. `xy_cut`).
+    pub cells: std::collections::BTreeMap<String, String>,
+}
+
+/// Schema version accepted by [`LearnedDecisionTable::validate`].
+pub const LEARNED_TABLE_SCHEMA_VERSION: &str = "learned-decision-table.v1";
+/// Bucketing identity stamped into every table produced by [`feature_bucket`].
+pub const LEARNED_BUCKET_SPEC: &str = "feature-bucket.v1";
+
+fn learned_cells_digest(
+    point: &str,
+    cells: &std::collections::BTreeMap<String, String>,
+) -> String {
+    use sha2::Digest;
+    let canonical = serde_json::json!({
+        "bucket_spec": LEARNED_BUCKET_SPEC,
+        "decision_point": point,
+        "cells": cells,
+    });
+    let bytes = serde_json::to_vec(&canonical).unwrap_or_default();
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(&bytes);
+    hex::encode(hasher.finalize())
+}
+
+impl LearnedDecisionTable {
+    /// Build a table from a decision point and its bucket->code cells, sealing
+    /// the content digest. The caller owns which cells exist; this only binds
+    /// them to a replayable identity.
+    pub fn seal(
+        point: DecisionPoint,
+        cells: std::collections::BTreeMap<String, String>,
+    ) -> Self {
+        let decision_point = point.as_str().to_string();
+        let table_sha256 = learned_cells_digest(&decision_point, &cells);
+        Self {
+            schema_version: LEARNED_TABLE_SCHEMA_VERSION.to_string(),
+            decision_point,
+            bucket_spec: LEARNED_BUCKET_SPEC.to_string(),
+            table_sha256,
+            cells,
+        }
+    }
+
+    /// Recompute the digest from content, ignoring `table_sha256`.
+    pub fn recomputed_digest(&self) -> String {
+        learned_cells_digest(&self.decision_point, &self.cells)
+    }
+
+    /// Reject a table whose schema, bucket spec, decision point, or digest does
+    /// not agree with its content.
+    pub fn validate(&self) -> Result<(), LearnedTableError> {
+        if self.schema_version != LEARNED_TABLE_SCHEMA_VERSION {
+            return Err(LearnedTableError::SchemaVersion);
+        }
+        if self.bucket_spec != LEARNED_BUCKET_SPEC {
+            return Err(LearnedTableError::BucketSpec);
+        }
+        if DecisionPoint::parse(&self.decision_point).is_none() {
+            return Err(LearnedTableError::DecisionPoint);
+        }
+        if self.table_sha256 != self.recomputed_digest() {
+            return Err(LearnedTableError::DigestMismatch);
+        }
+        Ok(())
+    }
+
+    /// The learned stamp a consult through this table carries.
+    pub fn source(&self) -> PolicySource {
+        PolicySource::Learned {
+            table_sha256: self.table_sha256.clone(),
+        }
+    }
+
+    /// Resolve a grammar route for `features`, or `None` when the bucket is
+    /// absent (caller fail-opens to native).
+    pub fn grammar_for(&self, features: &ArticleFeatures) -> Option<GrammarRoute> {
+        let code = self
+            .cells
+            .get(&feature_bucket(DecisionPoint::GrammarRoute, features))?;
+        GrammarRoute::parse(code)
+    }
+
+    /// Resolve a batch admission for `features`, or `None` when absent.
+    pub fn admission_for(&self, features: &ArticleFeatures) -> Option<Admission> {
+        let code = self
+            .cells
+            .get(&feature_bucket(DecisionPoint::BatchAdmission, features))?;
+        Admission::parse(code)
+    }
+
+    /// Resolve a GROBID profile route for `features`, or `None` when absent.
+    pub fn profile_for(&self, features: &ArticleFeatures) -> Option<ProfileRoute> {
+        let code = self
+            .cells
+            .get(&feature_bucket(DecisionPoint::ProfileRoute, features))?;
+        ProfileRoute::parse(code)
+    }
+}
+
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum LearnedTableError {
+    #[error("learned table: unsupported schema version")]
+    SchemaVersion,
+    #[error("learned table: bucket spec does not match feature_bucket")]
+    BucketSpec,
+    #[error("learned table: decision point is not a known DecisionPoint")]
+    DecisionPoint,
+    #[error("learned table: content digest does not match table_sha256")]
+    DigestMismatch,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -626,5 +816,118 @@ decision_points:
         let json = serde_json::to_string(&d).unwrap();
         let back: PolicyDecision = serde_json::from_str(&json).unwrap();
         assert_eq!(d, back);
+    }
+
+    #[test]
+    fn feature_bucket_is_stable_and_bucketed() {
+        let a = feat(18, 0, 0.85);
+        assert_eq!(
+            feature_bucket(DecisionPoint::GrammarRoute, &a),
+            "grammar_route;p=1_49;b=0;q=ge700;d=computer_science"
+        );
+        // Same bucket regardless of exact value inside the band.
+        assert_eq!(
+            feature_bucket(DecisionPoint::GrammarRoute, &feat(49, 0, 0.70)),
+            "grammar_route;p=1_49;b=0;q=ge700;d=computer_science"
+        );
+        // Bookmark presence splits the bucket.
+        assert_eq!(
+            feature_bucket(DecisionPoint::GrammarRoute, &feat(18, 3, 0.85)),
+            "grammar_route;p=1_49;b=1;q=ge700;d=computer_science"
+        );
+        // Empty domain renders as "_" not "".
+        let mut empty = feat(18, 0, 0.85);
+        empty.domain = String::new();
+        assert_eq!(
+            feature_bucket(DecisionPoint::GrammarRoute, &empty),
+            "grammar_route;p=1_49;b=0;q=ge700;d=_"
+        );
+    }
+
+    #[test]
+    fn learned_table_seal_and_validate() {
+        use std::collections::BTreeMap;
+        let mut cells = BTreeMap::new();
+        let key = feature_bucket(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85));
+        cells.insert(key.clone(), "xy_cut".to_string());
+        let table = LearnedDecisionTable::seal(DecisionPoint::GrammarRoute, cells);
+        table.validate().expect("sealed table validates");
+        assert_eq!(table.decision_point, "grammar_route");
+        assert_eq!(table.bucket_spec, LEARNED_BUCKET_SPEC);
+        assert_eq!(table.recomputed_digest(), table.table_sha256);
+        // The learned stamp carries the table digest.
+        match table.source() {
+            PolicySource::Learned { table_sha256 } => {
+                assert_eq!(table_sha256, table.table_sha256)
+            }
+            other => panic!("expected Learned, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn learned_table_rejects_tampered_digest() {
+        use std::collections::BTreeMap;
+        let mut cells = BTreeMap::new();
+        cells.insert(
+            feature_bucket(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85)),
+            "xy_cut".to_string(),
+        );
+        let mut table = LearnedDecisionTable::seal(DecisionPoint::GrammarRoute, cells);
+        table.table_sha256 = "0".repeat(64);
+        assert_eq!(table.validate(), Err(LearnedTableError::DigestMismatch));
+    }
+
+    #[test]
+    fn learned_table_rejects_wrong_schema_and_bucket() {
+        use std::collections::BTreeMap;
+        let table = LearnedDecisionTable::seal(DecisionPoint::GrammarRoute, BTreeMap::new());
+        let mut wrong_schema = table.clone();
+        wrong_schema.schema_version = "v0".into();
+        assert_eq!(
+            wrong_schema.validate(),
+            Err(LearnedTableError::SchemaVersion)
+        );
+        let mut wrong_bucket = table.clone();
+        wrong_bucket.bucket_spec = "other.v9".into();
+        assert_eq!(wrong_bucket.validate(), Err(LearnedTableError::BucketSpec));
+        let mut wrong_point = table.clone();
+        wrong_point.decision_point = "invented".into();
+        assert_eq!(
+            wrong_point.validate(),
+            Err(LearnedTableError::DecisionPoint)
+        );
+    }
+
+    #[test]
+    fn learned_table_resolves_only_covered_buckets() {
+        use std::collections::BTreeMap;
+        let mut cells = BTreeMap::new();
+        cells.insert(
+            feature_bucket(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85)),
+            "xy_cut".to_string(),
+        );
+        let table = LearnedDecisionTable::seal(DecisionPoint::GrammarRoute, cells);
+        assert_eq!(
+            table.grammar_for(&feat(18, 0, 0.85)),
+            Some(GrammarRoute::XyCut)
+        );
+        // Uncovered bucket fail-opens to None (caller falls back to native).
+        assert_eq!(table.grammar_for(&feat(700, 40, 0.9)), None);
+        // A grammar table does not answer admission/profile.
+        assert_eq!(table.admission_for(&feat(18, 0, 0.85)), None);
+        assert_eq!(table.profile_for(&feat(18, 0, 0.85)), None);
+    }
+
+    #[test]
+    fn learned_table_rejects_unknown_code_as_absent() {
+        use std::collections::BTreeMap;
+        let mut cells = BTreeMap::new();
+        cells.insert(
+            feature_bucket(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85)),
+            "not_a_route".to_string(),
+        );
+        let table = LearnedDecisionTable::seal(DecisionPoint::GrammarRoute, cells);
+        // A code outside the closed enum is treated as no decision, never a guess.
+        assert_eq!(table.grammar_for(&feat(18, 0, 0.85)), None);
     }
 }

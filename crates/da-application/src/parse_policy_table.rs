@@ -1,0 +1,437 @@
+//! Candidate learned decision-table trainer (ADR-074 candidate-only learning).
+//!
+//! Trains a [`LearnedDecisionTable`] from recorded policy observations instead
+//! of MicroLoRA weights. The observation carries the DECISION CONDITION
+//! ([`ArticleFeatures`]), the decision actually taken, and the measured reward;
+//! the learner groups by [`feature_bucket`] and picks, per bucket, the decision
+//! with the best mean reward under a minimum-support floor.
+//!
+//! Why a table and not weights: the policy sees four coarse features and answers
+//! a closed enum. A rank-1 MicroLoRA over that input is a threshold table with
+//! extra moving parts; the table is the same function, exactly replayable and
+//! trivially auditable.
+//!
+//! The learner is pure, deterministic and candidate-only. It never promotes, it
+//! omits buckets below the support floor (the consult then fail-opens to native
+//! DATA rules), and it refuses a non-document-disjoint split.
+
+use da_domain::fsm_policy::{
+    Admission, ArticleFeatures, DecisionPoint, GrammarRoute, LearnedDecisionTable, ProfileRoute,
+    feature_bucket,
+};
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use thiserror::Error;
+
+/// One recorded policy decision and its measured outcome.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PolicyObservation {
+    /// Document identity — the split key. Never the prompt.
+    pub document_identity: String,
+    pub decision_point: DecisionPoint,
+    /// The decision condition the policy saw.
+    pub features: ArticleFeatures,
+    /// The decision code the policy actually answered (closed enum value).
+    pub decision_code: String,
+    /// Measured reward for that decision. Higher is better.
+    pub reward: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TableLearnConfig {
+    /// Minimum observations a bucket needs before it earns a cell.
+    pub min_support: usize,
+}
+
+impl Default for TableLearnConfig {
+    fn default() -> Self {
+        Self { min_support: 2 }
+    }
+}
+
+#[derive(Debug, Error, PartialEq)]
+pub enum TableLearnError {
+    #[error("table learning: decision point {0} is not learnable by a table")]
+    UnlearnablePoint(String),
+    #[error("table learning: a decision code is outside the closed enum: {0}")]
+    UnknownCode(String),
+    #[error("table learning: reward is not finite")]
+    NonFiniteReward,
+    #[error("table learning: a document identity is blank")]
+    BlankIdentity,
+    #[error("table learning: train/validation documents overlap")]
+    SplitOverlap,
+    #[error("table learning: no bucket reached the support floor")]
+    NoLearnableCells,
+    #[error("table learning: {0}")]
+    InvalidConfig(String),
+}
+
+/// The decision codes a point may emit, in deterministic tie-break order.
+fn allowed_codes(point: DecisionPoint) -> Option<&'static [&'static str]> {
+    match point {
+        DecisionPoint::GrammarRoute => Some(&["page_outline", "xy_cut", "grobid_structural"]),
+        DecisionPoint::BatchAdmission => Some(&["accept", "defer", "skip"]),
+        DecisionPoint::ProfileRoute => Some(&["structural", "rich"]),
+        _ => None,
+    }
+}
+
+fn code_is_valid(point: DecisionPoint, code: &str) -> bool {
+    allowed_codes(point).is_some_and(|codes| codes.contains(&code))
+}
+
+/// Validate one observation against its point's closed code set.
+fn validate_observation(obs: &PolicyObservation) -> Result<(), TableLearnError> {
+    if obs.document_identity.trim().is_empty() {
+        return Err(TableLearnError::BlankIdentity);
+    }
+    if !obs.reward.is_finite() {
+        return Err(TableLearnError::NonFiniteReward);
+    }
+    if allowed_codes(obs.decision_point).is_none() {
+        return Err(TableLearnError::UnlearnablePoint(
+            obs.decision_point.as_str().to_string(),
+        ));
+    }
+    if !code_is_valid(obs.decision_point, &obs.decision_code) {
+        return Err(TableLearnError::UnknownCode(obs.decision_code.clone()));
+    }
+    Ok(())
+}
+
+/// Deterministic tie-break: highest mean reward, then lowest observation count
+/// deficit, then lexicographically smallest code. A stable order means two runs
+/// over the same observations always seal the same table digest.
+fn pick_code(stats: &BTreeMap<String, (f64, usize)>) -> Option<String> {
+    let mut best: Option<(String, f64, usize)> = None;
+    for (code, (sum, count)) in stats {
+        let mean = sum / (*count as f64);
+        let better = match &best {
+            None => true,
+            Some((best_code, best_mean, _)) => {
+                mean > *best_mean || (mean == *best_mean && code < best_code)
+            }
+        };
+        if better {
+            best = Some((code.clone(), mean, *count));
+        }
+    }
+    best.map(|(code, _, _)| code)
+}
+
+/// Learn a sealed table for `point` from observations, omitting buckets below
+/// the support floor. The caller owns promotion; the result is a candidate.
+pub fn learn_decision_table(
+    point: DecisionPoint,
+    observations: &[PolicyObservation],
+    config: TableLearnConfig,
+) -> Result<LearnedDecisionTable, TableLearnError> {
+    if config.min_support == 0 {
+        return Err(TableLearnError::InvalidConfig(
+            "min_support must be at least 1".into(),
+        ));
+    }
+    if allowed_codes(point).is_none() {
+        return Err(TableLearnError::UnlearnablePoint(point.as_str().to_string()));
+    }
+
+    // bucket -> code -> (reward sum, count)
+    let mut by_bucket: BTreeMap<String, BTreeMap<String, (f64, usize)>> = BTreeMap::new();
+    for obs in observations.iter().filter(|o| o.decision_point == point) {
+        validate_observation(obs)?;
+        let key = feature_bucket(point, &obs.features);
+        let entry = by_bucket
+            .entry(key)
+            .or_default()
+            .entry(obs.decision_code.clone())
+            .or_insert((0.0, 0));
+        entry.0 += obs.reward;
+        entry.1 += 1;
+    }
+
+    let mut cells: BTreeMap<String, String> = BTreeMap::new();
+    for (bucket, stats) in &by_bucket {
+        let support: usize = stats.values().map(|(_, c)| c).sum();
+        if support < config.min_support {
+            continue;
+        }
+        if let Some(code) = pick_code(stats) {
+            cells.insert(bucket.clone(), code);
+        }
+    }
+    if cells.is_empty() {
+        return Err(TableLearnError::NoLearnableCells);
+    }
+    Ok(LearnedDecisionTable::seal(point, cells))
+}
+
+/// A train/validation split of observations, keyed on document identity.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ObservationSplit {
+    pub train: Vec<PolicyObservation>,
+    pub validation: Vec<PolicyObservation>,
+}
+
+impl ObservationSplit {
+    /// Reject a blank identity or a document present on both sides.
+    pub fn validate(&self) -> Result<(), TableLearnError> {
+        use std::collections::BTreeSet;
+        let mut seen = BTreeSet::new();
+        for obs in self.train.iter().chain(self.validation.iter()) {
+            if obs.document_identity.trim().is_empty() {
+                return Err(TableLearnError::BlankIdentity);
+            }
+            if !seen.insert(obs.document_identity.as_str()) {
+                return Err(TableLearnError::SplitOverlap);
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Accuracy of a sealed table over observations: the fraction of covered
+/// observations whose learned code equals the recorded decision. Uncovered
+/// observations are excluded (they fail open to native at runtime, so they are
+/// not evidence for or against the table).
+pub fn table_accuracy(table: &LearnedDecisionTable, observations: &[PolicyObservation]) -> (usize, usize) {
+    let mut covered = 0usize;
+    let mut agree = 0usize;
+    for obs in observations {
+        let learned = match obs.decision_point {
+            DecisionPoint::GrammarRoute => table.grammar_for(&obs.features).map(|r| r.as_str()),
+            DecisionPoint::BatchAdmission => table.admission_for(&obs.features).map(|a| a.as_str()),
+            DecisionPoint::ProfileRoute => table.profile_for(&obs.features).map(|p| p.as_str()),
+            _ => None,
+        };
+        if let Some(code) = learned {
+            covered += 1;
+            if code == obs.decision_code {
+                agree += 1;
+            }
+        }
+    }
+    (agree, covered)
+}
+
+/// Deterministic mean reward of a table's decisions over covered observations.
+pub fn table_mean_reward(table: &LearnedDecisionTable, observations: &[PolicyObservation]) -> f64 {
+    let mut sum = 0.0;
+    let mut count = 0usize;
+    for obs in observations {
+        let covered = match obs.decision_point {
+            DecisionPoint::GrammarRoute => table.grammar_for(&obs.features).is_some(),
+            DecisionPoint::BatchAdmission => table.admission_for(&obs.features).is_some(),
+            DecisionPoint::ProfileRoute => table.profile_for(&obs.features).is_some(),
+            _ => false,
+        };
+        if covered {
+            sum += obs.reward;
+            count += 1;
+        }
+    }
+    if count == 0 {
+        0.0
+    } else {
+        sum / count as f64
+    }
+}
+
+/// Closed enum views used by callers that want a typed code, not a string.
+pub fn grammar_of(table: &LearnedDecisionTable, f: &ArticleFeatures) -> Option<GrammarRoute> {
+    table.grammar_for(f)
+}
+pub fn admission_of(table: &LearnedDecisionTable, f: &ArticleFeatures) -> Option<Admission> {
+    table.admission_for(f)
+}
+pub fn profile_of(table: &LearnedDecisionTable, f: &ArticleFeatures) -> Option<ProfileRoute> {
+    table.profile_for(f)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn feat(pages: u32, bookmarks: u32, quality: f32) -> ArticleFeatures {
+        ArticleFeatures {
+            page_count: pages,
+            toc_bookmarks: bookmarks,
+            text_layer_quality: quality,
+            domain: "computer_science".into(),
+        }
+    }
+
+    fn obs(id: &str, f: ArticleFeatures, code: &str, reward: f64) -> PolicyObservation {
+        PolicyObservation {
+            document_identity: id.into(),
+            decision_point: DecisionPoint::GrammarRoute,
+            features: f,
+            decision_code: code.into(),
+            reward,
+        }
+    }
+
+    #[test]
+    fn learns_majority_by_reward_per_bucket() {
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9),
+            obs("d2", feat(20, 0, 0.80), "xy_cut", 0.8),
+            obs("d3", feat(25, 0, 0.90), "page_outline", 0.1),
+        ];
+        let table = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig { min_support: 2 },
+        )
+        .unwrap();
+        assert_eq!(table.grammar_for(&feat(18, 0, 0.85)), Some(GrammarRoute::XyCut));
+    }
+
+    #[test]
+    fn omits_buckets_below_support_floor() {
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9),
+            obs("d2", feat(20, 0, 0.80), "xy_cut", 0.8),
+            // A lone observation in another bucket must not earn a cell.
+            obs("d3", feat(700, 40, 0.9), "page_outline", 0.9),
+        ];
+        let table = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig { min_support: 2 },
+        )
+        .unwrap();
+        assert!(table.grammar_for(&feat(18, 0, 0.85)).is_some());
+        assert_eq!(
+            table.grammar_for(&feat(700, 40, 0.9)),
+            None,
+            "single-observation bucket must fail open to native"
+        );
+    }
+
+    #[test]
+    fn rejects_point_without_closed_codes() {
+        let mut o = obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9);
+        o.decision_point = DecisionPoint::ConcurrencyTune;
+        let err = learn_decision_table(
+            DecisionPoint::ConcurrencyTune,
+            &[o],
+            TableLearnConfig::default(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, TableLearnError::UnlearnablePoint(_)));
+    }
+
+    #[test]
+    fn rejects_code_outside_closed_enum() {
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "invented_route", 0.9),
+            obs("d2", feat(20, 0, 0.80), "xy_cut", 0.8),
+        ];
+        let err = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig::default(),
+        )
+        .unwrap_err();
+        assert_eq!(err, TableLearnError::UnknownCode("invented_route".into()));
+    }
+
+    #[test]
+    fn rejects_non_finite_reward() {
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "xy_cut", f64::NAN),
+            obs("d2", feat(20, 0, 0.80), "xy_cut", 0.8),
+        ];
+        let err = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig::default(),
+        )
+        .unwrap_err();
+        assert_eq!(err, TableLearnError::NonFiniteReward);
+    }
+
+    #[test]
+    fn refuses_when_no_bucket_reaches_support() {
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9),
+            obs("d2", feat(700, 40, 0.9), "page_outline", 0.9),
+        ];
+        let err = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig { min_support: 2 },
+        )
+        .unwrap_err();
+        assert_eq!(err, TableLearnError::NoLearnableCells);
+    }
+
+    #[test]
+    fn deterministic_tie_break_by_code() {
+        // Equal reward and support: the lexicographically smallest code wins,
+        // so two runs seal the same digest.
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "xy_cut", 0.5),
+            obs("d2", feat(20, 0, 0.80), "grobid_structural", 0.5),
+        ];
+        let table = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig { min_support: 2 },
+        )
+        .unwrap();
+        assert_eq!(
+            table.grammar_for(&feat(18, 0, 0.85)),
+            Some(GrammarRoute::GrobidStructural),
+            "grobid_structural sorts before xy_cut"
+        );
+    }
+
+    #[test]
+    fn split_rejects_overlap() {
+        let split = ObservationSplit {
+            train: vec![obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9)],
+            validation: vec![obs("d1", feat(20, 0, 0.80), "xy_cut", 0.8)],
+        };
+        assert_eq!(split.validate(), Err(TableLearnError::SplitOverlap));
+    }
+
+    #[test]
+    fn accuracy_counts_only_covered_observations() {
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9),
+            obs("d2", feat(20, 0, 0.80), "xy_cut", 0.8),
+        ];
+        let table = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig { min_support: 2 },
+        )
+        .unwrap();
+        let (agree, covered) = table_accuracy(&table, &observations);
+        assert_eq!((agree, covered), (2, 2));
+        // An uncovered observation is not counted.
+        let extra = vec![obs("d3", feat(700, 40, 0.9), "page_outline", 0.9)];
+        let (a2, c2) = table_accuracy(&table, &extra);
+        assert_eq!((a2, c2), (0, 0));
+    }
+
+    #[test]
+    fn sealed_table_from_learner_validates() {
+        let observations = vec![
+            obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9),
+            obs("d2", feat(20, 0, 0.80), "xy_cut", 0.8),
+        ];
+        let table = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig { min_support: 2 },
+        )
+        .unwrap();
+        table.validate().expect("learner output must validate");
+    }
+}

@@ -81,6 +81,11 @@ pub mod fsm_policy_fallback;
 pub mod html_parsed_stage;
 pub mod navigation_stage;
 pub mod parse_grammar;
+pub mod parse_policy_table;
+pub use parse_policy_table::{
+    ObservationSplit, PolicyObservation, TableLearnConfig, TableLearnError, learn_decision_table,
+    table_accuracy, table_mean_reward,
+};
 pub mod parse_job_runner;
 pub mod parse_learning_cycle;
 pub mod parse_learning_evaluation;

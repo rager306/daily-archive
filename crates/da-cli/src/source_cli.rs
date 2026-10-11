@@ -415,6 +415,9 @@ fn stamp_from_grammar(
     let (source, hash) = match &g.source {
         da_domain::fsm_policy::PolicySource::Wasm { sha256 } => ("wasm", sha256.as_str()),
         da_domain::fsm_policy::PolicySource::Native => ("native_fallback", g.policy_hash.as_str()),
+        da_domain::fsm_policy::PolicySource::Learned { table_sha256 } => {
+            ("learned", table_sha256.as_str())
+        }
     };
     stamp_parse_grammar(m, &g.grammar_profile, g.route.as_str(), source, hash);
 }
