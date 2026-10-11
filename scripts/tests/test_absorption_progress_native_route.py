@@ -56,6 +56,7 @@ from governor.adapters.absorption_progress_reader import (  # noqa: E402
     FilesystemAbsorptionProgressReader,
     _independent_candidate_violations,
     _native_route_violations,
+    _release_readiness_violations,
     effective_progress_contract,
     missing_progress_vocabulary,
 )
@@ -63,6 +64,7 @@ from governor.application.trajectory_service import TrajectoryService  # noqa: E
 from governor.domain.absorption_progress import (  # noqa: E402
     INDEPENDENT_CANDIDATE_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
+    RELEASE_READINESS_VIOLATION_LABELS,
 )
 
 RULE_PATH = "scripts/governor/checks/grobid_absorption_progress.yaml"
@@ -770,3 +772,290 @@ def test_the_independent_candidate_labels_are_covered_by_the_negative_cases(
         observed |= violations
         assert violations == {label}, (label, sorted(violations))
     assert observed == set(INDEPENDENT_CANDIDATE_VIOLATION_LABELS)
+
+# ── S12/T04: the release-readiness receipt half ────────────────────────────
+#
+# T02 published `artifacts/parse_compat/grobid_retirement_release_readiness.json`:
+# a machine-readable receipt that projects the three quality/cost/rights release
+# gates (each gate's evidence bound by repository-relative path + pointer +
+# recomputed sha256), names exactly the pending human decisions, binds the
+# S03/S05/S10/S11 milestone evidence and proves the machine authorizes nothing.
+# Publishing it without a sibling governor half would let the artifact's mere
+# existence read as progress (R141), so the half is audited here exactly like the
+# route, threshold-candidate and independent-candidate halves: the live tree
+# resolves it clean, the real service path consumes it (MEM1948), and every
+# registered label has a negative case. It reads the receipt artifact, not the
+# manifest pins already held by `scholarly_parse_plane.yaml#release_probe_lane`,
+# so it never duplicates them.
+
+RELEASE_READINESS_PATH = (
+    "artifacts/parse_compat/grobid_retirement_release_readiness.json"
+)
+
+@pytest.fixture(scope="module")
+def release_readiness_rule(contract: dict) -> dict:
+    return contract["release_readiness"]
+
+@pytest.fixture(scope="module")
+def live_release_readiness_evidence(
+    contract: dict, reader: FilesystemAbsorptionProgressReader
+) -> dict:
+    return reader.read_release_readiness(contract)
+
+def test_release_readiness_rule_registers_exactly_the_domain_literal_vocabulary(
+    release_readiness_rule: dict,
+) -> None:
+    """The rule may not register a label the oracle cannot emit, or vice versa."""
+    assert set(release_readiness_rule["violations"]) == set(
+        RELEASE_READINESS_VIOLATION_LABELS
+    )
+    assert len(RELEASE_READINESS_VIOLATION_LABELS) == 8
+
+def test_a_dropped_release_readiness_block_fails_closed(contract: dict) -> None:
+    stripped = dict(contract)
+    stripped.pop("release_readiness")
+    assert "release_readiness" in missing_progress_vocabulary(stripped)
+
+def test_the_release_readiness_half_is_not_a_competing_dimension(
+    release_readiness_rule: dict,
+) -> None:
+    """It rides the existing `absorption_progress` check; it registers nothing new."""
+    assert "dimension" not in release_readiness_rule
+    assert "severity" not in release_readiness_rule
+    for rel in (DIMENSIONS_PATH, SEVERITY_PATH):
+        text = (_REPO_ROOT / rel).read_text(encoding="utf-8")
+        assert "release_readiness" not in text, rel
+
+def test_live_release_readiness_is_resolved_by_pointer_and_clean(
+    contract: dict, live_release_readiness_evidence: dict
+) -> None:
+    evidence = live_release_readiness_evidence
+    assert evidence["available"] is True
+    assert evidence["errors"] == []
+    assert evidence["receipt_exists"] is True
+    assert isinstance(evidence["receipt"], dict)
+    # Every carrier the receipt binds recomputes to the committed bytes.
+    assert evidence["carrier_sha256"]
+    for manifest, digest in evidence["carrier_sha256"].items():
+        assert digest == "sha256:" + _bare_sha(manifest), manifest
+    assert _release_readiness_violations(contract, evidence) == set()
+
+def test_live_tree_service_reports_no_release_readiness_finding() -> None:
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _REPO_ROOT
+    flags = service._check_absorption_progress()
+    leaked = [
+        f
+        for f in flags
+        if any(
+            label in (f.evidence or "")
+            for label in RELEASE_READINESS_VIOLATION_LABELS
+        )
+    ]
+    assert leaked == [], [f.evidence for f in leaked]
+    assert flags == [], [f.flag for f in flags]
+
+def test_the_service_path_consumes_the_release_readiness_observation(
+    monkeypatch,
+) -> None:
+    """The S12 release-readiness half must be consumed by the live service.
+
+    MEM1948: a sibling half is inert unless `_check_absorption_progress` puts the
+    reader's bundle into the observations map. Patching the reader to return a
+    claim-with-no-receipt bundle must surface as a composed finding.
+    """
+
+    def broken(self, contract):  # noqa: ANN001, ARG001
+        return {"available": True, "receipt": None, "receipt_exists": True}
+
+    monkeypatch.setattr(
+        FilesystemAbsorptionProgressReader, "read_release_readiness", broken
+    )
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _REPO_ROOT
+    flags = service._check_absorption_progress()
+    broken_flags = [f for f in flags if f.flag == "absorption_progress_broken"]
+    assert broken_flags, [f.flag for f in flags]
+    assert "release_readiness_receipt_absent" in broken_flags[0].evidence
+
+def test_absent_release_readiness_evidence_is_unverified_never_refuted(
+    contract: dict,
+) -> None:
+    """Silence is not compliance, and it is not a finding."""
+    assert _release_readiness_violations(contract, None) == set()
+    assert _release_readiness_violations(contract, {}) == set()
+    assert _release_readiness_violations(contract, {"available": False}) == set()
+
+def test_the_declaration_authority_gates_the_release_readiness(
+    contract: dict,
+) -> None:
+    """A tree without the S03 authority is silence, not a claim and not a finding."""
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, BASELINE_PATH)
+    rule = contract["release_readiness"]
+    absent = reader.read_release_readiness(
+        {
+            "release_readiness": {
+                **rule,
+                "declaration": {
+                    "manifest": "data/parse/absent_bakeoff.yaml",
+                    "pointer": "java_free_vertical_slice",
+                },
+            }
+        }
+    )
+    assert absent is not None
+    assert absent["available"] is False
+    assert _release_readiness_violations(contract, absent) == set()
+
+def _clean_release_readiness_bundle() -> dict:
+    contract = effective_progress_contract(_load_yaml(SCHEMA_PATH), _load_yaml(RULE_PATH))
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, BASELINE_PATH)
+    return copy.deepcopy(reader.read_release_readiness(contract))
+
+def _rr_receipt(bundle: dict) -> dict:
+    return bundle["receipt"]
+
+def test_a_receipt_absent_or_bound_to_another_schema_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    bundle["receipt"] = None
+    bundle["receipt_exists"] = True
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_receipt_absent"
+    }
+
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["schema_version"] = "other-schema.v9"
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_receipt_absent"
+    }
+
+def test_a_stale_evidence_binding_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["release_gates"][0]["evidence"][0]["revision_sha256"] = (
+        "sha256:" + "9" * 64
+    )
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_evidence_stale"
+    }
+
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["milestone_evidence"][0]["revision_sha256"] = (
+        "sha256:" + "9" * 64
+    )
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_evidence_stale"
+    }
+
+def test_a_dropped_evidence_binding_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["release_gates"] = _rr_receipt(bundle)["release_gates"][:2]
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_evidence_dropped"
+    }
+
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["milestone_evidence"] = _rr_receipt(bundle)[
+        "milestone_evidence"
+    ][:3]
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_evidence_dropped"
+    }
+
+def test_a_re_labelled_human_decision_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["human_decision"]["reviewer"] = "someone"
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_human_decision_claimed"
+    }
+
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["human_decision"]["decision"] = "approved"
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_human_decision_claimed"
+    }
+
+def test_an_opened_lock_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["machine_authorization"]["locks"]["deployed"] = "true"
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_lock_opened"
+    }
+
+def test_a_claimed_machine_authorization_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["machine_authorization"]["s09_authorized"] = True
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_machine_authorization_claimed"
+    }
+
+def test_an_accepted_threshold_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["thresholds"] = "accepted"
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_threshold_accepted"
+    }
+
+def test_a_widened_claim_scope_is_refused(contract: dict) -> None:
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["claim_scope"] = "release_authorized"
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_claim_scope_widened"
+    }
+
+    bundle = _clean_release_readiness_bundle()
+    _rr_receipt(bundle)["nothing_here_authorizes_a_release"] = False
+    assert _release_readiness_violations(contract, bundle) == {
+        "release_readiness_claim_scope_widened"
+    }
+
+def test_the_release_readiness_labels_are_covered_by_the_negative_cases(
+    contract: dict,
+) -> None:
+    """Every registered label has a mutation that raises exactly it and nothing else."""
+    observed: set[str] = set()
+
+    def absent(bundle: dict) -> None:
+        bundle["receipt"] = None
+        bundle["receipt_exists"] = True
+
+    def stale(bundle: dict) -> None:
+        _rr_receipt(bundle)["release_gates"][0]["evidence"][0]["revision_sha256"] = (
+            "sha256:" + "9" * 64
+        )
+
+    def dropped(bundle: dict) -> None:
+        _rr_receipt(bundle)["release_gates"] = _rr_receipt(bundle)["release_gates"][:2]
+
+    def human(bundle: dict) -> None:
+        _rr_receipt(bundle)["human_decision"]["reviewer"] = "someone"
+
+    def locked(bundle: dict) -> None:
+        _rr_receipt(bundle)["machine_authorization"]["locks"]["deployed"] = "true"
+
+    def machine(bundle: dict) -> None:
+        _rr_receipt(bundle)["machine_authorization"]["s09_authorized"] = True
+
+    def threshold(bundle: dict) -> None:
+        _rr_receipt(bundle)["thresholds"] = "accepted"
+
+    def widened(bundle: dict) -> None:
+        _rr_receipt(bundle)["claim_scope"] = "release_authorized"
+
+    mutations = {
+        "release_readiness_receipt_absent": absent,
+        "release_readiness_evidence_stale": stale,
+        "release_readiness_evidence_dropped": dropped,
+        "release_readiness_human_decision_claimed": human,
+        "release_readiness_lock_opened": locked,
+        "release_readiness_machine_authorization_claimed": machine,
+        "release_readiness_threshold_accepted": threshold,
+        "release_readiness_claim_scope_widened": widened,
+    }
+    assert set(mutations) == set(RELEASE_READINESS_VIOLATION_LABELS)
+    for label, mutate in mutations.items():
+        bundle = _clean_release_readiness_bundle()
+        mutate(bundle)
+        violations = _release_readiness_violations(contract, bundle)
+        observed |= violations
+        assert violations == {label}, (label, sorted(violations))
+    assert observed == set(RELEASE_READINESS_VIOLATION_LABELS)

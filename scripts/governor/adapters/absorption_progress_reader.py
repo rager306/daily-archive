@@ -94,6 +94,7 @@ from governor.domain.absorption_progress import (
     NATIVE_FAMILY_VIOLATION_LABELS,
     NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
+    RELEASE_READINESS_VIOLATION_LABELS,
     REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS,
     RETIREMENT_READINESS_VIOLATION_LABELS,
     SEMANTIC_CORRECTNESS_VIOLATION_LABELS,
@@ -168,6 +169,7 @@ _RULE_KEYS = (
     "required_scope_downgrades",
     "acceptance_package",
     "retirement_readiness",
+    "release_readiness",
 )
 
 
@@ -2135,6 +2137,88 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    def read_release_readiness(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the S12 release-readiness receipt and every carrier it binds.
+
+        The half this governs is the S12 release-readiness receipt: one artifact
+        that projects the three quality/cost/rights release gates (each gate's
+        evidence bound by repository-relative path + pointer + recomputed
+        ``sha256``), names exactly the pending human decisions, binds the
+        S03/S05/S10/S11 milestone evidence and proves the machine authorizes
+        nothing. The rule names only *where* the receipt lives and *what envelope*
+        it must describe; nothing about the receipt contents is restated, so the
+        rule cannot drift from the artifact it governs.
+
+        ``None`` means the rule does not govern a release-readiness half. Otherwise
+        a bundle carrying the parsed receipt and the recomputed ``sha256`` of every
+        carrier the receipt binds (gate evidence + milestone evidence).
+        ``available`` is True only when the S03 declaration carrier resolves -- the
+        same authority the Java-free, native-family, native-content, native-route,
+        acceptance-package and retirement-readiness halves read -- so a tree
+        without that authority is *absence*, not a violation. An unreadable
+        *receipt* under a resolvable declaration is a claim with no evidence, and
+        the oracle reports it. This half reads the receipt artifact; the
+        human-pending manifest pins stay with the
+        ``scholarly_parse_plane.yaml#release_probe_lane`` check, so it never
+        duplicates them.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("release_readiness")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        receipt_rule = rule.get("receipt")
+        receipt_rule = receipt_rule if isinstance(receipt_rule, dict) else {}
+        receipt_path = _text(receipt_rule.get("path"))
+        receipt_schema = _text(receipt_rule.get("schema_version"))
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_manifest_present": bool(
+                declaration_manifest and self.path_exists(declaration_manifest)
+            ),
+            "receipt_schema_version": receipt_schema,
+            "receipt_path": receipt_path,
+            "receipt_exists": bool(receipt_path and self.path_exists(receipt_path)),
+            "receipt_sha256": self.file_sha256(receipt_path) if receipt_path else None,
+            "receipt": None,
+            "carrier_sha256": {},
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            block = _resolve_declared_pointer(manifest, declaration_pointer)
+            if not isinstance(block, dict):
+                bundle["errors"].append("declaration_pointer_unresolved")
+            else:
+                bundle["available"] = True
+
+        bundle["receipt"] = self.read_json(receipt_path) if receipt_path else None
+        if bundle["receipt"] is None and bundle["receipt_exists"]:
+            bundle["errors"].append("receipt_unreadable")
+
+        # Recompute every carrier the receipt binds (gate evidence + milestone
+        # evidence) so a declared pin is checked against the committed bytes
+        # rather than trusted from a label.
+        receipt = bundle["receipt"]
+        if isinstance(receipt, dict):
+            for rel in _release_readiness_carriers(receipt):
+                if rel not in bundle["carrier_sha256"]:
+                    bundle["carrier_sha256"][rel] = self.file_sha256(rel)
+
+        return bundle
+
     def read_required_scope_downgrades(self, contract: Any) -> Optional[dict[str, Any]]:
         """Resolve the recorded required-scope downgrade registry and its ledger.
 
@@ -2403,6 +2487,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
     )
     missing.extend(_acceptance_package_vocabulary(contract.get("acceptance_package")))
     missing.extend(_retirement_readiness_vocabulary(contract.get("retirement_readiness")))
+    missing.extend(_release_readiness_vocabulary(contract.get("release_readiness")))
     return missing
 
 def _java_free_slice_vocabulary(block: Any) -> list[str]:
@@ -3597,6 +3682,82 @@ def _retirement_readiness_vocabulary(block: Any) -> list[str]:
     return missing
 
 
+def _release_readiness_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``release_readiness`` fields absent or unusable.
+
+    Without these the half cannot tell a declared-and-evidenced release-readiness
+    receipt from a claim with no artifact: it needs the declaration carrier, the
+    receipt path with its schema version, the expected envelope (claim scope,
+    product coverage effect, threshold state, the closed lock set, the machine
+    authorization fields, the pending human decision, the exact gate and milestone
+    sets) and the closed label set. The declared label set must be exactly the
+    domain's literal set -- a label the oracle can emit must be registered, and a
+    registered label must be one the oracle can emit -- so an unregistered
+    emission is a data/implementation mismatch rather than a silent finding. The
+    caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["release_readiness"]
+    missing: list[str] = []
+
+    if _text(block.get("schema_version")) is None:
+        missing.append("release_readiness.schema_version")
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("release_readiness.declaration")
+    else:
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("release_readiness.declaration.manifest")
+        if _text(declaration.get("pointer")) is None:
+            missing.append("release_readiness.declaration.pointer")
+
+    receipt = block.get("receipt")
+    if not isinstance(receipt, dict):
+        missing.append("release_readiness.receipt")
+    else:
+        if not _is_relative_path(receipt.get("path")):
+            missing.append("release_readiness.receipt.path")
+        if _text(receipt.get("schema_version")) is None:
+            missing.append("release_readiness.receipt.schema_version")
+        if receipt.get("required") is not True:
+            missing.append("release_readiness.receipt.required")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("release_readiness.expected")
+    else:
+        for key in (
+            "claim_scope",
+            "product_coverage_effect",
+            "thresholds",
+            "human_decision_pending",
+        ):
+            if _text(expected.get(key)) is None:
+                missing.append(f"release_readiness.expected.{key}")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict):
+            missing.append("release_readiness.expected.locks")
+        else:
+            for key in (
+                "deployed",
+                "import_eligible",
+                "auto_promote",
+                "production_route",
+                "graph_write",
+            ):
+                if key not in locks:
+                    missing.append(f"release_readiness.expected.locks.{key}")
+        for key in ("gate_ids", "milestone_slices", "machine_authorization_fields"):
+            if not _text_list(expected.get(key)):
+                missing.append(f"release_readiness.expected.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(RELEASE_READINESS_VIOLATION_LABELS):
+        missing.append("release_readiness.violations")
+    return missing
+
+
 def resolve_pointer(document: Any, pointer: Any) -> Any:
     """Follow a slash-separated ``pointer`` into ``document``.
 
@@ -3815,6 +3976,7 @@ def absorption_progress_violations(
     _required_scope_downgrades_violations_into(contract, observations, violations)
     _acceptance_package_violations_into(contract, observations, violations)
     _retirement_readiness_violations_into(contract, observations, violations)
+    _release_readiness_violations_into(contract, observations, violations)
     if _scope_accepted(rows, contract):
         _regression_violations(scorecard, rows, contract, violations)
     return violations
@@ -4256,6 +4418,211 @@ def _retirement_readiness_violations_into(
             else None,
         )
     )
+
+def _release_readiness_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the release-readiness receipt labels carried by the observations."""
+    violations.update(
+        _release_readiness_violations(
+            contract,
+            observations.get("release_readiness")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+
+def _release_readiness_carriers(receipt: Any) -> list[str]:
+    """The repository-relative manifests the receipt binds (gate + milestone evidence).
+
+    The reader recomputes the ``sha256`` of each one from the committed bytes, so a
+    binding whose declared digest no longer matches is a finding rather than a
+    trusted label. A non-string or empty manifest is skipped here; the oracle
+    reports the malformed binding itself.
+    """
+    if not isinstance(receipt, dict):
+        return []
+    carriers: list[str] = []
+    gates = receipt.get("release_gates")
+    if isinstance(gates, list):
+        for gate in gates:
+            if not isinstance(gate, dict):
+                continue
+            evidence = gate.get("evidence")
+            if not isinstance(evidence, list):
+                continue
+            for binding in evidence:
+                if isinstance(binding, dict):
+                    manifest = _text(binding.get("manifest"))
+                    if manifest is not None:
+                        carriers.append(manifest)
+    milestones = receipt.get("milestone_evidence")
+    if isinstance(milestones, list):
+        for binding in milestones:
+            if isinstance(binding, dict):
+                manifest = _text(binding.get("manifest"))
+                if manifest is not None:
+                    carriers.append(manifest)
+    return carriers
+
+
+def _release_readiness_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse a release-readiness claim the receipt does not evidence.
+
+    The shape R141 forbids is a *claim of readiness* -- a receipt that silently
+    reads as an authorization to release, or that claims a recorded human
+    decision, an opened lock or a machine authorization the committed carriers do
+    not support. Concretely:
+
+    * ``release_readiness_receipt_absent`` -- the S03 declaration resolves but the
+      required receipt is absent or unreadable, or it names another schema
+      version, so there is a claim and no matching evidence;
+    * ``release_readiness_evidence_stale`` -- an evidence binding (a gate or a
+      milestone) no longer matches the committed bytes, is not a repo-relative
+      path + pointer + sha256, or is malformed;
+    * ``release_readiness_evidence_dropped`` -- the receipt does not carry exactly
+      the declared gate set and milestone-slice set, so a required binding was
+      dropped (or the set drifted);
+    * ``release_readiness_human_decision_claimed`` -- the receipt names a reviewer
+      or a non-pending decision, so a pending human decision was re-labelled as
+      taken;
+    * ``release_readiness_lock_opened`` -- a promotion lock is open or absent;
+    * ``release_readiness_machine_authorization_claimed`` -- a machine-authorization
+      verdict is true;
+    * ``release_readiness_threshold_accepted`` -- the threshold state is not the
+      declared ``not_accepted``;
+    * ``release_readiness_claim_scope_widened`` -- the claim scope, the product
+      coverage effect or the ``nothing_here_authorizes_a_release`` proof is not the
+      declared one.
+
+    ``set()`` (empty) means clean. A tree that does not carry the declaration
+    authority is *unverified*, never clean and never refuted. This half reads the
+    receipt artifact; the human-pending manifest pins stay with the
+    ``scholarly_parse_plane.yaml#release_probe_lane`` check, so it never
+    duplicates them.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("release_readiness")
+    if not isinstance(rule, dict):
+        return violations
+
+    def _mapping(value: Any) -> dict[str, Any]:
+        return value if isinstance(value, dict) else {}
+
+    def _add(label: str) -> None:
+        violations.add(label)
+
+    receipt_rule = _mapping(rule.get("receipt"))
+    expected = _mapping(rule.get("expected"))
+
+    receipt = evidence.get("receipt")
+    required = receipt_rule.get("required") is True
+    if not isinstance(receipt, dict):
+        if evidence.get("receipt_exists") is True or required:
+            _add("release_readiness_receipt_absent")
+        return violations
+    if _text(receipt.get("schema_version")) != _text(receipt_rule.get("schema_version")):
+        _add("release_readiness_receipt_absent")
+        return violations
+
+    # ── envelope: the claim may not widen past preparation-only ──
+    if _text(receipt.get("claim_scope")) != _text(expected.get("claim_scope")):
+        _add("release_readiness_claim_scope_widened")
+    if _text(receipt.get("product_coverage_effect")) != _text(
+        expected.get("product_coverage_effect")
+    ):
+        _add("release_readiness_claim_scope_widened")
+    if receipt.get("nothing_here_authorizes_a_release") is not True:
+        _add("release_readiness_claim_scope_widened")
+    if _text(receipt.get("thresholds")) != _text(expected.get("thresholds")):
+        _add("release_readiness_threshold_accepted")
+
+    # ── locks: every promotion lock must stay closed ──
+    machine = _mapping(receipt.get("machine_authorization"))
+    locks = machine.get("locks")
+    locks_rule = _mapping(expected.get("locks"))
+    if not isinstance(locks, dict):
+        _add("release_readiness_lock_opened")
+    else:
+        for key, want in locks_rule.items():
+            if str(locks.get(key)) != str(want):
+                _add("release_readiness_lock_opened")
+
+    # ── the machine authorizes nothing ──
+    for field in _text_list(expected.get("machine_authorization_fields")):
+        if machine.get(field) is not False:
+            _add("release_readiness_machine_authorization_claimed")
+
+    # ── the human decision is still pending ──
+    human = _mapping(receipt.get("human_decision"))
+    pending = _text(expected.get("human_decision_pending"))
+    if _text(human.get("reviewer")) is not None:
+        _add("release_readiness_human_decision_claimed")
+    if _text(human.get("decision")) != pending:
+        _add("release_readiness_human_decision_claimed")
+
+    # ── evidence bindings: every pin must still match the committed bytes ──
+    carrier_sha = evidence.get("carrier_sha256")
+    carrier_sha = carrier_sha if isinstance(carrier_sha, dict) else {}
+
+    def _binding_ok(binding: Any) -> bool:
+        if not isinstance(binding, dict):
+            return False
+        manifest = _text(binding.get("manifest"))
+        pointer = _text(binding.get("pointer"))
+        digest = _text(binding.get("revision_sha256"))
+        if (
+            manifest is None
+            or pointer is None
+            or not _is_relative_path(manifest)
+            or digest is None
+            or _SHA256_RE.match(digest) is None
+        ):
+            return False
+        recomputed = carrier_sha.get(manifest)
+        return _text(recomputed) is not None and _text(recomputed) == digest
+
+    gates = receipt.get("release_gates")
+    gates = gates if isinstance(gates, list) else []
+    seen_gates: list[Optional[str]] = []
+    for gate in gates:
+        if not isinstance(gate, dict):
+            _add("release_readiness_evidence_stale")
+            continue
+        seen_gates.append(_text(gate.get("gate_id")))
+        bindings = gate.get("evidence")
+        if not isinstance(bindings, list) or not bindings:
+            _add("release_readiness_evidence_stale")
+            continue
+        for binding in bindings:
+            if not _binding_ok(binding):
+                _add("release_readiness_evidence_stale")
+    gate_ids = _text_list(expected.get("gate_ids"))
+    if sorted(seen_gates, key=lambda value: value or "") != sorted(gate_ids):
+        _add("release_readiness_evidence_dropped")
+
+    milestones = receipt.get("milestone_evidence")
+    milestones = milestones if isinstance(milestones, list) else []
+    seen_slices: list[Optional[str]] = []
+    for binding in milestones:
+        if not isinstance(binding, dict):
+            _add("release_readiness_evidence_stale")
+            continue
+        seen_slices.append(_text(binding.get("slice")))
+        if not _binding_ok(binding):
+            _add("release_readiness_evidence_stale")
+    milestone_slices = _text_list(expected.get("milestone_slices"))
+    if sorted(seen_slices, key=lambda value: value or "") != sorted(milestone_slices):
+        _add("release_readiness_evidence_dropped")
+
+    return violations
 
 
 def _retirement_readiness_violations(contract: Any, evidence: Any) -> set[str]:

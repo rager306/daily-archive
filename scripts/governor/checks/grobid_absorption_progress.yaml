@@ -1327,6 +1327,77 @@ retirement_readiness:
           - retirement_readiness_product_coverage_claimed
           - retirement_readiness_goal_marked_met
 
+# ── Release-readiness receipt half (M516-th0oby/S12/T04) ───────────────────
+# T02 published `artifacts/parse_compat/grobid_retirement_release_readiness.json`:
+# a machine-readable receipt that projects the three quality/cost/rights release
+# gates (each gate's evidence bound by repository-relative path + pointer +
+# recomputed sha256), names exactly the pending human decisions, binds the
+# S03/S05/S10/S11 milestone evidence and proves the machine authorizes nothing.
+# This sibling half makes that artifact auditable rather than merely present.
+#
+# Why it exists (R141): an artifact nobody reads is not governed, so publishing
+# the receipt without a sibling governor half would let its mere existence read as
+# progress. This half owns availability, digest and drift: a receipt that is
+# absent or bound to another schema, an evidence binding whose recomputed sha256
+# no longer matches the committed bytes (stale) or whose required gate/milestone
+# binding was dropped, a human decision re-labelled as taken, an opened lock, a
+# claimed machine authorization, an accepted threshold and a widened claim scope
+# are each a typed, fail-closed finding.
+#
+# Nothing about the receipt contents is restated as evidence: the declaration
+# authority is the same S03 slice declaration the Java-free, native-family,
+# native-content, native-route, acceptance-package and retirement-readiness halves
+# read, and the reader recomputes every gate and milestone evidence sha256 from
+# the committed bytes, so a tree without the declaration authority is silence, not
+# a finding. The half reads the receipt artifact, not the manifest pins already
+# held by `scholarly_parse_plane.yaml#release_probe_lane`, so it never duplicates
+# them.
+#
+# Severity: this block registers no dimension and no severity — it rides the
+# `absorption_progress` check, which is deliberately absent from
+# `assurance_severity.yaml`, so a finding stays drift-visible and never blocks
+# (D492).
+release_readiness:
+  schema_version: release-readiness-rule.v1
+  declaration:
+    manifest: data/parse/layout_bakeoff.yaml
+    pointer: java_free_vertical_slice
+  receipt:
+    path: artifacts/parse_compat/grobid_retirement_release_readiness.json
+    schema_version: grobid-retirement-release-readiness.v1
+    required: true
+  # The envelope the receipt must carry, the exact gate and milestone sets it must
+  # enumerate, the closed lock set and the machine-authorization fields that must
+  # stay false. `gate_ids` / `milestone_slices` are the exact sets, so a silently
+  # dropped gate or milestone binding is a finding rather than a
+  # smaller-but-consistent list.
+  expected:
+    claim_scope: release_readiness_preparation_only
+    product_coverage_effect: none
+    thresholds: not_accepted
+    human_decision_pending: pending
+    locks:
+      deployed: "false"
+      import_eligible: "false"
+      auto_promote: forbidden
+      production_route: forbidden
+      graph_write: forbidden
+    gate_ids: [quality, cost, rights]
+    milestone_slices: [S03, S05, S10, S11]
+    machine_authorization_fields: [s09_authorized, gsd_lifecycle_authorizes, human_release_recorded]
+  # The closed vocabulary of adapter labels this half may emit. Kept separate from
+  # the halves above so each stays separately governable. The literal set lives in
+  # `scripts/governor/domain/absorption_progress.py`; the two must match exactly.
+  violations:
+    - release_readiness_receipt_absent
+    - release_readiness_evidence_stale
+    - release_readiness_evidence_dropped
+    - release_readiness_human_decision_claimed
+    - release_readiness_lock_opened
+    - release_readiness_machine_authorization_claimed
+    - release_readiness_threshold_accepted
+    - release_readiness_claim_scope_widened
+
 # ── Semantic correctness half (M516-th0oby/S04/T03) ────────────────────────
 # T01 published `artifacts/parse_compat/native_route_semantic_receipt.json`:
 # H14 (composer XML well-formedness) and H15 (bibliography id/target integrity)
@@ -1488,10 +1559,10 @@ required_scope_downgrades:
 source_markers:
   domain_validator:
     path: scripts/governor/domain/absorption_progress.py
-    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS, NATIVE_CONTENT_VIOLATION_LABELS, NATIVE_ROUTE_VIOLATION_LABELS, NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS, ACCEPTANCE_PACKAGE_VIOLATION_LABELS, RETIREMENT_READINESS_VIOLATION_LABELS, SEMANTIC_CORRECTNESS_VIOLATION_LABELS, REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS]
+    required_patterns: [scorecard_violations, preservation_pooled_with_extraction, skipped_as_delivered, threshold_missing_for_required_metric, JAVA_FREE_SLICE_VIOLATION_LABELS, NATIVE_FAMILY_VIOLATION_LABELS, NATIVE_CONTENT_VIOLATION_LABELS, NATIVE_ROUTE_VIOLATION_LABELS, NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS, ACCEPTANCE_PACKAGE_VIOLATION_LABELS, RETIREMENT_READINESS_VIOLATION_LABELS, SEMANTIC_CORRECTNESS_VIOLATION_LABELS, REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS, RELEASE_READINESS_VIOLATION_LABELS]
   adapter_oracle:
     path: scripts/governor/adapters/absorption_progress_reader.py
-    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped, _native_content_receipt_violations, read_native_content_receipt, native_content_oracle_absence_only, native_content_group_partition_untyped, _native_route_violations, read_native_route_e2e, native_route_receipt_stale, native_route_limit_tuned_after_scoring, native_route_resource_pair_unbound, native_route_stage_outside_slice_counted, _native_route_independence_violations, read_native_route_independence, native_route_independence_receipt_stale, native_route_independence_unbound_denominator, native_route_independence_lock_opened, _semantic_correctness_violations, read_semantic_correctness, receipt_stale, corpus_pointer_mismatch, per_document_reason_missing, placeholder_header_read_as_populated, pinned_aggregate_rewritten, _acceptance_package_violations, read_acceptance_package, acceptance_package_carrier_stale, acceptance_package_threshold_unbound, acceptance_package_mandatory_gate_dropped, acceptance_package_rollback_without_byte_identity, acceptance_package_pooled_resource_claim, _retirement_readiness_violations, read_retirement_readiness, retirement_readiness_carrier_stale, retirement_readiness_human_decision_claimed_without_record, retirement_readiness_family_switched_with_blocking_gate, retirement_readiness_goal_marked_met, _required_scope_downgrades_violations, read_required_scope_downgrades, required_scope_downgrade_gate_without_record, required_scope_downgrade_record_without_gate, required_scope_downgrade_unknown_family, required_scope_downgrade_for_measured_family, required_scope_downgrade_record_incomplete]
+    required_patterns: [absorption_progress_violations, threshold_freeze_revision_mismatch, threshold_reference_unbound, resolve_pointer, census_projection_mismatch, census_document_dropped, census_disposition_untyped, refused_set_unbound, recompute_population_census, _java_free_slice_violations, read_java_free_slice, java_free_slice_receipt_stale, _native_family_receipt_violations, read_native_family_receipt, native_family_receipt_stale, native_family_exclusion_denominator_dropped, _native_content_receipt_violations, read_native_content_receipt, native_content_oracle_absence_only, native_content_group_partition_untyped, _native_route_violations, read_native_route_e2e, native_route_receipt_stale, native_route_limit_tuned_after_scoring, native_route_resource_pair_unbound, native_route_stage_outside_slice_counted, _native_route_independence_violations, read_native_route_independence, native_route_independence_receipt_stale, native_route_independence_unbound_denominator, native_route_independence_lock_opened, _semantic_correctness_violations, read_semantic_correctness, receipt_stale, corpus_pointer_mismatch, per_document_reason_missing, placeholder_header_read_as_populated, pinned_aggregate_rewritten, _acceptance_package_violations, read_acceptance_package, acceptance_package_carrier_stale, acceptance_package_threshold_unbound, acceptance_package_mandatory_gate_dropped, acceptance_package_rollback_without_byte_identity, acceptance_package_pooled_resource_claim, _retirement_readiness_violations, read_retirement_readiness, retirement_readiness_carrier_stale, retirement_readiness_human_decision_claimed_without_record, retirement_readiness_family_switched_with_blocking_gate, retirement_readiness_goal_marked_met, _required_scope_downgrades_violations, read_required_scope_downgrades, required_scope_downgrade_gate_without_record, required_scope_downgrade_record_without_gate, required_scope_downgrade_unknown_family, required_scope_downgrade_for_measured_family, required_scope_downgrade_record_incomplete, _release_readiness_violations, read_release_readiness, release_readiness_receipt_absent, release_readiness_evidence_stale, release_readiness_evidence_dropped, release_readiness_human_decision_claimed, release_readiness_lock_opened, release_readiness_machine_authorization_claimed, release_readiness_claim_scope_widened]
   acceptance_audit:
     path: crates/da-cli/tests/native_acceptance_package_test.rs
     required_patterns: [native_acceptance_package_audit, committed_carrier_pins, acceptance_package_gate_ledger, acceptance_package_refuses, p1_localization_uncertain, s09_authorized]

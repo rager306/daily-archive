@@ -81,6 +81,7 @@ __all__ = [
     "NATIVE_FAMILY_VIOLATION_LABELS",
     "NATIVE_ROUTE_INDEPENDENCE_VIOLATION_LABELS",
     "NATIVE_ROUTE_VIOLATION_LABELS",
+    "RELEASE_READINESS_VIOLATION_LABELS",
     "REQUIRED_SCOPE_DOWNGRADE_VIOLATION_LABELS",
     "RETIREMENT_READINESS_VIOLATION_LABELS",
     "SCOPE_VIOLATION_LABELS",
@@ -467,6 +468,36 @@ INDEPENDENT_CANDIDATE_VIOLATION_LABELS = frozenset(
         "threshold_accepted",
         "conservation_record_dropped",
         "locks_open",
+    }
+)
+
+#: The release-readiness receipt half's closed label set (M516-th0oby/S12/T04).
+#: T02 published `artifacts/parse_compat/grobid_retirement_release_readiness.json`:
+#: a machine-readable receipt that projects the three quality/cost/rights release
+#: gates (each gate's evidence recomputed from committed bytes), names exactly the
+#: pending human decisions, binds the S03/S05/S10/S11 milestone evidence and
+#: proves the machine authorizes nothing. Publishing that receipt without a
+#: sibling governor half would let the artifact's mere existence read as progress
+#: (R141), so this half makes it auditable. These literals name the refusals that
+#: keep it honest: a receipt that is absent or bound to another schema (a claim
+#: with no evidence), an evidence binding whose recomputed sha256 no longer
+#: matches the committed bytes (stale) or whose required gate/milestone binding was
+#: dropped, a human decision that was re-labelled as taken, an opened promotion
+#: lock, a claimed machine authorization, an accepted threshold and a widened
+#: claim scope. The half reads the receipt artifact, not the manifest pins already
+#: held by `scholarly_parse_plane.yaml#release_probe_lane`, and it is deliberately
+#: absent from `assurance_severity.yaml` so a finding stays drift-visible and never
+#: blocks a merge (D492).
+RELEASE_READINESS_VIOLATION_LABELS = frozenset(
+    {
+        "release_readiness_receipt_absent",
+        "release_readiness_evidence_stale",
+        "release_readiness_evidence_dropped",
+        "release_readiness_human_decision_claimed",
+        "release_readiness_lock_opened",
+        "release_readiness_machine_authorization_claimed",
+        "release_readiness_threshold_accepted",
+        "release_readiness_claim_scope_widened",
     }
 )
 

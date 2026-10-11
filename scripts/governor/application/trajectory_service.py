@@ -3219,6 +3219,23 @@ class TrajectoryService:
             # Absence of the declaration authority stays silence, not compliance,
             # so a tree without the carrier yields no finding here.
             "retirement_readiness": reader.read_retirement_readiness(contract),
+            # S12/T04 (M516-th0oby): the release-readiness receipt projects the
+            # three quality/cost/rights release gates (each gate's evidence bound
+            # by repository-relative path + pointer + recomputed sha256), names
+            # exactly the pending human decisions, binds the S03/S05/S10/S11
+            # milestone evidence and proves the machine authorizes nothing.
+            # Publishing it without a sibling half would let the artifact's mere
+            # existence read as progress (R141), so the reader resolves the
+            # receipt and recomputes every gate and milestone evidence pin from
+            # the committed bytes. The pure oracle then refuses a receipt that is
+            # absent or bound to another schema, an evidence binding that is stale
+            # or dropped, a human decision re-labelled as taken, an opened lock, a
+            # claimed machine authorization, an accepted threshold and a widened
+            # claim scope. This half reads the receipt artifact, not the manifest
+            # pins already held by the release_probe_lane check, so it never
+            # duplicates them (MEM1948: a sibling half not listed here is inert).
+            # Absence of the declaration authority stays silence, not compliance.
+            "release_readiness": reader.read_release_readiness(contract),
         }
 
         violations = absorption_progress_violations(scorecard, contract, observations)
