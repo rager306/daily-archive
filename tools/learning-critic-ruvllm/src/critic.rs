@@ -78,6 +78,14 @@ pub enum CriticError {
     NonFiniteMetric,
     #[error("empty case_id")]
     EmptyCaseId,
+    #[error("io: {0}")]
+    Io(String),
+    #[error("unknown model id (not in registry): {0}")]
+    UnknownModel(String),
+    #[error("model file missing: {0}")]
+    ModelMissing(String),
+    #[error("backend: {0}")]
+    Backend(String),
 }
 
 pub fn identity_digest(value: &str) -> String {

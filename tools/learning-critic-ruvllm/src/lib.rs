@@ -14,10 +14,14 @@
 //! Only redacted, bounded subjects cross this boundary.
 
 pub mod critic;
+pub mod gguf_critic;
+pub mod models;
 pub mod subject;
 
 pub use critic::{
     identity_digest, CriticCase, CriticError, CriticObservation, CriticStatus, ProducerProvenance,
     RuvllmReflectionCritic,
 };
+pub use gguf_critic::{GenerationStats, GgufCritic, ObserveOutput, Verdict, VerdictClass};
+pub use models::{resolve as resolve_model, ModelSpec, MODELS};
 pub use subject::{derive_subject, StructuralProfile};
