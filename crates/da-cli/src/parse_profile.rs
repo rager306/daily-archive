@@ -5,8 +5,8 @@
 //! [`GrobidParser::from_env`] stays historical rich — production PDF
 //! callers must consult this helper instead of `from_env().profile()`.
 
-use da_application::parse_grammar::resolve_parse_profile;
-use da_domain::fsm_policy::{ArticleFeatures, ProfileRoute};
+use da_application::parse_grammar::{ParseProfileDecision, resolve_parse_profile};
+use da_domain::fsm_policy::{ArticleFeatures, PolicySource, ProfileRoute};
 use da_parse::GrobidProfile;
 use da_ports::fsm_policy::FsmPolicyPort;
 use std::path::PathBuf;
@@ -56,6 +56,27 @@ pub fn consult_corpus_grobid_profile_from_yaml(yaml: &str) -> GrobidProfile {
         Ok(d) => grobid_profile_from_route(d.profile),
         Err(_) => GrobidProfile::structural(),
     }
+}
+
+/// Full profile_route decision (profile + policy hash + source), not just the
+/// mapped GROBID profile. Thin wrapper over [`resolve_parse_profile`]; fails
+/// open exactly like [`consult_corpus_grobid_profile`] so a missing or invalid
+/// registry names the DATA native structural default instead of an invented
+/// consult. The governed-process record consumes this decision (S10).
+pub fn corpus_grobid_profile_decision() -> ParseProfileDecision {
+    let yaml = std::fs::read_to_string(policy_registry_path()).unwrap_or_default();
+    corpus_grobid_profile_decision_from_yaml(&yaml)
+}
+
+/// YAML-in decision consult used by tests and by
+/// [`corpus_grobid_profile_decision`].
+pub fn corpus_grobid_profile_decision_from_yaml(yaml: &str) -> ParseProfileDecision {
+    let host: Option<&dyn FsmPolicyPort> = None;
+    resolve_parse_profile(yaml, host, &corpus_features()).unwrap_or_else(|_| ParseProfileDecision {
+        profile: ProfileRoute::Structural,
+        policy_hash: PolicySource::Native.hash_stamp().to_string(),
+        source: PolicySource::Native,
+    })
 }
 
 #[cfg(test)]
@@ -119,6 +140,45 @@ decision_points:
         let yaml = include_str!("../../../data/policies/registry.yaml");
         let p = consult_corpus_grobid_profile_from_yaml(yaml);
         assert_eq!(p.name(), "structural");
+    }
+
+    #[test]
+    fn corpus_grobid_profile_decision_from_yaml_defaults_structural_native() {
+        let d = corpus_grobid_profile_decision_from_yaml(PROFILE_YAML);
+        assert_eq!(d.profile, ProfileRoute::Structural);
+        assert_eq!(d.source, PolicySource::Native);
+        assert_eq!(d.policy_hash, "native");
+    }
+
+    #[test]
+    fn corpus_grobid_profile_decision_from_yaml_honors_named_rich() {
+        let d = corpus_grobid_profile_decision_from_yaml(RICH_YAML);
+        assert_eq!(d.profile, ProfileRoute::Rich);
+        assert_eq!(d.source, PolicySource::Native);
+    }
+
+    #[test]
+    fn corpus_grobid_profile_decision_invalid_yaml_fails_open_structural_native() {
+        for yaml in ["decision_points: {}", "not: yaml: ["] {
+            let d = corpus_grobid_profile_decision_from_yaml(yaml);
+            assert_eq!(d.profile, ProfileRoute::Structural);
+            assert_eq!(d.source, PolicySource::Native);
+            assert_eq!(d.policy_hash, "native");
+        }
+    }
+
+    #[test]
+    fn real_registry_yaml_decision_matches_profile_consult() {
+        let yaml = include_str!("../../../data/policies/registry.yaml");
+        let d = corpus_grobid_profile_decision_from_yaml(yaml);
+        assert_eq!(d.profile, ProfileRoute::Structural);
+        assert_eq!(d.source, PolicySource::Native);
+        assert_eq!(d.policy_hash, "native");
+        assert_eq!(
+            grobid_profile_from_route(d.profile).name(),
+            consult_corpus_grobid_profile_from_yaml(yaml).name(),
+            "decision wrapper and profile consult must resolve the same route"
+        );
     }
 
     #[test]

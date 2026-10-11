@@ -518,6 +518,7 @@ impl LoadContentPipeline for CliContentPipeline {
             extract: extract_out,
             cache_records,
             conservation,
+            governed_process_record: None,
         })
     }
 }

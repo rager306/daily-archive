@@ -7,6 +7,7 @@ use da_domain::{
     AcquisitionPolicy, ArticleLocator, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord,
     LoadCacheRecord, LoadFinding, LoadQueueRecord, LoadReport, LoadStageName, LoadStageSet,
     StageStatus, context_conservation::ConservationEvidence,
+    governed_process_record::GovernedProcessRecord,
 };
 use da_ports::{AcquisitionError, EnsuredAssets, SourceAcquisitionPort};
 use std::path::{Path, PathBuf};
@@ -55,6 +56,11 @@ pub struct LoadContentOutcome {
     /// Deterministic non-authoritative HTML conservation evidence
     /// (parse → extraction), when observed. Never authorizes import.
     pub conservation: Option<ConservationEvidence>,
+    /// Single governed-process record for this driven request (S10): the DATA
+    /// profile_route decision, the per-stage admission codes and the
+    /// registry-bound prompt lineage, assembled by the journey seam.
+    /// Candidate evidence only — never authorizes import.
+    pub governed_process_record: Option<GovernedProcessRecord>,
 }
 
 /// Request for the injected content pipeline.
@@ -644,6 +650,7 @@ mod tests {
                     payload_sha256: None,
                 }],
                 conservation: None,
+                governed_process_record: None,
             })
         }
     }

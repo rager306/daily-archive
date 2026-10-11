@@ -55,6 +55,10 @@ use da_application::{
     PipelineOrchestrator, PipelineRunReport, StageDisposition, embedding_fingerprint,
 };
 use da_domain::figure_analysis::FigureQuotePolicy;
+use da_domain::fsm_policy::PolicySource;
+use da_domain::governed_process_record::{
+    AdmissionRecord, GovernedProcessRecord, PolicyDecisionRecord, PromptLineageRecord,
+};
 use da_domain::prompt_registry::PromptRegistry;
 use da_domain::{LoadCacheRecord, StageCacheMode, StageIdRegistry};
 use da_parse::GrobidProfile;
@@ -545,6 +549,10 @@ pub async fn run_journey_content(
     let mut candidate_report: Option<
         da_application::candidate_materialization_stage::CandidateMaterializationReport,
     > = None;
+    // Governed-process record assembly (S10): figure lineages are collected
+    // while the figures branch decodes each analysis payload; profile_route
+    // and admissions come from the run report below.
+    let mut prompt_lineages: Vec<PromptLineageRecord> = Vec::new();
     if with_figures {
         let Some(branch) = &figure_branch else {
             return Err("figures branch requires model settings".into());
@@ -774,6 +782,19 @@ pub async fn run_journey_content(
             let analysis: da_domain::figure_analysis::FigureAnalysis =
                 serde_json::from_slice(&analysis_payload)
                     .map_err(|error| format!("figure analysis decode: {error}"))?;
+            // Registry-bound lineages only: legacy cached payloads predate the
+            // S10 prompt identity (serde default empty) and record no lineage
+            // rather than an unresolvable one.
+            if !analysis.provenance.prompt_id.trim().is_empty()
+                && !analysis.provenance.prompt_version.trim().is_empty()
+            {
+                prompt_lineages.push(PromptLineageRecord {
+                    prompt_id: analysis.provenance.prompt_id.clone(),
+                    prompt_version: analysis.provenance.prompt_version.clone(),
+                    prompt_sha256: analysis.provenance.prompt_sha256.clone(),
+                    schema_sha256: analysis.provenance.output_schema_sha256.clone(),
+                });
+            }
             let candidate = assemble_from_context(
                 &context,
                 &analysis,
@@ -849,6 +870,54 @@ pub async fn run_journey_content(
         .collect::<Vec<LoadCacheRecord>>();
     cache_records_from_report.append(&mut cache_records);
 
+    // ── Governed-process record (S10): one typed artifact for this request ─
+    // profile_route only — the journey consults no other policy point, so the
+    // consulted decision-point set stays a subset the governor can assert
+    // against `consult_status.parse_pdf_consults`. Do not invent a
+    // grammar_route consult here.
+    let profile_decision = crate::parse_profile::corpus_grobid_profile_decision();
+    let policy_decisions = vec![PolicyDecisionRecord {
+        decision_point: "profile_route".into(),
+        resolved_value: profile_decision.profile.as_str().into(),
+        policy_source: match &profile_decision.source {
+            PolicySource::Native => "native".into(),
+            PolicySource::Wasm { sha256 } => format!("wasm:{sha256}"),
+        },
+        policy_hash: profile_decision.policy_hash.clone(),
+    }];
+    let admissions = report
+        .stages
+        .iter()
+        .filter_map(|record| {
+            // Stages outside the ACAP FSM mapping carry no admission; skip
+            // them rather than inventing a code (PIR-014).
+            let admission = record.admission.as_ref()?;
+            let (admitted, code) = if !admission.admitted {
+                (false, "blocked")
+            } else if admission.skip_reason.is_some() {
+                (true, "skipped")
+            } else {
+                (true, "admitted")
+            };
+            Some(AdmissionRecord {
+                stage_id: record.stage_id.clone(),
+                admitted,
+                code: code.into(),
+                skip_reason: admission.skip_reason.clone(),
+            })
+        })
+        .collect::<Vec<AdmissionRecord>>();
+    let governed_record = GovernedProcessRecord {
+        article_id: paper_id.to_string(),
+        policy_decisions,
+        admissions,
+        prompt_lineages,
+        import_eligible: false,
+    };
+    governed_record
+        .validate()
+        .map_err(|error| format!("journey governed process record: {error}"))?;
+
     let outcome = LoadContentOutcome {
         ingest: LoadIngestOutcome {
             paper_id: paper_id.to_string(),
@@ -868,6 +937,7 @@ pub async fn run_journey_content(
         }),
         cache_records: cache_records_from_report,
         conservation: None,
+        governed_process_record: Some(governed_record),
     };
     let _ = candidate_contract;
     let _ = candidate_report;
