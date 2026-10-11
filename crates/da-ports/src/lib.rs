@@ -19,6 +19,7 @@ pub mod extractor;
 pub mod figure_detection;
 pub mod fsm_policy;
 pub mod graph_store;
+pub mod learning_critic;
 pub mod lexicon;
 pub mod llm_client;
 pub mod multimodal_llm;
