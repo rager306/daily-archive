@@ -206,22 +206,25 @@ mod tests {
             status: CriticStatus::Ok,
         };
         let json: serde_json::Value = serde_json::to_value(&row).expect("serializable");
-        let keys: Vec<&str> = json
+        // serde_json::Value sorts object keys alphabetically by default; the
+        // contract is the FIELD SET matching the application row, not order.
+        let mut keys: Vec<&str> = json
             .as_object()
             .expect("object")
             .keys()
             .map(String::as_str)
             .collect();
+        keys.sort_unstable();
         assert_eq!(
             keys,
             vec![
-                "schema_version",
                 "case_id",
                 "corpus",
-                "order",
-                "producer",
                 "metric_one",
                 "metric_two",
+                "order",
+                "producer",
+                "schema_version",
                 "status"
             ]
         );
