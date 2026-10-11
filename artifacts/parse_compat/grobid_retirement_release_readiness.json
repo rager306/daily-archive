@@ -1,0 +1,129 @@
+{
+  "schema_version": "grobid-retirement-release-readiness.v1",
+  "claim_scope": "release_readiness_preparation_only",
+  "product_coverage_effect": "none",
+  "thresholds": "not_accepted",
+  "nothing_here_authorizes_a_release": true,
+  "release_gates": [
+    {
+      "gate_id": "quality",
+      "status": "blocked",
+      "release_effect": "does_not_authorize_production_use",
+      "evidence": [
+        {
+          "manifest": "data/parse/acceptance_manifest.yaml",
+          "pointer": "release_decision_package.quality",
+          "revision_sha256": "sha256:4d1c55ea9dd873b4aada48aa964609395f59e8a726bdf42c65d2b0f36865ca06"
+        },
+        {
+          "manifest": "data/parse/layout_bakeoff.yaml",
+          "pointer": "native_route_corpus",
+          "revision_sha256": "sha256:a98d1772e68da35b9deb99c62e4c9ab413e53f0d1ddf918e017ac2242c0d80cc"
+        },
+        {
+          "manifest": "artifacts/parse_compat/absorption_progress_threshold_candidates.json",
+          "pointer": "threshold_candidates",
+          "revision_sha256": "sha256:cfcd77fac15df4d34670c0c9448d229dfd58b4d24fcb7790fbbb476869ff78b4"
+        },
+        {
+          "manifest": "artifacts/parse_compat/grobid_retirement_acceptance_package.json",
+          "pointer": "mandatory_gates",
+          "revision_sha256": "sha256:3aa816164b8e23ae6cc0da6cd0e50446e65923531eaf289aa4eb587e1102a0e7"
+        }
+      ]
+    },
+    {
+      "gate_id": "cost",
+      "status": "bounded_not_measured",
+      "release_effect": "does_not_authorize_external_downloads",
+      "evidence": [
+        {
+          "manifest": "data/parse/acceptance_manifest.yaml",
+          "pointer": "external_holdout_contract.cost_bounds",
+          "revision_sha256": "sha256:4d1c55ea9dd873b4aada48aa964609395f59e8a726bdf42c65d2b0f36865ca06"
+        }
+      ]
+    },
+    {
+      "gate_id": "rights",
+      "status": "blocked",
+      "release_effect": "does_not_authorize_redistribution",
+      "evidence": [
+        {
+          "manifest": "data/parse/acceptance_manifest.yaml",
+          "pointer": "release_decision_package.rights",
+          "revision_sha256": "sha256:4d1c55ea9dd873b4aada48aa964609395f59e8a726bdf42c65d2b0f36865ca06"
+        },
+        {
+          "manifest": "data/parse/grobid_compatibility.yaml",
+          "pointer": "parity_ledger.required_scope_downgrades",
+          "revision_sha256": "sha256:0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec"
+        }
+      ]
+    }
+  ],
+  "human_decision": {
+    "reviewer": null,
+    "decision": "pending",
+    "decision_record": "doc/review/HUMAN-REVIEW-TEMPLATE.md",
+    "authorization_requires": [
+      "named_reviewer",
+      "explicit_decision",
+      "passing_quality_gate",
+      "passing_cost_gate",
+      "passing_rights_gate"
+    ],
+    "gate_status": {
+      "cost": "bounded_not_measured",
+      "quality": "blocked",
+      "rights": "blocked"
+    }
+  },
+  "machine_authorization": {
+    "s09_authorized": false,
+    "gsd_lifecycle_authorizes": false,
+    "human_release_recorded": false,
+    "locks": {
+      "auto_promote": "forbidden",
+      "deployed": "false",
+      "graph_write": "forbidden",
+      "import_eligible": "false",
+      "production_route": "forbidden"
+    }
+  },
+  "milestone_evidence": [
+    {
+      "slice": "S03",
+      "manifest": "data/parse/layout_bakeoff.yaml",
+      "pointer": "native_route_corpus",
+      "revision_sha256": "sha256:a98d1772e68da35b9deb99c62e4c9ab413e53f0d1ddf918e017ac2242c0d80cc"
+    },
+    {
+      "slice": "S05",
+      "manifest": "data/parse/grobid_compatibility.yaml",
+      "pointer": "parity_ledger.required_scope_downgrades",
+      "revision_sha256": "sha256:0065ca553b8b4f647831bec7f372680c4d6c0f9d31701517883d5b17c9d8f4ec"
+    },
+    {
+      "slice": "S10",
+      "manifest": "governor/fixtures/governed_process_record/record_legal.positive.json",
+      "pointer": "0",
+      "revision_sha256": "sha256:92ec51b04907eb4b609b84e01418c58775193c0692afa7e844907f33ea7a205b"
+    },
+    {
+      "slice": "S11",
+      "manifest": "artifacts/parse_compat/independent_preservation_candidate.json",
+      "pointer": "series_identity",
+      "revision_sha256": "sha256:c22123b07264c47647a18f397d5f5ddd8c4164e1493c3fd67c14f6f90087fb43"
+    }
+  ],
+  "redaction": {
+    "raw_text": false,
+    "raw_pdf": false,
+    "tei_xml": false,
+    "images": false,
+    "physical_paths": false,
+    "hostname": false,
+    "executable": false
+  }
+}
