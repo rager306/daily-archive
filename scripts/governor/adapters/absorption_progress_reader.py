@@ -88,6 +88,7 @@ import yaml
 
 from governor.domain.absorption_progress import (
     ACCEPTANCE_PACKAGE_VIOLATION_LABELS,
+    INDEPENDENT_CANDIDATE_VIOLATION_LABELS,
     JAVA_FREE_SLICE_VIOLATION_LABELS,
     NATIVE_CONTENT_VIOLATION_LABELS,
     NATIVE_FAMILY_VIOLATION_LABELS,
@@ -115,6 +116,13 @@ __all__ = [
 
 #: A bound byte hash and a bound revision, as declared by the evidence contract.
 _SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+#: The only series-identity verdict that establishes an independent candidate. A
+#: candidate whose verdict is ``same_series`` is the frozen reference series
+#: re-labelled (the self-reference the honesty rule forbids), and an
+#: ``series_identity_unresolved`` candidate cannot demonstrate independence, so
+#: both are refused by the independent-candidate half.
+_INDEPENDENT_SERIES_VERDICT = "independent_series"
 
 #: Observation key under which the reader publishes the per-document census it
 #: recomputed from the two frozen sources, and the oracle consumes it.
@@ -155,6 +163,7 @@ _RULE_KEYS = (
     "native_route_e2e",
     "native_route_independence",
     "threshold_candidates",
+    "independent_candidate",
     "semantic_correctness",
     "required_scope_downgrades",
     "acceptance_package",
@@ -1559,6 +1568,146 @@ class FilesystemAbsorptionProgressReader(AbsorptionProgressReader):
 
         return bundle
 
+    def read_independent_candidate(self, contract: Any) -> Optional[dict[str, Any]]:
+        """Resolve the T02 independent-preservation-candidate artifact and its carriers.
+
+        The half this governs is the T02 evidence that a preservation candidate was
+        measured by *new* measurement whose series fingerprint differs from the
+        frozen reference, that each of the three frozen thresholds was resolved
+        against it (honestly ``not_comparable``, because the measured population
+        differs) and that the earlier conservation result is retained as its own
+        disclosed record. The rule names only *where* the candidate artifact, the
+        S03 corpus declaration and the two retained-conservation carriers live;
+        nothing about the artifact contents is restated, so the rule cannot drift
+        from the artifact it governs. ``available`` is True only when the S03
+        declaration carrier resolves -- the same authority the Java-free, family,
+        content, route, independence and threshold-candidate halves read -- so a
+        tree without that authority is *absence*, not a violation. An unreadable
+        *candidate* under a resolvable declaration is a claim with no evidence and
+        the oracle reports it.
+        """
+        if not isinstance(contract, dict):
+            return None
+        rule = contract.get("independent_candidate")
+        if not isinstance(rule, dict):
+            return None
+
+        declaration_rule = rule.get("declaration")
+        declaration_rule = declaration_rule if isinstance(declaration_rule, dict) else {}
+        declaration_manifest = _text(declaration_rule.get("manifest"))
+        declaration_pointer = _text(declaration_rule.get("pointer"))
+
+        candidate_rule = rule.get("candidate")
+        candidate_rule = candidate_rule if isinstance(candidate_rule, dict) else {}
+        candidate_path = _text(candidate_rule.get("path"))
+
+        reference_rule = rule.get("reference")
+        reference_rule = reference_rule if isinstance(reference_rule, list) else []
+
+        bundle: dict[str, Any] = {
+            "available": False,
+            "declaration_manifest": declaration_manifest,
+            "declaration_pointer": declaration_pointer,
+            "declaration_sha256": (
+                self.file_sha256(declaration_manifest) if declaration_manifest else None
+            ),
+            "declaration": None,
+            "corpus_documents": None,
+            "corpus_document_count": None,
+            "corpus_page_denominator": None,
+            "reference_carriers": [],
+            "candidate_path": candidate_path,
+            "candidate_exists": bool(
+                candidate_path and self.path_exists(candidate_path)
+            ),
+            "candidate_sha256": (
+                self.file_sha256(candidate_path) if candidate_path else None
+            ),
+            "candidate": None,
+            "errors": [],
+        }
+
+        manifest = self.read_yaml(declaration_manifest) if declaration_manifest else None
+        if not isinstance(manifest, dict):
+            bundle["errors"].append("declaration_manifest_unreadable")
+        else:
+            documents = _resolve_declared_pointer(manifest, declaration_pointer)
+            if isinstance(documents, list):
+                bundle["declaration"] = manifest
+                bundle["available"] = True
+                bundle["corpus_documents"] = [
+                    {
+                        "id": _text(entry.get("id")),
+                        "sha256": _text(entry.get("sha256")),
+                        "pages": _count(entry.get("pages")),
+                    }
+                    for entry in documents
+                    if isinstance(entry, dict)
+                ]
+                bundle["corpus_document_count"] = len(bundle["corpus_documents"])
+                corpus_block = _corpus_block_for_pointer(manifest, declaration_pointer)
+                if isinstance(corpus_block, dict):
+                    declared_n = _count(corpus_block.get("corpus_n"))
+                    if declared_n is not None:
+                        bundle["corpus_document_count"] = declared_n
+                    bundle["corpus_page_denominator"] = _count(
+                        corpus_block.get("page_denominator")
+                    )
+            else:
+                bundle["errors"].append("declaration_pointer_unresolved")
+
+        # The retained-conservation carriers, each resolved by pointer from the
+        # committed bytes and reduced to the one field the rule requires it to
+        # still read (the conservation verdict / the disclosed-unresolved status).
+        for entry in reference_rule:
+            if not isinstance(entry, dict):
+                continue
+            reference_manifest = _text(entry.get("manifest"))
+            reference_pointer = _text(entry.get("pointer"))
+            retained_field = _text(entry.get("retained_field"))
+            document = (
+                self.read_json(reference_manifest) if reference_manifest else None
+            )
+            resolved = (
+                _resolve_declared_pointer(document, reference_pointer)
+                if isinstance(document, dict)
+                else _UNRESOLVED
+            )
+            retained_read = (
+                _text(resolved.get(retained_field))
+                if isinstance(resolved, dict) and retained_field is not None
+                else None
+            )
+            reference_fingerprint = (
+                _text(resolved.get("reference_fingerprint"))
+                if isinstance(resolved, dict)
+                else None
+            )
+            bundle["reference_carriers"].append(
+                {
+                    "manifest": reference_manifest,
+                    "pointer": reference_pointer,
+                    "retained_field": retained_field,
+                    "retained_value": _text(entry.get("retained_value")),
+                    "exists": bool(
+                        reference_manifest and self.path_exists(reference_manifest)
+                    ),
+                    "sha256": (
+                        self.file_sha256(reference_manifest)
+                        if reference_manifest
+                        else None
+                    ),
+                    "retained_read": retained_read,
+                    "reference_fingerprint": reference_fingerprint,
+                }
+            )
+
+        bundle["candidate"] = self.read_json(candidate_path) if candidate_path else None
+        if bundle["candidate"] is None and bundle["candidate_exists"]:
+            bundle["errors"].append("candidate_unreadable")
+
+        return bundle
+
     def read_semantic_correctness(self, contract: Any) -> Optional[dict[str, Any]]:
         """Resolve the S04 semantic-correctness receipt and its committed carriers.
 
@@ -2245,6 +2394,7 @@ def missing_progress_vocabulary(contract: Any) -> list[str]:
         _native_route_independence_vocabulary(contract.get("native_route_independence"))
     )
     missing.extend(_threshold_candidates_vocabulary(contract.get("threshold_candidates")))
+    missing.extend(_independent_candidate_vocabulary(contract.get("independent_candidate")))
     missing.extend(_semantic_correctness_vocabulary(contract.get("semantic_correctness")))
     missing.extend(
         _required_scope_downgrades_vocabulary(
@@ -2876,6 +3026,90 @@ def _threshold_candidates_vocabulary(block: Any) -> list[str]:
     registered = set(_text_list(block.get("violations")))
     if registered != set(THRESHOLD_CANDIDATES_VIOLATION_LABELS):
         missing.append("threshold_candidates.violations")
+    return missing
+
+def _independent_candidate_vocabulary(block: Any) -> list[str]:
+    """Dotted names of ``independent_candidate`` fields absent or unusable.
+
+    Without these the independent-candidate half cannot tell a declared-and-
+    evidenced candidate from a claim with no artifact, an unbound retained-
+    conservation carrier or an unregistered label. The declared label set must be
+    exactly the domain's literal set -- a label the oracle can emit must be
+    registered, and a registered label must be one the oracle can emit -- so an
+    unregistered emission is a data/implementation mismatch rather than a silent
+    finding. The caller fails closed on a non-empty result.
+    """
+    if not isinstance(block, dict):
+        return ["independent_candidate"]
+    missing: list[str] = []
+
+    if _text(block.get("schema_version")) is None:
+        missing.append("independent_candidate.schema_version")
+
+    declaration = block.get("declaration")
+    if not isinstance(declaration, dict):
+        missing.append("independent_candidate.declaration")
+    else:
+        if not _is_relative_path(declaration.get("manifest")):
+            missing.append("independent_candidate.declaration.manifest")
+        if _text(declaration.get("pointer")) is None:
+            missing.append("independent_candidate.declaration.pointer")
+
+    reference = block.get("reference")
+    if not isinstance(reference, list) or not reference:
+        missing.append("independent_candidate.reference")
+    else:
+        for index, entry in enumerate(reference):
+            if not isinstance(entry, dict):
+                missing.append(f"independent_candidate.reference[{index}]")
+                continue
+            if not _is_relative_path(entry.get("manifest")):
+                missing.append(f"independent_candidate.reference[{index}].manifest")
+            if _text(entry.get("pointer")) is None:
+                missing.append(f"independent_candidate.reference[{index}].pointer")
+            if _text(entry.get("retained_field")) is None:
+                missing.append(f"independent_candidate.reference[{index}].retained_field")
+            if _text(entry.get("retained_value")) is None:
+                missing.append(f"independent_candidate.reference[{index}].retained_value")
+
+    candidate = block.get("candidate")
+    if not isinstance(candidate, dict):
+        missing.append("independent_candidate.candidate")
+    else:
+        if not _is_relative_path(candidate.get("path")):
+            missing.append("independent_candidate.candidate.path")
+        if _text(candidate.get("schema_version")) is None:
+            missing.append("independent_candidate.candidate.schema_version")
+        if candidate.get("required") is not True:
+            missing.append("independent_candidate.candidate.required")
+
+    expected = block.get("expected")
+    if not isinstance(expected, dict):
+        missing.append("independent_candidate.expected")
+    else:
+        for key in ("claim_scope", "product_coverage_effect", "thresholds"):
+            if _text(expected.get(key)) is None:
+                missing.append(f"independent_candidate.expected.{key}")
+        locks = expected.get("locks")
+        if not isinstance(locks, dict):
+            missing.append("independent_candidate.expected.locks")
+        else:
+            for key in (
+                "deployed",
+                "import_eligible",
+                "auto_promote",
+                "production_route",
+                "graph_write",
+            ):
+                if key not in locks:
+                    missing.append(f"independent_candidate.expected.locks.{key}")
+        for key in ("series_identity_verdict_vocabulary", "resolution_vocabulary"):
+            if not _text_list(expected.get(key)):
+                missing.append(f"independent_candidate.expected.{key}")
+
+    registered = set(_text_list(block.get("violations")))
+    if registered != set(INDEPENDENT_CANDIDATE_VIOLATION_LABELS):
+        missing.append("independent_candidate.violations")
     return missing
 
 def _semantic_correctness_vocabulary(block: Any) -> list[str]:
@@ -3576,6 +3810,7 @@ def absorption_progress_violations(
     _native_route_violations_into(contract, observations, violations)
     _native_route_independence_violations_into(contract, observations, violations)
     _threshold_candidates_violations_into(contract, observations, violations)
+    _independent_candidate_violations_into(contract, observations, violations)
     _semantic_correctness_violations_into(contract, observations, violations)
     _required_scope_downgrades_violations_into(contract, observations, violations)
     _acceptance_package_violations_into(contract, observations, violations)
@@ -3942,6 +4177,21 @@ def _threshold_candidates_violations_into(
         _threshold_candidates_violations(
             contract,
             observations.get("threshold_candidates")
+            if isinstance(observations, dict)
+            else None,
+        )
+    )
+
+def _independent_candidate_violations_into(
+    contract: Any,
+    observations: Any,
+    violations: set[str],
+) -> None:
+    """Add the independent-candidate labels carried by the observations."""
+    violations.update(
+        _independent_candidate_violations(
+            contract,
+            observations.get("independent_candidate")
             if isinstance(observations, dict)
             else None,
         )
@@ -6287,6 +6537,174 @@ def _threshold_candidates_violations(contract: Any, evidence: Any) -> set[str]:
                 stale()
     if pinned and seen != set(pinned):
         stale()
+    return violations
+
+def _independent_candidate_violations(contract: Any, evidence: Any) -> set[str]:
+    """Refuse an independent-preservation-candidate claim the artifact does not evidence.
+
+    The shape R141 forbids is a *claim* that a preservation candidate was measured
+    by new measurement, with each frozen threshold resolved against it and the
+    earlier conservation result retained -- backed by no artifact, by an artifact
+    whose declared pins no longer match the committed bytes, by the candidate
+    series re-labelled as the frozen reference (the self-reference the honesty
+    rule forbids), by a threshold claimed accepted, by a dropped conservation
+    record, or by an opened promotion lock. ``set()`` (empty) means clean; a tree
+    without the declaration authority is *unverified*, never clean and never
+    refuted.
+    """
+    violations: set[str] = set()
+    if not isinstance(contract, dict) or not isinstance(evidence, dict) or not evidence:
+        return violations
+    if evidence.get("available") is not True:
+        return violations
+    rule = contract.get("independent_candidate")
+    if not isinstance(rule, dict):
+        return violations
+
+    def absent() -> None:
+        violations.add("candidate_absent")
+
+    def stale() -> None:
+        violations.add("candidate_stale")
+
+    def relabelled() -> None:
+        violations.add("series_relabelled_as_reference")
+
+    def accepted() -> None:
+        violations.add("threshold_accepted")
+
+    def dropped() -> None:
+        violations.add("conservation_record_dropped")
+
+    def locked() -> None:
+        violations.add("locks_open")
+
+    expected = rule.get("expected")
+    expected = expected if isinstance(expected, dict) else {}
+    resolution_vocabulary = set(_text_list(expected.get("resolution_vocabulary")))
+    locks_rule = expected.get("locks")
+    locks_rule = locks_rule if isinstance(locks_rule, dict) else {}
+
+    candidate = evidence.get("candidate")
+    if evidence.get("candidate_exists") is not True or not isinstance(candidate, dict):
+        absent()
+        return violations
+
+    # The envelope: diagnostic-only, no product-coverage effect, thresholds still
+    # not accepted and every promotion lock closed.
+    if _text(candidate.get("claim_scope")) != _text(expected.get("claim_scope")):
+        locked()
+    if _text(candidate.get("product_coverage_effect")) != _text(
+        expected.get("product_coverage_effect")
+    ):
+        locked()
+    if _text(candidate.get("thresholds")) != _text(expected.get("thresholds")):
+        accepted()
+    locks = candidate.get("locks")
+    if not isinstance(locks, dict):
+        locked()
+    else:
+        for key, want in locks_rule.items():
+            if str(locks.get(key)) != str(want):
+                locked()
+
+    # The series: the candidate must be a *different* series than the frozen
+    # reference (the self-reference the honesty rule forbids) and must record that
+    # verdict rather than reading unresolved.
+    candidate_series = candidate.get("candidate_series")
+    reference_series = candidate.get("reference_series")
+    series_identity = candidate.get("series_identity")
+    candidate_fingerprint = (
+        _text(candidate_series.get("fingerprint"))
+        if isinstance(candidate_series, dict)
+        else None
+    )
+    reference_fingerprint = (
+        _text(reference_series.get("fingerprint"))
+        if isinstance(reference_series, dict)
+        else None
+    )
+    verdict = (
+        _text(series_identity.get("verdict"))
+        if isinstance(series_identity, dict)
+        else None
+    )
+    if (
+        candidate_fingerprint is None
+        or reference_fingerprint is None
+        or candidate_fingerprint == reference_fingerprint
+    ):
+        relabelled()
+    if verdict != _INDEPENDENT_SERIES_VERDICT:
+        relabelled()
+
+    # The candidate must still name the committed reference carriers: a declared
+    # binding sha256 that no longer matches the committed bytes is a stale pin.
+    reference_carriers = evidence.get("reference_carriers")
+    reference_carriers = (
+        reference_carriers if isinstance(reference_carriers, list) else []
+    )
+    committed_sha256 = {
+        _text(entry.get("manifest")): _text(entry.get("sha256"))
+        for entry in reference_carriers
+        if isinstance(entry, dict)
+    }
+    retained = candidate.get("retained_conservation")
+    bindings = retained.get("bindings") if isinstance(retained, dict) else None
+    bound_pairs: set[tuple[str, str]] = set()
+    if isinstance(bindings, list):
+        for binding in bindings:
+            if not isinstance(binding, dict):
+                continue
+            path = _text(binding.get("path"))
+            pointer = _text(binding.get("pointer"))
+            if path is not None and pointer is not None:
+                bound_pairs.add((path, pointer))
+            declared = _text(binding.get("sha256"))
+            live = committed_sha256.get(path) if path is not None else None
+            if declared is None or live is None or declared != live:
+                stale()
+
+    # The retained-conservation record must not have been dropped: the record
+    # carries the conservation verdict, every declared reference carrier is bound,
+    # and the committed bytes still read the conservation semantics the rule names.
+    if not isinstance(retained, dict) or _text(retained.get("verdict")) is None:
+        dropped()
+    for entry in reference_carriers:
+        if not isinstance(entry, dict):
+            continue
+        manifest = _text(entry.get("manifest"))
+        pointer = _text(entry.get("pointer"))
+        if manifest is None or pointer is None:
+            continue
+        if (manifest, pointer) not in bound_pairs:
+            dropped()
+        if _text(entry.get("retained_read")) != _text(entry.get("retained_value")):
+            dropped()
+        # A candidate whose declared reference fingerprint no longer matches the
+        # committed carrier's pinned reference series is stale, not clean.
+        pinned_fingerprint = _text(entry.get("reference_fingerprint"))
+        if pinned_fingerprint is not None and pinned_fingerprint != reference_fingerprint:
+            stale()
+        # A carrier whose committed verdict is the record's verdict must be the
+        # one the candidate still declares, so a re-pinned carrier is a finding.
+        if _text(entry.get("retained_field")) == "verdict" and isinstance(
+            retained, dict
+        ):
+            if _text(retained.get("verdict")) != _text(entry.get("retained_read")):
+                dropped()
+
+    rows = candidate.get("thresholds_resolved")
+    if not isinstance(rows, list) or not rows:
+        accepted()
+        return violations
+    for row in rows:
+        if not isinstance(row, dict):
+            accepted()
+            continue
+        resolution = _text(row.get("resolution"))
+        if resolution is None or resolution not in resolution_vocabulary:
+            accepted()
     return violations
 
 def _closed_reason(value: str, allowed: set[str], prefixes: tuple[str, ...]) -> bool:

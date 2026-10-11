@@ -75,6 +75,7 @@ from typing import Any, Optional
 
 __all__ = [
     "ACCEPTANCE_PACKAGE_VIOLATION_LABELS",
+    "INDEPENDENT_CANDIDATE_VIOLATION_LABELS",
     "JAVA_FREE_SLICE_VIOLATION_LABELS",
     "NATIVE_CONTENT_VIOLATION_LABELS",
     "NATIVE_FAMILY_VIOLATION_LABELS",
@@ -440,6 +441,32 @@ THRESHOLD_CANDIDATES_VIOLATION_LABELS = frozenset(
         "threshold_accepted",
         "comparability_without_shared_identity",
         "unbound_candidate_denominator",
+    }
+)
+
+#: The independent-preservation-candidate half's closed label set
+#: (M516-th0oby/S11/T04). T02 published a preservation candidate measured by new
+#: measurement whose series fingerprint differs from the frozen reference, with
+#: each of the three frozen thresholds resolved against it (honestly
+#: ``not_comparable``, because the measured population differs) and the earlier
+#: conservation result retained as its own disclosed record. Publishing that
+#: artifact without a sibling governor half would let the artifact's mere
+#: existence read as progress (R141). These literals name the refusals that keep
+#: the half honest: a candidate that is absent, a candidate whose declared pins no
+#: longer match the committed bytes (stale), a candidate re-labelled as the frozen
+#: reference series (the self-reference the honesty rule forbids), a threshold
+#: claimed accepted, a retained-conservation record that was dropped or whose
+#: committed carriers no longer read the conservation verdict, and an opened
+#: promotion lock or a non-diagnostic scope. Findings are drift-visible and never
+#: block (D492).
+INDEPENDENT_CANDIDATE_VIOLATION_LABELS = frozenset(
+    {
+        "candidate_absent",
+        "candidate_stale",
+        "series_relabelled_as_reference",
+        "threshold_accepted",
+        "conservation_record_dropped",
+        "locks_open",
     }
 )
 

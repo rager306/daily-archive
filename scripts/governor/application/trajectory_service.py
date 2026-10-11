@@ -3146,6 +3146,19 @@ class TrajectoryService:
             # never observed. Absence of the declaration authority stays silence,
             # not compliance.
             "threshold_candidates": reader.read_threshold_candidates(contract),
+            # S11/T04 (M516-th0oby): the independent-preservation-candidate artifact
+            # presents a preservation candidate measured by *new* measurement whose
+            # series fingerprint differs from the frozen reference, each of the
+            # three frozen thresholds resolved against it (honestly
+            # `not_comparable`, because the measured population differs), and the
+            # earlier conservation result retained as its own disclosed record.
+            # Publishing it here (MEM1948) keeps the half non-vacuous: a candidate
+            # re-labelled as the reference series, a stale candidate, an accepted
+            # threshold, a dropped conservation record and an opened lock must each
+            # reach the composed finding rather than read as clean by being never
+            # observed. Absence of the declaration authority stays silence, not
+            # compliance.
+            "independent_candidate": reader.read_independent_candidate(contract),
             # S04/T03 (M516-th0oby): the semantic-correctness receipt runs H14
             # (XML well-formedness) and H15 (bibliography id/target integrity)
             # over the expanded 12-document native route corpus and publishes a

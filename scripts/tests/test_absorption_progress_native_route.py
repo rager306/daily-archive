@@ -54,12 +54,14 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 from governor.adapters.absorption_progress_reader import (  # noqa: E402
     FilesystemAbsorptionProgressReader,
+    _independent_candidate_violations,
     _native_route_violations,
     effective_progress_contract,
     missing_progress_vocabulary,
 )
 from governor.application.trajectory_service import TrajectoryService  # noqa: E402
 from governor.domain.absorption_progress import (  # noqa: E402
+    INDEPENDENT_CANDIDATE_VIOLATION_LABELS,
     NATIVE_ROUTE_VIOLATION_LABELS,
 )
 
@@ -489,3 +491,282 @@ def test_a_required_resource_receipt_absent_is_unbound(contract: dict) -> None:
     assert _native_route_violations(contract, record) == {
         "native_route_resource_pair_unbound"
     }
+
+# ── S11/T04: the independent-preservation-candidate half ───────────────────
+#
+# The T02 artifact presents a preservation candidate measured by *new*
+# measurement whose series fingerprint differs from the frozen reference, each of
+# the three frozen thresholds resolved against it (honestly `not_comparable`,
+# because the measured population differs) and the earlier conservation result
+# retained as its own disclosed record. Publishing it without a sibling governor
+# half would let the artifact's mere existence read as progress (R141), so the
+# half is audited here exactly like the route and threshold-candidate halves: the
+# live tree resolves it clean, the real service path consumes it (MEM1948), and
+# every registered label has a negative case.
+
+INDEPENDENT_CANDIDATE_PATH = (
+    "artifacts/parse_compat/independent_preservation_candidate.json"
+)
+
+
+@pytest.fixture(scope="module")
+def independent_rule(contract: dict) -> dict:
+    return contract["independent_candidate"]
+
+
+@pytest.fixture(scope="module")
+def live_independent_evidence(
+    contract: dict, reader: FilesystemAbsorptionProgressReader
+) -> dict:
+    return reader.read_independent_candidate(contract)
+
+
+def test_independent_candidate_rule_registers_exactly_the_domain_literal_vocabulary(
+    independent_rule: dict,
+) -> None:
+    """The rule may not register a label the oracle cannot emit, or vice versa."""
+    assert set(independent_rule["violations"]) == set(
+        INDEPENDENT_CANDIDATE_VIOLATION_LABELS
+    )
+    assert len(INDEPENDENT_CANDIDATE_VIOLATION_LABELS) == 6
+
+
+def test_a_dropped_independent_candidate_block_fails_closed(contract: dict) -> None:
+    stripped = dict(contract)
+    stripped.pop("independent_candidate")
+    assert "independent_candidate" in missing_progress_vocabulary(stripped)
+
+
+def test_the_independent_candidate_half_is_not_a_competing_dimension(
+    independent_rule: dict,
+) -> None:
+    """It rides the existing `absorption_progress` check; it registers nothing new."""
+    assert "dimension" not in independent_rule
+    assert "severity" not in independent_rule
+    for rel in (DIMENSIONS_PATH, SEVERITY_PATH):
+        text = (_REPO_ROOT / rel).read_text(encoding="utf-8")
+        assert "independent_candidate" not in text, rel
+
+
+def test_live_independent_candidate_is_resolved_by_pointer_and_clean(
+    contract: dict, live_independent_evidence: dict
+) -> None:
+    assert live_independent_evidence["available"] is True
+    assert live_independent_evidence["errors"] == []
+    assert live_independent_evidence["candidate_exists"] is True
+    assert isinstance(live_independent_evidence["candidate"], dict)
+    assert live_independent_evidence["corpus_document_count"] == 12
+    assert live_independent_evidence["corpus_page_denominator"] == 381
+    carriers = live_independent_evidence["reference_carriers"]
+    assert {carrier["manifest"] for carrier in carriers} == {
+        "artifacts/parse_compat/grobid_retirement_acceptance_package.json",
+        "artifacts/parse_compat/m515_requirement_coverage_reconciliation.json",
+    }
+    for carrier in carriers:
+        assert carrier["exists"] is True
+        assert carrier["sha256"] == "sha256:" + _bare_sha(carrier["manifest"])
+        assert carrier["retained_read"] == carrier["retained_value"]
+    assert _independent_candidate_violations(contract, live_independent_evidence) == set()
+
+
+def test_live_tree_service_reports_no_independent_candidate_finding() -> None:
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _REPO_ROOT
+    flags = service._check_absorption_progress()
+    leaked = [
+        f
+        for f in flags
+        if any(
+            label in (f.evidence or "")
+            for label in INDEPENDENT_CANDIDATE_VIOLATION_LABELS
+        )
+    ]
+    assert leaked == [], [f.evidence for f in leaked]
+
+
+def test_the_service_path_consumes_the_independent_candidate_observation(
+    monkeypatch,
+) -> None:
+    """The S11 independent-candidate half must be consumed by the live service.
+
+    MEM1948: a sibling half is inert unless `_check_absorption_progress` puts the
+    reader's bundle into the observations map. Patching the reader to return a
+    claim-with-no-artifact bundle must surface as a composed finding.
+    """
+
+    def broken(self, contract):  # noqa: ANN001, ARG001
+        return {"available": True, "candidate": None, "candidate_exists": False}
+
+    monkeypatch.setattr(
+        FilesystemAbsorptionProgressReader, "read_independent_candidate", broken
+    )
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _REPO_ROOT
+    flags = service._check_absorption_progress()
+    broken_flags = [f for f in flags if f.flag == "absorption_progress_broken"]
+    assert broken_flags, [f.flag for f in flags]
+    assert "candidate_absent" in broken_flags[0].evidence
+
+
+def _clean_independent_bundle() -> dict:
+    contract = effective_progress_contract(_load_yaml(SCHEMA_PATH), _load_yaml(RULE_PATH))
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, BASELINE_PATH)
+    return copy.deepcopy(reader.read_independent_candidate(contract))
+
+
+def _candidate(bundle: dict) -> dict:
+    return bundle["candidate"]
+
+
+def test_an_absent_independent_candidate_is_refused(contract: dict) -> None:
+    bundle = _clean_independent_bundle()
+    bundle["candidate"] = None
+    bundle["candidate_exists"] = False
+    assert _independent_candidate_violations(contract, bundle) == {"candidate_absent"}
+
+
+def test_a_stale_independent_candidate_is_refused(contract: dict) -> None:
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["retained_conservation"]["bindings"][0]["sha256"] = (
+        "sha256:" + "9" * 64
+    )
+    assert _independent_candidate_violations(contract, bundle) == {"candidate_stale"}
+
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["reference_series"]["fingerprint"] = "sha256:" + "9" * 64
+    assert _independent_candidate_violations(contract, bundle) == {"candidate_stale"}
+
+
+def test_a_candidate_relabelled_as_the_reference_is_refused(contract: dict) -> None:
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["candidate_series"]["fingerprint"] = _candidate(bundle)[
+        "reference_series"
+    ]["fingerprint"]
+    assert _independent_candidate_violations(contract, bundle) == {
+        "series_relabelled_as_reference"
+    }
+
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["series_identity"]["verdict"] = "series_identity_unresolved"
+    assert _independent_candidate_violations(contract, bundle) == {
+        "series_relabelled_as_reference"
+    }
+
+
+def test_an_accepted_threshold_is_refused(contract: dict) -> None:
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["thresholds"] = "accepted"
+    assert _independent_candidate_violations(contract, bundle) == {"threshold_accepted"}
+
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["thresholds_resolved"][0]["resolution"] = "met"
+    assert _independent_candidate_violations(contract, bundle) == {"threshold_accepted"}
+
+
+def test_a_dropped_conservation_record_is_refused(contract: dict) -> None:
+    bundle = _clean_independent_bundle()
+    _candidate(bundle).pop("retained_conservation")
+    assert _independent_candidate_violations(contract, bundle) == {
+        "conservation_record_dropped"
+    }
+
+    # A committed carrier re-pinned to a resolved verdict is a finding, not a pass.
+    bundle = _clean_independent_bundle()
+    for carrier in bundle["reference_carriers"]:
+        if carrier["retained_field"] == "status":
+            carrier["retained_read"] = "resolved"
+    assert _independent_candidate_violations(contract, bundle) == {
+        "conservation_record_dropped"
+    }
+
+    bundle = _clean_independent_bundle()
+    bundle["reference_carriers"][0]["retained_read"] = "independent_series"
+    assert _independent_candidate_violations(contract, bundle) == {
+        "conservation_record_dropped"
+    }
+
+
+def test_an_opened_lock_or_non_diagnostic_scope_is_refused(contract: dict) -> None:
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["claim_scope"] = "product"
+    assert _independent_candidate_violations(contract, bundle) == {"locks_open"}
+
+    bundle = _clean_independent_bundle()
+    _candidate(bundle)["locks"]["deployed"] = "true"
+    assert _independent_candidate_violations(contract, bundle) == {"locks_open"}
+
+
+def test_absent_independent_evidence_is_unverified_never_refuted(contract: dict) -> None:
+    """Silence is not compliance, and it is not a finding."""
+    assert _independent_candidate_violations(contract, None) == set()
+    assert _independent_candidate_violations(contract, {}) == set()
+    assert _independent_candidate_violations(contract, {"available": False}) == set()
+
+
+def test_the_declaration_authority_gates_the_independent_candidate(
+    contract: dict,
+) -> None:
+    """A tree without the S03 authority is silence, not a claim and not a finding."""
+    reader = FilesystemAbsorptionProgressReader(_REPO_ROOT, SCHEMA_PATH, BASELINE_PATH)
+    rule = contract["independent_candidate"]
+    absent = reader.read_independent_candidate(
+        {
+            "independent_candidate": {
+                **rule,
+                "declaration": {
+                    "manifest": "data/parse/absent_bakeoff.yaml",
+                    "pointer": "native_route_corpus.documents",
+                },
+            }
+        }
+    )
+    assert absent is not None
+    assert absent["available"] is False
+    assert _independent_candidate_violations(contract, absent) == set()
+
+
+def test_the_independent_candidate_labels_are_covered_by_the_negative_cases(
+    contract: dict,
+) -> None:
+    """Every registered label has a mutation that raises exactly it and nothing else."""
+    observed: set[str] = set()
+
+    def absent(bundle: dict) -> None:
+        bundle["candidate"] = None
+        bundle["candidate_exists"] = False
+
+    def stale(bundle: dict) -> None:
+        _candidate(bundle)["retained_conservation"]["bindings"][0]["sha256"] = (
+            "sha256:" + "9" * 64
+        )
+
+    def relabelled(bundle: dict) -> None:
+        _candidate(bundle)["candidate_series"]["fingerprint"] = _candidate(bundle)[
+            "reference_series"
+        ]["fingerprint"]
+
+    def accepted(bundle: dict) -> None:
+        _candidate(bundle)["thresholds"] = "accepted"
+
+    def dropped(bundle: dict) -> None:
+        _candidate(bundle).pop("retained_conservation")
+
+    def locked(bundle: dict) -> None:
+        _candidate(bundle)["claim_scope"] = "product"
+
+    mutations = {
+        "candidate_absent": absent,
+        "candidate_stale": stale,
+        "series_relabelled_as_reference": relabelled,
+        "threshold_accepted": accepted,
+        "conservation_record_dropped": dropped,
+        "locks_open": locked,
+    }
+    assert set(mutations) == set(INDEPENDENT_CANDIDATE_VIOLATION_LABELS)
+    for label, mutate in mutations.items():
+        bundle = _clean_independent_bundle()
+        mutate(bundle)
+        violations = _independent_candidate_violations(contract, bundle)
+        observed |= violations
+        assert violations == {label}, (label, sorted(violations))
+    assert observed == set(INDEPENDENT_CANDIDATE_VIOLATION_LABELS)
