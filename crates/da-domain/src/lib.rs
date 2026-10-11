@@ -40,6 +40,7 @@ pub mod figure_context;
 pub mod figure_geometry;
 pub mod finalize;
 pub mod fsm_policy;
+pub mod governed_process_record;
 pub mod graph_tasks;
 pub mod hard_metrics;
 pub mod healing;
@@ -146,6 +147,10 @@ pub use figure_candidate::{FigureCandidate, FigureCandidateError, figure_candida
 pub use figure_context::{
     ArticleSummaryContext, FigureContextError, FigureReferenceExcerpt, FigureSectionContext,
     FigureSectionRelation, FigureSemanticContext,
+};
+pub use governed_process_record::{
+    AdmissionRecord, GOVERNED_ADMISSION_CODES, GOVERNED_PROCESS_RECORD_SCHEMA_VERSION,
+    GovernedProcessRecord, GovernedProcessRecordError, PolicyDecisionRecord, PromptLineageRecord,
 };
 pub use hard_metrics::{
     MetricCoverage, cache_lineage_exactness, checksum_lineage_coverage,
@@ -629,6 +634,35 @@ mod serde_roundtrip_tests {
                     source_ref: "data/prompts/critic/system.v1.md".into(),
                 },
             ],
+        });
+    }
+
+    #[test]
+    fn roundtrip_governed_process_record() {
+        use crate::governed_process_record::{
+            AdmissionRecord, GovernedProcessRecord, PolicyDecisionRecord, PromptLineageRecord,
+        };
+        roundtrip_json(&GovernedProcessRecord {
+            article_id: "2507.19457".into(),
+            policy_decisions: vec![PolicyDecisionRecord {
+                decision_point: "profile_route".into(),
+                resolved_value: "structural".into(),
+                policy_source: "native".into(),
+                policy_hash: "a".repeat(64),
+            }],
+            admissions: vec![AdmissionRecord {
+                stage_id: "parse".into(),
+                admitted: true,
+                code: "admitted".into(),
+                skip_reason: None,
+            }],
+            prompt_lineages: vec![PromptLineageRecord {
+                prompt_id: "figure_analysis".into(),
+                prompt_version: "figure-analysis.v3".into(),
+                prompt_sha256: "b".repeat(64),
+                schema_sha256: "c".repeat(64),
+            }],
+            import_eligible: false,
         });
     }
 

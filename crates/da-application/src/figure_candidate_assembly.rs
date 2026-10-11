@@ -296,6 +296,8 @@ mod tests {
                 protocol: "openai_chat_completions".into(),
                 requested_model: "m".into(),
                 resolved_model: "m".into(),
+                prompt_id: String::new(),
+                prompt_version: String::new(),
                 prompt_sha256: sha(5),
                 output_schema_sha256: sha(6),
                 schema_id: "chart".into(),

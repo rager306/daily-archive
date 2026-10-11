@@ -658,6 +658,13 @@ pub struct FigureAnalysisProvenance {
     pub protocol: String,
     pub requested_model: String,
     pub resolved_model: String,
+    /// Registry-bound prompt identity (S10). Empty for legacy readers that
+    /// predate the prompt registry binding.
+    #[serde(default)]
+    pub prompt_id: String,
+    /// Registry-bound prompt version (S10). Empty for legacy readers.
+    #[serde(default)]
+    pub prompt_version: String,
     pub prompt_sha256: String,
     pub output_schema_sha256: String,
     /// DATA Stage-2 schema_id selected for this candidate (ADR-060 / M389).
@@ -1043,6 +1050,8 @@ mod tests {
                 protocol: "anthropic_messages".into(),
                 requested_model: "MiniMax-M3-512k".into(),
                 resolved_model: "MiniMax-M3".into(),
+                prompt_id: "figure_analysis".into(),
+                prompt_version: "figure-analysis.v3".into(),
                 prompt_sha256: "c".repeat(64),
                 output_schema_sha256: "d".repeat(64),
                 schema_id: "diagram_analysis".into(),

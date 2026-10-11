@@ -191,6 +191,8 @@ impl FigureAnalysisUseCase {
                 protocol: protocol_name(route.protocol).into(),
                 requested_model: route.model,
                 resolved_model: response.resolved_model,
+                prompt_id: prompt_lineage.prompt_id.clone(),
+                prompt_version: prompt_lineage.prompt_version.clone(),
                 prompt_sha256: Self::prompt_sha256(),
                 // Prefer DATA schema digest; fall back to lineage if empty.
                 output_schema_sha256: if selected_schema_sha.len() == 64 {

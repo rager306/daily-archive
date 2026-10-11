@@ -872,6 +872,8 @@ impl da_ports::multimodal_llm::MultimodalLlmPort for FakeLlm {
                 protocol: "openai_chat_completions".into(),
                 requested_model: "fake".into(),
                 resolved_model: "fake".into(),
+                prompt_id: String::new(),
+                prompt_version: String::new(),
                 prompt_sha256: sha(5),
                 output_schema_sha256: sha(6),
                 schema_id: "plot".into(),
