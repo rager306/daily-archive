@@ -1132,7 +1132,7 @@ fn require_fd_api_key_for_ingest() {
 /// pair, not a doubled echo. Candidate-only: nothing here changes a route.
 fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<()> {
     use da_application::parse_policy_pair::{
-        PairMetric, ParseArm, pair_to_observations, score_pair,
+        PairMetric, ParseArm, pair_to_observations, score_pair_optional,
     };
 
     let metric = PairMetric::from_yaml_str(
@@ -1165,10 +1165,20 @@ fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<(
         );
     }
 
+    // The TOC arm needs outline bookmarks. A PDF without an outline is an
+    // honest NotApplicable (ADR-080 §5), not a failure: the arm cannot run on
+    // this document, so the GROBID arm is the only applicable one.
     let toc_started = std::time::Instant::now();
-    da_cli::source_cli::run_parse_pdf_toc(paper_id).map_err(|e| anyhow::anyhow!("toc arm: {e}"))?;
-    let toc_latency = toc_started.elapsed().as_millis() as u64;
-    let toc_ev = evidence_from_parsed(paper_id, toc_latency, Some("pymupdf"))?;
+    let toc_ev = match da_cli::source_cli::run_parse_pdf_toc(paper_id) {
+        Ok(()) => {
+            let latency = toc_started.elapsed().as_millis() as u64;
+            evidence_from_parsed(paper_id, latency, Some("pymupdf")).ok()
+        }
+        Err(e) => {
+            println!("toc arm not applicable: {e}");
+            None
+        }
+    };
 
     // Arm B: GROBID.
     let gb_started = std::time::Instant::now();
@@ -1177,29 +1187,37 @@ fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<(
     let gb_latency = gb_started.elapsed().as_millis() as u64;
     let gb_ev = evidence_from_parsed(paper_id, gb_latency, None)?;
 
-    let mut pair = score_pair(
+    let pair = score_pair_optional(
         &metric,
-        (ParseArm::Toc, ParseArm::Toc.decision_code().into(), toc_ev),
-        (
+        toc_ev.map(|e| (ParseArm::Toc, ParseArm::Toc.decision_code().to_string(), e)),
+        Some((
             ParseArm::Grobid,
-            ParseArm::Grobid.decision_code().into(),
+            ParseArm::Grobid.decision_code().to_string(),
             gb_ev,
-        ),
+        )),
     );
+    let Some(mut pair) = pair else {
+        anyhow::bail!("neither arm produced an outcome for {paper_id}");
+    };
     pair.document_identity = paper_id.to_string();
-    // The decision condition is the measured classification artifact when
-    // present; otherwise the honest not-measured defaults.
+    // The decision condition: prefer the measured classification artifact
+    // (written by ingest); otherwise classify the PDF right here, so the pair
+    // carries real features instead of the not-measured defaults. The harness
+    // owns the PDF, so it can always measure the condition.
     let features_path = std::path::Path::new("artifacts/pipeline_cache/pdf_policy_features")
         .join(format!("{paper_id}.json"));
-    pair.features = std::fs::read_to_string(&features_path)
+    let from_artifact = std::fs::read_to_string(&features_path)
         .ok()
-        .and_then(|t| serde_json::from_str(&t).ok())
-        .unwrap_or(da_domain::fsm_policy::ArticleFeatures {
+        .and_then(|t| serde_json::from_str(&t).ok());
+    pair.features = match from_artifact {
+        Some(f) => f,
+        None => classify_features(pdf).unwrap_or(da_domain::fsm_policy::ArticleFeatures {
             page_count: 0,
             toc_bookmarks: 0,
             text_layer_quality: 0.0,
             domain: String::new(),
-        });
+        }),
+    };
 
     // Append the pair and its two counterfactual observations.
     let dir = std::path::Path::new("data/agent_memory/policy");
@@ -1233,6 +1251,27 @@ fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<(
     println!("pairs: {}", pairs_path.display());
     println!("observations appended: 2 -> {journal}");
     Ok(())
+}
+
+/// Classify a PDF into the policy's decision features (ADR-080: the harness
+/// measures the condition itself when no ingest artifact exists). Behind the
+/// `pdf-classifier` feature; without it the caller falls back to the honest
+/// not-measured defaults.
+#[cfg(feature = "pdf-classifier")]
+fn classify_features(pdf: &str) -> Option<da_domain::fsm_policy::ArticleFeatures> {
+    use da_ports::PdfClassificationPort;
+    let bytes = std::fs::read(pdf).ok()?;
+    let classifier = da_adapters::PdfInspectorClassifier::new();
+    let rt = tokio::runtime::Runtime::new().ok()?;
+    let classification = rt.block_on(classifier.classify(&bytes)).ok()?;
+    Some(
+        da_application::parse_policy_observation::features_from_classification(&classification, ""),
+    )
+}
+
+#[cfg(not(feature = "pdf-classifier"))]
+fn classify_features(_pdf: &str) -> Option<da_domain::fsm_policy::ArticleFeatures> {
+    None
 }
 
 /// Read `data/processed/<id>/parsed/article.json` and turn it into outcome

@@ -151,7 +151,31 @@ that is recorded, not hidden.
 4. Run over a small real corpus (the textbook PDFs + a few ACM papers).
 5. `da policy learn` over the resulting journal; record gain/no-gain.
 
-## 5. Relations
+## 5. Corrections and findings
+
+### 2026-10-12 — TOC arm may be NotApplicable; margin 0 is sensitive
+
+Two findings from the first live corpus run (4 PDFs):
+
+1. **NotApplicable arms.** A PDF without outline bookmarks cannot be parsed by
+   the TOC arm (`pdf-toc stage: empty toc`). This is not a loss — the choice is
+   forced. The verdict vocabulary gained `NotApplicable`: an absent arm emits
+   no observation, and if exactly one arm is applicable it is the winner.
+   `score_pair_optional` implements this; `score_pair` (both arms present) is
+   unchanged.
+2. **Margin sensitivity.** On one document both arms produced 10 sections and
+   the verdict turned on a 1.5% body-char difference (34818 vs 34316). With
+   `margin: 0` that counts as a win, but it is measurement noise, not a real
+   preference. The metric stays frozen at `margin: 0` for now (it is the honest
+   "strictly more is better" rule); if corpus runs show the table flipping on
+   noise, the margin becomes a DATA change with its own recorded decision.
+
+The first run also confirmed the mechanism end to end: 4 documents produced 3
+pairs, and the learned table carried a real decision (bucket `p=1_49` -> `xy_cut`
+at mean reward 0.67 vs 0.33) that native could not have learned, because native
+never observed the TOC arm at all.
+
+## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
 - ADR-079: Faculty D pre-parse analysis gains real paired history; Faculty A

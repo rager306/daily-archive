@@ -16,6 +16,12 @@ pub struct ParseGrammarDecision {
     pub route: GrammarRoute,
     pub policy_hash: String,
     pub source: PolicySource,
+    /// ADR-079 D505: the exact query bucket, so a reader sees WHY (which
+    /// condition) the decision was made. Always present.
+    pub bucket_key: String,
+    /// ADR-079 D505: the learned cell that answered, when one did. `None`
+    /// means the native DATA rules answered (or no table was attached).
+    pub cell: Option<da_domain::fsm_policy::TableCell>,
 }
 
 /// Consult grammar_route and map to an FSM grammar_profile via DATA.
@@ -44,6 +50,8 @@ pub fn resolve_parse_grammar(
         route,
         policy_hash: decision.id.source.hash_stamp().to_string(),
         source: decision.id.source,
+        bucket_key: da_domain::fsm_policy::feature_bucket(DecisionPoint::GrammarRoute, features),
+        cell: None,
     })
 }
 
@@ -78,6 +86,11 @@ pub fn resolve_parse_grammar_with_learned(
                     route,
                     policy_hash: d.id.source.hash_stamp().to_string(),
                     source: d.id.source,
+                    bucket_key: da_domain::fsm_policy::feature_bucket(
+                        DecisionPoint::GrammarRoute,
+                        features,
+                    ),
+                    cell: None,
                 });
             }
             Err(FsmPolicyError::UnknownPoint(_)) => {}
@@ -92,8 +105,8 @@ pub fn resolve_parse_grammar_with_learned(
     if let Some(table) = learned {
         native = native.with_learned_table(table.clone())?;
     }
-    let d = native.consult(DecisionPoint::GrammarRoute, features)?;
-    let route = d.route.unwrap_or(GrammarRoute::XyCut);
+    let detail = native.consult_detail(DecisionPoint::GrammarRoute, features)?;
+    let route = detail.decision.route.unwrap_or(GrammarRoute::XyCut);
     let grammar_profile = registry
         .profile_for(route)
         .unwrap_or(default.as_str())
@@ -101,8 +114,10 @@ pub fn resolve_parse_grammar_with_learned(
     Ok(ParseGrammarDecision {
         grammar_profile,
         route,
-        policy_hash: d.id.source.hash_stamp().to_string(),
-        source: d.id.source,
+        policy_hash: detail.decision.id.source.hash_stamp().to_string(),
+        source: detail.decision.id.source,
+        bucket_key: detail.bucket_key,
+        cell: detail.cell,
     })
 }
 

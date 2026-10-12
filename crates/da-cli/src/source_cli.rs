@@ -70,6 +70,39 @@ pub(crate) fn stamp_parse_grammar(
     m.insert("policy_hash".into(), policy_hash.into());
 }
 
+/// ADR-079 D505: stamp the WHY alongside the decision — the query bucket and,
+/// when a learned cell answered, its support and generalization level. These
+/// are additive keys; a reader can replay which condition drove the route.
+pub(crate) fn stamp_policy_detail(
+    m: &mut serde_yaml::Mapping,
+    decision: &da_application::parse_grammar::ParseGrammarDecision,
+) {
+    if !decision.bucket_key.is_empty() {
+        m.insert(
+            "policy_bucket_key".into(),
+            decision.bucket_key.clone().into(),
+        );
+    }
+    match &decision.cell {
+        Some(cell) => {
+            m.insert(
+                "policy_cell_level".into(),
+                (cell.level.code() as i64).into(),
+            );
+            m.insert(
+                "policy_cell_key".into(),
+                cell.bucket_key_used.clone().into(),
+            );
+            if let Some(support) = cell.support {
+                m.insert("policy_cell_support".into(), (support as i64).into());
+            }
+        }
+        None => {
+            m.insert("policy_cell_level".into(), "native".into());
+        }
+    }
+}
+
 pub(crate) fn grobid_profile_from_route(
     route: da_domain::fsm_policy::ProfileRoute,
 ) -> da_parse::GrobidProfile {
@@ -420,6 +453,7 @@ fn stamp_from_grammar(
         }
     };
     stamp_parse_grammar(m, &g.grammar_profile, g.route.as_str(), source, hash);
+    stamp_policy_detail(m, g);
 }
 
 fn stamp_policy_none(m: &mut serde_yaml::Mapping) {
@@ -3760,6 +3794,59 @@ mod tests {
         fn drop(&mut self) {
             std::env::set_current_dir(&self.original).unwrap();
         }
+    }
+
+    #[test]
+    fn stamp_policy_detail_writes_why_when_learned() {
+        use da_application::parse_grammar::ParseGrammarDecision;
+        use da_domain::fsm_policy::{BucketLevel, GrammarRoute, PolicySource, TableCell};
+        let d = ParseGrammarDecision {
+            grammar_profile: "arxiv_pdf_dot".into(),
+            route: GrammarRoute::XyCut,
+            policy_hash: "abc".into(),
+            source: PolicySource::Learned {
+                table_sha256: "abc".into(),
+            },
+            bucket_key: "grammar_route;p=1_49;b=0;q=ge700;d=_".into(),
+            cell: Some(TableCell {
+                code: "xy_cut".into(),
+                bucket_key_used: "grammar_route;p=1_49;b=0;q=ge700;d=_".into(),
+                support: Some(5),
+                level: BucketLevel::Exact,
+            }),
+        };
+        let mut m = serde_yaml::Mapping::new();
+        stamp_policy_detail(&mut m, &d);
+        assert_eq!(
+            m.get("policy_bucket_key").and_then(|v| v.as_str()),
+            Some("grammar_route;p=1_49;b=0;q=ge700;d=_")
+        );
+        assert_eq!(
+            m.get("policy_cell_support").and_then(|v| v.as_i64()),
+            Some(5)
+        );
+        assert_eq!(m.get("policy_cell_level").and_then(|v| v.as_i64()), Some(0));
+    }
+
+    #[test]
+    fn stamp_policy_detail_marks_native_when_no_cell() {
+        use da_application::parse_grammar::ParseGrammarDecision;
+        use da_domain::fsm_policy::{GrammarRoute, PolicySource};
+        let d = ParseGrammarDecision {
+            grammar_profile: "arxiv_pdf_dot".into(),
+            route: GrammarRoute::XyCut,
+            policy_hash: "native".into(),
+            source: PolicySource::Native,
+            bucket_key: "grammar_route;p=1_49;b=0;q=ge700;d=_".into(),
+            cell: None,
+        };
+        let mut m = serde_yaml::Mapping::new();
+        stamp_policy_detail(&mut m, &d);
+        assert_eq!(
+            m.get("policy_cell_level").and_then(|v| v.as_str()),
+            Some("native")
+        );
+        assert!(m.get("policy_cell_support").is_none());
     }
 
     #[test]

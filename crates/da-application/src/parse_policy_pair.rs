@@ -118,6 +118,9 @@ pub enum PairVerdict {
     Tie,
     /// A conservation loss vetoed this arm regardless of yield.
     Vetoed,
+    /// The arm cannot run on this document (e.g. the TOC arm needs outline
+    /// bookmarks the PDF does not have). Not a loss: the choice was forced.
+    NotApplicable,
 }
 
 /// One arm's measured outcome inside a pair.
@@ -205,17 +208,79 @@ pub fn score_pair(
     }
 }
 
+/// Score a pair where either arm may be **not applicable** (ADR-080 §5
+/// correction). A document with no outline cannot be parsed by the TOC arm, so
+/// that arm is `NotApplicable` and the other wins if it produced evidence.
+/// Returns `None` when neither arm produced an outcome — there is nothing to
+/// pair.
+pub fn score_pair_optional(
+    metric: &PairMetric,
+    toc: Option<(ParseArm, String, PolicyOutcomeEvidence)>,
+    grobid: Option<(ParseArm, String, PolicyOutcomeEvidence)>,
+) -> Option<PairedObservation> {
+    let toc_absent = toc.is_none();
+    let gb_absent = grobid.is_none();
+    let (toc_arm, toc_code, toc_ev) = toc.unwrap_or((
+        ParseArm::Toc,
+        ParseArm::Toc.decision_code().to_string(),
+        PolicyOutcomeEvidence {
+            ok: false,
+            section_count: 0,
+            body_chars: 0,
+            latency_ms: 0,
+            backend: None,
+        },
+    ));
+    let (gb_arm, gb_code, gb_ev) = grobid.unwrap_or((
+        ParseArm::Grobid,
+        ParseArm::Grobid.decision_code().to_string(),
+        PolicyOutcomeEvidence {
+            ok: false,
+            section_count: 0,
+            body_chars: 0,
+            latency_ms: 0,
+            backend: None,
+        },
+    ));
+    // Build the base pair, then override the verdict of an absent arm.
+    let mut pair = score_pair(
+        metric,
+        (toc_arm, toc_code, toc_ev),
+        (gb_arm, gb_code, gb_ev),
+    );
+    if toc_absent {
+        pair.arms[0].verdict = PairVerdict::NotApplicable;
+    }
+    if gb_absent {
+        pair.arms[1].verdict = PairVerdict::NotApplicable;
+    }
+    // If exactly one arm is applicable and it produced evidence, it is the
+    // winner; if both are absent there is nothing to pair.
+    if toc_absent && gb_absent {
+        return None;
+    }
+    if toc_absent && !gb_absent {
+        pair.arms[1].verdict = PairVerdict::Winner;
+    }
+    if gb_absent && !toc_absent {
+        pair.arms[0].verdict = PairVerdict::Winner;
+    }
+    Some(pair)
+}
+
 /// Project a scored pair into the observations the trainer consumes: the
 /// winner earns reward 1.0, the loser 0.0, a tie both 0.5, a veto 0.0. Both
 /// arms are emitted so the table sees a genuine counterfactual.
 pub fn pair_to_observations(pair: &PairedObservation) -> Vec<PolicyObservation> {
     pair.arms
         .iter()
+        .filter(|arm| arm.verdict != PairVerdict::NotApplicable)
         .map(|arm| {
             let reward = match arm.verdict {
                 PairVerdict::Winner => binary_reward(&arm.evidence).max(1.0),
                 PairVerdict::Loser | PairVerdict::Vetoed => 0.0,
                 PairVerdict::Tie => 0.5,
+                PairVerdict::NotApplicable => 0.0, // filtered out above
             };
             PolicyObservation {
                 document_identity: pair.document_identity.clone(),
@@ -335,5 +400,45 @@ mod tests {
         )
         .unwrap_err();
         assert!(matches!(err, PairError::MetricSchema(_)));
+    }
+
+    #[test]
+    fn optional_pair_marks_absent_toc_and_crowns_grobid() {
+        let m = metric();
+        let pair = score_pair_optional(
+            &m,
+            None, // no outline -> TOC arm not applicable
+            Some((ParseArm::Grobid, "xy_cut".into(), ev(true, 22, 100))),
+        )
+        .expect("one applicable arm is a pair");
+        assert_eq!(pair.arms[0].verdict, PairVerdict::NotApplicable);
+        assert_eq!(pair.arms[1].verdict, PairVerdict::Winner);
+        // Only the applicable arm becomes an observation.
+        let obs = pair_to_observations(&pair);
+        assert_eq!(obs.len(), 1);
+        assert_eq!(obs[0].decision_code, "xy_cut");
+        assert_eq!(obs[0].reward, 1.0);
+    }
+
+    #[test]
+    fn optional_pair_marks_absent_grobid_and_crowns_toc() {
+        let m = metric();
+        let pair = score_pair_optional(
+            &m,
+            Some((ParseArm::Toc, "page_outline".into(), ev(true, 15, 100))),
+            None,
+        )
+        .unwrap();
+        assert_eq!(pair.arms[0].verdict, PairVerdict::Winner);
+        assert_eq!(pair.arms[1].verdict, PairVerdict::NotApplicable);
+        let obs = pair_to_observations(&pair);
+        assert_eq!(obs.len(), 1);
+        assert_eq!(obs[0].decision_code, "page_outline");
+    }
+
+    #[test]
+    fn optional_pair_with_both_absent_is_not_a_pair() {
+        let m = metric();
+        assert!(score_pair_optional(&m, None, None).is_none());
     }
 }
