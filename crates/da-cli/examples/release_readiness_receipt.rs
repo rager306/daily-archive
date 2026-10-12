@@ -399,7 +399,7 @@ fn mutations() -> Vec<(&'static str, &'static str, Mutation)> {
     ]
 }
 
-fn gate_mut<'a>(gates: &'a mut Vec<ReleaseGateRow>, gate_id: &str) -> &'a mut ReleaseGateRow {
+fn gate_mut<'a>(gates: &'a mut [ReleaseGateRow], gate_id: &str) -> &'a mut ReleaseGateRow {
     gates
         .iter_mut()
         .find(|row| row.gate_id == gate_id)
@@ -407,7 +407,7 @@ fn gate_mut<'a>(gates: &'a mut Vec<ReleaseGateRow>, gate_id: &str) -> &'a mut Re
 }
 
 fn milestone_mut<'a>(
-    rows: &'a mut Vec<da_cli::release_readiness_receipt::MilestoneEvidence>,
+    rows: &'a mut [da_cli::release_readiness_receipt::MilestoneEvidence],
     slice: &str,
 ) -> &'a mut da_cli::release_readiness_receipt::MilestoneEvidence {
     rows.iter_mut()
@@ -416,10 +416,10 @@ fn milestone_mut<'a>(
 }
 
 fn write_artifact_atomically(path: &Path, bytes: &[u8]) -> Result<(), Box<dyn Error>> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        fs::create_dir_all(parent)?;
     }
     let tmp = path.with_extension("tmp");
     fs::write(&tmp, bytes)?;
