@@ -160,10 +160,11 @@ enum Commands {
 
     /// ADR-078: candidate learned policy table (learn / inspect). Candidate-only.
     Policy {
-        /// Subcommand: learn
+        /// Subcommand: learn | health
         action: String,
         /// Decision point to learn: grammar_route | batch_admission | profile_route
-        #[arg(long)]
+        /// (required for learn; ignored by health)
+        #[arg(long, default_value = "")]
         point: String,
         /// Observations journal (JSONL)
         #[arg(long, default_value = "data/agent_memory/policy/observations.jsonl")]
@@ -1112,6 +1113,12 @@ fn require_fd_api_key_for_ingest() {
 fn policy_command(action: &str, point: &str, journal: &str, min_support: usize, out: Option<&str>) {
     match action {
         "learn" => {
+            if point.is_empty() {
+                eprintln!(
+                    "learn requires --point (grammar_route | batch_admission | profile_route)"
+                );
+                std::process::exit(2);
+            }
             let decision_point = da_domain::fsm_policy::DecisionPoint::parse(point)
                 .unwrap_or_else(|| panic!("unknown decision point: {point}"));
             use da_application::parse_policy_artifact::save_learned_table;
@@ -1198,7 +1205,71 @@ fn policy_command(action: &str, point: &str, journal: &str, min_support: usize, 
                 "opt-in consult: DA_LEARNED_POLICY_TABLE={out_path} (never production by default)"
             );
         }
-        other => panic!("unknown policy action {other:?} (learn)"),
+        "health" => {
+            use da_application::parse_policy_health::{HealthThresholds, parse_health};
+            use da_application::parse_policy_table::PolicyObservation;
+
+            let text = std::fs::read_to_string(journal)
+                .unwrap_or_else(|e| panic!("observations journal {journal}: {e}"));
+            let observations: Vec<PolicyObservation> = text
+                .lines()
+                .filter(|l| !l.trim().is_empty())
+                .map(|l| serde_json::from_str(l).expect("journal line must parse"))
+                .collect();
+            match parse_health(&observations, &HealthThresholds::default()) {
+                Ok(report) => {
+                    println!("journal: {journal} ({} observations)", observations.len());
+                    println!("journal digest: {}…", &report.journal_digest[..16]);
+                    for (point, health) in &report.points {
+                        println!(
+                            "{point}: {}/{} ok ({:.0}%), mean latency {:.0} ms",
+                            health.ok,
+                            health.total,
+                            100.0 * health.ok as f64 / health.total as f64,
+                            health.mean_latency_ms
+                        );
+                    }
+                    for (backend, health) in &report.backends {
+                        println!(
+                            "backend {backend}: {}/{} ok, p50={} ms p95={} ms",
+                            health.ok, health.total, health.latency_p50_ms, health.latency_p95_ms
+                        );
+                    }
+                    if let Some(slowest) = report.buckets.iter().max_by(|a, b| {
+                        a.1.mean_latency_ms
+                            .partial_cmp(&b.1.mean_latency_ms)
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    }) {
+                        println!(
+                            "slowest bucket: {} ({:.0} ms mean, {}/{} ok)",
+                            slowest.0, slowest.1.mean_latency_ms, slowest.1.ok, slowest.1.total
+                        );
+                    }
+                    if report.drift_alarms.is_empty() {
+                        println!("drift alarms: none");
+                    } else {
+                        for alarm in &report.drift_alarms {
+                            println!("DRIFT ALARM [{}]: {}", alarm.kind, alarm.detail);
+                        }
+                    }
+                    if let Some(out_json) = out {
+                        let bytes = serde_json::to_vec_pretty(&report)
+                            .unwrap_or_else(|e| panic!("serialize health report: {e}"));
+                        if let Some(parent) = std::path::Path::new(&out_json).parent() {
+                            let _ = std::fs::create_dir_all(parent);
+                        }
+                        std::fs::write(&out_json, bytes)
+                            .unwrap_or_else(|e| panic!("write health report {out_json}: {e}"));
+                        println!("report: {out_json}");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("health: {e}");
+                    std::process::exit(1);
+                }
+            }
+        }
+        other => panic!("unknown policy action {other:?} (learn|health)"),
     }
 }
 
