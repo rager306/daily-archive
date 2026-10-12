@@ -1,0 +1,59 @@
+# DATA: drift-flag ownership registry (M516-th0oby/S12/T05)
+#
+# The milestone criterion "every preflight flag names an owner" is only
+# machine-checkable once each flag CLASS carries a declared owner. This file is
+# the DATA that declares it; `TrajectoryService._check_drift_ownership` is the
+# fail-closed consumer, and `TrajectoryService._drift_owner_for` is what stamps
+# the `owner` field onto every serialized flag.
+#
+# Keys are flag CLASSES — the flag id before any parameterized `@` suffix — so a
+# parameterized id such as `artifact_file_missing@M514` resolves through
+# `artifact_file_missing`. Populating by class (not by full id) is what lets a
+# per-milestone parameter resolve without a per-milestone entry.
+#
+# This file deliberately carries NO `dimension` and NO `severity` key. It is an
+# ownership registry, not a check rule: registering a dimension/severity here
+# would let it masquerade as a quality gate (D492). An unowned flag of a required
+# severity becomes a `drift_flag_owner_missing` finding — drift-visible, never a
+# merge blocker and never a silent pass.
+#
+# Fail-closed: if this file is missing, malformed, or declares no required
+# severity, the service falls back to `required_for_severities: [high]` with an
+# empty owner map, so every high flag reports as unowned rather than passing.
+schema_version: drift-ownership.v1
+
+# Severities whose flags MUST resolve to a declared owner. A flag of another
+# severity may still carry an owner; it simply does not fail closed when absent.
+required_for_severities:
+  - high
+
+# flag CLASS -> owner. Owners are the process/role responsible for clearing the
+# flag. The owners of the pre-existing high flags are recorded in the decision
+# log (D-ownership); the checks themselves are never weakened to clear a flag
+# (R141).
+owners:
+  # reverse ADR audit — the governor's own audit service over the codebase.
+  reverse_adr_audit_violations: governor-audit
+  # GSD control plane — projection/liveness/doctor/tech-verdict signals read
+  # from the GSD runtime stores.
+  gsd_control_plane_projection_contention: gsd-control-plane
+  gsd_control_plane_liveness_wedge: gsd-control-plane
+  gsd_control_plane_tech_verdict_block: gsd-control-plane
+  gsd_control_plane_doctor_new_divergence: gsd-control-plane
+  # GSD exec-capture evidence hygiene (D463): a captured run that hit the
+  # timeout cap, or that reported exit 0 while its own output named a failure.
+  # The remedy is to bound or re-run the command, not to reword the reader, so
+  # the owner is the exec-evidence surface, not the control plane.
+  gsd_exec_false_success_evidence: gsd-exec-evidence
+  gsd_exec_timeout_evidence: gsd-exec-evidence
+  # data-integrity checker over artifacts/ and committed reports.
+  data_integrity_stale_artifact: data-integrity
+  # resource-safety preflight (disk / memory / target size).
+  resource_target_bloat: resource-safety
+  # schema-hierarchy checker over data/ subdirectories.
+  subdir_not_in_schema: schema-hierarchy
+  # milestone scorecard momentum signal.
+  scorecard_momentum_drift: milestone-scorecard
+  # The ownership audit's own finding. Declared so the audit is self-consistent:
+  # its sentinel flag resolves to an owner and never self-triggers.
+  drift_flag_owner_missing: governor-ownership

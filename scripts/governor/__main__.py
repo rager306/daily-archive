@@ -260,7 +260,11 @@ def main() -> int:
         name = flag.get("flag") if isinstance(flag, dict) else getattr(flag, "flag", "?")
         sev = flag.get("severity") if isinstance(flag, dict) else getattr(flag, "severity", "")
         ev = flag.get("evidence") if isinstance(flag, dict) else getattr(flag, "evidence", "")
-        print(f"  - {name} [{sev}]: {ev}")
+        owner = flag.get("owner") if isinstance(flag, dict) else getattr(flag, "owner", None)
+        # M516-th0oby/S12/T05: name the owner of every flag's class, so the
+        # criterion "every preflight flag names an owner" is visible on the CLI
+        # surface too. `UNOWNED` is the honest rendering of a missing owner.
+        print(f"  - {name} [{sev}] owner={owner or 'UNOWNED'}: {ev}")
 
     # D491 / R141: expose the effective active-research policy the report ran
     # under, so the authorization DATA is a consumed policy rather than an
@@ -1130,7 +1134,10 @@ def _run_doctor(args) -> int:
     report = service.build_report(phase="closeout")
     print(f"  Verdict: {report.verdict}")
     for flag in report.drift_flags:
-        print(f"  [{flag.get('severity')}] {flag.get('flag')}: {str(flag.get('evidence'))[:100]}")
+        print(
+            f"  [{flag.get('severity')}] owner={flag.get('owner') or 'UNOWNED'} "
+            f"{flag.get('flag')}: {str(flag.get('evidence'))[:100]}"
+        )
     
     print("\n--- 2. Architecture ---")
     arch_result = _run_architecture_gate(args)

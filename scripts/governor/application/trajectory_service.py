@@ -2100,6 +2100,10 @@ class TrajectoryService:
         # registry (object identity), never the flag name or its evidence text,
         # so a signal cannot exempt itself by claiming to be a D491 note.
         self._d491_informational_flags: list[DriftFlag] = []
+        # M516-th0oby/S12/T05: cached drift-flag ownership DATA. `None` means "not
+        # loaded yet"; the read is by `getattr` so a service built with `__new__`
+        # (as the governor's own unit tests do) still resolves owners.
+        self._drift_ownership_cache: dict | None = None
 
     def build_report(self, phase: str = "preflight") -> TrajectoryReport:
         audit_report = self.audit.run_audit()
@@ -2330,6 +2334,13 @@ class TrajectoryService:
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
+
+        # M516-th0oby/S12/T05: every flag the report publishes must name an owner.
+        # The audit runs on the final flag list (after the last `extend`) and before
+        # serialization, so an orphan signal is visible in the same report instead of
+        # passing silently. It appends `drift_flag_owner_missing` findings; a
+        # registry that names every class contributes nothing here.
+        drift_flags.extend(self._check_drift_ownership(drift_flags))
 
         # Serialized flags publish whether the verdict exemption applies to them,
         # so a `low` note in the report states its own reason instead of looking
@@ -6786,7 +6797,124 @@ class TrajectoryService:
             # True only for a note this service itself downgraded under a
             # currently-valid D491 authorization (per-instance identity).
             "informational": flag.severity == "low" and id(flag) in informational_ids,
+            # M516-th0oby/S12/T05: the declared owner of this flag's CLASS, so a
+            # serialized flag names who clears it. `None` means unowned; the
+            # ownership audit reports an unowned required flag fail-closed.
+            "owner": self._drift_owner_for(flag.flag),
         }
+
+    # ── M516-th0oby/S12/T05: drift-flag ownership ─────────────────────────────
+    #
+    # The milestone criterion "every preflight flag names an owner" is only
+    # machine-checkable once each flag CLASS has a declared owner. The registry is
+    # DATA (`scripts/governor/checks/drift_ownership.yaml`); this service is the
+    # fail-closed consumer. An unowned flag of a `required_for_severities`
+    # severity is a `drift_flag_owner_missing` finding -- never a silent default
+    # -- so a new check cannot publish an orphan signal.
+
+    def _drift_ownership_map(self) -> dict:
+        """The ownership DATA, cached per service instance.
+
+        A missing or malformed registry degrades to the fail-closed default
+        (`required_for_severities=["high"]`, no owners): every high flag then
+        reports as unowned rather than passing silently. The cache is read by
+        `getattr` so a service built with `__new__` still resolves an owner
+        instead of raising `AttributeError`.
+        """
+        cached = getattr(self, "_drift_ownership_cache", None)
+        if cached is not None:
+            return cached
+        path = self.root / _DRIFT_OWNERSHIP_RELATIVE
+        data = None
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            data = None
+        owners = data.get("owners") if isinstance(data, dict) else None
+        required = (
+            data.get("required_for_severities") if isinstance(data, dict) else None
+        )
+        resolved = {
+            "owners": {
+                key: value
+                for key, value in owners.items()
+                if isinstance(key, str) and isinstance(value, str) and value
+            }
+            if isinstance(owners, dict)
+            else {},
+            "required_for_severities": [
+                severity for severity in required if isinstance(severity, str)
+            ]
+            if isinstance(required, list)
+            else [],
+        }
+        if not resolved["required_for_severities"]:
+            # Fail closed: a registry that cannot be read, or that declares no
+            # required severity, still holds `high` flags to ownership.
+            resolved["required_for_severities"] = ["high"]
+        self._drift_ownership_cache = resolved
+        return resolved
+
+    @staticmethod
+    def _drift_flag_class(flag_id: str) -> str:
+        """The flag CLASS: the id before any parameterized `@` suffix.
+
+        `artifact_file_missing@M514` and `artifact_file_missing` share the class
+        `artifact_file_missing`, so one registry entry owns both.
+        """
+        return str(flag_id).split("@", 1)[0]
+
+    def _drift_owner_for(self, flag_id: str) -> str | None:
+        """The declared owner for a flag id, resolved by class; None if unowned."""
+        return self._drift_ownership_map()["owners"].get(
+            self._drift_flag_class(flag_id)
+        )
+
+    def _check_drift_ownership(self, flags: list[DriftFlag]) -> list[DriftFlag]:
+        """Fail-closed ownership audit over the flags the report is about to publish.
+
+        Every flag whose severity is in `required_for_severities` must resolve to a
+        declared owner; a flag class the registry does not name becomes a
+        `drift_flag_owner_missing` finding. The audit seeds itself with the finding
+        it can emit, so the finding's own class must also be declared -- a
+        self-consistent registry with no special case, and no recursion.
+        """
+        ownership = self._drift_ownership_map()
+        required = set(ownership["required_for_severities"])
+        seeds = list(flags)
+        seeds.append(
+            DriftFlag(
+                flag=_DRIFT_OWNER_MISSING_FLAG,
+                severity="high",
+                evidence="ownership audit sentinel",
+            )
+        )
+        findings: list[DriftFlag] = []
+        for flag in seeds:
+            if flag.severity not in required:
+                continue
+            if self._drift_owner_for(flag.flag) is not None:
+                continue
+            findings.append(
+                DriftFlag(
+                    flag=_DRIFT_OWNER_MISSING_FLAG,
+                    severity="high",
+                    evidence=(
+                        f"drift flag {flag.flag!r} (severity={flag.severity}) has no "
+                        "declared owner in scripts/governor/checks/drift_ownership.yaml"
+                    ),
+                )
+            )
+        return findings
+
+
+# ── M516-th0oby/S12/T05: drift-flag ownership registry (DATA) ────────────────
+#
+# The ownership registry is keyed by flag CLASS and holds no dimension/severity
+# (it is DATA about ownership, not a check rule -- D492). The audit that consumes
+# it lives in `TrajectoryService._check_drift_ownership`.
+_DRIFT_OWNERSHIP_RELATIVE = "scripts/governor/checks/drift_ownership.yaml"
+_DRIFT_OWNER_MISSING_FLAG = "drift_flag_owner_missing"
 
 
 # ── D491 active research authorization (DATA `data/parse/research_authorization.yaml`) ──

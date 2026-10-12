@@ -45,6 +45,13 @@ class DriftFlag:
     severity: str  # "high" (blocking) | "medium" (drift) | "low" (informational)
     evidence: str = ""
     dimension: Optional[str] = None
+    # M516-th0oby/S12/T05: the declared owner of this flag's CLASS (the id before
+    # any parameterized `@` suffix), resolved from the DATA registry
+    # `scripts/governor/checks/drift_ownership.yaml`. `None` means the flag is
+    # unowned; a `required_for_severities` flag in that state is reported
+    # fail-closed by `TrajectoryService._check_drift_ownership`. Defaulted so every
+    # existing construction stays valid.
+    owner: Optional[str] = None
 
 
 @dataclass
