@@ -64,7 +64,7 @@ pub struct PromptRegistry {
 }
 
 impl PromptRegistry {
-    /// Structural validation. Any unlock attempt (`d127_import_eligible: true`)
+    /// Structural validation. Any unlock attempt (setting `d127_import_eligible` to true)
     /// or identity drift is refused.
     pub fn validate(&self) -> Result<(), PromptRegistryError> {
         if self.schema_version != PROMPT_REGISTRY_SCHEMA_VERSION {

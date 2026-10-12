@@ -113,7 +113,7 @@ impl GovernedProcessRecord {
     /// Refuses: an empty `article_id`; zero policy decisions; an admission code
     /// outside [`GOVERNED_ADMISSION_CODES`]; a prompt lineage with an empty
     /// identity or a non-64-lowercase-hex fingerprint; and any attempt to set
-    /// `import_eligible = true`.
+    /// `import_eligible` to true.
     pub fn validate(&self) -> Result<(), GovernedProcessRecordError> {
         if self.article_id.trim().is_empty() {
             return Err(GovernedProcessRecordError::EmptyArticleId);

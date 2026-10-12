@@ -73,6 +73,8 @@ pub struct MeasurementInputs {
 }
 
 /// The fully derived artifact plus the canonical bytes it was validated as.
+#[allow(dead_code)] // `bytes` pins the canonical artifact bytes for downstream
+// receipt tooling; current consumers only read `receipt`.
 pub struct ThresholdCandidatesArtifact {
     /// The built and validated receipt.
     pub receipt: ThresholdCandidatesReceipt,
