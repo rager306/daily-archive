@@ -9,6 +9,7 @@
 - Amends: ADR-078 (the learned table gains per-cell support and a fallback chain; consult detail is a superset of the stamp), ADR-074 (the declared-but-dead decision points get a data path)
 - Binding level: binding for the form of the four ported faculties and the not-ported list; does not amend ADR-076 waves, promotion rules, or the three-automata separation
 - Revisable: after faculty A runs over a real journal and faculty D is exercised with F4 two-arm data; or if the fallback chain proves to blur route boundaries
+- Corrections: 2026-10-12 — D506 fallback corrected from wildcard keys to **not-measured markers** (see §7). The table stores exact keys only, so a wildcard probe could never match a stored cell; the chain now asks "what was learned where this feature was not measured".
 - Tags: policy, fsm, queen-pattern, health, confidence, fallback, observation-journal
 
 ## 0. One-line decision
@@ -68,11 +69,13 @@ points (`concurrency_tune`, `retry_policy`, `summary_depth` are empty-native;
    probability; downstream gating thresholds live in DATA, not code.
 3. **Faculty C — hierarchical bucket fallback (D506, R147).** The bucket key is
    structured (`point;p=..;b=..;q=..;d=..`). Consult tries a fixed, total
-   chain: L0 exact → L1 domain dropped (`d=*`) → L2 domain and bookmarks
-   dropped (`d=*,b=*`) → native fail-open. **The chain never generalizes
-   across text-layer quality (`q`)**: a scan-vs-text distinction must not be
-   blurred. Each level is stamped in the consult detail; replay under the same
-   table and features reproduces the same chain.
+   chain: L0 exact → L1 domain replaced by its **not-measured marker**
+   (`d=_`) → L2 domain and bookmarks replaced by their not-measured markers
+   (`d=_,b=0`) → native fail-open. **The chain never generalizes across
+   text-layer quality (`q`)**: a scan-vs-text distinction must not be blurred.
+   Each level is stamped in the consult detail; replay under the same table and
+   features reproduces the same chain. See §7 for why the marker is `_`/`0`,
+   not a wildcard.
 4. **Faculty D — pre-parse analysis (D507, R149/R150).** A small
    `ParseTaskAnalysis { features, estimated_duration_ms, sample_count,
    risk_flags }` derived from journal history for the bucket (mean latency at
@@ -130,10 +133,11 @@ pub struct LearnedDecisionTable {
 }
 
 impl LearnedDecisionTable {
-    /// L0 exact → L1 drop domain → L2 drop domain+bookmarks → None.
-    /// Never drops the quality band.
-    pub fn lookup_with_fallback(&self, point: DecisionPoint, features: &ArticleFeatures)
-        -> Option<TableCell>; // { code, bucket_key_used, support, fallback_level }
+    /// L0 exact → L1 domain not-measured → L2 domain+bookmarks not-measured
+    /// → None. Never generalizes the quality band. Matching stays exact string
+    /// equality against stored keys; the level selects which key is probed.
+    pub fn lookup_with_fallback(&self, features: &ArticleFeatures)
+        -> Option<TableCell>; // { code, bucket_key_used, support, level }
 }
 
 pub struct PolicyConsultDetail {
@@ -143,8 +147,10 @@ pub struct PolicyConsultDetail {
 }
 ```
 
-- Fallback keys are derived by string surgery on the structured key
-  (`d=<domain>` → `d=*`, then `b=<n>` → `b=*`), deterministic by construction.
+- Fallback keys are derived from the features by the same bucketing function
+  at a higher level (`feature_bucket_at_level`), so the probe key is produced
+  by the SAME code that produced the stored keys — no separate string surgery
+  that could drift from the trainer. Deterministic by construction.
 - `NativeFallbackPolicy::consult_detail(point, features)` is the new surface;
   `consult` delegates to it and discards the detail.
 - The trainer emits `cell_support` alongside cells; the digest covers
@@ -186,7 +192,29 @@ also consume.
   defaulting empty (support unknown ⇒ consult detail reports `None`, never a
   fabricated count).
 
-## 5. Relations
+## 5. Corrections
+
+### 2026-10-12 — D506 fallback: wildcard → not-measured markers
+
+The first implementation of the fallback chain probed generalized keys with a
+`*` wildcard (`d=*`, `b=*`). A test caught the defect immediately: the table
+stores **exact** keys only, so a wildcard probe can never equal a stored key,
+which made every level ≥ 1 unreachable. The corrected semantics:
+
+- A level replaces the named feature with its **not-measured marker** — `_` for
+  the domain (the value the feature producer emits when the domain is unknown)
+  and `0` for bookmarks (typed absence; the classifier does not measure them).
+- The chain therefore asks "what was learned where this feature was **not
+  measured**", which is the honest reading of a generalization step and stays
+  exact-matchable.
+- `parse_exact_bucket_key` refuses a stored key with a literal `*`, so a
+  wildcard can never be sealed into an artifact.
+
+The decision (D506: a fixed, total, quality-preserving chain) is unchanged;
+only the key vocabulary was corrected. The quality band is still never
+generalized.
+
+## 6. Relations
 
 - ADR-078: extended (support, fallback, consult detail). Its locks are
   unchanged.

@@ -128,6 +128,39 @@ impl NativeFallbackPolicy {
     pub fn learned_stamp(&self) -> Option<&str> {
         self.learned.as_ref().map(|t| t.table_sha256.as_str())
     }
+
+    /// Consult with the full detail (ADR-079 D505): the decision plus the
+    /// bucket key, the matched cell (code/support/level), or `None` when the
+    /// native DATA rules answered. `consult` delegates here and drops detail.
+    pub fn consult_detail(
+        &self,
+        point: DecisionPoint,
+        features: &ArticleFeatures,
+    ) -> FsmPolicyResult<PolicyConsultDetail> {
+        let decision = self.consult(point, features)?;
+        let (bucket_key, cell) = match &self.learned {
+            Some(table) if table.decision_point == point.as_str() => (
+                da_domain::fsm_policy::feature_bucket(point, features),
+                table.lookup_with_fallback(features),
+            ),
+            _ => (da_domain::fsm_policy::feature_bucket(point, features), None),
+        };
+        Ok(PolicyConsultDetail {
+            decision,
+            bucket_key,
+            cell,
+        })
+    }
+}
+
+/// A consult result plus the WHY (ADR-079 D505): the exact bucket key of the
+/// query and, when a learned cell answered, the cell with its support and
+/// generalization level. `cell == None` means the native DATA rules answered.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PolicyConsultDetail {
+    pub decision: PolicyDecision,
+    pub bucket_key: String,
+    pub cell: Option<da_domain::fsm_policy::TableCell>,
 }
 
 #[cfg(test)]
@@ -312,5 +345,72 @@ decision_points:
             .with_learned_table(table)
             .unwrap_err();
         assert!(matches!(err, FsmPolicyError::Load(_)));
+    }
+
+    #[test]
+    fn consult_detail_reports_bucket_and_cell_with_support() {
+        use da_domain::fsm_policy::{BucketLevel, LearnedDecisionTable, feature_bucket};
+        use std::collections::BTreeMap;
+        let features = feat(18, 0, 0.85);
+        let mut cells = BTreeMap::new();
+        let mut support = BTreeMap::new();
+        let key = feature_bucket(DecisionPoint::GrammarRoute, &features);
+        cells.insert(key.clone(), "grobid_structural".to_string());
+        support.insert(key.clone(), 7u32);
+        let table =
+            LearnedDecisionTable::seal_with_support(DecisionPoint::GrammarRoute, cells, support);
+        let p = NativeFallbackPolicy::empty()
+            .with_learned_table(table)
+            .unwrap();
+        let detail = p
+            .consult_detail(DecisionPoint::GrammarRoute, &features)
+            .unwrap();
+        assert_eq!(detail.bucket_key, key);
+        let cell = detail.cell.expect("learned cell answered");
+        assert_eq!(cell.code, "grobid_structural");
+        assert_eq!(cell.support, Some(7));
+        assert_eq!(cell.level, BucketLevel::Exact);
+        assert!(matches!(
+            detail.decision.id.source,
+            PolicySource::Learned { .. }
+        ));
+    }
+
+    #[test]
+    fn consult_detail_reports_none_cell_when_native_answered() {
+        let p = NativeFallbackPolicy::empty();
+        let detail = p
+            .consult_detail(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85))
+            .unwrap();
+        assert!(detail.cell.is_none());
+        assert_eq!(detail.decision.id.source, PolicySource::Native);
+        assert_eq!(
+            detail.bucket_key,
+            da_domain::fsm_policy::feature_bucket(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85))
+        );
+    }
+
+    #[test]
+    fn consult_detail_marks_the_fallback_level_that_answered() {
+        use da_domain::fsm_policy::{BucketLevel, LearnedDecisionTable, feature_bucket_at_level};
+        use std::collections::BTreeMap;
+        // Only the level-2 (domain+bookmarks dropped) cell exists.
+        let mut cells = BTreeMap::new();
+        let mut support = BTreeMap::new();
+        let broad = feature_bucket_at_level(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85), 2);
+        cells.insert(broad.clone(), "page_outline".to_string());
+        support.insert(broad, 3);
+        let table =
+            LearnedDecisionTable::seal_with_support(DecisionPoint::GrammarRoute, cells, support);
+        let p = NativeFallbackPolicy::empty()
+            .with_learned_table(table)
+            .unwrap();
+        let detail = p
+            .consult_detail(DecisionPoint::GrammarRoute, &feat(18, 5, 0.9))
+            .unwrap();
+        let cell = detail.cell.expect("broad cell answered");
+        assert_eq!(cell.level, BucketLevel::DropDomainAndBookmarks);
+        assert_eq!(cell.support, Some(3));
+        assert_eq!(cell.code, "page_outline");
     }
 }
