@@ -206,6 +206,41 @@ concentrated in any feature bucket: they are spread across page counts (7, 15,
 Six pairs were `NotApplicable` on the TOC side (PDFs with no outline) — the
 verdict added in §5 held up across the corpus.
 
+### 2026-10-12 — real `toc_bookmarks` added; the separating signal is still absent
+
+The first corpus run exposed that `toc_bookmarks` was always 0 (the classifier
+does not measure bookmarks), yet it is the TOC arm's precondition. The harness
+now reads the outline count from the TOC observation export it already writes,
+so the feature is a MEASURED count. Second run, 30 PDFs:
+
+| bookmarks | TOC wins | GROBID wins | NotApplicable |
+|---|---|---|---|
+| `bm=0` | 0 | 6 | 6 |
+| `bm>0` | 4 | 20 | 0 |
+
+Findings:
+
+- **`bm=0` perfectly predicts NotApplicable** (6/6): a document with no outline
+  physically cannot be parsed by the TOC arm. The feature is now honest.
+- **Among `bm>0` the TOC arm wins only 17%**, spread across page counts
+  (7, 15, 19, 61) with no monotone relation to the bookmark count.
+- The learned table (3 cells) agrees with the native threshold rule on every
+  validation observation: **learned 53.8% = native 53.8% = baseline**. Still an
+  honest `measured_no_gain`, now with a sharp diagnosis: the four features
+  cannot separate the TOC-favorable documents, and native already encodes the
+  `pages>=50 && bookmarks>=1` rule the data supports.
+
+Caveat recorded (metric fairness): `section_count` as primary yield may favor
+the arm that segments more finely. GROBID tends to split more sections than the
+outline-based TOC arm, so the frozen metric may understate the TOC arm. This is
+not changed here — the metric is frozen and honest as declared; a fairer yield
+(e.g. body-char coverage as primary) would be a new metric decision with its
+own recorded rationale, not a silent edit.
+
+The path to a gain is therefore a **richer feature set** (bookmark density,
+outline depth, layout stats) or a **fairer yield metric** — both are recorded
+revisability triggers, not changes to this ADR.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.

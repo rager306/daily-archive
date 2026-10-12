@@ -1208,8 +1208,8 @@ fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<(
         .join(format!("{paper_id}.json"));
     let from_artifact = std::fs::read_to_string(&features_path)
         .ok()
-        .and_then(|t| serde_json::from_str(&t).ok());
-    pair.features = match from_artifact {
+        .and_then(|t| serde_json::from_str::<da_domain::fsm_policy::ArticleFeatures>(&t).ok());
+    let mut features = match from_artifact {
         Some(f) => f,
         None => classify_features(pdf).unwrap_or(da_domain::fsm_policy::ArticleFeatures {
             page_count: 0,
@@ -1218,6 +1218,15 @@ fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<(
             domain: String::new(),
         }),
     };
+    // The outline bookmark count is the TOC arm's precondition and its strongest
+    // separating feature (ADR-080 §5: the four features did not separate the
+    // TOC wins; the bookmark count does). The TOC exporter already measured it,
+    // so read it from the observation cache the arm just wrote. It is a MEASURED
+    // count, never a guess: absent observation -> keep 0 (typed absence).
+    if let Some(count) = toc_bookmark_count(paper_id) {
+        features.toc_bookmarks = count;
+    }
+    pair.features = features;
 
     // Append the pair and its two counterfactual observations.
     let dir = std::path::Path::new("data/agent_memory/policy");
@@ -1251,6 +1260,18 @@ fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<(
     println!("pairs: {}", pairs_path.display());
     println!("observations appended: 2 -> {journal}");
     Ok(())
+}
+
+/// The outline bookmark count the TOC arm measured for this document, from the
+/// observation cache it wrote (`artifacts/pipeline_cache/pdf_toc_observations`).
+/// `None` when the export is absent or unreadable — never a fabricated count.
+fn toc_bookmark_count(paper_id: &str) -> Option<u32> {
+    let path = std::path::Path::new("artifacts/pipeline_cache/pdf_toc_observations")
+        .join(format!("{paper_id}.json"));
+    let text = std::fs::read_to_string(path).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let entries = value.get("toc")?.as_array()?;
+    u32::try_from(entries.len()).ok()
 }
 
 /// Classify a PDF into the policy's decision features (ADR-080: the harness
