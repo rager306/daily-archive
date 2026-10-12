@@ -175,6 +175,37 @@ pairs, and the learned table carried a real decision (bucket `p=1_49` -> `xy_cut
 at mean reward 0.67 vs 0.33) that native could not have learned, because native
 never observed the TOC arm at all.
 
+### 2026-10-12 — first corpus result: 44 documents, 4 TOC wins (10.5%)
+
+The first real corpus run (44 arxiv/textbook/acm PDFs < 6 MB, both arms on
+each) gives the first honest measurement of the two-arm question:
+
+| bucket | TOC wins | GROBID wins | NotApplicable |
+|---|---|---|---|
+| `p1;qge700` (1-49 pages, clean text) | 3 | 37 | 6 |
+| `p2;qge700` (50-199 pages, clean text) | 1 | 3 | 0 |
+
+**GROBID wins 90.9% of decided pairs.** The TOC arm's 4 wins are real but not
+concentrated in any feature bucket: they are spread across page counts (7, 15,
+19, 61) with no separating signal in the four features. Consequence:
+
+- The learned table converges to `xy_cut` (the GROBID arm) for the dominant
+  bucket, which is **the same decision the native threshold rule already makes**
+  for these features. On the validation split the table scores 52.4%, exactly
+  the `always grobid` baseline.
+- **This is an honest `measured_no_gain`.** It is the result ADR-078 §5
+  predicted for a corpus where one arm dominates, and it is recorded, not
+  hidden. The value of the run is the measurement itself: F4 now produces a
+  real number where before there was none, and it proves the mechanism
+  (two arms, one metric, counterfactual observations) works end to end.
+- A gain would require a feature that separates the 10.5% of documents where
+  the TOC arm wins. The current four features do not carry it; that is the
+  recorded revisability trigger for a richer feature set (e.g. outline
+  bookmark counts, layout stats), not a change to this ADR.
+
+Six pairs were `NotApplicable` on the TOC side (PDFs with no outline) — the
+verdict added in §5 held up across the corpus.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
