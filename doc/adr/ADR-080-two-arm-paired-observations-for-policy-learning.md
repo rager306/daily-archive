@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-12
 - Deciders: repository owner + agent (owner: proceed on the branch, no merge until M516 closes)
-- Decisions: D508 (coverage comes from same-document two-arm runs, never from production exploration), D509 (a pair is one document measured on both parse arms under one frozen metric; the reward is the arm's measured outcome), D510 (pairs are candidate-only evidence; the table learns from the arm that won, and the losing arm is kept as the negative observation)
+- Decisions: D508 (coverage comes from same-document two-arm runs, never from production exploration), D509 (a pair is one document measured on both parse arms under one frozen metric; the reward is the arm's measured outcome), D510 (pairs are candidate-only evidence; the table learns from the arm that won, and the losing arm is kept as the negative observation), D511 (2026-10-12, Cycle 2: the yield metric becomes latency-aware — characters per millisecond — because the arms differ by an order of magnitude in speed and section counts alone cannot express that)
 - Requirements: R151–R153 (new); inherits R142–R150 (ADR-078/079) and R118–R124 (ADR-076)
 - Milestone: parallel branch `feat/learning-critic-e1` (GSD M516 unaffected; no production route change)
 - Amends: ADR-078 §5 (the coverage constraint now has its data source); ADR-079 Faculty D (the pre-parse analysis gains real paired history)
@@ -68,6 +68,12 @@ the GROBID arm produced 22 sections (arxiv_pdf_dot), both in the shared
    so the trainer sees a genuine counterfactual and not a single-armed echo.
 4. **Stay candidate-only.** Pairs feed `da policy learn`; nothing promotes,
    no route reloads, `deployed=false`, `import_eligible=false`.
+5. **(D511, Cycle 2) Make the yield latency-aware.** The arms differ by an
+   order of magnitude in speed (TOC 621 ms vs GROBID 11,560 ms in the same
+   bucket), so raw section counts cannot express throughput. Each arm's yield
+   score is `body_chars / max(latency_ms, 1)` (chars per millisecond); the
+   conservation veto and the `NotApplicable` verdicts are unchanged. Section
+   counts remain recorded in the evidence for re-scoring.
 
 ### We will not
 
@@ -288,9 +294,10 @@ produced three stable results:
 Consequence: the interesting finding is no longer "which arm wins on quality"
 but **quality per unit of time**. A yield metric that normalises by latency
 (e.g. chars/second) or a two-axis rule (quality >= threshold, then fastest arm)
-would express the 18.6x latency advantage the current metric cannot see. That
-is a recorded candidate for the next metric revision (owner decision over
-frozen DATA, per D509).
+would express the 18.6x latency advantage the current metric cannot see.
+**D511 (2026-10-12) adopts chars-per-millisecond as the yield score** — the
+owner approved the latency-aware revision; section counts stay in the evidence
+for re-scoring.
 
 ### 2026-10-12 — gold-F1 as the arm-comparison metric (metric v2)
 
