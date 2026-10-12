@@ -1,0 +1,200 @@
+# DATA: milestone-closeout criterion disposition registry (M516-th0oby/S13)
+#
+# CRITERION — milestone success criterion SC7 clause 1: "governor preflight
+# reports no high severity flag at closeout". The criterion is only
+# machine-checkable once every high-capable flag CLASS carries a recorded
+# disposition. This file is the DATA that declares it; the S13 fail-closed
+# oracle (scripts/governor/adapters/closeout_criterion_disposition.py) and its
+# consumer `TrajectoryService._check_closeout_criterion_disposition` are the
+# readers, and `scripts/tests/test_closeout_criterion_disposition_registry.py`
+# pins the shape below.
+#
+# DISPOSITIONS (closed set, `disposition_vocabulary`):
+#   measured   — the flag class is ABSENT from the governor's own live report,
+#                so the criterion is met by measurement. A `measured` record is
+#                a live claim: if the class is actually live, the check reports
+#                a contradiction (a stale clear), not a pass.
+#   downgraded — the flag class is live (or high-capable and severity-
+#                fluctuating) and is honestly downgraded with an owner + reason
+#                + decision_ref + rationale. Nothing is suppressed and no check
+#                is weakened (D569); the disposition records that the criterion
+#                is met by recorded downgrade, not by clearing a flag.
+#
+# KEYING RULE — records are keyed by flag CLASS: the flag id before any
+# parameterized `@` suffix. A parameterized id such as
+# `gsd_control_plane_doctor_new_divergence@M516` therefore resolves through the
+# class key `gsd_control_plane_doctor_new_divergence`, so a per-milestone
+# parameter never needs a per-milestone entry.
+#
+# NO `measured` RECORD ON THIS TREE — every high-capable class here is either
+# live or severity-fluctuating across sessions (MEM2134: resource_target_bloat
+# and data_integrity_stale_artifact shift medium<->high; gsd_exec_timeout_evidence
+# became live from a single timed-out capture, D568), so each requires a standing
+# downgrade. A `measured` record for such a class would be a stale-clear that the
+# check would then flag as a contradiction.
+#
+# D492 — this file deliberately carries NO `dimension` and NO `severity` key. It
+# is a disposition registry, not a check rule: adding a dimension/severity here
+# would let it masquerade as a quality gate. The consumer's finding
+# (`closeout_criterion_undisposed`) stays drift-visible (dimension None) and is
+# absent from assurance_severity.yaml#blocking_dimensions, so it never blocks a
+# merge. It is a check, not a fourth scorecard axis; the pinned axes
+# (measurability 5/21, declaration_sync_gap 57, feature_gated_coverage 19/31) do
+# not move.
+#
+# FAIL-CLOSED — the consumer treats this file as a REQUIRED input: a missing or
+# malformed registry raises rather than reporting a vacuous "all disposed" zero,
+# and any live high-severity class with no record here is reported as
+# `closeout_criterion_undisposed`.
+schema_version: closeout-criterion-dispositions.v1
+
+# Closed vocabulary of dispositions. A record's `disposition` must be one of
+# these; anything else is a malformed record.
+disposition_vocabulary:
+  - measured
+  - downgraded
+
+# Closed vocabulary of downgrade reasons. A record's `reason` must be one of
+# these; anything else is a malformed record.
+reason_vocabulary:
+  - pre_existing_structural
+  - pre_existing_environment
+  - severity_environment_dependent
+  - governor_process_finding
+
+# Every record must carry these fields, each non-empty.
+required_record_fields:
+  - disposition
+  - owner
+  - reason
+  - decision_ref
+  - rationale
+
+# Severities that must resolve to a record. Only `high` fails closed.
+required_for_severities:
+  - high
+
+# flag CLASS -> disposition record. Every record here is `downgraded` with
+# decision_ref D572 (the S13 pre-existing-high-flag downgrade decision); owners
+# reuse the S12 drift_ownership.yaml role names so the two registries agree.
+records:
+  # The reverse-ADR audit's own violations (governor-audit). Structural, and
+  # they drive audit_report.has_blocking -> the BLOCKED verdict; clearing them
+  # would mean weakening the audit, which D569 forbids.
+  reverse_adr_audit_violations:
+    disposition: downgraded
+    owner: governor-audit
+    reason: pre_existing_structural
+    decision_ref: D572
+    rationale: >-
+      Pre-existing reverse-ADR audit violations drive has_blocking on this tree;
+      they are structural and clearing them would require weakening the audit,
+      which D569 forbids.
+
+  # GSD control-plane signals (gsd-control-plane). The control-plane contract
+  # declares five high_severity_signals; they are pre-existing environment/
+  # harness signals, not slice-attributable (MEM2119).
+  gsd_control_plane_projection_contention:
+    disposition: downgraded
+    owner: gsd-control-plane
+    reason: pre_existing_environment
+    decision_ref: D572
+    rationale: >-
+      Pre-existing GSD control-plane projection contention (a declared
+      high_severity_signal) is environment/harness state, not slice-attributable.
+  gsd_control_plane_lease_conflict:
+    disposition: downgraded
+    owner: gsd-control-plane
+    reason: pre_existing_environment
+    decision_ref: D572
+    rationale: >-
+      Pre-existing GSD control-plane lease conflict (a declared
+      high_severity_signal) is environment/harness state, not slice-attributable.
+  gsd_control_plane_orphan_projection_dir:
+    disposition: downgraded
+    owner: gsd-control-plane
+    reason: pre_existing_environment
+    decision_ref: D572
+    rationale: >-
+      Pre-existing orphan GSD projection directories (a declared
+      high_severity_signal) are environment/harness state, not slice-attributable.
+  gsd_control_plane_doctor_new_divergence:
+    disposition: downgraded
+    owner: gsd-control-plane
+    reason: pre_existing_environment
+    decision_ref: D572
+    rationale: >-
+      Pre-existing GSD doctor divergence (a declared high_severity_signal, e.g.
+      a validation_source_revision_mismatch parameterization) is environment/
+      harness state, not slice-attributable.
+  gsd_control_plane_commit_hook_failures:
+    disposition: downgraded
+    owner: gsd-control-plane
+    reason: pre_existing_environment
+    decision_ref: D572
+    rationale: >-
+      Pre-existing GSD commit-hook failures (a declared high_severity_signal)
+      are environment/harness state, not slice-attributable.
+
+  # GSD exec-capture evidence hygiene (D463). The remedy is to bound or re-run
+  # the captured command, not to reword the reader, so the owner is the
+  # exec-evidence surface (D568).
+  gsd_exec_false_success_evidence:
+    disposition: downgraded
+    owner: gsd-exec-evidence
+    reason: pre_existing_environment
+    decision_ref: D572
+    rationale: >-
+      The D463 false-success exec-capture class is pre-existing exec-evidence
+      hygiene state; the remedy is to re-run the captured command, not to reword
+      the reader.
+  gsd_exec_timeout_evidence:
+    disposition: downgraded
+    owner: gsd-exec-evidence
+    reason: pre_existing_environment
+    decision_ref: D572
+    rationale: >-
+      The D463 timeout exec-capture class became live from a single timed-out
+      capture (D568); it is window-dependent exec-evidence state, not a
+      slice defect.
+
+  # Severity-fluctuating checks (MEM2134): each shifts medium<->high across
+  # sessions, so a `measured` record would go stale; a standing downgrade keeps
+  # the fail-closed audit from firing spuriously when the class is high.
+  resource_target_bloat:
+    disposition: downgraded
+    owner: resource-safety
+    reason: severity_environment_dependent
+    decision_ref: D572
+    rationale: >-
+      Resource-safety target bloat is severity-environment-dependent (MEM2134),
+      so a standing downgrade avoids a spurious fail-closed finding on a high
+      session.
+  data_integrity_stale_artifact:
+    disposition: downgraded
+    owner: data-integrity
+    reason: severity_environment_dependent
+    decision_ref: D572
+    rationale: >-
+      Data-integrity stale artifacts are severity-environment-dependent
+      (MEM2134), so a standing downgrade avoids a spurious fail-closed finding on
+      a high session.
+
+  # Both fail-closed audits seed themselves with their own finding class, so each
+  # sentinel must be declared here or the audit self-triggers on every report.
+  drift_flag_owner_missing:
+    disposition: downgraded
+    owner: governor-ownership
+    reason: governor_process_finding
+    decision_ref: D572
+    rationale: >-
+      The S12 ownership audit's own sentinel class is declared so that audit
+      stays self-consistent and never self-triggers.
+  closeout_criterion_undisposed:
+    disposition: downgraded
+    owner: governor-criterion
+    reason: governor_process_finding
+    decision_ref: D572
+    rationale: >-
+      The S13 closeout-criterion audit's own sentinel class is declared so this
+      audit stays self-consistent and never self-triggers.
