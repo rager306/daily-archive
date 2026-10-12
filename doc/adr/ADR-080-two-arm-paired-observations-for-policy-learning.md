@@ -241,6 +241,34 @@ The path to a gain is therefore a **richer feature set** (bookmark density,
 outline depth, layout stats) or a **fairer yield metric** — both are recorded
 revisability triggers, not changes to this ADR.
 
+### 2026-10-12 — the metric choice inverts the result (owner decision required)
+
+The no-gain verdict is **an artifact of the metric axis**. On the same 17 pairs,
+scoring under each primary axis gives the mirror result:
+
+| Metric primary | TOC wins | GROBID wins |
+|---|---|---|
+| section_count (current) | 4 | 13 |
+| body_chars | **13** | 4 |
+
+Why: the two arms measure differently — the outline-based TOC arm recovers
+**more body text** (+15% to +137% chars on its wins) while GROBID recovers
+**more section boundaries**. Neither is the more "correct" parse by construction;
+the question is which axis expresses "yield" for a downstream reader.
+
+This is an owner decision, not a code change: `metric_one` in
+`data/policies/parse_pair_metric.yaml` is frozen DATA (D509), and swapping it
+silently would violate that decision. The options recorded for the owner:
+
+- keep `section_count` primary — favours boundary density;
+- make `body_chars` primary — favours text coverage, likely flips several
+  buckets to `page_outline` and gives the table a real, measurable gain;
+- a compound rule (e.g. require both axes' wins) — stricter, rarer wins.
+
+The pair records already carry both axes (sections + chars), so this decision
+can be **re-scored offline from the existing journal without re-running the
+arms**. That reusability is why the metric is frozen and the evidence is kept.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
