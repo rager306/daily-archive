@@ -90,3 +90,35 @@ carrying `last_error`. The queue is enqueued by `captureCurrentProjectionWork()`
 by `settleProjectionWork()` from `projection-worker.js`; nothing has settled for over two
 weeks. This did **not** cause the aborts above (the delivery worker holds no claim between
 runs) and is left uninvestigated.
+
+## patch-verification-source-snapshot.mjs
+
+**Symptom it removes:** `postUnitPreVerification timed out after 60s ... pausing auto-mode
+for recovery` → `Auto-mode paused (Escape)` on **every** task finalize, paired with
+`Safety: task ... claimed passing verification that failed in recorded execution` when the
+task's probe used a compound script.
+
+**Root cause (verified in the 1.21.0 source, not inferred):**
+
+1. `verification-source-integrity.js` builds the host verification source set from
+   `git ls-files --cached --others --exclude-standard` over `SOURCE_PATHSPEC`, which
+   excludes only `.gsd/**` and `receipts/**`.
+2. `addSourceEntry()` reads and sha256s **every** listed file's content, and
+   `captureVerificationSourceSnapshot()` runs that **twice** (capture + confirm).
+3. This repository commits a large corpus: `data/` (~13.2k files), `archive/` (~12.6k),
+   `artifacts/` (~2.2k) — ~28k of ~30k tracked files. Two content passes over ~30k files
+   exceeds `FINALIZE_PRE_TIMEOUT_MS` (60_000 in `auto/finalize-timeout.js`), the guard
+   fires, and auto pauses with the Escape/recovery notice.
+
+**Fix:** (A) exclude the committed corpus and build output from the source pathspec so the
+gate still proves code/tests/config are unchanged during verification (30,163 → 2,155
+files; `git ls-files` 0.76s); (B) raise `FINALIZE_PRE_TIMEOUT_MS` /
+`FINALIZE_POST_TIMEOUT_MS` to 300_000 as a safety net for slower hosts.
+
+Apply alongside the projection-lock patch:
+
+```bash
+node tools/gsd-engine-patches/patch-verification-source-snapshot.mjs \
+  /usr/lib/node_modules/@opengsd/gsd-pi/dist/resources/extensions/gsd \
+  /root/.gsd/agent/extensions/gsd
+```

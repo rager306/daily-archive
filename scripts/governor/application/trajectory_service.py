@@ -2342,6 +2342,14 @@ class TrajectoryService:
         # registry that names every class contributes nothing here.
         drift_flags.extend(self._check_drift_ownership(drift_flags))
 
+        # M516-th0oby/S13/T03: SC7 clause 1 is satisfied only when every live
+        # high-severity flag class carries a recorded disposition (or is absent).
+        # The audit runs after ownership on the final flag list, so a class with
+        # no disposition is visible in the same report instead of passing
+        # silently. It appends `closeout_criterion_undisposed` findings; a
+        # registry that disposes every class contributes nothing here.
+        drift_flags.extend(self._check_closeout_criterion_disposition(drift_flags))
+
         # Serialized flags publish whether the verdict exemption applies to them,
         # so a `low` note in the report states its own reason instead of looking
         # like an unexplained silence.
@@ -6907,6 +6915,126 @@ class TrajectoryService:
             )
         return findings
 
+    # ── M516-th0oby/S13/T03: milestone-closeout criterion disposition ────────
+    #
+    # Milestone success criterion SC7 clause 1 is "governor preflight reports no
+    # high severity flag at closeout". The criterion is machine-checkable once
+    # every high-capable flag CLASS carries a recorded disposition. That
+    # disposition is DATA (`scripts/governor/checks/closeout_criterion_dispositions.yaml`,
+    # S13/T01); the S13 oracle (`governor.adapters.closeout_criterion_disposition`,
+    # S13/T02) is the pure reader and this service is the fail-closed consumer.
+    # A live high class with no record -- or a `measured` record for a class that
+    # is actually live -- becomes a `closeout_criterion_undisposed` finding,
+    # never a silent pass. The finding is drift-visible only: no dimension, and
+    # absent from `assurance_severity.yaml#blocking_dimensions` (D492/D569).
+
+    def _closeout_criterion_disposition_map(self) -> dict:
+        """The disposition DATA, cached per service instance.
+
+        A missing or malformed registry degrades to the fail-closed default
+        (`required_for_severities=["high"]`, no records): every high flag then
+        reports as undisposed rather than passing silently. The cache is read by
+        `getattr` so a service built with `__new__` still resolves it instead of
+        raising `AttributeError`.
+        """
+        cached = getattr(self, "_closeout_criterion_disposition_cache", None)
+        if cached is not None:
+            return cached
+        path = self.root / _CLOSEOUT_CRITERION_DISPOSITIONS_RELATIVE
+        data = None
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            data = None
+        records = data.get("records") if isinstance(data, dict) else None
+        required = (
+            data.get("required_for_severities") if isinstance(data, dict) else None
+        )
+        resolved = {
+            "records": (
+                {key: value for key, value in records.items() if isinstance(key, str)}
+                if isinstance(records, dict)
+                else {}
+            ),
+            "required_for_severities": [
+                severity for severity in required if isinstance(severity, str)
+            ]
+            if isinstance(required, list)
+            else [],
+        }
+        if not resolved["required_for_severities"]:
+            # Fail closed: a registry that cannot be read, or that declares no
+            # required severity, still holds `high` flags to the criterion.
+            resolved["required_for_severities"] = ["high"]
+        self._closeout_criterion_disposition_cache = resolved
+        return resolved
+
+    def _check_closeout_criterion_disposition(
+        self, flags: list[DriftFlag]
+    ) -> list[DriftFlag]:
+        """Fail-closed closeout-criterion reconciliation over the report's flags.
+
+        Calls the S13 oracle to reconcile the disposition registry against the
+        live high-severity classes. Every unresolved class (undisposed,
+        contradiction, or malformed) becomes one `closeout_criterion_undisposed`
+        finding naming the class and the kind. The audit seeds itself with the
+        finding class it can emit -- exactly as `_check_drift_ownership` does --
+        so the registry MUST declare that class or the audit self-triggers: a
+        self-consistent registry with no special case and no recursion.
+
+        A registry the oracle cannot trust (missing or malformed) RAISES there;
+        this consumer catches it and reports every required-severity class as
+        undisposed, so a deleted registry can never read as a green criterion.
+        """
+        from governor.adapters.closeout_criterion_disposition import (
+            build_closeout_criterion_disposition,
+        )
+
+        seeds = list(flags)
+        seeds.append(
+            DriftFlag(
+                flag=_CLOSEOUT_CRITERION_UNDISPOSED_FLAG,
+                severity="high",
+                evidence="closeout-criterion disposition audit sentinel",
+            )
+        )
+        try:
+            result = build_closeout_criterion_disposition(self.root, seeds)
+        except (OSError, ValueError, yaml.YAMLError) as exc:
+            # Fail closed: an untrustworthy registry must not read as a green
+            # criterion. Report every required-severity class as undisposed.
+            required = set(
+                self._closeout_criterion_disposition_map()[
+                    "required_for_severities"
+                ]
+            )
+            return [
+                DriftFlag(
+                    flag=_CLOSEOUT_CRITERION_UNDISPOSED_FLAG,
+                    severity="high",
+                    evidence=(
+                        f"closeout-criterion disposition registry "
+                        f"{_CLOSEOUT_CRITERION_DISPOSITIONS_RELATIVE} is "
+                        f"untrustworthy ({type(exc).__name__}); flag class "
+                        f"{flag.flag!r} (severity={flag.severity}) is reported "
+                        "undisposed"
+                    ),
+                )
+                for flag in seeds
+                if flag.severity in required
+            ]
+        return [
+            DriftFlag(
+                flag=_CLOSEOUT_CRITERION_UNDISPOSED_FLAG,
+                severity="high",
+                evidence=(
+                    f"closeout criterion {finding.kind} for flag class "
+                    f"{finding.flag_class!r}: {finding.detail}"
+                ),
+            )
+            for finding in result.findings
+        ]
+
 
 # ── M516-th0oby/S12/T05: drift-flag ownership registry (DATA) ────────────────
 #
@@ -6915,6 +7043,16 @@ class TrajectoryService:
 # it lives in `TrajectoryService._check_drift_ownership`.
 _DRIFT_OWNERSHIP_RELATIVE = "scripts/governor/checks/drift_ownership.yaml"
 _DRIFT_OWNER_MISSING_FLAG = "drift_flag_owner_missing"
+
+# ── M516-th0oby/S13/T03: closeout-criterion disposition (DATA) ───────────────
+#
+# The disposition registry is keyed by flag CLASS and holds no dimension/
+# severity (it is DATA about the criterion, not a check rule -- D492). The audit
+# that consumes it lives in `TrajectoryService._check_closeout_criterion_disposition`.
+_CLOSEOUT_CRITERION_DISPOSITIONS_RELATIVE = (
+    "scripts/governor/checks/closeout_criterion_dispositions.yaml"
+)
+_CLOSEOUT_CRITERION_UNDISPOSED_FLAG = "closeout_criterion_undisposed"
 
 
 # ── D491 active research authorization (DATA `data/parse/research_authorization.yaml`) ──
