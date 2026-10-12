@@ -316,6 +316,20 @@ Corpus: 196 of the 200 gold papers have a local PDF (main repo, read-only).
 Not all will be TOC-applicable (the TOC arm needs an outline); the
 NotApplicable verdict (§5) covers that.
 
+## 5.1 Summary of corrections and findings (index)
+
+- §5 first: NotApplicable verdict; margin sensitivity (1.5% char noise).
+- §5 first (second block): real toc_bookmarks wired (bm=0 → 6/6 NotApplicable);
+  learned == native on validation → measured_no_gain; metric-fairness caveat
+  (section_count may favor finer segmentation).
+- §5 (later): metric axis INVERTS the result (sections→GROBID 76%, chars→TOC
+  76%); owner decision required over frozen DATA (D509).
+- Cycle 1 (§5 last): 84 pairs; sections/compound tie native at 58%; latency
+  18.6× advantage for the TOC arm in p=50_199 is invisible to the metric →
+  candidate for a latency-normalised yield.
+- §5.1 (this): the count of observed buckets and pairs grows with the corpus;
+  the full corpus (637 PDFs) is available for a statistically significant run.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
