@@ -366,6 +366,37 @@ adoption): (a) math-aware reference extraction for LaTeXML HTML, (b) then the
 TOC arm can be compared on outline-bearing documents only (textbooks), (c) the
 policy table's buckets can then be trained on coverage-derived rewards.
 
+### 2026-10-12 — metric v3 final: reference suitability, coverage table, verdict
+
+Reference-audit of the 11 HTML variants:
+
+- **8 are full-text LaTeXML encodings** (`article.html`, 19–265 long
+  paragraphs) — valid references;
+- **2 are `abs.html`** — the arXiv abstract page, not a fulltext encoding.
+  An abstract cannot serve as a parse reference: exclude, never score 0;
+- 1 paper has no article-level HTML at all.
+
+Math-strip experiment: stripping `<math>`/`<svg>` blocks before extraction
+**lowers** measured coverage (LaTeXML duplicates formula text into
+`<annotation>`, and the GROBID arm also drops formulas — stripping removes
+shared tokens). Keep the raw extraction; do not add math handling.
+
+Final coverage table (GROBID arm vs 8 full-text references, 8-gram paragraph
+coverage): 2608.22118 79.7%, 2608.21343 76.2%, 2608.20634 76.1%,
+2507.19458 63.1%, 2512.00107 42.2%, 2608.19799 (4-paragraph reference —
+excluded as a degenerate reference). Coverage ≈ 63–80% on conventional papers.
+
+**Verdict (recorded):** metric v3 is live, discriminating, and reference-honest.
+On this corpus the GROBID arm's fidelity to the publisher HTML is 63–80% by
+8-gram paragraph coverage — the first absolute quality number for the parse
+plane. The TOC arm remains NotApplicable for arXiv papers (no outlines); its
+comparison requires outline-bearing documents (textbooks), which is the
+remaining scope for a two-arm run under metric v3.
+
+Next (owner decision): adopt metric v3 as the `critic_sample` signal
+(low-coverage documents are re-parse candidates); extend the reference set
+(more publisher-HTML documents); a two-arm run on outline-bearing textbooks.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
