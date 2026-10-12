@@ -292,6 +292,30 @@ would express the 18.6x latency advantage the current metric cannot see. That
 is a recorded candidate for the next metric revision (owner decision over
 frozen DATA, per D509).
 
+### 2026-10-12 — gold-F1 as the arm-comparison metric (metric v2)
+
+The metric-inversion finding (§5) showed the yield axis is a policy choice.
+The established practice for comparing document parsers is precision/recall/F1
+**against a gold-standard reference** — GROBID's own evaluation methodology.
+The repository already ships that: `data/gold_standard/` (200 annotated arXiv
+papers, entity-level) plus `ExtractionMetrics::evaluate_fuzzy` and the
+`eval_extract` flow (parse → entity extraction → F1 vs gold).
+
+**Scope note (ADR-076 unchanged):** gold-F1 here is the **arm-comparison**
+metric for the learning loop, not a parse oracle. ADR-076's rule "extraction
+F1 alone ≠ scientific KG readiness" still governs conservation and import
+decisions; this metric only answers "which arm recovered fields closer to the
+annotated truth on this document".
+
+Implementation: for each document, both arms produce `parsed/article.json`;
+the SAME `RuleBasedExtractor` runs on each; F1 is computed against the gold
+entities for that paper. Winner = higher F1 (tie → the faster arm). The pair
+carries `metric_digest` = gold-metric version, so re-scoring stays honest.
+
+Corpus: 196 of the 200 gold papers have a local PDF (main repo, read-only).
+Not all will be TOC-applicable (the TOC arm needs an outline); the
+NotApplicable verdict (§5) covers that.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
