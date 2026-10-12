@@ -337,6 +337,35 @@ NotApplicable verdict (§5) covers that.
 - §5.1 (this): the count of observed buckets and pairs grows with the corpus;
   the full corpus (637 PDFs) is available for a statistically significant run.
 
+### 2026-10-12 — metric v3: HTML-reference coverage, first live numbers
+
+An HTML source of the same paper is the reference of record for comparing the
+arms (the GROBID methodology: parse vs the publisher's own high-fidelity
+encoding). 11 catalog documents have both a local PDF and a local HTML variant
+(`data/sources/**/article.json` → source_variants paths are relative to the
+article.json file).
+
+First live coverage measurement (GROBID arm vs HTML reference, 8-gram
+paragraph coverage):
+
+- corpus-wide mean: 39.6%;
+- conventional papers: 60.7–79.7% (2608.20634: 76.1%, 2608.21343: 76.2%,
+  2608.22118: 79.7%, 2507.19458: 63.9%);
+- 0% on 4 papers whose HTML is LaTeXML math-heavy markup (few long `<p>`
+  blocks) — the reference extractor needs math-aware handling; those papers
+  must be excluded from the metric until handled, not counted as 0.
+
+All 11 TOC-arm runs were `empty toc` (arXiv papers carry no outline
+bookmarks) — consistent with the bookmark finding: the TOC arm's applicability
+on this corpus segment is zero, so the two-arm pair for arXiv papers is
+one-arm (GROBID) vs the HTML reference.
+
+Consequence: the HTML-reference coverage metric is live and discriminates
+strongly between documents. Next steps for the owner decision (metric v3
+adoption): (a) math-aware reference extraction for LaTeXML HTML, (b) then the
+TOC arm can be compared on outline-bearing documents only (textbooks), (c) the
+policy table's buckets can then be trained on coverage-derived rewards.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
