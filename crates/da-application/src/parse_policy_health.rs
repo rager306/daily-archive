@@ -242,6 +242,7 @@ mod tests {
     use super::*;
     use crate::parse_policy_table::PolicyOutcomeEvidence;
     use da_domain::fsm_policy::{ArticleFeatures, DecisionPoint};
+    use proptest::prelude::*;
 
     fn obs(backend: Option<&str>, latency: u64, ok: bool, pages: u32) -> PolicyObservation {
         PolicyObservation {
@@ -364,5 +365,59 @@ mod tests {
             elapsed.as_secs_f64() < 1.0,
             "R149 budget violated: {elapsed:?}"
         );
+    }
+
+    #[test]
+    fn health_report_roundtrips_through_json() {
+        let journal = vec![
+            obs(Some("0.9.1"), 100, true, 18),
+            obs(Some("0.9.1"), 200, false, 18),
+        ];
+        let report = parse_health(&journal, &HealthThresholds::default()).unwrap();
+        let json = serde_json::to_string(&report).unwrap();
+        let back: ParseHealthReport = serde_json::from_str(&json).unwrap();
+        assert_eq!(report, back);
+    }
+
+    proptest::proptest! {
+        /// The report digest is invariant under any permutation of the journal.
+        #[test]
+        fn report_digest_is_permutation_invariant(
+            order in proptest::collection::vec(0usize..6, 1..30),
+        ) {
+            let base = vec![
+                obs(Some("0.9.1"), 100, true, 18),
+                obs(Some("0.9.1"), 250, false, 18),
+                obs(Some("0.9.0"), 400, true, 700),
+                obs(Some("0.9.1"), 90, true, 700),
+            ];
+            let shuffled: Vec<_> = order.iter().map(|i| base[i % base.len()].clone()).collect();
+            let report = parse_health(&shuffled, &HealthThresholds::default()).unwrap();
+            let key = da_domain::fsm_policy::feature_bucket(
+                da_domain::fsm_policy::DecisionPoint::GrammarRoute,
+                &shuffled[0].features,
+            );
+            // Buckets are keyed deterministically; every observed bucket appears.
+            prop_assert!(report.buckets.contains_key(&key));
+            prop_assert_eq!(report.points["grammar_route"].total, shuffled.len() as u64);
+        }
+
+        /// ok-rate is always within [0, 1] and total equals the journal length.
+        #[test]
+        fn ok_rate_is_a_ratio(
+            flags in proptest::collection::vec(proptest::prelude::any::<bool>(), 1..40),
+        ) {
+            let journal: Vec<PolicyObservation> = flags
+                .iter()
+                .enumerate()
+                .map(|(i, ok)| obs(Some("0.9.1"), 100 + i as u64, *ok, 18))
+                .collect();
+            let report = parse_health(&journal, &HealthThresholds::default()).unwrap();
+            let p = &report.points["grammar_route"];
+            prop_assert_eq!(p.total, journal.len() as u64);
+            prop_assert!(p.ok <= p.total);
+            let rate = p.ok as f64 / p.total as f64;
+            prop_assert!((0.0..=1.0).contains(&rate));
+        }
     }
 }

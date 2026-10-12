@@ -103,4 +103,14 @@ mod tests {
             GrammarRoute::XyCut
         );
     }
+
+    #[test]
+    fn article_features_serde_roundtrip() {
+        // features_from_classification output must survive a JSON cycle: the
+        // artifact written at ingest is read back by the consult.
+        let f = features_from_classification(&classification(31, vec![13, 17, 18, 31]), "");
+        let json = serde_json::to_string(&f).unwrap();
+        let back: da_domain::fsm_policy::ArticleFeatures = serde_json::from_str(&json).unwrap();
+        assert_eq!(f, back);
+    }
 }

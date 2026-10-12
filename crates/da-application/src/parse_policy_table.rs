@@ -181,6 +181,7 @@ pub fn learn_decision_table(
     }
 
     let mut cells: BTreeMap<String, String> = BTreeMap::new();
+    let mut cell_support: BTreeMap<String, u32> = BTreeMap::new();
     for (bucket, stats) in &by_bucket {
         let support: usize = stats.values().map(|(_, c)| c).sum();
         if support < config.min_support {
@@ -188,12 +189,17 @@ pub fn learn_decision_table(
         }
         if let Some(code) = pick_code(stats) {
             cells.insert(bucket.clone(), code);
+            cell_support.insert(bucket.clone(), support as u32);
         }
     }
     if cells.is_empty() {
         return Err(TableLearnError::NoLearnableCells);
     }
-    Ok(LearnedDecisionTable::seal(point, cells))
+    Ok(LearnedDecisionTable::seal_with_support(
+        point,
+        cells,
+        cell_support,
+    ))
 }
 
 /// A train/validation split of observations, keyed on document identity.
@@ -328,6 +334,7 @@ pub fn profile_of(table: &LearnedDecisionTable, f: &ArticleFeatures) -> Option<P
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     fn feat(pages: u32, bookmarks: u32, quality: f32) -> ArticleFeatures {
         ArticleFeatures {
@@ -562,5 +569,84 @@ mod tests {
         };
         assert_eq!(binary_reward(&ok), 1.0);
         assert_eq!(binary_reward(&fail), 0.0);
+    }
+
+    proptest::proptest! {
+        /// The learner is deterministic: the same observations seal the same
+        /// table identity, regardless of the order they are presented in.
+        #[test]
+        fn learning_is_order_independent(
+            rewards in proptest::collection::vec(0u8..2, 4..24),
+        ) {
+            let observations: Vec<PolicyObservation> = rewards
+                .iter()
+                .enumerate()
+                .map(|(i, ok)| obs(&format!("d{i}"), feat(18, 0, 0.85), "xy_cut", f64::from(*ok)))
+                .collect();
+            let forward = learn_decision_table(
+                DecisionPoint::GrammarRoute,
+                &observations,
+                TableLearnConfig { min_support: 2 },
+            )
+            .expect("covered");
+            let mut reversed = observations.clone();
+            reversed.reverse();
+            let backward = learn_decision_table(
+                DecisionPoint::GrammarRoute,
+                &reversed,
+                TableLearnConfig { min_support: 2 },
+            )
+            .expect("covered");
+            prop_assert_eq!(forward.table_sha256, backward.table_sha256);
+        }
+
+        /// Support recorded for a cell equals the number of observations that
+        /// landed in that cell, and is never below the support floor. A corpus
+        /// below the floor is honestly not-trainable, never a silent empty table.
+        #[test]
+        fn support_equals_observed_count(
+            count in 2usize..40,
+            min_support in 2usize..5,
+        ) {
+            let observations: Vec<PolicyObservation> = (0..count)
+                .map(|i| obs(&format!("d{i}"), feat(18, 0, 0.85), "xy_cut", 1.0))
+                .collect();
+            let key = feature_bucket(DecisionPoint::GrammarRoute, &feat(18, 0, 0.85));
+            match learn_decision_table(
+                DecisionPoint::GrammarRoute,
+                &observations,
+                TableLearnConfig { min_support },
+            ) {
+                Ok(table) => {
+                    prop_assert_eq!(table.cell_support.get(&key).copied(), Some(count as u32));
+                    prop_assert!(table.validate().is_ok());
+                }
+                Err(e) => {
+                    // The only honest failure here is a corpus below the floor.
+                    prop_assert_eq!(e, TableLearnError::NoLearnableCells);
+                    prop_assert!(count < min_support);
+                }
+            }
+        }
+
+        /// A learned table always answers its own training buckets at level 0.
+        #[test]
+        fn learned_table_covers_its_training_buckets(
+            quality_milli in 0i32..1000,
+            pages in 1u32..500,
+        ) {
+            let f = feat(pages, 0, quality_milli as f32 / 1000.0);
+            let observations: Vec<PolicyObservation> = (0..4)
+                .map(|i| obs(&format!("d{i}"), f.clone(), "xy_cut", 1.0))
+                .collect();
+            let table = learn_decision_table(
+                DecisionPoint::GrammarRoute,
+                &observations,
+                TableLearnConfig { min_support: 2 },
+            )
+            .expect("covered");
+            let cell = table.lookup_with_fallback(&f).expect("covered");
+            prop_assert_eq!(cell.code.as_str(), "xy_cut");
+        }
     }
 }
