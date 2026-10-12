@@ -821,6 +821,19 @@ async fn proxy_endpoints_time_out_without_retrying() {
             .expect_err("delayed response must time out");
         assert_eq!(err.code(), FailureCode::Timeout, "{endpoint}");
         assert_eq!(err.phase(), FailurePhase::AwaitResponse, "{endpoint}");
+        // The stub logs the request as soon as it reads it, but under load the
+        // stub task may not be scheduled before the client's 30ms timeout
+        // fires, turning the exactly-once check into a scheduling race rather
+        // than a contract check. Wait (bounded) for the single observation;
+        // the stub's 250ms delay keeps it from ever answering.
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+        loop {
+            let observed = !log.lock().expect("request log lock").is_empty();
+            if observed || tokio::time::Instant::now() >= deadline {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
         assert_exactly_one_request(&log, 0);
     }
 }
