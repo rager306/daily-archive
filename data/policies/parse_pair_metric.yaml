@@ -1,0 +1,15 @@
+# ADR-080 D509: frozen metric for two-arm pair scoring (F4).
+# A pair is only comparable if both arms are scored by this one rule.
+# The metric is content-digested; a pair carries the digest so a retrain can
+# never mix two metric versions. Changing this file is a new decision.
+schema_version: parse-pair-metric.v1
+adr_ref: ADR-080
+# A conservation loss on either arm vetoes that arm (ADR-076 honesty gate).
+conservation_first: true
+yield:
+  # Primary structural yield: number of sections recovered.
+  metric_one: section_count
+  # Tiebreak: recovered body characters.
+  metric_two: body_chars
+  # Strict win required; a margin of 0 means equal scores are a Tie.
+  margin: 0

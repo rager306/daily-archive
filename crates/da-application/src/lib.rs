@@ -84,6 +84,7 @@ pub mod parse_grammar;
 pub mod parse_policy_artifact;
 pub mod parse_policy_health;
 pub mod parse_policy_observation;
+pub mod parse_policy_pair;
 pub mod parse_policy_table;
 pub use parse_policy_table::{
     ObservationSplit, PolicyObservation, TableLearnConfig, TableLearnError, learn_decision_table,

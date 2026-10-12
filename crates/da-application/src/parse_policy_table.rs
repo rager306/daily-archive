@@ -212,16 +212,30 @@ pub struct ObservationSplit {
 
 impl ObservationSplit {
     /// Reject a blank identity or a document present on both sides.
+    /// Reject a blank identity, or a document present on BOTH sides.
+    ///
+    /// A document may legitimately appear more than once on the SAME side:
+    /// ADR-080 two-arm pairs put two observations of one document (one per
+    /// arm) into the same split half. The invariant is document-disjointness
+    /// between train and validation, not global uniqueness of the identity.
     pub fn validate(&self) -> Result<(), TableLearnError> {
         use std::collections::BTreeSet;
-        let mut seen = BTreeSet::new();
-        for obs in self.train.iter().chain(self.validation.iter()) {
+        let mut train = BTreeSet::new();
+        let mut validation = BTreeSet::new();
+        for obs in &self.train {
             if obs.document_identity.trim().is_empty() {
                 return Err(TableLearnError::BlankIdentity);
             }
-            if !seen.insert(obs.document_identity.as_str()) {
-                return Err(TableLearnError::SplitOverlap);
+            train.insert(obs.document_identity.as_str());
+        }
+        for obs in &self.validation {
+            if obs.document_identity.trim().is_empty() {
+                return Err(TableLearnError::BlankIdentity);
             }
+            validation.insert(obs.document_identity.as_str());
+        }
+        if !train.is_disjoint(&validation) {
+            return Err(TableLearnError::SplitOverlap);
         }
         Ok(())
     }
@@ -477,12 +491,25 @@ mod tests {
     }
 
     #[test]
-    fn split_rejects_overlap() {
+    fn split_rejects_a_document_on_both_sides() {
         let split = ObservationSplit {
             train: vec![obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9)],
             validation: vec![obs("d1", feat(20, 0, 0.80), "xy_cut", 0.8)],
         };
         assert_eq!(split.validate(), Err(TableLearnError::SplitOverlap));
+    }
+
+    #[test]
+    fn split_allows_a_pair_on_one_side() {
+        // ADR-080: one document, two arms, same half - not an overlap.
+        let split = ObservationSplit {
+            train: vec![
+                obs("d1", feat(18, 0, 0.85), "xy_cut", 1.0),
+                obs("d1", feat(18, 0, 0.85), "page_outline", 0.0),
+            ],
+            validation: vec![obs("d2", feat(20, 0, 0.80), "xy_cut", 0.8)],
+        };
+        split.validate().expect("a pair on one side is legal");
     }
 
     #[test]

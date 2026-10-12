@@ -88,7 +88,6 @@ pub fn resolve_parse_profile_with_learned(
     features: &ArticleFeatures,
     learned: Option<da_domain::fsm_policy::LearnedDecisionTable>,
 ) -> Result<ParseProfileDecision, da_ports::fsm_policy::FsmPolicyError> {
-    use da_application::fsm_policy_consult::consult_with_fallback;
     use da_domain::fsm_policy::DecisionPoint;
     let registry = da_domain::fsm_policy::PolicyRegistry::from_yaml_str(yaml)
         .map_err(|e| da_ports::fsm_policy::FsmPolicyError::Load(e.to_string()))?;

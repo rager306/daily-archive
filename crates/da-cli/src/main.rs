@@ -175,6 +175,12 @@ enum Commands {
         /// Artifact output path (default under artifacts/learning/)
         #[arg(long)]
         out: Option<String>,
+        /// pair: path to the source PDF
+        #[arg(long)]
+        pdf: Option<String>,
+        /// pair: document identity (paper id)
+        #[arg(long)]
+        paper_id: Option<String>,
     },
 
     /// Validate schema-manifest objects against their DATA norm
@@ -533,7 +539,17 @@ fn main() {
             journal,
             min_support,
             out,
-        } => policy_command(&action, &point, &journal, min_support, out.as_deref()),
+            pdf,
+            paper_id,
+        } => policy_command(
+            &action,
+            &point,
+            &journal,
+            min_support,
+            out.as_deref(),
+            pdf.as_deref(),
+            paper_id.as_deref(),
+        ),
         Commands::Source {
             action,
             paper_id,
@@ -1110,7 +1126,163 @@ fn require_fd_api_key_for_ingest() {
 /// measured_no_gain when the table equals the observed policy) and never
 /// promotes: the artifact is candidate-only, deployed=false, import_eligible=
 /// false. Wiring the artifact into a consult is a separate explicit env opt-in.
-fn policy_command(action: &str, point: &str, journal: &str, min_support: usize, out: Option<&str>) {
+/// ADR-080 F4 harness: run both parse arms on one document, score them under
+/// the frozen metric, and append the paired observations to the journal. The
+/// single-arm journaling of both runs is suppressed so the journal holds the
+/// pair, not a doubled echo. Candidate-only: nothing here changes a route.
+fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<()> {
+    use da_application::parse_policy_pair::{
+        PairMetric, ParseArm, pair_to_observations, score_pair,
+    };
+
+    let metric = PairMetric::from_yaml_str(
+        &std::fs::read_to_string("data/policies/parse_pair_metric.yaml")
+            .map_err(|e| anyhow::anyhow!("pair metric: {e}"))?,
+    )
+    .map_err(|e| anyhow::anyhow!("{e}"))?;
+
+    // Suppress single-arm journaling for the whole harness run.
+    // SAFETY: single-threaded CLI entry point.
+    unsafe { std::env::set_var("DA_POLICY_PAIR_SUPPRESS_JOURNAL", "1") };
+
+    // Arm A: TOC. Export observations for this PDF through the reference
+    // extractor module (its CLI maps fixed ids; the module takes any PDF).
+    let code = format!(
+        "import importlib.util, pathlib\n\
+         spec=importlib.util.spec_from_file_location('m','scripts/m451_pdf_toc_observations.py')\n\
+         m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)\n\
+         m.export(pathlib.Path({pdf:?}), {paper_id:?})"
+    );
+    let export = std::process::Command::new("python3")
+        .arg("-c")
+        .arg(&code)
+        .output()
+        .map_err(|e| anyhow::anyhow!("toc export: {e}"))?;
+    if !export.status.success() {
+        anyhow::bail!(
+            "toc observation export failed: {}",
+            String::from_utf8_lossy(&export.stderr)
+        );
+    }
+
+    let toc_started = std::time::Instant::now();
+    da_cli::source_cli::run_parse_pdf_toc(paper_id).map_err(|e| anyhow::anyhow!("toc arm: {e}"))?;
+    let toc_latency = toc_started.elapsed().as_millis() as u64;
+    let toc_ev = evidence_from_parsed(paper_id, toc_latency, Some("pymupdf"))?;
+
+    // Arm B: GROBID.
+    let gb_started = std::time::Instant::now();
+    da_cli::source_cli::run_parse_pdf(paper_id, Some(pdf), None, None, None)
+        .map_err(|e| anyhow::anyhow!("grobid arm: {e}"))?;
+    let gb_latency = gb_started.elapsed().as_millis() as u64;
+    let gb_ev = evidence_from_parsed(paper_id, gb_latency, None)?;
+
+    let mut pair = score_pair(
+        &metric,
+        (ParseArm::Toc, ParseArm::Toc.decision_code().into(), toc_ev),
+        (
+            ParseArm::Grobid,
+            ParseArm::Grobid.decision_code().into(),
+            gb_ev,
+        ),
+    );
+    pair.document_identity = paper_id.to_string();
+    // The decision condition is the measured classification artifact when
+    // present; otherwise the honest not-measured defaults.
+    let features_path = std::path::Path::new("artifacts/pipeline_cache/pdf_policy_features")
+        .join(format!("{paper_id}.json"));
+    pair.features = std::fs::read_to_string(&features_path)
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or(da_domain::fsm_policy::ArticleFeatures {
+            page_count: 0,
+            toc_bookmarks: 0,
+            text_layer_quality: 0.0,
+            domain: String::new(),
+        });
+
+    // Append the pair and its two counterfactual observations.
+    let dir = std::path::Path::new("data/agent_memory/policy");
+    std::fs::create_dir_all(dir)?;
+    let pairs_path = dir.join("pairs.jsonl");
+    let obs_path = std::path::Path::new(journal);
+    let mut pairs_lines = serde_json::to_string(&pair)?;
+    pairs_lines.push('\n');
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&pairs_path)
+        .and_then(|mut f| std::io::Write::write_all(&mut f, pairs_lines.as_bytes()))?;
+    let mut obs_lines = String::new();
+    for obs in pair_to_observations(&pair) {
+        obs_lines.push_str(&serde_json::to_string(&obs)?);
+        obs_lines.push('\n');
+    }
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(obs_path)
+        .and_then(|mut f| std::io::Write::write_all(&mut f, obs_lines.as_bytes()))?;
+
+    println!(
+        "pair {paper_id}: toc={:?} grobid={:?} (metric {})",
+        pair.arms[0].verdict,
+        pair.arms[1].verdict,
+        &pair.metric_digest[..16]
+    );
+    println!("pairs: {}", pairs_path.display());
+    println!("observations appended: 2 -> {journal}");
+    Ok(())
+}
+
+/// Read `data/processed/<id>/parsed/article.json` and turn it into outcome
+/// evidence. `ok` is true when the file exists and carries at least one
+/// section; sections and body chars come from the shared schema.
+fn evidence_from_parsed(
+    paper_id: &str,
+    latency_ms: u64,
+    backend: Option<&str>,
+) -> anyhow::Result<da_application::parse_policy_table::PolicyOutcomeEvidence> {
+    let path = std::path::Path::new("data/processed")
+        .join(paper_id)
+        .join("parsed/article.json");
+    let text =
+        std::fs::read_to_string(&path).map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
+    let value: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("parsed article: {e}"))?;
+    let sections = value
+        .get("sections")
+        .and_then(|s| s.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let body_chars = sections
+        .iter()
+        .map(|s| {
+            s.get("text")
+                .and_then(|t| t.as_str())
+                .map(str::chars)
+                .map(Iterator::count)
+                .unwrap_or(0)
+        })
+        .sum();
+    Ok(da_application::parse_policy_table::PolicyOutcomeEvidence {
+        ok: !sections.is_empty(),
+        section_count: sections.len(),
+        body_chars,
+        latency_ms,
+        backend: backend.map(str::to_string),
+    })
+}
+
+fn policy_command(
+    action: &str,
+    point: &str,
+    journal: &str,
+    min_support: usize,
+    out: Option<&str>,
+    pdf: Option<&str>,
+    paper_id: Option<&str>,
+) {
     match action {
         "learn" => {
             if point.is_empty() {
@@ -1204,6 +1376,25 @@ fn policy_command(action: &str, point: &str, journal: &str, min_support: usize, 
             println!(
                 "opt-in consult: DA_LEARNED_POLICY_TABLE={out_path} (never production by default)"
             );
+        }
+        "pair" => {
+            // ADR-080: two-arm pair harness. Needs --pdf and an id; the id is
+            // passed via --point's sibling `paper_id`? No: the CLI Policy
+            // command has no paper_id, so the harness reads them from env-free
+            // args carried in `journal` and `out`? Keep it explicit: the pair
+            // action takes the PDF and id from DA_POLICY_PAIR_PDF/_ID.
+            let pdf = pdf.unwrap_or_else(|| {
+                eprintln!("pair requires --pdf <path>");
+                std::process::exit(2)
+            });
+            let id = paper_id.unwrap_or_else(|| {
+                eprintln!("pair requires --paper-id <id>");
+                std::process::exit(2)
+            });
+            run_policy_pair(pdf, id, journal).unwrap_or_else(|e| {
+                eprintln!("pair failed: {e}");
+                std::process::exit(1);
+            });
         }
         "health" => {
             use da_application::parse_policy_health::{HealthThresholds, parse_health};
