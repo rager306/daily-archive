@@ -18,6 +18,12 @@ from governor.adapters.feature_gated_coverage import (
     build_feature_gated_coverage,
     observe_feature_gated_coverage,
 )
+from governor.adapters.closeout_criterion_disposition import (
+    CloseoutCriterionDisposition,
+    DispositionFinding,
+    build_closeout_criterion_disposition,
+    observe_closeout_criterion_disposition,
+)
 from governor.adapters.declaration_sync_gap import (
     DeclarationGap,
     DeclarationSyncGap,
@@ -37,8 +43,10 @@ __all__ = [
     "ClippyReport",
     "ClippyScanner",
     "ClippyWarning",
+    "CloseoutCriterionDisposition",
     "DeclarationGap",
     "DeclarationSyncGap",
+    "DispositionFinding",
     "FeatureGatedCoverage",
     "FilesystemAbsorptionProgressReader",
     "FilesystemADRRepository",
@@ -52,11 +60,13 @@ __all__ = [
     "MeasurabilityAxis",
     "YAMLRuleRepository",
     "absorption_progress_violations",
+    "build_closeout_criterion_disposition",
     "build_declaration_sync_gap",
     "build_feature_gated_coverage",
     "build_measurability_axis",
     "effective_progress_contract",
     "missing_progress_vocabulary",
+    "observe_closeout_criterion_disposition",
     "observe_declaration_sync_gap",
     "observe_feature_gated_coverage",
     "observe_measurability_axis",
