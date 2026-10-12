@@ -161,13 +161,12 @@ fn receipt_bound_digests(receipt: &ReleaseReadinessReceipt) -> BTreeMap<String, 
 fn find_binding_sha(value: &serde_json::Value, manifest: &str) -> Option<String> {
     match value {
         serde_json::Value::Object(map) => {
-            if map.get("manifest").and_then(serde_json::Value::as_str) == Some(manifest) {
-                if let Some(sha) = map
+            if map.get("manifest").and_then(serde_json::Value::as_str) == Some(manifest)
+                && let Some(sha) = map
                     .get("revision_sha256")
                     .and_then(serde_json::Value::as_str)
-                {
-                    return Some(sha.to_owned());
-                }
+            {
+                return Some(sha.to_owned());
             }
             map.values()
                 .find_map(|child| find_binding_sha(child, manifest))
