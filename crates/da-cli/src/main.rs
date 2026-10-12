@@ -1109,22 +1109,16 @@ fn require_fd_api_key_for_ingest() {
 /// measured_no_gain when the table equals the observed policy) and never
 /// promotes: the artifact is candidate-only, deployed=false, import_eligible=
 /// false. Wiring the artifact into a consult is a separate explicit env opt-in.
-fn policy_command(
-    action: &str,
-    point: &str,
-    journal: &str,
-    min_support: usize,
-    out: Option<&str>,
-) {
+fn policy_command(action: &str, point: &str, journal: &str, min_support: usize, out: Option<&str>) {
     match action {
         "learn" => {
             let decision_point = da_domain::fsm_policy::DecisionPoint::parse(point)
                 .unwrap_or_else(|| panic!("unknown decision point: {point}"));
+            use da_application::parse_policy_artifact::save_learned_table;
             use da_application::parse_policy_table::{
                 PolicyObservation, TableLearnConfig, learn_decision_table, split_observations,
                 table_accuracy,
             };
-            use da_application::parse_policy_artifact::save_learned_table;
 
             let text = std::fs::read_to_string(journal)
                 .unwrap_or_else(|e| panic!("observations journal {journal}: {e}"));
@@ -1138,7 +1132,12 @@ fn policy_command(
                 .filter(|o| o.decision_point == decision_point)
                 .cloned()
                 .collect();
-            println!("journal: {journal} ({} lines, {}/{} for {point})", observations.len(), observations.len(), all.len());
+            println!(
+                "journal: {journal} ({} lines, {}/{} for {point})",
+                observations.len(),
+                observations.len(),
+                all.len()
+            );
             if observations.is_empty() {
                 eprintln!(
                     "no observations for {point}: run parse-pdf first (the writer appends to the journal), or check --point"
@@ -1174,18 +1173,21 @@ fn policy_command(
             if covered == 0 {
                 println!("validation: no covered buckets (table narrower than validation)");
             } else {
-                println!("validation accuracy: {}/{} = {:.1}%", agree, covered, 100.0 * agree as f64 / covered as f64);
+                println!(
+                    "validation accuracy: {}/{} = {:.1}%",
+                    agree,
+                    covered,
+                    100.0 * agree as f64 / covered as f64
+                );
             }
             println!("locks: candidate-only, deployed=false, import_eligible=false");
 
-            let out_path = out
-                .map(str::to_string)
-                .unwrap_or_else(|| {
-                    std::path::Path::new("artifacts/learning")
-                        .join(format!("policy_table_{point}.json"))
-                        .to_string_lossy()
-                        .into_owned()
-                });
+            let out_path = out.map(str::to_string).unwrap_or_else(|| {
+                std::path::Path::new("artifacts/learning")
+                    .join(format!("policy_table_{point}.json"))
+                    .to_string_lossy()
+                    .into_owned()
+            });
             if let Some(parent) = std::path::Path::new(&out_path).parent() {
                 let _ = std::fs::create_dir_all(parent);
             }

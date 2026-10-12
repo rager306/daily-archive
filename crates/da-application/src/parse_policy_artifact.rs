@@ -32,8 +32,8 @@ pub fn save_learned_table(
     table
         .validate()
         .map_err(|e| LearnedArtifactError::Invalid(e.to_string()))?;
-    let bytes = serde_json::to_vec_pretty(table)
-        .map_err(|e| LearnedArtifactError::Parse(e.to_string()))?;
+    let bytes =
+        serde_json::to_vec_pretty(table).map_err(|e| LearnedArtifactError::Parse(e.to_string()))?;
     let tmp = path.with_extension("json.tmp");
     std::fs::write(&tmp, bytes).map_err(|e| LearnedArtifactError::Io(e.to_string()))?;
     std::fs::rename(&tmp, path).map_err(|e| LearnedArtifactError::Io(e.to_string()))?;
@@ -44,8 +44,8 @@ pub fn save_learned_table(
 /// at consult time, so a corrupt artifact fails loudly and early.
 pub fn load_learned_table(path: &Path) -> Result<LearnedDecisionTable, LearnedArtifactError> {
     let bytes = std::fs::read(path).map_err(|e| LearnedArtifactError::Io(e.to_string()))?;
-    let table: LearnedDecisionTable = serde_json::from_slice(&bytes)
-        .map_err(|e| LearnedArtifactError::Parse(e.to_string()))?;
+    let table: LearnedDecisionTable =
+        serde_json::from_slice(&bytes).map_err(|e| LearnedArtifactError::Parse(e.to_string()))?;
     table
         .validate()
         .map_err(|e| LearnedArtifactError::Invalid(e.to_string()))?;
@@ -84,7 +84,10 @@ mod tests {
         save_learned_table(&path, &original).unwrap();
         let loaded = load_learned_table(&path).unwrap();
         assert_eq!(original, loaded);
-        assert_eq!(loaded.grammar_for(&feat(18, 0, 0.85)).unwrap().as_str(), "xy_cut");
+        assert_eq!(
+            loaded.grammar_for(&feat(18, 0, 0.85)).unwrap().as_str(),
+            "xy_cut"
+        );
     }
 
     #[test]
@@ -109,10 +112,10 @@ mod tests {
 
     #[test]
     fn full_loop_learn_save_reload_consult() {
+        use crate::fsm_policy_fallback::NativeFallbackPolicy;
         use crate::parse_policy_table::{
             PolicyObservation, TableLearnConfig, learn_decision_table,
         };
-        use crate::fsm_policy_fallback::NativeFallbackPolicy;
         use da_domain::fsm_policy::{DecisionPoint, PolicySource};
         use da_ports::fsm_policy::FsmPolicyPort;
 
@@ -136,9 +139,12 @@ mod tests {
             },
         ];
         // 2. Learn a sealed candidate table.
-        let learned =
-            learn_decision_table(DecisionPoint::GrammarRoute, &observations, TableLearnConfig { min_support: 2 })
-                .unwrap();
+        let learned = learn_decision_table(
+            DecisionPoint::GrammarRoute,
+            &observations,
+            TableLearnConfig { min_support: 2 },
+        )
+        .unwrap();
         // 3. Persist and reload it (digest checked on load).
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("learned.json");

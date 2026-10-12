@@ -2175,33 +2175,39 @@ pub fn run_parse_pdf(
     let consulted_features = features_from_env_and_cache(paper_id, pages, bookmarks, quality);
     let started = std::time::Instant::now();
     let rt = tokio::runtime::Runtime::new()?;
-    let parse_outcome: anyhow::Result<(da_ports::parser::ParsedArticle, String)> = rt.block_on(async {
-        // D204 corpus default is structural via DATA profile_route.native.default.
-        // Rich is a closed consult variant; it is not the corpus default and
-        // still requires Crossref. Bibliography enrichment stays on the
-        // separately cached OpenAlex/Crossref enrich stage from the host.
-        let parser = GrobidParser::from_env().with_profile(grobid_profile);
-        // The LIVE release is part of the article's parse identity: probe it
-        // once and fail closed. There is no silent versionless fallback
-        // (ADR-076 W0 `backend_identity` / R121).
-        let probe = parser.probe_version().await.map_err(|failure| {
-            anyhow::anyhow!(
-                "grobid version probe: {failure} (required for parse identity; \
+    let parse_outcome: anyhow::Result<(da_ports::parser::ParsedArticle, String)> =
+        rt.block_on(async {
+            // D204 corpus default is structural via DATA profile_route.native.default.
+            // Rich is a closed consult variant; it is not the corpus default and
+            // still requires Crossref. Bibliography enrichment stays on the
+            // separately cached OpenAlex/Crossref enrich stage from the host.
+            let parser = GrobidParser::from_env().with_profile(grobid_profile);
+            // The LIVE release is part of the article's parse identity: probe it
+            // once and fail closed. There is no silent versionless fallback
+            // (ADR-076 W0 `backend_identity` / R121).
+            let probe = parser.probe_version().await.map_err(|failure| {
+                anyhow::anyhow!(
+                    "grobid version probe: {failure} (required for parse identity; \
                  there is no silent versionless fallback)"
-            )
-        })?;
-        let parsed = parser
-            .parse_pdf(pdf, paper_id)
-            .await
-            .map_err(|e| anyhow::anyhow!("grobid: {e}"))?;
-        Ok::<_, anyhow::Error>((parsed, probe.version))
-    });
+                )
+            })?;
+            let parsed = parser
+                .parse_pdf(pdf, paper_id)
+                .await
+                .map_err(|e| anyhow::anyhow!("grobid: {e}"))?;
+            Ok::<_, anyhow::Error>((parsed, probe.version))
+        });
     let (parsed, backend_version) = match parse_outcome {
         Ok(value) => {
             let outcome = da_application::parse_policy_table::PolicyOutcomeEvidence {
                 ok: true,
                 section_count: value.0.sections.len(),
-                body_chars: value.0.sections.iter().map(|s| s.text.chars().count()).sum(),
+                body_chars: value
+                    .0
+                    .sections
+                    .iter()
+                    .map(|s| s.text.chars().count())
+                    .sum(),
                 latency_ms: started.elapsed().as_millis() as u64,
                 backend: Some(value.1.clone()),
             };

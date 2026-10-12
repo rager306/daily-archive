@@ -218,7 +218,7 @@ decision_points:
     }
 
     fn learned_grammar_table() -> LearnedDecisionTable {
-        use da_domain::fsm_policy::{feature_bucket, LearnedDecisionTable};
+        use da_domain::fsm_policy::{LearnedDecisionTable, feature_bucket};
         use std::collections::BTreeMap;
         let mut cells = BTreeMap::new();
         // The 18-page article bucket learns xy_cut; nothing else is covered.
@@ -279,7 +279,7 @@ decision_points:
     fn learned_table_overrides_native_when_covered() {
         // Native would say page_outline for 700 pages, but a learned cell may
         // deliberately differ; the learned stamp proves which producer answered.
-        use da_domain::fsm_policy::{feature_bucket, LearnedDecisionTable};
+        use da_domain::fsm_policy::{LearnedDecisionTable, feature_bucket};
         use std::collections::BTreeMap;
         let mut cells = BTreeMap::new();
         cells.insert(
@@ -299,7 +299,7 @@ decision_points:
 
     #[test]
     fn invalid_learned_table_is_refused_not_silently_attached() {
-        use da_domain::fsm_policy::{feature_bucket, LearnedDecisionTable};
+        use da_domain::fsm_policy::{LearnedDecisionTable, feature_bucket};
         use std::collections::BTreeMap;
         let mut cells = BTreeMap::new();
         cells.insert(

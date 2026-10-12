@@ -67,8 +67,12 @@ pub fn corpus_grobid_parser() -> da_parse::GrobidParser {
 /// YAML-in consult used by tests and by [`consult_corpus_grobid_profile`].
 pub fn consult_corpus_grobid_profile_from_yaml(yaml: &str) -> GrobidProfile {
     let host: Option<&dyn FsmPolicyPort> = None;
-    match resolve_parse_profile_with_learned(yaml, host, &corpus_features(), load_learned_table_env())
-    {
+    match resolve_parse_profile_with_learned(
+        yaml,
+        host,
+        &corpus_features(),
+        load_learned_table_env(),
+    ) {
         Ok(d) => grobid_profile_from_route(d.profile),
         Err(_) => GrobidProfile::structural(),
     }
@@ -104,7 +108,7 @@ pub fn resolve_parse_profile_with_learned(
                     profile: d.profile.unwrap_or(ProfileRoute::Structural),
                     policy_hash: d.id.source.hash_stamp().to_string(),
                     source: d.id.source,
-                })
+                });
             }
             Err(da_ports::fsm_policy::FsmPolicyError::UnknownPoint(_)) => {}
             Err(da_ports::fsm_policy::FsmPolicyError::Load(_))

@@ -197,11 +197,15 @@ impl Admission {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum PolicySource {
     Native,
-    Wasm { sha256: String },
+    Wasm {
+        sha256: String,
+    },
     /// A candidate learned decision table. The stamp is the table content
     /// digest so a trajectory can replay the exact learned artifact. A
     /// `Learned` stamp never means production-active: promotion is explicit.
-    Learned { table_sha256: String },
+    Learned {
+        table_sha256: String,
+    },
 }
 
 impl PolicySource {
@@ -466,7 +470,11 @@ pub fn feature_bucket(point: DecisionPoint, features: &ArticleFeatures) -> Strin
         50..=199 => "50_199",
         _ => "200_plus",
     };
-    let bookmarks = if features.toc_bookmarks == 0 { "0" } else { "1" };
+    let bookmarks = if features.toc_bookmarks == 0 {
+        "0"
+    } else {
+        "1"
+    };
     let quality = match features.quality_milli() {
         i32::MIN..=199 => "lt200",
         200..=399 => "200_399",
@@ -475,13 +483,12 @@ pub fn feature_bucket(point: DecisionPoint, features: &ArticleFeatures) -> Strin
     };
     let domain = {
         let trimmed = features.domain.trim();
-        if trimmed.is_empty() {
-            "_"
-        } else {
-            trimmed
-        }
+        if trimmed.is_empty() { "_" } else { trimmed }
     };
-    format!("{point};p={pages};b={bookmarks};q={quality};d={domain}", point = point.as_str())
+    format!(
+        "{point};p={pages};b={bookmarks};q={quality};d={domain}",
+        point = point.as_str()
+    )
 }
 
 /// A candidate learned decision table (ADR-074 candidate-only learning).
@@ -509,10 +516,7 @@ pub const LEARNED_TABLE_SCHEMA_VERSION: &str = "learned-decision-table.v1";
 /// Bucketing identity stamped into every table produced by [`feature_bucket`].
 pub const LEARNED_BUCKET_SPEC: &str = "feature-bucket.v1";
 
-fn learned_cells_digest(
-    point: &str,
-    cells: &std::collections::BTreeMap<String, String>,
-) -> String {
+fn learned_cells_digest(point: &str, cells: &std::collections::BTreeMap<String, String>) -> String {
     use sha2::Digest;
     let canonical = serde_json::json!({
         "bucket_spec": LEARNED_BUCKET_SPEC,
@@ -529,10 +533,7 @@ impl LearnedDecisionTable {
     /// Build a table from a decision point and its bucket->code cells, sealing
     /// the content digest. The caller owns which cells exist; this only binds
     /// them to a replayable identity.
-    pub fn seal(
-        point: DecisionPoint,
-        cells: std::collections::BTreeMap<String, String>,
-    ) -> Self {
+    pub fn seal(point: DecisionPoint, cells: std::collections::BTreeMap<String, String>) -> Self {
         let decision_point = point.as_str().to_string();
         let table_sha256 = learned_cells_digest(&decision_point, &cells);
         Self {

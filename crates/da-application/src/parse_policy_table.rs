@@ -61,11 +61,7 @@ pub struct PolicyOutcomeEvidence {
 /// Binary reward rule: ok -> 1.0, failure -> 0.0. Explicit and boring on
 /// purpose; every observation also carries the evidence for re-scoring.
 pub fn binary_reward(outcome: &PolicyOutcomeEvidence) -> f64 {
-    if outcome.ok {
-        1.0
-    } else {
-        0.0
-    }
+    if outcome.ok { 1.0 } else { 0.0 }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -165,7 +161,9 @@ pub fn learn_decision_table(
         ));
     }
     if allowed_codes(point).is_none() {
-        return Err(TableLearnError::UnlearnablePoint(point.as_str().to_string()));
+        return Err(TableLearnError::UnlearnablePoint(
+            point.as_str().to_string(),
+        ));
     }
 
     // bucket -> code -> (reward sum, count)
@@ -226,10 +224,11 @@ impl ObservationSplit {
 /// Deterministic document-disjoint split, mirroring the frozen-corpus rule
 /// (`document_identity_sha256_rank_modulo;validation_every=4`): rank documents
 /// by sha256(identity) and send every fourth to validation.
-pub const OBSERVATION_SPLIT_RULE: &str =
-    "document_identity_sha256_rank_modulo;validation_every=4";
+pub const OBSERVATION_SPLIT_RULE: &str = "document_identity_sha256_rank_modulo;validation_every=4";
 
-pub fn split_observations(observations: &[PolicyObservation]) -> Result<ObservationSplit, TableLearnError> {
+pub fn split_observations(
+    observations: &[PolicyObservation],
+) -> Result<ObservationSplit, TableLearnError> {
     use sha2::Digest;
     use std::collections::BTreeMap;
     // Keep one bucket per document: all observations of a document must land
@@ -239,7 +238,10 @@ pub fn split_observations(observations: &[PolicyObservation]) -> Result<Observat
         if obs.document_identity.trim().is_empty() {
             return Err(TableLearnError::BlankIdentity);
         }
-        by_doc.entry(obs.document_identity.as_str()).or_default().push(obs);
+        by_doc
+            .entry(obs.document_identity.as_str())
+            .or_default()
+            .push(obs);
     }
     let mut ranked: Vec<(&str, u64)> = by_doc
         .keys()
@@ -270,7 +272,10 @@ pub fn split_observations(observations: &[PolicyObservation]) -> Result<Observat
 /// observations whose learned code equals the recorded decision. Uncovered
 /// observations are excluded (they fail open to native at runtime, so they are
 /// not evidence for or against the table).
-pub fn table_accuracy(table: &LearnedDecisionTable, observations: &[PolicyObservation]) -> (usize, usize) {
+pub fn table_accuracy(
+    table: &LearnedDecisionTable,
+    observations: &[PolicyObservation],
+) -> (usize, usize) {
     let mut covered = 0usize;
     let mut agree = 0usize;
     for obs in observations {
@@ -306,11 +311,7 @@ pub fn table_mean_reward(table: &LearnedDecisionTable, observations: &[PolicyObs
             count += 1;
         }
     }
-    if count == 0 {
-        0.0
-    } else {
-        sum / count as f64
-    }
+    if count == 0 { 0.0 } else { sum / count as f64 }
 }
 
 /// Closed enum views used by callers that want a typed code, not a string.
@@ -361,7 +362,10 @@ mod tests {
             TableLearnConfig { min_support: 2 },
         )
         .unwrap();
-        assert_eq!(table.grammar_for(&feat(18, 0, 0.85)), Some(GrammarRoute::XyCut));
+        assert_eq!(
+            table.grammar_for(&feat(18, 0, 0.85)),
+            Some(GrammarRoute::XyCut)
+        );
     }
 
     #[test]
@@ -527,7 +531,11 @@ mod tests {
         let mut observations = vec![obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9)];
         observations.push(obs("d1", feat(700, 40, 0.9), "page_outline", 0.4));
         let split = split_observations(&observations).unwrap();
-        let in_train = split.train.iter().filter(|o| o.document_identity == "d1").count();
+        let in_train = split
+            .train
+            .iter()
+            .filter(|o| o.document_identity == "d1")
+            .count();
         let in_val = split
             .validation
             .iter()
@@ -548,7 +556,10 @@ mod tests {
             latency_ms: 10,
             backend: Some("0.9.0".into()),
         };
-        let fail = PolicyOutcomeEvidence { ok: false, ..ok.clone() };
+        let fail = PolicyOutcomeEvidence {
+            ok: false,
+            ..ok.clone()
+        };
         assert_eq!(binary_reward(&ok), 1.0);
         assert_eq!(binary_reward(&fail), 0.0);
     }

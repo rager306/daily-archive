@@ -167,7 +167,10 @@ mod tests {
 
     #[test]
     fn case_accepts_bounded_redacted_subject() {
-        assert_eq!(case("sections: 7; references: 41; figures: 3").validate(), Ok(()));
+        assert_eq!(
+            case("sections: 7; references: 41; figures: 3").validate(),
+            Ok(())
+        );
     }
 
     #[test]
@@ -186,11 +189,17 @@ mod tests {
 
         let mut wrong_version = ok.clone();
         wrong_version.schema_version = CRITIC_SCHEMA_VERSION + 1;
-        assert_eq!(wrong_version.validate(), Err(LearningCriticError::MalformedRow));
+        assert_eq!(
+            wrong_version.validate(),
+            Err(LearningCriticError::MalformedRow)
+        );
 
         let mut non_finite = ok;
         non_finite.metric_one = f64::NAN;
-        assert_eq!(non_finite.validate(), Err(LearningCriticError::NonFiniteMetric));
+        assert_eq!(
+            non_finite.validate(),
+            Err(LearningCriticError::NonFiniteMetric)
+        );
     }
 
     #[test]

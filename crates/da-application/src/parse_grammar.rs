@@ -58,8 +58,8 @@ pub fn resolve_parse_grammar_with_learned(
     features: &ArticleFeatures,
     learned: Option<&da_domain::fsm_policy::LearnedDecisionTable>,
 ) -> FsmPolicyResult<ParseGrammarDecision> {
-    let registry = PolicyRegistry::from_yaml_str(yaml)
-        .map_err(|e| FsmPolicyError::Load(e.to_string()))?;
+    let registry =
+        PolicyRegistry::from_yaml_str(yaml).map_err(|e| FsmPolicyError::Load(e.to_string()))?;
     let default = registry
         .default_grammar_profile()
         .unwrap_or("arxiv_pdf_dot")
@@ -81,7 +81,9 @@ pub fn resolve_parse_grammar_with_learned(
                 });
             }
             Err(FsmPolicyError::UnknownPoint(_)) => {}
-            Err(FsmPolicyError::Load(_) | FsmPolicyError::Instantiate(_) | FsmPolicyError::Io(_)) => {}
+            Err(
+                FsmPolicyError::Load(_) | FsmPolicyError::Instantiate(_) | FsmPolicyError::Io(_),
+            ) => {}
             Err(e) => return Err(e),
         }
     }

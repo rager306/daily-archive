@@ -147,10 +147,7 @@ fn main() -> anyhow::Result<()> {
         n,
         report.baseline_n == report.candidate_n && report.candidate_n == n
     );
-    println!(
-        "producer_independence: {}",
-        report.producer_independent
-    );
+    println!("producer_independence: {}", report.producer_independent);
     println!(
         "critic_failures: {} (kept in the denominator, n={})",
         report.critic_failures, n

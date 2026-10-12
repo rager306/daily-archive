@@ -21,7 +21,10 @@ use da_domain::pdf_classification::PdfClassification;
 /// not a measured zero) — the grammar_route native rule already treats
 /// `toc_bookmarks >= 1` as a monograph signal, and an absent count must not
 /// invent one.
-pub fn features_from_classification(classification: &PdfClassification, domain: &str) -> ArticleFeatures {
+pub fn features_from_classification(
+    classification: &PdfClassification,
+    domain: &str,
+) -> ArticleFeatures {
     let page_count = classification.page_count;
     let text_layer_quality = if page_count == 0 {
         // No pages measured: do not claim a text layer either way.
