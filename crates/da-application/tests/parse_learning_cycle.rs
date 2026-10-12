@@ -141,3 +141,42 @@ fn cycle_is_deterministic() {
         "two runs over the same corpus must be byte-identical"
     );
 }
+
+/// The vendor ReasoningBank stamps every learned pattern with wall-clock
+/// seconds, so a cycle run must stay byte-identical even when it straddles a
+/// second boundary. `cycle_is_deterministic` exercises the same invariant but
+/// only flakily (its two runs usually share a second); the explicit sleep below
+/// makes the wall-clock dependency deterministic, so this test fails whenever a
+/// volatile field leaks back into the receipt (M516/S13/T05).
+#[test]
+fn cycle_report_digest_is_stable_across_a_second_boundary() {
+    let corpus = load();
+    let dir = tempfile::tempdir().unwrap();
+
+    let run = |tag: &str| {
+        let lineage = learning_lineage_for_corpus(&corpus);
+        let mut store = RvfFileStore::open(
+            dir.path().join(format!("boundary-{tag}.rvf")),
+            lineage.clone(),
+        )
+        .unwrap();
+        run_learning_cycle(
+            &corpus,
+            &mut store,
+            lineage,
+            &dir.path().join(format!("boundary-candidate-{tag}.json")),
+        )
+        .unwrap()
+    };
+
+    let first = run("a");
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let second = run("b");
+
+    assert_eq!(first.report_digest, second.report_digest);
+    assert_eq!(
+        serde_json::to_vec(&first).unwrap(),
+        serde_json::to_vec(&second).unwrap(),
+        "a wall-clock second boundary must not change the receipt"
+    );
+}

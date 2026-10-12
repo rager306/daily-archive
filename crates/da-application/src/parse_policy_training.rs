@@ -255,11 +255,22 @@ pub fn train_microlora_candidate<S: RvfExperienceStore>(
         );
         bank.add_trajectory(&trajectory);
     }
-    let patterns = bank.extract_patterns();
+    let mut patterns = bank.extract_patterns();
     if patterns.is_empty() {
         return Err(TrainingError::NotTrainable(
             "ReasoningBank produced no patterns",
         ));
+    }
+    // The vendor ReasoningBank stamps every pattern with wall-clock seconds
+    // (`created_at`/`last_accessed`, see ruvector-sona types.rs). A frozen
+    // training receipt must be a pure function of its inputs, so normalize
+    // those volatile fields before digesting: otherwise two runs over the same
+    // corpus produce different `patterns_digest` whenever they straddle a
+    // second boundary, which makes the whole receipt (and the RVF store digest
+    // derived from it) non-deterministic (M516/S13/T05).
+    for pattern in &mut patterns {
+        pattern.created_at = 0;
+        pattern.last_accessed = 0;
     }
     let patterns_digest = digest_json(&patterns)?;
     let bank_receipt = ReasoningBankReceipt {
