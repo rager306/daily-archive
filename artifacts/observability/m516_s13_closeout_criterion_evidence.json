@@ -1,0 +1,60 @@
+{
+  "schema_version": "m516-s13-closeout-criterion-evidence.v1",
+  "milestone": "M516-th0oby",
+  "slice": "S13",
+  "task": "T04",
+  "generated_at": "2026-10-12T10:03:15+00:00",
+  "phase": "preflight",
+  "verdict": "drift_risk",
+  "cli_exit_code": 0,
+  "criterion": {
+    "id": "SC7",
+    "clause": 1,
+    "statement": "governor preflight reports no high severity flag at closeout",
+    "resolution": "satisfied_by_recorded_downgrade",
+    "decision_ref": "D572",
+    "note": "Every live high-severity flag CLASS carries a recorded `downgraded` disposition (owner + reason + decision_ref D572); nothing is suppressed, no severity is changed and no check is weakened (D569). The clause is therefore satisfied by recorded downgrade, not by clearing a flag."
+  },
+  "registry_path": "scripts/governor/checks/closeout_criterion_dispositions.yaml",
+  "registry_record_count": 12,
+  "live_high_flags": [
+    {
+      "flag": "gsd_control_plane_doctor_new_divergence",
+      "flag_class": "gsd_control_plane_doctor_new_divergence",
+      "severity": "high",
+      "owner": "gsd-control-plane",
+      "disposition": "downgraded",
+      "reason": "pre_existing_environment",
+      "decision_ref": "D572"
+    },
+    {
+      "flag": "gsd_control_plane_projection_contention",
+      "flag_class": "gsd_control_plane_projection_contention",
+      "severity": "high",
+      "owner": "gsd-control-plane",
+      "disposition": "downgraded",
+      "reason": "pre_existing_environment",
+      "decision_ref": "D572"
+    },
+    {
+      "flag": "gsd_exec_timeout_evidence",
+      "flag_class": "gsd_exec_timeout_evidence",
+      "severity": "high",
+      "owner": "gsd-exec-evidence",
+      "disposition": "downgraded",
+      "reason": "pre_existing_environment",
+      "decision_ref": "D572"
+    }
+  ],
+  "live_high_flag_count": 3,
+  "undisposed_count": 0,
+  "contradiction_count": 0,
+  "malformed_count": 0,
+  "finding_count": 0,
+  "scorecard_axes": {
+    "measurability": "5/21 (23.8%)",
+    "declaration_sync_gap": "0 gaps",
+    "feature_gated_coverage": "19/31 (61.3%)"
+  },
+  "verdict_note": "The live `governor --phase preflight` verdict is recorded AS OBSERVED (drift_risk); the CLI exit code is derived by the CLI's own rule (`scripts/governor/__main__.py`: 1 iff verdict == blocked). The plan-time expectation of `blocked` (exit 1) no longer holds because the reverse-ADR audit currently reports no blocking violation; S13 changes nothing about the verdict."
+}
