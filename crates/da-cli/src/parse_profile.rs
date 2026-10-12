@@ -26,7 +26,7 @@ pub fn grobid_profile_from_route(route: ProfileRoute) -> GrobidProfile {
 /// unset, missing, or invalid, the consult fail-opens to the native DATA rules.
 /// This is deliberately an env opt-in: a learned table is never production by
 /// default, matching the candidate-only contract.
-fn load_learned_table_env() -> Option<da_domain::fsm_policy::LearnedDecisionTable> {
+pub(crate) fn load_learned_table_env() -> Option<da_domain::fsm_policy::LearnedDecisionTable> {
     let path = std::env::var("DA_LEARNED_POLICY_TABLE").ok()?;
     if path.trim().is_empty() {
         return None;
@@ -94,7 +94,26 @@ pub fn resolve_parse_profile_with_learned(
             .with_learned_table(table)
             .map_err(|e| da_ports::fsm_policy::FsmPolicyError::Load(e.to_string()))?;
     }
-    let decision = consult_with_fallback(Some(&native), yaml, DecisionPoint::ProfileRoute, features)?;
+    // R145 precedence: the explicit host (WASM artifact) is consulted first;
+    // the learned-attached native is the fallback layer, exactly like
+    // consult_with_fallback's fail-open contract.
+    if let Some(h) = host {
+        match h.consult(DecisionPoint::ProfileRoute, features) {
+            Ok(d) => {
+                return Ok(ParseProfileDecision {
+                    profile: d.profile.unwrap_or(ProfileRoute::Structural),
+                    policy_hash: d.id.source.hash_stamp().to_string(),
+                    source: d.id.source,
+                })
+            }
+            Err(da_ports::fsm_policy::FsmPolicyError::UnknownPoint(_)) => {}
+            Err(da_ports::fsm_policy::FsmPolicyError::Load(_))
+            | Err(da_ports::fsm_policy::FsmPolicyError::Instantiate(_))
+            | Err(da_ports::fsm_policy::FsmPolicyError::Io(_)) => {}
+            Err(e) => return Err(e),
+        }
+    }
+    let decision = native.consult(DecisionPoint::ProfileRoute, features)?;
     Ok(ParseProfileDecision {
         profile: decision.profile.unwrap_or(ProfileRoute::Structural),
         policy_hash: decision.id.source.hash_stamp().to_string(),

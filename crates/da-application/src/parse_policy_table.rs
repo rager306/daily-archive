@@ -36,6 +36,36 @@ pub struct PolicyObservation {
     pub decision_code: String,
     /// Measured reward for that decision. Higher is better.
     pub reward: f64,
+    /// Raw outcome evidence the reward was computed from, so the reward rule
+    /// stays re-computable and auditable after the fact.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outcome: Option<PolicyOutcomeEvidence>,
+}
+
+/// The raw signals behind a reward. The first honest rule is binary
+/// (`ok` -> 1.0, failure -> 0.0); richer re-scoring can use the rest without
+/// re-running the pipeline.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PolicyOutcomeEvidence {
+    /// Did the stage the decision gated complete without error.
+    pub ok: bool,
+    pub section_count: usize,
+    pub body_chars: usize,
+    pub latency_ms: u64,
+    /// Backend identity the decision ran against (e.g. GROBID version).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backend: Option<String>,
+}
+
+/// Binary reward rule: ok -> 1.0, failure -> 0.0. Explicit and boring on
+/// purpose; every observation also carries the evidence for re-scoring.
+pub fn binary_reward(outcome: &PolicyOutcomeEvidence) -> f64 {
+    if outcome.ok {
+        1.0
+    } else {
+        0.0
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -193,6 +223,49 @@ impl ObservationSplit {
     }
 }
 
+/// Deterministic document-disjoint split, mirroring the frozen-corpus rule
+/// (`document_identity_sha256_rank_modulo;validation_every=4`): rank documents
+/// by sha256(identity) and send every fourth to validation.
+pub const OBSERVATION_SPLIT_RULE: &str =
+    "document_identity_sha256_rank_modulo;validation_every=4";
+
+pub fn split_observations(observations: &[PolicyObservation]) -> Result<ObservationSplit, TableLearnError> {
+    use sha2::Digest;
+    use std::collections::BTreeMap;
+    // Keep one bucket per document: all observations of a document must land
+    // on the same side, or the split leaks the decision condition.
+    let mut by_doc: BTreeMap<&str, Vec<&PolicyObservation>> = BTreeMap::new();
+    for obs in observations {
+        if obs.document_identity.trim().is_empty() {
+            return Err(TableLearnError::BlankIdentity);
+        }
+        by_doc.entry(obs.document_identity.as_str()).or_default().push(obs);
+    }
+    let mut ranked: Vec<(&str, u64)> = by_doc
+        .keys()
+        .map(|id| {
+            let mut hasher = sha2::Sha256::new();
+            hasher.update(id.as_bytes());
+            let digest = hasher.finalize();
+            let rank = u64::from_be_bytes(digest[..8].try_into().expect("8 bytes"));
+            (*id, rank)
+        })
+        .collect();
+    ranked.sort_by_key(|(_, rank)| *rank);
+    let mut train = Vec::new();
+    let mut validation = Vec::new();
+    for (index, (id, _)) in ranked.iter().enumerate() {
+        let bucket = by_doc.get(id).expect("key came from by_doc");
+        let target = if (index + 1) % 4 == 0 {
+            &mut validation
+        } else {
+            &mut train
+        };
+        target.extend(bucket.iter().map(|obs| (*obs).clone()));
+    }
+    Ok(ObservationSplit { train, validation })
+}
+
 /// Accuracy of a sealed table over observations: the fraction of covered
 /// observations whose learned code equals the recorded decision. Uncovered
 /// observations are excluded (they fail open to native at runtime, so they are
@@ -271,6 +344,7 @@ mod tests {
             features: f,
             decision_code: code.into(),
             reward,
+            outcome: None,
         }
     }
 
@@ -433,5 +507,49 @@ mod tests {
         )
         .unwrap();
         table.validate().expect("learner output must validate");
+    }
+
+    #[test]
+    fn split_is_document_disjoint_and_deterministic() {
+        let observations: Vec<PolicyObservation> = (1..=8)
+            .map(|i| obs(&format!("d{i}"), feat(18, 0, 0.85), "xy_cut", 0.9))
+            .collect();
+        let a = split_observations(&observations).unwrap();
+        let b = split_observations(&observations).unwrap();
+        assert_eq!(a, b, "split must be deterministic");
+        a.validate().expect("documents must not straddle the split");
+        assert!(!a.train.is_empty());
+        assert!(!a.validation.is_empty());
+    }
+
+    #[test]
+    fn split_keeps_one_documents_observations_together() {
+        let mut observations = vec![obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9)];
+        observations.push(obs("d1", feat(700, 40, 0.9), "page_outline", 0.4));
+        let split = split_observations(&observations).unwrap();
+        let in_train = split.train.iter().filter(|o| o.document_identity == "d1").count();
+        let in_val = split
+            .validation
+            .iter()
+            .filter(|o| o.document_identity == "d1")
+            .count();
+        assert!(
+            in_train == 0 || in_val == 0,
+            "a document's observations must not straddle the split"
+        );
+    }
+
+    #[test]
+    fn binary_reward_is_explicit() {
+        let ok = PolicyOutcomeEvidence {
+            ok: true,
+            section_count: 3,
+            body_chars: 100,
+            latency_ms: 10,
+            backend: Some("0.9.0".into()),
+        };
+        let fail = PolicyOutcomeEvidence { ok: false, ..ok.clone() };
+        assert_eq!(binary_reward(&ok), 1.0);
+        assert_eq!(binary_reward(&fail), 0.0);
     }
 }

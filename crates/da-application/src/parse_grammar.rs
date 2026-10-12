@@ -47,6 +47,63 @@ pub fn resolve_parse_grammar(
     })
 }
 
+/// Consult grammar_route with an optional candidate learned table
+/// (ADR-078/R145). Precedence: the explicit host (WASM artifact) is consulted
+/// first and fail-opens; the learned-attached native is the fallback layer, so
+/// a covered bucket answers with a `Learned` stamp and an uncovered bucket
+/// falls open to the native DATA rules.
+pub fn resolve_parse_grammar_with_learned(
+    yaml: &str,
+    host: Option<&dyn FsmPolicyPort>,
+    features: &ArticleFeatures,
+    learned: Option<&da_domain::fsm_policy::LearnedDecisionTable>,
+) -> FsmPolicyResult<ParseGrammarDecision> {
+    let registry = PolicyRegistry::from_yaml_str(yaml)
+        .map_err(|e| FsmPolicyError::Load(e.to_string()))?;
+    let default = registry
+        .default_grammar_profile()
+        .unwrap_or("arxiv_pdf_dot")
+        .to_string();
+
+    if let Some(h) = host {
+        match h.consult(DecisionPoint::GrammarRoute, features) {
+            Ok(d) => {
+                let route = d.route.unwrap_or(GrammarRoute::XyCut);
+                let grammar_profile = registry
+                    .profile_for(route)
+                    .unwrap_or(default.as_str())
+                    .to_string();
+                return Ok(ParseGrammarDecision {
+                    grammar_profile,
+                    route,
+                    policy_hash: d.id.source.hash_stamp().to_string(),
+                    source: d.id.source,
+                });
+            }
+            Err(FsmPolicyError::UnknownPoint(_)) => {}
+            Err(FsmPolicyError::Load(_) | FsmPolicyError::Instantiate(_) | FsmPolicyError::Io(_)) => {}
+            Err(e) => return Err(e),
+        }
+    }
+
+    let mut native = crate::fsm_policy_fallback::NativeFallbackPolicy::new(registry.clone());
+    if let Some(table) = learned {
+        native = native.with_learned_table(table.clone())?;
+    }
+    let d = native.consult(DecisionPoint::GrammarRoute, features)?;
+    let route = d.route.unwrap_or(GrammarRoute::XyCut);
+    let grammar_profile = registry
+        .profile_for(route)
+        .unwrap_or(default.as_str())
+        .to_string();
+    Ok(ParseGrammarDecision {
+        grammar_profile,
+        route,
+        policy_hash: d.id.source.hash_stamp().to_string(),
+        source: d.id.source,
+    })
+}
+
 /// Consulted Java GROBID REST profile (ADR-076 profile_route).
 /// Not FSM grammar_profile. Corpus default is structural (D204).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -290,5 +347,43 @@ decision_points:
         let yaml = include_str!("../../../data/policies/registry.yaml");
         let d = resolve_parse_profile(yaml, None, &feat(18, 0, 0.85)).unwrap();
         assert_eq!(d.profile, da_domain::fsm_policy::ProfileRoute::Structural);
+    }
+
+    #[test]
+    fn grammar_consult_with_learned_table_stamps_learned() {
+        use da_domain::fsm_policy::{
+            ArticleFeatures, DecisionPoint, LearnedDecisionTable, PolicySource, feature_bucket,
+        };
+        use std::collections::BTreeMap;
+        let features = ArticleFeatures {
+            page_count: 18,
+            toc_bookmarks: 0,
+            text_layer_quality: 0.85,
+            domain: String::new(),
+        };
+        let mut cells = BTreeMap::new();
+        cells.insert(
+            feature_bucket(DecisionPoint::GrammarRoute, &features),
+            "grobid_structural".to_string(),
+        );
+        let table = LearnedDecisionTable::seal(DecisionPoint::GrammarRoute, cells);
+        // Covered bucket: Learned stamp, table's code, not native's xy_cut.
+        let d = resolve_parse_grammar_with_learned(YAML, None, &features, Some(&table)).unwrap();
+        assert!(matches!(d.source, PolicySource::Learned { .. }));
+        assert_eq!(d.route.as_str(), "grobid_structural");
+        // Uncovered bucket: native fail-open with a Native stamp.
+        let other = ArticleFeatures {
+            page_count: 700,
+            toc_bookmarks: 40,
+            text_layer_quality: 0.9,
+            domain: String::new(),
+        };
+        let d2 = resolve_parse_grammar_with_learned(YAML, None, &other, Some(&table)).unwrap();
+        assert_eq!(d2.source, PolicySource::Native);
+        assert_eq!(d2.route.as_str(), "page_outline");
+        // No table at all: pure native, identical to resolve_parse_grammar.
+        let d3 = resolve_parse_grammar_with_learned(YAML, None, &features, None).unwrap();
+        let d4 = resolve_parse_grammar(YAML, None, &features).unwrap();
+        assert_eq!(d3, d4);
     }
 }

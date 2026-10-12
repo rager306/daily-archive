@@ -124,6 +124,7 @@ mod tests {
                 features: feat(18, 0, 0.85),
                 decision_code: "xy_cut".into(),
                 reward: 0.9,
+                outcome: None,
             },
             PolicyObservation {
                 document_identity: "d2".into(),
@@ -131,6 +132,7 @@ mod tests {
                 features: feat(20, 0, 0.80),
                 decision_code: "xy_cut".into(),
                 reward: 0.8,
+                outcome: None,
             },
         ];
         // 2. Learn a sealed candidate table.

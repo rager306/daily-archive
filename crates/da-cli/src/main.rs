@@ -158,6 +158,24 @@ enum Commands {
         domain: Option<String>,
     },
 
+    /// ADR-078: candidate learned policy table (learn / inspect). Candidate-only.
+    Policy {
+        /// Subcommand: learn
+        action: String,
+        /// Decision point to learn: grammar_route | batch_admission | profile_route
+        #[arg(long)]
+        point: String,
+        /// Observations journal (JSONL)
+        #[arg(long, default_value = "data/agent_memory/policy/observations.jsonl")]
+        journal: String,
+        /// Minimum observations per bucket before it earns a cell
+        #[arg(long, default_value_t = 2)]
+        min_support: usize,
+        /// Artifact output path (default under artifacts/learning/)
+        #[arg(long)]
+        out: Option<String>,
+    },
+
     /// Validate schema-manifest objects against their DATA norm
     /// (ADR-068: articles today, any schema_objects class later)
     ValidateObjects {
@@ -508,6 +526,13 @@ fn main() {
     });
 
     match cli.command {
+        Commands::Policy {
+            action,
+            point,
+            journal,
+            min_support,
+            out,
+        } => policy_command(&action, &point, &journal, min_support, out.as_deref()),
         Commands::Source {
             action,
             paper_id,
@@ -1079,6 +1104,102 @@ fn require_fd_api_key_for_ingest() {
     }
 }
 
+/// ADR-078: `da policy learn` — train a candidate decision table from the
+/// observation journal. The run prints the honest measurement (including
+/// measured_no_gain when the table equals the observed policy) and never
+/// promotes: the artifact is candidate-only, deployed=false, import_eligible=
+/// false. Wiring the artifact into a consult is a separate explicit env opt-in.
+fn policy_command(
+    action: &str,
+    point: &str,
+    journal: &str,
+    min_support: usize,
+    out: Option<&str>,
+) {
+    match action {
+        "learn" => {
+            let decision_point = da_domain::fsm_policy::DecisionPoint::parse(point)
+                .unwrap_or_else(|| panic!("unknown decision point: {point}"));
+            use da_application::parse_policy_table::{
+                PolicyObservation, TableLearnConfig, learn_decision_table, split_observations,
+                table_accuracy,
+            };
+            use da_application::parse_policy_artifact::save_learned_table;
+
+            let text = std::fs::read_to_string(journal)
+                .unwrap_or_else(|e| panic!("observations journal {journal}: {e}"));
+            let all: Vec<PolicyObservation> = text
+                .lines()
+                .filter(|l| !l.trim().is_empty())
+                .map(|l| serde_json::from_str(l).expect("journal line must parse"))
+                .collect();
+            let observations: Vec<PolicyObservation> = all
+                .iter()
+                .filter(|o| o.decision_point == decision_point)
+                .cloned()
+                .collect();
+            println!("journal: {journal} ({} lines, {}/{} for {point})", observations.len(), observations.len(), all.len());
+            if observations.is_empty() {
+                eprintln!(
+                    "no observations for {point}: run parse-pdf first (the writer appends to the journal), or check --point"
+                );
+                std::process::exit(1);
+            }
+
+            let split = split_observations(&observations).expect("document-disjoint split");
+            split.validate().expect("split must validate");
+            println!(
+                "split ({}): train={} validation={}",
+                da_application::parse_policy_table::OBSERVATION_SPLIT_RULE,
+                split.train.len(),
+                split.validation.len()
+            );
+
+            let config = TableLearnConfig { min_support };
+            let table = match learn_decision_table(decision_point, &split.train, config) {
+                Ok(t) => t,
+                Err(e) => {
+                    // ADR-078 §5: an honest not-trainable is a result, not a crash.
+                    println!("outcome: not_trainable ({e})");
+                    println!("locks: candidate-only; nothing written; promotion forbidden");
+                    return;
+                }
+            };
+            let (agree, covered) = table_accuracy(&table, &split.validation);
+            println!(
+                "learned: {} cells, table_sha256={}",
+                table.cells.len(),
+                &table.table_sha256[..16]
+            );
+            if covered == 0 {
+                println!("validation: no covered buckets (table narrower than validation)");
+            } else {
+                println!("validation accuracy: {}/{} = {:.1}%", agree, covered, 100.0 * agree as f64 / covered as f64);
+            }
+            println!("locks: candidate-only, deployed=false, import_eligible=false");
+
+            let out_path = out
+                .map(str::to_string)
+                .unwrap_or_else(|| {
+                    std::path::Path::new("artifacts/learning")
+                        .join(format!("policy_table_{point}.json"))
+                        .to_string_lossy()
+                        .into_owned()
+                });
+            if let Some(parent) = std::path::Path::new(&out_path).parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            save_learned_table(std::path::Path::new(&out_path), &table)
+                .unwrap_or_else(|e| panic!("save artifact {out_path}: {e}"));
+            println!("artifact: {out_path}");
+            println!(
+                "opt-in consult: DA_LEARNED_POLICY_TABLE={out_path} (never production by default)"
+            );
+        }
+        other => panic!("unknown policy action {other:?} (learn)"),
+    }
+}
+
 async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
     use da_adapters::FdApiEmbedder;
     use da_application::IngestUseCase;
@@ -1159,6 +1280,23 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
                     c.has_encoding_issues,
                     c.confidence
                 );
+                // ADR-078/D501: persist the decision condition so later
+                // consults and observation writers use the measured features,
+                // not the corpus stub. Typed absence: toc_bookmarks is 0
+                // because the classifier does not measure it.
+                let features =
+                    da_application::parse_policy_observation::features_from_classification(c, "");
+                let dir = std::path::Path::new("artifacts/pipeline_cache/pdf_policy_features");
+                let _ = std::fs::create_dir_all(dir);
+                let path = dir.join(format!("{}.json", result.paper_id));
+                match serde_json::to_string_pretty(&features) {
+                    Ok(json) => {
+                        if let Err(e) = std::fs::write(&path, json) {
+                            eprintln!("⚠️ policy features not cached: {e}");
+                        }
+                    }
+                    Err(e) => eprintln!("⚠️ policy features not cached: {e}"),
+                }
                 // Compact per-page OCR reasons (e.g. 69=suspected_garbled_text)
                 if !c.ocr_reasons_by_page.is_empty() {
                     let reasons: Vec<String> = c
