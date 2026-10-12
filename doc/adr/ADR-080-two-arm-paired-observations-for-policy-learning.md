@@ -269,6 +269,29 @@ The pair records already carry both axes (sections + chars), so this decision
 can be **re-scored offline from the existing journal without re-running the
 arms**. That reusability is why the metric is frozen and the evidence is kept.
 
+### 2026-10-12 — Cycle 1 result: 84 pairs; latency is the missing dimension
+
+The first full cycle (84 documents, 84 pairs, 21 validation observations)
+produced three stable results:
+
+1. **sections and compound tie native at 58%** on validation; chars and
+   coverage score 42%. The table reproduces the native decision at the current
+   bucket granularity.
+2. The table **learned a bucket native cannot express**: `p=50_199 →
+   page_outline` (native requires bookmarks ≥ 1 for page_outline, and our
+   features carry bookmarks = 0). This is the first real deviation from native.
+3. **Latency is the missing dimension**: in the `p=50_199` bucket the TOC arm
+   averaged **621 ms** vs GROBID **11,560 ms** — 18.6x faster — while
+   recovering more body text (173k vs 127k chars). The frozen metric scores
+   section counts and misses this entirely.
+
+Consequence: the interesting finding is no longer "which arm wins on quality"
+but **quality per unit of time**. A yield metric that normalises by latency
+(e.g. chars/second) or a two-axis rule (quality >= threshold, then fastest arm)
+would express the 18.6x latency advantage the current metric cannot see. That
+is a recorded candidate for the next metric revision (owner decision over
+frozen DATA, per D509).
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
