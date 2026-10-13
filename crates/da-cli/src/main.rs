@@ -1131,7 +1131,7 @@ fn require_fd_api_key_for_ingest() {
 /// frozen gold entities, and append the verdict. Candidate-only.
 fn run_policy_gold_pair(pdf: &str, paper_id: &str) -> anyhow::Result<()> {
     use da_application::parse_policy_gold_f1::{
-        ArmF1, GOLD_PAIR_SCHEMA_VERSION, arm_f1, GoldEntity, GoldPairVerdict, score_gold_pair,
+        ArmF1, GOLD_PAIR_SCHEMA_VERSION, GoldEntity, GoldPairVerdict, arm_f1, score_gold_pair,
     };
     use da_ports::parser::ParserPort;
     use std::sync::Arc;

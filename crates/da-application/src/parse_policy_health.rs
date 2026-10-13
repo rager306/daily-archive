@@ -374,7 +374,7 @@ mod tests {
             outcome: Some(PolicyOutcomeEvidence {
                 ok,
                 section_count: 3,
-                body_chars: 100,
+                body_chars: 2000,
                 latency_ms: latency,
                 backend: backend.map(str::to_string),
             }),
@@ -540,6 +540,77 @@ mod tests {
             prop_assert!(p.ok <= p.total);
             let rate = p.ok as f64 / p.total as f64;
             prop_assert!((0.0..=1.0).contains(&rate));
+        }
+    }
+
+    #[test]
+    fn documents_gate_accept_defer_reparse() {
+        let mk = |id: &str, ok: bool, sections: usize| -> PolicyObservation {
+            let mut o = obs(Some("0.9.1"), 100, ok, 18);
+            o.document_identity = id.into();
+            o.outcome = Some(PolicyOutcomeEvidence {
+                ok,
+                section_count: sections,
+                body_chars: 10000,
+                latency_ms: 100,
+                backend: None,
+            });
+            o
+        };
+        let journal = vec![mk("d1", true, 5), mk("d2", true, 1), mk("d3", false, 3)];
+        let thresholds = HealthThresholds {
+            min_ok_rate: 0.5,
+            gate_floors: GateFloors {
+                min_sections: 2,
+                min_body_chars: 5000,
+            },
+        };
+        let report = parse_health(&journal, &thresholds).unwrap();
+        assert_eq!(report.documents.len(), 3);
+        let by_id: std::collections::BTreeMap<&str, &DocumentGate> = report
+            .documents
+            .iter()
+            .map(|g| (g.document_identity.as_str(), g))
+            .collect();
+        assert_eq!(by_id["d1"].decision, GateDecision::Accept);
+        assert_eq!(by_id["d2"].decision, GateDecision::Defer);
+        assert_eq!(by_id["d3"].decision, GateDecision::ReParse);
+    }
+
+    #[test]
+    fn gate_reasons_are_audit_trail() {
+        let journal = vec![{
+            let mut o = obs(Some("0.9.1"), 100, false, 18);
+            o.document_identity = "d1".into();
+            o
+        }];
+        let report = parse_health(&journal, &HealthThresholds::default()).unwrap();
+        assert!(
+            report.documents[0]
+                .reasons
+                .iter()
+                .any(|r| r.contains("parse_not_ok"))
+        );
+    }
+
+    proptest::proptest! {
+        /// Gate is total: every document gets exactly one decision.
+        #[test]
+        fn gate_covers_all_documents(
+            flags in proptest::collection::vec(proptest::prelude::any::<bool>(), 1..20),
+        ) {
+            let journal: Vec<PolicyObservation> = flags.iter().enumerate()
+                .map(|(i, ok)| {
+                    let mut o = obs(Some("0.9.1"), 100, *ok, 18);
+                    o.document_identity = format!("d{i}");
+                    o.outcome = Some(PolicyOutcomeEvidence {
+                        ok: *ok, section_count: 3, body_chars: 10000, latency_ms: 100, backend: None,
+                    });
+                    o
+                })
+                .collect();
+            let report = parse_health(&journal, &HealthThresholds::default()).unwrap();
+            prop_assert_eq!(report.documents.len(), flags.len());
         }
     }
 }

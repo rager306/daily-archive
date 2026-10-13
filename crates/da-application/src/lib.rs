@@ -83,7 +83,15 @@ pub mod navigation_stage;
 pub mod parse_grammar;
 pub mod parse_policy_artifact;
 pub mod parse_policy_gold_f1;
+pub use parse_policy_gold_f1::{
+    ArmF1, GOLD_PAIR_SCHEMA_VERSION, GoldEntity, GoldPairError, GoldPairVerdict, arm_f1, f1_winner,
+    score_gold_pair,
+};
 pub mod parse_policy_health;
+pub use parse_policy_health::{
+    BackendHealth, BucketHealth, DocumentGate, DriftAlarm, GateDecision, GateFloors,
+    HealthThresholds, ParseHealthReport, PointHealth, parse_health,
+};
 pub mod parse_policy_observation;
 pub mod parse_policy_pair;
 pub mod parse_policy_table;
