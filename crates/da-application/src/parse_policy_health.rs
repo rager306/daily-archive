@@ -10,7 +10,6 @@
 use crate::parse_policy_table::PolicyObservation;
 use serde::{Deserialize, Serialize};
 
-use crate::parse_policy_table::PolicyOutcomeEvidence;
 use std::collections::BTreeMap;
 use thiserror::Error;
 
