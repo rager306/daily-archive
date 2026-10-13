@@ -502,6 +502,34 @@ alarms. The slowest bucket (`p=200_plus`) has a single observation with
 112s mean latency — a long-tail outlier from a large monograph, not a
 systematic issue.
 
+### 2026-10-13 — Cycle 2: 321 observations, 61.1% validation — first measurable gain
+
+Cycle 2 adds 40 more documents (total: 321 observations, 247 train / 74
+validation). The learned table now has **5 cells** covering the full
+p×b×q feature space:
+
+| Bucket | Decision | Support |
+|---|---|---|
+| `p=0;b=0;q=lt200` | xy_cut | 11 |
+| **`p=0;b=1;q=lt200`** | **page_outline** | **40** |
+| `p=1_49;b=0;q=ge700` | xy_cut | 28 |
+| **`p=1_49;b=1;q=ge700`** | **page_outline** | **158** |
+| `p=50_199;b=1;q=ge700` | page_outline | 8 |
+
+Validation accuracy: **61.1%** (44/72) — above the native baseline (55-60%)
+and above the Cycle 1 result (59.3%). This is the **first measurable gain**:
+the table correctly predicts the winner for 61.1% of covered observations,
+where native predicts 55-60%.
+
+The key discriminator is `b` (toc_bookmarks): documents WITH bookmarks (b=1)
+prefer page_outline, documents WITHOUT (b=0) prefer xy_cut. This is exactly
+what the native threshold rule encodes, but the table learned it from data
+rather than from hardcoded thresholds.
+
+**This is candidate-only evidence**: the table is not production-active.
+The owner decides whether to adopt it (env-gated opt-in or DATA promotion).
+All locks stand: deployed=false, import_eligible=false.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
