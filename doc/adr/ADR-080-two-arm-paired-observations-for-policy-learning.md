@@ -433,6 +433,33 @@ document mix. A corpus with more outline-bearing documents shifts the balance
 toward the TOC arm. This confirms that the policy table must be trained per
 corpus segment, not globally.
 
+### 2026-10-13 — Cycle 4 final: 120 pairs, conclusion confirmed
+
+After 4 cycles and 120 pairs across 120 documents:
+
+| Strategy | Validation |
+|---|---|
+| **sections** | **58%** |
+| **native** | **58%** |
+| compound | 54% |
+| chars | 42% |
+| coverage | 42% |
+
+**TOC arm now wins 76%** of pairs (91 toc vs 29 grobid) — a complete reversal
+from Cycle 1 (grobid 76%). This confirms that the arms' relative performance
+depends on the document corpus.
+
+**The self-confirming loop is the core constraint**: the production consult
+always chose xy_cut, so all observations record xy_cut as the "correct" code.
+The table learns xy_cut → the table agrees with native → no gain. To break
+this cycle, the pipeline must **actually route some documents to the TOC arm**
+and measure the outcome. That is a production route change (ADR-076 territory),
+not a learning-loop change.
+
+**Path forward (owner decision):** explicitly route a sample of outline-bearing
+documents to the TOC arm, measure, and use the paired data to retrain. This
+requires a production route change under ADR-076.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
