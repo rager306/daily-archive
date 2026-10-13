@@ -9171,8 +9171,6 @@ def test_grobid_absorption_review_real_registry_closes_eight_p1_findings():
         assert delivering_slice in owner_allow, (finding_id, delivering_slice)
 
 
-if __name__ == "__main__":
-    sys.exit(_run_all_tests())
 
 
 
@@ -10534,3 +10532,6 @@ def test_architecture_gate_reports_the_recorded_21_of_23(monkeypatch, capsys, tm
     assert "22/23" not in out
     assert rc == 2
     assert "ARCHITECTURE GATE: FAIL" in out
+
+if __name__ == "__main__":
+    sys.exit(_run_all_tests())
