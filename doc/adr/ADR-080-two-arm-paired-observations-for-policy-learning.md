@@ -485,6 +485,23 @@ A gain would require either:
 - Or simply more diverse training data with genuinely different outcomes per
   bucket.
 
+### 2026-10-13 — Cycle 1 (expanded corpus): 257 observations, 59.3% validation
+
+First cycle on the expanded corpus (257 observations, 196 train / 61
+validation). The learned table achieves **59.3%** on validation — up from
+55.1% on the previous 124-pair corpus. The improvement (+4%) is from more
+diverse training data, not from a metric change.
+
+The table has 3 cells: xy_cut for two buckets, page_outline for one. The
+validation shows the table correctly predicts 59.3% of the time — slightly
+better than the native 55-60% baseline. This is not yet a measurable gain,
+but the trend is positive as the corpus grows.
+
+All 257 observations pass through `parse_policy_health` with zero drift
+alarms. The slowest bucket (`p=200_plus`) has a single observation with
+112s mean latency — a long-tail outlier from a large monograph, not a
+systematic issue.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
