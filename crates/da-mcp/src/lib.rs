@@ -4,15 +4,24 @@
 //! - Tools: get_schema, get_graph_stats, read_cypher, get_paper, get_sections,
 //!   get_references, search_papers, get_entities, validate_node, vector_search,
 //!   get_summary
-//! - Resources: 6 ontology YAML descriptors (list_mcp_resources)
-//! - Prompts: 6 agent guidance templates (list_mcp_prompts)
+//! - Resources: ontology/schema descriptors and live graph statistics
+//! - Prompts: literature_review and critical_reading workflows
 //!
 //! D127-safe: no write tools, no import unlock, query_readonly enforced.
 
 use std::sync::Arc;
 
 use kg_storage::DirectGraphStore;
-use rmcp::handler::server::wrapper::Parameters;
+use rmcp::{
+    ServerHandler,
+    handler::server::wrapper::Parameters,
+    model::{
+        GetPromptResult, ListResourcesResult, PromptMessage, ReadResourceRequestParams,
+        ReadResourceResponse, ReadResourceResult, Resource, ResourceContents, Role,
+        ServerCapabilities, ServerInfo,
+    },
+    service::{RequestContext, RoleServer},
+};
 
 pub mod hybrid;
 pub mod tools;
@@ -93,7 +102,7 @@ impl DailyArchiveMcpServer {
             McpResource {
                 uri: "graph://ontology/node_schemas".into(),
                 name: "Node Schemas".into(),
-                description: Some("ADR-050 node schema definitions (31 labels)".into()),
+                description: Some("Authoritative ADR-050 node schema definitions".into()),
                 mime_type: Some("text/yaml".into()),
             },
             McpResource {
@@ -119,7 +128,7 @@ impl DailyArchiveMcpServer {
             McpResource {
                 uri: "graph://schema".into(),
                 name: "Schema Summary".into(),
-                description: Some("Quick summary: node labels + edge types + counts".into()),
+                description: Some("Quick summary of node labels and edge types".into()),
                 mime_type: Some("text/plain".into()),
             },
             McpResource {
@@ -148,7 +157,15 @@ impl DailyArchiveMcpServer {
             }
             "graph://schema" => {
                 let labels = data_ontology_labels();
-                Some(format!("Node labels ({})\n{}", labels.len(), labels.join(", ")))
+                let mut edge_types = da_domain::schema::registered_edge_types_or_yaml();
+                edge_types.sort();
+                Some(format!(
+                    "Node labels ({})\n{}\nEdge types ({})\n{}",
+                    labels.len(),
+                    labels.join(", "),
+                    edge_types.len(),
+                    edge_types.join(", "),
+                ))
             }
             "graph://stats" => {
                 Some("{\"resource\": \"graph://stats\", \"note\": \"Use get_graph_stats tool for live counts\"}".into())
@@ -304,7 +321,7 @@ fn data_ontology_labels() -> Vec<String> {
 }
 
 /// Wave 1 tools: get_schema + get_graph_stats. Read-only by construction.
-#[rmcp::tool_router(server_handler)]
+#[rmcp::tool_router]
 impl DailyArchiveMcpServer {
     /// Get the daily-archive knowledge graph schema.
     #[rmcp::tool(
@@ -526,13 +543,162 @@ impl DailyArchiveMcpServer {
     }
 }
 
-// server_handler flag emits `impl ServerHandler for DailyArchiveMcpServer` with
-// an auto-generated `get_info()` (tools capability). Import is kept for clarity.
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct LiteratureReviewPromptArgs {
+    /// Research topic or question.
+    topic: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct CriticalReadingPromptArgs {
+    /// arXiv ID of the paper to analyze.
+    arxiv_id: String,
+}
+
+#[rmcp::prompt_router]
+impl DailyArchiveMcpServer {
+    #[rmcp::prompt(
+        description = "Search the knowledge graph and synthesize findings and research gaps for a topic."
+    )]
+    async fn literature_review(
+        &self,
+        Parameters(args): Parameters<LiteratureReviewPromptArgs>,
+    ) -> GetPromptResult {
+        let prompt = self
+            .get_mcp_prompt(
+                "literature_review",
+                &std::collections::HashMap::from([("topic".to_string(), args.topic)]),
+            )
+            .expect("registered literature_review prompt has a renderer");
+        GetPromptResult::new(vec![PromptMessage::new_text(Role::User, prompt)])
+    }
+
+    #[rmcp::prompt(
+        description = "Critically assess a paper's claims, methodology, evidence, limitations, and reproducibility."
+    )]
+    async fn critical_reading(
+        &self,
+        Parameters(args): Parameters<CriticalReadingPromptArgs>,
+    ) -> GetPromptResult {
+        let prompt = self
+            .get_mcp_prompt(
+                "critical_reading",
+                &std::collections::HashMap::from([("arxiv_id".to_string(), args.arxiv_id)]),
+            )
+            .expect("registered critical_reading prompt has a renderer");
+        GetPromptResult::new(vec![PromptMessage::new_text(Role::User, prompt)])
+    }
+}
+
+#[rmcp::tool_handler(router = Self::tool_router())]
+#[rmcp::prompt_handler(router = Self::prompt_router())]
+impl ServerHandler for DailyArchiveMcpServer {
+    fn get_info(&self) -> ServerInfo {
+        ServerInfo::new(
+            ServerCapabilities::builder()
+                .enable_tools()
+                .enable_prompts()
+                .enable_resources()
+                .build(),
+        )
+        .with_instructions("Read-only access to daily-archive's scholarly knowledge graph.")
+    }
+
+    async fn list_resources(
+        &self,
+        _request: Option<rmcp::model::PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListResourcesResult, rmcp::ErrorData> {
+        let resources = self
+            .list_mcp_resources()
+            .into_iter()
+            .map(|resource| {
+                let mut item = Resource::new(resource.uri, resource.name);
+                if let Some(description) = resource.description {
+                    item = item.with_description(description);
+                }
+                if let Some(mime_type) = resource.mime_type {
+                    item = item.with_mime_type(mime_type);
+                }
+                item
+            })
+            .collect();
+        Ok(ListResourcesResult::with_all_items(resources))
+    }
+
+    async fn read_resource(
+        &self,
+        request: ReadResourceRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ReadResourceResponse, rmcp::ErrorData> {
+        let content = if request.uri == "graph://stats" {
+            let stats = tools::get_graph_stats(
+                self.graph_store.as_ref(),
+                self.config.snapshot_path.as_deref(),
+            )
+            .await
+            .map_err(|error| rmcp::ErrorData::internal_error(error.to_string(), None))?;
+            serde_json::to_string(&stats)
+                .map_err(|error| rmcp::ErrorData::internal_error(error.to_string(), None))?
+        } else {
+            self.read_mcp_resource(&request.uri).ok_or_else(|| {
+                rmcp::ErrorData::resource_not_found(
+                    format!("unknown daily-archive resource: {}", request.uri),
+                    None,
+                )
+            })?
+        };
+        let mime_type = self
+            .list_mcp_resources()
+            .into_iter()
+            .find(|resource| resource.uri == request.uri)
+            .and_then(|resource| resource.mime_type)
+            .unwrap_or_else(|| "text/plain".into());
+        let contents = ResourceContents::text(content, request.uri).with_mime_type(mime_type);
+        Ok(ReadResourceResult::new(vec![contents]).into())
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use rmcp::ServerHandler;
+    use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncWrite, AsyncWriteExt, BufReader};
+
+    async fn protocol_request<R, W>(
+        reader: &mut R,
+        writer: &mut W,
+        id: u64,
+        method: &str,
+        params: serde_json::Value,
+    ) -> serde_json::Value
+    where
+        R: AsyncBufRead + Unpin,
+        W: AsyncWrite + Unpin,
+    {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": method,
+            "params": params,
+        });
+        writer
+            .write_all(serde_json::to_string(&request).unwrap().as_bytes())
+            .await
+            .expect("write request");
+        writer.write_all(b"\n").await.expect("write delimiter");
+        writer.flush().await.expect("flush request");
+
+        let mut line = String::new();
+        reader.read_line(&mut line).await.expect("read response");
+        let response: serde_json::Value = serde_json::from_str(&line).expect("valid JSON-RPC");
+        assert_eq!(response["id"], id, "response matches request id");
+        assert!(
+            response.get("error").is_none(),
+            "request failed: {response}"
+        );
+        response["result"].clone()
+    }
 
     fn test_server() -> DailyArchiveMcpServer {
         let mut s = DailyArchiveMcpServer::new(Arc::new(kg_storage::MockGraphStore::new()));
@@ -629,12 +795,194 @@ mod tests {
     }
 
     #[test]
-    fn test_server_tools_capability_enabled() {
+    fn test_server_protocol_capabilities_enabled() {
         let server = test_server();
         let info = server.get_info();
+        assert!(info.capabilities.tools.is_some());
+        assert!(info.capabilities.resources.is_some());
+        assert!(info.capabilities.prompts.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_mcp_protocol_lists_and_reads_resources_prompts_and_tools() {
+        let (server_transport, client_transport) = tokio::io::duplex(16 * 1024);
+        let (server_read, server_write) = tokio::io::split(server_transport);
+        let (client_read, mut client_write) = tokio::io::split(client_transport);
+        let mut client_read = BufReader::new(client_read);
+        let cancellation = tokio_util::sync::CancellationToken::new();
+        let server_cancellation = cancellation.clone();
+        let server = tokio::spawn(async move {
+            rmcp::service::serve_server_with_ct(
+                test_server(),
+                (server_read, server_write),
+                server_cancellation,
+            )
+            .await
+            .expect("server initializes")
+            .waiting()
+            .await
+            .expect("server stops cleanly")
+        });
+
+        let initialized = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            1,
+            "initialize",
+            serde_json::json!({
+                "protocolVersion": "2025-11-25",
+                "capabilities": {},
+                "clientInfo": { "name": "da-mcp-protocol-test", "version": "0.1.0" }
+            }),
+        )
+        .await;
+        assert!(initialized["capabilities"]["resources"].is_object());
+        assert!(initialized["capabilities"]["prompts"].is_object());
+        assert!(initialized["capabilities"]["tools"].is_object());
+        client_write
+            .write_all(b"{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n")
+            .await
+            .expect("send initialized notification");
+        client_write.flush().await.expect("flush notification");
+
+        let resources = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            2,
+            "resources/list",
+            serde_json::json!({}),
+        )
+        .await;
+        let resource_uris: Vec<&str> = resources["resources"]
+            .as_array()
+            .expect("resource list")
+            .iter()
+            .filter_map(|resource| resource["uri"].as_str())
+            .collect();
+        assert!(resource_uris.contains(&"graph://ontology/node_schemas"));
+        assert!(resource_uris.contains(&"graph://stats"));
+
+        let schema = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            3,
+            "resources/read",
+            serde_json::json!({ "uri": "graph://ontology/node_schemas" }),
+        )
+        .await;
         assert!(
-            info.capabilities.tools.is_some(),
-            "server must advertise tools capability"
+            schema["contents"][0]["text"]
+                .as_str()
+                .expect("schema is text")
+                .contains("Paper")
         );
+        let stats = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            4,
+            "resources/read",
+            serde_json::json!({ "uri": "graph://stats" }),
+        )
+        .await;
+        assert!(
+            serde_json::from_str::<serde_json::Value>(
+                stats["contents"][0]["text"]
+                    .as_str()
+                    .expect("stats are text")
+            )
+            .is_ok()
+        );
+
+        let prompts = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            5,
+            "prompts/list",
+            serde_json::json!({}),
+        )
+        .await;
+        let prompt_list = prompts["prompts"].as_array().expect("prompt list");
+        assert!(
+            prompt_list
+                .iter()
+                .any(|prompt| prompt["name"] == "literature_review")
+        );
+        assert!(
+            prompt_list
+                .iter()
+                .any(|prompt| prompt["name"] == "critical_reading")
+        );
+        assert!(
+            prompt_list
+                .iter()
+                .find(|prompt| prompt["name"] == "literature_review")
+                .expect("literature review prompt")
+                .to_string()
+                .contains("topic")
+        );
+
+        let review = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            6,
+            "prompts/get",
+            serde_json::json!({
+                "name": "literature_review",
+                "arguments": { "topic": "graph retrieval" }
+            }),
+        )
+        .await;
+        assert!(
+            review["messages"][0]["content"]["text"]
+                .as_str()
+                .expect("prompt message is text")
+                .contains("graph retrieval")
+        );
+        let critical = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            7,
+            "prompts/get",
+            serde_json::json!({
+                "name": "critical_reading",
+                "arguments": { "arxiv_id": "2507.19457" }
+            }),
+        )
+        .await;
+        assert!(
+            critical["messages"][0]["content"]["text"]
+                .as_str()
+                .expect("critical reading prompt is text")
+                .contains("2507.19457")
+        );
+
+        let tools = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            8,
+            "tools/list",
+            serde_json::json!({}),
+        )
+        .await;
+        assert_eq!(tools["tools"].as_array().expect("tool list").len(), 14);
+        let schema_tool = protocol_request(
+            &mut client_read,
+            &mut client_write,
+            9,
+            "tools/call",
+            serde_json::json!({ "name": "get_schema", "arguments": {} }),
+        )
+        .await;
+        assert!(
+            schema_tool["content"][0]["text"]
+                .as_str()
+                .expect("get_schema returns text")
+                .contains("Paper")
+        );
+
+        cancellation.cancel();
+        drop(client_read);
+        drop(client_write);
+        server.await.expect("server task completes");
     }
 }

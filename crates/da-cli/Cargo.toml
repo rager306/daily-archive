@@ -322,6 +322,14 @@ required-features = ["learning-evaluation"]
 name = "parse_policy_ablation"
 required-features = ["learning-evaluation"]
 
+# D471 / ADR-075 §2.7 (Э1): deterministic ruVLLM learning-critic end-to-end
+# runner. Same offline-evaluation feature as its parse-learning siblings; it
+# observes embedded redacted samples through the vendored ruvllm reflection
+# critics and folds the rows through the untouched ablation contract.
+[[example]]
+name = "learning_critic_e2e"
+required-features = ["learning-evaluation"]
+
 [dependencies]
 regex = { workspace = true }
 async-trait = { workspace = true }
@@ -376,6 +384,11 @@ pdf-layout = ["da-adapters/pdf-layout"]
 # are sufficient without it (deleting redb never destroys unique state).
 redb = ["da-adapters/redb"]
 # Explicit offline ruVLLM-boundary evaluation; no serving or promotion capability.
+# da-adapters supplies the deterministic ruVLLM reflection critics behind
+# LearningCriticPort (CPU, no GGUF, no network).
+# The ruVLLM critic runs in the standalone producer crate
+# tools/learning-critic-ruvllm (hnsw_rs 0.3 vs 0.2.1 must not share a link
+# unit with the samyama chain); this feature only gates the evaluator side.
 learning-evaluation = ["da-application/learning-evaluation"]
 
 [dev-dependencies]

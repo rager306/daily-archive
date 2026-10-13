@@ -882,6 +882,7 @@ pub async fn run_journey_content(
         policy_source: match &profile_decision.source {
             PolicySource::Native => "native".into(),
             PolicySource::Wasm { sha256 } => format!("wasm:{sha256}"),
+            PolicySource::Learned { table_sha256 } => format!("learned:{table_sha256}"),
         },
         policy_hash: profile_decision.policy_hash.clone(),
     }];

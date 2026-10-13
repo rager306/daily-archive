@@ -6,6 +6,7 @@
 
 pub mod agent_run;
 pub mod article_load;
+pub mod article_load_queue;
 pub mod artifact_stage;
 pub mod assurance;
 pub mod candidate_materialization_stage;
@@ -32,6 +33,7 @@ pub use article_load::{
     ArticleLoadError, ArticleLoadUseCase, LoadContentOutcome, LoadContentPipeline,
     LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome,
 };
+pub use article_load_queue::{enqueue_remaining_load_stages, load_stage_task_types};
 pub use artifact_stage::ArtifactPayloadStage;
 pub use assurance::{
     MaterializationAssuranceUseCase, MaterializationReadback, MaterializationReplayObservation,
@@ -79,6 +81,24 @@ pub mod fsm_policy_fallback;
 pub mod html_parsed_stage;
 pub mod navigation_stage;
 pub mod parse_grammar;
+pub mod parse_policy_artifact;
+pub mod parse_policy_gold_f1;
+pub use parse_policy_gold_f1::{
+    ArmF1, GOLD_PAIR_SCHEMA_VERSION, GoldEntity, GoldPairError, GoldPairVerdict, arm_f1, f1_winner,
+    score_gold_pair,
+};
+pub mod parse_policy_health;
+pub use parse_policy_health::{
+    BackendHealth, BucketHealth, DocumentGate, DriftAlarm, GateDecision, GateFloors,
+    HealthThresholds, ParseHealthReport, PointHealth, parse_health,
+};
+pub mod parse_policy_observation;
+pub mod parse_policy_pair;
+pub mod parse_policy_table;
+pub use parse_policy_table::{
+    ObservationSplit, PolicyObservation, TableLearnConfig, TableLearnError, learn_decision_table,
+    table_accuracy, table_mean_reward,
+};
 pub mod parse_job_runner;
 pub mod parse_learning_cycle;
 pub mod parse_learning_evaluation;

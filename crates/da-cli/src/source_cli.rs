@@ -70,6 +70,39 @@ pub(crate) fn stamp_parse_grammar(
     m.insert("policy_hash".into(), policy_hash.into());
 }
 
+/// ADR-079 D505: stamp the WHY alongside the decision — the query bucket and,
+/// when a learned cell answered, its support and generalization level. These
+/// are additive keys; a reader can replay which condition drove the route.
+pub(crate) fn stamp_policy_detail(
+    m: &mut serde_yaml::Mapping,
+    decision: &da_application::parse_grammar::ParseGrammarDecision,
+) {
+    if !decision.bucket_key.is_empty() {
+        m.insert(
+            "policy_bucket_key".into(),
+            decision.bucket_key.clone().into(),
+        );
+    }
+    match &decision.cell {
+        Some(cell) => {
+            m.insert(
+                "policy_cell_level".into(),
+                (cell.level.code() as i64).into(),
+            );
+            m.insert(
+                "policy_cell_key".into(),
+                cell.bucket_key_used.clone().into(),
+            );
+            if let Some(support) = cell.support {
+                m.insert("policy_cell_support".into(), (support as i64).into());
+            }
+        }
+        None => {
+            m.insert("policy_cell_level".into(), "native".into());
+        }
+    }
+}
+
 pub(crate) fn grobid_profile_from_route(
     route: da_domain::fsm_policy::ProfileRoute,
 ) -> da_parse::GrobidProfile {
@@ -415,8 +448,12 @@ fn stamp_from_grammar(
     let (source, hash) = match &g.source {
         da_domain::fsm_policy::PolicySource::Wasm { sha256 } => ("wasm", sha256.as_str()),
         da_domain::fsm_policy::PolicySource::Native => ("native_fallback", g.policy_hash.as_str()),
+        da_domain::fsm_policy::PolicySource::Learned { table_sha256 } => {
+            ("learned", table_sha256.as_str())
+        }
     };
     stamp_parse_grammar(m, &g.grammar_profile, g.route.as_str(), source, hash);
+    stamp_policy_detail(m, g);
 }
 
 fn stamp_policy_none(m: &mut serde_yaml::Mapping) {
@@ -438,6 +475,30 @@ fn features_from_env_and_cache(
     let text_layer_quality = quality
         .or_else(|| env_f32("DA_PARSE_TEXT_QUALITY"))
         .unwrap_or(0.85);
+    // ADR-078/D501: the measured classification artifact wins over env
+    // defaults and the legacy toc cache; it is the real decision condition.
+    let policy_features_path = std::path::Path::new("artifacts/pipeline_cache/pdf_policy_features")
+        .join(format!("{paper_id}.json"));
+    if let Ok(text) = std::fs::read_to_string(&policy_features_path)
+        && let Ok(measured) = serde_json::from_str::<da_domain::fsm_policy::ArticleFeatures>(&text)
+    {
+        // Explicit CLI args still override the measured artifact.
+        if pages.is_none() && env_u32("DA_PARSE_PAGES").is_none() {
+            page_count = measured.page_count;
+        }
+        if bookmarks.is_none() && env_u32("DA_PARSE_BOOKMARKS").is_none() {
+            toc_bookmarks = measured.toc_bookmarks;
+        }
+        if quality.is_none() && env_f32("DA_PARSE_TEXT_QUALITY").is_none() {
+            return measured;
+        }
+        return da_domain::fsm_policy::ArticleFeatures {
+            page_count,
+            toc_bookmarks,
+            text_layer_quality: measured.text_layer_quality,
+            domain: measured.domain,
+        };
+    }
     if (page_count == 0 || toc_bookmarks == 0)
         && let Some(v) = std::fs::read_to_string(toc_observations_path(paper_id))
             .ok()
@@ -468,7 +529,7 @@ fn consult_parse_grammar_cli(
     bookmarks: Option<u32>,
     quality: Option<f32>,
 ) -> anyhow::Result<da_application::parse_grammar::ParseGrammarDecision> {
-    use da_application::parse_grammar::resolve_parse_grammar;
+    use da_application::parse_grammar::resolve_parse_grammar_with_learned;
     use da_domain::fsm_policy::{DecisionPoint, PolicyRegistry};
     use da_ports::fsm_policy::FsmPolicyPort;
 
@@ -486,7 +547,9 @@ fn consult_parse_grammar_cli(
             .ok()
     });
     let host_ref: Option<&dyn FsmPolicyPort> = host.as_ref().map(|h| h as _);
-    resolve_parse_grammar(&yaml, host_ref, &features).map_err(|e| anyhow::anyhow!("{e}"))
+    let learned = crate::parse_profile::load_learned_table_env();
+    resolve_parse_grammar_with_learned(&yaml, host_ref, &features, learned.as_ref())
+        .map_err(|e| anyhow::anyhow!("{e}"))
 }
 
 fn consult_parse_profile_cli(
@@ -2061,6 +2124,65 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
 /// `da source parse-pdf <paper_id> --pdf <path>` — GROBID structural ->
 /// parsed/article.json + context/projection.json + manifest draft
 /// (idempotent; the article FSM then continues via build-* commands).
+/// ADR-078/D502: append policy observations to the journal. The record carries
+/// the decision condition, the code actually answered, the binary reward, and
+/// the raw outcome evidence so the reward rule stays re-computable. Failures
+/// to journal never fail the parse.
+fn append_policy_observations(
+    paper_id: &str,
+    grammar: &Option<da_application::parse_grammar::ParseGrammarDecision>,
+    grobid: &Option<da_application::parse_grammar::ParseProfileDecision>,
+    features: &da_domain::fsm_policy::ArticleFeatures,
+    outcome: &da_application::parse_policy_table::PolicyOutcomeEvidence,
+) {
+    use da_application::parse_policy_table::{PolicyObservation, binary_reward};
+
+    // ADR-080: the two-arm pair harness scores both arms itself and appends the
+    // paired observations; single-arm journaling is suppressed for its run so
+    // the journal holds a real counterfactual, not a doubled echo.
+    if std::env::var("DA_POLICY_PAIR_SUPPRESS_JOURNAL").is_ok() {
+        return;
+    }
+
+    let reward = binary_reward(outcome);
+    let observations = [
+        grammar.as_ref().map(|g| PolicyObservation {
+            document_identity: paper_id.to_string(),
+            decision_point: da_domain::fsm_policy::DecisionPoint::GrammarRoute,
+            features: features.clone(),
+            decision_code: g.route.as_str().to_string(),
+            reward,
+            outcome: Some(outcome.clone()),
+        }),
+        grobid.as_ref().map(|d| PolicyObservation {
+            document_identity: paper_id.to_string(),
+            decision_point: da_domain::fsm_policy::DecisionPoint::ProfileRoute,
+            features: features.clone(),
+            decision_code: d.profile.as_str().to_string(),
+            reward,
+            outcome: Some(outcome.clone()),
+        }),
+    ];
+    let dir = std::path::Path::new("data/agent_memory/policy");
+    if std::fs::create_dir_all(dir).is_err() {
+        return;
+    }
+    let path = dir.join("observations.jsonl");
+    let mut lines = String::new();
+    for obs in observations.into_iter().flatten() {
+        match serde_json::to_string(&obs) {
+            Ok(line) => lines.push_str(&line),
+            Err(_) => return,
+        }
+        lines.push('\n');
+    }
+    let _ = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+        .and_then(|mut f| std::io::Write::write_all(&mut f, lines.as_bytes()));
+}
+
 pub fn run_parse_pdf(
     paper_id: &str,
     pdf_path: Option<&str>,
@@ -2091,28 +2213,63 @@ pub fn run_parse_pdf(
     let Some(pdf) = pdf_path else {
         anyhow::bail!("parse-pdf requires --pdf <path>");
     };
+    let consulted_features = features_from_env_and_cache(paper_id, pages, bookmarks, quality);
+    let started = std::time::Instant::now();
     let rt = tokio::runtime::Runtime::new()?;
-    let (parsed, backend_version) = rt.block_on(async {
-        // D204 corpus default is structural via DATA profile_route.native.default.
-        // Rich is a closed consult variant; it is not the corpus default and
-        // still requires Crossref. Bibliography enrichment stays on the
-        // separately cached OpenAlex/Crossref enrich stage from the host.
-        let parser = GrobidParser::from_env().with_profile(grobid_profile);
-        // The LIVE release is part of the article's parse identity: probe it
-        // once and fail closed. There is no silent versionless fallback
-        // (ADR-076 W0 `backend_identity` / R121).
-        let probe = parser.probe_version().await.map_err(|failure| {
-            anyhow::anyhow!(
-                "grobid version probe: {failure} (required for parse identity; \
+    let parse_outcome: anyhow::Result<(da_ports::parser::ParsedArticle, String)> =
+        rt.block_on(async {
+            // D204 corpus default is structural via DATA profile_route.native.default.
+            // Rich is a closed consult variant; it is not the corpus default and
+            // still requires Crossref. Bibliography enrichment stays on the
+            // separately cached OpenAlex/Crossref enrich stage from the host.
+            let parser = GrobidParser::from_env().with_profile(grobid_profile);
+            // The LIVE release is part of the article's parse identity: probe it
+            // once and fail closed. There is no silent versionless fallback
+            // (ADR-076 W0 `backend_identity` / R121).
+            let probe = parser.probe_version().await.map_err(|failure| {
+                anyhow::anyhow!(
+                    "grobid version probe: {failure} (required for parse identity; \
                  there is no silent versionless fallback)"
-            )
-        })?;
-        let parsed = parser
-            .parse_pdf(pdf, paper_id)
-            .await
-            .map_err(|e| anyhow::anyhow!("grobid: {e}"))?;
-        Ok::<_, anyhow::Error>((parsed, probe.version))
-    })?;
+                )
+            })?;
+            let parsed = parser
+                .parse_pdf(pdf, paper_id)
+                .await
+                .map_err(|e| anyhow::anyhow!("grobid: {e}"))?;
+            Ok::<_, anyhow::Error>((parsed, probe.version))
+        });
+    let (parsed, backend_version) = match parse_outcome {
+        Ok(value) => {
+            let outcome = da_application::parse_policy_table::PolicyOutcomeEvidence {
+                ok: true,
+                section_count: value.0.sections.len(),
+                body_chars: value
+                    .0
+                    .sections
+                    .iter()
+                    .map(|s| s.text.chars().count())
+                    .sum(),
+                latency_ms: started.elapsed().as_millis() as u64,
+                backend: Some(value.1.clone()),
+            };
+            append_policy_observations(paper_id, &grammar, &grobid, &consulted_features, &outcome);
+            value
+        }
+        Err(e) => {
+            // ADR-078/D502: failures are observations too - the reward rule is
+            // binary and the evidence keeps the error context out of the record
+            // (identity, condition and code are what learning needs).
+            let outcome = da_application::parse_policy_table::PolicyOutcomeEvidence {
+                ok: false,
+                section_count: 0,
+                body_chars: 0,
+                latency_ms: started.elapsed().as_millis() as u64,
+                backend: None,
+            };
+            append_policy_observations(paper_id, &grammar, &grobid, &consulted_features, &outcome);
+            return Err(e);
+        }
+    };
 
     let dir = std::path::Path::new("data/processed").join(paper_id);
     std::fs::create_dir_all(dir.join("parsed"))?;
@@ -3637,6 +3794,59 @@ mod tests {
         fn drop(&mut self) {
             std::env::set_current_dir(&self.original).unwrap();
         }
+    }
+
+    #[test]
+    fn stamp_policy_detail_writes_why_when_learned() {
+        use da_application::parse_grammar::ParseGrammarDecision;
+        use da_domain::fsm_policy::{BucketLevel, GrammarRoute, PolicySource, TableCell};
+        let d = ParseGrammarDecision {
+            grammar_profile: "arxiv_pdf_dot".into(),
+            route: GrammarRoute::XyCut,
+            policy_hash: "abc".into(),
+            source: PolicySource::Learned {
+                table_sha256: "abc".into(),
+            },
+            bucket_key: "grammar_route;p=1_49;b=0;q=ge700;d=_".into(),
+            cell: Some(TableCell {
+                code: "xy_cut".into(),
+                bucket_key_used: "grammar_route;p=1_49;b=0;q=ge700;d=_".into(),
+                support: Some(5),
+                level: BucketLevel::Exact,
+            }),
+        };
+        let mut m = serde_yaml::Mapping::new();
+        stamp_policy_detail(&mut m, &d);
+        assert_eq!(
+            m.get("policy_bucket_key").and_then(|v| v.as_str()),
+            Some("grammar_route;p=1_49;b=0;q=ge700;d=_")
+        );
+        assert_eq!(
+            m.get("policy_cell_support").and_then(|v| v.as_i64()),
+            Some(5)
+        );
+        assert_eq!(m.get("policy_cell_level").and_then(|v| v.as_i64()), Some(0));
+    }
+
+    #[test]
+    fn stamp_policy_detail_marks_native_when_no_cell() {
+        use da_application::parse_grammar::ParseGrammarDecision;
+        use da_domain::fsm_policy::{GrammarRoute, PolicySource};
+        let d = ParseGrammarDecision {
+            grammar_profile: "arxiv_pdf_dot".into(),
+            route: GrammarRoute::XyCut,
+            policy_hash: "native".into(),
+            source: PolicySource::Native,
+            bucket_key: "grammar_route;p=1_49;b=0;q=ge700;d=_".into(),
+            cell: None,
+        };
+        let mut m = serde_yaml::Mapping::new();
+        stamp_policy_detail(&mut m, &d);
+        assert_eq!(
+            m.get("policy_cell_level").and_then(|v| v.as_str()),
+            Some("native")
+        );
+        assert!(m.get("policy_cell_support").is_none());
     }
 
     #[test]
