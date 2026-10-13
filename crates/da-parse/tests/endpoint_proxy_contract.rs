@@ -807,7 +807,7 @@ async fn proxy_endpoints_carry_partial_tei_verbatim_including_empty_and_non_utf8
     }
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn proxy_endpoints_time_out_without_retrying() {
     for endpoint in PROXY_ENDPOINTS {
         let plan =
@@ -815,25 +815,24 @@ async fn proxy_endpoints_time_out_without_retrying() {
         let (addr, log) = spawn_grobid_stub(plan).await;
         let backend =
             http_backend(addr, GrobidProfile::rich()).with_timeout(Duration::from_millis(30));
-        let err = backend
-            .fetch_tei(proxy_request(endpoint, &GrobidProfile::rich()))
+        let request = proxy_request(endpoint, &GrobidProfile::rich());
+        let exchange = tokio::spawn(async move { backend.fetch_tei(request).await });
+        // Keep virtual time from auto-advancing until the local stub has
+        // received the request. Host scheduling cannot consume the timeout.
+        while log.lock().expect("request log lock").is_empty() {
+            assert!(
+                !exchange.is_finished(),
+                "{endpoint}: exchange completed before the stub received its request"
+            );
+            tokio::task::yield_now().await;
+        }
+        tokio::time::advance(Duration::from_millis(31)).await;
+        let err = exchange
             .await
+            .expect("proxy exchange task")
             .expect_err("delayed response must time out");
         assert_eq!(err.code(), FailureCode::Timeout, "{endpoint}");
         assert_eq!(err.phase(), FailurePhase::AwaitResponse, "{endpoint}");
-        // The stub logs the request as soon as it reads it, but under load the
-        // stub task may not be scheduled before the client's 30ms timeout
-        // fires, turning the exactly-once check into a scheduling race rather
-        // than a contract check. Wait (bounded) for the single observation;
-        // the stub's 250ms delay keeps it from ever answering.
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
-        loop {
-            let observed = !log.lock().expect("request log lock").is_empty();
-            if observed || tokio::time::Instant::now() >= deadline {
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(10)).await;
-        }
         assert_exactly_one_request(&log, 0);
     }
 }

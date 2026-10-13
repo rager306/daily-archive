@@ -1,0 +1,1590 @@
+{
+  "paper_id": "2511.01854",
+  "title": "Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems",
+  "abstract_text": "Recent advances in LLM Multi-Agent Systems enable scalable orchestration of sub-agents, each coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. However, existing retrieval methods typically match queries against coarse agentlevel descriptions before routing, which obscures fine-grained tool functionality and often results in suboptimal agent selection. We introduce Tool-to-Agent Retrieval, a unified framework that embeds both tools and their parent agents in a shared vector space and connects them through metadata relationships. By explicitly representing tool capabilities and traversing metadata to the agent level, Tool-to-Agent Retrieval enables granular tool-level or agent-level retrieval, ensuring that agents and their underlying tools or MCP servers are equally represented without the context dilution that arises from chunking many tools together. Evaluating Tool-to-Agent Retrieval across eight embedding models, our approach achieves consistent improvements of 19.4% in Recall@5 and 17.7% in nDCG@5 over previous state-of-the-art agent retrievers on the LiveM-CPBench benchmark.",
+  "body_text": "IntroductionRecent advancements in Large Language Model (LLM) agents and the Model Context Protocol (MCP) enable assistants to discover, equip, and use large collections of external tools and MCP servers at inference time [6,20]. In practice, a single assistant may delegate to specialized sub-agents for code analysis, databases, or web search, each bundling dozens of tools behind a single interface [5]. A central challenge is routing: given a user query, should the system select a specific tool or leverage an entire agent (e.g., an MCP server) that provides a coherent set of tools? Forwarding all tool descriptions to the model is impractical, e.g., one MCP server with 26 tools can consume over 4,600 tokens, making efficient retrieval essential for scalability [35,38].Existing strategies typically fall into two camps. Agent-first pipelines match the query against a brief agent description, then operate only within that agent, which can hide highly relevant tools whose parent description does not obviously align with the query. Conversely, tool-only retrieval treats each tool independently and ignores the complementary benefits of the surrounding bundle on multi-step tasks [22]. Recent benchmarks have highlighted these challenges in multi-step tool selection, evaluating agents across diverse tool repositories [10,15,29]. In practice, single-tool matches may underperform when a workflow benefits from a coordinated set of tools, while agent-first routing may overlook fine-grained capabilities. What is needed is a retrieval mechanism that can operate at both levels, return a focused tool when the query is specific, or return an entire agent when broader capability is advantageous, without committing to a brittle two-stage pipeline.We introduce Tool-to-Agent Retrieval, which represents tools and their parent agents in the same vector space and links them through explicit metadata (Figure 1). At query time, retrieval runs over a joint index and returns either an individual tool or an agent bundle, depending on which better fits the query. By modeling fine-grained tool semantics while retaining agent context via tool→agent links (and traversing those links at retrieval time), the method avoids the context dilution that arises when many tools are collapsed into a single coarse description. This enables one-pass decisions about what to equip (a tool vs. an agent), improving routing for both focused and multi-step queries.\nRelated Work.A growing line of work builds tool retrieval for LLM agents by embedding tool descriptions and metadata in a tool knowledge base and selecting top-k tools per query [19,21,22,37]. Retrieval-augmented generation (RAG) enables LLM agents to access external knowledge and tools through semantic search [7], with recent hybrid approaches combining knowledge graphs and vector retrieval to improve tool selection accuracy [32]. Systems such as PLUTO and Re-Invoke refine dense retrieval for tool selection and demonstrate strong single-pass performance at scale [4,9]. Graph-based approaches have emerged to structure tool relationships, including ToolNet and Control-Algorithm 1 Combined Tool-Agent Top-K Retrieval (Tool-to-Agent Retrieval) 1: Input: query q, corpus C (agents ∪ tools), type τ (•) ∈ {agent, tool}, owner map own(•), similarity s(q, •), cutoffs N , K 2: Output: set of agents A ⋆ with |A ⋆ |= K 3: L ← TopN(q, C, N ) ▷ rank by s and return ordered [e (1) , . . . , e (N ) ] 4: A ← ∅; i ← 1 5: while |A|&lt; K and i ≤ N do 6:e ← L[i] 7:if τ (e) = agent then 8:a ← e 9:else if τ (e) = tool and own(e) is defined then 10:a ← own(e) 11: else 12:i ← i + 1; continue ▷ skip if owner missing/undefined 13:if a / ∈ A then 14:A ← A ∪ {a} 15:i ← i + 1 16: return A ⋆ ← ALLM which organize tools through graph structures to enable more sophisticated navigation [16,17]. Iterative methods like ToolReAGT decompose complex tasks and retrieve tools step-by-step, improving recall on multi-step problems [2,3]. Multi-hop reasoning frameworks further enhance retrieval by chaining intermediate steps [34,36]. In parallel, hierarchical pipelines first choose the MCP server and then a tool inside it to control prompt cost, but this agent-first routing can suppress fine-grained matches [6,39]. Our approach differs by jointly representing tools and agents and retrieving over a single, linked space, so the system does not have to commit upfront to tool-only or agent-first selection.Contributions. We make the the following contributions through this work:1. Unified Retrieval Framework: We introduce a novel tool retrieval strategy that embeds both tools and their parent agents in a shared vector space, linked through tool-to-agent metadata traversal, enabling unified retrieval and achieving state-of-the-art performance. 2. Granular Routing Mechanism: We propose a retrieval procedure that preserves fine-grained tool-level detail while retaining agent-level context, mitigating context dilution from coarse summaries and improving robustness on multi-step queries. 3. Comprehensive Evaluation: We evaluate the method on LiveMCPBench across eight embedding models, demonstrating 17.7% (recall@5) and 19.4% (nDCG@5) improvements over previous state-of-the-art approaches.\nApproach: Tool-to-Agent RetrievalAs illustrated in Figure 1, Tool-to-Agent Retrieval embeds both tools and their parent agents in a unified vector space, explicitly linking each tool to its parent agent through metadata relationships. We consider a catalog of MCP servers with their corresponding agents, denoted as a ∈ A. Each agent a owns a set of tools T a , consisting of API calls, functions, or actions exposed by the agent. The combined system is modeled as a bipartite graph G = (A, T , E), where edges E represent ownership relations between tools and agents. Graph-based modeling of tool relationships enables structured navigation and reasoning over tool capabilities [11,33]. This unified representation directly addresses the limitations of single-level retrieval. Retrieving solely by agent descriptions can obscure finegrained functional capabilities at the tool level, while retrieving tools independently discards important execution context such as authentication, parameter inference, or access policies maintained at the agent level. By integrating both levels, the retriever can surface relevant tools without losing their surrounding agent context. Furthermore, every query or sub-query ultimately resolves to an executable agent, ensuring that the retrieved entity can act upon the user request.Indexing. We construct a unified tool-agent catalog C that integrates both tools and agents for retrieval. The catalog is composed of two corpora: the tool corpus C T and the agent corpus C A .The Tool Corpus C T ⊂ C contains tool names and descriptions that are directly indexed for retrieval. Each tool entry includes metadata explicitly linking it to its parent MCP server or agent, denoted as owner(T ) = A. This mapping enables traversal from a retrieved tool to the corresponding executable agent during query resolution, drawing on graph-based representation techniques for knowledge integration [27,28].The Agent Corpus C A ⊂ C similarly contains agent names and descriptions, representing higher-level capabilities and serving as parent nodes within the retrieval graph.Retrieval. The retrieval process modifies the standard top-K ranking procedure. The objective is to identify the top-K most relevant agents for a given query or sub-query. To achieve this, we first retrieve the top N ≫ K entities from the unified tool-agent catalog C, ranked by semantic similarity to the query. This approach combines semantic and lexical matching strategies to improve recall [14], utilizing BM25 [30] alongside dense vector retrieval. The corresponding parent agents are then aggregated, and the top-K unique agents are selected. The complete retrieval procedure is detailed in Algorithm 1.Query. The input to the Tool-to-Agent Retriever can be the original user query, the decomposed sub-steps derived from it, or a combination of both. We evaluate two query paradigms.The first, Direct Querying, uses the user's high-level question directly as the retrieval query, without any pre-processing. This approach retrieves the top-K most relevant agents or tools for the overall task.The second, Step-wise Querying, decomposes the original query into a sequence of smaller sub-tasks. Each step is then submitted independently to the Table 1. Results on the LiveMCPBench benchmark comparing Tool-to-Agent Retrieval with baselines (BM25, Q.Retrieval, ScaleMCP, and MCPZero). Metrics are Recall@K, mAP@K, and nDCG@K for K ∈ {1, 5, 10}.\nApproachRecall mAP nDCG @1 @3 @5 @1 @3@5 @1 @3 @5 BM25 0.20 0.20 0.20 0.12 0.12 0.12 0.14 0.14 0.14 Q.Retrieval 0.31 0.47 0.56 0.31 0.31 0.24 0.31 0.35 0.32 MCPZero 0.44 0.66 0.70 0.45 0.39 0.31 0.45 0.46 0.41 ScaleMCP 0.49 0.68 0.74 0.49 0.40 0.29 0.49 0.48 0.40 Tool-to-Agent Retrieval 0.61 0.77 0.83 0.61 0.49 0.34 0.61 0.56 0.46retriever, allowing the system to identify different agents as needed across multistep workflows. This decomposition strategy aligns with reasoning-based retrieval planning methods that break complex queries into manageable sub-goals [12,13]. Query rewriting techniques further enhance retrieval by reformulating queries for improved semantic matching [23]. This step-wise procedure is the primary setting used in our evaluations.\nExperiments and EvaluationWe evaluate the effectiveness of the proposed Tool-to-Agent Retriever in comparison to agent-only retrieval methods. Our primary hypothesis is that a unified retriever operating over both tools and agents will outperform approaches that retrieve agents alone. In the MCP context, particularly under hierarchical querying [6,21], this improvement extends to the initial stage of routing, where identifying the correct MCP server enables access to its associated tools for crossconnected operations. Recent benchmarking efforts have highlighted the challenges of stateful, conversational tool use across multi-turn interactions [18,40].The experimental setup evaluates retrieval accuracy in identifying the correct agents or MCP servers for each query. We report standard information retrieval metrics, including Recall, mean average precision (mAP), and normalized discounted cumulative gain (nDCG), to quantify the performance improvements of the proposed approach.\nDataset and Evaluation Protocol.We evaluate our approach on the LiveM-CPBench dataset [24,25], which includes 70 MCP servers and 527 tools, along with 95 real-world questions annotated with step-by-step breakdowns and relevant tool-agent mappings. This structure enables fine-grained, step-level evaluation of retrieval performance. On average, each question spans 2.68 steps and involves 2.82 tools and 1.40 MCP agents.To isolate the contribution of tool-level information, we also construct an agent-only baseline dataset containing only MCP server names and descriptions. During inference, we employ step-wise querying and compare Tool-to-Agent Retrieval against BM25 [31], ScaleMCP [21], and MCPZero [6]. Retriever Setup. We evaluate retrieval performance across several embedding models. Specifically, we use 8 embedding models, both closed and open source [1,8,26]. The datasets are embedded using each model, and semantic similarity search is performed to retrieve relevant entities. We first retrieve the top N ≫ K entities from the tool-agent catalog and then select the top-K unique agents using Algorithm 1. Retrieval accuracy is computed by comparing the retrieved agents against the ground-truth agents associated with each query in the evaluation set.Results. Tables 1 and 2 show that Tool-to-Agent Retrieval consistently outperforms prior methods across Recall, mAP, and nDCG metrics. Our approach achieves superior performance over all baselines, with gains observed across multiple embedding families including Vertex AI, Gemini, Titan, OpenAI, and MiniLM. These improvements arise primarily from the richer retrieval corpus that jointly indexes both tools and agents, enabling finer-grained semantic alignment. Importantly, the performance lift is not attributable to tool-level retrieval alone. The joint index supports nuanced matches while preserving agent context, as evidenced by 39.13% of retrieved top-K items originating from the agent corpus C A and 34.44% of matched top-K tools also tracing back to C A . Together, these results demonstrate that explicitly linking tools to their parent agents mitigates context dilution and improves multi-step routing without sacrificing fine-grained precision. Across all eight embedding models, Tool-to-Agent Retrieval exhibited remarkably stable improvements, with standard deviations of 0.02 in Recall@5 and 0.01 in nDCG@5 relative to MCPZero. This consistency indicates that the gains are architecture-agnostic and primarily driven by the unified indexing design rather than embedding-specific behavior. The strongest relative improvement was observed on Amazon Titan v2 (Recall@5 improved from 0.66 to 0.85, a +28% relative gain), while even the compact All-MiniLM-L6-v2 model achieved a +13% improvement, confirming generalizability across both proprietary and open-source embeddings.\nConclusionRecent advances in LLM multi-agent systems enable scalable orchestration of sub-agents coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. We introduce Tool-to-Agent Retrieval, a unified framework for large language model (LLM) multi-agent systems that embeds both tools and their parent agents in a shared vector space, linked through metadata relationships. By explicitly modeling tool capabilities and enabling traversal between tool-and agent-level representations, our approach supports granular retrieval decisions that preserve fine-grained context without the dilution introduced by coarse agent summaries. Experiments across eight embedding models on the LiveMCPBench benchmark demonstrate substantial improvements over prior agent retrievers, with gains of 19.4% in Recall@5 and 17.7% in nDCG@5. These results highlight a promising direction for unifying tool and agent selection, motivating future research into retrieval architectures that scale across increasingly complex agent networks.Fig. 1 .1Fig. 1. Comparison of agent-only retrieval (left) and the proposed Tool-to-Agent Retrieval (right), which embeds tools and agents in a shared vector space to support joint retrieval and traversal.\nTable 2 .2Per-embedding comparison against MCPZeroRetriever ModelRecall@5nDCG@5mAP@5Ours MCPZero Ours MCPZero Ours MCPZeroVertex AI text embedding 0050.870.740.480.420.360.32Gemini Embedding 0010.860.740.490.440.370.34Amazon titan embed text v20.850.660.470.370.350.28Amazon titan embed text v10.850.650.480.390.360.30OpenAI text embedding ada 002 0.830.700.500.400.390.30OpenAI text embedding 3 small 0.870.720.490.410.360.31OpenAI text embedding 3 large 0.870.740.500.420.380.32All MiniLM L6 v20.800.670.450.390.330.29",
+  "sections": [
+    {
+      "title": "Introduction",
+      "text": "Recent advancements in Large Language Model (LLM) agents and the Model Context Protocol (MCP) enable assistants to discover, equip, and use large collections of external tools and MCP servers at inference time [6,20]. In practice, a single assistant may delegate to specialized sub-agents for code analysis, databases, or web search, each bundling dozens of tools behind a single interface [5]. A central challenge is routing: given a user query, should the system select a specific tool or leverage an entire agent (e.g., an MCP server) that provides a coherent set of tools? Forwarding all tool descriptions to the model is impractical, e.g., one MCP server with 26 tools can consume over 4,600 tokens, making efficient retrieval essential for scalability [35,38].Existing strategies typically fall into two camps. Agent-first pipelines match the query against a brief agent description, then operate only within that agent, which can hide highly relevant tools whose parent description does not obviously align with the query. Conversely, tool-only retrieval treats each tool independently and ignores the complementary benefits of the surrounding bundle on multi-step tasks [22]. Recent benchmarks have highlighted these challenges in multi-step tool selection, evaluating agents across diverse tool repositories [10,15,29]. In practice, single-tool matches may underperform when a workflow benefits from a coordinated set of tools, while agent-first routing may overlook fine-grained capabilities. What is needed is a retrieval mechanism that can operate at both levels, return a focused tool when the query is specific, or return an entire agent when broader capability is advantageous, without committing to a brittle two-stage pipeline.We introduce Tool-to-Agent Retrieval, which represents tools and their parent agents in the same vector space and links them through explicit metadata (Figure 1). At query time, retrieval runs over a joint index and returns either an individual tool or an agent bundle, depending on which better fits the query. By modeling fine-grained tool semantics while retaining agent context via tool→agent links (and traversing those links at retrieval time), the method avoids the context dilution that arises when many tools are collapsed into a single coarse description. This enables one-pass decisions about what to equip (a tool vs. an agent), improving routing for both focused and multi-step queries.",
+      "level": 1,
+      "path_id": "1",
+      "parent_section_id": null,
+      "order_in_parent": 0,
+      "section_id": "sec-1"
+    },
+    {
+      "title": "Related Work.",
+      "text": "A growing line of work builds tool retrieval for LLM agents by embedding tool descriptions and metadata in a tool knowledge base and selecting top-k tools per query [19,21,22,37]. Retrieval-augmented generation (RAG) enables LLM agents to access external knowledge and tools through semantic search [7], with recent hybrid approaches combining knowledge graphs and vector retrieval to improve tool selection accuracy [32]. Systems such as PLUTO and Re-Invoke refine dense retrieval for tool selection and demonstrate strong single-pass performance at scale [4,9]. Graph-based approaches have emerged to structure tool relationships, including ToolNet and Control-Algorithm 1 Combined Tool-Agent Top-K Retrieval (Tool-to-Agent Retrieval) 1: Input: query q, corpus C (agents ∪ tools), type τ (•) ∈ {agent, tool}, owner map own(•), similarity s(q, •), cutoffs N , K 2: Output: set of agents A ⋆ with |A ⋆ |= K 3: L ← TopN(q, C, N ) ▷ rank by s and return ordered [e (1) , . . . , e (N ) ] 4: A ← ∅; i ← 1 5: while |A|&lt; K and i ≤ N do 6:e ← L[i] 7:if τ (e) = agent then 8:a ← e 9:else if τ (e) = tool and own(e) is defined then 10:a ← own(e) 11: else 12:i ← i + 1; continue ▷ skip if owner missing/undefined 13:if a / ∈ A then 14:A ← A ∪ {a} 15:i ← i + 1 16: return A ⋆ ← ALLM which organize tools through graph structures to enable more sophisticated navigation [16,17]. Iterative methods like ToolReAGT decompose complex tasks and retrieve tools step-by-step, improving recall on multi-step problems [2,3]. Multi-hop reasoning frameworks further enhance retrieval by chaining intermediate steps [34,36]. In parallel, hierarchical pipelines first choose the MCP server and then a tool inside it to control prompt cost, but this agent-first routing can suppress fine-grained matches [6,39]. Our approach differs by jointly representing tools and agents and retrieving over a single, linked space, so the system does not have to commit upfront to tool-only or agent-first selection.Contributions. We make the the following contributions through this work:1. Unified Retrieval Framework: We introduce a novel tool retrieval strategy that embeds both tools and their parent agents in a shared vector space, linked through tool-to-agent metadata traversal, enabling unified retrieval and achieving state-of-the-art performance. 2. Granular Routing Mechanism: We propose a retrieval procedure that preserves fine-grained tool-level detail while retaining agent-level context, mitigating context dilution from coarse summaries and improving robustness on multi-step queries. 3. Comprehensive Evaluation: We evaluate the method on LiveMCPBench across eight embedding models, demonstrating 17.7% (recall@5) and 19.4% (nDCG@5) improvements over previous state-of-the-art approaches.",
+      "level": 1,
+      "path_id": "1~2",
+      "parent_section_id": null,
+      "order_in_parent": 1,
+      "section_id": "sec-1~2"
+    },
+    {
+      "title": "Approach: Tool-to-Agent Retrieval",
+      "text": "As illustrated in Figure 1, Tool-to-Agent Retrieval embeds both tools and their parent agents in a unified vector space, explicitly linking each tool to its parent agent through metadata relationships. We consider a catalog of MCP servers with their corresponding agents, denoted as a ∈ A. Each agent a owns a set of tools T a , consisting of API calls, functions, or actions exposed by the agent. The combined system is modeled as a bipartite graph G = (A, T , E), where edges E represent ownership relations between tools and agents. Graph-based modeling of tool relationships enables structured navigation and reasoning over tool capabilities [11,33]. This unified representation directly addresses the limitations of single-level retrieval. Retrieving solely by agent descriptions can obscure finegrained functional capabilities at the tool level, while retrieving tools independently discards important execution context such as authentication, parameter inference, or access policies maintained at the agent level. By integrating both levels, the retriever can surface relevant tools without losing their surrounding agent context. Furthermore, every query or sub-query ultimately resolves to an executable agent, ensuring that the retrieved entity can act upon the user request.Indexing. We construct a unified tool-agent catalog C that integrates both tools and agents for retrieval. The catalog is composed of two corpora: the tool corpus C T and the agent corpus C A .The Tool Corpus C T ⊂ C contains tool names and descriptions that are directly indexed for retrieval. Each tool entry includes metadata explicitly linking it to its parent MCP server or agent, denoted as owner(T ) = A. This mapping enables traversal from a retrieved tool to the corresponding executable agent during query resolution, drawing on graph-based representation techniques for knowledge integration [27,28].The Agent Corpus C A ⊂ C similarly contains agent names and descriptions, representing higher-level capabilities and serving as parent nodes within the retrieval graph.Retrieval. The retrieval process modifies the standard top-K ranking procedure. The objective is to identify the top-K most relevant agents for a given query or sub-query. To achieve this, we first retrieve the top N ≫ K entities from the unified tool-agent catalog C, ranked by semantic similarity to the query. This approach combines semantic and lexical matching strategies to improve recall [14], utilizing BM25 [30] alongside dense vector retrieval. The corresponding parent agents are then aggregated, and the top-K unique agents are selected. The complete retrieval procedure is detailed in Algorithm 1.Query. The input to the Tool-to-Agent Retriever can be the original user query, the decomposed sub-steps derived from it, or a combination of both. We evaluate two query paradigms.The first, Direct Querying, uses the user's high-level question directly as the retrieval query, without any pre-processing. This approach retrieves the top-K most relevant agents or tools for the overall task.The second, Step-wise Querying, decomposes the original query into a sequence of smaller sub-tasks. Each step is then submitted independently to the Table 1. Results on the LiveMCPBench benchmark comparing Tool-to-Agent Retrieval with baselines (BM25, Q.Retrieval, ScaleMCP, and MCPZero). Metrics are Recall@K, mAP@K, and nDCG@K for K ∈ {1, 5, 10}.",
+      "level": 2,
+      "path_id": "2",
+      "parent_section_id": null,
+      "order_in_parent": 2,
+      "section_id": "sec-2"
+    },
+    {
+      "title": "Approach",
+      "text": "Recall mAP nDCG @1 @3 @5 @1 @3@5 @1 @3 @5 BM25 0.20 0.20 0.20 0.12 0.12 0.12 0.14 0.14 0.14 Q.Retrieval 0.31 0.47 0.56 0.31 0.31 0.24 0.31 0.35 0.32 MCPZero 0.44 0.66 0.70 0.45 0.39 0.31 0.45 0.46 0.41 ScaleMCP 0.49 0.68 0.74 0.49 0.40 0.29 0.49 0.48 0.40 Tool-to-Agent Retrieval 0.61 0.77 0.83 0.61 0.49 0.34 0.61 0.56 0.46retriever, allowing the system to identify different agents as needed across multistep workflows. This decomposition strategy aligns with reasoning-based retrieval planning methods that break complex queries into manageable sub-goals [12,13]. Query rewriting techniques further enhance retrieval by reformulating queries for improved semantic matching [23]. This step-wise procedure is the primary setting used in our evaluations.",
+      "level": 1,
+      "path_id": "1~3",
+      "parent_section_id": null,
+      "order_in_parent": 3,
+      "section_id": "sec-1~3"
+    },
+    {
+      "title": "Experiments and Evaluation",
+      "text": "We evaluate the effectiveness of the proposed Tool-to-Agent Retriever in comparison to agent-only retrieval methods. Our primary hypothesis is that a unified retriever operating over both tools and agents will outperform approaches that retrieve agents alone. In the MCP context, particularly under hierarchical querying [6,21], this improvement extends to the initial stage of routing, where identifying the correct MCP server enables access to its associated tools for crossconnected operations. Recent benchmarking efforts have highlighted the challenges of stateful, conversational tool use across multi-turn interactions [18,40].The experimental setup evaluates retrieval accuracy in identifying the correct agents or MCP servers for each query. We report standard information retrieval metrics, including Recall, mean average precision (mAP), and normalized discounted cumulative gain (nDCG), to quantify the performance improvements of the proposed approach.",
+      "level": 3,
+      "path_id": "3",
+      "parent_section_id": null,
+      "order_in_parent": 4,
+      "section_id": "sec-3"
+    },
+    {
+      "title": "Dataset and Evaluation Protocol.",
+      "text": "We evaluate our approach on the LiveM-CPBench dataset [24,25], which includes 70 MCP servers and 527 tools, along with 95 real-world questions annotated with step-by-step breakdowns and relevant tool-agent mappings. This structure enables fine-grained, step-level evaluation of retrieval performance. On average, each question spans 2.68 steps and involves 2.82 tools and 1.40 MCP agents.To isolate the contribution of tool-level information, we also construct an agent-only baseline dataset containing only MCP server names and descriptions. During inference, we employ step-wise querying and compare Tool-to-Agent Retrieval against BM25 [31], ScaleMCP [21], and MCPZero [6]. Retriever Setup. We evaluate retrieval performance across several embedding models. Specifically, we use 8 embedding models, both closed and open source [1,8,26]. The datasets are embedded using each model, and semantic similarity search is performed to retrieve relevant entities. We first retrieve the top N ≫ K entities from the tool-agent catalog and then select the top-K unique agents using Algorithm 1. Retrieval accuracy is computed by comparing the retrieved agents against the ground-truth agents associated with each query in the evaluation set.Results. Tables 1 and 2 show that Tool-to-Agent Retrieval consistently outperforms prior methods across Recall, mAP, and nDCG metrics. Our approach achieves superior performance over all baselines, with gains observed across multiple embedding families including Vertex AI, Gemini, Titan, OpenAI, and MiniLM. These improvements arise primarily from the richer retrieval corpus that jointly indexes both tools and agents, enabling finer-grained semantic alignment. Importantly, the performance lift is not attributable to tool-level retrieval alone. The joint index supports nuanced matches while preserving agent context, as evidenced by 39.13% of retrieved top-K items originating from the agent corpus C A and 34.44% of matched top-K tools also tracing back to C A . Together, these results demonstrate that explicitly linking tools to their parent agents mitigates context dilution and improves multi-step routing without sacrificing fine-grained precision. Across all eight embedding models, Tool-to-Agent Retrieval exhibited remarkably stable improvements, with standard deviations of 0.02 in Recall@5 and 0.01 in nDCG@5 relative to MCPZero. This consistency indicates that the gains are architecture-agnostic and primarily driven by the unified indexing design rather than embedding-specific behavior. The strongest relative improvement was observed on Amazon Titan v2 (Recall@5 improved from 0.66 to 0.85, a +28% relative gain), while even the compact All-MiniLM-L6-v2 model achieved a +13% improvement, confirming generalizability across both proprietary and open-source embeddings.",
+      "level": 1,
+      "path_id": "1~4",
+      "parent_section_id": null,
+      "order_in_parent": 5,
+      "section_id": "sec-1~4"
+    },
+    {
+      "title": "Conclusion",
+      "text": "Recent advances in LLM multi-agent systems enable scalable orchestration of sub-agents coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. We introduce Tool-to-Agent Retrieval, a unified framework for large language model (LLM) multi-agent systems that embeds both tools and their parent agents in a shared vector space, linked through metadata relationships. By explicitly modeling tool capabilities and enabling traversal between tool-and agent-level representations, our approach supports granular retrieval decisions that preserve fine-grained context without the dilution introduced by coarse agent summaries. Experiments across eight embedding models on the LiveMCPBench benchmark demonstrate substantial improvements over prior agent retrievers, with gains of 19.4% in Recall@5 and 17.7% in nDCG@5. These results highlight a promising direction for unifying tool and agent selection, motivating future research into retrieval architectures that scale across increasingly complex agent networks.Fig. 1 .1Fig. 1. Comparison of agent-only retrieval (left) and the proposed Tool-to-Agent Retrieval (right), which embeds tools and agents in a shared vector space to support joint retrieval and traversal.\nTable 2 .2Per-embedding comparison against MCPZeroRetriever ModelRecall@5nDCG@5mAP@5Ours MCPZero Ours MCPZero Ours MCPZeroVertex AI text embedding 0050.870.740.480.420.360.32Gemini Embedding 0010.860.740.490.440.370.34Amazon titan embed text v20.850.660.470.370.350.28Amazon titan embed text v10.850.650.480.390.360.30OpenAI text embedding ada 002 0.830.700.500.400.390.30OpenAI text embedding 3 small 0.870.720.490.410.360.31OpenAI text embedding 3 large 0.870.740.500.420.380.32All MiniLM L6 v20.800.670.450.390.330.29",
+      "level": 4,
+      "path_id": "4",
+      "parent_section_id": null,
+      "order_in_parent": 6,
+      "section_id": "sec-4"
+    }
+  ],
+  "citations": [
+    {
+      "raw_text": "Amazon: Amazon titan text embeddings models\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b0",
+          "section_path_id": "1~4",
+          "quote": "[1,",
+          "offset": 830
+        }
+      ]
+    },
+    {
+      "raw_text": "RAnantha\n\t\t\n\t\t\n\t\t\tBBandyopadhyay\n\t\t\n\t\t\n\t\t\tAKashi\n\t\t\n\t\t\n\t\t\tSMahinder\n\t\t\n\t\t\n\t\t\tAWHill\n\t\t\n\t\t\n\t\t\tSChappidi\n\t\t\n\t\t\n\t\tProtip: Progressive tool retrieval improves planning\n\t\t\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b1",
+          "section_path_id": "1~2",
+          "quote": "[2,",
+          "offset": 1501
+        }
+      ]
+    },
+    {
+      "raw_text": "ToolreAGt: Tool retrieval for LLM-based complex task solution via retrieval augmented generation\n\t\t\n\t\t\tNBraunschweiler\n\t\t\n\t\t\n\t\t\tRDoddipatla\n\t\t\n\t\t\n\t\t\tTCZorila\n\t\t\n\t\t\n\t\n\t\n\t\tKnowledgeable Foundation Models at ACL 2025\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "ToolreAGt: Tool retrieval for LLM-based complex task solution via retrieval augmented generation",
+      "anchors": [
+        {
+          "ref_id": "b2",
+          "section_path_id": "1~2",
+          "quote": "3]",
+          "offset": 1504
+        }
+      ]
+    },
+    {
+      "raw_text": "YChen\n\t\t\n\t\t\n\t\t\tJYoon\n\t\t\n\t\t\n\t\t\tDSSachan\n\t\t\n\t\t\n\t\t\tQWang\n\t\t\n\t\t\n\t\t\tVCohen-Addad\n\t\t\n\t\t\n\t\t\tMBateni\n\t\t\n\t\t\n\t\t\tCYLee\n\t\t\n\t\t\n\t\t\tTPfister\n\t\t\n\t\t\n\t\tRe-invoke: Tool invocation rewriting for zero-shot tool retrieval\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b3",
+          "section_path_id": "1~2",
+          "quote": "[4,",
+          "offset": 557
+        }
+      ]
+    },
+    {
+      "raw_text": "AnyTool: Self-Reflective\n\t\t\n\t\t\tYDu\n\t\t\n\t\t\n\t\t\tFWei\n\t\t\n\t\t\n\t\t\tHZhang\n\t\t\n\t\tarXiv:2402.04253\n\t\n\t\n\t\tHierarchical Agents for Large-Scale API Calls (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2402.04253",
+      "title": "AnyTool: Self-Reflective",
+      "anchors": [
+        {
+          "ref_id": "b4",
+          "section_path_id": "1",
+          "quote": "[5]",
+          "offset": 390
+        }
+      ]
+    },
+    {
+      "raw_text": "XFei\n\t\t\n\t\t\n\t\t\tXZheng\n\t\t\n\t\t\n\t\t\tHFeng\n\t\t\n\t\t\n\t\tMcp-zero: Active tool discovery for autonomous llm agents\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b5",
+          "section_path_id": "1",
+          "quote": "[6,",
+          "offset": 210
+        },
+        {
+          "ref_id": "b5",
+          "section_path_id": "1~2",
+          "quote": "[6,",
+          "offset": 1782
+        },
+        {
+          "ref_id": "b5",
+          "section_path_id": "3",
+          "quote": "[6,",
+          "offset": 321
+        },
+        {
+          "ref_id": "b5",
+          "section_path_id": "1~4",
+          "quote": "[6]",
+          "offset": 672
+        }
+      ]
+    },
+    {
+      "raw_text": "YGao\n\t\t\n\t\t\n\t\t\tYXiong\n\t\t\n\t\t\n\t\t\tXGao\n\t\t\n\t\t\n\t\t\tKJia\n\t\t\n\t\t\n\t\t\tJPan\n\t\t\n\t\t\n\t\t\tYBi\n\t\t\n\t\t\n\t\t\tYDai\n\t\t\n\t\t\n\t\t\tJSun\n\t\t\n\t\t\n\t\t\tMWang\n\t\t\n\t\t\n\t\t\tHWang\n\t\t\n\t\tarXiv:2312.10997\n\t\tRetrieval-augmented generation for large language models: A survey (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2312.10997",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b6",
+          "section_path_id": "1~2",
+          "quote": "[7]",
+          "offset": 299
+        }
+      ]
+    },
+    {
+      "raw_text": "Google\n\t\t\n\t\t\n\t\tVertex ai text embeddings models\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b7",
+          "section_path_id": "1~4",
+          "quote": "8,",
+          "offset": 833
+        }
+      ]
+    },
+    {
+      "raw_text": "Planning and editing what you retrieve for enhanced tool learning\n\t\t\n\t\t\tTHuang\n\t\t\n\t\t\n\t\t\tDJung\n\t\t\n\t\t\n\t\t\tMChen\n\t\t\n\t\t\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b8",
+          "section_path_id": "1~2",
+          "quote": "9]",
+          "offset": 560
+        }
+      ]
+    },
+    {
+      "raw_text": "YHuang\n\t\t\n\t\t\n\t\t\tJShi\n\t\t\n\t\t\n\t\t\tYLi\n\t\t\n\t\t\n\t\t\tCFan\n\t\t\n\t\t\n\t\t\tSWu\n\t\t\n\t\t\n\t\t\tQZhang\n\t\t\n\t\t\n\t\t\tYLiu\n\t\t\n\t\t\n\t\t\tPZhou\n\t\t\n\t\t\n\t\t\tYWan\n\t\t\n\t\t\n\t\t\tNZGong\n\t\t\n\t\t\n\t\t\tLSun\n\t\t\n\t\tarXiv:2310.03128\n\t\tMetatool benchmark for large language models: Deciding whether to use tools and which to use (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2310.03128",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b9",
+          "section_path_id": "1",
+          "quote": "[10,",
+          "offset": 1317
+        }
+      ]
+    },
+    {
+      "raw_text": "BJin\n\t\t\n\t\t\n\t\t\tCXie\n\t\t\n\t\t\n\t\t\tJZhang\n\t\t\n\t\t\n\t\t\tKKRoy\n\t\t\n\t\t\n\t\t\tYZhang\n\t\t\n\t\t\n\t\t\tZLi\n\t\t\n\t\t\n\t\t\tRLi\n\t\t\n\t\t\n\t\t\tXTang\n\t\t\n\t\t\n\t\t\tSWang\n\t\t\n\t\t\n\t\t\tYMeng\n\t\t\n\t\t\n\t\t\tJHan\n\t\t\n\t\tarXiv:2404.07103\n\t\tGraph chain-of-thought: Augmenting large language models by reasoning on graphs (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2404.07103",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b10",
+          "section_path_id": "2",
+          "quote": "[11,",
+          "offset": 646
+        }
+      ]
+    },
+    {
+      "raw_text": "AJoshi\n\t\t\n\t\t\n\t\t\tSMSarwar\n\t\t\n\t\t\n\t\t\tSVarshney\n\t\t\n\t\t\n\t\t\tSNag\n\t\t\n\t\t\n\t\t\tSAgrawal\n\t\t\n\t\t\n\t\t\tJNaik\n\t\t\n\t\tarXiv:2407.18553\n\t\tREAPER: Reasoning based Retrieval Planning for Complex RAG Systems (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2407.18553",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b11",
+          "section_path_id": "1~3",
+          "quote": "[12,",
+          "offset": 558
+        }
+      ]
+    },
+    {
+      "raw_text": "OKhattab\n\t\t\n\t\t\n\t\t\tKSanthanam\n\t\t\n\t\t\n\t\t\tXLLi\n\t\t\n\t\t\n\t\t\tDHall\n\t\t\n\t\t\n\t\t\tPLiang\n\t\t\n\t\t\n\t\t\tCPotts\n\t\t\n\t\t\n\t\t\tMZaharia\n\t\t\n\t\tarXiv:2212.14024\n\t\tDemonstrate-Search-Predict: Composing retrieval and language models for knowledge-intensive NLP (2023)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2212.14024",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b12",
+          "section_path_id": "1~3",
+          "quote": "13]",
+          "offset": 562
+        }
+      ]
+    },
+    {
+      "raw_text": "Leveraging semantic and lexical matching to improve the recall of document retrieval systems: A hybrid approach\n\t\t\n\t\t\tSKuzi\n\t\t\n\t\t\n\t\t\tMZhang\n\t\t\n\t\t\n\t\t\tCLi\n\t\t\n\t\t\n\t\t\tMBendersky\n\t\t\n\t\t\n\t\t\tMNajork\n\t\t\n\t\tarXiv:2010.01195\n\t\t\n\t\t\t2020\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2010.01195",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b13",
+          "section_path_id": "2",
+          "quote": "[14]",
+          "offset": 2459
+        }
+      ]
+    },
+    {
+      "raw_text": "MLi\n\t\t\n\t\t\n\t\t\tYZhao\n\t\t\n\t\t\n\t\t\tBYu\n\t\t\n\t\t\n\t\t\tFSong\n\t\t\n\t\t\n\t\t\tHLi\n\t\t\n\t\t\n\t\t\tHYu\n\t\t\n\t\t\n\t\t\tZLi\n\t\t\n\t\t\n\t\t\tFHuang\n\t\t\n\t\t\n\t\t\tYLi\n\t\t\n\t\tarXiv:2304.08244\n\t\tAPI-Bank: A Comprehensive Benchmark for Tool-Augmented LLMs (2023)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2304.08244",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b14",
+          "section_path_id": "1",
+          "quote": "15,",
+          "offset": 1321
+        }
+      ]
+    },
+    {
+      "raw_text": "XLiu\n\t\t\n\t\t\n\t\t\tZPeng\n\t\t\n\t\t\n\t\t\tXYi\n\t\t\n\t\t\n\t\t\tXXie\n\t\t\n\t\t\n\t\t\tLXiang\n\t\t\n\t\t\n\t\t\tYLiu\n\t\t\n\t\t\n\t\t\tDXu\n\t\t\n\t\tarXiv:2403.00839\n\t\tToolnet: Connecting large language models with massive tools via tool graph (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2403.00839",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b15",
+          "section_path_id": "1~2",
+          "quote": "[16,",
+          "offset": 1362
+        }
+      ]
+    },
+    {
+      "raw_text": "ZLiu\n\t\t\n\t\t\n\t\t\tZLai\n\t\t\n\t\t\n\t\t\tZGao\n\t\t\n\t\t\n\t\t\tECui\n\t\t\n\t\t\n\t\t\tZLi\n\t\t\n\t\t\n\t\t\tXZhu\n\t\t\n\t\t\n\t\t\tLLu\n\t\t\n\t\t\n\t\t\tQChen\n\t\t\n\t\t\n\t\t\tYQiao\n\t\t\n\t\t\n\t\t\tJDai\n\t\t\n\t\t\n\t\t\tWWang\n\t\t\n\t\tarXiv:2310.17796\n\t\tControlllm: Augment language models with tools by searching on graphs (2023)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2310.17796",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~2",
+          "quote": "17]",
+          "offset": 1366
+        }
+      ]
+    },
+    {
+      "raw_text": "JLu\n\t\t\n\t\t\n\t\t\tTHolleis\n\t\t\n\t\t\n\t\t\tYZhang\n\t\t\n\t\t\n\t\t\tBAumayer\n\t\t\n\t\t\n\t\t\tFNan\n\t\t\n\t\t\n\t\t\tFBai\n\t\t\n\t\t\n\t\t\tSMa\n\t\t\n\t\t\n\t\t\tSMa\n\t\t\n\t\t\n\t\t\tMLi\n\t\t\n\t\t\n\t\t\tGYin\n\t\t\n\t\t\n\t\t\tZWang\n\t\t\n\t\t\n\t\t\tRPang\n\t\t\n\t\tarXiv:2408.04682\n\t\tToolsandbox: A stateful, conversational, interactive evaluation benchmark for llm tool use capabilities (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2408.04682",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b17",
+          "section_path_id": "3",
+          "quote": "[18,",
+          "offset": 626
+        }
+      ]
+    },
+    {
+      "raw_text": "ELumer\n\t\t\n\t\t\n\t\t\tPHBasavaraju\n\t\t\n\t\t\n\t\t\tMMason\n\t\t\n\t\t\n\t\t\tJABurke\n\t\t\n\t\t\n\t\t\tVKSubbiah\n\t\t\n\t\t\n\t\tGraph ragtool fusion\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b18",
+          "section_path_id": "1~2",
+          "quote": "[19,",
+          "offset": 165
+        }
+      ]
+    },
+    {
+      "raw_text": "Memtool: Optimizing short-term memory management for dynamic tool calling in llm agent multi-turn conversations\n\t\t\n\t\t\tELumer\n\t\t\n\t\t\n\t\t\tAGulati\n\t\t\n\t\t\n\t\t\tVKSubbiah\n\t\t\n\t\t\n\t\t\tPHBasavaraju\n\t\t\n\t\t\n\t\t\tJABurke\n\t\t\n\t\t\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b19",
+          "section_path_id": "1",
+          "quote": "20]",
+          "offset": 213
+        }
+      ]
+    },
+    {
+      "raw_text": "Scalemcp: Dynamic and auto-synchronizing model context protocol tools for llm agents\n\t\t\n\t\t\tELumer\n\t\t\n\t\t\n\t\t\tAGulati\n\t\t\n\t\t\n\t\t\tVKSubbiah\n\t\t\n\t\t\n\t\t\tPHBasavaraju\n\t\t\n\t\t\n\t\t\tJABurke\n\t\t\n\t\t\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b20",
+          "section_path_id": "1~2",
+          "quote": "21,",
+          "offset": 169
+        },
+        {
+          "ref_id": "b20",
+          "section_path_id": "3",
+          "quote": "21]",
+          "offset": 324
+        },
+        {
+          "ref_id": "b20",
+          "section_path_id": "1~4",
+          "quote": "[21]",
+          "offset": 654
+        }
+      ]
+    },
+    {
+      "raw_text": "Toolshed: Scale tool-equipped agents with advanced rag-tool fusion and tool knowledge bases\n\t\t\n\t\t\tELumer\n\t\t\n\t\t\n\t\t\tVKSubbiah\n\t\t\n\t\t\n\t\t\tJABurke\n\t\t\n\t\t\n\t\t\tPHBasavaraju\n\t\t\n\t\t\n\t\t\tAHuber\n\t\t\n\t\t\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b21",
+          "section_path_id": "1",
+          "quote": "[22]",
+          "offset": 1178
+        },
+        {
+          "ref_id": "b21",
+          "section_path_id": "1~2",
+          "quote": "22,",
+          "offset": 172
+        }
+      ]
+    },
+    {
+      "raw_text": "XMa\n\t\t\n\t\t\n\t\t\tYGong\n\t\t\n\t\t\n\t\t\tPHe\n\t\t\n\t\t\n\t\t\tHZhao\n\t\t\n\t\t\n\t\t\tNDuan\n\t\t\n\t\tarXiv:2305.14283\n\t\tQuery Rewriting for Retrieval-Augmented Large Language Models (2023)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2305.14283",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b22",
+          "section_path_id": "1~3",
+          "quote": "[23]",
+          "offset": 676
+        }
+      ]
+    },
+    {
+      "raw_text": "Livemcpbench: Can agents navigate an ocean of mcp tools?\n\t\t\n\t\t\tGMo\n\t\t\n\t\t\n\t\t\tWZhong\n\t\t\n\t\t\n\t\t\tJChen\n\t\t\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tYLu\n\t\t\n\t\t\n\t\t\tHLin\n\t\t\n\t\t\n\t\t\tBHe\n\t\t\n\t\t\n\t\t\tXHan\n\t\t\n\t\t\n\t\t\tLSun\n\t\t\n\t\t\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b23",
+          "section_path_id": "1~4",
+          "quote": "[24,",
+          "offset": 54
+        }
+      ]
+    },
+    {
+      "raw_text": "Livemcpbench: Can agents navigate an ocean of mcp tools?\n\t\t\n\t\t\tGMo\n\t\t\n\t\t\n\t\t\tWZhong\n\t\t\n\t\t\n\t\t\tJChen\n\t\t\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tYLu\n\t\t\n\t\t\n\t\t\tHLin\n\t\t\n\t\t\n\t\t\tBHe\n\t\t\n\t\t\n\t\t\tXHan\n\t\t\n\t\t\n\t\t\tLSun\n\t\t\n\t\t\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b24",
+          "section_path_id": "1~4",
+          "quote": "25]",
+          "offset": 58
+        }
+      ]
+    },
+    {
+      "raw_text": "OpenAI: Vector embeddings documentation\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b25",
+          "section_path_id": "1~4",
+          "quote": "26]",
+          "offset": 835
+        }
+      ]
+    },
+    {
+      "raw_text": "Unifying large language models and knowledge graphs: A roadmap\n\t\t\n\t\t\tSPan\n\t\t\n\t\t\n\t\t\tLLuo\n\t\t\n\t\t\n\t\t\tYWang\n\t\t\n\t\t\n\t\t\tCChen\n\t\t\n\t\t\n\t\t\tJWang\n\t\t\n\t\t\n\t\t\tXWu\n\t\t\n\t\t10.1109/TKDE.2024.3352100\n\t\t\n\t\n\t\n\t\tIEEE Transactions on Knowledge and Data Engineering\n\t\t\n\t\t\t36\n\t\t\t7\n\t\t\t\n\t\t\tJul 2024",
+      "doi": "10.1109/TKDE.2024.3352100",
+      "arxiv_id": null,
+      "title": "Unifying large language models and knowledge graphs: A roadmap",
+      "anchors": [
+        {
+          "ref_id": "b26",
+          "section_path_id": "2",
+          "quote": "[27,",
+          "offset": 1888
+        }
+      ]
+    },
+    {
+      "raw_text": "BPeng\n\t\t\n\t\t\n\t\t\tYZhu\n\t\t\n\t\t\n\t\t\tYLiu\n\t\t\n\t\t\n\t\t\tXBo\n\t\t\n\t\t\n\t\t\tHShi\n\t\t\n\t\t\n\t\t\tCHong\n\t\t\n\t\t\n\t\t\tYZhang\n\t\t\n\t\t\n\t\t\tSTang\n\t\t\n\t\tarXiv:2408.08921\n\t\tGraph retrieval-augmented generation: A survey (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2408.08921",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b27",
+          "section_path_id": "2",
+          "quote": "28]",
+          "offset": 1892
+        }
+      ]
+    },
+    {
+      "raw_text": "YQin\n\t\t\n\t\t\n\t\t\tSLiang\n\t\t\n\t\t\n\t\t\tYYe\n\t\t\n\t\t\n\t\t\tKZhu\n\t\t\n\t\t\n\t\t\tLYan\n\t\t\n\t\t\n\t\t\tYLu\n\t\t\n\t\t\n\t\t\tYLin\n\t\t\n\t\t\n\t\t\tXCong\n\t\t\n\t\t\n\t\t\tXTang\n\t\t\n\t\t\n\t\t\tBQian\n\t\t\n\t\t\n\t\t\tSZhao\n\t\t\n\t\t\n\t\t\tLHong\n\t\t\n\t\t\n\t\t\tRTian\n\t\t\n\t\t\n\t\t\tRXie\n\t\t\n\t\t\n\t\t\tJZhou\n\t\t\n\t\t\n\t\t\tMGerstein\n\t\t\n\t\t\n\t\t\tDLi\n\t\t\n\t\t\n\t\t\tZLiu\n\t\t\n\t\t\n\t\t\tMSun\n\t\t\n\t\tarXiv:2307.16789\n\t\tToolllm: Facilitating large language models to master 16000+ real-world apis (2023)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2307.16789",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b28",
+          "section_path_id": "1",
+          "quote": "29]",
+          "offset": 1324
+        }
+      ]
+    },
+    {
+      "raw_text": "SRobertson\n\t\t\n\t\t\n\t\t\tHZaragoza\n\t\t\n\t\t10.1561/1500000019\n\t\t\n\t\n\t\n\t\tThe Probabilistic Relevance Framework: BM25 and Beyond\n\t\t\n\t\t\t2009\n\t\t\t3",
+      "doi": "10.1561/1500000019",
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b29",
+          "section_path_id": "2",
+          "quote": "[30]",
+          "offset": 2480
+        }
+      ]
+    },
+    {
+      "raw_text": "The probabilistic relevance framework: Bm25 and beyond\n\t\t\n\t\t\tSRobertson\n\t\t\n\t\t\n\t\t\tHZaragoza\n\t\t\n\t\t10.1561/1500000019\n\t\t\n\t\n\t\n\t\tFoundations and Trends® in Information Retrieval\n\t\t\n\t\t\t3\n\t\t\t4\n\t\t\t\n\t\t\t2009",
+      "doi": "10.1561/1500000019",
+      "arxiv_id": null,
+      "title": "The probabilistic relevance framework: Bm25 and beyond",
+      "anchors": [
+        {
+          "ref_id": "b30",
+          "section_path_id": "1~4",
+          "quote": "[31]",
+          "offset": 639
+        }
+      ]
+    },
+    {
+      "raw_text": "Hybridrag: Integrating knowledge graphs and vector retrieval augmented generation for efficient information extraction\n\t\t\n\t\t\tBSarmah\n\t\t\n\t\t\n\t\t\tBHall\n\t\t\n\t\t\n\t\t\tRRao\n\t\t\n\t\t\n\t\t\tSPatel\n\t\t\n\t\t\n\t\t\tSPasquali\n\t\t\n\t\t\n\t\t\tDMehta\n\t\t\n\t\tarXiv:2408.04948\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2408.04948",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b31",
+          "section_path_id": "1~2",
+          "quote": "[32]",
+          "offset": 417
+        }
+      ]
+    },
+    {
+      "raw_text": "JSun\n\t\t\n\t\t\n\t\t\tCXu\n\t\t\n\t\t\n\t\t\tLTang\n\t\t\n\t\t\n\t\t\tSWang\n\t\t\n\t\t\n\t\t\tCLin\n\t\t\n\t\t\n\t\t\tYGong\n\t\t\n\t\t\n\t\t\tLMNi\n\t\t\n\t\t\n\t\t\tHYShum\n\t\t\n\t\t\n\t\t\tJGuo\n\t\t\n\t\tarXiv:2307.07697\n\t\tThink-on-graph: Deep and responsible reasoning of large language model on knowledge graph (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2307.07697",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b32",
+          "section_path_id": "2",
+          "quote": "33]",
+          "offset": 650
+        }
+      ]
+    },
+    {
+      "raw_text": "Interleaving Retrieval with Chain-of-Thought Reasoning for Knowledge-Intensive Multi-Step Questions\n\t\t\n\t\t\tHTrivedi\n\t\t\n\t\t\n\t\t\tNBalasubramanian\n\t\t\n\t\t\n\t\t\tTKhot\n\t\t\n\t\t\n\t\t\tASabharwal\n\t\t\n\t\tarXiv:2212.10509\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2212.10509",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b33",
+          "section_path_id": "1~2",
+          "quote": "[34,",
+          "offset": 1596
+        }
+      ]
+    },
+    {
+      "raw_text": "MWu\n\t\t\n\t\t\n\t\t\tTZhu\n\t\t\n\t\t\n\t\t\tHHan\n\t\t\n\t\t\n\t\t\tCTan\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\t\n\t\t\tWChen\n\t\t\n\t\tarXiv:2405.08355\n\t\tSeal-tools: Self-instruct tool learning dataset for agent tuning and detailed benchmark (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2405.08355",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b34",
+          "section_path_id": "1",
+          "quote": "[35,",
+          "offset": 758
+        }
+      ]
+    },
+    {
+      "raw_text": "SYao\n\t\t\n\t\t\n\t\t\tJZhao\n\t\t\n\t\t\n\t\t\tDYu\n\t\t\n\t\t\n\t\t\tNDu\n\t\t\n\t\t\n\t\t\tIShafran\n\t\t\n\t\t\n\t\t\tKNarasimhan\n\t\t\n\t\t\n\t\t\tYCao\n\t\t\n\t\tarXiv:2210.03629\n\t\tReAct: Synergizing Reasoning and Acting in Language Models (2023)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2210.03629",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b35",
+          "section_path_id": "1~2",
+          "quote": "36]",
+          "offset": 1600
+        }
+      ]
+    },
+    {
+      "raw_text": "Craft: Customizing llms by creating and retrieving from specialized toolsets\n\t\t\n\t\t\tLYuan\n\t\t\n\t\t\n\t\t\tYChen\n\t\t\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tYRFung\n\t\t\n\t\t\n\t\t\tHPeng\n\t\t\n\t\t\n\t\t\tHJi\n\t\t\n\t\t\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b36",
+          "section_path_id": "1~2",
+          "quote": "37]",
+          "offset": 175
+        }
+      ]
+    },
+    {
+      "raw_text": "SYuan\n\t\t\n\t\t\n\t\t\tKSong\n\t\t\n\t\t\n\t\t\tJChen\n\t\t\n\t\t\n\t\t\tXTan\n\t\t\n\t\t\n\t\t\tYShen\n\t\t\n\t\t\n\t\t\tRKan\n\t\t\n\t\t\n\t\t\tDLi\n\t\t\n\t\t\n\t\t\tDYang\n\t\t\n\t\tarXiv:2401.06201\n\t\tEASY-TOOL: Enhancing LLM-based Agents with Concise Tool Instruction (2024)\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2401.06201",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b37",
+          "section_path_id": "1",
+          "quote": "38]",
+          "offset": 762
+        }
+      ]
+    },
+    {
+      "raw_text": "YZheng\n\t\t\n\t\t\n\t\t\tPLi\n\t\t\n\t\t\n\t\t\tWLiu\n\t\t\n\t\t\n\t\t\tYLiu\n\t\t\n\t\t\n\t\t\tJLuan\n\t\t\n\t\t\n\t\t\tBWang\n\t\t\n\t\t\n\t\tToolrerank: Adaptive and hierarchy-aware reranking for tool retrieval\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b38",
+          "section_path_id": "1~2",
+          "quote": "39]",
+          "offset": 1785
+        }
+      ]
+    },
+    {
+      "raw_text": "Complexfuncbench: Exploring multi-step and constrained function calling under long-context scenario\n\t\t\n\t\t\tLZhong\n\t\t\n\t\t\n\t\t\tZDu\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\t\n\t\t\tHHu\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\tarXiv:2501.10132\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2501.10132",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b39",
+          "section_path_id": "3",
+          "quote": "40]",
+          "offset": 630
+        }
+      ]
+    }
+  ],
+  "layout_json": null,
+  "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2025-11-04\">4 Nov 2025</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Elias</forename><surname>Lumer</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">U.S.A</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Faheem</forename><surname>Nizar</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">U.S.A</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Anmol</forename><surname>Gulati</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">U.S.A</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Pradeep</forename><forename type=\"middle\">Honaganahalli</forename><surname>Basavaraju</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">U.S.A</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Vamse</forename><forename type=\"middle\">Kumar</forename><surname>Subbiah</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">U.S.A</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Tool-to-Agent Retrieval: Bridging Tools and Agents for Scalable LLM Multi-Agent Systems</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2025-11-04\">4 Nov 2025</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">B8EB632D2994B3354C63CFB48B1EFE98</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2511.01854v2[cs.CL]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.1\" ident=\"GROBID\" when=\"2026-10-13T10:34+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.1</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null, debugLabelingCollector=disabled</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<textClass>\n\t\t\t\t<keywords>\n\t\t\t\t\t<term>Large Language Models</term>\n\t\t\t\t\t<term>Tool Retrieval</term>\n\t\t\t\t\t<term>Agent Routing</term>\n\t\t\t\t\t<term>Multi-Agent Systems</term>\n\t\t\t\t\t<term>Model Context Protocol (MCP)</term>\n\t\t\t\t</keywords>\n\t\t\t</textClass>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Recent advances in LLM Multi-Agent Systems enable scalable orchestration of sub-agents, each coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. However, existing retrieval methods typically match queries against coarse agentlevel descriptions before routing, which obscures fine-grained tool functionality and often results in suboptimal agent selection. We introduce Tool-to-Agent Retrieval, a unified framework that embeds both tools and their parent agents in a shared vector space and connects them through metadata relationships. By explicitly representing tool capabilities and traversing metadata to the agent level, Tool-to-Agent Retrieval enables granular tool-level or agent-level retrieval, ensuring that agents and their underlying tools or MCP servers are equally represented without the context dilution that arises from chunking many tools together. Evaluating Tool-to-Agent Retrieval across eight embedding models, our approach achieves consistent improvements of 19.4% in Recall@5 and 17.7% in nDCG@5 over previous state-of-the-art agent retrievers on the LiveM-CPBench benchmark.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>Recent advancements in Large Language Model (LLM) agents and the Model Context Protocol (MCP) enable assistants to discover, equip, and use large collections of external tools and MCP servers at inference time <ref type=\"bibr\" target=\"#b5\">[6,</ref><ref type=\"bibr\" target=\"#b19\">20]</ref>. In practice, a single assistant may delegate to specialized sub-agents for code analysis, databases, or web search, each bundling dozens of tools behind a single interface <ref type=\"bibr\" target=\"#b4\">[5]</ref>. A central challenge is routing: given a user query, should the system select a specific tool or leverage an entire agent (e.g., an MCP server) that provides a coherent set of tools? Forwarding all tool descriptions to the model is impractical, e.g., one MCP server with 26 tools can consume over 4,600 tokens, making efficient retrieval essential for scalability <ref type=\"bibr\" target=\"#b34\">[35,</ref><ref type=\"bibr\" target=\"#b37\">38]</ref>.</p><p>Existing strategies typically fall into two camps. Agent-first pipelines match the query against a brief agent description, then operate only within that agent, which can hide highly relevant tools whose parent description does not obviously align with the query. Conversely, tool-only retrieval treats each tool independently and ignores the complementary benefits of the surrounding bundle on multi-step tasks <ref type=\"bibr\" target=\"#b21\">[22]</ref>. Recent benchmarks have highlighted these challenges in multi-step tool selection, evaluating agents across diverse tool repositories <ref type=\"bibr\" target=\"#b9\">[10,</ref><ref type=\"bibr\" target=\"#b14\">15,</ref><ref type=\"bibr\" target=\"#b28\">29]</ref>. In practice, single-tool matches may underperform when a workflow benefits from a coordinated set of tools, while agent-first routing may overlook fine-grained capabilities. What is needed is a retrieval mechanism that can operate at both levels, return a focused tool when the query is specific, or return an entire agent when broader capability is advantageous, without committing to a brittle two-stage pipeline.</p><p>We introduce Tool-to-Agent Retrieval, which represents tools and their parent agents in the same vector space and links them through explicit metadata (Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>). At query time, retrieval runs over a joint index and returns either an individual tool or an agent bundle, depending on which better fits the query. By modeling fine-grained tool semantics while retaining agent context via tool→agent links (and traversing those links at retrieval time), the method avoids the context dilution that arises when many tools are collapsed into a single coarse description. This enables one-pass decisions about what to equip (a tool vs. an agent), improving routing for both focused and multi-step queries.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Related Work.</head><p>A growing line of work builds tool retrieval for LLM agents by embedding tool descriptions and metadata in a tool knowledge base and selecting top-k tools per query <ref type=\"bibr\" target=\"#b18\">[19,</ref><ref type=\"bibr\" target=\"#b20\">21,</ref><ref type=\"bibr\" target=\"#b21\">22,</ref><ref type=\"bibr\" target=\"#b36\">37]</ref>. Retrieval-augmented generation (RAG) enables LLM agents to access external knowledge and tools through semantic search <ref type=\"bibr\" target=\"#b6\">[7]</ref>, with recent hybrid approaches combining knowledge graphs and vector retrieval to improve tool selection accuracy <ref type=\"bibr\" target=\"#b31\">[32]</ref>. Systems such as PLUTO and Re-Invoke refine dense retrieval for tool selection and demonstrate strong single-pass performance at scale <ref type=\"bibr\" target=\"#b3\">[4,</ref><ref type=\"bibr\" target=\"#b8\">9]</ref>. Graph-based approaches have emerged to structure tool relationships, including ToolNet and Control-Algorithm 1 Combined Tool-Agent Top-K Retrieval (Tool-to-Agent Retrieval) 1: Input: query q, corpus C (agents ∪ tools), type τ (•) ∈ {agent, tool}, owner map own(•), similarity s(q, •), cutoffs N , K 2: Output: set of agents A ⋆ with |A ⋆ |= K 3: L ← TopN(q, C, N ) ▷ rank by s and return ordered [e (1) , . . . , e (N ) ] 4: A ← ∅; i ← 1 5: while |A|&lt; K and i ≤ N do 6:</p><p>e ← L[i] 7:</p><p>if τ (e) = agent then 8:</p><p>a ← e 9:</p><p>else if τ (e) = tool and own(e) is defined then 10:</p><p>a ← own(e) 11: else 12:</p><formula xml:id=\"formula_0\">i ← i + 1; continue ▷ skip if owner missing/undefined 13:</formula><p>if a / ∈ A then 14:</p><p>A ← A ∪ {a} 15:</p><formula xml:id=\"formula_1\">i ← i + 1 16: return A ⋆ ← A</formula><p>LLM which organize tools through graph structures to enable more sophisticated navigation <ref type=\"bibr\" target=\"#b15\">[16,</ref><ref type=\"bibr\" target=\"#b16\">17]</ref>. Iterative methods like ToolReAGT decompose complex tasks and retrieve tools step-by-step, improving recall on multi-step problems <ref type=\"bibr\" target=\"#b1\">[2,</ref><ref type=\"bibr\" target=\"#b2\">3]</ref>. Multi-hop reasoning frameworks further enhance retrieval by chaining intermediate steps <ref type=\"bibr\" target=\"#b33\">[34,</ref><ref type=\"bibr\" target=\"#b35\">36]</ref>. In parallel, hierarchical pipelines first choose the MCP server and then a tool inside it to control prompt cost, but this agent-first routing can suppress fine-grained matches <ref type=\"bibr\" target=\"#b5\">[6,</ref><ref type=\"bibr\" target=\"#b38\">39]</ref>. Our approach differs by jointly representing tools and agents and retrieving over a single, linked space, so the system does not have to commit upfront to tool-only or agent-first selection.</p><p>Contributions. We make the the following contributions through this work:</p><p>1. Unified Retrieval Framework: We introduce a novel tool retrieval strategy that embeds both tools and their parent agents in a shared vector space, linked through tool-to-agent metadata traversal, enabling unified retrieval and achieving state-of-the-art performance. 2. Granular Routing Mechanism: We propose a retrieval procedure that preserves fine-grained tool-level detail while retaining agent-level context, mitigating context dilution from coarse summaries and improving robustness on multi-step queries. 3. Comprehensive Evaluation: We evaluate the method on LiveMCPBench across eight embedding models, demonstrating 17.7% (recall@5) and 19.4% (nDCG@5) improvements over previous state-of-the-art approaches.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">Approach: Tool-to-Agent Retrieval</head><p>As illustrated in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>, Tool-to-Agent Retrieval embeds both tools and their parent agents in a unified vector space, explicitly linking each tool to its parent agent through metadata relationships. We consider a catalog of MCP servers with their corresponding agents, denoted as a ∈ A. Each agent a owns a set of tools T a , consisting of API calls, functions, or actions exposed by the agent. The combined system is modeled as a bipartite graph G = (A, T , E), where edges E represent ownership relations between tools and agents. Graph-based modeling of tool relationships enables structured navigation and reasoning over tool capabilities <ref type=\"bibr\" target=\"#b10\">[11,</ref><ref type=\"bibr\" target=\"#b32\">33]</ref>. This unified representation directly addresses the limitations of single-level retrieval. Retrieving solely by agent descriptions can obscure finegrained functional capabilities at the tool level, while retrieving tools independently discards important execution context such as authentication, parameter inference, or access policies maintained at the agent level. By integrating both levels, the retriever can surface relevant tools without losing their surrounding agent context. Furthermore, every query or sub-query ultimately resolves to an executable agent, ensuring that the retrieved entity can act upon the user request.</p><p>Indexing. We construct a unified tool-agent catalog C that integrates both tools and agents for retrieval. The catalog is composed of two corpora: the tool corpus C T and the agent corpus C A .</p><p>The Tool Corpus C T ⊂ C contains tool names and descriptions that are directly indexed for retrieval. Each tool entry includes metadata explicitly linking it to its parent MCP server or agent, denoted as owner(T ) = A. This mapping enables traversal from a retrieved tool to the corresponding executable agent during query resolution, drawing on graph-based representation techniques for knowledge integration <ref type=\"bibr\" target=\"#b26\">[27,</ref><ref type=\"bibr\" target=\"#b27\">28]</ref>.</p><p>The Agent Corpus C A ⊂ C similarly contains agent names and descriptions, representing higher-level capabilities and serving as parent nodes within the retrieval graph.</p><p>Retrieval. The retrieval process modifies the standard top-K ranking procedure. The objective is to identify the top-K most relevant agents for a given query or sub-query. To achieve this, we first retrieve the top N ≫ K entities from the unified tool-agent catalog C, ranked by semantic similarity to the query. This approach combines semantic and lexical matching strategies to improve recall <ref type=\"bibr\" target=\"#b13\">[14]</ref>, utilizing BM25 <ref type=\"bibr\" target=\"#b29\">[30]</ref> alongside dense vector retrieval. The corresponding parent agents are then aggregated, and the top-K unique agents are selected. The complete retrieval procedure is detailed in Algorithm 1.</p><p>Query. The input to the Tool-to-Agent Retriever can be the original user query, the decomposed sub-steps derived from it, or a combination of both. We evaluate two query paradigms.</p><p>The first, Direct Querying, uses the user's high-level question directly as the retrieval query, without any pre-processing. This approach retrieves the top-K most relevant agents or tools for the overall task.</p><p>The second, Step-wise Querying, decomposes the original query into a sequence of smaller sub-tasks. Each step is then submitted independently to the Table <ref type=\"table\">1</ref>. Results on the LiveMCPBench benchmark comparing Tool-to-Agent Retrieval with baselines (BM25, Q.Retrieval, ScaleMCP, and MCPZero). Metrics are Recall@K, mAP@K, and nDCG@K for K ∈ {1, 5, 10}.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Approach</head><p>Recall mAP nDCG @1 @3 @5 @1 @3</p><p>@5 @1 @3 @5 BM25 0.20 0.20 0.20 0.12 0.12 0.12 0.14 0.14 0.14 Q.Retrieval 0.31 0.47 0.56 0.31 0.31 0.24 0.31 0.35 0.32 MCPZero 0.44 0.66 0.70 0.45 0.39 0.31 0.45 0.46 0.41 ScaleMCP 0.49 0.68 0.74 0.49 0.40 0.29 0.49 0.48 0.40 Tool-to-Agent Retrieval 0.61 0.77 0.83 0.61 0.49 0.34 0.61 0.56 0.46</p><p>retriever, allowing the system to identify different agents as needed across multistep workflows. This decomposition strategy aligns with reasoning-based retrieval planning methods that break complex queries into manageable sub-goals <ref type=\"bibr\" target=\"#b11\">[12,</ref><ref type=\"bibr\" target=\"#b12\">13]</ref>. Query rewriting techniques further enhance retrieval by reformulating queries for improved semantic matching <ref type=\"bibr\" target=\"#b22\">[23]</ref>. This step-wise procedure is the primary setting used in our evaluations.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Experiments and Evaluation</head><p>We evaluate the effectiveness of the proposed Tool-to-Agent Retriever in comparison to agent-only retrieval methods. Our primary hypothesis is that a unified retriever operating over both tools and agents will outperform approaches that retrieve agents alone. In the MCP context, particularly under hierarchical querying <ref type=\"bibr\" target=\"#b5\">[6,</ref><ref type=\"bibr\" target=\"#b20\">21]</ref>, this improvement extends to the initial stage of routing, where identifying the correct MCP server enables access to its associated tools for crossconnected operations. Recent benchmarking efforts have highlighted the challenges of stateful, conversational tool use across multi-turn interactions <ref type=\"bibr\" target=\"#b17\">[18,</ref><ref type=\"bibr\" target=\"#b39\">40]</ref>.</p><p>The experimental setup evaluates retrieval accuracy in identifying the correct agents or MCP servers for each query. We report standard information retrieval metrics, including Recall, mean average precision (mAP), and normalized discounted cumulative gain (nDCG), to quantify the performance improvements of the proposed approach.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Dataset and Evaluation Protocol.</head><p>We evaluate our approach on the LiveM-CPBench dataset <ref type=\"bibr\" target=\"#b23\">[24,</ref><ref type=\"bibr\" target=\"#b24\">25]</ref>, which includes 70 MCP servers and 527 tools, along with 95 real-world questions annotated with step-by-step breakdowns and relevant tool-agent mappings. This structure enables fine-grained, step-level evaluation of retrieval performance. On average, each question spans 2.68 steps and involves 2.82 tools and 1.40 MCP agents.</p><p>To isolate the contribution of tool-level information, we also construct an agent-only baseline dataset containing only MCP server names and descriptions. During inference, we employ step-wise querying and compare Tool-to-Agent Retrieval against BM25 <ref type=\"bibr\" target=\"#b30\">[31]</ref>, ScaleMCP <ref type=\"bibr\" target=\"#b20\">[21]</ref>, and MCPZero <ref type=\"bibr\" target=\"#b5\">[6]</ref>. Retriever Setup. We evaluate retrieval performance across several embedding models. Specifically, we use 8 embedding models, both closed and open source <ref type=\"bibr\" target=\"#b0\">[1,</ref><ref type=\"bibr\" target=\"#b7\">8,</ref><ref type=\"bibr\" target=\"#b25\">26]</ref>. The datasets are embedded using each model, and semantic similarity search is performed to retrieve relevant entities. We first retrieve the top N ≫ K entities from the tool-agent catalog and then select the top-K unique agents using Algorithm 1. Retrieval accuracy is computed by comparing the retrieved agents against the ground-truth agents associated with each query in the evaluation set.</p><p>Results. Tables <ref type=\"table\">1</ref> and <ref type=\"table\" target=\"#tab_0\">2</ref> show that Tool-to-Agent Retrieval consistently outperforms prior methods across Recall, mAP, and nDCG metrics. Our approach achieves superior performance over all baselines, with gains observed across multiple embedding families including Vertex AI, Gemini, Titan, OpenAI, and MiniLM. These improvements arise primarily from the richer retrieval corpus that jointly indexes both tools and agents, enabling finer-grained semantic alignment. Importantly, the performance lift is not attributable to tool-level retrieval alone. The joint index supports nuanced matches while preserving agent context, as evidenced by 39.13% of retrieved top-K items originating from the agent corpus C A and 34.44% of matched top-K tools also tracing back to C A . Together, these results demonstrate that explicitly linking tools to their parent agents mitigates context dilution and improves multi-step routing without sacrificing fine-grained precision. Across all eight embedding models, Tool-to-Agent Retrieval exhibited remarkably stable improvements, with standard deviations of 0.02 in Recall@5 and 0.01 in nDCG@5 relative to MCPZero. This consistency indicates that the gains are architecture-agnostic and primarily driven by the unified indexing design rather than embedding-specific behavior. The strongest relative improvement was observed on Amazon Titan v2 (Recall@5 improved from 0.66 to 0.85, a +28% relative gain), while even the compact All-MiniLM-L6-v2 model achieved a +13% improvement, confirming generalizability across both proprietary and open-source embeddings.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Conclusion</head><p>Recent advances in LLM multi-agent systems enable scalable orchestration of sub-agents coordinating hundreds or thousands of tools or Model Context Protocol (MCP) servers. We introduce Tool-to-Agent Retrieval, a unified framework for large language model (LLM) multi-agent systems that embeds both tools and their parent agents in a shared vector space, linked through metadata relationships. By explicitly modeling tool capabilities and enabling traversal between tool-and agent-level representations, our approach supports granular retrieval decisions that preserve fine-grained context without the dilution introduced by coarse agent summaries. Experiments across eight embedding models on the LiveMCPBench benchmark demonstrate substantial improvements over prior agent retrievers, with gains of 19.4% in Recall@5 and 17.7% in nDCG@5. These results highlight a promising direction for unifying tool and agent selection, motivating future research into retrieval architectures that scale across increasingly complex agent networks.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Comparison of agent-only retrieval (left) and the proposed Tool-to-Agent Retrieval (right), which embeds tools and agents in a shared vector space to support joint retrieval and traversal.</figDesc><graphic coords=\"2,134.77,115.84,345.77,127.84\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 2 .</head><label>2</label><figDesc>Per-embedding comparison against MCPZero</figDesc><table><row><cell>Retriever Model</cell><cell cols=\"2\">Recall@5</cell><cell cols=\"2\">nDCG@5</cell><cell cols=\"2\">mAP@5</cell></row><row><cell></cell><cell cols=\"6\">Ours MCPZero Ours MCPZero Ours MCPZero</cell></row><row><cell>Vertex AI text embedding 005</cell><cell>0.87</cell><cell>0.74</cell><cell>0.48</cell><cell>0.42</cell><cell>0.36</cell><cell>0.32</cell></row><row><cell>Gemini Embedding 001</cell><cell>0.86</cell><cell>0.74</cell><cell>0.49</cell><cell>0.44</cell><cell>0.37</cell><cell>0.34</cell></row><row><cell>Amazon titan embed text v2</cell><cell>0.85</cell><cell>0.66</cell><cell>0.47</cell><cell>0.37</cell><cell>0.35</cell><cell>0.28</cell></row><row><cell>Amazon titan embed text v1</cell><cell>0.85</cell><cell>0.65</cell><cell>0.48</cell><cell>0.39</cell><cell>0.36</cell><cell>0.30</cell></row><row><cell cols=\"2\">OpenAI text embedding ada 002 0.83</cell><cell>0.70</cell><cell>0.50</cell><cell>0.40</cell><cell>0.39</cell><cell>0.30</cell></row><row><cell cols=\"2\">OpenAI text embedding 3 small 0.87</cell><cell>0.72</cell><cell>0.49</cell><cell>0.41</cell><cell>0.36</cell><cell>0.31</cell></row><row><cell cols=\"2\">OpenAI text embedding 3 large 0.87</cell><cell>0.74</cell><cell>0.50</cell><cell>0.42</cell><cell>0.38</cell><cell>0.32</cell></row><row><cell>All MiniLM L6 v2</cell><cell>0.80</cell><cell>0.67</cell><cell>0.45</cell><cell>0.39</cell><cell>0.33</cell><cell>0.29</cell></row></table></figure>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<ptr target=\"https://docs.aws.amazon.com/bedrock/latest/userguide/titan-embedding-models.html\" />\n\t\t<title level=\"m\">Amazon: Amazon titan text embeddings models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Anantha</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Bandyopadhyay</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Kashi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Mahinder</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">W</forename><surname>Hill</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Chappidi</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2312.10332\" />\n\t\t<title level=\"m\">Protip: Progressive tool retrieval improves planning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">ToolreAGt: Tool retrieval for LLM-based complex task solution via retrieval augmented generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Braunschweiler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Doddipatla</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><forename type=\"middle\">C</forename><surname>Zorila</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://openreview.net/forum?id=LTeBIM1rJL\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Knowledgeable Foundation Models at ACL 2025</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Yoon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><forename type=\"middle\">S</forename><surname>Sachan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Cohen-Addad</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bateni</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">Y</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Pfister</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2408.01875\" />\n\t\t<title level=\"m\">Re-invoke: Tool invocation rewriting for zero-shot tool retrieval</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">AnyTool: Self-Reflective</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Du</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2402.04253</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Hierarchical Agents for Large-Scale API Calls (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Fei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Feng</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2506.01056\" />\n\t\t<title level=\"m\">Mcp-zero: Active tool discovery for autonomous llm agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xiong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Jia</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Pan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Bi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2312.10997</idno>\n\t\t<title level=\"m\">Retrieval-augmented generation for large language models: A survey (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><surname>Google</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings\" />\n\t\t<title level=\"m\">Vertex ai text embeddings models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Planning and editing what you retrieve for enhanced tool learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Jung</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2404.00450\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Fan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><forename type=\"middle\">Z</forename><surname>Gong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.03128</idno>\n\t\t<title level=\"m\">Metatool benchmark for large language models: Deciding whether to use tools and which to use (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Jin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><forename type=\"middle\">K</forename><surname>Roy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Meng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2404.07103</idno>\n\t\t<title level=\"m\">Graph chain-of-thought: Augmenting large language models by reasoning on graphs (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Joshi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">M</forename><surname>Sarwar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Varshney</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Nag</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Agrawal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Naik</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2407.18553</idno>\n\t\t<title level=\"m\">REAPER: Reasoning based Retrieval Planning for Complex RAG Systems (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Khattab</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Santhanam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><forename type=\"middle\">L</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Hall</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Potts</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Zaharia</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2212.14024</idno>\n\t\t<title level=\"m\">Demonstrate-Search-Predict: Composing retrieval and language models for knowledge-intensive NLP (2023)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Leveraging semantic and lexical matching to improve the recall of document retrieval systems: A hybrid approach</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kuzi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bendersky</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Najork</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2010.01195</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2304.08244</idno>\n\t\t<title level=\"m\">API-Bank: A Comprehensive Benchmark for Tool-Augmented LLMs (2023)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Peng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Yi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Xiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2403.00839</idno>\n\t\t<title level=\"m\">Toolnet: Connecting large language models with massive tools via tool graph (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Cui</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Qiao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Dai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.17796</idno>\n\t\t<title level=\"m\">Controlllm: Augment language models with tools by searching on graphs (2023)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Holleis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Aumayer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Nan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Bai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Yin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Pang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.04682</idno>\n\t\t<title level=\"m\">Toolsandbox: A stateful, conversational, interactive evaluation benchmark for llm tool use capabilities (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Lumer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><forename type=\"middle\">H</forename><surname>Basavaraju</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Mason</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">A</forename><surname>Burke</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><forename type=\"middle\">K</forename><surname>Subbiah</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2502.07223\" />\n\t\t<title level=\"m\">Graph ragtool fusion</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Memtool: Optimizing short-term memory management for dynamic tool calling in llm agent multi-turn conversations</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Lumer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Gulati</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><forename type=\"middle\">K</forename><surname>Subbiah</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><forename type=\"middle\">H</forename><surname>Basavaraju</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">A</forename><surname>Burke</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2507.21428\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Scalemcp: Dynamic and auto-synchronizing model context protocol tools for llm agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Lumer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Gulati</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><forename type=\"middle\">K</forename><surname>Subbiah</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><forename type=\"middle\">H</forename><surname>Basavaraju</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">A</forename><surname>Burke</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2505.06416\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Toolshed: Scale tool-equipped agents with advanced rag-tool fusion and tool knowledge bases</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Lumer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><forename type=\"middle\">K</forename><surname>Subbiah</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">A</forename><surname>Burke</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><forename type=\"middle\">H</forename><surname>Basavaraju</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Huber</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2410.14594\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Gong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>He</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Duan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2305.14283</idno>\n\t\t<title level=\"m\">Query Rewriting for Retrieval-Augmented Large Language Models (2023)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Livemcpbench: Can agents navigate an ocean of mcp tools?</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Mo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Zhong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>He</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2508.01780\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Livemcpbench: Can agents navigate an ocean of mcp tools?</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Mo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Zhong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>He</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://github.com/icip-cas/LiveMCPBench/blob/main/annotated_data/all_annotations.json\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<monogr>\n\t\t<ptr target=\"https://platform.openai.com/docs/guides/embeddings/embedding-models\" />\n\t\t<title level=\"m\">OpenAI: Vector embeddings documentation</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Unifying large language models and knowledge graphs: A roadmap</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Pan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Luo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1109/TKDE.2024.3352100</idno>\n\t\t<ptr target=\"http://dx.doi.org/10.1109/TKDE.2024.3352100\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE Transactions on Knowledge and Data Engineering</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<biblScope unit=\"issue\">7</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"3580\" to=\"3599\" />\n\t\t\t<date type=\"published\" when=\"2024-07\">Jul 2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Peng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Bo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Hong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.08921</idno>\n\t\t<title level=\"m\">Graph retrieval-augmented generation: A survey (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Qin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Ye</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Yan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Cong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Qian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Hong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Tian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Gerstein</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2307.16789</idno>\n\t\t<title level=\"m\">Toolllm: Facilitating large language models to master 16000+ real-world apis (2023)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<analytic>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Robertson</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zaragoza</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1561/1500000019</idno>\n\t\t<ptr target=\"http://dx.doi.org/10.1561/1500000019\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">The Probabilistic Relevance Framework: BM25 and Beyond</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2009\">2009</date>\n\t\t\t<biblScope unit=\"page\">3</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The probabilistic relevance framework: Bm25 and beyond</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Robertson</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zaragoza</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1561/1500000019</idno>\n\t\t<ptr target=\"http://dx.doi.org/10.1561/1500000019\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Foundations and Trends® in Information Retrieval</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">3</biblScope>\n\t\t\t<biblScope unit=\"issue\">4</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"333\" to=\"389\" />\n\t\t\t<date type=\"published\" when=\"2009\">2009</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Hybridrag: Integrating knowledge graphs and vector retrieval augmented generation for efficient information extraction</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Sarmah</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Hall</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Rao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Patel</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Pasquali</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Mehta</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.04948</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Gong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><forename type=\"middle\">M</forename><surname>Ni</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><forename type=\"middle\">Y</forename><surname>Shum</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2307.07697</idno>\n\t\t<title level=\"m\">Think-on-graph: Deep and responsible reasoning of large language model on knowledge graph (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Interleaving Retrieval with Chain-of-Thought Reasoning for Knowledge-Intensive Multi-Step Questions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Trivedi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Balasubramanian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Khot</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Sabharwal</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2212.10509</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b34\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Tan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2405.08355</idno>\n\t\t<title level=\"m\">Seal-tools: Self-instruct tool learning dataset for agent tuning and detailed benchmark (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b35\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Du</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Shafran</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Narasimhan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Cao</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2210.03629</idno>\n\t\t<title level=\"m\">ReAct: Synergizing Reasoning and Acting in Language Models (2023)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b36\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Craft: Customizing llms by creating and retrieving from specialized toolsets</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Yuan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><forename type=\"middle\">R</forename><surname>Fung</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Peng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Ji</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2309.17428\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b37\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yuan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Tan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Kan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2401.06201</idno>\n\t\t<title level=\"m\">EASY-TOOL: Enhancing LLM-based Agents with Concise Tool Instruction (2024)</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b38\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Luan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2403.06551\" />\n\t\t<title level=\"m\">Toolrerank: Adaptive and hierarchy-aware reranking for tool retrieval</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b39\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Complexfuncbench: Exploring multi-step and constrained function calling under long-context scenario</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zhong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Du</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Hu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2501.10132</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+  "pdf_hash": "1b0bd0677872216172902d702894f5dfc05c42fb963cc3f188c3e7c0a5fda254",
+  "tables": [
+    {
+      "table_id": "tab_0",
+      "section_path_id": "4",
+      "section_ordinal": 6,
+      "caption": "Table 2 .",
+      "coordinates": null,
+      "cells": [
+        {
+          "row": 0,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Retriever Model",
+          "coordinates": null,
+          "span": {
+            "start": 1290,
+            "end": 1305
+          },
+          "digest": "0c099a053964573bf1b709d7abdcc000e8185c71b7772afe81fdc34e921a5b09"
+        },
+        {
+          "row": 0,
+          "column": 1,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "Recall@5",
+          "coordinates": null,
+          "span": {
+            "start": 1305,
+            "end": 1313
+          },
+          "digest": "76934bbd183de78e74e8130daf9d50f30c659c9eeec04ce1a9e12b7d19fbff0f"
+        },
+        {
+          "row": 0,
+          "column": 3,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "nDCG@5",
+          "coordinates": null,
+          "span": {
+            "start": 1313,
+            "end": 1319
+          },
+          "digest": "afcf9e1e7fe4036a6036ca2666c52af21fb3137ddfd43aa013117799226470da"
+        },
+        {
+          "row": 0,
+          "column": 5,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "mAP@5",
+          "coordinates": null,
+          "span": {
+            "start": 1319,
+            "end": 1324
+          },
+          "digest": "c17e56fce1c7145128afb218c3f766ca0d07c857513c79ccffec3b842db93ada"
+        },
+        {
+          "row": 1,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 1324,
+            "end": 1324
+          },
+          "digest": "c942b58bc8713f389c3702ee97885b2f4dcfcc6f6ff08fc4665baca5d7a24971"
+        },
+        {
+          "row": 1,
+          "column": 1,
+          "colspan": 6,
+          "rowspan": 1,
+          "text": "Ours MCPZero Ours MCPZero Ours MCPZero",
+          "coordinates": null,
+          "span": {
+            "start": 1324,
+            "end": 1362
+          },
+          "digest": "444dcaf962696fb7953183924d26c7b61ee8d4413c0e0927028b8a59f6b15aed"
+        },
+        {
+          "row": 2,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Vertex AI text embedding 005",
+          "coordinates": null,
+          "span": {
+            "start": 1362,
+            "end": 1390
+          },
+          "digest": "0b8a3827e6ce65d11615678f1e4758bb623ee68237067ba0fbe75adf47a9d1a7"
+        },
+        {
+          "row": 2,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.87",
+          "coordinates": null,
+          "span": {
+            "start": 1390,
+            "end": 1394
+          },
+          "digest": "b85ed36026b1c0329d3f60356b08d1bd8e21ad64fc6bdab400740498c3e4ffa0"
+        },
+        {
+          "row": 2,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.74",
+          "coordinates": null,
+          "span": {
+            "start": 1394,
+            "end": 1398
+          },
+          "digest": "ba88153f3baecbd80d4be5b9388a98c74203e84ab4cac330e279985c4d936b77"
+        },
+        {
+          "row": 2,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.48",
+          "coordinates": null,
+          "span": {
+            "start": 1398,
+            "end": 1402
+          },
+          "digest": "4eb32ef9df0fea41fc6410c9eaf56fe4506cb208b44140ee9c50d9428475f7bb"
+        },
+        {
+          "row": 2,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.42",
+          "coordinates": null,
+          "span": {
+            "start": 1402,
+            "end": 1406
+          },
+          "digest": "8a646305bc5526475c88da533676e09069e64ab5744c1db7e026021e1c0e88ca"
+        },
+        {
+          "row": 2,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.36",
+          "coordinates": null,
+          "span": {
+            "start": 1406,
+            "end": 1410
+          },
+          "digest": "04deecb026aef0596de4ddbb9173e771882a2d2c07b1211c7aba056aa45d51b0"
+        },
+        {
+          "row": 2,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.32",
+          "coordinates": null,
+          "span": {
+            "start": 1410,
+            "end": 1414
+          },
+          "digest": "3934f86969ef5738fb1dfad7c13e4fe7b98b37cbc5c2330f8bcdfa053b034ef7"
+        },
+        {
+          "row": 3,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Gemini Embedding 001",
+          "coordinates": null,
+          "span": {
+            "start": 1414,
+            "end": 1434
+          },
+          "digest": "d3b139d45d438d4150330659b93ff8fffaa3c7f2311489161869fbeea9a6bd40"
+        },
+        {
+          "row": 3,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.86",
+          "coordinates": null,
+          "span": {
+            "start": 1434,
+            "end": 1438
+          },
+          "digest": "918ac3f4fbeb789215941f0f7aa1bace8533f521f5de29f4791c8c4454b1ef49"
+        },
+        {
+          "row": 3,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.74",
+          "coordinates": null,
+          "span": {
+            "start": 1438,
+            "end": 1442
+          },
+          "digest": "2ea0397912e89f906806e40275180abd924bbea58732a6dedd5f07059573100e"
+        },
+        {
+          "row": 3,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.49",
+          "coordinates": null,
+          "span": {
+            "start": 1442,
+            "end": 1446
+          },
+          "digest": "365ebddfb887313569e6d10255e36f7a774deebe41c6b0fe9abf76d4db1dfbd1"
+        },
+        {
+          "row": 3,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.44",
+          "coordinates": null,
+          "span": {
+            "start": 1446,
+            "end": 1450
+          },
+          "digest": "d72264a52b55a42bfb4cb7b396f335f58ebb01401bb494ecbbc08017e9d2a044"
+        },
+        {
+          "row": 3,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.37",
+          "coordinates": null,
+          "span": {
+            "start": 1450,
+            "end": 1454
+          },
+          "digest": "480433050feca709c072a1399269664c1569a6a21f5a987b7c61c76f5f91d7cc"
+        },
+        {
+          "row": 3,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.34",
+          "coordinates": null,
+          "span": {
+            "start": 1454,
+            "end": 1458
+          },
+          "digest": "ded132629cff345f0cc40490235215fd7c7a1b489d6ceaefa1baafd0fe009c1f"
+        },
+        {
+          "row": 4,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Amazon titan embed text v2",
+          "coordinates": null,
+          "span": {
+            "start": 1458,
+            "end": 1484
+          },
+          "digest": "7a1f48669b519fd22da7c3e30916d8a3ed0a5d54a52d357562ca061cab34b4fe"
+        },
+        {
+          "row": 4,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.85",
+          "coordinates": null,
+          "span": {
+            "start": 1484,
+            "end": 1488
+          },
+          "digest": "cd5428e28f9ef67efedfa721f0f4f773dc246c2a0b3add16bf89fc36026e1e63"
+        },
+        {
+          "row": 4,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.66",
+          "coordinates": null,
+          "span": {
+            "start": 1488,
+            "end": 1492
+          },
+          "digest": "9ad05015263e178893c55b28bb1a0613e80ff198aa65502f65ccd7bbec53670f"
+        },
+        {
+          "row": 4,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.47",
+          "coordinates": null,
+          "span": {
+            "start": 1492,
+            "end": 1496
+          },
+          "digest": "8377943ea9cdb99da41e8dcb9d050d0581a7146a6b61bb1e7a46b368324c2892"
+        },
+        {
+          "row": 4,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.37",
+          "coordinates": null,
+          "span": {
+            "start": 1496,
+            "end": 1500
+          },
+          "digest": "bd3d8cc1dc6509dcfb0e939024c879a61eb8d925ed747ab0f0a92cba5c2264e0"
+        },
+        {
+          "row": 4,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.35",
+          "coordinates": null,
+          "span": {
+            "start": 1500,
+            "end": 1504
+          },
+          "digest": "dde44d01261fa8b8dbda8eee09d2ff838467bc9d1f05e751b54a2ae5663d230c"
+        },
+        {
+          "row": 4,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.28",
+          "coordinates": null,
+          "span": {
+            "start": 1504,
+            "end": 1508
+          },
+          "digest": "0f273e261cc5223772a2b478669e7dfd62fa9041bbf60743251e5da52a2ff154"
+        },
+        {
+          "row": 5,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Amazon titan embed text v1",
+          "coordinates": null,
+          "span": {
+            "start": 1508,
+            "end": 1534
+          },
+          "digest": "3e251e8b5432272fbbee72d188fb75bb5115bbb14006851cf582f7527dd7a2f7"
+        },
+        {
+          "row": 5,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.85",
+          "coordinates": null,
+          "span": {
+            "start": 1534,
+            "end": 1538
+          },
+          "digest": "67ba682ed3a70b9cdf401a76cef0bceca5c90803f7a358fdd080b5077ab1c649"
+        },
+        {
+          "row": 5,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.65",
+          "coordinates": null,
+          "span": {
+            "start": 1538,
+            "end": 1542
+          },
+          "digest": "fe94d174f59fc3391591e8670bcb056b0cb6e9401b95c8a9ad603e2bb4a4e5bf"
+        },
+        {
+          "row": 5,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.48",
+          "coordinates": null,
+          "span": {
+            "start": 1542,
+            "end": 1546
+          },
+          "digest": "013f88d85bf43dd91bbf0c7c123c3be16b4b3f96f57f44f3e190850b08cd72da"
+        },
+        {
+          "row": 5,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.39",
+          "coordinates": null,
+          "span": {
+            "start": 1546,
+            "end": 1550
+          },
+          "digest": "eff3c8e697893633004975b8f04fe11c8d8e1db85d2ba862dfe69fb093d7e9d4"
+        },
+        {
+          "row": 5,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.36",
+          "coordinates": null,
+          "span": {
+            "start": 1550,
+            "end": 1554
+          },
+          "digest": "a517fcc17d378f686f82655350047bc1851967113fb2f7e963856d9ecf6121e8"
+        },
+        {
+          "row": 5,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.30",
+          "coordinates": null,
+          "span": {
+            "start": 1554,
+            "end": 1558
+          },
+          "digest": "46a6684477a55e18c65c654028e761f4ad2eadaee97dabe734ab7bb2d7a40214"
+        },
+        {
+          "row": 6,
+          "column": 0,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "OpenAI text embedding ada 002 0.83",
+          "coordinates": null,
+          "span": {
+            "start": 1558,
+            "end": 1592
+          },
+          "digest": "8ad7ea5aef2fa54a636b4210edb474f9f8ac99831dac51945a10395d16be030c"
+        },
+        {
+          "row": 6,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.70",
+          "coordinates": null,
+          "span": {
+            "start": 1592,
+            "end": 1596
+          },
+          "digest": "d5fd2f9a90b6cc77df45cf55c18f0f5be2bae7586e2fec7464b9fb1cc3c65888"
+        },
+        {
+          "row": 6,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.50",
+          "coordinates": null,
+          "span": {
+            "start": 1596,
+            "end": 1600
+          },
+          "digest": "9e8e2d2762e35d84c7ba1be338be81c80fc532fd30f57ddc12f483afc33d0786"
+        },
+        {
+          "row": 6,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.40",
+          "coordinates": null,
+          "span": {
+            "start": 1600,
+            "end": 1604
+          },
+          "digest": "47a178690ff8319db9bd70886be798beb4bc2d57c573dd8a6496bb7bfdd1cbbf"
+        },
+        {
+          "row": 6,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.39",
+          "coordinates": null,
+          "span": {
+            "start": 1604,
+            "end": 1608
+          },
+          "digest": "6792da9fe0aa868b41f89f9bb2a488e1d55b3ce5c282f64ec0241d2679ecd2fd"
+        },
+        {
+          "row": 6,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.30",
+          "coordinates": null,
+          "span": {
+            "start": 1608,
+            "end": 1612
+          },
+          "digest": "297c9201d7c547e23ac3fefde98cb038b7d560788cf716846ad957e9b54c9510"
+        },
+        {
+          "row": 7,
+          "column": 0,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "OpenAI text embedding 3 small 0.87",
+          "coordinates": null,
+          "span": {
+            "start": 1612,
+            "end": 1646
+          },
+          "digest": "a97c424e9c48968d363e3cef359056cf1862b74be646b240cd30fef6dd12a039"
+        },
+        {
+          "row": 7,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.72",
+          "coordinates": null,
+          "span": {
+            "start": 1646,
+            "end": 1650
+          },
+          "digest": "88127ce5d4a3f0801605344a3a4106585ea75304e23f9323efba526cf4056e3b"
+        },
+        {
+          "row": 7,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.49",
+          "coordinates": null,
+          "span": {
+            "start": 1650,
+            "end": 1654
+          },
+          "digest": "3bb4868c3611ba96e5966902bd248956662e4b6be0eca0590343e1527fad6e86"
+        },
+        {
+          "row": 7,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.41",
+          "coordinates": null,
+          "span": {
+            "start": 1654,
+            "end": 1658
+          },
+          "digest": "4501c67cd8dadae1cb534b17fe579bef3052f3bf122e123efb2a8bf30e8f44b5"
+        },
+        {
+          "row": 7,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.36",
+          "coordinates": null,
+          "span": {
+            "start": 1658,
+            "end": 1662
+          },
+          "digest": "c1d7bace7cc2fe3c87c5d82f01bab0f04024467cd133324e1f5f67287d9851ba"
+        },
+        {
+          "row": 7,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.31",
+          "coordinates": null,
+          "span": {
+            "start": 1662,
+            "end": 1666
+          },
+          "digest": "fe8518e24ec5d67801806473de5706a57bf6e7a6c317c89dd54fef8e15409054"
+        },
+        {
+          "row": 8,
+          "column": 0,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "OpenAI text embedding 3 large 0.87",
+          "coordinates": null,
+          "span": {
+            "start": 1666,
+            "end": 1700
+          },
+          "digest": "58ed340b8719ecb208fd4a26a94db9135db4efae22785912dcef214cfad835d0"
+        },
+        {
+          "row": 8,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.74",
+          "coordinates": null,
+          "span": {
+            "start": 1700,
+            "end": 1704
+          },
+          "digest": "1c0dc68aabbf0e0931da8e764e23b0cd5f0e0190d2c84f5a5a38202da254698b"
+        },
+        {
+          "row": 8,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.50",
+          "coordinates": null,
+          "span": {
+            "start": 1704,
+            "end": 1708
+          },
+          "digest": "785f5ba754346d329683e0b2947b0287f0f5f0774e9e53f13448241410cf675c"
+        },
+        {
+          "row": 8,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.42",
+          "coordinates": null,
+          "span": {
+            "start": 1708,
+            "end": 1712
+          },
+          "digest": "bf02f219d7692bd45ee824c997ee6ff9cb00ba46259a08962e1787eb40e51d10"
+        },
+        {
+          "row": 8,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.38",
+          "coordinates": null,
+          "span": {
+            "start": 1712,
+            "end": 1716
+          },
+          "digest": "4c5aaa826a72f2021f0418bd1a4dcb9bc0be393f61d7d0be6ea35a3e68d8db84"
+        },
+        {
+          "row": 8,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.32",
+          "coordinates": null,
+          "span": {
+            "start": 1716,
+            "end": 1720
+          },
+          "digest": "c903a255ea46153b575e5527cbd383073ecf5a79e6347db4fc6cb062d098d8c9"
+        },
+        {
+          "row": 9,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "All MiniLM L6 v2",
+          "coordinates": null,
+          "span": {
+            "start": 1720,
+            "end": 1736
+          },
+          "digest": "bf4b5b8ee3af84b11ace7d16cf0f5cb960cc2589354100822bd54f8543607929"
+        },
+        {
+          "row": 9,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.80",
+          "coordinates": null,
+          "span": {
+            "start": 1736,
+            "end": 1740
+          },
+          "digest": "e8d932b412f17b799772b6e1883e388da650877e52ed5cc5cb9a73228ff2580a"
+        },
+        {
+          "row": 9,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.67",
+          "coordinates": null,
+          "span": {
+            "start": 1740,
+            "end": 1744
+          },
+          "digest": "41e460f6cf9faafee8cbe706ff0ffa258f3781c8fd4720cb018d00d81f5a6857"
+        },
+        {
+          "row": 9,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.45",
+          "coordinates": null,
+          "span": {
+            "start": 1744,
+            "end": 1748
+          },
+          "digest": "9c516ffb6740ba8e970ab20948104a650056d3d17c81f83520cbb924c60128b5"
+        },
+        {
+          "row": 9,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.39",
+          "coordinates": null,
+          "span": {
+            "start": 1748,
+            "end": 1752
+          },
+          "digest": "39107a6094701e9ae8290a2235b47b9e3d46dd6258bac6b41ac08eda56238d84"
+        },
+        {
+          "row": 9,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.33",
+          "coordinates": null,
+          "span": {
+            "start": 1752,
+            "end": 1756
+          },
+          "digest": "899f9b72eacd27d44f324a4387f5546625d38cd4260d91db21acd6cffc8f5620"
+        },
+        {
+          "row": 9,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.29",
+          "coordinates": null,
+          "span": {
+            "start": 1756,
+            "end": 1760
+          },
+          "digest": "5a5e3dfad86b02ea49ab86571a150d97ce5f2ef49737518497c0ab90ac4d4042"
+        }
+      ],
+      "source_digest": "03d29b3f439c728d3aac13961906dfc7f356db2cb7df235b22c384cfc9694326",
+      "missingness": null
+    }
+  ],
+  "table_missingness": null,
+  "formulas": [
+    {
+      "formula_id": "formula_0",
+      "section_path_id": "1~2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "i ← i + 1; continue ▷ skip if owner missing/undefined 13:"
+      },
+      "span": {
+        "start": 1153,
+        "end": 1210
+      },
+      "source_digest": "0a5f281c44a36eca8c102ebe4b9aa799500a53d62625ffaeb7ff81247d1f2758",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_1",
+      "section_path_id": "1~2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "i ← i + 1 16: return A ⋆ ← A"
+      },
+      "span": {
+        "start": 1244,
+        "end": 1272
+      },
+      "source_digest": "9319f4ce32e4552adbae6bcbac0cc7ac738b61b8e7731a7868342ba3bd58b730",
+      "missingness": null
+    }
+  ],
+  "formula_missingness": null,
+  "page_text_missingness": null,
+  "declared_arxiv_id": {
+    "raw": "arXiv:2511.01854v2[cs.CL]",
+    "bare_id": "2511.01854",
+    "revision": "v2",
+    "source_digest": "8cc6900db42990702e7d89537b6807408baccdea0982d428196d6f6456cb562d"
+  },
+  "declared_id_missingness": null,
+  "header_authors": [
+    {
+      "name": "Elias Lumer",
+      "forename": "Elias",
+      "surname": "Lumer",
+      "source_digest": "b99d23c0b6489b512930f1e6b9ae2a5da500aed6ee13d903ed6266b95ba90686"
+    },
+    {
+      "name": "Faheem Nizar",
+      "forename": "Faheem",
+      "surname": "Nizar",
+      "source_digest": "e0abc7af650538bfb0259b02f0e1049530c85e0da46fda865130dfcb4dde061b"
+    },
+    {
+      "name": "Anmol Gulati",
+      "forename": "Anmol",
+      "surname": "Gulati",
+      "source_digest": "44a715a6bb613df006e7c8e8cd338221b657f5a4b7b81e642ccdb4b74c253816"
+    },
+    {
+      "name": "Pradeep Honaganahalli Basavaraju",
+      "forename": "Pradeep Honaganahalli",
+      "surname": "Basavaraju",
+      "source_digest": "ee22c6c5780aefb0b41161f0c4319ec2714e55067e0979bc79a99035121eb045"
+    },
+    {
+      "name": "Vamse Kumar Subbiah",
+      "forename": "Vamse Kumar",
+      "surname": "Subbiah",
+      "source_digest": "286f55321ad0b4fa4107698986f34f6f7d919d7d9ba7d4865677c89fb5867cd0"
+    }
+  ],
+  "figures": [
+    {
+      "figure_id": "fig_0",
+      "label": "1",
+      "caption": "Fig. 1 .",
+      "coordinates": "2,134.77,115.84,345.77,127.84",
+      "graphic_missingness": null,
+      "source_digest": "8aa64f862050c5dd1936648162b8f494bd1300e5f7ffeaae5cb6ec1a82148f69"
+    }
+  ],
+  "visual_callouts": [
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "1",
+      "offset": 1903,
+      "section_path_id": "1",
+      "section_ordinal": 0,
+      "source_digest": "b4c568e218ada3ac135bcc3ea8fb2e9b0ab7a098e8ee79a4e825b7d1bd9145b2"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "1",
+      "offset": 25,
+      "section_path_id": "2",
+      "section_ordinal": 2,
+      "source_digest": "d2bd58ca5df2d12ca2efb7a0abaa0b51531c4aeb034ba0aa05a7c2ebd0a5974b"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 3219,
+      "section_path_id": "2",
+      "section_ordinal": 2,
+      "source_digest": "81903a0618586cca5200fe2f4f1c9b362c1c0b3c3f953cb0642c43f046e215c9"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 1249,
+      "section_path_id": "1~4",
+      "section_ordinal": 5,
+      "source_digest": "5dbb9ac5a3723a0faf8350fbefb630f6ed152174a9cc5784a08b58faff893dc5"
+    },
+    {
+      "kind": "table",
+      "target": "tab_0",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 1255,
+      "section_path_id": "1~4",
+      "section_ordinal": 5,
+      "source_digest": "677e97976b1d8d5b25b597785aab4454e0a214dcae923f5321d34615db70ac35"
+    }
+  ]
+}

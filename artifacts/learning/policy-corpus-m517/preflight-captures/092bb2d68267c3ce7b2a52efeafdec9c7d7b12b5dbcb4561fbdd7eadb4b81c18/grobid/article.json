@@ -1,0 +1,872 @@
+{
+  "paper_id": "2502.05199",
+  "title": "Advancing Geometry with AI: Multi-agent Generation of Polytopes",
+  "abstract_text": "Polytopes are one of the most primitive concepts underlying geometry. They are defined as intersections of a finite number of half-spaces, i.e. the subsets of Euclidean spaces which can be defined by a finite set of linear inequalities. Discovery and study of polytopes with complex structures provides a means of advancing scientific knowledge. Construction of polytopes with specific extremal structure is very difficult and time-consuming. Having an automated tool for the generation of such extremal examples is therefore of great value. We present an Artificial Intelligence system capable of generating novel polytopes with very high complexity, whose abilities we demonstrate in three different and challenging scenarios: the Hirsch Conjecture, the k-neighbourly problem and the longest monotone paths problem. For each of these three problems the system was able to generate novel examples, which match or surpass the best previously known bounds. Our main focus was the Hirsch Conjecture, which had remained an open problem for over 50 years. The highly parallel A.I. system presented in this paper was able to generate millions of examples, with many of them surpassing best known previous results and possessing properties not present in the earlier human-constructed examples. For comparison, it took leading human experts over 50 years to handcraft the first example of a polytope exceeding the bound conjectured by Hirsch, and in the decade since humans were able to construct only a scarce few families of such counterexample polytopes. With the adoption of computer-aided methods, the creation of new examples of mathematical objects stops being a domain reserved only for human expertise. Advances in A.I. provide mathematicians with yet another powerful tool in advancing mathematical knowledge. The results presented demonstrate that A.I. is capable of addressing problems in geometry recognized as extremely hard, and also to produce extremal examples different in nature from the ones constructed by humans.",
+  "body_text": "IntroductionThe discovery of interesting examples is a critical component of mathematical progress. The icosahedron, whose discovery is often attributed to the ancient Greeks, is an early example of exceptional structure in mathematics, and features prominently in Euclid's elements. More recently, the Lorenz attractor, Conway's game of life and the Mandelbrot set are all examples of 20th century discoveries that gave birth to new fields of mathematical inquiry and new understanding of our world. According to mathematician Gil Kalai \"The methods for coming up with useful examples in mathematics . . . are even less clear than the methods for proving mathematical statements.\" 32 In this work we focus on polytopes, which are higher dimensional generalizations of familiar geometric objects like the triangle, square, cube and tetrahedron. As well as being fundamental objects in geometry, polytopes are also of great importance in optimization. Despite their importance, many mysteries abound concerning their structure. In particular, it can be a very difficult task to construct examples of polytopes with specific extremal structure in high dimensions.In this paper we propose a new A.I. guided algorithm for the generation of interesting polytopes. A key idea is to regard the generation of polytopes as a one-player game, in which new polytopes are built by starting with a randomly generated list of vertices and then repeatedly selecting and moving a vertex. In high dimensions there are an enormous number of ways to modify a polytope by moving a vertex. This makes any exhaustive search computationally intractable, because the number of possible moves is too large. Moreover, amongst all possible modifications of a given polytope the vast majority of modifications are uninteresting. For this reason, we train an A.I. agent to predict moves in this game which will lead to interesting polytopes.We demonstrate the power of our approach on three classical problems in the theory of highdimensional polytopes. The first is the 50-year-old Hirsch conjecture, which asks for a bound on the diameter of a polytope in terms of its dimension and number of facets. In a breakthrough 2012 paper 23 , Santos constructed the first counterexample to the Hirsch conjecture, and since his work only two more examples and one family have been discovered 20 . However, each involved many months of human effort and closely related questions still remain unsolved 34,24 . Our system is able to generate millions of new counter-examples which appear fundamentally different to the previously known human constructions, and it found a non-Hirsch polytope in only 19 dimensions, improving on the previous bound (20 dimensions). We also test our system on two other problems in polytope theory: the neighbourly polytopes problem and the longest monotone paths problem. In all three cases, we were able to generate new examples that match or surpass the best known bounds.\nBackground on polytopesA polytope is the convex hull of finitely many points inside a finite-dimensional vector space R d (see Figure 1(a)). We will always assume that the vertices are not contained in a hyperplane, and that our polytopes are simplicial, meaning that each (d -1)-dimensional face is a simplex, i.e. the convex hull of exactly d vertices. For example, the tetrahedron, octahedron and icosahedron are simplicial, but the cube and regular dodecahedron are not.Most questions in the combinatorics of polytopes only concern their combinatorial structure and not the explicit position of their vertices. A polytope has faces of dimensions 0, 1, . . . , d -1 and their incidences determine the combinatorial type of a polytope. We will often regard polytopes as the same if they are of the same combinatorial type. Small perturbations of the vertices of a simplicial polytope result in combinatorially equivalent polytopes. 33,8 In general, the computation of the faces of a polytope from its vertices presents both conceptual and computational challenges as the number of faces of polytopes can be very large. The enumeration of the facets of a polytope given only its vertices is a close relative of the linear programming problem, ubiquitous in many optimization problems. 11,6 Consider a polytope P with n vertices and suppose we wish to modify it by either moving one of its vertices yielding a (combinatorially) different polytope with n vertices, adding a vertex to P to create a new polytope with n + 1 vertices or deleting a vertex, creating a polytope with n -1 vertices. Several difficulties arise:1. The first two modifications often lead to a polytope with a different number of vertices than desired. This can happen due to some vertices ending up within a convex hull of the others as a result of the modification.2. Among the modifications which preserve the number of vertices, many lead to combinatorially equivalent polytopes. The regions leading to combinatorially equivalent polytopes are themselves polytopes, whose faces are given by hyperplanes through the vertices of P (see Figure 1(b)). It is computationally expensive to compute all these regions, and there are an enormous number in high dimensional space (e.g. 5 • 10 23 for a 30-vertex polytope in 5 dimensions).3. For the regions constituting valid moves, moves leading to extremal polytopes are very rare if they exist at all. Thus they are unlikely to be found via random search.Several innovations are necessary in order to overcome these difficulties, which we now explain.\nThe Hopper algorithmThroughout we work with polytopes P , described via a list of vertices. We fix a property ρ which we would like to achieve (e.g., \"facet-ridge graph has diameter n\"). We also specify several fitness functions f i which are continuous approximations of how close P is to achieving ρ.While machine learning methods for polytopes have been considered in the past to predict various standard properties 2,5,14,15 and databases of polytopes have been built before 21 , our approach is rather different. The global structure of the algorithm is population refinement. A collection of agents is working together on a shared repository of examples, collectively trying to improve the fitness functions f i , while each of the individual agents has its individual fitness function fixed. The agents operate using a work-stealing strategy. Each agent picks a polytope from a shared repository and attempts to modify it. If an improvement is achieved, the resulting polytope is written back to the repository (see Figure 2). Each inserted polytope has an \"importance score\" attached, which is a combination of its fitness function values, its history of improvements, etc. If the size of the repository exceeds a fixed maximum size, some stored polytopes are discarded (see Methods, A.12).The subtlety in our algorithm arises in the operation of each agent. As we discussed above, the task of moving, adding or deleting a point to create a polytope with a set of desirable properties, is a difficult one. In order to overcome these difficulties we propose the Hopper algorithm, where each agent randomly selects moves and uses a neural network to predict how good these moves are. This is used to select which moves to action. Given a d-dimensional polytope P , the Hopper algorithm first computes all hyperplanes H through subsets of size d of vertices of P . Then, these hyperplanes are each fed through the neural network, which takes as input the vertices of P as well as the equation of the given hyperplane. The neural network then outputs a probability that this hyperplane is the boundary of a region which constitutes a good move.Guided by these probabilities, the Hopper algorithm chooses a region A whose boundary is described via hyperplanes belonging to H. (Hyperplanes assigned a high probability by the neural network are more likely to feature in the boundary of A -see Figure 1(c) and Methods.) It then computes the center of the largest ball which can be inscribed inside A, and by \"hopping\" each vertex of P to c creates n new polytope candidatesfoot_0 (see Figure 1(d,e)). Degenerate examples are discarded, and the fitness function values of the resulting polytopes are evaluated.\nAlgorithm 1 Hopper algorithm -individual agentRequire: Polytope P ∈ R d , represented as a n × d matrix V of vertices. Fitness function f of the agent. Likelihood function βfoot_1 . Ensure: The given vertices span P properly -no vertex is inside a convex hull of other vertices Compute hyperplanes1: H = ∅ 2: for all {v 1 , . . . v d } ⊆ V sets of distinct d vertices do 3: H.append(h), h -equation of a hyperplane containing {v 1 , . . . v d } 4:Compute probability distribution π on hyperplanes in H by computing likelihoods of each h using likelihood function β (see 3.1) and normalizing them by dividing by their sum.Construct hop target c 5: A = ∅ 6: Sample d + 1 equations h 1 , . . . h d+1 from H according to π and change them to inequalities χ 1 , . . . , χ d+1 , choosing directions of the inequalities such that the feasible set is nonempty If the feasible set is not bounded or the shape violates geometric constrains, discard χ 1 , . . . , χ d+1 and sample again 7: A ← χ 1 , . . . , χ d+1 8: Find (c, r) -the center and radius of the largest ball inscribed in the polytope defined by A 9: while exists h ∈ H such that dist(h, c) &lt; 0.8 * r do10: A.append(h) 11: Recompute (c, r) Construct list of candidates 12: Q = [] 13: for v ∈ V do 14: Construct polytope P ′ by replacing v with c 15: if P ′ satisfies admissibility criteria then 16: Q.append(P ′ ) Evaluate candidates 17: for ϱ ∈ Q do 18: if f (ϱ) &lt; f (P ) then 19: Q.delete(ϱ) 20: return arg max f Q\nUsing a neural network for selecting actionsInitially the actions are chosen uniformly at random. As the work progresses, more and more knowledge can be exploited. The agents are equipped with a (shared) \"brain\" β that allows this to happen. The architecture of that brain -a transformer-based neural network -is described in detail in A.11. The brain takes as an input a polytope and a hyperplane pair (P, h) and outputs a floating point number representing a likelihood of hyperplane h being part of a boundary of a successful hop region (see Algorithm 1). The training happens in an online mode -the (labelled)data from each agent is written to a shared data repository (\"Hop Data\" silo on Figure 2) from where it is sampled by the training process. In reinforcement learning terminology, the brain β corresponds to the policy, which we are improving over time by learning from our experiences.\nPolytope discovery results\nHirsch conjecture -finding non-Hirsch polytopesA fundamental problem in linear programming is to bound the number of iterations the simplex method needs to take to solve an optimization problem that has d variables and n inequalities 3 . To find a lower bound for this quantity, we would like to know what the largest possible distance between any two vertices can be, in a d-dimensional polytope with n facets. The celebrated Hirsch conjecture asserts that the diameter of a d-dimensional convex polytope with n facets is at most n -d. To date, the best upper bound known is quasipolynomial 27,28,17 .A prismatoid is a special class of polytopes introduced by Santos. A prismatoid is a polytope with two parallel facets (the base facets), which together contain all vertices. The width of a prismatoid is the distance, in the facet-ridge graph, of its base facets. Santos explained how to start with a d-dimensional prismatoid with n vertices of width ≥ w and produce another prismatoid with 2(n -d) vertices in dimension n -d of diameter ≥ w + n -2d. Thus, the Hirsch conjecture implies that prismatoids in dimension d have width at most d.This concept of prismatoids turned out to be very fruitful in attacking the Hirsch conjecture.Indeed, every counterexample humans have found for the Hirsch conjecture originated from a 5dimensional prismatoid. We followed this idea, and use the Hopper algorithm to generate over a million new 5-dimensional prismatoids with width 6. The smallest counterexample we found has only 24 vertices, beating the state of the art of 25 vertices 20 . This prismatoid has 12 points in both base facets and width 6, see section A.13. By the discussion above it corresponds to a non-Hirsch polytope of dimension 19 (24-5), the smallest known counterexample so far.\nNew featuresThe constructions found by the Hopper algorithm seem to be of a genuinely different nature to known human constructions. It has been observed by Matschke, Santos and Weibel that all known counterexamples to the Hirsch conjecture may be explained by a simple observation: one may construct a bipartite directed graph from any prismatoid via a simple geometric procedure, and if this digraph contains no directed cycles of length 2, then the polytope is non-Hirsch ( 20 , Proposition 2.3). We have checked that this explains all human constructions of non-Hirsch polytopes. We checked a sample of 100 of the non-Hirsch polytopes constructed by the Hopper algorithm, and none of them can be explained in this way. This indicates that the polytopes constructed by the Hopper algorithm are fundamentally non-human, potentially providing new lines of investigation in the field. We also see new features when considering the global geometry of prismatoids yielding counterexamples to the Hirsch conjecture. Examples constructed by Maschke, Santos and Weibel relied on polytopes with drastically different coordinate scales -their coordinates range from 10 -foot_2 to 10 9 . One way of analysing this is to apply a linear transformation to the bottom base facet, so that all of its PCA eigenvalues are 1, and then analyse the PCA eigenvalues of the top base facet. The largest and smallest PCA eigenvalues of the prismatoids discovered by Santos and Maschke-Santos-Weibel are presented in Figure 3a. It is striking that all examples found by the Hopper algorithm involve multiple orders of magnitude of difference between the lowest and highest PCA eigenvalues. It is also interesting to note that the infinite family found by Maschke, Santos and Weibel has coordinates in a range very close to those discovered by the Hopper algorithm.\nThe longest monotone path problemGiven a polytope, how long is the longest 'monotone path' in it? That is, the longest sequence of vertices, each consecutive pair connected by an edge in the polytope, so that a certain linear functional is always increasing.Among polytopes with n facets, in dimension d, denote the longest possible such monotone path by f (n, d). Many general constructions are given in 19,1,22 . We can use the length of the longest path along which the x coordinate always increases as a fitness function. To be able to generate polytopes with exactly n facets we worked in the dual space. Using the Hopper algorithm, we obtained the following lower bounds, beating the state-of-the-art for each pair of parameters that we tried.  (n, d) previously known bounds new bounds from the Hopper algorithm (9, 5) 1 ≤ f (9, 5) ≤ 30 f (9, 5) = 30 (10, 5) 40 ≤ f (10, 5) ≤ 42 41 ≤ f (10, 5) ≤ 42 (11, 5) 32 ≤ f (11, 5) ≤ 56 55 ≤ f (11, 5) ≤ 56 (9, 6) 27 ≤ f (9, 6) ≤ 29 f (9, 6) = 29\nThe neighbourly polytopes problemA polytope is called neighbourly if every set of at most ⌊d/2⌋ vertices forms a face. For any (n, d) pair, there exists a unique d-dimensional polytope with n vertices called the cyclic polytope, and every cyclic polytope is neighbourly. Motzkin 12 conjectured that all neighborly polytopes are equivalent to cyclic polytopes. This turned out to be false. It is now known that there exist polytopes in d ≥ 4 dimensions with d + 4 or more vertices that are neighbourly but not cyclic.There has been a lot of work on finding new classes of neighbourly polytopes via ingenius human constructions, see e.g. 25,26,9 . To calculate the number of faces of various dimensions, we used the algorithm presented in 11 . The fitness function was then the largest k for which every set of at most k vertices forms a face, plus the proportion of k + 1-sets of vertices that form a face. Using this fitness function, the Hopper algorithm was easily able to find many previously unknown neighbourly polytopes that are not cyclic, for several pairs (n, d) ranging from (10, 6) to (13, 8).\nConclusionWe presented a new A.I. guided algorithm that when trained from scratch, discovered new examples of polytopes that are novel and exceed the best known results on three classical problems in geometry. An important strength of the Hopper algorithm is its flexibility -it is a general purpose algorithm that can easily be adapted to find polytopes with a wide variety of extremal properties. It supports the optimization of complex non-differentiable rewards, and when there is not a single good choice for a reward function, it is capable of working with a larger set of approximate reward functions. This flexibility enables the user to apply the Hopper algorithm to complex problems where they may not have a full understanding of the precise reward function they want to optimize for. Another advantage of our approach is that the constructions it produces are different from constructions found by humans, which can lead to further insights and discoveries. The automatic discovery of polytopes with never before seen properties has the potential to advance mathematics. What took humans many years, can be discovered by the Hopper algorithm much faster. Our approach demonstrates the power of A.I.and its ability to assist in making new mathematical discoveries in a field of mathematics which has resisted effective computer search due to its complexity. work with exact fractions, at a cost of performance/memory utilization. The Hopper works in the dual mode. Many pre-selection procedures rely on the representation using float numbers. Final evaluation of candidates always uses the precise mode.\nA.7 Multi-objective optimizationIf for an optimization problem it is possible to have more than one fitness function, it can be often used to the advantage of the optimization process. One of the most notorious problems of optimization is being stuck in \"bad regions\", such as local minima or plateaus. If the two fitness functions share a global minimum corresponding to the desired solution -but differ from one another, one can hope for their \"bad regions\" to not overlap, as in Figure 4a. Then a savvy switching procedure between the fitness function can make us successfully bypass the local minima and arrive at the global minimum. The procedure has its inherent failure modes, as illustrated in Figure 4b. In finding counterexamples to Hirsch conjecture a collection of 10 different fitness functions was successfully used. Those fitness functions were a defect (see A.8) and a collection of formulae counting the shortest and longest paths connecting the top and bottom base facet. \nA.8 HeuristicsIn the Hirsch conjecture, the primary metric we want to optimize is the width of the prismatoid, i.e. the distance between the two base facets in the facet-ridge graph. To make this fitness metric more continuous, a natural quantity to define is the average distance between neighbors of the bottom base facet and neighbors of the top base facet. This \"average width\" was a useful general concept, as it enabled us to have a more continuous measure of progress. To use multi-objective optimization (see A.7) we worked with several variants of this quantity. In case of the input being a prismatoid, a very importantfoot_3 one among those is a defect, defined as follows: Let l min be the length of the shortest path connecting top to the bottom. The defect of a prismatoid is the total number of paths of length l min from a vertex in the top face to a vertex in the bottom face.\nA.9 Adding and subtracting verticesFor applications to the Hirsch conjecture, it was necessary to extend the agent to allow the addition and subtraction of vertices. 5 However, we found that doing this naively led to degenerate behaviour: either the agents removed vertices until we were left with simplices, or the agent kept adding vertices until computations became infeasible. This degenerate behaviour was avoided by the addition of preventive rules. The Hopper can operate in two modes. In the rigid mode the Hopper is allowed only the modifications by taking a vertex and moving it somewhere else. In this mode the total number of vertices is preserved. In a flexible mode the Hopper is allowed two more modifications: deleting a vertex and adding a vertex. The latter modification needs an explanation. Recall that the basic modification (see 3) consists of choosing a vertex v i and a new vertex v inside a region V ι and then replacing the vertex v i with the vertex v. The operation of addition means simply adding the vertex v without removing any existing vertices, hence increasing the number of vertices. In case such modification would not lead to the increase of vertices due to one or more of existing vertices becoming the interior points or any other disallowed geometric condition the modification is discarded. Deletion of vertices is done randomly. For addition, we use the neural network to select a region in a way similar to that describe above, see 3.1. We discovered that simply enabling the flexible mode leads to trivial behaviours. In almost every case the vertices are either removed until the polytope becomes a simplex, or are being added with the number of vertices tending towards infinity. To remedy the tendency to converge to one of those trivial regimes a heuristic was invented. It was called an uptick and downtick rule. Uptick means that the addition of a vertex is only allowed, if the total number of the shortest paths (compare A.8) decreases as a result of it. This means that the addition did something \"interesting\" to the geometry, as the natural tendency of the addition of a vertex is to increase the number of vertices, and hence -the total number of connections. The downtick rule acts in a dual manner, using a slightly technical concept of \"longest paths\". In the \"production\" runs of the Hirsch conjecture experiments (4.1) used the flexible mode, while the monotone paths experiments (4.2) and k-neighbourly polytopes experiments (4.3) used the rigid mode.\nA.10 Avoiding geometric degenerationAs the agent modifies the polytope, it might propose changes leading to undesired geometric properties of the polytope. Examples of such properties would be very large coordinates of vertices (escape to infinity), very small angles between the facets, extreme disproportions between sizes in different directions etc. Some of those issues can be remedied by simply applying an affine transformation. A heuristic maintaining a \"canonical scaling\" based on Principal Components Analysis is invoked after every update. Other issues are handled by a number of heuristics which do not admit hops that lead to flatness, disproportions etc.\nA.11.4 Main lossThe main loss is computed as a cross-entropy (see for example 31 ) loss between the output of the final Feed Forward block and a 1-hot 3-dimensional vector indicating the ground truth of one of the scenarios: [1, 0, 0] -the hyperplane was a part of a partition cell that led to a successful hop, [0, 1, 0] if the hyperplane was a part of a partition cell that got rejected due to geometrical infeasibility (see A.8) and [0, 0, 1] if the hyperplane was a part of a partition cell which was geometrically feasible, but did not lead to a successful hop. A hop is considered successful, if it lead to an improvement in a heuristic and a subsequent increase in the heuristic value.\nA.11.5 Auxiliary lossThe pre-processed prismatoid is fed into a 4-layer gelu activated Feed Forward block, decreasing the dimensionality to 128. The auxiliary loss is then computed as a cross entropy between the output and a 128-dimensional 1-hot vector denoting the ground truth value of the defect (see A.8) of the prismatoid, with the vector with 1 at the last position indicates any defect greater or equal to 127. The purpose of the auxiliary loss is to \"teach the brain some geometry\". This follows the philosophy of AI and the paradigm of a transfer of knowledge. The prediction of the defect n itself is not important to us, but it improves the quality of the model.\nA.11.6 Total loss and the trainingThe total loss is the sum of the main loss and the auxiliary loss. The model was implemented using the JAX library and trained using Adam 18 algorithm in Optax optimizer.\nA.12 Shared repository &amp; ReverbIn Subsection 3 the multiagent architecture of Hopper swarm is explained. It uses two data repositories, one for the polytope examples, and one for the purpose of training the shared \"consciousness\" of the agents. In order for such repositories to be of practical use a lot of performance demands had to be satisfied. The speed, reliability, well implemented addition/removal protocols etc. A Google DeepMind solution called Reverb 4 was chosen for the task. Reverb is a replay buffer designed to support large scale Reinforcement Learning experiments and has proven to be a great fit for the needs of the Hopper.-0.002 1.302 -0.072 -0.277 1 0.028 -1.854 -0.031 -1.509 1 -0.031 -2.024 0.062 -0.648 1 0.083 -0.544 -0.048 1.771 1 -0.024 1.084 0.082 0.168 1 0.047 0.108 0.046 -2.533 1 -0.028 1.317 0.002 -1.173 1 0.013 -1.755 0.051 0.348 1 -0.037 -2.020 -0.066 -0.423 1 0.001 -1.320 0.018 -2.118 1 -0.086 -1.040 0.019 1.657 1 -0.061 1.190 -0.029 -1.518 1 1.751 0.035 -0.574 -0.029 -1 -0.821 -0.017 2.210 0.216 -1 -1.696 0.033 -0.938 -0.046 -1 1.531 -0.024 -0.932 -0.032 -1 -1.743 -0.041 0.440 -0.008 -1 1.344 0.034 1.333 0.125 -1 1.696 -0.045 0.587 -0.025 -1 0.670 0.005 1.961 -0.077 -1 0.692 0.020 -1.894 -0.134 -1 -0.156 -0.002 -1.900 0.540 -1 -1.573 -0.029 -1.286 -0.171 -1 -1.693 0.052 0.995 -0.011 -1 This prismatoid has a defect (see A.8) equal to 64, which is the smallest value we observed for a 12 × 12 example of a non-Hirsch prismatoid. Figure 1 :1Figure 1: An outline of the Hopper algorithm. (a) A polytope P and all the hyperplanes determined by its vertices. (b) Of these regions, adding a point is only possible in the light orange shaded regions. In each of these regions, adding a point yields a combinatorially non-equivalent polytope. (c) After computation of all hyperplanes (red), the neural network determines a probability distribution on these hyperplanes. (d) A region (red) described by a subset of the hyperplanes is selected using the neural network, then a point c ∈ R is chosen (deterministically). (e) All polytopes obtained by \"hopping\" a vertex of P to c are returned, degenerate ones are discarded, and non-degenerate ones are evaluated. (f) One of the resulting polytopes. (This 2d picture obscures some subtleties present in higher dimension. Most importantly, individual modifications can have an enormous effect on the combinatorial type of the polytope. Additionally, the selection of the region R in step (c) is more complicated than this picture makes out. Finally, in higher dimensions the number of regions R yielding potential hops is enormous.)\nFigure 2 :2Figure 2: Multi-agent architecture. The agents (A) read and write polytopes from the shared polytope repository. Simultaneously pairs of polytopes and hyperplanes are written to the shared data repository. The pairs are labeled positively if the hyperplane was part of a boundary of a successful hop region and negatively otherwise.\n(a) PCA scales of our constructions versus human constructions. (b) Prismatoid generation: 937, defect: 95, final number of vertices: 29 × 35, ascension 3 at 17 × 22 vertices. (c) Prismatoid generation: 850, defect: 11, final number of vertices: 29x33, ascension 3 at 12 × 14 vertices.\nFigure 3 :3Figure 3: (a) The different scales of the constructions given by the Hopper algorithm, versus human examples. We normalize the bottom base facet and record the PCA eigenvalues of the top base facet, then plot the largest eigenvalue versus the smallest eigenvalue at log scale. The green, red, and purple dots correspond to Santos's original construction, the 25 vertex constructions in 20 , and the first member of the family of constructions in 20 (all other members of this family have approximately the same position in this plot). The blue dots are the constructions found by the Hopper algorithm. We can see the examples found by the Hopper algorithm feature several orders of magnitude of difference between the smallest and largest PCA eigenvalues. (b) Evolution of a prismatoid. The axes represent numbers of vertices. The cyan dots represent the states before the prismatoid increases its width to 6, the blue ones correspond to the states after. The orange dot marks the \"ascension\" 3 to the non-Hirsch realm of width 6 prismatoids. (c) Evolution of another prismatoid. This prismatoid has a low defect (see A.8) equal to 11.\nFigure 4 :4Figure 4: Multi-objective training. Two fitness functions share the same global minimum corresponding to a desired state. Alternating between the objectives can lead to bypassing a barrier of local minima.\nFigure 5 :5Figure 5: (a) The architecture of the Hopper brain. The input is a pair -a polytope and a hyperplane. The outputs are: the main prediction, of whether the input hyperplane was in a boundary of some successful hop region, and the auxiliary prediction -the defect (see A.8) of the input prismatoid. The \"arrow block\" highlights the fact that the hyperplane data leg does not participate in the prediction of the defect. (b) Training loss of the Hopper brain. As opposed to more traditional scenarios the training is happening in an online fashion. As the population of polytopes in the repository becomes more refined the model can be expected to lose its validity at time. Such change of the regime can be well seen around step 2.77M .\n\t\t\tIn the \"addition\" mode it also creates a candidate with n + 1 vertices by adding c as a new vertex.\n\t\t\tLikelihood function β is an output of a neural network being trained in an online fashion. For more details see Methods A.11.\n\t\t\tThe Hopper algorithm starts off with a population of polytopes satisfying the Hirsch condition diameter ≤ n -d. By means of sequence of hops some of the polytopes become non-Hirsch polytopes. We called the hop that attains that the \"ascension\". After becoming non-Hirsch the polytope continues to be worked on, hence the blue part of the trajectory.\n\t\t\tIn our opinion -also elegant.\n\t\t\tThe first new counterexample to Hirsch conjecture found by Hopper algorithm was operating in a rigid 12 × 13 regime, with no addition or deletion allowed. Enabling the addition and deletion changed the expected time to finding the first example from weeks to hours, and enabled to produce millions of them.\n\t\t\tThanks to the proper choice of sizes of layers, all dimensions match.",
+  "sections": [
+    {
+      "title": "Introduction",
+      "text": "The discovery of interesting examples is a critical component of mathematical progress. The icosahedron, whose discovery is often attributed to the ancient Greeks, is an early example of exceptional structure in mathematics, and features prominently in Euclid's elements. More recently, the Lorenz attractor, Conway's game of life and the Mandelbrot set are all examples of 20th century discoveries that gave birth to new fields of mathematical inquiry and new understanding of our world. According to mathematician Gil Kalai \"The methods for coming up with useful examples in mathematics . . . are even less clear than the methods for proving mathematical statements.\" 32 In this work we focus on polytopes, which are higher dimensional generalizations of familiar geometric objects like the triangle, square, cube and tetrahedron. As well as being fundamental objects in geometry, polytopes are also of great importance in optimization. Despite their importance, many mysteries abound concerning their structure. In particular, it can be a very difficult task to construct examples of polytopes with specific extremal structure in high dimensions.In this paper we propose a new A.I. guided algorithm for the generation of interesting polytopes. A key idea is to regard the generation of polytopes as a one-player game, in which new polytopes are built by starting with a randomly generated list of vertices and then repeatedly selecting and moving a vertex. In high dimensions there are an enormous number of ways to modify a polytope by moving a vertex. This makes any exhaustive search computationally intractable, because the number of possible moves is too large. Moreover, amongst all possible modifications of a given polytope the vast majority of modifications are uninteresting. For this reason, we train an A.I. agent to predict moves in this game which will lead to interesting polytopes.We demonstrate the power of our approach on three classical problems in the theory of highdimensional polytopes. The first is the 50-year-old Hirsch conjecture, which asks for a bound on the diameter of a polytope in terms of its dimension and number of facets. In a breakthrough 2012 paper 23 , Santos constructed the first counterexample to the Hirsch conjecture, and since his work only two more examples and one family have been discovered 20 . However, each involved many months of human effort and closely related questions still remain unsolved 34,24 . Our system is able to generate millions of new counter-examples which appear fundamentally different to the previously known human constructions, and it found a non-Hirsch polytope in only 19 dimensions, improving on the previous bound (20 dimensions). We also test our system on two other problems in polytope theory: the neighbourly polytopes problem and the longest monotone paths problem. In all three cases, we were able to generate new examples that match or surpass the best known bounds.",
+      "level": 1,
+      "path_id": "1",
+      "parent_section_id": null,
+      "order_in_parent": 0,
+      "section_id": "sec-1"
+    },
+    {
+      "title": "Background on polytopes",
+      "text": "A polytope is the convex hull of finitely many points inside a finite-dimensional vector space R d (see Figure 1(a)). We will always assume that the vertices are not contained in a hyperplane, and that our polytopes are simplicial, meaning that each (d -1)-dimensional face is a simplex, i.e. the convex hull of exactly d vertices. For example, the tetrahedron, octahedron and icosahedron are simplicial, but the cube and regular dodecahedron are not.Most questions in the combinatorics of polytopes only concern their combinatorial structure and not the explicit position of their vertices. A polytope has faces of dimensions 0, 1, . . . , d -1 and their incidences determine the combinatorial type of a polytope. We will often regard polytopes as the same if they are of the same combinatorial type. Small perturbations of the vertices of a simplicial polytope result in combinatorially equivalent polytopes. 33,8 In general, the computation of the faces of a polytope from its vertices presents both conceptual and computational challenges as the number of faces of polytopes can be very large. The enumeration of the facets of a polytope given only its vertices is a close relative of the linear programming problem, ubiquitous in many optimization problems. 11,6 Consider a polytope P with n vertices and suppose we wish to modify it by either moving one of its vertices yielding a (combinatorially) different polytope with n vertices, adding a vertex to P to create a new polytope with n + 1 vertices or deleting a vertex, creating a polytope with n -1 vertices. Several difficulties arise:1. The first two modifications often lead to a polytope with a different number of vertices than desired. This can happen due to some vertices ending up within a convex hull of the others as a result of the modification.2. Among the modifications which preserve the number of vertices, many lead to combinatorially equivalent polytopes. The regions leading to combinatorially equivalent polytopes are themselves polytopes, whose faces are given by hyperplanes through the vertices of P (see Figure 1(b)). It is computationally expensive to compute all these regions, and there are an enormous number in high dimensional space (e.g. 5 • 10 23 for a 30-vertex polytope in 5 dimensions).3. For the regions constituting valid moves, moves leading to extremal polytopes are very rare if they exist at all. Thus they are unlikely to be found via random search.Several innovations are necessary in order to overcome these difficulties, which we now explain.",
+      "level": 2,
+      "path_id": "2",
+      "parent_section_id": null,
+      "order_in_parent": 1,
+      "section_id": "sec-2"
+    },
+    {
+      "title": "The Hopper algorithm",
+      "text": "Throughout we work with polytopes P , described via a list of vertices. We fix a property ρ which we would like to achieve (e.g., \"facet-ridge graph has diameter n\"). We also specify several fitness functions f i which are continuous approximations of how close P is to achieving ρ.While machine learning methods for polytopes have been considered in the past to predict various standard properties 2,5,14,15 and databases of polytopes have been built before 21 , our approach is rather different. The global structure of the algorithm is population refinement. A collection of agents is working together on a shared repository of examples, collectively trying to improve the fitness functions f i , while each of the individual agents has its individual fitness function fixed. The agents operate using a work-stealing strategy. Each agent picks a polytope from a shared repository and attempts to modify it. If an improvement is achieved, the resulting polytope is written back to the repository (see Figure 2). Each inserted polytope has an \"importance score\" attached, which is a combination of its fitness function values, its history of improvements, etc. If the size of the repository exceeds a fixed maximum size, some stored polytopes are discarded (see Methods, A.12).The subtlety in our algorithm arises in the operation of each agent. As we discussed above, the task of moving, adding or deleting a point to create a polytope with a set of desirable properties, is a difficult one. In order to overcome these difficulties we propose the Hopper algorithm, where each agent randomly selects moves and uses a neural network to predict how good these moves are. This is used to select which moves to action. Given a d-dimensional polytope P , the Hopper algorithm first computes all hyperplanes H through subsets of size d of vertices of P . Then, these hyperplanes are each fed through the neural network, which takes as input the vertices of P as well as the equation of the given hyperplane. The neural network then outputs a probability that this hyperplane is the boundary of a region which constitutes a good move.Guided by these probabilities, the Hopper algorithm chooses a region A whose boundary is described via hyperplanes belonging to H. (Hyperplanes assigned a high probability by the neural network are more likely to feature in the boundary of A -see Figure 1(c) and Methods.) It then computes the center of the largest ball which can be inscribed inside A, and by \"hopping\" each vertex of P to c creates n new polytope candidatesfoot_0 (see Figure 1(d,e)). Degenerate examples are discarded, and the fitness function values of the resulting polytopes are evaluated.",
+      "level": 3,
+      "path_id": "3",
+      "parent_section_id": null,
+      "order_in_parent": 2,
+      "section_id": "sec-3"
+    },
+    {
+      "title": "Algorithm 1 Hopper algorithm -individual agent",
+      "text": "Require: Polytope P ∈ R d , represented as a n × d matrix V of vertices. Fitness function f of the agent. Likelihood function βfoot_1 . Ensure: The given vertices span P properly -no vertex is inside a convex hull of other vertices Compute hyperplanes1: H = ∅ 2: for all {v 1 , . . . v d } ⊆ V sets of distinct d vertices do 3: H.append(h), h -equation of a hyperplane containing {v 1 , . . . v d } 4:Compute probability distribution π on hyperplanes in H by computing likelihoods of each h using likelihood function β (see 3.1) and normalizing them by dividing by their sum.Construct hop target c 5: A = ∅ 6: Sample d + 1 equations h 1 , . . . h d+1 from H according to π and change them to inequalities χ 1 , . . . , χ d+1 , choosing directions of the inequalities such that the feasible set is nonempty If the feasible set is not bounded or the shape violates geometric constrains, discard χ 1 , . . . , χ d+1 and sample again 7: A ← χ 1 , . . . , χ d+1 8: Find (c, r) -the center and radius of the largest ball inscribed in the polytope defined by A 9: while exists h ∈ H such that dist(h, c) &lt; 0.8 * r do10: A.append(h) 11: Recompute (c, r) Construct list of candidates 12: Q = [] 13: for v ∈ V do 14: Construct polytope P ′ by replacing v with c 15: if P ′ satisfies admissibility criteria then 16: Q.append(P ′ ) Evaluate candidates 17: for ϱ ∈ Q do 18: if f (ϱ) &lt; f (P ) then 19: Q.delete(ϱ) 20: return arg max f Q",
+      "level": 1,
+      "path_id": "1~2",
+      "parent_section_id": null,
+      "order_in_parent": 3,
+      "section_id": "sec-1~2"
+    },
+    {
+      "title": "Using a neural network for selecting actions",
+      "text": "Initially the actions are chosen uniformly at random. As the work progresses, more and more knowledge can be exploited. The agents are equipped with a (shared) \"brain\" β that allows this to happen. The architecture of that brain -a transformer-based neural network -is described in detail in A.11. The brain takes as an input a polytope and a hyperplane pair (P, h) and outputs a floating point number representing a likelihood of hyperplane h being part of a boundary of a successful hop region (see Algorithm 1). The training happens in an online mode -the (labelled)data from each agent is written to a shared data repository (\"Hop Data\" silo on Figure 2) from where it is sampled by the training process. In reinforcement learning terminology, the brain β corresponds to the policy, which we are improving over time by learning from our experiences.",
+      "level": 2,
+      "path_id": "3.1",
+      "parent_section_id": "sec-3",
+      "order_in_parent": 0,
+      "section_id": "sec-3.1"
+    },
+    {
+      "title": "Polytope discovery results",
+      "text": "",
+      "level": 4,
+      "path_id": "4",
+      "parent_section_id": null,
+      "order_in_parent": 4,
+      "section_id": "sec-4"
+    },
+    {
+      "title": "Hirsch conjecture -finding non-Hirsch polytopes",
+      "text": "A fundamental problem in linear programming is to bound the number of iterations the simplex method needs to take to solve an optimization problem that has d variables and n inequalities 3 . To find a lower bound for this quantity, we would like to know what the largest possible distance between any two vertices can be, in a d-dimensional polytope with n facets. The celebrated Hirsch conjecture asserts that the diameter of a d-dimensional convex polytope with n facets is at most n -d. To date, the best upper bound known is quasipolynomial 27,28,17 .A prismatoid is a special class of polytopes introduced by Santos. A prismatoid is a polytope with two parallel facets (the base facets), which together contain all vertices. The width of a prismatoid is the distance, in the facet-ridge graph, of its base facets. Santos explained how to start with a d-dimensional prismatoid with n vertices of width ≥ w and produce another prismatoid with 2(n -d) vertices in dimension n -d of diameter ≥ w + n -2d. Thus, the Hirsch conjecture implies that prismatoids in dimension d have width at most d.This concept of prismatoids turned out to be very fruitful in attacking the Hirsch conjecture.Indeed, every counterexample humans have found for the Hirsch conjecture originated from a 5dimensional prismatoid. We followed this idea, and use the Hopper algorithm to generate over a million new 5-dimensional prismatoids with width 6. The smallest counterexample we found has only 24 vertices, beating the state of the art of 25 vertices 20 . This prismatoid has 12 points in both base facets and width 6, see section A.13. By the discussion above it corresponds to a non-Hirsch polytope of dimension 19 (24-5), the smallest known counterexample so far.",
+      "level": 2,
+      "path_id": "4.1",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 0,
+      "section_id": "sec-4.1"
+    },
+    {
+      "title": "New features",
+      "text": "The constructions found by the Hopper algorithm seem to be of a genuinely different nature to known human constructions. It has been observed by Matschke, Santos and Weibel that all known counterexamples to the Hirsch conjecture may be explained by a simple observation: one may construct a bipartite directed graph from any prismatoid via a simple geometric procedure, and if this digraph contains no directed cycles of length 2, then the polytope is non-Hirsch ( 20 , Proposition 2.3). We have checked that this explains all human constructions of non-Hirsch polytopes. We checked a sample of 100 of the non-Hirsch polytopes constructed by the Hopper algorithm, and none of them can be explained in this way. This indicates that the polytopes constructed by the Hopper algorithm are fundamentally non-human, potentially providing new lines of investigation in the field. We also see new features when considering the global geometry of prismatoids yielding counterexamples to the Hirsch conjecture. Examples constructed by Maschke, Santos and Weibel relied on polytopes with drastically different coordinate scales -their coordinates range from 10 -foot_2 to 10 9 . One way of analysing this is to apply a linear transformation to the bottom base facet, so that all of its PCA eigenvalues are 1, and then analyse the PCA eigenvalues of the top base facet. The largest and smallest PCA eigenvalues of the prismatoids discovered by Santos and Maschke-Santos-Weibel are presented in Figure 3a. It is striking that all examples found by the Hopper algorithm involve multiple orders of magnitude of difference between the lowest and highest PCA eigenvalues. It is also interesting to note that the infinite family found by Maschke, Santos and Weibel has coordinates in a range very close to those discovered by the Hopper algorithm.",
+      "level": 3,
+      "path_id": "4.1.1",
+      "parent_section_id": "sec-4.1",
+      "order_in_parent": 0,
+      "section_id": "sec-4.1.1"
+    },
+    {
+      "title": "The longest monotone path problem",
+      "text": "Given a polytope, how long is the longest 'monotone path' in it? That is, the longest sequence of vertices, each consecutive pair connected by an edge in the polytope, so that a certain linear functional is always increasing.Among polytopes with n facets, in dimension d, denote the longest possible such monotone path by f (n, d). Many general constructions are given in 19,1,22 . We can use the length of the longest path along which the x coordinate always increases as a fitness function. To be able to generate polytopes with exactly n facets we worked in the dual space. Using the Hopper algorithm, we obtained the following lower bounds, beating the state-of-the-art for each pair of parameters that we tried.  (n, d) previously known bounds new bounds from the Hopper algorithm (9, 5) 1 ≤ f (9, 5) ≤ 30 f (9, 5) = 30 (10, 5) 40 ≤ f (10, 5) ≤ 42 41 ≤ f (10, 5) ≤ 42 (11, 5) 32 ≤ f (11, 5) ≤ 56 55 ≤ f (11, 5) ≤ 56 (9, 6) 27 ≤ f (9, 6) ≤ 29 f (9, 6) = 29",
+      "level": 2,
+      "path_id": "4.2",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 1,
+      "section_id": "sec-4.2"
+    },
+    {
+      "title": "The neighbourly polytopes problem",
+      "text": "A polytope is called neighbourly if every set of at most ⌊d/2⌋ vertices forms a face. For any (n, d) pair, there exists a unique d-dimensional polytope with n vertices called the cyclic polytope, and every cyclic polytope is neighbourly. Motzkin 12 conjectured that all neighborly polytopes are equivalent to cyclic polytopes. This turned out to be false. It is now known that there exist polytopes in d ≥ 4 dimensions with d + 4 or more vertices that are neighbourly but not cyclic.There has been a lot of work on finding new classes of neighbourly polytopes via ingenius human constructions, see e.g. 25,26,9 . To calculate the number of faces of various dimensions, we used the algorithm presented in 11 . The fitness function was then the largest k for which every set of at most k vertices forms a face, plus the proportion of k + 1-sets of vertices that form a face. Using this fitness function, the Hopper algorithm was easily able to find many previously unknown neighbourly polytopes that are not cyclic, for several pairs (n, d) ranging from (10, 6) to (13, 8).",
+      "level": 2,
+      "path_id": "4.3",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 2,
+      "section_id": "sec-4.3"
+    },
+    {
+      "title": "Conclusion",
+      "text": "We presented a new A.I. guided algorithm that when trained from scratch, discovered new examples of polytopes that are novel and exceed the best known results on three classical problems in geometry. An important strength of the Hopper algorithm is its flexibility -it is a general purpose algorithm that can easily be adapted to find polytopes with a wide variety of extremal properties. It supports the optimization of complex non-differentiable rewards, and when there is not a single good choice for a reward function, it is capable of working with a larger set of approximate reward functions. This flexibility enables the user to apply the Hopper algorithm to complex problems where they may not have a full understanding of the precise reward function they want to optimize for. Another advantage of our approach is that the constructions it produces are different from constructions found by humans, which can lead to further insights and discoveries. The automatic discovery of polytopes with never before seen properties has the potential to advance mathematics. What took humans many years, can be discovered by the Hopper algorithm much faster. Our approach demonstrates the power of A.I.and its ability to assist in making new mathematical discoveries in a field of mathematics which has resisted effective computer search due to its complexity. work with exact fractions, at a cost of performance/memory utilization. The Hopper works in the dual mode. Many pre-selection procedures rely on the representation using float numbers. Final evaluation of candidates always uses the precise mode.",
+      "level": 5,
+      "path_id": "5",
+      "parent_section_id": null,
+      "order_in_parent": 5,
+      "section_id": "sec-5"
+    },
+    {
+      "title": "A.7 Multi-objective optimization",
+      "text": "If for an optimization problem it is possible to have more than one fitness function, it can be often used to the advantage of the optimization process. One of the most notorious problems of optimization is being stuck in \"bad regions\", such as local minima or plateaus. If the two fitness functions share a global minimum corresponding to the desired solution -but differ from one another, one can hope for their \"bad regions\" to not overlap, as in Figure 4a. Then a savvy switching procedure between the fitness function can make us successfully bypass the local minima and arrive at the global minimum. The procedure has its inherent failure modes, as illustrated in Figure 4b. In finding counterexamples to Hirsch conjecture a collection of 10 different fitness functions was successfully used. Those fitness functions were a defect (see A.8) and a collection of formulae counting the shortest and longest paths connecting the top and bottom base facet.",
+      "level": 1,
+      "path_id": "1~3",
+      "parent_section_id": null,
+      "order_in_parent": 6,
+      "section_id": "sec-1~3"
+    },
+    {
+      "title": "A.8 Heuristics",
+      "text": "In the Hirsch conjecture, the primary metric we want to optimize is the width of the prismatoid, i.e. the distance between the two base facets in the facet-ridge graph. To make this fitness metric more continuous, a natural quantity to define is the average distance between neighbors of the bottom base facet and neighbors of the top base facet. This \"average width\" was a useful general concept, as it enabled us to have a more continuous measure of progress. To use multi-objective optimization (see A.7) we worked with several variants of this quantity. In case of the input being a prismatoid, a very importantfoot_3 one among those is a defect, defined as follows: Let l min be the length of the shortest path connecting top to the bottom. The defect of a prismatoid is the total number of paths of length l min from a vertex in the top face to a vertex in the bottom face.",
+      "level": 1,
+      "path_id": "1~4",
+      "parent_section_id": null,
+      "order_in_parent": 7,
+      "section_id": "sec-1~4"
+    },
+    {
+      "title": "A.9 Adding and subtracting vertices",
+      "text": "For applications to the Hirsch conjecture, it was necessary to extend the agent to allow the addition and subtraction of vertices. 5 However, we found that doing this naively led to degenerate behaviour: either the agents removed vertices until we were left with simplices, or the agent kept adding vertices until computations became infeasible. This degenerate behaviour was avoided by the addition of preventive rules. The Hopper can operate in two modes. In the rigid mode the Hopper is allowed only the modifications by taking a vertex and moving it somewhere else. In this mode the total number of vertices is preserved. In a flexible mode the Hopper is allowed two more modifications: deleting a vertex and adding a vertex. The latter modification needs an explanation. Recall that the basic modification (see 3) consists of choosing a vertex v i and a new vertex v inside a region V ι and then replacing the vertex v i with the vertex v. The operation of addition means simply adding the vertex v without removing any existing vertices, hence increasing the number of vertices. In case such modification would not lead to the increase of vertices due to one or more of existing vertices becoming the interior points or any other disallowed geometric condition the modification is discarded. Deletion of vertices is done randomly. For addition, we use the neural network to select a region in a way similar to that describe above, see 3.1. We discovered that simply enabling the flexible mode leads to trivial behaviours. In almost every case the vertices are either removed until the polytope becomes a simplex, or are being added with the number of vertices tending towards infinity. To remedy the tendency to converge to one of those trivial regimes a heuristic was invented. It was called an uptick and downtick rule. Uptick means that the addition of a vertex is only allowed, if the total number of the shortest paths (compare A.8) decreases as a result of it. This means that the addition did something \"interesting\" to the geometry, as the natural tendency of the addition of a vertex is to increase the number of vertices, and hence -the total number of connections. The downtick rule acts in a dual manner, using a slightly technical concept of \"longest paths\". In the \"production\" runs of the Hirsch conjecture experiments (4.1) used the flexible mode, while the monotone paths experiments (4.2) and k-neighbourly polytopes experiments (4.3) used the rigid mode.",
+      "level": 1,
+      "path_id": "1~5",
+      "parent_section_id": null,
+      "order_in_parent": 8,
+      "section_id": "sec-1~5"
+    },
+    {
+      "title": "A.10 Avoiding geometric degeneration",
+      "text": "As the agent modifies the polytope, it might propose changes leading to undesired geometric properties of the polytope. Examples of such properties would be very large coordinates of vertices (escape to infinity), very small angles between the facets, extreme disproportions between sizes in different directions etc. Some of those issues can be remedied by simply applying an affine transformation. A heuristic maintaining a \"canonical scaling\" based on Principal Components Analysis is invoked after every update. Other issues are handled by a number of heuristics which do not admit hops that lead to flatness, disproportions etc.",
+      "level": 1,
+      "path_id": "1~6",
+      "parent_section_id": null,
+      "order_in_parent": 9,
+      "section_id": "sec-1~6"
+    },
+    {
+      "title": "A.11.4 Main loss",
+      "text": "The main loss is computed as a cross-entropy (see for example 31 ) loss between the output of the final Feed Forward block and a 1-hot 3-dimensional vector indicating the ground truth of one of the scenarios: [1, 0, 0] -the hyperplane was a part of a partition cell that led to a successful hop, [0, 1, 0] if the hyperplane was a part of a partition cell that got rejected due to geometrical infeasibility (see A.8) and [0, 0, 1] if the hyperplane was a part of a partition cell which was geometrically feasible, but did not lead to a successful hop. A hop is considered successful, if it lead to an improvement in a heuristic and a subsequent increase in the heuristic value.",
+      "level": 1,
+      "path_id": "1~7",
+      "parent_section_id": null,
+      "order_in_parent": 10,
+      "section_id": "sec-1~7"
+    },
+    {
+      "title": "A.11.5 Auxiliary loss",
+      "text": "The pre-processed prismatoid is fed into a 4-layer gelu activated Feed Forward block, decreasing the dimensionality to 128. The auxiliary loss is then computed as a cross entropy between the output and a 128-dimensional 1-hot vector denoting the ground truth value of the defect (see A.8) of the prismatoid, with the vector with 1 at the last position indicates any defect greater or equal to 127. The purpose of the auxiliary loss is to \"teach the brain some geometry\". This follows the philosophy of AI and the paradigm of a transfer of knowledge. The prediction of the defect n itself is not important to us, but it improves the quality of the model.",
+      "level": 1,
+      "path_id": "1~8",
+      "parent_section_id": null,
+      "order_in_parent": 11,
+      "section_id": "sec-1~8"
+    },
+    {
+      "title": "A.11.6 Total loss and the training",
+      "text": "The total loss is the sum of the main loss and the auxiliary loss. The model was implemented using the JAX library and trained using Adam 18 algorithm in Optax optimizer.",
+      "level": 1,
+      "path_id": "1~9",
+      "parent_section_id": null,
+      "order_in_parent": 12,
+      "section_id": "sec-1~9"
+    },
+    {
+      "title": "A.12 Shared repository &amp; Reverb",
+      "text": "In Subsection 3 the multiagent architecture of Hopper swarm is explained. It uses two data repositories, one for the polytope examples, and one for the purpose of training the shared \"consciousness\" of the agents. In order for such repositories to be of practical use a lot of performance demands had to be satisfied. The speed, reliability, well implemented addition/removal protocols etc. A Google DeepMind solution called Reverb 4 was chosen for the task. Reverb is a replay buffer designed to support large scale Reinforcement Learning experiments and has proven to be a great fit for the needs of the Hopper.-0.002 1.302 -0.072 -0.277 1 0.028 -1.854 -0.031 -1.509 1 -0.031 -2.024 0.062 -0.648 1 0.083 -0.544 -0.048 1.771 1 -0.024 1.084 0.082 0.168 1 0.047 0.108 0.046 -2.533 1 -0.028 1.317 0.002 -1.173 1 0.013 -1.755 0.051 0.348 1 -0.037 -2.020 -0.066 -0.423 1 0.001 -1.320 0.018 -2.118 1 -0.086 -1.040 0.019 1.657 1 -0.061 1.190 -0.029 -1.518 1 1.751 0.035 -0.574 -0.029 -1 -0.821 -0.017 2.210 0.216 -1 -1.696 0.033 -0.938 -0.046 -1 1.531 -0.024 -0.932 -0.032 -1 -1.743 -0.041 0.440 -0.008 -1 1.344 0.034 1.333 0.125 -1 1.696 -0.045 0.587 -0.025 -1 0.670 0.005 1.961 -0.077 -1 0.692 0.020 -1.894 -0.134 -1 -0.156 -0.002 -1.900 0.540 -1 -1.573 -0.029 -1.286 -0.171 -1 -1.693 0.052 0.995 -0.011 -1 This prismatoid has a defect (see A.8) equal to 64, which is the smallest value we observed for a 12 × 12 example of a non-Hirsch prismatoid. Figure 1 :1Figure 1: An outline of the Hopper algorithm. (a) A polytope P and all the hyperplanes determined by its vertices. (b) Of these regions, adding a point is only possible in the light orange shaded regions. In each of these regions, adding a point yields a combinatorially non-equivalent polytope. (c) After computation of all hyperplanes (red), the neural network determines a probability distribution on these hyperplanes. (d) A region (red) described by a subset of the hyperplanes is selected using the neural network, then a point c ∈ R is chosen (deterministically). (e) All polytopes obtained by \"hopping\" a vertex of P to c are returned, degenerate ones are discarded, and non-degenerate ones are evaluated. (f) One of the resulting polytopes. (This 2d picture obscures some subtleties present in higher dimension. Most importantly, individual modifications can have an enormous effect on the combinatorial type of the polytope. Additionally, the selection of the region R in step (c) is more complicated than this picture makes out. Finally, in higher dimensions the number of regions R yielding potential hops is enormous.)\nFigure 2 :2Figure 2: Multi-agent architecture. The agents (A) read and write polytopes from the shared polytope repository. Simultaneously pairs of polytopes and hyperplanes are written to the shared data repository. The pairs are labeled positively if the hyperplane was part of a boundary of a successful hop region and negatively otherwise.\n(a) PCA scales of our constructions versus human constructions. (b) Prismatoid generation: 937, defect: 95, final number of vertices: 29 × 35, ascension 3 at 17 × 22 vertices. (c) Prismatoid generation: 850, defect: 11, final number of vertices: 29x33, ascension 3 at 12 × 14 vertices.\nFigure 3 :3Figure 3: (a) The different scales of the constructions given by the Hopper algorithm, versus human examples. We normalize the bottom base facet and record the PCA eigenvalues of the top base facet, then plot the largest eigenvalue versus the smallest eigenvalue at log scale. The green, red, and purple dots correspond to Santos's original construction, the 25 vertex constructions in 20 , and the first member of the family of constructions in 20 (all other members of this family have approximately the same position in this plot). The blue dots are the constructions found by the Hopper algorithm. We can see the examples found by the Hopper algorithm feature several orders of magnitude of difference between the smallest and largest PCA eigenvalues. (b) Evolution of a prismatoid. The axes represent numbers of vertices. The cyan dots represent the states before the prismatoid increases its width to 6, the blue ones correspond to the states after. The orange dot marks the \"ascension\" 3 to the non-Hirsch realm of width 6 prismatoids. (c) Evolution of another prismatoid. This prismatoid has a low defect (see A.8) equal to 11.\nFigure 4 :4Figure 4: Multi-objective training. Two fitness functions share the same global minimum corresponding to a desired state. Alternating between the objectives can lead to bypassing a barrier of local minima.\nFigure 5 :5Figure 5: (a) The architecture of the Hopper brain. The input is a pair -a polytope and a hyperplane. The outputs are: the main prediction, of whether the input hyperplane was in a boundary of some successful hop region, and the auxiliary prediction -the defect (see A.8) of the input prismatoid. The \"arrow block\" highlights the fact that the hyperplane data leg does not participate in the prediction of the defect. (b) Training loss of the Hopper brain. As opposed to more traditional scenarios the training is happening in an online fashion. As the population of polytopes in the repository becomes more refined the model can be expected to lose its validity at time. Such change of the regime can be well seen around step 2.77M .\n\t\t\tIn the \"addition\" mode it also creates a candidate with n + 1 vertices by adding c as a new vertex.\n\t\t\tLikelihood function β is an output of a neural network being trained in an online fashion. For more details see Methods A.11.\n\t\t\tThe Hopper algorithm starts off with a population of polytopes satisfying the Hirsch condition diameter ≤ n -d. By means of sequence of hops some of the polytopes become non-Hirsch polytopes. We called the hop that attains that the \"ascension\". After becoming non-Hirsch the polytope continues to be worked on, hence the blue part of the trajectory.\n\t\t\tIn our opinion -also elegant.\n\t\t\tThe first new counterexample to Hirsch conjecture found by Hopper algorithm was operating in a rigid 12 × 13 regime, with no addition or deletion allowed. Enabling the addition and deletion changed the expected time to finding the first example from weeks to hours, and enabled to produce millions of them.\n\t\t\tThanks to the proper choice of sizes of layers, all dimensions match.",
+      "level": 1,
+      "path_id": "1~10",
+      "parent_section_id": null,
+      "order_in_parent": 13,
+      "section_id": "sec-1~10"
+    }
+  ],
+  "citations": [
+    {
+      "raw_text": "Deformed products and maximal shadows of polytopes\n\t\t\n\t\t\tNinaAmenta\n\t\t\n\t\t\n\t\t\tGunterMZiegler\n\t\t\n\t\n\t\n\t\tContemporary Mathematics\n\t\t\n\t\t\t223\n\t\t\t\n\t\t\t1999",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Deformed products and maximal shadows of polytopes",
+      "anchors": [
+        {
+          "ref_id": "b0",
+          "section_path_id": "4.2",
+          "quote": "1,",
+          "offset": 375
+        }
+      ]
+    },
+    {
+      "raw_text": "Polytopes and machine learning\n\t\t\n\t\t\tJiakangBao\n\t\t\n\t\tarXiv:2109.09602\n\t\t\n\t\t\t2021\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2109.09602",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b1",
+          "section_path_id": "3",
+          "quote": "2,",
+          "offset": 399
+        }
+      ]
+    },
+    {
+      "raw_text": "The simplex method: a probabilistic analysis\n\t\t\n\t\t\tKarlHeinz\n\t\t\n\t\t\n\t\t\tBorgwardt\n\t\t\n\t\t\n\t\t\t2012\n\t\t\tSpringer Science &amp; Business Media\n\t\t\t1",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b2",
+          "section_path_id": "4.1",
+          "quote": "3",
+          "offset": 187
+        }
+      ]
+    },
+    {
+      "raw_text": "Reverb: A Framework For Experience Replay\n\t\t\n\t\t\tAlbinCassirer\n\t\t\n\t\tarXiv:2102.04736[cs.LG]\n\t\t\n\t\t\t2021",
+      "doi": null,
+      "arxiv_id": "2102.04736[cs.LG]",
+      "title": null,
+      "anchors": []
+    },
+    {
+      "raw_text": "Machine learning: The dimension of a polytope\n\t\t\n\t\t\tTomCoates\n\t\t\n\t\t\n\t\t\tJohannesHofscheier\n\t\t\n\t\t\n\t\t\tAlexanderMKasprzyk\n\t\t\n\t\n\t\n\t\tMachine Learning in Pure Mathematics and Thoeretical Physics\n\t\t\n\t\t\tWorld Scientific\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Machine learning: The dimension of a polytope",
+      "anchors": [
+        {
+          "ref_id": "b4",
+          "section_path_id": "3",
+          "quote": "5,",
+          "offset": 401
+        },
+        {
+          "ref_id": "b4",
+          "section_path_id": "1~5",
+          "quote": "5",
+          "offset": 131
+        }
+      ]
+    },
+    {
+      "raw_text": "Linear programming and extensions\n\t\t\n\t\t\tGeorgeDantzig\n\t\t\n\t\t\n\t\t\t1963\n\t\t\tPrinceton university press",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b5",
+          "section_path_id": "2",
+          "quote": "6",
+          "offset": 1266
+        }
+      ]
+    },
+    {
+      "raw_text": "Advancing mathematics by guiding human intuition with AI\n\t\t\n\t\t\tAlexDavies\n\t\t\n\t\n\t\n\t\tNature\n\t\t\n\t\t\t600\n\t\t\t\n\t\t\t2021",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Advancing mathematics by guiding human intuition with AI",
+      "anchors": []
+    },
+    {
+      "raw_text": "Triangulations: structures for algorithms and applications\n\t\t\n\t\t\tJesúsDe Loera\n\t\t\n\t\t\n\t\t\tJörgRambau\n\t\t\n\t\t\n\t\t\tFranciscoSantos\n\t\t\n\t\t\n\t\t\t2010\n\t\t\tSpringer Science &amp; Business Media\n\t\t\t25",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b7",
+          "section_path_id": "2",
+          "quote": "8",
+          "offset": 914
+        }
+      ]
+    },
+    {
+      "raw_text": "Neighbourly polytopes with few vertices\n\t\t\n\t\t\tARostislav\n\t\t\n\t\t\n\t\t\tDevyatov\n\t\t\n\t\n\t\n\t\tSbornik: Mathematics\n\t\t\n\t\t\t202\n\t\t\t1441\n\t\t\t2011",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Neighbourly polytopes with few vertices",
+      "anchors": [
+        {
+          "ref_id": "b8",
+          "section_path_id": "4.3",
+          "quote": "9",
+          "offset": 609
+        }
+      ]
+    },
+    {
+      "raw_text": "Discovering faster matrix multiplication algorithms with reinforcement learning\n\t\t\n\t\t\tAlhusseinFawzi\n\t\t\n\t\t10.1038/s41586-022-05172-4\n\t\t\n\t\n\t\n\t\tNature\n\t\t1476-4687\n\t\t\n\t\t\t610\n\t\t\t\n\t\t\t2022",
+      "doi": "10.1038/s41586-022-05172-4",
+      "arxiv_id": null,
+      "title": "Discovering faster matrix multiplication algorithms with reinforcement learning",
+      "anchors": []
+    },
+    {
+      "raw_text": "Combinatorial face enumeration in convex polytopes\n\t\t\n\t\t\tKomeiFukuda\n\t\t\n\t\t\n\t\t\tVeraRosta\n\t\t\n\t\n\t\n\t\tComputational Geometry\n\t\t\n\t\t\t4\n\t\t\t\n\t\t\t1994",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Combinatorial face enumeration in convex polytopes",
+      "anchors": [
+        {
+          "ref_id": "b10",
+          "section_path_id": "2",
+          "quote": "11,",
+          "offset": 1263
+        },
+        {
+          "ref_id": "b10",
+          "section_path_id": "4.3",
+          "quote": "11",
+          "offset": 704
+        }
+      ]
+    },
+    {
+      "raw_text": "Neighborly and cyclic polytopes\n\t\t\n\t\t\tDavidGale\n\t\t\n\t\n\t\n\t\tProc. Sympos. Pure Math\n\t\t\n\t\t\t7\n\t\t\t\n\t\t\t1963",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Neighborly and cyclic polytopes",
+      "anchors": [
+        {
+          "ref_id": "b11",
+          "section_path_id": "4.3",
+          "quote": "12",
+          "offset": 246
+        }
+      ]
+    },
+    {
+      "raw_text": "Polymake: a framework for analyzing convex polytopes\n\t\t\n\t\t\tEwgenijGawrilow\n\t\t\n\t\t\n\t\t\tMichaelJoswig\n\t\t\n\t\n\t\n\t\tPolytopes-combinatorics and computation\n\t\t\n\t\t\tSpringer\n\t\t\t2000",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Polymake: a framework for analyzing convex polytopes",
+      "anchors": []
+    },
+    {
+      "raw_text": "Machine-learning mathematical structures\n\t\t\n\t\t\tYang-HuiHe\n\t\t\n\t\n\t\n\t\tInternational Journal of Data Science in the Mathematical Sciences\n\t\t\n\t\t\t1\n\t\t\t\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Machine-learning mathematical structures",
+      "anchors": [
+        {
+          "ref_id": "b13",
+          "section_path_id": "3",
+          "quote": "14,",
+          "offset": 403
+        }
+      ]
+    },
+    {
+      "raw_text": "Yang-HuiHe\n\t\t\n\t\t\n\t\t\tElliHeyes\n\t\t\n\t\t\n\t\t\tEdwardHirst\n\t\t\n\t\tarXiv:2303.12626\n\t\tMachine Learning in Physics and Geometry\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2303.12626",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b14",
+          "section_path_id": "3",
+          "quote": "15",
+          "offset": 406
+        }
+      ]
+    },
+    {
+      "raw_text": "Learning to reason in large theories without imitation\n\t\t\n\t\t\tDanHendrycks\n\t\t\n\t\t\n\t\t\tKevinGimpel\n\t\t\n\t\tarXiv:1606.08415\n\t\t\n\t\t\t2016",
+      "doi": null,
+      "arxiv_id": "1606.08415",
+      "title": null,
+      "anchors": []
+    },
+    {
+      "raw_text": "A quasi-polynomial bound for the diameter of graphs of polyhedra\n\t\t\n\t\t\tGilKalai\n\t\t\n\t\t\n\t\t\tDaniel J Kleitman\n\t\t\n\t\n\t\n\t\tBulletin of the American Mathematical Society\n\t\t\n\t\t\t26\n\t\t\t\n\t\t\t1992",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "A quasi-polynomial bound for the diameter of graphs of polyhedra",
+      "anchors": [
+        {
+          "ref_id": "b16",
+          "section_path_id": "4.1",
+          "quote": "17",
+          "offset": 551
+        }
+      ]
+    },
+    {
+      "raw_text": "Adam: A Method for Stochastic Optimization\n\t\t\n\t\t\tPDiederik\n\t\t\n\t\t\n\t\t\tJimmyKingma\n\t\t\n\t\t\n\t\t\tBa\n\t\t\n\t\tCoRR abs/1412.6980\n\t\t\n\t\t\t2015",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b17",
+          "section_path_id": "1~9",
+          "quote": "18",
+          "offset": 138
+        }
+      ]
+    },
+    {
+      "raw_text": "How good is the simplex algorithm\n\t\t\n\t\t\tVictorKlee\n\t\t\n\t\t\n\t\t\tGeorgeJMinty\n\t\t\n\t\n\t\n\t\tInequalities\n\t\t\n\t\t\t3\n\t\t\t3\n\t\t\t\n\t\t\t1972",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "How good is the simplex algorithm",
+      "anchors": [
+        {
+          "ref_id": "b18",
+          "section_path_id": "4.2",
+          "quote": "19,",
+          "offset": 372
+        }
+      ]
+    },
+    {
+      "raw_text": "The width of five-dimensional prismatoids\n\t\t\n\t\t\tBenjaminMatschke\n\t\t\n\t\t\n\t\t\tFranciscoSantos\n\t\t\n\t\t\n\t\t\tChristopheWeibel\n\t\t\n\t\n\t\n\t\tProceedings of the London Mathematical Society\n\t\t\n\t\t\t110\n\t\t\t\n\t\t\t2015",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "The width of five-dimensional prismatoids",
+      "anchors": [
+        {
+          "ref_id": "b19",
+          "section_path_id": "1",
+          "quote": "20",
+          "offset": 2344
+        },
+        {
+          "ref_id": "b19",
+          "section_path_id": "4.1",
+          "quote": "20",
+          "offset": 1531
+        }
+      ]
+    },
+    {
+      "raw_text": "polyDB: a database for polytopes and related objects\n\t\t\n\t\t\tAndreasPaffenholz\n\t\t\n\t\n\t\n\t\tAlgorithmic and experimental methods in algebra, geometry, and number theory\n\t\t\n\t\t\t2017",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "polyDB: a database for polytopes and related objects",
+      "anchors": [
+        {
+          "ref_id": "b20",
+          "section_path_id": "3",
+          "quote": "21",
+          "offset": 459
+        }
+      ]
+    },
+    {
+      "raw_text": "On the monotone upper bound problem\n\t\t\n\t\t\tJulianPfeifle\n\t\t\n\t\t\n\t\t\tMGünter\n\t\t\n\t\t\n\t\t\tZiegler\n\t\t\n\t\n\t\n\t\tExperimental Mathematics\n\t\t\n\t\t\t13\n\t\t\t1\n\t\t\t\n\t\t\t2004",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "On the monotone upper bound problem",
+      "anchors": [
+        {
+          "ref_id": "b21",
+          "section_path_id": "4.2",
+          "quote": "22",
+          "offset": 377
+        }
+      ]
+    },
+    {
+      "raw_text": "A counterexample to the Hirsch conjecture\n\t\t\n\t\t\tFranciscoSantos\n\t\t\n\t\n\t\n\t\tAnnals of mathematics\n\t\t\n\t\t\t176\n\t\t\t\n\t\t\t1 2012",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "A counterexample to the Hirsch conjecture",
+      "anchors": [
+        {
+          "ref_id": "b22",
+          "section_path_id": "1",
+          "quote": "23",
+          "offset": 2191
+        }
+      ]
+    },
+    {
+      "raw_text": "Recent progress on the combinatorial diameter of polytopes and simplicial complexes\n\t\t\n\t\t\tFranciscoSantos\n\t\t\n\t\n\t\n\t\tTop\n\t\t\n\t\t\t21\n\t\t\t3\n\t\t\t\n\t\t\t2013",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Recent progress on the combinatorial diameter of polytopes and simplicial complexes",
+      "anchors": [
+        {
+          "ref_id": "b23",
+          "section_path_id": "1",
+          "quote": "24",
+          "offset": 2455
+        }
+      ]
+    },
+    {
+      "raw_text": "IdoShemer\n\t\t\n\t\n\t\n\t\tNeighborly polytopes\n\t\t\n\t\t\t1982\n\t\t\t43",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b24",
+          "section_path_id": "4.3",
+          "quote": "25,",
+          "offset": 603
+        }
+      ]
+    },
+    {
+      "raw_text": "Techniques for investigating neighborly polytopes\n\t\t\n\t\t\tIdoShemer\n\t\t\n\t\n\t\n\t\tNorth-Holland Mathematics Studies\n\t\t\n\t\t\tElsevier\n\t\t\t1984\n\t\t\t87",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Techniques for investigating neighborly polytopes",
+      "anchors": [
+        {
+          "ref_id": "b25",
+          "section_path_id": "4.3",
+          "quote": "26,",
+          "offset": 606
+        }
+      ]
+    },
+    {
+      "raw_text": "An asymptotically improved upper bound on the diameter of polyhedra\n\t\t\n\t\t\tNoriyoshiSukegawa\n\t\t\n\t\n\t\n\t\tDiscrete &amp; Computational Geometry\n\t\t\n\t\t\t62\n\t\t\t\n\t\t\t2019",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "An asymptotically improved upper bound on the diameter of polyhedra",
+      "anchors": [
+        {
+          "ref_id": "b26",
+          "section_path_id": "4.1",
+          "quote": "27,",
+          "offset": 545
+        }
+      ]
+    },
+    {
+      "raw_text": "An improved Kalai-Kleitman bound for the diameter of a polyhedron\n\t\t\n\t\t\tToddMichael\n\t\t\n\t\n\t\n\t\tSIAM Journal on Discrete Mathematics\n\t\t\n\t\t\t28\n\t\t\t\n\t\t\t2014",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "An improved Kalai-Kleitman bound for the diameter of a polyhedron",
+      "anchors": [
+        {
+          "ref_id": "b27",
+          "section_path_id": "4.1",
+          "quote": "28,",
+          "offset": 548
+        }
+      ]
+    },
+    {
+      "raw_text": "Attention Is All You Need\n\t\t\n\t\t\tAshishVaswani\n\t\t\n\t\tarXiv:1706.03762[cs.CL\n\t\t\n\t\t\t2017",
+      "doi": null,
+      "arxiv_id": "1706.03762[cs.CL",
+      "title": null,
+      "anchors": []
+    },
+    {
+      "raw_text": "AdamZsolt\n\t\t\n\t\t\n\t\t\tWagner\n\t\t\n\t\tarXiv:2104.14516\n\t\tConstructions in combinatorics via neural networks&quot;. In: arXiv preprint\n\t\t\n\t\t\t2021",
+      "doi": null,
+      "arxiv_id": "2104.14516",
+      "title": null,
+      "anchors": []
+    },
+    {
+      "raw_text": "Generalized cross entropy loss for training deep neural networks with noisy labels\n\t\t\n\t\t\tZhiluZhang\n\t\t\n\t\t\n\t\t\tMertSabuncu\n\t\t\n\t\n\t\n\t\tAdvances in neural information processing systems\n\t\t\n\t\t\t31\n\t\t\t2018",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Generalized cross entropy loss for training deep neural networks with noisy labels",
+      "anchors": [
+        {
+          "ref_id": "b30",
+          "section_path_id": "1~7",
+          "quote": "31",
+          "offset": 62
+        }
+      ]
+    },
+    {
+      "raw_text": "Convex polytopes: extremal constructions and f -vector shapes\n\t\t\n\t\t\tMGünter\n\t\t\n\t\t\n\t\t\tZiegler\n\t\t\n\t\t10.1090/pcms/013/10\n\t\t\n\t\n\t\n\t\tGeometric combinatorics\n\t\t\n\t\t\t13\n\t\t\t\n\t\t\t2007\n\t\t\tMath. Soc\n\t\t\tProvidence, RI",
+      "doi": "10.1090/pcms/013/10",
+      "arxiv_id": null,
+      "title": "Convex polytopes: extremal constructions and f -vector shapes",
+      "anchors": [
+        {
+          "ref_id": "b31",
+          "section_path_id": "1",
+          "quote": "32",
+          "offset": 670
+        }
+      ]
+    },
+    {
+      "raw_text": "Graduate Texts in Mathematics\n\t\t\n\t\t\tMGünter\n\t\t\n\t\t\n\t\t\tZiegler\n\t\t\n\t\t10.1007/978-1-4613-8431-1\n\t\t\n\t\n\t\n\t\tLectures on polytopes\n\t\tNew York\n\t\t\n\t\t\tSpringer-Verlag\n\t\t\t1995\n\t\t\t152\n\t\t\t370",
+      "doi": "10.1007/978-1-4613-8431-1",
+      "arxiv_id": null,
+      "title": "Graduate Texts in Mathematics",
+      "anchors": [
+        {
+          "ref_id": "b32",
+          "section_path_id": "2",
+          "quote": "33,",
+          "offset": 911
+        }
+      ]
+    },
+    {
+      "raw_text": "Polymath 3: Polynomial Hirsch Conjecture\n\t\t\n\t\t\tGilKalai\n\t\t\n\t\t\n\t\t\n\t\t\t2010",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b33",
+          "section_path_id": "1",
+          "quote": "34,",
+          "offset": 2452
+        }
+      ]
+    }
+  ],
+  "layout_json": null,
+  "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Advancing Geometry with AI: Multi-agent Generation of Polytopes</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2025-02-11\">February 11, 2025</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Grzegorz</forename><surname>Świrszcz</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Adam</forename><forename type=\"middle\">Zsolt</forename><surname>Wagner</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Geordie</forename><surname>Williamson</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Sam</forename><surname>Blackwell</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Bogdan</forename><surname>Georgiev</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Alex</forename><surname>Davies</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Ali</forename><surname>Eslami</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Sébastien</forename><surname>Racanière</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Theophane</forename><surname>Weber</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Pushmeet</forename><surname>Kohli</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Advancing Geometry with AI: Multi-agent Generation of Polytopes</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2025-02-11\">February 11, 2025</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">59C5BD5915FCD57A34F5DD7B02DB74C4</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2502.05199v1[math.CO]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.1\" ident=\"GROBID\" when=\"2026-10-13T10:31+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.1</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null, debugLabelingCollector=disabled</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Polytopes are one of the most primitive concepts underlying geometry. They are defined as intersections of a finite number of half-spaces, i.e. the subsets of Euclidean spaces which can be defined by a finite set of linear inequalities. Discovery and study of polytopes with complex structures provides a means of advancing scientific knowledge. Construction of polytopes with specific extremal structure is very difficult and time-consuming. Having an automated tool for the generation of such extremal examples is therefore of great value. We present an Artificial Intelligence system capable of generating novel polytopes with very high complexity, whose abilities we demonstrate in three different and challenging scenarios: the Hirsch Conjecture, the k-neighbourly problem and the longest monotone paths problem. For each of these three problems the system was able to generate novel examples, which match or surpass the best previously known bounds. Our main focus was the Hirsch Conjecture, which had remained an open problem for over 50 years. The highly parallel A.I. system presented in this paper was able to generate millions of examples, with many of them surpassing best known previous results and possessing properties not present in the earlier human-constructed examples. For comparison, it took leading human experts over 50 years to handcraft the first example of a polytope exceeding the bound conjectured by Hirsch, and in the decade since humans were able to construct only a scarce few families of such counterexample polytopes. With the adoption of computer-aided methods, the creation of new examples of mathematical objects stops being a domain reserved only for human expertise. Advances in A.I. provide mathematicians with yet another powerful tool in advancing mathematical knowledge. The results presented demonstrate that A.I. is capable of addressing problems in geometry recognized as extremely hard, and also to produce extremal examples different in nature from the ones constructed by humans.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"11\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"12\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"13\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"14\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"15\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"16\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"17\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"18\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>The discovery of interesting examples is a critical component of mathematical progress. The icosahedron, whose discovery is often attributed to the ancient Greeks, is an early example of exceptional structure in mathematics, and features prominently in Euclid's elements. More recently, the Lorenz attractor, Conway's game of life and the Mandelbrot set are all examples of 20th century discoveries that gave birth to new fields of mathematical inquiry and new understanding of our world. According to mathematician Gil Kalai \"The methods for coming up with useful examples in mathematics . . . are even less clear than the methods for proving mathematical statements.\" <ref type=\"bibr\" target=\"#b31\">32</ref> In this work we focus on polytopes, which are higher dimensional generalizations of familiar geometric objects like the triangle, square, cube and tetrahedron. As well as being fundamental objects in geometry, polytopes are also of great importance in optimization. Despite their importance, many mysteries abound concerning their structure. In particular, it can be a very difficult task to construct examples of polytopes with specific extremal structure in high dimensions.</p><p>In this paper we propose a new A.I. guided algorithm for the generation of interesting polytopes. A key idea is to regard the generation of polytopes as a one-player game, in which new polytopes are built by starting with a randomly generated list of vertices and then repeatedly selecting and moving a vertex. In high dimensions there are an enormous number of ways to modify a polytope by moving a vertex. This makes any exhaustive search computationally intractable, because the number of possible moves is too large. Moreover, amongst all possible modifications of a given polytope the vast majority of modifications are uninteresting. For this reason, we train an A.I. agent to predict moves in this game which will lead to interesting polytopes.</p><p>We demonstrate the power of our approach on three classical problems in the theory of highdimensional polytopes. The first is the 50-year-old Hirsch conjecture, which asks for a bound on the diameter of a polytope in terms of its dimension and number of facets. In a breakthrough 2012 paper <ref type=\"bibr\" target=\"#b22\">23</ref> , Santos constructed the first counterexample to the Hirsch conjecture, and since his work only two more examples and one family have been discovered <ref type=\"bibr\" target=\"#b19\">20</ref> . However, each involved many months of human effort and closely related questions still remain unsolved <ref type=\"bibr\" target=\"#b33\">34,</ref><ref type=\"bibr\" target=\"#b23\">24</ref> . Our system is able to generate millions of new counter-examples which appear fundamentally different to the previously known human constructions, and it found a non-Hirsch polytope in only 19 dimensions, improving on the previous bound (20 dimensions). We also test our system on two other problems in polytope theory: the neighbourly polytopes problem and the longest monotone paths problem. In all three cases, we were able to generate new examples that match or surpass the best known bounds.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">Background on polytopes</head><p>A polytope is the convex hull of finitely many points inside a finite-dimensional vector space R d (see Figure <ref type=\"figure\" target=\"#fig_0\">1(a)</ref>). We will always assume that the vertices are not contained in a hyperplane, and that our polytopes are simplicial, meaning that each (d -1)-dimensional face is a simplex, i.e. the convex hull of exactly d vertices. For example, the tetrahedron, octahedron and icosahedron are simplicial, but the cube and regular dodecahedron are not.</p><p>Most questions in the combinatorics of polytopes only concern their combinatorial structure and not the explicit position of their vertices. A polytope has faces of dimensions 0, 1, . . . , d -1 and their incidences determine the combinatorial type of a polytope. We will often regard polytopes as the same if they are of the same combinatorial type. Small perturbations of the vertices of a simplicial polytope result in combinatorially equivalent polytopes. <ref type=\"bibr\" target=\"#b32\">33,</ref><ref type=\"bibr\" target=\"#b7\">8</ref> In general, the computation of the faces of a polytope from its vertices presents both conceptual and computational challenges as the number of faces of polytopes can be very large. The enumeration of the facets of a polytope given only its vertices is a close relative of the linear programming problem, ubiquitous in many optimization problems. <ref type=\"bibr\" target=\"#b10\">11,</ref><ref type=\"bibr\" target=\"#b5\">6</ref> Consider a polytope P with n vertices and suppose we wish to modify it by either moving one of its vertices yielding a (combinatorially) different polytope with n vertices, adding a vertex to P to create a new polytope with n + 1 vertices or deleting a vertex, creating a polytope with n -1 vertices. Several difficulties arise:</p><p>1. The first two modifications often lead to a polytope with a different number of vertices than desired. This can happen due to some vertices ending up within a convex hull of the others as a result of the modification.</p><p>2. Among the modifications which preserve the number of vertices, many lead to combinatorially equivalent polytopes. The regions leading to combinatorially equivalent polytopes are themselves polytopes, whose faces are given by hyperplanes through the vertices of P (see Figure <ref type=\"figure\" target=\"#fig_0\">1(b)</ref>). It is computationally expensive to compute all these regions, and there are an enormous number in high dimensional space (e.g. 5 • 10 23 for a 30-vertex polytope in 5 dimensions).</p><p>3. For the regions constituting valid moves, moves leading to extremal polytopes are very rare if they exist at all. Thus they are unlikely to be found via random search.</p><p>Several innovations are necessary in order to overcome these difficulties, which we now explain.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">The Hopper algorithm</head><p>Throughout we work with polytopes P , described via a list of vertices. We fix a property ρ which we would like to achieve (e.g., \"facet-ridge graph has diameter n\"). We also specify several fitness functions f i which are continuous approximations of how close P is to achieving ρ.</p><p>While machine learning methods for polytopes have been considered in the past to predict various standard properties <ref type=\"bibr\" target=\"#b1\">2,</ref><ref type=\"bibr\" target=\"#b4\">5,</ref><ref type=\"bibr\" target=\"#b13\">14,</ref><ref type=\"bibr\" target=\"#b14\">15</ref> and databases of polytopes have been built before <ref type=\"bibr\" target=\"#b20\">21</ref> , our approach is rather different. The global structure of the algorithm is population refinement. A collection of agents is working together on a shared repository of examples, collectively trying to improve the fitness functions f i , while each of the individual agents has its individual fitness function fixed. The agents operate using a work-stealing strategy. Each agent picks a polytope from a shared repository and attempts to modify it. If an improvement is achieved, the resulting polytope is written back to the repository (see Figure <ref type=\"figure\" target=\"#fig_1\">2</ref>). Each inserted polytope has an \"importance score\" attached, which is a combination of its fitness function values, its history of improvements, etc. If the size of the repository exceeds a fixed maximum size, some stored polytopes are discarded (see Methods, A.12).</p><p>The subtlety in our algorithm arises in the operation of each agent. As we discussed above, the task of moving, adding or deleting a point to create a polytope with a set of desirable properties, is a difficult one. In order to overcome these difficulties we propose the Hopper algorithm, where each agent randomly selects moves and uses a neural network to predict how good these moves are. This is used to select which moves to action. Given a d-dimensional polytope P , the Hopper algorithm first computes all hyperplanes H through subsets of size d of vertices of P . Then, these hyperplanes are each fed through the neural network, which takes as input the vertices of P as well as the equation of the given hyperplane. The neural network then outputs a probability that this hyperplane is the boundary of a region which constitutes a good move.</p><p>Guided by these probabilities, the Hopper algorithm chooses a region A whose boundary is described via hyperplanes belonging to H. (Hyperplanes assigned a high probability by the neural network are more likely to feature in the boundary of A -see Figure <ref type=\"figure\" target=\"#fig_0\">1(c</ref>) and Methods.) It then computes the center of the largest ball which can be inscribed inside A, and by \"hopping\" each vertex of P to c creates n new polytope candidates<ref type=\"foot\" target=\"#foot_0\">foot_0</ref> (see Figure <ref type=\"figure\" target=\"#fig_0\">1(d</ref>,<ref type=\"figure\">e)</ref>). Degenerate examples are discarded, and the fitness function values of the resulting polytopes are evaluated.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Algorithm 1 Hopper algorithm -individual agent</head><p>Require: Polytope P ∈ R d , represented as a n × d matrix V of vertices. Fitness function f of the agent. Likelihood function β<ref type=\"foot\" target=\"#foot_1\">foot_1</ref> . Ensure: The given vertices span P properly -no vertex is inside a convex hull of other vertices Compute hyperplanes</p><formula xml:id=\"formula_0\">1: H = ∅ 2: for all {v 1 , . . . v d } ⊆ V sets of distinct d vertices do 3: H.append(h), h -equation of a hyperplane containing {v 1 , . . . v d } 4:</formula><p>Compute probability distribution π on hyperplanes in H by computing likelihoods of each h using likelihood function β (see 3.1) and normalizing them by dividing by their sum.</p><p>Construct hop target c 5: A = ∅ 6: Sample d + 1 equations h 1 , . . . h d+1 from H according to π and change them to inequalities χ 1 , . . . , χ d+1 , choosing directions of the inequalities such that the feasible set is nonempty If the feasible set is not bounded or the shape violates geometric constrains, discard χ 1 , . . . , χ d+1 and sample again 7: A ← χ 1 , . . . , χ d+1 8: Find (c, r) -the center and radius of the largest ball inscribed in the polytope defined by A 9: while exists h ∈ H such that dist(h, c) &lt; 0.8 * r do</p><p>10: A.append(h) 11: Recompute (c, r) Construct list of candidates 12: Q = [] 13: for v ∈ V do 14: Construct polytope P ′ by replacing v with c 15: if P ′ satisfies admissibility criteria then 16: Q.append(P ′ ) Evaluate candidates 17: for ϱ ∈ Q do 18: if f (ϱ) &lt; f (P ) then 19: Q.delete(ϱ) 20: return arg max f Q</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1\">Using a neural network for selecting actions</head><p>Initially the actions are chosen uniformly at random. As the work progresses, more and more knowledge can be exploited. The agents are equipped with a (shared) \"brain\" β that allows this to happen. The architecture of that brain -a transformer-based neural network -is described in detail in A.11. The brain takes as an input a polytope and a hyperplane pair (P, h) and outputs a floating point number representing a likelihood of hyperplane h being part of a boundary of a successful hop region (see Algorithm 1). The training happens in an online mode -the (labelled)</p><p>data from each agent is written to a shared data repository (\"Hop Data\" silo on Figure <ref type=\"figure\" target=\"#fig_1\">2</ref>) from where it is sampled by the training process. In reinforcement learning terminology, the brain β corresponds to the policy, which we are improving over time by learning from our experiences.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Polytope discovery results</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.1\">Hirsch conjecture -finding non-Hirsch polytopes</head><p>A fundamental problem in linear programming is to bound the number of iterations the simplex method needs to take to solve an optimization problem that has d variables and n inequalities <ref type=\"bibr\" target=\"#b2\">3</ref> . To find a lower bound for this quantity, we would like to know what the largest possible distance between any two vertices can be, in a d-dimensional polytope with n facets. The celebrated Hirsch conjecture asserts that the diameter of a d-dimensional convex polytope with n facets is at most n -d. To date, the best upper bound known is quasipolynomial <ref type=\"bibr\" target=\"#b26\">27,</ref><ref type=\"bibr\" target=\"#b27\">28,</ref><ref type=\"bibr\" target=\"#b16\">17</ref> .</p><p>A prismatoid is a special class of polytopes introduced by Santos. A prismatoid is a polytope with two parallel facets (the base facets), which together contain all vertices. The width of a prismatoid is the distance, in the facet-ridge graph, of its base facets. Santos explained how to start with a d-dimensional prismatoid with n vertices of width ≥ w and produce another prismatoid with 2(n -d) vertices in dimension n -d of diameter ≥ w + n -2d. Thus, the Hirsch conjecture implies that prismatoids in dimension d have width at most d.</p><p>This concept of prismatoids turned out to be very fruitful in attacking the Hirsch conjecture.</p><p>Indeed, every counterexample humans have found for the Hirsch conjecture originated from a 5dimensional prismatoid. We followed this idea, and use the Hopper algorithm to generate over a million new 5-dimensional prismatoids with width 6. The smallest counterexample we found has only 24 vertices, beating the state of the art of 25 vertices <ref type=\"bibr\" target=\"#b19\">20</ref> . This prismatoid has 12 points in both base facets and width 6, see section A.13. By the discussion above it corresponds to a non-Hirsch polytope of dimension 19 (24-5), the smallest known counterexample so far.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.1.1\">New features</head><p>The constructions found by the Hopper algorithm seem to be of a genuinely different nature to known human constructions. It has been observed by Matschke, Santos and Weibel that all known counterexamples to the Hirsch conjecture may be explained by a simple observation: one may construct a bipartite directed graph from any prismatoid via a simple geometric procedure, and if this digraph contains no directed cycles of length 2, then the polytope is non-Hirsch ( 20 , Proposition 2.3). We have checked that this explains all human constructions of non-Hirsch polytopes. We checked a sample of 100 of the non-Hirsch polytopes constructed by the Hopper algorithm, and none of them can be explained in this way. This indicates that the polytopes constructed by the Hopper algorithm are fundamentally non-human, potentially providing new lines of investigation in the field. We also see new features when considering the global geometry of prismatoids yielding counterexamples to the Hirsch conjecture. Examples constructed by Maschke, Santos and Weibel relied on polytopes with drastically different coordinate scales -their coordinates range from 10 -<ref type=\"foot\" target=\"#foot_2\">foot_2</ref> to 10 9 . One way of analysing this is to apply a linear transformation to the bottom base facet, so that all of its PCA eigenvalues are 1, and then analyse the PCA eigenvalues of the top base facet. The largest and smallest PCA eigenvalues of the prismatoids discovered by Santos and Maschke-Santos-Weibel are presented in Figure <ref type=\"figure\" target=\"#fig_3\">3a</ref>. It is striking that all examples found by the Hopper algorithm involve multiple orders of magnitude of difference between the lowest and highest PCA eigenvalues. It is also interesting to note that the infinite family found by Maschke, Santos and Weibel has coordinates in a range very close to those discovered by the Hopper algorithm.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.2\">The longest monotone path problem</head><p>Given a polytope, how long is the longest 'monotone path' in it? That is, the longest sequence of vertices, each consecutive pair connected by an edge in the polytope, so that a certain linear functional is always increasing.</p><p>Among polytopes with n facets, in dimension d, denote the longest possible such monotone path by f (n, d). Many general constructions are given in <ref type=\"bibr\" target=\"#b18\">19,</ref><ref type=\"bibr\" target=\"#b0\">1,</ref><ref type=\"bibr\" target=\"#b21\">22</ref> . We can use the length of the longest path along which the x coordinate always increases as a fitness function. To be able to generate polytopes with exactly n facets we worked in the dual space. Using the Hopper algorithm, we obtained the following lower bounds, beating the state-of-the-art for each pair of parameters that we tried.  (n, d) previously known bounds new bounds from the Hopper algorithm (9, 5) 1 ≤ f (9, 5) ≤ 30 f (9, 5) = 30 (10, 5) 40 ≤ f (10, 5) ≤ 42 41 ≤ f (10, 5) ≤ 42 (11, 5) 32 ≤ f (11, 5) ≤ 56 55 ≤ f (11, 5) ≤ 56 (9, 6) 27 ≤ f (9, 6) ≤ 29 f (9, 6) = 29</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.3\">The neighbourly polytopes problem</head><p>A polytope is called neighbourly if every set of at most ⌊d/2⌋ vertices forms a face. For any (n, d) pair, there exists a unique d-dimensional polytope with n vertices called the cyclic polytope, and every cyclic polytope is neighbourly. Motzkin <ref type=\"bibr\" target=\"#b11\">12</ref> conjectured that all neighborly polytopes are equivalent to cyclic polytopes. This turned out to be false. It is now known that there exist polytopes in d ≥ 4 dimensions with d + 4 or more vertices that are neighbourly but not cyclic.</p><p>There has been a lot of work on finding new classes of neighbourly polytopes via ingenius human constructions, see e.g. <ref type=\"bibr\" target=\"#b24\">25,</ref><ref type=\"bibr\" target=\"#b25\">26,</ref><ref type=\"bibr\" target=\"#b8\">9</ref> . To calculate the number of faces of various dimensions, we used the algorithm presented in <ref type=\"bibr\" target=\"#b10\">11</ref> . The fitness function was then the largest k for which every set of at most k vertices forms a face, plus the proportion of k + 1-sets of vertices that form a face. Using this fitness function, the Hopper algorithm was easily able to find many previously unknown neighbourly polytopes that are not cyclic, for several pairs (n, d) ranging from (10, 6) to (13, 8).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">Conclusion</head><p>We presented a new A.I. guided algorithm that when trained from scratch, discovered new examples of polytopes that are novel and exceed the best known results on three classical problems in geometry. An important strength of the Hopper algorithm is its flexibility -it is a general purpose algorithm that can easily be adapted to find polytopes with a wide variety of extremal properties. It supports the optimization of complex non-differentiable rewards, and when there is not a single good choice for a reward function, it is capable of working with a larger set of approximate reward functions. This flexibility enables the user to apply the Hopper algorithm to complex problems where they may not have a full understanding of the precise reward function they want to optimize for. Another advantage of our approach is that the constructions it produces are different from constructions found by humans, which can lead to further insights and discoveries. The automatic discovery of polytopes with never before seen properties has the potential to advance mathematics. What took humans many years, can be discovered by the Hopper algorithm much faster. Our approach demonstrates the power of A.I.and its ability to assist in making new mathematical discoveries in a field of mathematics which has resisted effective computer search due to its complexity. work with exact fractions, at a cost of performance/memory utilization. The Hopper works in the dual mode. Many pre-selection procedures rely on the representation using float numbers. Final evaluation of candidates always uses the precise mode.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.7 Multi-objective optimization</head><p>If for an optimization problem it is possible to have more than one fitness function, it can be often used to the advantage of the optimization process. One of the most notorious problems of optimization is being stuck in \"bad regions\", such as local minima or plateaus. If the two fitness functions share a global minimum corresponding to the desired solution -but differ from one another, one can hope for their \"bad regions\" to not overlap, as in Figure <ref type=\"figure\" target=\"#fig_4\">4a</ref>. Then a savvy switching procedure between the fitness function can make us successfully bypass the local minima and arrive at the global minimum. The procedure has its inherent failure modes, as illustrated in Figure <ref type=\"figure\" target=\"#fig_4\">4b</ref>. In finding counterexamples to Hirsch conjecture a collection of 10 different fitness functions was successfully used. Those fitness functions were a defect (see A.8) and a collection of formulae counting the shortest and longest paths connecting the top and bottom base facet. </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.8 Heuristics</head><p>In the Hirsch conjecture, the primary metric we want to optimize is the width of the prismatoid, i.e. the distance between the two base facets in the facet-ridge graph. To make this fitness metric more continuous, a natural quantity to define is the average distance between neighbors of the bottom base facet and neighbors of the top base facet. This \"average width\" was a useful general concept, as it enabled us to have a more continuous measure of progress. To use multi-objective optimization (see A.7) we worked with several variants of this quantity. In case of the input being a prismatoid, a very important<ref type=\"foot\" target=\"#foot_3\">foot_3</ref> one among those is a defect, defined as follows: Let l min be the length of the shortest path connecting top to the bottom. The defect of a prismatoid is the total number of paths of length l min from a vertex in the top face to a vertex in the bottom face.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.9 Adding and subtracting vertices</head><p>For applications to the Hirsch conjecture, it was necessary to extend the agent to allow the addition and subtraction of vertices. <ref type=\"bibr\" target=\"#b4\">5</ref> However, we found that doing this naively led to degenerate behaviour: either the agents removed vertices until we were left with simplices, or the agent kept adding vertices until computations became infeasible. This degenerate behaviour was avoided by the addition of preventive rules. The Hopper can operate in two modes. In the rigid mode the Hopper is allowed only the modifications by taking a vertex and moving it somewhere else. In this mode the total number of vertices is preserved. In a flexible mode the Hopper is allowed two more modifications: deleting a vertex and adding a vertex. The latter modification needs an explanation. Recall that the basic modification (see 3) consists of choosing a vertex v i and a new vertex v inside a region V ι and then replacing the vertex v i with the vertex v. The operation of addition means simply adding the vertex v without removing any existing vertices, hence increasing the number of vertices. In case such modification would not lead to the increase of vertices due to one or more of existing vertices becoming the interior points or any other disallowed geometric condition the modification is discarded. Deletion of vertices is done randomly. For addition, we use the neural network to select a region in a way similar to that describe above, see 3.1. We discovered that simply enabling the flexible mode leads to trivial behaviours. In almost every case the vertices are either removed until the polytope becomes a simplex, or are being added with the number of vertices tending towards infinity. To remedy the tendency to converge to one of those trivial regimes a heuristic was invented. It was called an uptick and downtick rule. Uptick means that the addition of a vertex is only allowed, if the total number of the shortest paths (compare A.8) decreases as a result of it. This means that the addition did something \"interesting\" to the geometry, as the natural tendency of the addition of a vertex is to increase the number of vertices, and hence -the total number of connections. The downtick rule acts in a dual manner, using a slightly technical concept of \"longest paths\". In the \"production\" runs of the Hirsch conjecture experiments (4.1) used the flexible mode, while the monotone paths experiments (4.2) and k-neighbourly polytopes experiments (4.3) used the rigid mode.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.10 Avoiding geometric degeneration</head><p>As the agent modifies the polytope, it might propose changes leading to undesired geometric properties of the polytope. Examples of such properties would be very large coordinates of vertices (escape to infinity), very small angles between the facets, extreme disproportions between sizes in different directions etc. Some of those issues can be remedied by simply applying an affine transformation. A heuristic maintaining a \"canonical scaling\" based on Principal Components Analysis is invoked after every update. Other issues are handled by a number of heuristics which do not admit hops that lead to flatness, disproportions etc.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.11.4 Main loss</head><p>The main loss is computed as a cross-entropy (see for example <ref type=\"bibr\" target=\"#b30\">31</ref> ) loss between the output of the final Feed Forward block and a 1-hot 3-dimensional vector indicating the ground truth of one of the scenarios: [1, 0, 0] -the hyperplane was a part of a partition cell that led to a successful hop, [0, 1, 0] if the hyperplane was a part of a partition cell that got rejected due to geometrical infeasibility (see A.8) and [0, 0, 1] if the hyperplane was a part of a partition cell which was geometrically feasible, but did not lead to a successful hop. A hop is considered successful, if it lead to an improvement in a heuristic and a subsequent increase in the heuristic value.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.11.5 Auxiliary loss</head><p>The pre-processed prismatoid is fed into a 4-layer gelu activated Feed Forward block, decreasing the dimensionality to 128. The auxiliary loss is then computed as a cross entropy between the output and a 128-dimensional 1-hot vector denoting the ground truth value of the defect (see A.8) of the prismatoid, with the vector with 1 at the last position indicates any defect greater or equal to 127. The purpose of the auxiliary loss is to \"teach the brain some geometry\". This follows the philosophy of AI and the paradigm of a transfer of knowledge. The prediction of the defect n itself is not important to us, but it improves the quality of the model.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.11.6 Total loss and the training</head><p>The total loss is the sum of the main loss and the auxiliary loss. The model was implemented using the JAX library and trained using Adam <ref type=\"bibr\" target=\"#b17\">18</ref> algorithm in Optax optimizer.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.12 Shared repository &amp; Reverb</head><p>In Subsection 3 the multiagent architecture of Hopper swarm is explained. It uses two data repositories, one for the polytope examples, and one for the purpose of training the shared \"consciousness\" of the agents. In order for such repositories to be of practical use a lot of performance demands had to be satisfied. The speed, reliability, well implemented addition/removal protocols etc. A Google DeepMind solution called Reverb 4 was chosen for the task. Reverb is a replay buffer designed to support large scale Reinforcement Learning experiments and has proven to be a great fit for the needs of the Hopper.</p><p>-0.002 1.302 -0.072 -0.277 1 0.028 -1.854 -0.031 -1.509 1 -0.031 -2.024 0.062 -0.648 1 0.083 -0.544 -0.048 1.771 1 -0.024 1.084 0.082 0.168 1 0.047 0.108 0.046 -2.533 1 -0.028 1.317 0.002 -1.173 1 0.013 -1.755 0.051 0.348 1 -0.037 -2.020 -0.066 -0.423 1 0.001 -1.320 0.018 -2.118 1 -0.086 -1.040 0.019 1.657 1 -0.061 1.190 -0.029 -1.518 1 1.751 0.035 -0.574 -0.029 -1 -0.821 -0.017 2.210 0.216 -1 -1.696 0.033 -0.938 -0.046 -1 1.531 -0.024 -0.932 -0.032 -1 -1.743 -0.041 0.440 -0.008 -1 1.344 0.034 1.333 0.125 -1 1.696 -0.045 0.587 -0.025 -1 0.670 0.005 1.961 -0.077 -1 0.692 0.020 -1.894 -0.134 -1 -0.156 -0.002 -1.900 0.540 -1 -1.573 -0.029 -1.286 -0.171 -1 -1.693 0.052 0.995 -0.011 -1 This prismatoid has a defect (see A.8) equal to 64, which is the smallest value we observed for a 12 × 12 example of a non-Hirsch prismatoid. </p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: An outline of the Hopper algorithm. (a) A polytope P and all the hyperplanes determined by its vertices. (b) Of these regions, adding a point is only possible in the light orange shaded regions. In each of these regions, adding a point yields a combinatorially non-equivalent polytope. (c) After computation of all hyperplanes (red), the neural network determines a probability distribution on these hyperplanes. (d) A region (red) described by a subset of the hyperplanes is selected using the neural network, then a point c ∈ R is chosen (deterministically). (e) All polytopes obtained by \"hopping\" a vertex of P to c are returned, degenerate ones are discarded, and non-degenerate ones are evaluated. (f) One of the resulting polytopes. (This 2d picture obscures some subtleties present in higher dimension. Most importantly, individual modifications can have an enormous effect on the combinatorial type of the polytope. Additionally, the selection of the region R in step (c) is more complicated than this picture makes out. Finally, in higher dimensions the number of regions R yielding potential hops is enormous.)</figDesc><graphic coords=\"3,107.58,95.04,396.84,214.99\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Multi-agent architecture. The agents (A) read and write polytopes from the shared polytope repository. Simultaneously pairs of polytopes and hyperplanes are written to the shared data repository. The pairs are labeled positively if the hyperplane was part of a boundary of a successful hop region and negatively otherwise.</figDesc><graphic coords=\"6,135.92,95.04,340.16,195.93\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><figDesc>(a) PCA scales of our constructions versus human constructions. (b) Prismatoid generation: 937, defect: 95, final number of vertices: 29 × 35, ascension 3 at 17 × 22 vertices. (c) Prismatoid generation: 850, defect: 11, final number of vertices: 29x33, ascension 3 at 12 × 14 vertices.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: (a) The different scales of the constructions given by the Hopper algorithm, versus human examples. We normalize the bottom base facet and record the PCA eigenvalues of the top base facet, then plot the largest eigenvalue versus the smallest eigenvalue at log scale. The green, red, and purple dots correspond to Santos's original construction, the 25 vertex constructions in 20 , and the first member of the family of constructions in 20 (all other members of this family have approximately the same position in this plot). The blue dots are the constructions found by the Hopper algorithm. We can see the examples found by the Hopper algorithm feature several orders of magnitude of difference between the smallest and largest PCA eigenvalues. (b) Evolution of a prismatoid. The axes represent numbers of vertices. The cyan dots represent the states before the prismatoid increases its width to 6, the blue ones correspond to the states after. The orange dot marks the \"ascension\" 3 to the non-Hirsch realm of width 6 prismatoids. (c) Evolution of another prismatoid. This prismatoid has a low defect (see A.8) equal to 11.</figDesc><graphic coords=\"8,91.80,123.88,131.09,105.67\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_4\"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Multi-objective training. Two fitness functions share the same global minimum corresponding to a desired state. Alternating between the objectives can lead to bypassing a barrier of local minima.</figDesc><graphic coords=\"11,314.57,296.68,205.63,102.67\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_5\"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: (a) The architecture of the Hopper brain. The input is a pair -a polytope and a hyperplane. The outputs are: the main prediction, of whether the input hyperplane was in a boundary of some successful hop region, and the auxiliary prediction -the defect (see A.8) of the input prismatoid. The \"arrow block\" highlights the fact that the hyperplane data leg does not participate in the prediction of the defect. (b) Training loss of the Hopper brain. As opposed to more traditional scenarios the training is happening in an online fashion. As the population of polytopes in the repository becomes more refined the model can be expected to lose its validity at time. Such change of the regime can be well seen around step 2.77M .</figDesc><graphic coords=\"18,91.80,374.10,428.40,142.80\" type=\"bitmap\" /></figure>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"1\" xml:id=\"foot_0\"><p>In the \"addition\" mode it also creates a candidate with n + 1 vertices by adding c as a new vertex.</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"2\" xml:id=\"foot_1\"><p>Likelihood function β is an output of a neural network being trained in an online fashion. For more details see Methods A.11.</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"3\" xml:id=\"foot_2\"><p>The Hopper algorithm starts off with a population of polytopes satisfying the Hirsch condition diameter ≤ n -d. By means of sequence of hops some of the polytopes become non-Hirsch polytopes. We called the hop that attains that the \"ascension\". After becoming non-Hirsch the polytope continues to be worked on, hence the blue part of the trajectory.</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"4\" xml:id=\"foot_3\"><p>In our opinion -also elegant.</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"5\" xml:id=\"foot_4\"><p>The first new counterexample to Hirsch conjecture found by Hopper algorithm was operating in a rigid 12 × 13 regime, with no addition or deletion allowed. Enabling the addition and deletion changed the expected time to finding the first example from weeks to hours, and enabled to produce millions of them.</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"6\" xml:id=\"foot_5\"><p>Thanks to the proper choice of sizes of layers, all dimensions match.</p></note>\n\t\t</body>\n\t\t<back>\n\n\t\t\t<div type=\"availability\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>A. <ref type=\"bibr\" target=\"#b12\">13</ref> </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Data</head><p>The coordinates of the 24-vertex prismatoid of width 6 are as follows.</p></div>\n\t\t\t</div>\n\n\t\t\t<div type=\"annex\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A Methods</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.1 Preliminaries</head><p>Let P be a convex polytope. The connection graph of P has nodes and edges corresponding to the vertices and edges of P . The diameter of P is the maximum distance between any two points in the graph of P . For some problems, it is useful to dualize. To P we may also associate its facet-ridge graph which has nodes given by the facets (=codimension 1 faces) of P and edges corresponding to ridges (=codimension 2 faces) of P . The facet-ridge graph of P agrees with the (vertex-edge) connection graph of the dual polytope. To work with polytopes computationally, while there are other specialized tools available <ref type=\"bibr\" target=\"#b12\">13</ref> , we relied on the scipy and pycddlib packages (see A.6).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.2 Our approach</head><p>Numerous successes have been obtained by applying Reinforcement Learning (RL) to various problems from playing games to making scientific breakthroughs, see for example <ref type=\"bibr\" target=\"#b9\">10,</ref><ref type=\"bibr\" target=\"#b6\">7,</ref><ref type=\"bibr\" target=\"#b29\">30</ref> . The concept of RL is very broad and general, hence our approach could be presented within this framework. Nevertheless, in the traditional Reinforcement Learning the main focus is on the policy improvement. In our case, the main pillars of the solution are the multi-agent knowledge distillation and the concept of multi-objective optimization described in A.7.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.3 Memoization</head><p>Memoization means storing the results of a computed expressions so that they can be subsequently retrieved without repeating the computation. This technique is used frequently in the code. One prominent example would be in recomputing the planes in Algorithm 1. After the hop is executed not all hyperplanes change, and only the ones that changed are being recomputed in order to improve performance.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.4 Batching</head><p>When computing the probability distributions over hyperplanes (see Algorithm 1) the neural network is applied to batches of inputs rather than one individual hyperplane at a time, for performance reasons. This is a very standard practice in the field of Neural Networks.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.5 \"Safety fuses\"</head><p>In most while loops break clauses were introduced based on timeouts and/or numbers of repetitions. This prevented accidental freezing or unnecessary slowdowns of the agents. One prominent use of said technique was the construction of a hop region -the break was executed if the addition of subsequent hyperplanes was taking too long, if the number of attempts to construct the initial simplex was too high etc.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.6 Numerical stability of computations</head><p>The objects we are working with are usually very complicated polytopes. Hence it is crucial to not get false results as an outcome of numerical roundoff errors. The CDD library offers the ability to</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.11 \"Hopper brain\" architecture</head><p>The hopper brain takes as an input a pair -a d-dimensional prismatoid and a hyperplane determined by d vertices of the prismatoid. The prismatoid and the hyperplane data is first preprocessed independently, then is is stacked together and fed into the final Transformer block, followed by a Feed Forward block. The approach follows the pattern from the 29 and uses multi-headed attention and positional encoding. The details are as follows.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.11.1 Preprocessing the prismatoid</head><p>• Each base facet is separately processed by a 2-headed attention block with 3 layers and a key size d + 3</p><p>• Each base facet is further fed through GELU <ref type=\"bibr\" target=\"#b15\">16</ref> activated Feed Forward block with two linear layers</p><p>• Top and bottom base facets are embelished with a [1, 0] and [0, 1] positional encodings respectively and stacked into a full prismatoid matrix</p><p>• Full prismatoid matrix is fed into a a 2-headed attention block with 4 layers and a key size 3d + 1</p><p>• The rows corresponding to the top base facet are further positionally encoded with [0, 0, 1, 0, 1, 0, 0]</p><p>• The rows corresponding to the bottom base facet are further positionally encoded with [0, 0, 0, 1, 1, 0, 0]</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.11.2 Preprocessing the hyperplane</head><p>A (signed) hyperplane-constraint is encoded as a single vector, corresponding to the inequality Ax ≤ b. A positional encoding token DECK is created, equal to [1, 0] if the hyperplane is a part of the hop in the top base facet and [0, 1] if it is a part of the hop in the bottom base facet.</p><p>• Hyperplane is processed by a gelu activated Feed Forward block with 3 layers</p><p>• Positionally encode processed hyperplane with [DECK, 0, 0, 0, 1, 0]</p><p>• Positionally encode raw hyperplane with [DECK, 0, 0, 0, 0, 1]</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A.11.3 Joint stage</head><p>• Stack vertically the processed hyperplane, the raw hyperplane and the processed prismatoid together with their positional encoding 6</p><p>• Apply 2-headed attention with 4 layers and key size 4d + 1</p><p>• Process the output of the main attention block by 4-layer gelu activated Feed Forward block, decreasing the dimensionality to 3</p></div>\t\t\t</div>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Deformed products and maximal shadows of polytopes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nina</forename><surname>Amenta</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Gunter</forename><forename type=\"middle\">M</forename><surname>Ziegler</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Contemporary Mathematics</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">223</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"57\" to=\"90\" />\n\t\t\t<date type=\"published\" when=\"1999\">1999</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Polytopes and machine learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jiakang</forename><surname>Bao</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2109.09602</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">The simplex method: a probabilistic analysis</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Karl</forename><surname>Heinz</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Borgwardt</forename></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2012\">2012</date>\n\t\t\t<publisher>Springer Science &amp; Business Media</publisher>\n\t\t\t<biblScope unit=\"volume\">1</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Reverb: A Framework For Experience Replay</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Albin</forename><surname>Cassirer</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2102.04736[cs.LG]</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Machine learning: The dimension of a polytope</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tom</forename><surname>Coates</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Johannes</forename><surname>Hofscheier</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alexander</forename><forename type=\"middle\">M</forename><surname>Kasprzyk</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Machine Learning in Pure Mathematics and Thoeretical Physics</title>\n\t\t<imprint>\n\t\t\t<publisher>World Scientific</publisher>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"85\" to=\"104\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Linear programming and extensions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">George</forename><surname>Dantzig</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"1963\">1963</date>\n\t\t\t<publisher>Princeton university press</publisher>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Advancing mathematics by guiding human intuition with AI</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alex</forename><surname>Davies</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Nature</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">600</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"70\" to=\"74\" />\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Triangulations: structures for algorithms and applications</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jesús</forename><surname>De Loera</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jörg</forename><surname>Rambau</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Francisco</forename><surname>Santos</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2010\">2010</date>\n\t\t\t<publisher>Springer Science &amp; Business Media</publisher>\n\t\t\t<biblScope unit=\"volume\">25</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Neighbourly polytopes with few vertices</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Rostislav</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Devyatov</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Sbornik: Mathematics</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">202</biblScope>\n\t\t\t<biblScope unit=\"page\">1441</biblScope>\n\t\t\t<date type=\"published\" when=\"2011\">2011</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Discovering faster matrix multiplication algorithms with reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alhussein</forename><surname>Fawzi</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1038/s41586-022-05172-4</idno>\n\t\t<ptr target=\"https://doi.org/10.1038/s41586-022-05172-4\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Nature</title>\n\t\t<idno type=\"ISSN\">1476-4687</idno>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">610</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"47\" to=\"53\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Combinatorial face enumeration in convex polytopes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Komei</forename><surname>Fukuda</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Vera</forename><surname>Rosta</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Computational Geometry</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">4</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"191\" to=\"198\" />\n\t\t\t<date type=\"published\" when=\"1994\">1994</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Neighborly and cyclic polytopes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">David</forename><surname>Gale</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Proc. Sympos. Pure Math</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">7</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"225\" to=\"232\" />\n\t\t\t<date type=\"published\" when=\"1963\">1963</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Polymake: a framework for analyzing convex polytopes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ewgenij</forename><surname>Gawrilow</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Michael</forename><surname>Joswig</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Polytopes-combinatorics and computation</title>\n\t\t<imprint>\n\t\t\t<publisher>Springer</publisher>\n\t\t\t<date type=\"published\" when=\"2000\">2000</date>\n\t\t\t<biblScope unit=\"page\" from=\"43\" to=\"73\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Machine-learning mathematical structures</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yang-Hui</forename><surname>He</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">International Journal of Data Science in the Mathematical Sciences</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"23\" to=\"47\" />\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yang-Hui</forename><surname>He</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Elli</forename><surname>Heyes</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Edward</forename><surname>Hirst</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2303.12626</idno>\n\t\t<title level=\"m\">Machine Learning in Physics and Geometry</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Learning to reason in large theories without imitation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dan</forename><surname>Hendrycks</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kevin</forename><surname>Gimpel</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1606.08415</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2016\">2016</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A quasi-polynomial bound for the diameter of graphs of polyhedra</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Gil</forename><surname>Kalai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Daniel J Kleitman</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Bulletin of the American Mathematical Society</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">26</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"315\" to=\"316\" />\n\t\t\t<date type=\"published\" when=\"1992\">1992</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Adam: A Method for Stochastic Optimization</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Diederik</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jimmy</forename><surname>Kingma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ba</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR abs/1412.6980</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">How good is the simplex algorithm</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Victor</forename><surname>Klee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">George</forename><forename type=\"middle\">J</forename><surname>Minty</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Inequalities</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">3</biblScope>\n\t\t\t<biblScope unit=\"issue\">3</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"159\" to=\"175\" />\n\t\t\t<date type=\"published\" when=\"1972\">1972</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The width of five-dimensional prismatoids</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Benjamin</forename><surname>Matschke</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Francisco</forename><surname>Santos</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Christophe</forename><surname>Weibel</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Proceedings of the London Mathematical Society</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">110</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"647\" to=\"672\" />\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">polyDB: a database for polytopes and related objects</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Andreas</forename><surname>Paffenholz</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Algorithmic and experimental methods in algebra, geometry, and number theory</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2017\">2017</date>\n\t\t\t<biblScope unit=\"page\" from=\"533\" to=\"547\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">On the monotone upper bound problem</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Julian</forename><surname>Pfeifle</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Günter</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ziegler</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Experimental Mathematics</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">13</biblScope>\n\t\t\t<biblScope unit=\"issue\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1\" to=\"11\" />\n\t\t\t<date type=\"published\" when=\"2004\">2004</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A counterexample to the Hirsch conjecture</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Francisco</forename><surname>Santos</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Annals of mathematics</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">176</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"383\" to=\"412\" />\n\t\t\t<date type=\"published\" when=\"2012\">1 2012</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Recent progress on the combinatorial diameter of polytopes and simplicial complexes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Francisco</forename><surname>Santos</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Top</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">21</biblScope>\n\t\t\t<biblScope unit=\"issue\">3</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"426\" to=\"460\" />\n\t\t\t<date type=\"published\" when=\"2013\">2013</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<analytic>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ido</forename><surname>Shemer</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Neighborly polytopes</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"1982\">1982</date>\n\t\t\t<biblScope unit=\"volume\">43</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"291\" to=\"314\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Techniques for investigating neighborly polytopes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ido</forename><surname>Shemer</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">North-Holland Mathematics Studies</title>\n\t\t<imprint>\n\t\t\t<publisher>Elsevier</publisher>\n\t\t\t<date type=\"published\" when=\"1984\">1984</date>\n\t\t\t<biblScope unit=\"volume\">87</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"283\" to=\"292\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">An asymptotically improved upper bound on the diameter of polyhedra</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Noriyoshi</forename><surname>Sukegawa</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Discrete &amp; Computational Geometry</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">62</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"690\" to=\"699\" />\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">An improved Kalai-Kleitman bound for the diameter of a polyhedron</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Todd</forename><surname>Michael</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">SIAM Journal on Discrete Mathematics</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">28</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1944\" to=\"1947\" />\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Attention Is All You Need</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ashish</forename><surname>Vaswani</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1706.03762[cs.CL</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2017\">2017</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Adam</forename><surname>Zsolt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wagner</forename></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2104.14516</idno>\n\t\t<title level=\"m\">Constructions in combinatorics via neural networks&quot;. In: arXiv preprint</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Generalized cross entropy loss for training deep neural networks with noisy labels</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhilu</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Mert</forename><surname>Sabuncu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in neural information processing systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"page\">31</biblScope>\n\t\t\t<date type=\"published\" when=\"2018\">2018</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Convex polytopes: extremal constructions and f -vector shapes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Günter</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ziegler</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1090/pcms/013/10</idno>\n\t\t<ptr target=\"https://doi.org/10.1090/pcms/013/10\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Geometric combinatorics</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">13</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"617\" to=\"691\" />\n\t\t\t<date type=\"published\" when=\"2007\">2007</date>\n\t\t\t<publisher>Math. Soc</publisher>\n\t\t\t<pubPlace>Providence, RI</pubPlace>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Graduate Texts in Mathematics</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Günter</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ziegler</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1007/978-1-4613-8431-1</idno>\n\t\t<ptr target=\"https://doi.org/10.1007/978-1-4613-8431-1\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Lectures on polytopes</title>\n\t\t<meeting><address><addrLine>New York</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Springer-Verlag</publisher>\n\t\t\t<date type=\"published\" when=\"1995\">1995</date>\n\t\t\t<biblScope unit=\"volume\">152</biblScope>\n\t\t\t<biblScope unit=\"page\">370</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Polymath 3: Polynomial Hirsch Conjecture</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Gil</forename><surname>Kalai</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://gilkalai.wordpress.com/2010/09/29/polymath-3-polynomial-hirsch-conjecture\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2010\">2010</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+  "pdf_hash": "092bb2d68267c3ce7b2a52efeafdec9c7d7b12b5dbcb4561fbdd7eadb4b81c18",
+  "tables": [],
+  "table_missingness": "no_table_elements",
+  "formulas": [
+    {
+      "formula_id": "formula_0",
+      "section_path_id": "1~2",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "1: H = ∅ 2: for all {v 1 , . . . v d } ⊆ V sets of distinct d vertices do 3: H.append(h), h -equation of a hyperplane containing {v 1 , . . . v d } 4:"
+      },
+      "span": {
+        "start": 251,
+        "end": 401
+      },
+      "source_digest": "24a4f0f10ff5c493110fb6ac0e68892fa0447a83ad46cf7ba6bfb2c32804987d",
+      "missingness": null
+    }
+  ],
+  "formula_missingness": null,
+  "page_text_missingness": null,
+  "declared_arxiv_id": {
+    "raw": "arXiv:2502.05199v1[math.CO]",
+    "bare_id": "2502.05199",
+    "revision": "v1",
+    "source_digest": "fbd9c532978216c111ddf15d39962c2ceae02ac251f1429c9b3c34c6f6739613"
+  },
+  "declared_id_missingness": null,
+  "header_authors": [
+    {
+      "name": "Grzegorz Świrszcz",
+      "forename": "Grzegorz",
+      "surname": "Świrszcz",
+      "source_digest": "b22f27c662468235b5d882a1c4b4aed099a6a03615c5930ca961d93440756351"
+    },
+    {
+      "name": "Adam Zsolt Wagner",
+      "forename": "Adam Zsolt",
+      "surname": "Wagner",
+      "source_digest": "d9f63023b71eef05c20ae991b87d2f24d21920948f3a8ed39e84b52b7f26d76c"
+    },
+    {
+      "name": "Geordie Williamson",
+      "forename": "Geordie",
+      "surname": "Williamson",
+      "source_digest": "69584ab91144414af7c79b78a611e2d2647326b6818558eca823d2509b67daf1"
+    },
+    {
+      "name": "Sam Blackwell",
+      "forename": "Sam",
+      "surname": "Blackwell",
+      "source_digest": "17171624174e3b232bd3fe461db62cdf64e1b0bd724a0637f718136dbfd40008"
+    },
+    {
+      "name": "Bogdan Georgiev",
+      "forename": "Bogdan",
+      "surname": "Georgiev",
+      "source_digest": "00a190a5ad68e0ea39f077f1149a9319499e97962b798d0c4ee26859f92b166d"
+    },
+    {
+      "name": "Alex Davies",
+      "forename": "Alex",
+      "surname": "Davies",
+      "source_digest": "58e2391fda596519da69fd59dcdc94fa8752fee5a1c603a192ce2059cee020b5"
+    },
+    {
+      "name": "Ali Eslami",
+      "forename": "Ali",
+      "surname": "Eslami",
+      "source_digest": "30e8eb3939ebb5d540003b9f4a5e38316090b77a2ac3725fbbfda3257553628e"
+    },
+    {
+      "name": "Sébastien Racanière",
+      "forename": "Sébastien",
+      "surname": "Racanière",
+      "source_digest": "034e24505d6027ef3f3135cd8315292c3909cb36c9ff152b46ebe4d146661331"
+    },
+    {
+      "name": "Theophane Weber",
+      "forename": "Theophane",
+      "surname": "Weber",
+      "source_digest": "e923321932a3106dc5115367e188b57075420c0651fbcbb0b029e51b392f77b8"
+    },
+    {
+      "name": "Pushmeet Kohli",
+      "forename": "Pushmeet",
+      "surname": "Kohli",
+      "source_digest": "9f4c19fe40efe22580ad2fcbd6e793007af745584ad69f1db0d6eec183bcfd63"
+    }
+  ],
+  "figures": [
+    {
+      "figure_id": "fig_0",
+      "label": "1",
+      "caption": "Figure 1 :",
+      "coordinates": "3,107.58,95.04,396.84,214.99",
+      "graphic_missingness": null,
+      "source_digest": "779bfbf063c30da4868a6e927b4e0e756819321f6ba1af6157efc097bad0f4ac"
+    },
+    {
+      "figure_id": "fig_1",
+      "label": "2",
+      "caption": "Figure 2 :",
+      "coordinates": "6,135.92,95.04,340.16,195.93",
+      "graphic_missingness": null,
+      "source_digest": "9d2f03fe3b001194594bc59457c28fa978ec2ca3b06e666b17041bc3c86d18fa"
+    },
+    {
+      "figure_id": "fig_2",
+      "label": null,
+      "caption": null,
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "0995bc72950598733fe035886fbd8693e00a8234641c751e7f0191def3c02352"
+    },
+    {
+      "figure_id": "fig_3",
+      "label": "3",
+      "caption": "Figure 3 :",
+      "coordinates": "8,91.80,123.88,131.09,105.67",
+      "graphic_missingness": null,
+      "source_digest": "f98bbcb188e9ddb48c52c1f625c8751bcca0e76456d76e13c85c59b0c4dc04b7"
+    },
+    {
+      "figure_id": "fig_4",
+      "label": "4",
+      "caption": "Figure 4 :",
+      "coordinates": "11,314.57,296.68,205.63,102.67",
+      "graphic_missingness": null,
+      "source_digest": "62a4ada61137df9c7b1b3f5815096d1d4f0b80c189feee46cdb94c6eb0d8479b"
+    },
+    {
+      "figure_id": "fig_5",
+      "label": "5",
+      "caption": "Figure 5 :",
+      "coordinates": "18,91.80,374.10,428.40,142.80",
+      "graphic_missingness": null,
+      "source_digest": "4d9d318dcb2127243be97aec1c4e1d6580dc091a8b5e8af35f6f26199217da0c"
+    }
+  ],
+  "visual_callouts": [
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "1(a)",
+      "offset": 111,
+      "section_path_id": "2",
+      "section_ordinal": 1,
+      "source_digest": "61eedc512a4eeee3317b28461df53f2eb7e62083419e1a8f9820ff76528b053b"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "1(b)",
+      "offset": 2094,
+      "section_path_id": "2",
+      "section_ordinal": 1,
+      "source_digest": "82bfc27d9b00c00a12cb2141853108559c36ea659fe48644404670b3e72c1393"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_1",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 1010,
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "source_digest": "e7bfd36918b8b7812fd01d2d4572597f4ce3e80bf9aa4b6a6ee42004954dc08f"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "1(c",
+      "offset": 2382,
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "source_digest": "ca70c0304aedc0773b01a42d67a49ecdc2ea7070c117a2efb89f17f6f137c66c"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "1(d",
+      "offset": 2573,
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "source_digest": "c9b7421f80da2932bc27848df921d1357ea86153dc185e1f2b9f61be54e2cf25"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "e)",
+      "offset": 2577,
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "source_digest": "3439577911f3d947c8f2709e19841c2b1bde65d3e469f81464c304c9112bfdcf"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_1",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 656,
+      "section_path_id": "3.1",
+      "section_ordinal": 4,
+      "source_digest": "695bdb30639b711f74b46d9380fdf413f9edde89de14b4c411c84a912e23557c"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_3",
+      "unresolved": null,
+      "quote": "3a",
+      "offset": 1489,
+      "section_path_id": "4.1.1",
+      "section_ordinal": 7,
+      "source_digest": "08efc674a78b80aac48002d32e3d0c4e9dfd8e44aed9b988ca92978f630aa6b9"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_4",
+      "unresolved": null,
+      "quote": "4a",
+      "offset": 457,
+      "section_path_id": "1~3",
+      "section_ordinal": 11,
+      "source_digest": "a6f45d7eef767d99400dd79328dd80273b9dada12b62e447878e0b15fe5c2f4f"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_4",
+      "unresolved": null,
+      "quote": "4b",
+      "offset": 677,
+      "section_path_id": "1~3",
+      "section_ordinal": 11,
+      "source_digest": "0471acfdd30a9e25718c2e8e0187790a778a6d1328903b1475bc6d772b925b3a"
+    }
+  ]
+}

@@ -1,0 +1,1571 @@
+RAP: Retrieval-Augmented Planning
+with Contextual Memory for Multimodal LLM Agents
+
+arXiv:2402.03610v1 [cs.LG] 6 Feb 2024
+
+Tomoyuki Kagaya * 1 Thong Jing Yuan * 2 Yuxuan Lou * 3 Jayashree Karlekar 2 Sugiri Pranata 2
+Akira Kinose 1 Koki Oguri 1 Felix Wick 4 Yang You 3
+
+Abstract
+
+Meanwhile, with the rapid development of LLMs, RetrievalAugmented Generation (RAG) has emerged as a prevalent
+technique in enhancing the generation capabilities of LLMs.
+This approach amalgamates external knowledge into the
+generation process, thus enriching the context and accuracy
+of generated content. However, integrating external memory
+to augment LLM agent planning, particularly in diverse environments, poses substantial challenges. Existing works like
+Reflexion (Shinn et al., 2023), which analyzes failure cases,
+and ExpeL (Zhao et al., 2023), which extracts insights and
+enhances learning of language agents, fall short in utilizing
+comprehensive past information in complex environments.
+This highlights a critical gap: the lack of a comprehensive
+framework for leveraging past experiences in LLM agent
+planning, limiting their adaptability and applicability in
+complex, real-world scenarios.
+
+Owing to recent advancements, Large Language
+Models (LLMs) can now be deployed as agents
+for increasingly complex decision-making applications in areas including robotics, gaming, and
+API integration. However, reflecting past experiences in current decision-making processes, an
+innate human behavior, continues to pose significant challenges. Addressing this, we propose
+Retrieval-Augmented Planning (RAP) framework,
+designed to dynamically leverage past experiences corresponding to the current situation and
+context, thereby enhancing agents’ planning capabilities. RAP distinguishes itself by being versatile: it excels in both text-only and multimodal environments, making it suitable for a wide range of
+tasks. Empirical evaluations demonstrate RAP’s
+effectiveness, where it achieves SOTA performance in textual scenarios and notably enhances
+multimodal LLM agents’ performance for embodied tasks. These results highlight RAP’s potential
+in advancing the functionality and applicability of
+LLM agents in complex, real-world applications.
+
+In this paper, we introduce a novel framework, RetrievalAugmented Planning (RAP), which embodies a pivotal human ability – to leverage generalized past experiences for
+current tasks – and apply it to LLM agents. Our approach involves storing past experiences in memory, retrieving them
+appropriately based on the similarity with present context
+including multimodal information, and generating subsequent actions via in-context learning, thereby enhancing the
+decision-making capacity of language agents.
+
+1. Introduction
+
+Central to this framework is the LLMs’ ability to perform
+analogy-making from various abstracted patterns (Mirchandani et al., 2023). Leveraging this capability, our memory
+stores both context and action-observation trajectories for
+each experience. The approach effectively facilitates deriving correct actions from memory examples within task constraints. Furthermore, by storing multimodal information in
+memory and considering it when retrieving past experiences,
+our approach flexibly utilizes multimodal information with
+LLMs and Vision-Language Models (VLMs) separately for
+language agents.
+
+Recent research has revealed the high inferential abilities
+of Large Language Models (LLMs) as agents (Wang et al.,
+2023b; Xi et al., 2023), indicating their potential application
+in various areas like decision-making tasks and robotic control. Previous works such as ReAct (Yao et al., 2023) have
+shown that LLMs can generate accurate actions as language
+agents by iteratively performing actions and reasoning.
+*
+
+Equal contribution 1 Panasonic Connect Co., Ltd., Japan
+Panasonic R&D Center, Singapore 3 National University
+of Singapore, Singapore 4 Panasonic R&D Center Germany, Germany.
+Correspondence to: Tomoyuki Kagaya
+<kagaya.tomoyuki@jp.panasonic.com>, Thong Jing Yuan
+<jingyuan.thong@sg.panasonic.com>, Yuxuan Lou <yuxuanlou@u.nus.edu>.
+2
+
+Consequently, our approach proves to be effective for memory utilization by language agents in both decision-making
+and robotics tasks, in textual and multimodal environments.
+Specifically, RAP achieves 33.6%, 13.0%, 18.2%, and
+12.7% gain over ReAct on the ALFWorld, Webshop, Franka
+1
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+Figure 1. Overview of RAP. Our framework stores past experiences and retrieves them based on the current situation. Left: The evaluation
+process on ALFWorld. ICL stands for in-context learning. Right: The evaluation process on Franka Kitchen.
+
+Kitchen, and Meta World benchmarks respectively.
+
+modal domains have given rise to Vision-Language Models (VLMs)(Yin et al., 2023) such as LLaVA(Liu et al.,
+2023) and CogVLM(Wang et al., 2023c), which integrate
+textual and visual inputs, exemplified by LLaVA’s training
+on image-caption pairs from the CC3M datasets (Sharma
+et al., 2018). Our work utilizes these foundations to build
+agents for textual and embodied environments: text-based
+agents employing LLMs, and embodied agents integrating
+VLMs for visual perception and action planning. We focus
+on enhancing these agents’ planning capabilities through
+memory retrieval techniques, enabling them to selectively
+access and utilize relevant memory for improved sequential
+decision-making.
+
+To summarize, our contributions are as follows:
+• We propose RAP, a novel framework that enhances
+LLM agents’ planning capacity. It strategically enriches the decision-making process by storing past experiences and intelligently retrieving them based on
+their similarity to the current situation.
+• RAP is capable of being applied not only in textual
+environments but also in multimodal embodied tasks,
+marking it as a pioneering effort in employing memory
+retrieval techniques for multimodal agents, a first in
+this domain to our knowledge.
+• We validate the effectiveness of RAP empirically
+across both textual and multimodal benchmarks. RAP
+shows significant improvements compared to prior
+SOTA methods in both types of environments.
+
+2.2. Language Models as AI Agents
+Recent works have leveraged LLM’s anthropomorphic capabilities when building autonomous agents. These agents
+can be depicted into having 4 key aspects: Profile (agent
+characteristics), Memory (past information), Planning (future strategies) and Action (execution policies) (Wang et al.,
+2023a). A notable example is Chain-of-Thought (CoT)
+(Wei et al., 2022), where agents are encouraged to mirror
+human cognitive mechanisms by incorporating reasoning
+into intermediate steps for complex problem-solving tasks.
+With a dynamic reasoning process, ReAct (Yao et al., 2023)
+interleaves generated actions and environmental states, improving the reasoning ability through action-state synergy.
+Our work seeks to enhance the ReAct framework by allowing agents to identify specific objects within observations
+and additionally retrieve relevant aspects of past experiences
+
+2. Related Work
+2.1. Language Models and Vision-Language Models as
+Foundations
+Large Language Models (LLMs) such as GPT (OpenAI,
+2023) and the LLaMA series (GenAI, 2023), leveraging
+transformer architecture and self-supervised learning objectives like Next Token Prediction, have excelled in generating
+coherent, human-like text. These models, pre-trained on
+extensive text corpora, possess vast linguistic knowledge
+and reasoning abilities. Extending beyond LLMs, multi2
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+Figure 2. RAP Core Components
+
+3.1. Preliminaries
+
+based on the current context. By doing so, our agent can
+adaptably receive different experiences at different points in
+time that are most similar to the situation at hand.
+
+In this work, we consider an agent operating in a particular
+environment and assigned with completing some task T.
+The agent forms an overall plan p, then interacts with the
+environment over a finite horizon of H timesteps. At each
+timestep t ∈ {1, 2, . . . H}, the agent forms an action plan p′t ,
+selects an action αt from the action space A and receives an
+observation ot from the observation space O. The trajectory
+τ = {p⃗′t , α⃗t , o⃗t } of the agent up to time t consists of the
+sequences of plans p⃗′t = (p′1 , ...p′t ), actions α⃗t = (α1 , ...αt )
+and observations o⃗t = (o1 , ...ot ).
+
+2.3. Retrieval-Augmented Generation with Memory
+Among works (Madaan et al., 2022; Liu et al., 2021; Su
+et al., 2022) that seek to derive better answers from LLMs
+via memory, RAG (Lewis et al., 2020) is a notable method
+that combines retrieval-based mechanisms with generative
+models. Responses from memory are selected based on similarity and passed into LLMs as additional context to deliver
+outputs that are creative and contextually-grounded. Building on RAG, Reflexion (Shinn et al., 2023) requires LLMs
+to self-reflect on unsuccessful tasks for self-improvement in
+solving tasks over time. ADaPT (Prasad et al., 2023) further
+decomposes into sub-tasks and re-executes where necessary. Yet, these works only reflect on trajectories within the
+task. Hence, these insights are often restricted to each task.
+Building on Reflexion, ExpeL (Zhao et al., 2023) passes all
+generated experiences into the LLM to reflect in a text-based
+manner. In contrast, our work adopts a different approach by
+implicitly drawing from a diverse range of experiences from
+memory without explicitly requiring an additional step of
+re-tasking the LLM to extract insights. With this approach,
+our agent can not only efficiently generalize experiences
+from other successful tasks to solve the current task, but
+also be flexible enough to extract relevant components from
+experiences for current task, enhancing the agent’s ability
+to expand its memory from textual to multimodal contexts.
+
+3.2. Memory
+To enable retrieval-augmented planning, we first construct
+memory databases. The databases contain logs of prior
+successful task executions. For each log Li completing a
+task Ti in Hi steps, we record the task information Ti , the
+overall plan pi , the trajectory of the agent τLi including
+plans, actions, and observations sequences.
+Li = {Ti , pi , τLi }
+
+(1)
+
+τLi = {p⃗′Li , α⃗Li , o⃗Li }
+
+(2)
+
+For textual environments, the observations are textual descriptions of the world state. For multimodal environments,
+the observations are visual representations - images from a
+fixed viewpoint camera after each agent action.
+The logs are collected by having agents attempt the tasks and
+saving streams of successful episodes. The episodic logs
+capture the steps needed to complete the tasks. Storing these
+examples allows the agents to leverage prior experience
+when planning for new instances of the tasks.
+
+3. RAP: Retrieval-Augmented Planning
+We developed Retrieval-Augmented Planning (RAP), a
+framework that leverages past experiences to facilitate
+decision-making according to the current context. Fig. 2
+provides an overview of the framework, which consists of
+four core components: Memory, Reasoner, Retriever, and
+Executor. The specific details of each module will be discussed in sections 3.2 to 3.5.
+
+During interactions with the environment, the agents can
+selectively retrieve relevant memory samples to make more
+informed action decisions. For text tasks, the textual logs
+provide crucial context. For embodiment, prior visual observations reveal outcomes of actions in the space. By retrieving prototypical executions, the agents can plan smarter
+policies while avoiding past failures. The memory augmentation thus equips the models with vital environmental
+knowledge for sequential decision-making.
+3
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+Figure 3. Memory-Retrieval in RAP. Left to Middle: The Retriever, calculating similarities with Memory, dynamically switches between
+action or observation based on the Retrieval Key. This figure illustrates the process of calculating similarity with observation. Right:
+Executor receives related experiences from memory and utilizes them in the prompt.
+
+3.3. Reasoner
+
+tions are generated with a CLIP-based Vision Transformer.
+
+The Reasoner generates overall plans, action plans, and retrieval keys based on the agent’s current situation and action
+trajectory, using LLMs. Initially, the Reasoner produces the
+overall plan from the task information. Based on the task
+and the overall plan, the Reasoner generates an action plan.
+Also, in accordance with ReAct, an action or action plan is
+dynamically generated by LLMs, considering the current
+task status. If an action plan is generated, a retrieval key is
+created based on the generated action plan. For instance, in
+ALFWorld (Shridhar et al., 2021), if an action plan like ”I
+need to find the watch” is generated, the retrieval key would
+be ”search watch”. Hence, the Reasoner enables agents to
+take into consideration the current situation and context.
+
+The similarity score between the retrieval key and the log trajectory is adaptive based on environment type and retrieval
+key type. In multimodal environments, the retrieval key
+corresponds to agents’ current visual observation. Thus, the
+retrieval-key similarity score is the score between current
+and logged visual trajectory observations as in equation (4).
+
+3.4. Retriever
+
+sim(k0 , τLi ) = max(cos sim(k0text , oj )), for oj ∈ o⃗Li
+(5)
+
+sim(k0 , τLi ) = max(cos sim(k0visual , oj )), for oj ∈ o⃗Li
+(4)
+In textual environments, the retrieval-key similarity score
+is adaptive based on key type. In scenarios involving the
+retrieval key for searching or locating objects, the similarity
+score is calculated between the retrieval key and the logged
+textual trajectory observations, as in equation (5).
+
+The Retriever is designed to extract the most relevant memory logs to guide the agent’s subsequent actions to complete
+the current task. This process is shown in Fig. 3 (Left).
+
+For the case retrieval-key is interacting with object action
+planning, it is an action similarity score, as in equation (6).
+
+The similarity score, comparing the current state S0 with log
+Li , is calculated as a weighted average of the task similarity,
+overall plan alignment, and retrieval key congruence.
+
+sim(k0 , τLi ) = max(cos sim(k0text , αj )), for αj ∈ α⃗Li
+(6)
+
+Let the current agent task be T0 , the overall plan be p0 , and
+the retrieval key generated by the Reasoner based on current
+action plan p′ be k0 . The similarity score between current
+state S0 with log Li is calculated as a weighted average of
+the similarity score for task, overall plan, and retrieval key.
+
+Furthermore, component weights are adaptively calibrated
+based on the environment. In environments with a constrained task space, task similarity is assigned a higher
+weight, For example, in Franka Kitchen environment which
+has only 5 tasks. We only retrieve logs with same task type.
+
+Score(S0 , Li ) = wt · sim(T0 , TLi )
++ wp · sim(p0 , pLi ) + wk · sim(k0 , τLi )
+
+For each retrieved experience, only a window of trajectory
+centered around the most similar action is passed to the
+agent. This allows agents to focus on actions most similar
+to current task, rather than full trajectories that may instead
+create additional noise to the agent.
+
+(3)
+
+Each component’s similarity score is determined using cosine similarity of their feature representations. For text data,
+the representations are derived using sentence-transformers
+(Reimers & Gurevych, 2019). For images, the representa-
+
+In summary, our meticulously-crafted retrieval method efficiently identifies the most pertinent logs by calculating
+a weighted similarity score that takes into account various
+aspects including task information, overall planning, and
+4
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+Algorithm 1 Retrieval-Augmented Planning
+Initialize: Trajectory τ , ReasonerLLM , Retriever,
+ExecutorLLM , Memory
+Input: Task T
+po = Reasoner(T ) // Generate overall plan
+e = Retriever(Memory, T ) // Retrieve experiences
+while reward is not Success and t < max steps do
+// Generate action or action plan
+at = Executor(T , po , e, τ )
+if action plan then
+k = Reasoner(at ) // Generate retrieval key
+e = Retriever(Memory, T , k) // Retrieve experiences
+else
+reward, ot = Env(at ) // Input action to environment
+end if
+τ ← at , ot // Update trajectory
+t = t + 1 // Increment
+end while
+
+Figure 4. Success Rate of ALFWorld with trial number
+
+4.1. Textual Environments
+4.1.1. ALFW ORLD
+ALFWorld (Shridhar et al., 2021) is a synthetic text-based
+game that challenges an agent to solve multi-step tasks in
+a variety of interactive environments based on TextWorld
+(Côté et al., 2018). Following ReAct, we evaluated an agent
+in 134 unseen games, including six types of tasks: Pick,
+Clean, Heat, Cool, Look, and Pick2. In this environment,
+agents are required to accomplish complex tasks using textbased actions in a simulated household providing textual
+and image feedback. Following previous works (Yao et al.,
+2023; Shinn et al., 2023; Prasad et al., 2023), RAP runs
+recursively until it reaches a depth (trial) of 3. In RAPtrain ,
+we use 1000 tasks from the provided training set, and run
+recursively with memory from successful tasks both from
+the training set and previous trials. Additionally, we use
+task information including the task type for the Retriever.
+During action-based similarity calculation, it extracts four
+experiences and ten actions from both before and after the
+most similar action. Meanwhile, during observation-based
+similarity calculation, it uses eight experiences and five
+actions from both before and after the most similar action.
+
+retrieval key. This process ensures that the most relevant
+and contextually appropriate logs are selected from a vast
+repository of memory logs. Once these logs are retrieved,
+they serve as an invaluable resource for the large language
+model serving as Executor.
+3.5. Executor
+The Executor receives past experiences from the Retriever
+and generates the next action by utilizing these experiences
+through in-context learning. This process is illustrated in Fig.
+3 (Right). By presenting the past experience aligned with
+the current context as a prompt, it enables accurate decisionmaking for the next action, mirroring the process humans
+leverage past experiences for future actions. Additionally,
+the length of the current task trajectory is used in the same
+way as past experiences, utilizing only a constant number of
+new trajectories. This encourages effective analogy-making
+from experiences through in-context learning in LLMs.
+
+We conducted evaluations using three models: GPT-3.5
+(Ouyang et al., 2022), GPT-4 (OpenAI, 2023), and Llama213b (GenAI, 2023). In Table 1, our experiments with
+GPT-3.5 show that RAP(85.8%) and RAPtrain (91.0%)
+achieve a significantly higher success rate compared to previous works such as ReAct(52.2%), Reflexion(74.6%), and
+ADaPT(71.6%). Further, RAP is also effective even with
+high-performance models like GPT-4, and locally-operated
+models such as Llama2-13b, thus illustrating the efficacy of
+our method across various LLMs.
+
+4. Experiments
+To validate the effectiveness of our framework in various environments, we performed evaluations on four benchmarks.
+These include the text-based multi-step tasks in ALFWorld
+(Shridhar et al., 2021) and Webshop (Yao et al., 2022), and
+robotics tasks, FrankaKitchen (Gupta et al., 2019) and MetaWorld (Yu et al., 2021), which are multimodal environments
+with texts and images.
+
+Figure 4 highlights the progression of improvements to success rate over three trials, where RAP shows higher success
+rates compared to ReAct, thus indicating the effective utility
+of successful experiences from other tasks in memory. In addition, RAP with GPT-3.5 achieves performance equivalent
+5
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+Table 1. ALFWorld task-specific success rate(%).
+Method(dmax =3)
+
+Model
+
+Pick
+
+Clean
+
+Heat
+
+Cool
+
+Look
+
+Pick2
+
+All
+
+Act
+ReAct
+Reflexion
+ADaPT*
+RAP(Ours)
+RAPtrain (Ours)
+
+GPT-3.5
+GPT-3.5
+GPT-3.5
+GPT-3.5
+GPT-3.5
+GPT-3.5
+
+66.7
+50.0
+75.0
+87.5
+95.8
+95.8
+
+51.6
+41.9
+77.4
+80.6
+87.1
+100.0
+
+73.9
+73.9
+65.2
+60.8
+78.3
+82.6
+
+61.9
+66.7
+76.2
+76.2
+90.5
+85.7
+
+38.9
+55.6
+83.3
+61.1
+88.9
+100.0
+
+17.6
+23.5
+70.6
+52.9
+70.6
+76.5
+
+53.7
+52.2
+74.6
+71.6
+85.8
+91.0
+
+ReAct
+RAP(Ours)
+
+GPT-4
+GPT-4
+
+83.3
+95.8
+
+71.0
+90.3
+
+95.7
+100.0
+
+81.0
+95.2
+
+100.0
+100.0
+
+94.1
+88.2
+
+85.8
+94.8
+
+ReAct
+RAP(Ours)
+
+Llama2-13b
+Llama2-13b
+
+29.2
+62.5
+
+41.9
+61.3
+
+34.8
+56.5
+
+52.4
+61.9
+
+38.9
+44.4
+
+17.6
+17.6
+
+36.6
+53.0
+
+*
+
+We use the performance reported by (Prasad et al., 2023)
+
+to ReAct with GPT-4. Also, RAP with memory built from
+the training set via GPT-3.5 surpasses ReAct with GPT-4.
+
+is most similar to the current action and its corresponding
+scenario for that task. This builds on the concept of ”A is
+to B as C is to D”, where the generated action depends not
+only on similar trajectories in memory, but also how these
+trajectories relate back to their scenario, and how the current trajectory should be related to the current scenario. By
+incorporating intra-task relationships, this allows the agent
+to better reason how the actions in memory are correlated
+with their own scenarios, and thereafter generate an action
+that is also aligned to the current scenario at hand.
+
+4.1.2. W EB S HOP
+WebShop (Yao et al., 2022) is a web application that simulates online shopping, where agents are required to select
+products for purchase based on a given user instruction.
+WebShop contains a total of 1.18M real-world products featured on Amazon, and comprises a wide variety of structured
+and unstructured texts. Following Reflexion (Shinn et al.,
+2023) and ADaPT (Prasad et al., 2023), we evaluated an
+agent across 100 instructions. For each instruction, agents
+are required to reason and select a desired product that is
+most aligned to the given instruction based on observations
+returned by the web application, and perform additional
+precise interactions with the portal to navigate through the
+web application such as searching or clicking buttons. Such
+interactions are performed in a text-based manner where
+the agent issues a textual command into the web application. Following previous studies, we allow the agent to run
+recursively until it reaches a depth (trial) of 3.
+
+We performed evaluations using two different models: GPT3.5 (Ouyang et al., 2022) and Llama2-13b (GenAI, 2023).
+In Table 2, experiments with GPT-3.5 demonstrate that our
+method (48.0%) achieves a higher success rate compared to
+previous studies such as ReAct (35.0%), Reflexion (35.0%),
+and ADaPT (43.0%). Furthermore, our method is able to
+achieve a higher overall reward score (76.1%) as compared
+to ReAct (61.8%), Reflexion (61.8%) and ADaPT (64.0%).
+
+Table 2. WebShop Score (%) and Success Rate(%).
+
+During our evaluation, we ran the initial trial with a ReAct agent and formulated the memory database based on
+successful tasks. The memory database would be further expanded for subsequent trials based on successful tasks in the
+preceding trials. Here, successful tasks are counted as those
+with a reward of 1. In addition, during retrieval of actions
+in memory, the Retriever extracts three experiences and five
+actions from before and after the most similar action.
+Moreover, unlike other environments where objects are generalizable across different tasks, WebShop has an additional
+unique feature where actions in each task are highly dependent on the scenario outlined in that task. As such,
+apart from the correlation between the current reasoning
+and trajectories in memory, our agent also considers the
+relationship between the action of each task in memory that
+
+Method(dmax =3)
+
+Model
+
+Score
+
+Success Rate
+
+ReAct
+Reflexion
+ADaPT
+RAP(Ours)
+
+GPT-3.5
+GPT-3.5
+GPT-3.5
+GPT-3.5
+
+61.8
+61.8
+64.0
+76.1
+
+35.0
+35.0
+43.0
+48.0
+
+ReAct
+RAP(Ours)
+
+Llama2-13b
+Llama2-13b
+
+64.6
+71.1
+
+31.0
+36.0
+
+Figure 5 illustrates a comparison of the improvement in
+success rate and reward score over three trials for ReAct and
+RAP, with both methods using GPT-3.5. Here, it indicates a
+marked improvement in both success rate and reward score
+for our method, indicating that successful experiences from
+the other tasks are being effectively utilized.
+6
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+Table 3. Average success rates on Franka Kitchen and Meta World
+of Vision-Languge Model Agents w/wo RAP(%)
+Method
+
+Franka Kitchen
+
+Meta World
+
+LLaVA
+LLaVA with RAP
+
+43.4
+61.6
+
+65.4
+79.2
+
+CogVLM
+CogVLM with RAP
+
+44.2
+56.9
+
+61.5
+68.8
+
+are required to be stored into memory.
+5.1. Evaluation across various Retrievers
+
+Figure 5. Success Rate and Reward Score of WebShop over 3 trials
+
+5.1.1. ALFW ORLD E VALUATION
+4.2. Multimodal Environments
+
+We perform evaluation on ALFWorld with GPT-3.5 by varying the Retriever, as shown in Table 4. The results of RAPact
+and RAPobs illustrate the effectiveness of switching the information used for retrieval depending on the situation.
+
+We evaluated our proposed technique in embodied multimodal agents on two benchmark environments: Franka
+Kitchen and Meta-World. These simulations offer a diverse
+set of household and robotic manipulation tasks requiring
+visual perception and physical interaction.
+
+Furthermore, we utilize visual observation provided by ALFWorld instead of textual observation, and perform an evaluation using similarity between textual retrieval key and image
+observation with CLIP (Radford et al., 2021). As a result,
+slightly better performance is demonstrated than when using
+text observation information. This suggests that employing
+direct image data, rather than information converted into
+text, could enable more effective retrieval.
+
+We constructed embodied agents using two VLM foundations - LLaVA and CogView. For each VLM, we compared
+task performance of the base model to a RAP-enhanced
+agent utilizing our memory retrieval system.
+The Franka Kitchen benchmark consists of compound tasks
+like arranging objects and preparing meals. Meta-World
+provides a suite of 50 distinct robotic skills focused on fine
+manipulation. For both sets, the agent must plan actions
+based on visual observations in an interactive 3D environment. We report quantitative results on task success rates
+with and without RAP augmentation. Our method allows
+the VLM Agents to selectively reference prior successful
+executions during planning. This provides vital visual context and demonstrates the benefits of memory-augmented
+reasoning for embodied agents.
+
+Table 4. ALFWorld success rate(%) with different retrievers.
+RAPact uses only action information, while RAPobs utilizes only
+observation information for retrieval. RAPclip refers to evaluations
+using images, rather than texts, as observations with CLIP.
+
+To map the high-level plans of the VLM agents to executable environment actions, we train a policy network on
+25 demonstrations for each task. We evaluate on 5 subtasks
+with 2 different camera views per benchmark. For each
+(task, view) combination we run 50 trials with different
+random seeds and report success rates.
+
+Method(dmax =3)
+
+Success Rate
+
+ReAct
+RAPact
+RAPobs
+RAPclip
+RAP
+
+52.2
+82.1
+84.3
+86.6
+85.8
+
+5.1.2. W EBSHOP E VALUATION
+In this subsection, we illustrate the effect of varying the
+components extracted from each experience by the Retriever.
+Here, all evaluations are performed on Llama2-13b.
+
+Table 3 and Figure 6 shows that RAP can significantly enhance embodied multimodal agents planning on both benchmarks. The results offer insights into how memory can aid
+these models for sequential decision making and embodied
+tasks requiring interactive visual perception.
+
+As shown in Table 5, through RAPobs , the agent is able to
+retrieve trajectories from memory based on either actions
+or observations, depending on the current stage of solving
+the task. With the incorporation of intra-task similarity in
+RAPintra , the agent is able to align the relationship between
+task information and the corresponding trajectories of each
+experience when projecting to the current task. By retrieving
+based on product category in RAPcat , the agent is able to
+
+5. Ablation Study
+In this section, we provide additional experimental results
+and showcase some critical components of experiences that
+7
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+Figure 6. Evaluation on Franka-Kitchen and Meta-World Benchmark. We evaluate with two vision-language models LLaVA and CogVLM
+both w/wo our proposed RAP method. The results demonstrate that our method notably enhances the performance of multimodal LLM
+agents in executing embodied tasks.
+
+5.2. Transfer Learning via Memory
+
+retrieve experiences that are more related to the current task.
+Overall, RAP takes into account these components, resulting
+in an overall boost of 6.5% and 5.0% for overall reward and
+success rate respectively on Llama2-13b. With these, RAP
+also demonstrates a boost of 14.3% and 13.0% for overall
+reward and success rate respectively on GPT-3.5 in Table 2,
+showcasing RAP’s generalizability across different models.
+
+RAP is capable of utilizing past experiences that are stored
+in memory. Since the experience of solving tasks is independent of the model, the model used for evaluation does not
+need to match the one used for memory construction. Here,
+we illustrate a verification of transfer learning between models by using memory constructed via different models for
+the evaluation model. From Section 4.1.1, we use 1000 samples from training data, but no recursive trial is conducted
+(dmax = 1) to simply verify the effect of transfer learning.
+
+Table 5. Webshop overall score (%) and success rate(%) with
+different retrievers on Llama2-13b. RAPobs uses additional
+retrieval by observations on top of action-based retrieval in
+RAPact . Also, RAPintra and RAPcat uses intra-task retrieval
+and product-category retrieval. RAP indicates combination of
+RAPobs , RAPintra and RAPcat .
+Method(dmax =3)
+
+Success Rate
+
+Overall Score
+
+ReAct
+RAPact
+RAPobs
+RAPintra
+RAPcat
+RAP
+
+31.0
+33.0
+33.0
+34.0
+35.0
+36.0
+
+64.6
+68.6
+69.0
+69.3
+69.9
+71.1
+
+Table 6 shows results of transfer learning, which indicate
+memory generated with GPT-3.5 is also effective in Llama213b. Thus, RAP allows sharing experiences across models.
+Table 6. ALFWorld success rate(%) with Memory and dmax =1.
+ModelM emory indicates the language model used to construct
+memory from the training data.
+
+8
+
+Model
+
+ModelM emory
+
+Success Rate
+
+GPT-3.5
+GPT-3.5
+Llama2-13b
+Llama2-13b
+
+GPT-3.5
+GPT-3.5
+
+44.0
+63.4
+20.9
+27.6
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+6. Conclusion
+
+Mirchandani, S., Xia, F., Florence, P., Ichter, B., Driess,
+D., Arenas, M. G., Rao, K., Sadigh, D., and Zeng, A.
+Large language models as general pattern machines. In
+Conference on Robot Learning (CoRL), 2023.
+
+We propose Retrieval-Augmented Planning (RAP), which
+stores past experiences, extracts pertinent experiences from
+multimodal information such as text and images, and guides
+subsequent actions. Our framework demonstrated superior performance compared to baseline methods in various
+LLMs and across four diverse agent and robotics benchmarks. Through these results, our framework enables language agents to flexibly utilize past experiences in accordance with current situations, mirroring a human ability, and
+thereby enhancing decision-making capabilities.
+
+OpenAI. Gpt-4 technical report. In arXiv, 2023.
+Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C.,
+Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A.,
+Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M.,
+Askell, A., Welinder, P., Christiano, P. F., Leike, J., and
+Lowe, R. Training language models to follow instructions
+with human feedback. In Neural Information Processing
+Systems (NeurIPS), 2022.
+
+Impact Statements
+
+Prasad, A., Koller, A., Hartmann, M., Clark, P., Sabharwal,
+A., Bansal, M., and Khot, T. Adapt: As-needed decomposition and planning with language models. In arXiv,
+2023.
+
+This paper presents work whose goal is to advance the field
+of Machine Learning. There are many potential societal
+consequences of our work, none which we feel must be
+specifically highlighted here.
+
+Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G.,
+Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark,
+J., Krueger, G., and Sutskever, I. Learning transferable
+visual models from natural language supervision. In
+Meila, M. and Zhang, T. (eds.), Proceedings of the 38th
+International Conference on Machine Learning, volume
+139 of Proceedings of Machine Learning Research, pp.
+8748–8763. PMLR, 18–24 Jul 2021.
+
+References
+Côté, M.-A., Ákos Kádár, Yuan, X., Kybartas, B., Barnes,
+T., Fine, E., Moore, J., Tao, R. Y., Hausknecht, M., Asri,
+L. E., Adada, M., Tay, W., and Trischler, A. Textworld:
+A learning environment for text-based games. In International Joint Conference on Artificial Intelligence (IJCAI),
+2018.
+
+Reimers, N. and Gurevych, I. Sentence-BERT: Sentence
+Embeddings using Siamese BERT-Networks. In arXiv,
+2019.
+
+GenAI, M. Llama 2: Open foundation and fine-tuned chat
+models. In arXiv, 2023.
+Gupta, A., Kumar, V., Lynch, C., Levine, S., and Hausman,
+K. Relay policy learning: Solving long-horizon tasks via
+imitation and reinforcement learning. In Conference on
+Robot Learning (CoRL), 2019.
+
+Sharma, P., Ding, N., Goodman, S., and Soricut, R. Conceptual captions: A cleaned, hypernymed, image alt-text
+dataset for automatic image captioning. In Gurevych,
+I. and Miyao, Y. (eds.), Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pp. 2556–2565, Melbourne, Australia, July 2018. Association for Computational Linguistics. doi: 10.18653/v1/P18-1238. URL
+https://aclanthology.org/P18-1238.
+
+Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V.,
+Goyal, N., Küttler, H., Lewis, M., Yih, W.-t., Rocktäschel,
+T., Riedel, S., and Kiela, D. Retrieval-augmented generation for knowledge-intensive nlp tasks. In Proceedings
+of the 34th International Conference on Neural Information Processing Systems, NIPS’20, Red Hook, NY, USA,
+2020. Curran Associates Inc. ISBN 9781713829546.
+
+Shinn, N., Cassano, F., Berman, E., Gopinath, A.,
+Narasimhan, K., and Yao, S. Reflexion: Language agents
+with verbal reinforcement learning. In Neural Information Processing Systems (NeurIPS), 2023.
+
+Liu, H., Li, C., Wu, Q., and Lee, Y. J. Visual instruction
+tuning. In ArXiv, volume abs/2304.08485, 2023.
+Liu, J., Shen, D., Zhang, Y., Dolan, B., Carin, L., and Chen,
+W. What makes good in-context examples for gpt-3? In
+arXiv, 2021.
+
+Shridhar, M., Yuan, X., Côté, M.-A., Bisk, Y., Trischler, A.,
+and Hausknecht, M. Alfworld: Aligning text and embodied environments for interactive learning. In International
+Conference on Learning Representations (ICLR), 2021.
+
+Madaan, A., Tandon, N., Clark, P., and Yang, Y. Memoryassisted prompt editing to improve gpt-3 after deployment.
+In Empirical Methods in Natural Language Processing
+(EMNLP), 2022.
+
+Su, H., Kasai, J., Wu, C. H., Shi, W., Wang, T., Xin, J.,
+Zhang, R., Ostendorf, M., Zettlemoyer, L., Smith, N. A.,
+and Yu, T. Selective annotation makes language models
+better few-shot learners. In arXiv, 2022.
+9
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+Wang, L., Ma, C., Feng, X., Zhang, Z., Yang, H., Zhang, J.,
+Chen, Z., Tang, J., Chen, X., Lin, Y., Zhao, W. X., Wei,
+Z., and Wen, J.-R. A survey on large language model
+based autonomous agents. In arXiv, 2023a.
+Wang, L., Ma, C., Feng, X., Zhang, Z., Yang, H., Zhang, J.,
+Chen, Z., Tang, J., Chen, X., Lin, Y., Zhao, W. X., Wei,
+Z., and Wen, J.-R. A Survey on Large Language Model
+based Autonomous Agents. In arXiv, 2023b.
+Wang, W., Lv, Q., Yu, W., Hong, W., Qi, J., Wang, Y.,
+Ji, J., Yang, Z., Zhao, L., Song, X., Xu, J., Xu, B., Li,
+J., Dong, Y., Ding, M., and Tang, J. CogVLM: Visual
+Expert for Pretrained Language Models. In ArXiv, volume
+abs/2311.03079, 2023c.
+Wei, J., Wang, X., Schuurmans, D., Bosma, M., ichter, b.,
+Xia, F., Chi, E., Le, Q. V., and Zhou, D. Chain-of-thought
+prompting elicits reasoning in large language models. In
+Koyejo, S., Mohamed, S., Agarwal, A., Belgrave, D.,
+Cho, K., and Oh, A. (eds.), Advances in Neural Information Processing Systems, volume 35, pp. 24824–24837.
+Curran Associates, Inc., 2022.
+Xi, Z., Chen, W., Guo, X., He, W., Ding, Y., Hong, B.,
+Zhang, M., Wang, J., Jin, S., Zhou, E., Zheng, R., Fan,
+X., Wang, X., Xiong, L., Zhou, Y., Wang, W., Jiang, C.,
+Zou, Y., Liu, X., Yin, Z., Dou, S., Weng, R., Cheng, W.,
+Zhang, Q., Qin, W., Zheng, Y., Qiu, X., Huang, X., and
+Gui, T. The rise and potential of large language model
+based agents: A survey. In arXiv, 2023.
+Yao, S., Chen, H., Yang, J., and Narasimhan, K. Webshop: Towards scalable real-world web interaction with
+grounded language agents. In arXiv, 2022.
+Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan,
+K., and Cao, Y. React: Synergizing reasoning and acting in language models. In International Conference on
+Learning Representations (ICLR), 2023.
+Yin, S., Fu, C., Zhao, S., Li, K., Sun, X., Xu, T., and Chen,
+E. A survey on multimodal large language models. In
+arXiv, 2023.
+Yu, T., Quillen, D., He, Z., Julian, R., Narayan, A., Shively,
+H., Bellathur, A., Hausman, K., Finn, C., and Levine, S.
+Meta-world: A benchmark and evaluation for multi-task
+and meta reinforcement learning, 2021.
+Zhao, A., Huang, D., Xu, Q., Lin, M., Liu, Y.-J., and Huang,
+G. ExpeL: LLM Agents Are Experiential Learners. In
+AAAI Conference on Artificial Intelligence (AAAI), 2023.
+
+10
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+A. Parameters
+In Webshop, all experiments were performed with a temperature setting of 0.0, due to the additional requirement of precise
+commands for interactions with the web application.
+
+Table 7. Parameters
+
+Experiments on ALFWorld
+Text Embedding Model
+VLM
+Max steps
+GPT-3.5 version
+GPT-3.5 temperature
+GPT-4 version
+GPT-4 temperature
+Llama2-13b version
+Llama2 temperature
+
+sentence-transformers/all-MiniLM-L6-v2
+openai/CLIP, ViT-B/32
+50
+gpt-3.5-turbo-instruct
+0
+gpt-4-0613
+0.5
+meta-llama/Llama-2-13b-chat-hf
+default(1.0)
+
+Experiments on Webshop
+Text Embedding Model
+Max steps
+GPT-3.5 temperature
+Llama2-13b version
+Llama2 temperature
+
+sentence-transformers/all-MiniLM-L6-v2
+15
+0
+meta-llama/Llama-2-13b-chat-hf
+0
+
+B. Prompts
+B.1. ALFWorld Prompt
+B.1.1. P ROMPT FOR OVERALL PLAN IN R EASONER
+
+
+
+
+Here are examples.
+{Your task is to: put some vase on safe.
+> To solve the task, I need to find and take a vase, then put it on safe.} examples x 3
+Here is the task. Please make a plan from the examples.
+Your task is to: put some watch on safe.
+> think: To solve the task,
+
+11
+
+
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+B.1.2. P ROMPT FOR RETRIEVAL KEY IN R EASONER
+
+
+
+
+Here are examples.
+think: First I need to find a spraybottle. A spraybottle is more likely to appear in cabinet (1-4), countertop (1),
+toilet (1), sinkbasin (1-2), garbagecan (1). I can check one by one, starting with cabinet 1.
+> search: spraybottle
+think: Now I put the first creditcard in dresser. Next, I need to find the second creditcard. I can directly go to
+countertop 1.
+> search: creditcard
+think: Now I take a pen (2). Next, I need to find a desklamp. A desklamp is more likely to appear in dresser
+(1), shelf (1-9), bed (1), garbagecan (1), drawer (1-10). I can check one by one, starting with dresser 1.
+> search: desklamp
+think: Now I find a lettuce (1). Next, I need to take it.
+> action: take
+think: Now I find a pan (1). Next, I need to take it.
+> action: take
+think: Now I find the second saltshaker (2). Next, I need to take it.
+> action: take
+think: Now I heat an egg (2). Next, I need to put it in/on diningtable 1.
+> action: put
+think: Now I take a spraybottle (2). Next, I need to put it in/on toilet 1.
+> action: put
+think: Now I take an apple (1). Next, I need to go to a microwave (1) and heat it.
+> action: heat
+think: Now I take a bread (1). Next, I need to go to a microwave (1) and heat it.
+> action: heat
+think: Now I take a mug (3). Next, I need to go to a fridge (1) and cool it.
+> action: cool
+think: Now I take a potato (2). Next, I need to go to a fridge (1) and cool it.
+> action: cool
+think: Now I find a desklamp (1). Next, I need to use it.
+> action: use
+think: Now I find a desklamp (3). Next, I need to use it.
+> action: use
+Here is the task. Please make a plan from the examples.
+think: First I need to find a watch. A watch is more likely to appear in/on cabinet (1-4), drawer (1-5). I can
+check one by one, starting with cabinet 1
+>
+
+
+
+12
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+B.1.3. P ROMPT FOR ACTION PLAN IN R EASONER AND FOR ACTION IN E XECUTOR
+
+
+
+
+Here is the task information.
+You are in the middle of a room. Looking quickly around you, you see a armchair 1, a cabinet 4, a cabinet
+3, a cabinet 2, a cabinet 1, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a dresser 1, a
+garbagecan 1, a safe 1, a shelf 12, a shelf 11, a shelf 10, a shelf 9, a shelf 8, a shelf 7, a shelf 6, a shelf 5, a
+shelf 4, a shelf 3, a shelf 2, a shelf 1, a sidetable 1, and a sofa 1.
+Here are examples.
+{Task: put a vase in safe.
+Plan: To solve the task, I need to find and take a vase, then put it in the safe.
+> think: First I need to find a vase.
+OK.
+> go to shelf 1
+On the shelf 1, you see nothing.
+...
+> go to shelf 6
+On the shelf 6, you see a vase 2.
+> think: Now I find a vase (2). Next, I need to take it
+OK.
+> take vase 2 from shelf 6
+You pick up the vase 2 from the shelf 6.} examples x n
+Here is the task. Please make an action from the examples.
+Task: put some watch on safe.
+Plan: To solve the task, I need to find and take a watch, then put it on the safe.
+>
+
+
+13
+
+
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+C. ALFWorld trajectories
+
+Task Description
+
+
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 2, a desk 1, a drawer
+6, a drawer 5, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a safe 1,
+a shelf 6, a shelf 5, a shelf 4, a shelf 3, a shelf 2, and a shelf 1.
+Your task is to: put a mug in desk.
+
+
+ReAct
+
+
+
+RAP
+
+
+
+Plan: To solve the task, I need to find and take a
+Act 1: think: To solve the task, I need to find and
+mug, then put it in desk.
+take a mug, then put it in desk
+Act 1: think: First I need to find a mug
+Obs 1: OK.
+Act 2: think: First I need to find a mug. A mug is
+Obs 1: OK.
+more likely to appear in drawer (1-6), shelf (1-6),
+Retrieval key: search mug
+desk (1-2), garbagecan (1), laundryhamper (1),
+Act 2: go to shelf 1
+safe (1). I can check one by one, starting with
+Obs 2: On the shelf 1, you see a mug 2.
+drawer 1
+Act 3: take mug 2 from shelf 1
+Obs 2: OK.
+Obs
+3: You pick up the mug 2 from the shelf 1.
+Act 3: go to drawer 1
+Act
+4:
+think: Now I find a mug (2). Next, I need to
+Obs 3: The drawer 1 is closed.
+put
+it
+in/on
+desk 1
+Act 4: open drawer 1
+Obs
+4:
+OK.
+Obs 4: You open the drawer 1. The drawer 1 is
+Retrieval key: action put
+open. In it, you see a pen 1.
+Act 5: go to desk 1
+...
+Obs 5: On the desk 1, you see a bowl 1, a cd 2, a
+Act 23: think: Hmm, it seems like the mug is not
+creditcard 2, a desklamp 1, a keychain 1, a laptop
+in any of the drawers. Let me check the other
+2, a pen 2, and a pencil 2.
+possible locations
+Obs 23: OK.
+Act 6: put mug 2 in/on desk 1
+...
+Obs 6: You put the mug 2 in/on the desk 1.
+Fail
+Success
+
+
+
+
+14
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+
+Task Description
+
+
+
+You are in the middle of a room. Looking quickly around you, you see a cabinet 4, a cabinet 3, a cabinet 2,
+a cabinet 1, a countertop 1, a garbagecan 1, a handtowelholder 2, a handtowelholder 1, a sinkbasin 2, a
+sinkbasin 1, a toilet 1, a toiletpaperhanger 1, and a towelholder 1.
+Your task is to: clean some cloth and put it in cabinet.
+
+
+ReAct
+
+
+
+RAP
+
+Act 1: think: To solve the task, I need to find and
+take a cloth, then clean it with sinkbasin, then put
+it in a cabinet
+Obs 1: OK.
+Act 2: think: First I need to find a cloth. A cloth
+is more likely to appear in a cabinet (1-4), countertop (1), sinkbasin (1-2), handtowelholder (1-2),
+towelholder (1), toiletpaperhanger (1), garbagecan (1). I can check one by one, starting with
+cabinet 1
+Obs 2: OK.
+...
+Act 6: open cabinet 2
+Obs 6: You open the cabinet 2. The cabinet 2 is
+open. In it, you see a cloth 1.
+Act 7: take cloth 1 from cabinet 2
+Obs 7: You pick up the cloth 1 from the cabinet 2.
+Act 8: think: Now I take a cloth (1). Next, I need
+to go to sinkbasin (1-2) and clean it
+Obs 8: OK.
+Act 9: go to sinkbasin 1
+Obs 9: On the sinkbasin 1, you see nothing.
+Act 10: go to sinkbasin 2
+Obs 10: On the sinkbasin 2, you see nothing.
+Act 11: think: I can’t clean the cloth without
+water. I need to find a source of water
+Obs 11: OK.
+Act 12: go to toilet 1
+...
+Fail
+
+
+
+15
+
+
+
+Plan: To solve the task, I need to find and take a
+cloth, then clean it with sinkbasin, then put it in
+cabinet.
+Act 1: think: First I need to find a cloth
+Obs 1: OK.
+Retrieval key: search cloth
+Act 2: go to cabinet 1
+Obs 2: The cabinet 1 is closed.
+Act 3: open cabinet 1
+Obs 3: You open the cabinet 1. The cabinet 1 is
+open. In it, you see a toiletpaper 1.
+Act 4: go to cabinet 2
+Obs 4: The cabinet 2 is closed.
+Act 5: open cabinet 2
+Obs 5: You open the cabinet 2. The cabinet 2 is
+open. In it, you see a cloth 1.
+Act 6: take cloth 1 from cabinet 2
+Obs 6: You pick up the cloth 1 from the cabinet 2.
+Act 7: think: Now I take a cloth (1). Next, I need
+to go to sinkbasin (1) and clean it
+Obs 7: OK.
+Retrieval key: action clean
+Act 8: go to sinkbasin 1
+Obs 8: On the sinkbasin 1, you see nothing.
+Act 9: clean cloth 1 with sinkbasin 1
+Obs 9: You clean the cloth 1 using the sinkbasin
+1.
+Act 10: think: Now I clean a cloth (1). Next, I need
+to put it in/on cabinet (1-6)
+Obs 10: OK.
+Retrieval key: action put
+Act 11: go to cabinet 3
+Obs 11: The cabinet 3 is closed.
+Act 12: open cabinet 3
+Obs 12: You open the cabinet 3. The cabinet 3 is
+open. In it, you see a soapbottle 1.
+Act 13: put cloth 1 in/on cabinet 3
+Obs 13: You put the cloth 1 in/on the cabinet 3.
+Success
+
+
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+D. Webshop trajectories
+
+Task Description
+
+
+
+WebShop
+Instruction:
+i am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars
+[Search]
+
+
+
+
+
+ReAct
+
+
+RAP
+
+Action: search[mn4 color foundation sensitive
+skin]
+Observation: [Back to Search] Page 1 (Total results: 50) [Next >] [B077PR9TL4] Physicians Formula The Healthy Foundation with SPF 20, LW2,
+1 Fl Oz $7.59 [B07VLKYJNH] PÜR 4-in-1 Love
+Your Selfie Longwear Foundation & Concealer Full Coverage Foundation & Concealer Makeup
+For Dark Spots, Blemishes and Imperfections Long-Lasting Liquid Makeup & Skincare $36.0
+[B09J1X9M1P] Neutrogena Healthy Skin Sensitive Skin Serum Foundation with Pro-Vitamin
+B5, Color Correcting & Pore Minimizing Liquid
+Foundation & Face Serum, Buildable Coverage,
+Medium 02, 1 oz $14.39
+
+Action: search[mn4 color foundation sensitive
+skin]
+Observation: [Back to Search] Page 1 (Total results: 50) [Next >] [B077PR9TL4] Physicians Formula The Healthy Foundation with SPF 20, LW2,
+1 Fl Oz $7.59 [B07VLKYJNH] PÜR 4-in-1 Love
+Your Selfie Longwear Foundation & Concealer Full Coverage Foundation & Concealer Makeup
+For Dark Spots, Blemishes and Imperfections Long-Lasting Liquid Makeup & Skincare $36.0
+[B09J1X9M1P] Neutrogena Healthy Skin Sensitive Skin Serum Foundation with Pro-Vitamin
+B5, Color Correcting & Pore Minimizing Liquid
+Foundation & Face Serum, Buildable Coverage,
+Medium 02, 1 oz $14.39
+
+Action: think[B077PR9TL4 and B09J1X9M1P are
+mn4 color foundation for sensitive skin and price
+lower than 40 dollars.]
+Observation: OK.
+
+Action: think[B077PR9TL4, B07VLKYJNH, and
+B09J1X9M1P are mn4 color foundation for sensitive skin and price lower than 40.00 dollars.]
+Observation: OK.
+
+Action: click[B077PR9TL4]
+Observation:
+[Back to Search] [< Prev]
+color
+[1][dc1][dn3][dn4][lc1][ln3][ln4][lw2]
+[mc1][mn3][mn4][mw2] size [1 fl oz (pack
+of 1)][1 ounce (pack of 1)][1 fluid ounce] Physicians Formula The Healthy Foundation with
+SPF 20, LW2, 1 Fl Oz Price: $7.59 Rating: N.A.
+[Description] [Features] [Reviews] [Attributes]
+[Buy Now]
+
+Action: click[B077PR9TL4]
+Observation:
+[Back to Search] [< Prev]
+color
+[1][dc1][dn3][dn4][lc1][ln3][ln4][lw2]
+[mc1][mn3][mn4][mw2] size [1 fl oz (pack
+of 1)][1 ounce (pack of 1)][1 fluid ounce] Physicians Formula The Healthy Foundation with
+SPF 20, LW2, 1 Fl Oz Price: $7.59 Rating: N.A.
+[Description] [Features] [Reviews] [Attributes]
+[Buy Now]
+
+Act 11: think[For mn4 color foundation for sensitive skin, the item has options ’lw2’ and ’1 fluid
+ounce’ and seems good to buy.]
+Observation: OK.
+
+Action: think[For mn4 color foundation for sensitive skin, the item has options ’1’, ’dc1’, ’dn3’, ’dn4’,
+’lc1’, ’ln3’, ’ln4’, ’lw2’,’mc1’,’mn3’,’mn4’, and’mw2’
+and seems good to buy.]
+Observation: OK.
+
+Action: click[lw2]
+Observation: You have clicked lw2.
+
+Action: click[mn4]
+Observation: You have clicked mn4.
+
+Action: click[Buy Now]
+Observation: Your score (min 0.0, max 1.0):
+0.6666666666666666
+Fail
+
+
+
+
+Action: click[Buy Now]
+Observation: Your score (min 0.0, max 1.0): 1.0
+Success
+
+
+16
+
+
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+
+Task Description
+
+
+
+WebShop
+Instruction:
+i want capri sun pacific cooler mixed fruit naturally flavored juice drinks, and price lower than 20.00 dollars
+[Search]
+
+
+
+ReAct
+
+
+RAP
+
+Action: search[capri sun pacific cooler mixed fruit
+naturally flavored juice drinks]
+Observation: [Back to Search] Page 1 (Total results: 50) [Next >] [B000R30X2A] Capri Sun Pacific Cooler Mixed Fruit Naturally Flavored Juice
+Drink Blend (Pack of 10) (Packaging May Vary)
+$2.55 [B075CSWGJR] Capri Sun Pacific Cooler
+Ready-to-Drink Juice, 6 Fl Oz (Pack of 30) $100.0
+[B0083GG2SC] Capri Sun Coolers Variety Pack
+Ready-to-Drink Juice (40 Pouches, 4 Boxes of 10)
+$100.0
+
+Action: search[capri sun pacific cooler mixed fruit
+naturally flavored juice drinks]
+Observation: [Back to Search] Page 1 (Total results: 50) [Next >] [B000R30X2A] Capri Sun Pacific Cooler Mixed Fruit Naturally Flavored Juice
+Drink Blend (Pack of 10) (Packaging May Vary)
+$2.55 [B075CSWGJR] Capri Sun Pacific Cooler
+Ready-to-Drink Juice, 6 Fl Oz (Pack of 30) $100.0
+[B0083GG2SC] Capri Sun Coolers Variety Pack
+Ready-to-Drink Juice (40 Pouches, 4 Boxes of 10)
+$100.0
+
+Action: think[B000R30X2A is capri sun pacific
+cooler mixed fruit naturally flavored juice drinks
+and price lower than 20.00 dollars.]
+Observation: OK.
+
+Action: think[B000R30X2A is capri sun pacific
+cooler mixed fruit naturally flavored juice drinks
+and seems good to buy.]
+Observation: OK.
+
+Action: click[B000R30X2A]
+Observation: [Back to Search] [< Prev] flavor name [assorted][pacific cooler][strawberry
+kiwi][variety pack] size [6 fl oz (pack of 10)][6 fl
+oz (pack of 30)] Capri Sun Pacific Cooler Mixed
+Fruit Naturally Flavored Juice Drink Blend (Pack
+of 10) (Packaging May Vary) Price: $2.55 Rating: N.A. [Description] [Features] [Reviews] [Attributes] [Buy Now]
+
+Action: click[B000R30X2A]
+Observation: [Back to Search] [< Prev] flavor name [assorted][pacific cooler][strawberry
+kiwi][variety pack] size [6 fl oz (pack of 10)][6 fl
+oz (pack of 30)] Capri Sun Pacific Cooler Mixed
+Fruit Naturally Flavored Juice Drink Blend (Pack
+of 10) (Packaging May Vary) Price: $2.55 Rating: N.A. [Description] [Features] [Reviews] [Attributes] [Buy Now]
+
+Action: think[For capri sun pacific cooler mixed
+fruit naturally flavored juice drinks, the item has
+options ’assorted’, ’pacific cooler’, and ’6 fl oz
+(pack of 10)’]
+Observation: OK.
+
+Action: think[For capri sun pacific cooler mixed
+fruit naturally flavored juice drinks, the item has
+options ’assorted’, ’pacific cooler’, and ’6 fl oz
+(pack of 10)’ and seems good to buy.]
+Observation: OK.
+
+Action: click[assorted]
+Observation: You have clicked assorted.
+
+Action: click[assorted]
+Observation: You have clicked assorted.
+
+Action: click[Buy Now]
+Observation: Your score (min 0.0, max 1.0):
+0.6666666666666666
+
+Action: click[pacific cooler]
+Observation: You have clicked pacific cooler.
+
+Fail
+
+
+
+
+Action: click[6 fl oz (pack of 10)]
+Observation: You have clicked 6 fl oz (pack of 10).
+
+
+Action: click[Buy Now]
+Observation: Your score (min 0.0, max 1.0): 1.0
+Success
+
+
+17
+
+
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+E. Multimodal Environments and Agents Details
+E.1. Task Selection
+To evaluate RAP in multimodal environments, we focus on two benchmarks: Franka Kitchen and Meta-World. These
+benchmarks offer a diverse range of tasks, simulating real-world scenarios in a controlled environment, making them ideal
+for evaluating the performance of multimodal agents.
+Franka Kitchen Benchmark simulates a kitchen environment, where the agent interacts with various kitchen appliances
+and items. We have selected five specific tasks that test the agent’s ability to manipulate objects and controls within this
+environment. These tasks are listed in table 8
+Task No.
+1. cabinet
+2. micro
+3. burner
+4. light
+5. kettle
+
+Task Description
+Open a hinge cabinet door
+Open the microwave door
+Twist knob for bottom left burner
+Move lever to turn on light
+Move kettle from bottom to top burner
+
+Table 8. Selected Tasks in Franka Kitchen Benchmark
+
+The Meta-World benchmark is designed to evaluate an agent’s skill in more generalized object manipulation tasks. We have
+selected five tasks that represent a broad range of actions.
+Task No.
+1. assemble
+2.buttion
+3. drawer
+4. hammer
+5. bin
+
+Meta-World Tasks
+Pick up a nut and place it onto a peg
+Press a button
+Open a drawer
+Hammer a screw on the wall
+Grasp the puck from one bin and place it into another bin
+Table 9. Selected Tasks in Meta-World Benchmark
+
+E.2. Model Specification
+In this subsection, we detail the model specifications for our multimodal agent, which is built upon two SOTA visionlanguage models: LLaVA and CogVLM. These models allows for a more comprehensive understanding and interaction with
+multimodal environments.
+LLaVA Model: Our agent utilizes the LLaVA-v1.5 13B model. This version of LLaVA incorporates the Vicuna-v1.5 13B as
+its underlying Large Language Model (LLM). The integration of Vicuna-v1.5 13B, known for its robust linguistic processing
+capabilities.
+CogVLM Model: For the CogVLM model, we employ the Cog-VLM 17B version. This model boasts a significant number
+of parameters – 10 billion are dedicated to visual understanding, and 7 billion are focused on language processing.
+In our experimental setup for the language generation of these models, we set the temperature to 0.0. This setting is chosen
+to prioritize precision and determinism in the generated outputs, which is crucial for the consistency and reliability of the
+agent’s planning responses in our multimodal tasks.
+E.3. Policy Network details
+Policy Network is a crucial component of our framework designed to translate high-level action plans generated by the
+vision-language model into precise, low-level control actions suitable for the specific action space of the environment. Our
+approach utilizes a Multi-Layer Perceptron (MLP) neural network for this purpose.
+In both Franka Kitchen and Meta-World environments, the policy network’s learning is facilitated through a few-shot
+learning approach, leveraging a limited but highly informative set of demonstration data.
+18
+
+RAP: Retrieval-Augmented Planning with Contextual Memory for Multimodal LLM Agents
+
+For each environment, we provide 25 expert demonstrations sourced from the D4RL dataset. These demonstrations consist
+of trajectories that include both observations and actions, showcasing expert-level performance in the respective tasks.
+In the Franka Kitchen tasks, each demonstration is composed of 50 state-action pairs, reflecting the sequence and specifics
+of actions required to complete the task. Meanwhile, for the Meta-World tasks, each demonstration sample comprises 500
+state-action pairs.
+
+19
+
+

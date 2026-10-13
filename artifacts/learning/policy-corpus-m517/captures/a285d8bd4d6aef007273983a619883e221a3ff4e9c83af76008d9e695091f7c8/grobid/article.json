@@ -1,0 +1,956 @@
+{
+  "paper_id": "2504.21716",
+  "title": "D r a f t LLM-Empowered Embodied Agent for Memory-Augmented Task Planning in Household Robotics",
+  "abstract_text": "We present an embodied robotic system with an LLM-driven agent-orchestration architecture for autonomous household object management. The system integrates memoryaugmented task planning, enabling robots to execute high-level user commands while tracking past actions. It employs three specialized agents: a routing agent, a task planning agent, and a knowledge base agent, each powered by task-specific LLMs. By leveraging in-context learning, our system avoids the need for explicit model training. RAG enables the system to retrieve context from past interactions, enhancing long-term object tracking. A combination of Grounded SAM and LLaMa3.2-Vision provides robust object detection, facilitating semantic scene understanding for task planning. Evaluation across three household scenarios demonstrates high task planning accuracy and an improvement in memory recall due to RAG. Specifically, Qwen2.5 yields best performance for specialized agents, while LLaMA3.",
+  "body_text": "I. INTRODUCTIONDespite recent progress in robotics and artificial intelligence, robots still struggle to adapt flexibly to the diverse, dynamic situations of real-world environments, particularly in household settings [24]. While symbolic task planning with languages like the Planning Domain Definition Language (PDDL) [11] is effective in domains with fixed rules and predictable object categories, it lacks the adaptability required for open-ended household environments. In such settings, robots must deal with ambiguous user commands, detect novel or unstructured objects, and respond to constantly changing spatial configurations [24]. These limitations motivate our hypothesis that a modular LLMdriven system can enhance flexibility by leveraging natural language understanding, contextual reasoning, and memorybased adaptation. We provide a proof-of-concept implementation and assess its performance in real-world household tasks.In this work, we present an embodied robotic system with an LLM-driven agent-orchestration architecture, where specialized software agents collaborate to address long-horizon household tasks. Recent advances in Large Language Models (LLMs) [13], [4], [15], [23], [5] have improved systems realworld understanding, enabling common-sense reasoning in 1 Automation and Control Institute, Faculty of Electrical Engineering, TU Wien, 1040 Vienna, Austria {hoenig, hirschmanner, vincze}@acin.ac.tuwien.at 2 AIT Austrian Institute of Technology GmbH, Center for Vision, Automation and Control, 1210 Vienna, Austria marc.glocker@ait.ac.at Fig. 1: Our LLM-driven robotic system autonomously plans tasks and retrieves past interactions to improve object handling, illustrated by LLM-enforced task planning and memory-retrieved reasoning in a household setting. human language and making them accessible to researchers. These advances combined with in-context learning [26] enable flexible embodied task planning by decomposing high-level commands, such as \"clear the dining table\", into actionable steps based on detected objects [2], [7], [25], [9], [21]. By integrating Grounded Segment Anything Model (Grounded SAM) [17] and LLaMa3.2-Vision [4], our system creates grounded task plans. Unlike most other works, we address long-term operations by maintaining action and environment records, utilizing Retrieval-Augmented Generation (RAG) for efficient memory retrieval. Our approach enables the robot to autonomously organize and retrieve objects, interpret complex tasks, and provide updates on object locations, all while ensuring privacy through the use of offline LLMs and avoiding explicit model training. To illustrate the systems interaction, Fig. 1 shows an example of our system in action.In summary, we present the following key contributions:• A long-horizon task planner for household tasks leveraging in-context learning and offline LLMs.• Use of RAG for efficient memory retrieval and object tracking.• A modular agent-orchestration system that improves robustness and modularity.• Evaluation of the system's performance in three realworld household scenarios.This paper is structured as follows: Section II reviews related work in the areas of task planning and memory mechanisms. Section III details the proposed system architecture.\nD r a f tSection IV describes the experimental setup and household scenarios. Section V presents the results. Finally, Section VI concludes the paper and outlines directions for future work.\nII. RELATED WORKIn this section we discuss related work for action and task planning, as well as memory and knowledge base.\nA. Action and Task PlanningRecent advancements in prompt engineering have improved the problem-solving capabilities of LLMs [26], [28], enabling the generation of structured plans without finetuning. Consequently, modern agent architectures leverage LLMs to dynamically react to execution failures [27], [7] and expand their context by retrieval [8] or external tools [19], [18]. However, LLMs lack an inherent understanding of a robot's physical abilities and real-world constraints. SayCan [2] addresses this by integrating value functions of pre-trained robotic skills to ensure feasibility, whereas Huang et al. [6] leverage LLMs to match high-level plans with lowlevel actions through semantic mapping. Some works treat LLMs as programmers rather than direct decision-makers: Code-as-Policies [9] and ProgPrompt [21] allow LLMs to generate structured code for robotic executions, enhancing flexibility but adding an execution layer.Pallagani et al. [14] found that LLMs perform better as translators of natural language into structured plans rather than generating plans from scratch. This ensures feasible actions based on predefined world models [20], [10]. These approaches are particularly effective in highly controlled environments, but present challenges when applied to openended, dynamic household settings. Our work, instead, embraces flexible, dynamic task planning with in-context learning like shown in [25]. The approaches named, while effective for short-horizon tasks, do not track object positions over time. For long-horizon tasks that involve real-world dynamic conditions, a combination of task planning and a memory mechanism is required.\nB. Memory and Knowledge BaseLong-horizon tasks require robust memory mechanisms. While LLM context windows keep expanding [23], using excessively large contexts in robotics is computationally inefficient. Instead, long-term memory retrieval, accessed only when needed, is a more viable solution. RAG [8] provides an efficient mechanism for narrowing context by querying a vast dataset and retrieving only relevant information. Additionally, scene graphs, used in approaches like SayPlan [16] and DELTA [10], offer structured memory that improves action verification and contextual reasoning. However, in unstructured and constantly changing environments, maintaining these graphs becomes challenging due to the need for complex automatic mechanisms or manual curation.Our work explores the feasibility of a lightweight, fully natural language-driven approach using RAG as a memory mechanism. Inspired by ReMEmbR [1], our system incorporates temporal elements into the retrieval process, ensuring the robot tracks long-term changes in its environment. While using language-based memory retrieval introduces potential for increased errors compared to structured models like scene graphs, we aim to evaluate how well purely language-based memory retrieval performs in practical, dynamic household scenarios. This approach offers flexibility, adaptability, and reduces the need for explicit world modelling, making it more suitable for real-world applications. III. METHODOLOGY Fig. 2: The full pipeline, integrating long-horizon task planning. Newly introduced components are highlighted in blue.Our system, coordinated by an agent-orchestration framework, combines task planning with RAG [8]. This chapter explains the individual components and their interaction.Fig. 2 illustrates the overall pipeline. The focus of this work is the agent-orchestration system, which processes object detection and user requests to create a robot task plan. In the system, each agent uses an LLM with a specialized role. The task planning agent additionally is prompted with a chain-of-thought technique [26].Fig. 3: The agent-orchestration architectureThe system architecture of the agent orchestrator, illustrated in Fig. 3, consists of:1) A routing agent, responsible for analyzing incoming user requests.D r a f t 2) A task planning agent, handling commands that require the robot to perform actions. 3) A knowledge base agent, processing follow-up questions about previously handled objects. When a user request arrives, the routing agent first analyzes it to determine its nature. The request is then categorized into one of three types: 1) Action command: If the robot is asked to perform an action, it is forwarded to the task planning agent. 2) Query about history: If it concerns previously handled objects, it is directed to the knowledge base agent. 3) Unclear request: If the request doesn't fit either category, clarification is requested before proceeding.\nA. Task Planning AgentThe task planning agent receives frequent environmental updates via camera perception, encoded as a list of single objects. Grounded SAM [17] enables text-driven object detection and segmentation for the pipeline, while Vision Language Models (VLMs) generate natural language descriptions of the environment. Although VLMs alone can extract the object list for the LLM, Grounded SAM is essential for precise segmentation, which is critical for grasping tasks. Using the object list, the LLM processes the user request -which can be both expressed in high-level or low-level terms -and formulates tasks that best fulfill the command. The generated answer has to include a JSON string for an action following this structure:1) Objects involved in the task.2) The destination for placement tasks. After the action is determined, the grasping process is initiated. We use the segmentation from Grounded SAM and the camera intrinsics to crop the depth image and project the depth crop to a 3D pointcloud of the respective object. To estimate a grasp approach vector, we feed the cropped object point cloud to Control-GraspNet [22], a pre-trained grasp estimator. The knowledge base agent is used for user inquiries regarding past robot actions, such as object locations or task completion status. These queries require access to longterm memory, for which RAG has proven most effective, as discussed in Section II. Fig 4 illustrates the RAG workflow, comprising two key steps:\nB. Knowledge Base Agent1) Document Ingestion: Input data, such as conversation history, is preprocessed, split into smaller chunks (each representing a question-answer pair), and converted into high-dimensional vectors using an embedding model. These embeddings are then stored in a vector database for efficient retrieval. 2) User Query, Retrieval, and Response Generation:User queries are embedded using the same model and are matched against the stored vectors to retrieve the most relevant context. This context is then provided to the LLM, which generates a response tailored to the user's query. To enable chronological reasoning, essential for tracking object movements over time, we augment RAG with a time stamp for each question-answer pair.IV. EXPERIMENTS To evaluate our system, we conduct experiments addressing the three key challenges from Chapter I: (1) flexible task planning in dynamic household environments, (2) longterm memory usage, and (3) modular agent coordination. Specifically, we assess the system's ability to create grounded task plans, answer questions based on prior interactions, and route tasks to the appropriate agent.\nA. Experimental SetupThis study evaluates an agent-orchestration system for symbolic task planning and follow-up questions via a knowledge base. To ensure a thorough evaluation, we consider three distinct phases:1) Task Planning Performance -The symbolic task planning output is assessed independently, measuring accuracy of object assignment to their destinations. 2) Knowledge Base Reliability -The system's ability to reason about past actions (with and without RAG) is tested by asking about the system's current status, such as locations of previously moved items. 3) Routing Reliability -Measures the accuracy of the routing agent in directing queries to the appropriate agent (Task Planning, History, or itself). To isolate the performance of the specialized agents, agent handoff is not considered in the evaluation of 1) and 2).\nB. Algorithmic FrameworkThe frameworks and models used are shown in gray in Fig. 4. To enable efficient collaboration among agents, we use OpenAI Swarm [12], a lightweight framework for agent orchestration and task delegation. We evaluate the performance of Qwen2.5-32b  The experiment is conducted in an artificial household environment, where objects must be assigned to correct destinations based on high-level commands. To evaluate task planning, we define three scenarios (see Fig. 6) that share five predefined placement locations, while each uses a different cleanup zone. Fig. 5 shows a visual representation of the environment. These locations reflect common-sense knowledge typically understood by LLMs. To ensure clarity, the agent receives explicit definitions for each destination:• Sink -For items that need washing.• Trash Can -For disposable or inedible items.• Fridge -For perishable food.• Food Shelf -For non-perishable food items.• Storage Box -For general storage.Fig. 6 shows the object list extracted from a captured image of each task scenario using LLaMa3.2-Vision along with the user queries and the segmentation results from Grounded SAM.After execution of all scenarios, the knowledge base agent is asked four distinct folow-up questions targeting different aspects of retrieval and reasoning:• Error Detection: \"Where is the jacket that was in the living room? I thought you put it in the storage box, but I can't find it there.\" • Hallucination: \"Where did you put the laptop? It's not on the desk anymore.\" • Food Availability: \"I am hungry. Is there any food left from earlier?\" • Trash Status: \"How many objects are in the trash can?\" To better reflect real-world applications, we extend the conversation dialogue with additional question-answer pairs containing actions. Furthermore, deliberate errors are introduced into the task plans, where the agent provides the user a different location than the one forwarded to the state machine. This allows us to evaluate how well the knowledge base handles inaccuracies. Beyond evaluating the specialized agents in isolated setups, we assess how effectively the routing agent delegates tasks to the appropriate specialized agent. Specifically, we test:• Task Planning Queries: The three high-level commands from the task planning scenarios (see Fig. 6) and an additional low-level request (\"Can I have a banana?\")• Knowledge Base Queries: The four follow-up questions from the knowledge base scenario.\nD. Evaluation MethodologyThe evaluation of the agent-orchestration system's components is based on the task scenarios and follow-up questions defined in Section IV-C. Task planning performance is evaluated by testing each model on the three task scenarios, with each scenario executed five times per model. Accuracy is measured at the object level as the percentage of correctly assigned tasks. A task is deemed correct if it satisfies the following criteria:• Valid JSON format • Correct destination assignment • Stationary Object Exclusion (ensuring no task is assigned to items that should remain in place) The final accuracy score represents the percentage of objects for which tasks were correctly assigned, including the implicit \"no task\" assignment for stationary objects (e.g., table ).The knowledge base is evaluated using four follow-up questions, each tested five times per model. Unlike the task planning agent, the knowledge base agent does not require a strict output format. It is assessed based on factual correctness, measured as the percentage of correct answers. For queries expecting multiple objects as an answer (e.g., \"Which objects are in the trash?\"), accuracy is based on the percentage of correctly identified objects.The routing agent's ability to correctly assign tasks is evaluated by processing queries from the task planning scenarios and history-based questions, along with one additional query, five times per model. The final metric is quantified as the percentage of correctly assigned tasks. Gemma2, which does not support tool calling, is excluded from this test.\nV. RESULTS AND DISCUSSIONThis section presents the experimental results for task planning, knowledge base and agent routing.\nA. Task PlanningWe introduce a lenient evaluation metric (cf. Table I), where reasonable alternative placements based on user preferences are counted as correct. The strictly correct placements, following the intended plan as prompted to the LLM, are presented under the strict metric in Table I.Table I shows that Qwen consistently outperforms the other models in nearly all scenarios. LLaMA performs notably worse in the living room scenario, with the lowest strict accuracy (40.0%). Gemma2 falls between the two, showing higher accuracy than LLaMA but lower than Qwen.\nB. Knowledge BaseThe integration of RAG notably enhances the accuracy of the knowledge base's responses, even in medium-term interactions consisting of 21 question-answer pairs with approximately 4000 tokens. Qwen achieves the highest validity (91.3%) with RAG (cf. Table II), highlighting the potential of retrieval-augmented approaches for maintaining consistency over longer interactions.    Fig. 6: The three scenarios used for task planning. For each scenario we have extracted an object list using the Vision-Language Model LLaMa3.2-Vision. This list is used as input for Grounded SAM [17] to perform segmentation.\nModelDiningTable Living Room Desk Organization Total Accuracy (%) Strict (%) Lenient (%) Strict (%) Lenient (%) Strict (%) Lenient (%) Strict (%) Lenient (%) LLaMa3.1-8B 68.0 78.0 40.0 40.0 61.3 65.3 56.4 61.1 Gemma2-27B 58.0 68.0 68.9 68.9 68.0 69.3 65.0 68.7 Qwen2.5-32B 64.0 80.0 88.9 88.9 78.7 84.0 77.2 84.3TABLE I: Task Planning Accuracy Across Different LLMs. Strict (%): Percentage of objects correctly placed according to the intended plan. Lenient (%): Percentage of objects placed differently than expected, but with reasonable alternative placements based on user preferences. Method Model Response Validity (%) Total Validity (%) Err. Detection Hallucination Food Avail. Trash Status Without RAG (Ablation Study) LLaMa3.1-8B 20.0 80.0 70.0 65.0 58.8 Gemma2-27B 0.0 80.0 10.0 60.0 37.5 Qwen2.5-32B 0.0 80.0 60.0 75.0 53.75 With RAG LLaMa3.1-8B 40.0 100.0 90.0 55.0 71.25 Gemma2-27B 80.0 100.0 40.0 60.0 70.0 Qwen2.5-32B 100.0 100.0 90.0 75.0 91.3TABLE II: Knowledge Base Response Accuracy Across Different LLMs. Used Embedding Model for RAG: BGE-M3. No. of question-answer pairs retrieved by RAG: 5 C. Agent RoutingIn task delegation, LLaMA exhibits the highest routing accuracy (92.5%), despite its weaker reasoning abilities (cf. Table III). Its structured approach to tool-calling ensures stable performance. In contrast, Qwen, while superior in contextual understanding, occasionally produces incorrect structured outputs, leading to execution failures.\nD. SummaryOur findings highlight the potential of lightweight, opensource LLMs for memory-augmented long-horizon task planning. A combination of LLaMA (routing) and Qwen (specialized agents) achieves the best balance between structured execution and high-level reasoning.Evaluating task execution remains challenging due to subjective human preferences, emphasizing the need for user studies. Furthermore, integrating Vision-Language Models (VLMs) into the agent orchestrator -rather than only using them for object lists -could enhance robustness. Embedding contextual information into the latent space reduces command dependency and improves autonomy.RAG improves factual consistency in knowledge retrieval but struggles with repeated object interactions and long histories, making full-history queries impractical. Scene graphs, as proposed by Liu et al. [10], present a promising alternative for efficient and robust knowledge integration.\nD r a f t\nModelTask Planning Queries (%) Knowledge Base Queries (%) Total Success Rate (%) LLaMa3.1-8B 85.0 100.0 92.5 Qwen2.5-32B 95.0 85.0 90.0\nTABLE III: Routing Success Rate Across Different LLMsWhile task delegation via the routing agent was mostly successful, certain models occasionally produced invalid structured outputs, leading to execution failures. To increase robustness, future work should explore schema validation and adaptive retry mechanisms that can automatically mitigate such issues.In summary, open-source LLMs prove viable for longhorizon task planning. However, addressing key challengesrefining evaluation metrics, improving long-term robustness, and integrating multimodal perception -remains essential for achieving reliable household robotics.\nVI. CONCLUSIONThis work presents a prototype of an agent-orchestration system for household robots, utilizing local, lightweight open-source LLMs to translate high-level user commands into structured task plans for tidy-up scenarios. Memoryaugmented task planning enables follow-up queries about past actions, improving user interaction and assisting in locating misplaced objects. Our evaluation shows strong task planning, routing, and knowledge retrieval. with Qwen2.5 excelling in reasoning-heavy tasks and LLaMA3.1 providing a more efficient routing solution. However, RAG-based retrieval for general tasks remains a challenge, particularly for implicit queries where relevant information is not always found. Addressing these limitations is key to improving longterm reasoning and knowledge access.Future work will focus on robust storage solutions, improved knowledge representations, broader user studies with structured datasets for evaluating and benchmarking existing approaches. Enhancing communication and tool usage in agent-orchestration will be crucial for greater adaptability and autonomy in household robotics.Fig. 4 :4Fig.4: RAG workflow for long-term question answering: Relevant past actions are retrieved from dialogue history, and the LLM generates responses based on the retrieved context.\n[15], Gemma2-27b[23], and LLaMa3.1-8b[4], selected for their open-source availability and ability to run locally on 16GB GPU RAM. For RAG, we employ ChromaDB [3], a vector database optimized for fast lookups, combined with the embedding model BGE-M3. D r a f t C. Task Scenarios\nFig. 5 :5Fig. 5: The artificial household environment used in the experiment.\nD r a f t (a) Scenario 1 :1Dining Table Cleanup\nObject list from VLM: Plate, Fork, Spoon, Salt shaker, Glass, Frying pan, Spatula, Chair, Table top, Pepper grinder. Command: I just finished dinner, please clear the dining table.\n(b) Scenario 2 :2Living Room CleanupObject list from VLM: A table, A couch, A brush, Scissors, Pen, Book, Salt packet, Jacket, Markers. Command: Please hand me the brush and tidy up the rest of the living room.\n( c )cScenario 3: Desk Organization Object list from VLM: Desk, Computer Monitor, Laptop, Mouse, Plate, Crumbs, Lemon, Cup, Glass of water, Bag of chips, Piece of paper, Potted plant, Cord, Wooden desk, White wall. Command: Please clear my desk, leaving only the essentials for work.",
+  "sections": [
+    {
+      "title": "I. INTRODUCTION",
+      "text": "Despite recent progress in robotics and artificial intelligence, robots still struggle to adapt flexibly to the diverse, dynamic situations of real-world environments, particularly in household settings [24]. While symbolic task planning with languages like the Planning Domain Definition Language (PDDL) [11] is effective in domains with fixed rules and predictable object categories, it lacks the adaptability required for open-ended household environments. In such settings, robots must deal with ambiguous user commands, detect novel or unstructured objects, and respond to constantly changing spatial configurations [24]. These limitations motivate our hypothesis that a modular LLMdriven system can enhance flexibility by leveraging natural language understanding, contextual reasoning, and memorybased adaptation. We provide a proof-of-concept implementation and assess its performance in real-world household tasks.In this work, we present an embodied robotic system with an LLM-driven agent-orchestration architecture, where specialized software agents collaborate to address long-horizon household tasks. Recent advances in Large Language Models (LLMs) [13], [4], [15], [23], [5] have improved systems realworld understanding, enabling common-sense reasoning in 1 Automation and Control Institute, Faculty of Electrical Engineering, TU Wien, 1040 Vienna, Austria {hoenig, hirschmanner, vincze}@acin.ac.tuwien.at 2 AIT Austrian Institute of Technology GmbH, Center for Vision, Automation and Control, 1210 Vienna, Austria marc.glocker@ait.ac.at Fig. 1: Our LLM-driven robotic system autonomously plans tasks and retrieves past interactions to improve object handling, illustrated by LLM-enforced task planning and memory-retrieved reasoning in a household setting. human language and making them accessible to researchers. These advances combined with in-context learning [26] enable flexible embodied task planning by decomposing high-level commands, such as \"clear the dining table\", into actionable steps based on detected objects [2], [7], [25], [9], [21]. By integrating Grounded Segment Anything Model (Grounded SAM) [17] and LLaMa3.2-Vision [4], our system creates grounded task plans. Unlike most other works, we address long-term operations by maintaining action and environment records, utilizing Retrieval-Augmented Generation (RAG) for efficient memory retrieval. Our approach enables the robot to autonomously organize and retrieve objects, interpret complex tasks, and provide updates on object locations, all while ensuring privacy through the use of offline LLMs and avoiding explicit model training. To illustrate the systems interaction, Fig. 1 shows an example of our system in action.In summary, we present the following key contributions:• A long-horizon task planner for household tasks leveraging in-context learning and offline LLMs.• Use of RAG for efficient memory retrieval and object tracking.• A modular agent-orchestration system that improves robustness and modularity.• Evaluation of the system's performance in three realworld household scenarios.This paper is structured as follows: Section II reviews related work in the areas of task planning and memory mechanisms. Section III details the proposed system architecture.",
+      "level": 1,
+      "path_id": "1",
+      "parent_section_id": null,
+      "order_in_parent": 0,
+      "section_id": "sec-1"
+    },
+    {
+      "title": "D r a f t",
+      "text": "Section IV describes the experimental setup and household scenarios. Section V presents the results. Finally, Section VI concludes the paper and outlines directions for future work.",
+      "level": 1,
+      "path_id": "1~2",
+      "parent_section_id": null,
+      "order_in_parent": 1,
+      "section_id": "sec-1~2"
+    },
+    {
+      "title": "II. RELATED WORK",
+      "text": "In this section we discuss related work for action and task planning, as well as memory and knowledge base.",
+      "level": 1,
+      "path_id": "1~3",
+      "parent_section_id": null,
+      "order_in_parent": 2,
+      "section_id": "sec-1~3"
+    },
+    {
+      "title": "A. Action and Task Planning",
+      "text": "Recent advancements in prompt engineering have improved the problem-solving capabilities of LLMs [26], [28], enabling the generation of structured plans without finetuning. Consequently, modern agent architectures leverage LLMs to dynamically react to execution failures [27], [7] and expand their context by retrieval [8] or external tools [19], [18]. However, LLMs lack an inherent understanding of a robot's physical abilities and real-world constraints. SayCan [2] addresses this by integrating value functions of pre-trained robotic skills to ensure feasibility, whereas Huang et al. [6] leverage LLMs to match high-level plans with lowlevel actions through semantic mapping. Some works treat LLMs as programmers rather than direct decision-makers: Code-as-Policies [9] and ProgPrompt [21] allow LLMs to generate structured code for robotic executions, enhancing flexibility but adding an execution layer.Pallagani et al. [14] found that LLMs perform better as translators of natural language into structured plans rather than generating plans from scratch. This ensures feasible actions based on predefined world models [20], [10]. These approaches are particularly effective in highly controlled environments, but present challenges when applied to openended, dynamic household settings. Our work, instead, embraces flexible, dynamic task planning with in-context learning like shown in [25]. The approaches named, while effective for short-horizon tasks, do not track object positions over time. For long-horizon tasks that involve real-world dynamic conditions, a combination of task planning and a memory mechanism is required.",
+      "level": 1,
+      "path_id": "1~4",
+      "parent_section_id": null,
+      "order_in_parent": 3,
+      "section_id": "sec-1~4"
+    },
+    {
+      "title": "B. Memory and Knowledge Base",
+      "text": "Long-horizon tasks require robust memory mechanisms. While LLM context windows keep expanding [23], using excessively large contexts in robotics is computationally inefficient. Instead, long-term memory retrieval, accessed only when needed, is a more viable solution. RAG [8] provides an efficient mechanism for narrowing context by querying a vast dataset and retrieving only relevant information. Additionally, scene graphs, used in approaches like SayPlan [16] and DELTA [10], offer structured memory that improves action verification and contextual reasoning. However, in unstructured and constantly changing environments, maintaining these graphs becomes challenging due to the need for complex automatic mechanisms or manual curation.Our work explores the feasibility of a lightweight, fully natural language-driven approach using RAG as a memory mechanism. Inspired by ReMEmbR [1], our system incorporates temporal elements into the retrieval process, ensuring the robot tracks long-term changes in its environment. While using language-based memory retrieval introduces potential for increased errors compared to structured models like scene graphs, we aim to evaluate how well purely language-based memory retrieval performs in practical, dynamic household scenarios. This approach offers flexibility, adaptability, and reduces the need for explicit world modelling, making it more suitable for real-world applications. III. METHODOLOGY Fig. 2: The full pipeline, integrating long-horizon task planning. Newly introduced components are highlighted in blue.Our system, coordinated by an agent-orchestration framework, combines task planning with RAG [8]. This chapter explains the individual components and their interaction.Fig. 2 illustrates the overall pipeline. The focus of this work is the agent-orchestration system, which processes object detection and user requests to create a robot task plan. In the system, each agent uses an LLM with a specialized role. The task planning agent additionally is prompted with a chain-of-thought technique [26].Fig. 3: The agent-orchestration architectureThe system architecture of the agent orchestrator, illustrated in Fig. 3, consists of:1) A routing agent, responsible for analyzing incoming user requests.D r a f t 2) A task planning agent, handling commands that require the robot to perform actions. 3) A knowledge base agent, processing follow-up questions about previously handled objects. When a user request arrives, the routing agent first analyzes it to determine its nature. The request is then categorized into one of three types: 1) Action command: If the robot is asked to perform an action, it is forwarded to the task planning agent. 2) Query about history: If it concerns previously handled objects, it is directed to the knowledge base agent. 3) Unclear request: If the request doesn't fit either category, clarification is requested before proceeding.",
+      "level": 1,
+      "path_id": "1~5",
+      "parent_section_id": null,
+      "order_in_parent": 4,
+      "section_id": "sec-1~5"
+    },
+    {
+      "title": "A. Task Planning Agent",
+      "text": "The task planning agent receives frequent environmental updates via camera perception, encoded as a list of single objects. Grounded SAM [17] enables text-driven object detection and segmentation for the pipeline, while Vision Language Models (VLMs) generate natural language descriptions of the environment. Although VLMs alone can extract the object list for the LLM, Grounded SAM is essential for precise segmentation, which is critical for grasping tasks. Using the object list, the LLM processes the user request -which can be both expressed in high-level or low-level terms -and formulates tasks that best fulfill the command. The generated answer has to include a JSON string for an action following this structure:1) Objects involved in the task.2) The destination for placement tasks. After the action is determined, the grasping process is initiated. We use the segmentation from Grounded SAM and the camera intrinsics to crop the depth image and project the depth crop to a 3D pointcloud of the respective object. To estimate a grasp approach vector, we feed the cropped object point cloud to Control-GraspNet [22], a pre-trained grasp estimator. The knowledge base agent is used for user inquiries regarding past robot actions, such as object locations or task completion status. These queries require access to longterm memory, for which RAG has proven most effective, as discussed in Section II. Fig 4 illustrates the RAG workflow, comprising two key steps:",
+      "level": 1,
+      "path_id": "1~6",
+      "parent_section_id": null,
+      "order_in_parent": 5,
+      "section_id": "sec-1~6"
+    },
+    {
+      "title": "B. Knowledge Base Agent",
+      "text": "1) Document Ingestion: Input data, such as conversation history, is preprocessed, split into smaller chunks (each representing a question-answer pair), and converted into high-dimensional vectors using an embedding model. These embeddings are then stored in a vector database for efficient retrieval. 2) User Query, Retrieval, and Response Generation:User queries are embedded using the same model and are matched against the stored vectors to retrieve the most relevant context. This context is then provided to the LLM, which generates a response tailored to the user's query. To enable chronological reasoning, essential for tracking object movements over time, we augment RAG with a time stamp for each question-answer pair.IV. EXPERIMENTS To evaluate our system, we conduct experiments addressing the three key challenges from Chapter I: (1) flexible task planning in dynamic household environments, (2) longterm memory usage, and (3) modular agent coordination. Specifically, we assess the system's ability to create grounded task plans, answer questions based on prior interactions, and route tasks to the appropriate agent.",
+      "level": 1,
+      "path_id": "1~7",
+      "parent_section_id": null,
+      "order_in_parent": 6,
+      "section_id": "sec-1~7"
+    },
+    {
+      "title": "A. Experimental Setup",
+      "text": "This study evaluates an agent-orchestration system for symbolic task planning and follow-up questions via a knowledge base. To ensure a thorough evaluation, we consider three distinct phases:1) Task Planning Performance -The symbolic task planning output is assessed independently, measuring accuracy of object assignment to their destinations. 2) Knowledge Base Reliability -The system's ability to reason about past actions (with and without RAG) is tested by asking about the system's current status, such as locations of previously moved items. 3) Routing Reliability -Measures the accuracy of the routing agent in directing queries to the appropriate agent (Task Planning, History, or itself). To isolate the performance of the specialized agents, agent handoff is not considered in the evaluation of 1) and 2).",
+      "level": 1,
+      "path_id": "1~8",
+      "parent_section_id": null,
+      "order_in_parent": 7,
+      "section_id": "sec-1~8"
+    },
+    {
+      "title": "B. Algorithmic Framework",
+      "text": "The frameworks and models used are shown in gray in Fig. 4. To enable efficient collaboration among agents, we use OpenAI Swarm [12], a lightweight framework for agent orchestration and task delegation. We evaluate the performance of Qwen2.5-32b  The experiment is conducted in an artificial household environment, where objects must be assigned to correct destinations based on high-level commands. To evaluate task planning, we define three scenarios (see Fig. 6) that share five predefined placement locations, while each uses a different cleanup zone. Fig. 5 shows a visual representation of the environment. These locations reflect common-sense knowledge typically understood by LLMs. To ensure clarity, the agent receives explicit definitions for each destination:• Sink -For items that need washing.• Trash Can -For disposable or inedible items.• Fridge -For perishable food.• Food Shelf -For non-perishable food items.• Storage Box -For general storage.Fig. 6 shows the object list extracted from a captured image of each task scenario using LLaMa3.2-Vision along with the user queries and the segmentation results from Grounded SAM.After execution of all scenarios, the knowledge base agent is asked four distinct folow-up questions targeting different aspects of retrieval and reasoning:• Error Detection: \"Where is the jacket that was in the living room? I thought you put it in the storage box, but I can't find it there.\" • Hallucination: \"Where did you put the laptop? It's not on the desk anymore.\" • Food Availability: \"I am hungry. Is there any food left from earlier?\" • Trash Status: \"How many objects are in the trash can?\" To better reflect real-world applications, we extend the conversation dialogue with additional question-answer pairs containing actions. Furthermore, deliberate errors are introduced into the task plans, where the agent provides the user a different location than the one forwarded to the state machine. This allows us to evaluate how well the knowledge base handles inaccuracies. Beyond evaluating the specialized agents in isolated setups, we assess how effectively the routing agent delegates tasks to the appropriate specialized agent. Specifically, we test:• Task Planning Queries: The three high-level commands from the task planning scenarios (see Fig. 6) and an additional low-level request (\"Can I have a banana?\")• Knowledge Base Queries: The four follow-up questions from the knowledge base scenario.",
+      "level": 1,
+      "path_id": "1~9",
+      "parent_section_id": null,
+      "order_in_parent": 8,
+      "section_id": "sec-1~9"
+    },
+    {
+      "title": "D. Evaluation Methodology",
+      "text": "The evaluation of the agent-orchestration system's components is based on the task scenarios and follow-up questions defined in Section IV-C. Task planning performance is evaluated by testing each model on the three task scenarios, with each scenario executed five times per model. Accuracy is measured at the object level as the percentage of correctly assigned tasks. A task is deemed correct if it satisfies the following criteria:• Valid JSON format • Correct destination assignment • Stationary Object Exclusion (ensuring no task is assigned to items that should remain in place) The final accuracy score represents the percentage of objects for which tasks were correctly assigned, including the implicit \"no task\" assignment for stationary objects (e.g., table ).The knowledge base is evaluated using four follow-up questions, each tested five times per model. Unlike the task planning agent, the knowledge base agent does not require a strict output format. It is assessed based on factual correctness, measured as the percentage of correct answers. For queries expecting multiple objects as an answer (e.g., \"Which objects are in the trash?\"), accuracy is based on the percentage of correctly identified objects.The routing agent's ability to correctly assign tasks is evaluated by processing queries from the task planning scenarios and history-based questions, along with one additional query, five times per model. The final metric is quantified as the percentage of correctly assigned tasks. Gemma2, which does not support tool calling, is excluded from this test.",
+      "level": 1,
+      "path_id": "1~10",
+      "parent_section_id": null,
+      "order_in_parent": 9,
+      "section_id": "sec-1~10"
+    },
+    {
+      "title": "V. RESULTS AND DISCUSSION",
+      "text": "This section presents the experimental results for task planning, knowledge base and agent routing.",
+      "level": 1,
+      "path_id": "1~11",
+      "parent_section_id": null,
+      "order_in_parent": 10,
+      "section_id": "sec-1~11"
+    },
+    {
+      "title": "A. Task Planning",
+      "text": "We introduce a lenient evaluation metric (cf. Table I), where reasonable alternative placements based on user preferences are counted as correct. The strictly correct placements, following the intended plan as prompted to the LLM, are presented under the strict metric in Table I.Table I shows that Qwen consistently outperforms the other models in nearly all scenarios. LLaMA performs notably worse in the living room scenario, with the lowest strict accuracy (40.0%). Gemma2 falls between the two, showing higher accuracy than LLaMA but lower than Qwen.",
+      "level": 1,
+      "path_id": "1~12",
+      "parent_section_id": null,
+      "order_in_parent": 11,
+      "section_id": "sec-1~12"
+    },
+    {
+      "title": "B. Knowledge Base",
+      "text": "The integration of RAG notably enhances the accuracy of the knowledge base's responses, even in medium-term interactions consisting of 21 question-answer pairs with approximately 4000 tokens. Qwen achieves the highest validity (91.3%) with RAG (cf. Table II), highlighting the potential of retrieval-augmented approaches for maintaining consistency over longer interactions.    Fig. 6: The three scenarios used for task planning. For each scenario we have extracted an object list using the Vision-Language Model LLaMa3.2-Vision. This list is used as input for Grounded SAM [17] to perform segmentation.",
+      "level": 1,
+      "path_id": "1~13",
+      "parent_section_id": null,
+      "order_in_parent": 12,
+      "section_id": "sec-1~13"
+    },
+    {
+      "title": "Model",
+      "text": "DiningTable Living Room Desk Organization Total Accuracy (%) Strict (%) Lenient (%) Strict (%) Lenient (%) Strict (%) Lenient (%) Strict (%) Lenient (%) LLaMa3.1-8B 68.0 78.0 40.0 40.0 61.3 65.3 56.4 61.1 Gemma2-27B 58.0 68.0 68.9 68.9 68.0 69.3 65.0 68.7 Qwen2.5-32B 64.0 80.0 88.9 88.9 78.7 84.0 77.2 84.3TABLE I: Task Planning Accuracy Across Different LLMs. Strict (%): Percentage of objects correctly placed according to the intended plan. Lenient (%): Percentage of objects placed differently than expected, but with reasonable alternative placements based on user preferences. Method Model Response Validity (%) Total Validity (%) Err. Detection Hallucination Food Avail. Trash Status Without RAG (Ablation Study) LLaMa3.1-8B 20.0 80.0 70.0 65.0 58.8 Gemma2-27B 0.0 80.0 10.0 60.0 37.5 Qwen2.5-32B 0.0 80.0 60.0 75.0 53.75 With RAG LLaMa3.1-8B 40.0 100.0 90.0 55.0 71.25 Gemma2-27B 80.0 100.0 40.0 60.0 70.0 Qwen2.5-32B 100.0 100.0 90.0 75.0 91.3TABLE II: Knowledge Base Response Accuracy Across Different LLMs. Used Embedding Model for RAG: BGE-M3. No. of question-answer pairs retrieved by RAG: 5 C. Agent RoutingIn task delegation, LLaMA exhibits the highest routing accuracy (92.5%), despite its weaker reasoning abilities (cf. Table III). Its structured approach to tool-calling ensures stable performance. In contrast, Qwen, while superior in contextual understanding, occasionally produces incorrect structured outputs, leading to execution failures.",
+      "level": 1,
+      "path_id": "1~14",
+      "parent_section_id": null,
+      "order_in_parent": 13,
+      "section_id": "sec-1~14"
+    },
+    {
+      "title": "D. Summary",
+      "text": "Our findings highlight the potential of lightweight, opensource LLMs for memory-augmented long-horizon task planning. A combination of LLaMA (routing) and Qwen (specialized agents) achieves the best balance between structured execution and high-level reasoning.Evaluating task execution remains challenging due to subjective human preferences, emphasizing the need for user studies. Furthermore, integrating Vision-Language Models (VLMs) into the agent orchestrator -rather than only using them for object lists -could enhance robustness. Embedding contextual information into the latent space reduces command dependency and improves autonomy.RAG improves factual consistency in knowledge retrieval but struggles with repeated object interactions and long histories, making full-history queries impractical. Scene graphs, as proposed by Liu et al. [10], present a promising alternative for efficient and robust knowledge integration.",
+      "level": 1,
+      "path_id": "1~15",
+      "parent_section_id": null,
+      "order_in_parent": 14,
+      "section_id": "sec-1~15"
+    },
+    {
+      "title": "D r a f t",
+      "text": "",
+      "level": 1,
+      "path_id": "1~16",
+      "parent_section_id": null,
+      "order_in_parent": 15,
+      "section_id": "sec-1~16"
+    },
+    {
+      "title": "Model",
+      "text": "Task Planning Queries (%) Knowledge Base Queries (%) Total Success Rate (%) LLaMa3.1-8B 85.0 100.0 92.5 Qwen2.5-32B 95.0 85.0 90.0",
+      "level": 1,
+      "path_id": "1~17",
+      "parent_section_id": null,
+      "order_in_parent": 16,
+      "section_id": "sec-1~17"
+    },
+    {
+      "title": "TABLE III: Routing Success Rate Across Different LLMs",
+      "text": "While task delegation via the routing agent was mostly successful, certain models occasionally produced invalid structured outputs, leading to execution failures. To increase robustness, future work should explore schema validation and adaptive retry mechanisms that can automatically mitigate such issues.In summary, open-source LLMs prove viable for longhorizon task planning. However, addressing key challengesrefining evaluation metrics, improving long-term robustness, and integrating multimodal perception -remains essential for achieving reliable household robotics.",
+      "level": 1,
+      "path_id": "1~18",
+      "parent_section_id": null,
+      "order_in_parent": 17,
+      "section_id": "sec-1~18"
+    },
+    {
+      "title": "VI. CONCLUSION",
+      "text": "This work presents a prototype of an agent-orchestration system for household robots, utilizing local, lightweight open-source LLMs to translate high-level user commands into structured task plans for tidy-up scenarios. Memoryaugmented task planning enables follow-up queries about past actions, improving user interaction and assisting in locating misplaced objects. Our evaluation shows strong task planning, routing, and knowledge retrieval. with Qwen2.5 excelling in reasoning-heavy tasks and LLaMA3.1 providing a more efficient routing solution. However, RAG-based retrieval for general tasks remains a challenge, particularly for implicit queries where relevant information is not always found. Addressing these limitations is key to improving longterm reasoning and knowledge access.Future work will focus on robust storage solutions, improved knowledge representations, broader user studies with structured datasets for evaluating and benchmarking existing approaches. Enhancing communication and tool usage in agent-orchestration will be crucial for greater adaptability and autonomy in household robotics.Fig. 4 :4Fig.4: RAG workflow for long-term question answering: Relevant past actions are retrieved from dialogue history, and the LLM generates responses based on the retrieved context.\n[15], Gemma2-27b[23], and LLaMa3.1-8b[4], selected for their open-source availability and ability to run locally on 16GB GPU RAM. For RAG, we employ ChromaDB [3], a vector database optimized for fast lookups, combined with the embedding model BGE-M3. D r a f t C. Task Scenarios\nFig. 5 :5Fig. 5: The artificial household environment used in the experiment.\nD r a f t (a) Scenario 1 :1Dining Table Cleanup\nObject list from VLM: Plate, Fork, Spoon, Salt shaker, Glass, Frying pan, Spatula, Chair, Table top, Pepper grinder. Command: I just finished dinner, please clear the dining table.\n(b) Scenario 2 :2Living Room CleanupObject list from VLM: A table, A couch, A brush, Scissors, Pen, Book, Salt packet, Jacket, Markers. Command: Please hand me the brush and tidy up the rest of the living room.\n( c )cScenario 3: Desk Organization Object list from VLM: Desk, Computer Monitor, Laptop, Mouse, Plate, Crumbs, Lemon, Cup, Glass of water, Bag of chips, Piece of paper, Potted plant, Cord, Wooden desk, White wall. Command: Please clear my desk, leaving only the essentials for work.",
+      "level": 1,
+      "path_id": "1~19",
+      "parent_section_id": null,
+      "order_in_parent": 18,
+      "section_id": "sec-1~19"
+    }
+  ],
+  "citations": [
+    {
+      "raw_text": "Remembr: Building and reasoning over long-horizon spatio-temporal memory for robot navigation\n\t\t\n\t\t\tAAnwar\n\t\t\n\t\t\n\t\t\tJWelsh\n\t\t\n\t\t\n\t\t\tJBiswas\n\t\t\n\t\t\n\t\t\tSPouya\n\t\t\n\t\t\n\t\t\tYChang\n\t\t\n\t\tarXiv:2409.13682\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2409.13682",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b0",
+          "section_path_id": "1~5",
+          "quote": "[1]",
+          "offset": 884
+        }
+      ]
+    },
+    {
+      "raw_text": "Do as i can, not as i say: Grounding language in robotic affordances\n\t\t\n\t\t\tABrohan\n\t\t\n\t\n\t\n\t\tProceedings of the Conference on Robot Learning (CoRL)\n\t\tthe Conference on Robot Learning (CoRL)\n\t\t\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Do as i can, not as i say: Grounding language in robotic affordances",
+      "anchors": [
+        {
+          "ref_id": "b1",
+          "section_path_id": "1",
+          "quote": "[2]",
+          "offset": 2043
+        },
+        {
+          "ref_id": "b1",
+          "section_path_id": "1~4",
+          "quote": "[2]",
+          "offset": 465
+        }
+      ]
+    },
+    {
+      "raw_text": "open-source vector database for AI applications\n\t\t\n\t\t\t\"Chroma\n\t\t\n\t\t\n\t\t\tChromadb",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": []
+    },
+    {
+      "raw_text": "The llama 3 herd of models\n\t\t\n\t\t\tADubey\n\t\t\n\t\tarXiv:2407.21783\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2407.21783",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b3",
+          "section_path_id": "1",
+          "quote": "[4]",
+          "offset": 1169
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1",
+          "quote": "[4]",
+          "offset": 2157
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1~19",
+          "quote": "[4]",
+          "offset": 1338
+        }
+      ]
+    },
+    {
+      "raw_text": "Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning\n\t\t\n\t\t\tDGuo\n\t\t\n\t\tarXiv:2501.12948\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2501.12948",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b4",
+          "section_path_id": "1",
+          "quote": "[5]",
+          "offset": 1186
+        }
+      ]
+    },
+    {
+      "raw_text": "Language models as zero-shot planners: Extracting actionable knowledge for embodied agents\n\t\t\n\t\t\tWHuang\n\t\t\n\t\t\n\t\t\tPAbbeel\n\t\t\n\t\t\n\t\t\tDPathak\n\t\t\n\t\t\n\t\t\tIMordatch\n\t\t\n\t\n\t\n\t\tProceedings of the International Conference on Machine Learning (ICML)\n\t\tthe International Conference on Machine Learning (ICML)\n\t\t\n\t\t\t2022",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Language models as zero-shot planners: Extracting actionable knowledge for embodied agents",
+      "anchors": [
+        {
+          "ref_id": "b5",
+          "section_path_id": "1~4",
+          "quote": "[6]",
+          "offset": 589
+        }
+      ]
+    },
+    {
+      "raw_text": "Inner monologue: Embodied reasoning through planning with language models\n\t\t\n\t\t\tWHuang\n\t\t\n\t\tarXiv:2207.05608\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2207.05608",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b6",
+          "section_path_id": "1",
+          "quote": "[7]",
+          "offset": 2048
+        },
+        {
+          "ref_id": "b6",
+          "section_path_id": "1~4",
+          "quote": "[7]",
+          "offset": 277
+        }
+      ]
+    },
+    {
+      "raw_text": "Retrieval-augmented generation for knowledgeintensive nlp tasks\n\t\t\n\t\t\tPLewis\n\t\t\n\t\n\t\n\t\tAdvances in neural information processing systems\n\t\t\n\t\t\t2020\n\t\t\t33",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Retrieval-augmented generation for knowledgeintensive nlp tasks",
+      "anchors": [
+        {
+          "ref_id": "b7",
+          "section_path_id": "1~4",
+          "quote": "[8]",
+          "offset": 319
+        },
+        {
+          "ref_id": "b7",
+          "section_path_id": "1~5",
+          "quote": "[8]",
+          "offset": 272
+        },
+        {
+          "ref_id": "b7",
+          "section_path_id": "1~5",
+          "quote": "[8]",
+          "offset": 1658
+        }
+      ]
+    },
+    {
+      "raw_text": "Code as policies: Language model programs for embodied control\n\t\t\n\t\t\tJLiang\n\t\t\n\t\n\t\n\t\tProceedings of the IEEE International Conference on Robotics and Automation (ICRA)\n\t\tthe IEEE International Conference on Robotics and Automation (ICRA)\n\t\t\n\t\t\tIEEE\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Code as policies: Language model programs for embodied control",
+      "anchors": [
+        {
+          "ref_id": "b8",
+          "section_path_id": "1",
+          "quote": "[9]",
+          "offset": 2059
+        },
+        {
+          "ref_id": "b8",
+          "section_path_id": "1~4",
+          "quote": "[9]",
+          "offset": 771
+        }
+      ]
+    },
+    {
+      "raw_text": "Delta: Decomposed efficient long-term robot task planning using large language models\n\t\t\n\t\t\tYLiu\n\t\t\n\t\t\n\t\t\tLPalmieri\n\t\t\n\t\t\n\t\t\tSKoch\n\t\t\n\t\t\n\t\t\tIGeorgievski\n\t\t\n\t\t\n\t\t\tMAiello\n\t\t\n\t\tarXiv:2404.03275\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2404.03275",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b9",
+          "section_path_id": "1~4",
+          "quote": "[10]",
+          "offset": 1132
+        },
+        {
+          "ref_id": "b9",
+          "section_path_id": "1~5",
+          "quote": "[10]",
+          "offset": 474
+        },
+        {
+          "ref_id": "b9",
+          "section_path_id": "1~15",
+          "quote": "[10]",
+          "offset": 848
+        }
+      ]
+    },
+    {
+      "raw_text": "The 1998 AI planning systems competition\n\t\t\n\t\t\tDMMcdermott\n\t\t\n\t\n\t\n\t\tAI Magazine\n\t\t\n\t\t\t21\n\t\t\t2\n\t\t\t35\n\t\t\t2000",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "The 1998 AI planning systems competition",
+      "anchors": [
+        {
+          "ref_id": "b10",
+          "section_path_id": "1",
+          "quote": "[11]",
+          "offset": 305
+        }
+      ]
+    },
+    {
+      "raw_text": "Swarm: Educational framework for multi-agent systems\n\t\t\n\t\t\tOpenai",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b11",
+          "section_path_id": "1~9",
+          "quote": "[12]",
+          "offset": 128
+        }
+      ]
+    },
+    {
+      "raw_text": "GPT-4 technical report\n\t\t\n\t\t\tOpenai\n\t\t\n\t\t\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b12",
+          "section_path_id": "1",
+          "quote": "[13]",
+          "offset": 1163
+        }
+      ]
+    },
+    {
+      "raw_text": "On the prospects of incorporating large language models (llms) in automated planning and scheduling (aps)\n\t\t\n\t\t\tVPallagani\n\t\t\n\t\n\t\n\t\tProceedings of the International Conference on Automated Planning and Scheduling\n\t\tthe International Conference on Automated Planning and Scheduling\n\t\t\n\t\t\t2024\n\t\t\t34",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "On the prospects of incorporating large language models (llms) in automated planning and scheduling (aps)",
+      "anchors": [
+        {
+          "ref_id": "b13",
+          "section_path_id": "1~4",
+          "quote": "[14]",
+          "offset": 927
+        }
+      ]
+    },
+    {
+      "raw_text": "Qwen2.5 technical report\n\t\t\n\t\t\tQwen\n\t\t\n\t\t\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b14",
+          "section_path_id": "1",
+          "quote": "[15]",
+          "offset": 1174
+        },
+        {
+          "ref_id": "b14",
+          "section_path_id": "1~19",
+          "quote": "[15]",
+          "offset": 1301
+        }
+      ]
+    },
+    {
+      "raw_text": "Sayplan: Grounding large language models using 3d scene graphs for scalable robot task planning\n\t\t\n\t\t\tKRana\n\t\t\n\t\tarXiv:2307.06135\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2307.06135",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b15",
+          "section_path_id": "1~5",
+          "quote": "[16]",
+          "offset": 459
+        }
+      ]
+    },
+    {
+      "raw_text": "Grounded sam: Assembling open-world models for diverse visual tasks\n\t\t\n\t\t\tTRen\n\t\t\n\t\tarXiv:2401.14159\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2401.14159",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b16",
+          "section_path_id": "1",
+          "quote": "[17]",
+          "offset": 2132
+        },
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~6",
+          "quote": "[17]",
+          "offset": 137
+        },
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~13",
+          "quote": "[17]",
+          "offset": 574
+        }
+      ]
+    },
+    {
+      "raw_text": "Tptu: Task planning and tool usage of large language model-based ai agents\n\t\t\n\t\t\tJRuan\n\t\t\n\t\n\t\n\t\tNeurIPS 2023 Foundation Models for Decision Making Workshop\n\t\t\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Tptu: Task planning and tool usage of large language model-based ai agents",
+      "anchors": [
+        {
+          "ref_id": "b17",
+          "section_path_id": "1~4",
+          "quote": "[18]",
+          "offset": 347
+        }
+      ]
+    },
+    {
+      "raw_text": "Toolformer: Language models can teach themselves to use tools\n\t\t\n\t\t\tTSchick\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t2023\n\t\t\t36",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Toolformer: Language models can teach themselves to use tools",
+      "anchors": [
+        {
+          "ref_id": "b18",
+          "section_path_id": "1~4",
+          "quote": "[19]",
+          "offset": 341
+        }
+      ]
+    },
+    {
+      "raw_text": "Generalized planning in pddl domains with pretrained large language models\n\t\t\n\t\t\tTSilver\n\t\t\n\t\n\t\n\t\tProceedings of the AAAI Conference on Artificial Intelligence\n\t\tthe AAAI Conference on Artificial Intelligence\n\t\t\n\t\t\t2024\n\t\t\t38",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Generalized planning in pddl domains with pretrained large language models",
+      "anchors": [
+        {
+          "ref_id": "b19",
+          "section_path_id": "1~4",
+          "quote": "[20]",
+          "offset": 1126
+        }
+      ]
+    },
+    {
+      "raw_text": "Progprompt: Generating situated robot task plans using large language models\n\t\t\n\t\t\tISingh\n\t\t\n\t\n\t\n\t\tProceedings of the IEEE International Conference on Robotics and Automation (ICRA)\n\t\tthe IEEE International Conference on Robotics and Automation (ICRA)\n\t\t\n\t\t\tIEEE\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Progprompt: Generating situated robot task plans using large language models",
+      "anchors": [
+        {
+          "ref_id": "b20",
+          "section_path_id": "1",
+          "quote": "[21]",
+          "offset": 2064
+        },
+        {
+          "ref_id": "b20",
+          "section_path_id": "1~4",
+          "quote": "[21]",
+          "offset": 790
+        }
+      ]
+    },
+    {
+      "raw_text": "Contactgraspnet: Efficient 6-dof grasp generation in cluttered scenes\n\t\t\n\t\t\tMSundermeyer\n\t\t\n\t\t\n\t\t\tAMousavian\n\t\t\n\t\t\n\t\t\tRTriebel\n\t\t\n\t\t\n\t\t\tDFox\n\t\t\n\t\n\t\n\t\tProceedings of the IEEE International Conference on Robotics and Automation (ICRA)\n\t\tthe IEEE International Conference on Robotics and Automation (ICRA)\n\t\t\n\t\t\t2021\n\t\t\t13\n\t\t\t444",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Contactgraspnet: Efficient 6-dof grasp generation in cluttered scenes",
+      "anchors": [
+        {
+          "ref_id": "b21",
+          "section_path_id": "1~6",
+          "quote": "[22]",
+          "offset": 1121
+        }
+      ]
+    },
+    {
+      "raw_text": "Gemma 2: Improving open language models at a practical size\n\t\t\n\t\t\tGTeam\n\t\t\n\t\tarXiv:2408.00118\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2408.00118",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b22",
+          "section_path_id": "1",
+          "quote": "[23]",
+          "offset": 1180
+        },
+        {
+          "ref_id": "b22",
+          "section_path_id": "1~5",
+          "quote": "[23]",
+          "offset": 94
+        },
+        {
+          "ref_id": "b22",
+          "section_path_id": "1~19",
+          "quote": "[23]",
+          "offset": 1317
+        }
+      ]
+    },
+    {
+      "raw_text": "Robots that use language\n\t\t\n\t\t\tSTellex\n\t\t\n\t\t\n\t\t\tNGopalan\n\t\t\n\t\t\n\t\t\tHKress-Gazit\n\t\t\n\t\t\n\t\t\tCMatuszek\n\t\t\n\t\n\t\n\t\tRobotics, and Autonomous Systems\n\t\t\n\t\t\t3\n\t\t\t1\n\t\t\t\n\t\t\t2020\n\t\t\n\t\n\tAnnual Review of Control",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Robots that use language",
+      "anchors": [
+        {
+          "ref_id": "b23",
+          "section_path_id": "1",
+          "quote": "[24]",
+          "offset": 203
+        },
+        {
+          "ref_id": "b23",
+          "section_path_id": "1",
+          "quote": "[24]",
+          "offset": 621
+        }
+      ]
+    },
+    {
+      "raw_text": "Chatgpt for robotics: Design principles and model abilities\n\t\t\n\t\t\tSHVemprala\n\t\t\n\t\t\n\t\t\tRBonatti\n\t\t\n\t\t\n\t\t\tABucker\n\t\t\n\t\t\n\t\t\tAKapoor\n\t\t\n\t\t\n\t\t\t2024\n\t\t\tIeee Access",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b24",
+          "section_path_id": "1",
+          "quote": "[25]",
+          "offset": 2053
+        },
+        {
+          "ref_id": "b24",
+          "section_path_id": "1~4",
+          "quote": "[25]",
+          "offset": 1394
+        }
+      ]
+    },
+    {
+      "raw_text": "Chain-of-thought prompting elicits reasoning in large language models\n\t\t\n\t\t\tJWei\n\t\t\n\t\n\t\n\t\tAdvances in neural information processing systems\n\t\t\n\t\t\t2022\n\t\t\t35",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Chain-of-thought prompting elicits reasoning in large language models",
+      "anchors": [
+        {
+          "ref_id": "b25",
+          "section_path_id": "1",
+          "quote": "[26]",
+          "offset": 1881
+        },
+        {
+          "ref_id": "b25",
+          "section_path_id": "1~4",
+          "quote": "[26]",
+          "offset": 97
+        },
+        {
+          "ref_id": "b25",
+          "section_path_id": "1~5",
+          "quote": "[26]",
+          "offset": 2058
+        }
+      ]
+    },
+    {
+      "raw_text": "React: Synergizing reasoning and acting in language models\n\t\t\n\t\t\tSYao\n\t\t\n\t\n\t\n\t\tProceedings of the International Conference on Learning Representations (ICLR)\n\t\tthe International Conference on Learning Representations (ICLR)\n\t\t\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "React: Synergizing reasoning and acting in language models",
+      "anchors": [
+        {
+          "ref_id": "b26",
+          "section_path_id": "1~4",
+          "quote": "[27]",
+          "offset": 271
+        }
+      ]
+    },
+    {
+      "raw_text": "Least-to-most prompting enables complex reasoning in large language models\n\t\t\n\t\t\tDZhou\n\t\t\n\t\tarXiv:2205.10625\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2205.10625",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b27",
+          "section_path_id": "1~4",
+          "quote": "[28]",
+          "offset": 103
+        }
+      ]
+    }
+  ],
+  "layout_json": null,
+  "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">D r a f t LLM-Empowered Embodied Agent for Memory-Augmented Task Planning in Household Robotics</title>\n\t\t\t\t<funder ref=\"#_MBTZZdG\">\n\t\t\t\t\t<orgName type=\"full\">EU program EC Horizon 2020 for Research and Innovation</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder>\n\t\t\t\t\t<orgName type=\"full\">Austrian Science Fund (FWF)</orgName>\n\t\t\t\t</funder>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability status=\"unknown\"><licence/></availability>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Marc</forename><surname>Glocker</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Peter</forename><surname>Hönig</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Matthias</forename><surname>Hirschmanner</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Markus</forename><surname>Vincze</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">D r a f t LLM-Empowered Embodied Agent for Memory-Augmented Task Planning in Household Robotics</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date/>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">9600DDC2C1B1A96443B37B35FDBE9D70</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.1\" ident=\"GROBID\" when=\"2026-10-13T10:58+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.1</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null, debugLabelingCollector=disabled</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<textClass>\n\t\t\t\t<keywords>\n\t\t\t\t\t<term>Embodied AI</term>\n\t\t\t\t\t<term>Task Planning</term>\n\t\t\t\t\t<term>Memory Retrieval</term>\n\t\t\t\t</keywords>\n\t\t\t</textClass>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>We present an embodied robotic system with an LLM-driven agent-orchestration architecture for autonomous household object management. The system integrates memoryaugmented task planning, enabling robots to execute high-level user commands while tracking past actions. It employs three specialized agents: a routing agent, a task planning agent, and a knowledge base agent, each powered by task-specific LLMs. By leveraging in-context learning, our system avoids the need for explicit model training. RAG enables the system to retrieve context from past interactions, enhancing long-term object tracking. A combination of Grounded SAM and LLaMa3.2-Vision provides robust object detection, facilitating semantic scene understanding for task planning. Evaluation across three household scenarios demonstrates high task planning accuracy and an improvement in memory recall due to RAG. Specifically, Qwen2.5 yields best performance for specialized agents, while LLaMA3.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"595.276\" lry=\"841.89\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"595.276\" lry=\"841.89\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"595.276\" lry=\"841.89\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"595.276\" lry=\"841.89\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"595.276\" lry=\"841.89\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"595.276\" lry=\"841.89\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>I. INTRODUCTION</head><p>Despite recent progress in robotics and artificial intelligence, robots still struggle to adapt flexibly to the diverse, dynamic situations of real-world environments, particularly in household settings <ref type=\"bibr\" target=\"#b23\">[24]</ref>. While symbolic task planning with languages like the Planning Domain Definition Language (PDDL) <ref type=\"bibr\" target=\"#b10\">[11]</ref> is effective in domains with fixed rules and predictable object categories, it lacks the adaptability required for open-ended household environments. In such settings, robots must deal with ambiguous user commands, detect novel or unstructured objects, and respond to constantly changing spatial configurations <ref type=\"bibr\" target=\"#b23\">[24]</ref>. These limitations motivate our hypothesis that a modular LLMdriven system can enhance flexibility by leveraging natural language understanding, contextual reasoning, and memorybased adaptation. We provide a proof-of-concept implementation and assess its performance in real-world household tasks.</p><p>In this work, we present an embodied robotic system with an LLM-driven agent-orchestration architecture, where specialized software agents collaborate to address long-horizon household tasks. Recent advances in Large Language Models (LLMs) <ref type=\"bibr\" target=\"#b12\">[13]</ref>, <ref type=\"bibr\" target=\"#b3\">[4]</ref>, <ref type=\"bibr\" target=\"#b14\">[15]</ref>, <ref type=\"bibr\" target=\"#b22\">[23]</ref>, <ref type=\"bibr\" target=\"#b4\">[5]</ref> have improved systems realworld understanding, enabling common-sense reasoning in 1 Automation and Control Institute, Faculty of Electrical Engineering, TU Wien, 1040 Vienna, Austria {hoenig, hirschmanner, vincze}@acin.ac.tuwien.at 2 AIT Austrian Institute of Technology GmbH, Center for Vision, Automation and Control, 1210 Vienna, Austria marc.glocker@ait.ac.at Fig. <ref type=\"figure\" target=\"#fig_3\">1</ref>: Our LLM-driven robotic system autonomously plans tasks and retrieves past interactions to improve object handling, illustrated by LLM-enforced task planning and memory-retrieved reasoning in a household setting. human language and making them accessible to researchers. These advances combined with in-context learning <ref type=\"bibr\" target=\"#b25\">[26]</ref> enable flexible embodied task planning by decomposing high-level commands, such as \"clear the dining table\", into actionable steps based on detected objects <ref type=\"bibr\" target=\"#b1\">[2]</ref>, <ref type=\"bibr\" target=\"#b6\">[7]</ref>, <ref type=\"bibr\" target=\"#b24\">[25]</ref>, <ref type=\"bibr\" target=\"#b8\">[9]</ref>, <ref type=\"bibr\" target=\"#b20\">[21]</ref>. By integrating Grounded Segment Anything Model (Grounded SAM) <ref type=\"bibr\" target=\"#b16\">[17]</ref> and LLaMa3.2-Vision <ref type=\"bibr\" target=\"#b3\">[4]</ref>, our system creates grounded task plans. Unlike most other works, we address long-term operations by maintaining action and environment records, utilizing Retrieval-Augmented Generation (RAG) for efficient memory retrieval. Our approach enables the robot to autonomously organize and retrieve objects, interpret complex tasks, and provide updates on object locations, all while ensuring privacy through the use of offline LLMs and avoiding explicit model training. To illustrate the systems interaction, Fig. <ref type=\"figure\" target=\"#fig_3\">1</ref> shows an example of our system in action.</p><p>In summary, we present the following key contributions:</p><p>• A long-horizon task planner for household tasks leveraging in-context learning and offline LLMs.</p><p>• Use of RAG for efficient memory retrieval and object tracking.</p><p>• A modular agent-orchestration system that improves robustness and modularity.</p><p>• Evaluation of the system's performance in three realworld household scenarios.</p><p>This paper is structured as follows: Section II reviews related work in the areas of task planning and memory mechanisms. Section III details the proposed system architecture.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>D r a f t</head><p>Section IV describes the experimental setup and household scenarios. Section V presents the results. Finally, Section VI concludes the paper and outlines directions for future work.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>II. RELATED WORK</head><p>In this section we discuss related work for action and task planning, as well as memory and knowledge base.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A. Action and Task Planning</head><p>Recent advancements in prompt engineering have improved the problem-solving capabilities of LLMs <ref type=\"bibr\" target=\"#b25\">[26]</ref>, <ref type=\"bibr\" target=\"#b27\">[28]</ref>, enabling the generation of structured plans without finetuning. Consequently, modern agent architectures leverage LLMs to dynamically react to execution failures <ref type=\"bibr\" target=\"#b26\">[27]</ref>, <ref type=\"bibr\" target=\"#b6\">[7]</ref> and expand their context by retrieval <ref type=\"bibr\" target=\"#b7\">[8]</ref> or external tools <ref type=\"bibr\" target=\"#b18\">[19]</ref>, <ref type=\"bibr\" target=\"#b17\">[18]</ref>. However, LLMs lack an inherent understanding of a robot's physical abilities and real-world constraints. SayCan <ref type=\"bibr\" target=\"#b1\">[2]</ref> addresses this by integrating value functions of pre-trained robotic skills to ensure feasibility, whereas Huang et al. <ref type=\"bibr\" target=\"#b5\">[6]</ref> leverage LLMs to match high-level plans with lowlevel actions through semantic mapping. Some works treat LLMs as programmers rather than direct decision-makers: Code-as-Policies <ref type=\"bibr\" target=\"#b8\">[9]</ref> and ProgPrompt <ref type=\"bibr\" target=\"#b20\">[21]</ref> allow LLMs to generate structured code for robotic executions, enhancing flexibility but adding an execution layer.</p><p>Pallagani et al. <ref type=\"bibr\" target=\"#b13\">[14]</ref> found that LLMs perform better as translators of natural language into structured plans rather than generating plans from scratch. This ensures feasible actions based on predefined world models <ref type=\"bibr\" target=\"#b19\">[20]</ref>, <ref type=\"bibr\" target=\"#b9\">[10]</ref>. These approaches are particularly effective in highly controlled environments, but present challenges when applied to openended, dynamic household settings. Our work, instead, embraces flexible, dynamic task planning with in-context learning like shown in <ref type=\"bibr\" target=\"#b24\">[25]</ref>. The approaches named, while effective for short-horizon tasks, do not track object positions over time. For long-horizon tasks that involve real-world dynamic conditions, a combination of task planning and a memory mechanism is required.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>B. Memory and Knowledge Base</head><p>Long-horizon tasks require robust memory mechanisms. While LLM context windows keep expanding <ref type=\"bibr\" target=\"#b22\">[23]</ref>, using excessively large contexts in robotics is computationally inefficient. Instead, long-term memory retrieval, accessed only when needed, is a more viable solution. RAG <ref type=\"bibr\" target=\"#b7\">[8]</ref> provides an efficient mechanism for narrowing context by querying a vast dataset and retrieving only relevant information. Additionally, scene graphs, used in approaches like SayPlan <ref type=\"bibr\" target=\"#b15\">[16]</ref> and DELTA <ref type=\"bibr\" target=\"#b9\">[10]</ref>, offer structured memory that improves action verification and contextual reasoning. However, in unstructured and constantly changing environments, maintaining these graphs becomes challenging due to the need for complex automatic mechanisms or manual curation.</p><p>Our work explores the feasibility of a lightweight, fully natural language-driven approach using RAG as a memory mechanism. Inspired by ReMEmbR <ref type=\"bibr\" target=\"#b0\">[1]</ref>, our system incorporates temporal elements into the retrieval process, ensuring the robot tracks long-term changes in its environment. While using language-based memory retrieval introduces potential for increased errors compared to structured models like scene graphs, we aim to evaluate how well purely language-based memory retrieval performs in practical, dynamic household scenarios. This approach offers flexibility, adaptability, and reduces the need for explicit world modelling, making it more suitable for real-world applications. III. METHODOLOGY Fig. <ref type=\"figure\" target=\"#fig_5\">2</ref>: The full pipeline, integrating long-horizon task planning. Newly introduced components are highlighted in blue.</p><p>Our system, coordinated by an agent-orchestration framework, combines task planning with RAG <ref type=\"bibr\" target=\"#b7\">[8]</ref>. This chapter explains the individual components and their interaction.</p><p>Fig. <ref type=\"figure\" target=\"#fig_5\">2</ref> illustrates the overall pipeline. The focus of this work is the agent-orchestration system, which processes object detection and user requests to create a robot task plan. In the system, each agent uses an LLM with a specialized role. The task planning agent additionally is prompted with a chain-of-thought technique <ref type=\"bibr\" target=\"#b25\">[26]</ref>.</p><p>Fig. <ref type=\"figure\">3</ref>: The agent-orchestration architecture</p><p>The system architecture of the agent orchestrator, illustrated in Fig. <ref type=\"figure\">3</ref>, consists of:</p><p>1) A routing agent, responsible for analyzing incoming user requests.</p><p>D r a f t 2) A task planning agent, handling commands that require the robot to perform actions. 3) A knowledge base agent, processing follow-up questions about previously handled objects. When a user request arrives, the routing agent first analyzes it to determine its nature. The request is then categorized into one of three types: 1) Action command: If the robot is asked to perform an action, it is forwarded to the task planning agent. 2) Query about history: If it concerns previously handled objects, it is directed to the knowledge base agent. 3) Unclear request: If the request doesn't fit either category, clarification is requested before proceeding.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A. Task Planning Agent</head><p>The task planning agent receives frequent environmental updates via camera perception, encoded as a list of single objects. Grounded SAM <ref type=\"bibr\" target=\"#b16\">[17]</ref> enables text-driven object detection and segmentation for the pipeline, while Vision Language Models (VLMs) generate natural language descriptions of the environment. Although VLMs alone can extract the object list for the LLM, Grounded SAM is essential for precise segmentation, which is critical for grasping tasks. Using the object list, the LLM processes the user request -which can be both expressed in high-level or low-level terms -and formulates tasks that best fulfill the command. The generated answer has to include a JSON string for an action following this structure:</p><p>1) Objects involved in the task.</p><p>2) The destination for placement tasks. After the action is determined, the grasping process is initiated. We use the segmentation from Grounded SAM and the camera intrinsics to crop the depth image and project the depth crop to a 3D pointcloud of the respective object. To estimate a grasp approach vector, we feed the cropped object point cloud to Control-GraspNet <ref type=\"bibr\" target=\"#b21\">[22]</ref>, a pre-trained grasp estimator. The knowledge base agent is used for user inquiries regarding past robot actions, such as object locations or task completion status. These queries require access to longterm memory, for which RAG has proven most effective, as discussed in Section II. Fig <ref type=\"figure\" target=\"#fig_0\">4</ref> illustrates the RAG workflow, comprising two key steps:</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>B. Knowledge Base Agent</head><p>1) Document Ingestion: Input data, such as conversation history, is preprocessed, split into smaller chunks (each representing a question-answer pair), and converted into high-dimensional vectors using an embedding model. These embeddings are then stored in a vector database for efficient retrieval. 2) User Query, Retrieval, and Response Generation:</p><p>User queries are embedded using the same model and are matched against the stored vectors to retrieve the most relevant context. This context is then provided to the LLM, which generates a response tailored to the user's query. To enable chronological reasoning, essential for tracking object movements over time, we augment RAG with a time stamp for each question-answer pair.</p><p>IV. EXPERIMENTS To evaluate our system, we conduct experiments addressing the three key challenges from Chapter I: (1) flexible task planning in dynamic household environments, (2) longterm memory usage, and (3) modular agent coordination. Specifically, we assess the system's ability to create grounded task plans, answer questions based on prior interactions, and route tasks to the appropriate agent.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A. Experimental Setup</head><p>This study evaluates an agent-orchestration system for symbolic task planning and follow-up questions via a knowledge base. To ensure a thorough evaluation, we consider three distinct phases:</p><p>1) Task Planning Performance -The symbolic task planning output is assessed independently, measuring accuracy of object assignment to their destinations. 2) Knowledge Base Reliability -The system's ability to reason about past actions (with and without RAG) is tested by asking about the system's current status, such as locations of previously moved items. 3) Routing Reliability -Measures the accuracy of the routing agent in directing queries to the appropriate agent (Task Planning, History, or itself). To isolate the performance of the specialized agents, agent handoff is not considered in the evaluation of 1) and 2).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>B. Algorithmic Framework</head><p>The frameworks and models used are shown in gray in Fig. <ref type=\"figure\" target=\"#fig_0\">4</ref>. To enable efficient collaboration among agents, we use OpenAI Swarm <ref type=\"bibr\" target=\"#b11\">[12]</ref>, a lightweight framework for agent orchestration and task delegation. We evaluate the performance of Qwen2.5-32b  The experiment is conducted in an artificial household environment, where objects must be assigned to correct destinations based on high-level commands. To evaluate task planning, we define three scenarios (see Fig. <ref type=\"figure\">6</ref>) that share five predefined placement locations, while each uses a different cleanup zone. Fig. <ref type=\"figure\" target=\"#fig_2\">5</ref> shows a visual representation of the environment. These locations reflect common-sense knowledge typically understood by LLMs. To ensure clarity, the agent receives explicit definitions for each destination:</p><p>• Sink -For items that need washing.</p><p>• Trash Can -For disposable or inedible items.</p><p>• Fridge -For perishable food.</p><p>• Food Shelf -For non-perishable food items.</p><p>• Storage Box -For general storage.</p><p>Fig. <ref type=\"figure\">6</ref> shows the object list extracted from a captured image of each task scenario using LLaMa3.2-Vision along with the user queries and the segmentation results from Grounded SAM.</p><p>After execution of all scenarios, the knowledge base agent is asked four distinct folow-up questions targeting different aspects of retrieval and reasoning:</p><p>• Error Detection: \"Where is the jacket that was in the living room? I thought you put it in the storage box, but I can't find it there.\" • Hallucination: \"Where did you put the laptop? It's not on the desk anymore.\" • Food Availability: \"I am hungry. Is there any food left from earlier?\" • Trash Status: \"How many objects are in the trash can?\" To better reflect real-world applications, we extend the conversation dialogue with additional question-answer pairs containing actions. Furthermore, deliberate errors are introduced into the task plans, where the agent provides the user a different location than the one forwarded to the state machine. This allows us to evaluate how well the knowledge base handles inaccuracies. Beyond evaluating the specialized agents in isolated setups, we assess how effectively the routing agent delegates tasks to the appropriate specialized agent. Specifically, we test:</p><p>• Task Planning Queries: The three high-level commands from the task planning scenarios (see Fig. <ref type=\"figure\">6</ref>) and an additional low-level request (\"Can I have a banana?\")</p><p>• Knowledge Base Queries: The four follow-up questions from the knowledge base scenario.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>D. Evaluation Methodology</head><p>The evaluation of the agent-orchestration system's components is based on the task scenarios and follow-up questions defined in Section IV-C. Task planning performance is evaluated by testing each model on the three task scenarios, with each scenario executed five times per model. Accuracy is measured at the object level as the percentage of correctly assigned tasks. A task is deemed correct if it satisfies the following criteria:</p><p>• Valid JSON format • Correct destination assignment • Stationary Object Exclusion (ensuring no task is assigned to items that should remain in place) The final accuracy score represents the percentage of objects for which tasks were correctly assigned, including the implicit \"no task\" assignment for stationary objects (e.g., table ).</p><p>The knowledge base is evaluated using four follow-up questions, each tested five times per model. Unlike the task planning agent, the knowledge base agent does not require a strict output format. It is assessed based on factual correctness, measured as the percentage of correct answers. For queries expecting multiple objects as an answer (e.g., \"Which objects are in the trash?\"), accuracy is based on the percentage of correctly identified objects.</p><p>The routing agent's ability to correctly assign tasks is evaluated by processing queries from the task planning scenarios and history-based questions, along with one additional query, five times per model. The final metric is quantified as the percentage of correctly assigned tasks. Gemma2, which does not support tool calling, is excluded from this test.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>V. RESULTS AND DISCUSSION</head><p>This section presents the experimental results for task planning, knowledge base and agent routing.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A. Task Planning</head><p>We introduce a lenient evaluation metric (cf. Table <ref type=\"table\">I</ref>), where reasonable alternative placements based on user preferences are counted as correct. The strictly correct placements, following the intended plan as prompted to the LLM, are presented under the strict metric in Table <ref type=\"table\">I</ref>.</p><p>Table <ref type=\"table\">I</ref> shows that Qwen consistently outperforms the other models in nearly all scenarios. LLaMA performs notably worse in the living room scenario, with the lowest strict accuracy (40.0%). Gemma2 falls between the two, showing higher accuracy than LLaMA but lower than Qwen.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>B. Knowledge Base</head><p>The integration of RAG notably enhances the accuracy of the knowledge base's responses, even in medium-term interactions consisting of 21 question-answer pairs with approximately 4000 tokens. Qwen achieves the highest validity (91.3%) with RAG (cf. Table <ref type=\"table\">II</ref>), highlighting the potential of retrieval-augmented approaches for maintaining consistency over longer interactions.    Fig. <ref type=\"figure\">6</ref>: The three scenarios used for task planning. For each scenario we have extracted an object list using the Vision-Language Model LLaMa3.2-Vision. This list is used as input for Grounded SAM <ref type=\"bibr\" target=\"#b16\">[17]</ref> to perform segmentation.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Model</head><p>Dining</p><p>Table Living Room Desk Organization Total Accuracy (%) Strict (%) Lenient (%) Strict (%) Lenient (%) Strict (%) Lenient (%) Strict (%) Lenient (%) LLaMa3.1-8B 68.0 78.0 40.0 40.0 61.3 65.3 56.4 61.1 Gemma2-27B 58.0 68.0 68.9 68.9 68.0 69.3 65.0 68.7 Qwen2.5-32B 64.0 80.0 88.9 88.9 78.7 84.0 77.2 84.3</p><p>TABLE I: Task Planning Accuracy Across Different LLMs. Strict (%): Percentage of objects correctly placed according to the intended plan. Lenient (%): Percentage of objects placed differently than expected, but with reasonable alternative placements based on user preferences. Method Model Response Validity (%) Total Validity (%) Err. Detection Hallucination Food Avail. Trash Status Without RAG (Ablation Study) LLaMa3.1-8B 20.0 80.0 70.0 65.0 58.8 Gemma2-27B 0.0 80.0 10.0 60.0 37.5 Qwen2.5-32B 0.0 80.0 60.0 75.0 53.75 With RAG LLaMa3.1-8B 40.0 100.0 90.0 55.0 71.25 Gemma2-27B 80.0 100.0 40.0 60.0 70.0 Qwen2.5-32B 100.0 100.0 90.0 75.0 91.3</p><p>TABLE II: Knowledge Base Response Accuracy Across Different LLMs. Used Embedding Model for RAG: BGE-M3. No. of question-answer pairs retrieved by RAG: 5 C. Agent Routing</p><p>In task delegation, LLaMA exhibits the highest routing accuracy (92.5%), despite its weaker reasoning abilities (cf. Table <ref type=\"table\">III</ref>). Its structured approach to tool-calling ensures stable performance. In contrast, Qwen, while superior in contextual understanding, occasionally produces incorrect structured outputs, leading to execution failures.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>D. Summary</head><p>Our findings highlight the potential of lightweight, opensource LLMs for memory-augmented long-horizon task planning. A combination of LLaMA (routing) and Qwen (specialized agents) achieves the best balance between structured execution and high-level reasoning.</p><p>Evaluating task execution remains challenging due to subjective human preferences, emphasizing the need for user studies. Furthermore, integrating Vision-Language Models (VLMs) into the agent orchestrator -rather than only using them for object lists -could enhance robustness. Embedding contextual information into the latent space reduces command dependency and improves autonomy.</p><p>RAG improves factual consistency in knowledge retrieval but struggles with repeated object interactions and long histories, making full-history queries impractical. Scene graphs, as proposed by Liu et al. <ref type=\"bibr\" target=\"#b9\">[10]</ref>, present a promising alternative for efficient and robust knowledge integration.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>D r a f t</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Model</head><p>Task Planning Queries (%) Knowledge Base Queries (%) Total Success Rate (%) LLaMa3.1-8B 85.0 100.0 92.5 Qwen2.5-32B 95.0 85.0 90.0</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>TABLE III: Routing Success Rate Across Different LLMs</head><p>While task delegation via the routing agent was mostly successful, certain models occasionally produced invalid structured outputs, leading to execution failures. To increase robustness, future work should explore schema validation and adaptive retry mechanisms that can automatically mitigate such issues.</p><p>In summary, open-source LLMs prove viable for longhorizon task planning. However, addressing key challengesrefining evaluation metrics, improving long-term robustness, and integrating multimodal perception -remains essential for achieving reliable household robotics.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>VI. CONCLUSION</head><p>This work presents a prototype of an agent-orchestration system for household robots, utilizing local, lightweight open-source LLMs to translate high-level user commands into structured task plans for tidy-up scenarios. Memoryaugmented task planning enables follow-up queries about past actions, improving user interaction and assisting in locating misplaced objects. Our evaluation shows strong task planning, routing, and knowledge retrieval. with Qwen2.5 excelling in reasoning-heavy tasks and LLaMA3.1 providing a more efficient routing solution. However, RAG-based retrieval for general tasks remains a challenge, particularly for implicit queries where relevant information is not always found. Addressing these limitations is key to improving longterm reasoning and knowledge access.</p><p>Future work will focus on robust storage solutions, improved knowledge representations, broader user studies with structured datasets for evaluating and benchmarking existing approaches. Enhancing communication and tool usage in agent-orchestration will be crucial for greater adaptability and autonomy in household robotics.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Fig. 4 :</head><label>4</label><figDesc>Fig.4: RAG workflow for long-term question answering: Relevant past actions are retrieved from dialogue history, and the LLM generates responses based on the retrieved context.</figDesc><graphic coords=\"3,50.40,608.05,251.99,100.99\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><figDesc><ref type=\"bibr\" target=\"#b14\">[15]</ref>, Gemma2-27b<ref type=\"bibr\" target=\"#b22\">[23]</ref>, and LLaMa3.1-8b<ref type=\"bibr\" target=\"#b3\">[4]</ref>, selected for their open-source availability and ability to run locally on 16GB GPU RAM. For RAG, we employ ChromaDB [3], a vector database optimized for fast lookups, combined with the embedding model BGE-M3. D r a f t C. Task Scenarios</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Fig. 5 :</head><label>5</label><figDesc>Fig. 5: The artificial household environment used in the experiment.</figDesc><graphic coords=\"4,54.00,128.75,244.80,107.08\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><head>D r a f t (a) Scenario 1 :</head><label>1</label><figDesc>Dining Table Cleanup</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_4\"><figDesc>Object list from VLM: Plate, Fork, Spoon, Salt shaker, Glass, Frying pan, Spatula, Chair, Table top, Pepper grinder. Command: I just finished dinner, please clear the dining table.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_5\"><head>(b) Scenario 2 :</head><label>2</label><figDesc>Living Room CleanupObject list from VLM: A table, A couch, A brush, Scissors, Pen, Book, Salt packet, Jacket, Markers. Command: Please hand me the brush and tidy up the rest of the living room.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_6\"><head>( c )</head><label>c</label><figDesc>Scenario 3: Desk Organization Object list from VLM: Desk, Computer Monitor, Laptop, Mouse, Plate, Crumbs, Lemon, Cup, Glass of water, Bag of chips, Piece of paper, Potted plant, Cord, Wooden desk, White wall. Command: Please clear my desk, leaving only the essentials for work.</figDesc></figure>\n\t\t</body>\n\t\t<back>\n\n\t\t\t<div type=\"acknowledgement\">\n<div><head>ACKNOWLEDGMENT</head><p>This research is supported by the <rs type=\"funder\">EU program EC Horizon 2020 for Research and Innovation</rs> under grant agreement No. <rs type=\"grantNumber\">101017089</rs>, project <rs type=\"projectName\">TraceBot</rs>, and the <rs type=\"funder\">Austrian Science Fund (FWF)</rs>, under project No. I 6114, iChores.</p></div>\n\t\t\t</div>\n\t\t\t<listOrg type=\"funding\">\n\t\t\t\t<org type=\"funded-project\" xml:id=\"_MBTZZdG\">\n\t\t\t\t\t<idno type=\"grant-number\">101017089</idno>\n\t\t\t\t\t<orgName type=\"project\" subtype=\"full\">TraceBot</orgName>\n\t\t\t\t</org>\n\t\t\t</listOrg>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Remembr: Building and reasoning over long-horizon spatio-temporal memory for robot navigation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Anwar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Welsh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Biswas</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Pouya</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2409.13682</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Do as i can, not as i say: Grounding language in robotic affordances</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Brohan</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the Conference on Robot Learning (CoRL)</title>\n\t\t<meeting>the Conference on Robot Learning (CoRL)</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"287\" to=\"318\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">open-source vector database for AI applications</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">\"</forename><surname>Chroma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Chromadb</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://www.trychroma.com/\" />\n\t\t<imprint/>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">The llama 3 herd of models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Dubey</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2407.21783</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2501.12948</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Language models as zero-shot planners: Extracting actionable knowledge for embodied agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Abbeel</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Pathak</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Mordatch</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the International Conference on Machine Learning (ICML)</title>\n\t\t<meeting>the International Conference on Machine Learning (ICML)</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t\t<biblScope unit=\"page\" from=\"9118\" to=\"9147\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Inner monologue: Embodied reasoning through planning with language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2207.05608</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Retrieval-augmented generation for knowledgeintensive nlp tasks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in neural information processing systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t\t<biblScope unit=\"volume\">33</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"9459\" to=\"9474\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Code as policies: Language model programs for embodied control</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)</title>\n\t\t<meeting>the IEEE International Conference on Robotics and Automation (ICRA)</meeting>\n\t\t<imprint>\n\t\t\t<publisher>IEEE</publisher>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"9493\" to=\"9500\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Delta: Decomposed efficient long-term robot task planning using large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Palmieri</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Koch</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Georgievski</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Aiello</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2404.03275</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The 1998 AI planning systems competition</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><forename type=\"middle\">M</forename><surname>Mcdermott</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">AI Magazine</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">21</biblScope>\n\t\t\t<biblScope unit=\"issue\">2</biblScope>\n\t\t\t<biblScope unit=\"page\">35</biblScope>\n\t\t\t<date type=\"published\" when=\"2000\">2000</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Swarm: Educational framework for multi-agent systems</title>\n\t\t<author>\n\t\t\t<persName><surname>Openai</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://github.com/openai/swarm\" />\n\t\t<imprint/>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">GPT-4 technical report</title>\n\t\t<author>\n\t\t\t<persName><surname>Openai</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/2303.08774\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">On the prospects of incorporating large language models (llms) in automated planning and scheduling (aps)</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Pallagani</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the International Conference on Automated Planning and Scheduling</title>\n\t\t<meeting>the International Conference on Automated Planning and Scheduling</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"volume\">34</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"432\" to=\"444\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Qwen2.5 technical report</title>\n\t\t<author>\n\t\t\t<persName><surname>Qwen</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/2412.15115\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Sayplan: Grounding large language models using 3d scene graphs for scalable robot task planning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Rana</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2307.06135</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Grounded sam: Assembling open-world models for diverse visual tasks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Ren</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2401.14159</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Tptu: Task planning and tool usage of large language model-based ai agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Ruan</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">NeurIPS 2023 Foundation Models for Decision Making Workshop</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Toolformer: Language models can teach themselves to use tools</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Schick</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"68\" to=\"539\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Generalized planning in pddl domains with pretrained large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Silver</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the AAAI Conference on Artificial Intelligence</title>\n\t\t<meeting>the AAAI Conference on Artificial Intelligence</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"volume\">38</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"20\" to=\"256\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Progprompt: Generating situated robot task plans using large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Singh</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)</title>\n\t\t<meeting>the IEEE International Conference on Robotics and Automation (ICRA)</meeting>\n\t\t<imprint>\n\t\t\t<publisher>IEEE</publisher>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"11\" to=\"523\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Contactgraspnet: Efficient 6-dof grasp generation in cluttered scenes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Sundermeyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mousavian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Triebel</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Fox</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)</title>\n\t\t<meeting>the IEEE International Conference on Robotics and Automation (ICRA)</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t\t<biblScope unit=\"volume\">13</biblScope>\n\t\t\t<biblScope unit=\"page\">444</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Gemma 2: Improving open language models at a practical size</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Team</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.00118</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Robots that use language</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Tellex</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Gopalan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Kress-Gazit</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Matuszek</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Robotics, and Autonomous Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">3</biblScope>\n\t\t\t<biblScope unit=\"issue\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"25\" to=\"55\" />\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t</imprint>\n\t</monogr>\n\t<note>Annual Review of Control</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Chatgpt for robotics: Design principles and model abilities</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">H</forename><surname>Vemprala</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Bonatti</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Bucker</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Kapoor</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<publisher>Ieee Access</publisher>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Chain-of-thought prompting elicits reasoning in large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in neural information processing systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"24\" to=\"824\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">React: Synergizing reasoning and acting in language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the International Conference on Learning Representations (ICLR)</title>\n\t\t<meeting>the International Conference on Learning Representations (ICLR)</meeting>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"page\">2023</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Least-to-most prompting enables complex reasoning in large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2205.10625</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+  "pdf_hash": "a285d8bd4d6aef007273983a619883e221a3ff4e9c83af76008d9e695091f7c8",
+  "tables": [],
+  "table_missingness": "no_table_elements",
+  "formulas": [],
+  "formula_missingness": "no_formula_elements",
+  "page_text_missingness": null,
+  "declared_arxiv_id": null,
+  "declared_id_missingness": "no_idno",
+  "header_authors": [
+    {
+      "name": "Marc Glocker",
+      "forename": "Marc",
+      "surname": "Glocker",
+      "source_digest": "1c95a43c77b9237b3234e3d300cbca445766bf2154f0cc87de4361d57ba25136"
+    },
+    {
+      "name": "Peter Hönig",
+      "forename": "Peter",
+      "surname": "Hönig",
+      "source_digest": "820b1075a6055b646299ad7417d7ff5e5a412c7e1d988eae2db6512b8e491574"
+    },
+    {
+      "name": "Matthias Hirschmanner",
+      "forename": "Matthias",
+      "surname": "Hirschmanner",
+      "source_digest": "b5810a87cb76a536483e835e628b756f2ed55428592892cdea79a83a16807d02"
+    },
+    {
+      "name": "Markus Vincze",
+      "forename": "Markus",
+      "surname": "Vincze",
+      "source_digest": "5a3f839fc61e14ed2569ca23e477818c2fd9f1d42d40f9874598776deaff39ae"
+    }
+  ],
+  "figures": [
+    {
+      "figure_id": "fig_0",
+      "label": "4",
+      "caption": "Fig. 4 :",
+      "coordinates": "3,50.40,608.05,251.99,100.99",
+      "graphic_missingness": null,
+      "source_digest": "0bdf18fef164be0423dc9839fe9e16963fe2232def7368f488e5e2fd2e4b383f"
+    },
+    {
+      "figure_id": "fig_1",
+      "label": null,
+      "caption": null,
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "99bf4683254bf69746397730424d2f3089ace75519ec08048530675d7a9f9731"
+    },
+    {
+      "figure_id": "fig_2",
+      "label": "5",
+      "caption": "Fig. 5 :",
+      "coordinates": "4,54.00,128.75,244.80,107.08",
+      "graphic_missingness": null,
+      "source_digest": "46e34c4ed8db03b8210b73f1c058bb64a19922e0b9e2610ffb218924d8421501"
+    },
+    {
+      "figure_id": "fig_3",
+      "label": "1",
+      "caption": "D r a f t (a) Scenario 1 :",
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "e76231df407fde2adf6ecb7e9b7eb1b4362f77236a1e720722ae0db6f30af88e"
+    },
+    {
+      "figure_id": "fig_4",
+      "label": null,
+      "caption": null,
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "e1b0e1b37b84d6d4b18184a4a1bcf7ebca8b5b278794de0378d1292dc9212f1a"
+    },
+    {
+      "figure_id": "fig_5",
+      "label": "2",
+      "caption": "(b) Scenario 2 :",
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "73b3873cbde7471600f47b4e9108786be20a2a2df6b61fe481a3dd2c5188c4d5"
+    },
+    {
+      "figure_id": "fig_6",
+      "label": "c",
+      "caption": "( c )",
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "772667ecc975236032494d8f81084d96378e1219418ee3090f50620fecb48e86"
+    }
+  ],
+  "visual_callouts": [
+    {
+      "kind": "figure",
+      "target": "fig_3",
+      "unresolved": null,
+      "quote": "1",
+      "offset": 1559,
+      "section_path_id": "1",
+      "section_ordinal": 0,
+      "source_digest": "ce1ebe73e5e31c4530df2448cc58607aed82361a074514e2d78a1b2ddc024d1a"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_3",
+      "unresolved": null,
+      "quote": "1",
+      "offset": 2670,
+      "section_path_id": "1",
+      "section_ordinal": 0,
+      "source_digest": "629730b0ecd758a456dcec97674a5a05d383c9b4d2809e755426d804c37016c4"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_5",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 1451,
+      "section_path_id": "1~5",
+      "section_ordinal": 4,
+      "source_digest": "02fdb3cc55105fb10f460e13f06201841d5478efe50207b115e7a4f0932869db"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_5",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 1738,
+      "section_path_id": "1~5",
+      "section_ordinal": 4,
+      "source_digest": "c2bf4d8706547a965364a3d477f5327b3f8ed823f8b7dca1e3e861e6e99e6090"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "3",
+      "offset": 2068,
+      "section_path_id": "1~5",
+      "section_ordinal": 4,
+      "source_digest": "8e61f8e6e6faf396442a88c36856bea1aa6c4e7c5fecbd47829f2ccc5d8439a9"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "3",
+      "offset": 2178,
+      "section_path_id": "1~5",
+      "section_ordinal": 4,
+      "source_digest": "f87682447586c76d4c9a6677014494ef99f1fdd9fdae8b216c1ea010679ce2e0"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "4",
+      "offset": 1414,
+      "section_path_id": "1~6",
+      "section_ordinal": 5,
+      "source_digest": "1a120ca4a1cd8a9441273e626f66c259afb504db339c28da251cde1d40ee8041"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "4",
+      "offset": 57,
+      "section_path_id": "1~9",
+      "section_ordinal": 8,
+      "source_digest": "1fc06257aae9fb34d22c1c9b8a497615587db0f93d345309b2558981dc0c3a12"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "6",
+      "offset": 463,
+      "section_path_id": "1~9",
+      "section_ordinal": 8,
+      "source_digest": "396939fcf653eb88549bf3ea0e99c733f846d1f4d8a4ffe2820f19e146ddb483"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_2",
+      "unresolved": null,
+      "quote": "5",
+      "offset": 561,
+      "section_path_id": "1~9",
+      "section_ordinal": 8,
+      "source_digest": "3310f7b89b790c394ffb1bafff08409a56336f4f4d4f87b740fc82b6867df78a"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "6",
+      "offset": 966,
+      "section_path_id": "1~9",
+      "section_ordinal": 8,
+      "source_digest": "7e07c23f0f4995c8ac2b797bf0a4a226d28e7c2fbb439f646a187630a20b06c3"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "6",
+      "offset": 2304,
+      "section_path_id": "1~9",
+      "section_ordinal": 8,
+      "source_digest": "f4946254a2c6838cb28bebd45a309739e1b82261b705df5f251dbbd25ec373bc"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "I",
+      "offset": 52,
+      "section_path_id": "1~12",
+      "section_ordinal": 11,
+      "source_digest": "fbea0315c6caf9cc116bcb9f62582fd29d9476bc94ca1e199d60d2d39d05f90e"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "I",
+      "offset": 278,
+      "section_path_id": "1~12",
+      "section_ordinal": 11,
+      "source_digest": "fb3afd5af3fa1a0c4d5df60da52e8a941604b7a6f35b81c6dde81a0f008ec67a"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "I",
+      "offset": 286,
+      "section_path_id": "1~12",
+      "section_ordinal": 11,
+      "source_digest": "bd8ecf756700ad0c00ab5ad2af06dd293ee7c3c0b2ce7e7952c48bc7ad259d39"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "II",
+      "offset": 255,
+      "section_path_id": "1~13",
+      "section_ordinal": 12,
+      "source_digest": "3f5374cb062ea93b9cb4f9a19d55470ee4676576d54c8f0d87e4bd26c018ac44"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "6",
+      "offset": 383,
+      "section_path_id": "1~13",
+      "section_ordinal": 12,
+      "source_digest": "4c80b0ea6df6d55fdfca16987fec91de2809dd3c5846ebf494477bc357b5cb78"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "III",
+      "offset": 1245,
+      "section_path_id": "1~14",
+      "section_ordinal": 13,
+      "source_digest": "b6ef01d3b5b1458f4e77dcc502b32efca82fd4d60fac75ef86b98ceb5bf7796d"
+    }
+  ]
+}

@@ -1,0 +1,482 @@
+{
+  "paper_id": "gradient-notes",
+  "title": "Computing Neural Network Gradients",
+  "abstract_text": "",
+  "body_text": "IntroductionThe purpose of these notes is to demonstrate how to quickly compute neural network gradients in a completely vectorized way. It is complementary to the last part of lecture 3 in CS224n 2019, which goes over the same material.\nVectorized GradientsWhile it is a good exercise to compute the gradient of a neural network with respect to a single parameter (e.g., a single element in a weight matrix), in practice this tends to be quite slow. Instead, it is more efficient to keep everything in matrix/vector form. The basic building block of vectorized gradients is the Jacobian Matrix. Suppose we have a function f : R n → R m that maps a vector of length n to a vector of length m:f (x) = [f 1 (x 1 , ..., x n ), f 2 (x 1 , ..., x n ), ..., f m (x 1 , ..., x n )].Then its Jacobian is the following m × n matrix:∂f ∂x =    ∂f1 ∂x1 . . . ∂f1 ∂xn . . . . . . . . . ∂fm ∂x1 . . . ∂fm ∂xn   That is, ( ∂f ∂x ) ij = ∂fi ∂xj (which is just a standard non-vector derivative). The Jacobian matrix will be useful for us because we can apply the chain rule to a vector-valued function just by multiplying Jacobians.As a little illustration of this, suppose we have a function f (x) = [f 1 (x), f 2 (x)] taking a scalar to a vector of size 2 and a function g(y) = [g 1 (y 1 , y 2 ), g 2 (y 1 , y 2 )] taking a vector of size two to a vector of size two. Now let's compose them toget g(x) = [g 1 (f 1 (x), f 2 (x)), g 2 (f 1 (x), f 2 (x))].Using the regular chain rule, we can compute the derivative of g as the Jacobian∂g ∂x = ∂ ∂x g 1 (f 1 (x), f 2 (x)) ∂ ∂x g 2 (f 1 (x), f 2 (x)) = ∂g1 ∂f1 ∂f1 ∂x + ∂g1 ∂f2 ∂f2 ∂x ∂g2 ∂f1 ∂f1 ∂x + ∂g2 ∂f2 ∂f2 ∂xAnd we see this is the same as multiplying the two Jacobians:∂g ∂x = ∂g ∂f ∂f ∂x = ∂g1 ∂f1 ∂g1 ∂f2 ∂g2 ∂f1 ∂g2 ∂f2 ∂f1 ∂x ∂f2 ∂x\nUseful IdentitiesThis section will now go over how to compute the Jacobian for several simple functions. It will provide some useful identities you can apply when taking neural network gradients.(1) Matrix times column vector with respect to the column vector(z = W x, what is ∂z ∂x ?)Suppose W ∈ R n×m . Then we can think of z as a function of x taking an m-dimensional vector to an n-dimensional vector. So its Jacobian will be n × m. Note thatz i = m k=1 W ik x kSo an entry ( ∂z ∂x ) ij of the Jacobian will be ( ∂z ∂x) ij = ∂z i ∂x j = ∂ ∂x j m k=1 W ik x k = m k=1 W ik ∂ ∂x j x k = W ij because ∂ ∂xj x k = 1 if k = j and 0 if otherwise. So we see that ∂z ∂x = W(2) Row vector times matrix with respect to the row vector(z = xW , what is ∂z ∂x ?)A computation similar to ( 1) shows that ∂z ∂x = W T .(3) A vector with itself(z = x, what is ∂z ∂x ? ) We have z i = x i . So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j x i = 1 if i = j 0 if otherwiseSo we see that the Jacobian ∂z ∂x is a diagonal matrix where the entry at (i, i) is 1. This is just the identity matrix: ∂z ∂x = I . When applying the chain rule, this term will disappear because a matrix or vector multiplied by the identity matrix does not change.(4) An elementwise function applied a vector(z = f (x), what is ∂z ∂x ? ) Since f is being applied elementwise, we have z i = f (x i ). So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j f (x i ) = f (x i ) if i = j 0 if otherwiseSo we see that the Jacobian ∂z ∂x is a diagonal matrix where the entry at (i, i)is the derivative of f applied to x i . We can write this as ∂z ∂x = diag(f (x)) .Since multiplication by a diagonal matrix is the same as doing elementwise multiplication by the diagonal, we could also write •f (x) when applying the chain rule.(5) Matrix times column vector with respect to the matrix(z = W x, δ = ∂J ∂z what is ∂J ∂W = ∂J ∂z ∂z ∂W = δ ∂z ∂W ?)This is a bit more complicated than the other identities. The reason for including ∂J ∂z in the above problem formulation will become clear in a moment. First suppose we have a loss function J (a scalar) and are computing its gradient with respect to a matrix W ∈ R n×m . Then we could think of J as a function of W taking nm inputs (the entries of W ) to a single output (J). This means the Jacobian ∂J ∂W would be a 1 × nm vector. But in practice this is not a very useful way of arranging the gradient. It would be much nicer if the derivatives were in a n × m matrix like this:∂J ∂W =    ∂J ∂W11 . . . ∂J ∂W1m . . . . . . . . . ∂J ∂Wn1 . . . ∂J ∂Wnm   Since this matrix has the same shape as W , we could just subtract it (times the learning rate) from W when doing gradient descent. So (in a slight abuse of notation) let's find this matrix as ∂J ∂W instead. This way of arranging the gradients becomes complicated when computing ∂z ∂W . Unlike J, z is a vector. So if we are trying to rearrange the gradients like with ∂J ∂W , ∂z ∂W would be an n × m × n tensor! Luckily, we can avoid the issue by taking the gradient with respect to a single weight W ij instead. ∂z ∂Wij is just a vector, which is much easier to deal with. We havez k = m l=1 W kl x l ∂z k ∂W ij = m l=1 x l ∂ ∂W ij W klNote that ∂ ∂Wij W kl = 1 if i = k and j = l and 0 if otherwise. So if k = i everything in the sum is zero and the gradient is zero. Otherwise, the only nonzero element of the sum is when l = j, so we just get x j . Thus we find∂z k ∂Wij = x j if k = i and 0 if otherwise. Another way of writing this is ∂z ∂W ij =             0 . . . 0 x j 0 . . . 0             ← ith element Now let's compute ∂J ∂Wij ∂J ∂W ij = ∂J ∂z ∂z ∂W ij = δ ∂z ∂W ij = m k=1 δ k ∂z k ∂W ij = δ i x j(the only nonzero term in the sum is δ i ∂zi ∂Wij ). To get ∂J ∂W we want a matrix where entry (i, j) is δ i x j . This matrix is equal to the outer product ∂J ∂W = δ T x T (6) Row vector time matrix with respect to the matrix(z = xW , δ = ∂J ∂z what is ∂J ∂W = δ ∂z ∂W ?)A similar computation to ( 5) shows that ∂J ∂W = x T δ .(7) Cross-entropy loss with respect to logits (ŷ = softmax(θ),J = CE(y, ŷ), what is ∂J ∂θ ?)The gradient is ∂J ∂θ = ŷy (or (ŷ -y) T if y is a column vector).These identities will be enough to let you quickly compute the gradients for many neural networks. However, it's important to know how to compute Jacobians for other functions as well in case they show up. Some examples if you want practice: dot product of two vectors, elementwise product of two vectors, 2-norm of a vector. Feel free to use these identities in the assignments. One option is just to memorize them. Another option is to figure them out by looking at the dimensions. For example, only one ordering/orientation of δ and x will produce the correct shape for ∂J ∂W (assuming W is not square).\nGradient LayoutJacobean formulation is great for applying the chain rule: you just have to multiply the Jacobians. However, when doing SGD it's more convenient to follow the convention \"the shape of the gradient equals the shape of the parameter\" (as we did when computing ∂J ∂W ). That way subtracting the gradient times the learning rate from the parameters is easy. We expect answers to homework questions to follow this convention. Therefore if you compute the gradient of a column vector using Jacobian formulation, you should take the transpose when reporting your final answer so the gradient is a column vector. Another option is to always follow the convention. In this case the identities may not work, but you can still figure out the answer by making sure the dimensions of your derivatives match up. Up to you which of these options you choose! 5 Example: 1-Layer Neural Network This section provides an example of computing the gradients of a full neural network. In particular we are going to compute the gradients of a one-layer neural network trained with cross-entropy loss. The forward pass of the model is as follows:x = input z = W x + b 1 h = ReLU(z) θ = U h + b 2 ŷ = softmax(θ) J = CE(y, ŷ)It helps to break up the model into the simplest parts possible, so note that we defined z and θ to split up the activation functions from the linear transformations in the network's layers. The dimensions of the model's parameters arex ∈ R Dx×1 b 1 ∈ R D h ×1 W ∈ R D h ×Dx b 2 ∈ R Nc×1 U ∈ R Nc×D hwhere D x is the size of our input, D h is the size of our hidden layer, and N c is the number of classes.In this example, we will compute all of the network's gradients:∂J ∂U ∂J ∂b 2 ∂J ∂W ∂J ∂b 1∂J ∂x To start with, recall that ReLU(x) = max(x, 0). This meansReLU (x) = 1 if x &gt; 0 0 if otherwise = sgn(ReLU(x))where sgn is the signum function. Note that we are able to write the derivative of the activation in terms of the activation itself. Now let's write out the chain rule for ∂J ∂U and ∂J ∂b2 :∂J ∂U = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂U ∂J ∂b 2 = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂b 2 Notice that ∂J ∂ ŷ ∂ ŷ ∂θ = ∂J∂θ is present in both gradients. This makes the math a bit cumbersome. Even worse, if we're implementing the model without automatic differentiation, computing ∂J ∂θ twice will be inefficient. So it will help us to define some variables to represent the intermediate derivatives:δ 1 = ∂J ∂θ δ 2 = ∂J ∂zThese can be thought as the error signals passed down to θ and z when doing backpropagation. We can compute them as follows:δ 1 = ∂J ∂θ = (ŷ -y) Tthis is just identity (7)δ 2 = ∂J ∂z = ∂J ∂θ ∂θ ∂h ∂h ∂z using the chain rule = δ 1 ∂θ ∂h ∂h ∂z substituting in δ 1 = δ 1 U ∂h ∂z using identity (1) = δ 1 U • ReLU (z) using identity (4) = δ 1 U • sgn(h)we computed this earlier A good way of checking our work is by looking at the dimensions of the Jacobians:∂J ∂z = δ 1 U • sgn(h) (1 × D h ) (1 × N c ) (N c × D h ) (D h )",
+  "sections": [
+    {
+      "title": "Introduction",
+      "text": "The purpose of these notes is to demonstrate how to quickly compute neural network gradients in a completely vectorized way. It is complementary to the last part of lecture 3 in CS224n 2019, which goes over the same material.",
+      "level": 1,
+      "path_id": "1",
+      "parent_section_id": null,
+      "order_in_parent": 0,
+      "section_id": "sec-1"
+    },
+    {
+      "title": "Vectorized Gradients",
+      "text": "While it is a good exercise to compute the gradient of a neural network with respect to a single parameter (e.g., a single element in a weight matrix), in practice this tends to be quite slow. Instead, it is more efficient to keep everything in matrix/vector form. The basic building block of vectorized gradients is the Jacobian Matrix. Suppose we have a function f : R n → R m that maps a vector of length n to a vector of length m:f (x) = [f 1 (x 1 , ..., x n ), f 2 (x 1 , ..., x n ), ..., f m (x 1 , ..., x n )].Then its Jacobian is the following m × n matrix:∂f ∂x =    ∂f1 ∂x1 . . . ∂f1 ∂xn . . . . . . . . . ∂fm ∂x1 . . . ∂fm ∂xn   That is, ( ∂f ∂x ) ij = ∂fi ∂xj (which is just a standard non-vector derivative). The Jacobian matrix will be useful for us because we can apply the chain rule to a vector-valued function just by multiplying Jacobians.As a little illustration of this, suppose we have a function f (x) = [f 1 (x), f 2 (x)] taking a scalar to a vector of size 2 and a function g(y) = [g 1 (y 1 , y 2 ), g 2 (y 1 , y 2 )] taking a vector of size two to a vector of size two. Now let's compose them toget g(x) = [g 1 (f 1 (x), f 2 (x)), g 2 (f 1 (x), f 2 (x))].Using the regular chain rule, we can compute the derivative of g as the Jacobian∂g ∂x = ∂ ∂x g 1 (f 1 (x), f 2 (x)) ∂ ∂x g 2 (f 1 (x), f 2 (x)) = ∂g1 ∂f1 ∂f1 ∂x + ∂g1 ∂f2 ∂f2 ∂x ∂g2 ∂f1 ∂f1 ∂x + ∂g2 ∂f2 ∂f2 ∂xAnd we see this is the same as multiplying the two Jacobians:∂g ∂x = ∂g ∂f ∂f ∂x = ∂g1 ∂f1 ∂g1 ∂f2 ∂g2 ∂f1 ∂g2 ∂f2 ∂f1 ∂x ∂f2 ∂x",
+      "level": 2,
+      "path_id": "2",
+      "parent_section_id": null,
+      "order_in_parent": 1,
+      "section_id": "sec-2"
+    },
+    {
+      "title": "Useful Identities",
+      "text": "This section will now go over how to compute the Jacobian for several simple functions. It will provide some useful identities you can apply when taking neural network gradients.(1) Matrix times column vector with respect to the column vector(z = W x, what is ∂z ∂x ?)Suppose W ∈ R n×m . Then we can think of z as a function of x taking an m-dimensional vector to an n-dimensional vector. So its Jacobian will be n × m. Note thatz i = m k=1 W ik x kSo an entry ( ∂z ∂x ) ij of the Jacobian will be ( ∂z ∂x) ij = ∂z i ∂x j = ∂ ∂x j m k=1 W ik x k = m k=1 W ik ∂ ∂x j x k = W ij because ∂ ∂xj x k = 1 if k = j and 0 if otherwise. So we see that ∂z ∂x = W(2) Row vector times matrix with respect to the row vector(z = xW , what is ∂z ∂x ?)A computation similar to ( 1) shows that ∂z ∂x = W T .(3) A vector with itself(z = x, what is ∂z ∂x ? ) We have z i = x i . So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j x i = 1 if i = j 0 if otherwiseSo we see that the Jacobian ∂z ∂x is a diagonal matrix where the entry at (i, i) is 1. This is just the identity matrix: ∂z ∂x = I . When applying the chain rule, this term will disappear because a matrix or vector multiplied by the identity matrix does not change.(4) An elementwise function applied a vector(z = f (x), what is ∂z ∂x ? ) Since f is being applied elementwise, we have z i = f (x i ). So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j f (x i ) = f (x i ) if i = j 0 if otherwiseSo we see that the Jacobian ∂z ∂x is a diagonal matrix where the entry at (i, i)is the derivative of f applied to x i . We can write this as ∂z ∂x = diag(f (x)) .Since multiplication by a diagonal matrix is the same as doing elementwise multiplication by the diagonal, we could also write •f (x) when applying the chain rule.(5) Matrix times column vector with respect to the matrix(z = W x, δ = ∂J ∂z what is ∂J ∂W = ∂J ∂z ∂z ∂W = δ ∂z ∂W ?)This is a bit more complicated than the other identities. The reason for including ∂J ∂z in the above problem formulation will become clear in a moment. First suppose we have a loss function J (a scalar) and are computing its gradient with respect to a matrix W ∈ R n×m . Then we could think of J as a function of W taking nm inputs (the entries of W ) to a single output (J). This means the Jacobian ∂J ∂W would be a 1 × nm vector. But in practice this is not a very useful way of arranging the gradient. It would be much nicer if the derivatives were in a n × m matrix like this:∂J ∂W =    ∂J ∂W11 . . . ∂J ∂W1m . . . . . . . . . ∂J ∂Wn1 . . . ∂J ∂Wnm   Since this matrix has the same shape as W , we could just subtract it (times the learning rate) from W when doing gradient descent. So (in a slight abuse of notation) let's find this matrix as ∂J ∂W instead. This way of arranging the gradients becomes complicated when computing ∂z ∂W . Unlike J, z is a vector. So if we are trying to rearrange the gradients like with ∂J ∂W , ∂z ∂W would be an n × m × n tensor! Luckily, we can avoid the issue by taking the gradient with respect to a single weight W ij instead. ∂z ∂Wij is just a vector, which is much easier to deal with. We havez k = m l=1 W kl x l ∂z k ∂W ij = m l=1 x l ∂ ∂W ij W klNote that ∂ ∂Wij W kl = 1 if i = k and j = l and 0 if otherwise. So if k = i everything in the sum is zero and the gradient is zero. Otherwise, the only nonzero element of the sum is when l = j, so we just get x j . Thus we find∂z k ∂Wij = x j if k = i and 0 if otherwise. Another way of writing this is ∂z ∂W ij =             0 . . . 0 x j 0 . . . 0             ← ith element Now let's compute ∂J ∂Wij ∂J ∂W ij = ∂J ∂z ∂z ∂W ij = δ ∂z ∂W ij = m k=1 δ k ∂z k ∂W ij = δ i x j(the only nonzero term in the sum is δ i ∂zi ∂Wij ). To get ∂J ∂W we want a matrix where entry (i, j) is δ i x j . This matrix is equal to the outer product ∂J ∂W = δ T x T (6) Row vector time matrix with respect to the matrix(z = xW , δ = ∂J ∂z what is ∂J ∂W = δ ∂z ∂W ?)A similar computation to ( 5) shows that ∂J ∂W = x T δ .(7) Cross-entropy loss with respect to logits (ŷ = softmax(θ),J = CE(y, ŷ), what is ∂J ∂θ ?)The gradient is ∂J ∂θ = ŷy (or (ŷ -y) T if y is a column vector).These identities will be enough to let you quickly compute the gradients for many neural networks. However, it's important to know how to compute Jacobians for other functions as well in case they show up. Some examples if you want practice: dot product of two vectors, elementwise product of two vectors, 2-norm of a vector. Feel free to use these identities in the assignments. One option is just to memorize them. Another option is to figure them out by looking at the dimensions. For example, only one ordering/orientation of δ and x will produce the correct shape for ∂J ∂W (assuming W is not square).",
+      "level": 3,
+      "path_id": "3",
+      "parent_section_id": null,
+      "order_in_parent": 2,
+      "section_id": "sec-3"
+    },
+    {
+      "title": "Gradient Layout",
+      "text": "Jacobean formulation is great for applying the chain rule: you just have to multiply the Jacobians. However, when doing SGD it's more convenient to follow the convention \"the shape of the gradient equals the shape of the parameter\" (as we did when computing ∂J ∂W ). That way subtracting the gradient times the learning rate from the parameters is easy. We expect answers to homework questions to follow this convention. Therefore if you compute the gradient of a column vector using Jacobian formulation, you should take the transpose when reporting your final answer so the gradient is a column vector. Another option is to always follow the convention. In this case the identities may not work, but you can still figure out the answer by making sure the dimensions of your derivatives match up. Up to you which of these options you choose! 5 Example: 1-Layer Neural Network This section provides an example of computing the gradients of a full neural network. In particular we are going to compute the gradients of a one-layer neural network trained with cross-entropy loss. The forward pass of the model is as follows:x = input z = W x + b 1 h = ReLU(z) θ = U h + b 2 ŷ = softmax(θ) J = CE(y, ŷ)It helps to break up the model into the simplest parts possible, so note that we defined z and θ to split up the activation functions from the linear transformations in the network's layers. The dimensions of the model's parameters arex ∈ R Dx×1 b 1 ∈ R D h ×1 W ∈ R D h ×Dx b 2 ∈ R Nc×1 U ∈ R Nc×D hwhere D x is the size of our input, D h is the size of our hidden layer, and N c is the number of classes.In this example, we will compute all of the network's gradients:∂J ∂U ∂J ∂b 2 ∂J ∂W ∂J ∂b 1∂J ∂x To start with, recall that ReLU(x) = max(x, 0). This meansReLU (x) = 1 if x &gt; 0 0 if otherwise = sgn(ReLU(x))where sgn is the signum function. Note that we are able to write the derivative of the activation in terms of the activation itself. Now let's write out the chain rule for ∂J ∂U and ∂J ∂b2 :∂J ∂U = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂U ∂J ∂b 2 = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂b 2 Notice that ∂J ∂ ŷ ∂ ŷ ∂θ = ∂J∂θ is present in both gradients. This makes the math a bit cumbersome. Even worse, if we're implementing the model without automatic differentiation, computing ∂J ∂θ twice will be inefficient. So it will help us to define some variables to represent the intermediate derivatives:δ 1 = ∂J ∂θ δ 2 = ∂J ∂zThese can be thought as the error signals passed down to θ and z when doing backpropagation. We can compute them as follows:δ 1 = ∂J ∂θ = (ŷ -y) Tthis is just identity (7)δ 2 = ∂J ∂z = ∂J ∂θ ∂θ ∂h ∂h ∂z using the chain rule = δ 1 ∂θ ∂h ∂h ∂z substituting in δ 1 = δ 1 U ∂h ∂z using identity (1) = δ 1 U • ReLU (z) using identity (4) = δ 1 U • sgn(h)we computed this earlier A good way of checking our work is by looking at the dimensions of the Jacobians:∂J ∂z = δ 1 U • sgn(h) (1 × D h ) (1 × N c ) (N c × D h ) (D h )",
+      "level": 4,
+      "path_id": "4",
+      "parent_section_id": null,
+      "order_in_parent": 3,
+      "section_id": "sec-4"
+    }
+  ],
+  "citations": [],
+  "layout_json": null,
+  "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Computing Neural Network Gradients</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability status=\"unknown\"><licence/></availability>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Kevin</forename><surname>Clark</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Computing Neural Network Gradients</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date/>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">25BF67F53C738DF4E86F0B12076DE2FD</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.1\" ident=\"GROBID\" when=\"2026-10-13T11:34+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.1</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null, debugLabelingCollector=disabled</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract/>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>The purpose of these notes is to demonstrate how to quickly compute neural network gradients in a completely vectorized way. It is complementary to the last part of lecture 3 in CS224n 2019, which goes over the same material.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">Vectorized Gradients</head><p>While it is a good exercise to compute the gradient of a neural network with respect to a single parameter (e.g., a single element in a weight matrix), in practice this tends to be quite slow. Instead, it is more efficient to keep everything in matrix/vector form. The basic building block of vectorized gradients is the Jacobian Matrix. Suppose we have a function f : R n → R m that maps a vector of length n to a vector of length m:</p><formula xml:id=\"formula_0\">f (x) = [f 1 (x 1 , ..., x n ), f 2 (x 1 , ..., x n ), ..., f m (x 1 , ..., x n )].</formula><p>Then its Jacobian is the following m × n matrix:</p><formula xml:id=\"formula_1\">∂f ∂x =    ∂f1 ∂x1 . . . ∂f1 ∂xn . . . . . . . . . ∂fm ∂x1 . . . ∂fm ∂xn   </formula><p>That is, ( ∂f ∂x ) ij = ∂fi ∂xj (which is just a standard non-vector derivative). The Jacobian matrix will be useful for us because we can apply the chain rule to a vector-valued function just by multiplying Jacobians.</p><p>As a little illustration of this, suppose we have a function f (x) = [f 1 (x), f 2 (x)] taking a scalar to a vector of size 2 and a function g(y) = [g 1 (y 1 , y 2 ), g 2 (y 1 , y 2 )] taking a vector of size two to a vector of size two. Now let's compose them to</p><formula xml:id=\"formula_2\">get g(x) = [g 1 (f 1 (x), f 2 (x)), g 2 (f 1 (x), f 2 (x))].</formula><p>Using the regular chain rule, we can compute the derivative of g as the Jacobian</p><formula xml:id=\"formula_3\">∂g ∂x = ∂ ∂x g 1 (f 1 (x), f 2 (x)) ∂ ∂x g 2 (f 1 (x), f 2 (x)) = ∂g1 ∂f1 ∂f1 ∂x + ∂g1 ∂f2 ∂f2 ∂x ∂g2 ∂f1 ∂f1 ∂x + ∂g2 ∂f2 ∂f2 ∂x</formula><p>And we see this is the same as multiplying the two Jacobians:</p><formula xml:id=\"formula_4\">∂g ∂x = ∂g ∂f ∂f ∂x = ∂g1 ∂f1 ∂g1 ∂f2 ∂g2 ∂f1 ∂g2 ∂f2 ∂f1 ∂x ∂f2 ∂x</formula></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Useful Identities</head><p>This section will now go over how to compute the Jacobian for several simple functions. It will provide some useful identities you can apply when taking neural network gradients.</p><p>(1) Matrix times column vector with respect to the column vector</p><formula xml:id=\"formula_5\">(z = W x, what is ∂z ∂x ?)</formula><p>Suppose W ∈ R n×m . Then we can think of z as a function of x taking an m-dimensional vector to an n-dimensional vector. So its Jacobian will be n × m. Note that</p><formula xml:id=\"formula_6\">z i = m k=1 W ik x k</formula><p>So an entry ( ∂z ∂x ) ij of the Jacobian will be ( ∂z ∂x</p><formula xml:id=\"formula_7\">) ij = ∂z i ∂x j = ∂ ∂x j m k=1 W ik x k = m k=1 W ik ∂ ∂x j x k = W ij because ∂ ∂xj x k = 1 if k = j and 0 if otherwise. So we see that ∂z ∂x = W</formula><p>(2) Row vector times matrix with respect to the row vector</p><formula xml:id=\"formula_8\">(z = xW , what is ∂z ∂x ?)</formula><p>A computation similar to ( <ref type=\"formula\">1</ref>) shows that ∂z ∂x = W T .</p><p>(3) A vector with itself</p><formula xml:id=\"formula_9\">(z = x, what is ∂z ∂x ? ) We have z i = x i . So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j x i = 1 if i = j 0 if otherwise</formula><p>So we see that the Jacobian ∂z ∂x is a diagonal matrix where the entry at (i, i) is 1. This is just the identity matrix: ∂z ∂x = I . When applying the chain rule, this term will disappear because a matrix or vector multiplied by the identity matrix does not change.</p><p>(4) An elementwise function applied a vector</p><formula xml:id=\"formula_10\">(z = f (x), what is ∂z ∂x ? ) Since f is being applied elementwise, we have z i = f (x i ). So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j f (x i ) = f (x i ) if i = j 0 if otherwise</formula><p>So we see that the Jacobian ∂z ∂x is a diagonal matrix where the entry at (i, i)</p><p>is the derivative of f applied to x i . We can write this as ∂z ∂x = diag(f (x)) .</p><p>Since multiplication by a diagonal matrix is the same as doing elementwise multiplication by the diagonal, we could also write •f (x) when applying the chain rule.</p><p>(5) Matrix times column vector with respect to the matrix</p><formula xml:id=\"formula_11\">(z = W x, δ = ∂J ∂z what is ∂J ∂W = ∂J ∂z ∂z ∂W = δ ∂z ∂W ?)</formula><p>This is a bit more complicated than the other identities. The reason for including ∂J ∂z in the above problem formulation will become clear in a moment. First suppose we have a loss function J (a scalar) and are computing its gradient with respect to a matrix W ∈ R n×m . Then we could think of J as a function of W taking nm inputs (the entries of W ) to a single output (J). This means the Jacobian ∂J ∂W would be a 1 × nm vector. But in practice this is not a very useful way of arranging the gradient. It would be much nicer if the derivatives were in a n × m matrix like this:</p><formula xml:id=\"formula_12\">∂J ∂W =    ∂J ∂W11 . . . ∂J ∂W1m . . . . . . . . . ∂J ∂Wn1 . . . ∂J ∂Wnm   </formula><p>Since this matrix has the same shape as W , we could just subtract it (times the learning rate) from W when doing gradient descent. So (in a slight abuse of notation) let's find this matrix as ∂J ∂W instead. This way of arranging the gradients becomes complicated when computing ∂z ∂W . Unlike J, z is a vector. So if we are trying to rearrange the gradients like with ∂J ∂W , ∂z ∂W would be an n × m × n tensor! Luckily, we can avoid the issue by taking the gradient with respect to a single weight W ij instead. ∂z ∂Wij is just a vector, which is much easier to deal with. We have</p><formula xml:id=\"formula_13\">z k = m l=1 W kl x l ∂z k ∂W ij = m l=1 x l ∂ ∂W ij W kl</formula><p>Note that ∂ ∂Wij W kl = 1 if i = k and j = l and 0 if otherwise. So if k = i everything in the sum is zero and the gradient is zero. Otherwise, the only nonzero element of the sum is when l = j, so we just get x j . Thus we find</p><formula xml:id=\"formula_14\">∂z k ∂Wij = x j if k = i and 0 if otherwise. Another way of writing this is ∂z ∂W ij =             0 . . . 0 x j 0 . . . 0             ← ith element Now let's compute ∂J ∂Wij ∂J ∂W ij = ∂J ∂z ∂z ∂W ij = δ ∂z ∂W ij = m k=1 δ k ∂z k ∂W ij = δ i x j</formula><p>(the only nonzero term in the sum is δ i ∂zi ∂Wij ). To get ∂J ∂W we want a matrix where entry (i, j) is δ i x j . This matrix is equal to the outer product ∂J ∂W = δ T x T (6) Row vector time matrix with respect to the matrix</p><formula xml:id=\"formula_15\">(z = xW , δ = ∂J ∂z what is ∂J ∂W = δ ∂z ∂W ?)</formula><p>A similar computation to ( <ref type=\"formula\">5</ref>) shows that ∂J ∂W = x T δ .</p><p>(7) Cross-entropy loss with respect to logits (ŷ = softmax(θ),</p><formula xml:id=\"formula_16\">J = CE(y, ŷ), what is ∂J ∂θ ?)</formula><p>The gradient is ∂J ∂θ = ŷy (or (ŷ -y) T if y is a column vector).</p><p>These identities will be enough to let you quickly compute the gradients for many neural networks. However, it's important to know how to compute Jacobians for other functions as well in case they show up. Some examples if you want practice: dot product of two vectors, elementwise product of two vectors, 2-norm of a vector. Feel free to use these identities in the assignments. One option is just to memorize them. Another option is to figure them out by looking at the dimensions. For example, only one ordering/orientation of δ and x will produce the correct shape for ∂J ∂W (assuming W is not square).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Gradient Layout</head><p>Jacobean formulation is great for applying the chain rule: you just have to multiply the Jacobians. However, when doing SGD it's more convenient to follow the convention \"the shape of the gradient equals the shape of the parameter\" (as we did when computing ∂J ∂W ). That way subtracting the gradient times the learning rate from the parameters is easy. We expect answers to homework questions to follow this convention. Therefore if you compute the gradient of a column vector using Jacobian formulation, you should take the transpose when reporting your final answer so the gradient is a column vector. Another option is to always follow the convention. In this case the identities may not work, but you can still figure out the answer by making sure the dimensions of your derivatives match up. Up to you which of these options you choose! 5 Example: 1-Layer Neural Network This section provides an example of computing the gradients of a full neural network. In particular we are going to compute the gradients of a one-layer neural network trained with cross-entropy loss. The forward pass of the model is as follows:</p><formula xml:id=\"formula_17\">x = input z = W x + b 1 h = ReLU(z) θ = U h + b 2 ŷ = softmax(θ) J = CE(y, ŷ)</formula><p>It helps to break up the model into the simplest parts possible, so note that we defined z and θ to split up the activation functions from the linear transformations in the network's layers. The dimensions of the model's parameters are</p><formula xml:id=\"formula_18\">x ∈ R Dx×1 b 1 ∈ R D h ×1 W ∈ R D h ×Dx b 2 ∈ R Nc×1 U ∈ R Nc×D h</formula><p>where D x is the size of our input, D h is the size of our hidden layer, and N c is the number of classes.</p><p>In this example, we will compute all of the network's gradients:</p><formula xml:id=\"formula_19\">∂J ∂U ∂J ∂b 2 ∂J ∂W ∂J ∂b 1</formula><p>∂J ∂x To start with, recall that ReLU(x) = max(x, 0). This means</p><formula xml:id=\"formula_20\">ReLU (x) = 1 if x &gt; 0 0 if otherwise = sgn(ReLU(x))</formula><p>where sgn is the signum function. Note that we are able to write the derivative of the activation in terms of the activation itself. Now let's write out the chain rule for ∂J ∂U and ∂J ∂b2 :</p><formula xml:id=\"formula_21\">∂J ∂U = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂U ∂J ∂b 2 = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂b 2 Notice that ∂J ∂ ŷ ∂ ŷ ∂θ = ∂J</formula><p>∂θ is present in both gradients. This makes the math a bit cumbersome. Even worse, if we're implementing the model without automatic differentiation, computing ∂J ∂θ twice will be inefficient. So it will help us to define some variables to represent the intermediate derivatives:</p><formula xml:id=\"formula_22\">δ 1 = ∂J ∂θ δ 2 = ∂J ∂z</formula><p>These can be thought as the error signals passed down to θ and z when doing backpropagation. We can compute them as follows:</p><formula xml:id=\"formula_23\">δ 1 = ∂J ∂θ = (ŷ -y) T</formula><p>this is just identity (7)</p><formula xml:id=\"formula_24\">δ 2 = ∂J ∂z = ∂J ∂θ ∂θ ∂h ∂h ∂z using the chain rule = δ 1 ∂θ ∂h ∂h ∂z substituting in δ 1 = δ 1 U ∂h ∂z using identity (1) = δ 1 U • ReLU (z) using identity (4) = δ 1 U • sgn(h)</formula><p>we computed this earlier A good way of checking our work is by looking at the dimensions of the Jacobians:</p><formula xml:id=\"formula_25\">∂J ∂z = δ 1 U • sgn(h) (1 × D h ) (1 × N c ) (N c × D h ) (D h )</formula></div>\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"annex\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>We see that the dimensions of all the terms in the gradient match up (i.e., the number of columns in a term equals the number of rows in the next term). This will always be the case if we computed our gradients correctly. Now we can use the error terms to compute our gradients. Note that we transpose out answers when computing the gradients for column vectors terms to follow the shape convention.</p><p>∂J ∂U = ∂J ∂θ ∂θ ∂U = δ 1 ∂θ ∂U = δ T 1 h T using identity (5) ∂J ∂b 2 = ∂J ∂θ ∂θ ∂b 2 = δ 1 ∂θ ∂b 2 = δ T 1 using identity (3) and transposing ∂J ∂W = ∂J ∂θ ∂z ∂W = δ 2 ∂z ∂W = δ T 2 x T using identity (5) ∂J ∂b 1 = ∂J ∂θ ∂z ∂b 1 = δ 2 ∂z ∂b 1 = δ T 2 using identity (3) and transposing ∂J ∂x = ∂J ∂θ ∂z ∂x = (δ 2 W ) T using identity (1) and transposing</p></div>\t\t\t</div>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl/>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+  "pdf_hash": "a2823e49e1a2849b1adb887c3091fe537a273aa5bbc190de117965afaac072b2",
+  "tables": [],
+  "table_missingness": "no_table_elements",
+  "formulas": [
+    {
+      "formula_id": "formula_0",
+      "section_path_id": "2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "f (x) = [f 1 (x 1 , ..., x n ), f 2 (x 1 , ..., x n ), ..., f m (x 1 , ..., x n )]."
+      },
+      "span": {
+        "start": 434,
+        "end": 517
+      },
+      "source_digest": "518a54820742dd96a41721414b07e8ea4ce66e28d73595cadab782809f95c755",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_1",
+      "section_path_id": "2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂f ∂x =    ∂f1 ∂x1 . . . ∂f1 ∂xn . . . . . . . . . ∂fm ∂x1 . . . ∂fm ∂xn   "
+      },
+      "span": {
+        "start": 565,
+        "end": 646
+      },
+      "source_digest": "e228ace92e0db5d86e2abd98ac3db5e545d1db0d0ad873cd92b84461ea1f39ad",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_2",
+      "section_path_id": "2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "get g(x) = [g 1 (f 1 (x), f 2 (x)), g 2 (f 1 (x), f 2 (x))]."
+      },
+      "span": {
+        "start": 1127,
+        "end": 1187
+      },
+      "source_digest": "f802b1e354290d3d28104a18a5f31a190d07f8cbece38525797fb2b2624d9dea",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_3",
+      "section_path_id": "2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂g ∂x = ∂ ∂x g 1 (f 1 (x), f 2 (x)) ∂ ∂x g 2 (f 1 (x), f 2 (x)) = ∂g1 ∂f1 ∂f1 ∂x + ∂g1 ∂f2 ∂f2 ∂x ∂g2 ∂f1 ∂f1 ∂x + ∂g2 ∂f2 ∂f2 ∂x"
+      },
+      "span": {
+        "start": 1267,
+        "end": 1396
+      },
+      "source_digest": "5810651ab772c6aed0f327dde791fb5c744f01953f905c4d3ce8d5f64142701e",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_4",
+      "section_path_id": "2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂g ∂x = ∂g ∂f ∂f ∂x = ∂g1 ∂f1 ∂g1 ∂f2 ∂g2 ∂f1 ∂g2 ∂f2 ∂f1 ∂x ∂f2 ∂x"
+      },
+      "span": {
+        "start": 1457,
+        "end": 1524
+      },
+      "source_digest": "75dc0a4e1ac96d768f950dd7948d54aed81cf05a39521bb9f0502e8bdd8e4e08",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_5",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "(z = W x, what is ∂z ∂x ?)"
+      },
+      "span": {
+        "start": 242,
+        "end": 268
+      },
+      "source_digest": "16a70f352ea17ba16dd198008907d6bf6d6a5f372b70174329ef51160d32b051",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_6",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "z i = m k=1 W ik x k"
+      },
+      "span": {
+        "start": 429,
+        "end": 449
+      },
+      "source_digest": "12f7845e8f4bf28ace9270b87bb64a6cc8a194b96572c44a69e7d6b7c7f3f092",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_7",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": ") ij = ∂z i ∂x j = ∂ ∂x j m k=1 W ik x k = m k=1 W ik ∂ ∂x j x k = W ij because ∂ ∂xj x k = 1 if k = j and 0 if otherwise. So we see that ∂z ∂x = W"
+      },
+      "span": {
+        "start": 505,
+        "end": 652
+      },
+      "source_digest": "26e6e33e6bfacd1f1d7a998b94ee5b1336c7c1107f112c4638c087ac98b0c867",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_8",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "(z = xW , what is ∂z ∂x ?)"
+      },
+      "span": {
+        "start": 710,
+        "end": 736
+      },
+      "source_digest": "3a30cb310f2385812439641ec9baac8749c56c321f9f04d10ee8846a840c6851",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_9",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "(z = x, what is ∂z ∂x ? ) We have z i = x i . So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j x i = 1 if i = j 0 if otherwise"
+      },
+      "span": {
+        "start": 814,
+        "end": 928
+      },
+      "source_digest": "ebf769ee25ba59dab4e4bf1057a1da348d9ec4e6570d2891d9e00cb2a4c18c39",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_10",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "(z = f (x), what is ∂z ∂x ? ) Since f is being applied elementwise, we have z i = f (x i ). So ( ∂z ∂x ) ij = ∂z i ∂x j = ∂ ∂x j f (x i ) = f (x i ) if i = j 0 if otherwise"
+      },
+      "span": {
+        "start": 1237,
+        "end": 1409
+      },
+      "source_digest": "128d1bfd151155dd4ea49d9ed0cd6f0e6c415396db73a72b0a36d1ac6f2ba911",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_11",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "(z = W x, δ = ∂J ∂z what is ∂J ∂W = ∂J ∂z ∂z ∂W = δ ∂z ∂W ?)"
+      },
+      "span": {
+        "start": 1791,
+        "end": 1851
+      },
+      "source_digest": "35c3f368b12404400fce0eafe40541d43c1fbefaff3503ad18a71816361da186",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_12",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂J ∂W =    ∂J ∂W11 . . . ∂J ∂W1m . . . . . . . . . ∂J ∂Wn1 . . . ∂J ∂Wnm   "
+      },
+      "span": {
+        "start": 2432,
+        "end": 2513
+      },
+      "source_digest": "897cbd03370209a3121a829c800ad0ef8debb78237a4982c80a2119df164c825",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_13",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "z k = m l=1 W kl x l ∂z k ∂W ij = m l=1 x l ∂ ∂W ij W kl"
+      },
+      "span": {
+        "start": 3095,
+        "end": 3151
+      },
+      "source_digest": "07c25cb4b594cda2da16447647459d022e27453ce712b92e255333bd73aa7b95",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_14",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂z k ∂Wij = x j if k = i and 0 if otherwise. Another way of writing this is ∂z ∂W ij =             0 . . . 0 x j 0 . . . 0             ← ith element Now let's compute ∂J ∂Wij ∂J ∂W ij = ∂J ∂z ∂z ∂W ij = δ ∂z ∂W ij = m k=1 δ k ∂z k ∂W ij = δ i x j"
+      },
+      "span": {
+        "start": 3379,
+        "end": 3649
+      },
+      "source_digest": "2de04c4d9cb97632ba76a712f53aca675181279b917a8492490379e3ac67f81e",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_15",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "(z = xW , δ = ∂J ∂z what is ∂J ∂W = δ ∂z ∂W ?)"
+      },
+      "span": {
+        "start": 3875,
+        "end": 3921
+      },
+      "source_digest": "0fe49384db3b242b349930e2dac02309b72a53d63e29bb8ad9c69483cfeb6fb9",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_16",
+      "section_path_id": "3",
+      "section_ordinal": 2,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "J = CE(y, ŷ), what is ∂J ∂θ ?)"
+      },
+      "span": {
+        "start": 4039,
+        "end": 4069
+      },
+      "source_digest": "9b8210e62ec3bc635f10ef1bf453e79cd0d2f8891d4fcdcd2164750ed42883e7",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_17",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "x = input z = W x + b 1 h = ReLU(z) θ = U h + b 2 ŷ = softmax(θ) J = CE(y, ŷ)"
+      },
+      "span": {
+        "start": 1122,
+        "end": 1199
+      },
+      "source_digest": "e221f04cbeb701fcaa6344cd2b03be8ee695a3338d5a9f89e02fa9296c3691f6",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_18",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "x ∈ R Dx×1 b 1 ∈ R D h ×1 W ∈ R D h ×Dx b 2 ∈ R Nc×1 U ∈ R Nc×D h"
+      },
+      "span": {
+        "start": 1434,
+        "end": 1499
+      },
+      "source_digest": "c00135b1cfad00b750686b841a51238cd4ff1cd7b6651752adab02ffe5725536",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_19",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂J ∂U ∂J ∂b 2 ∂J ∂W ∂J ∂b 1"
+      },
+      "span": {
+        "start": 1669,
+        "end": 1696
+      },
+      "source_digest": "337465dc32d97c703b87e66173e31727667951ae811bbf5e6de744c9242c5ecf",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_20",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "ReLU (x) = 1 if x &gt; 0 0 if otherwise = sgn(ReLU(x))"
+      },
+      "span": {
+        "start": 1760,
+        "end": 1814
+      },
+      "source_digest": "ef8d8a72f155869bd2549558da9029a3190eefd7afd51f5d7507fa566d936f81",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_21",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂J ∂U = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂U ∂J ∂b 2 = ∂J ∂ ŷ ∂ ŷ ∂θ ∂θ ∂b 2 Notice that ∂J ∂ ŷ ∂ ŷ ∂θ = ∂J"
+      },
+      "span": {
+        "start": 2004,
+        "end": 2094
+      },
+      "source_digest": "078f31cedeaab5a816d6319d3aad1b00ed692b59bef7e9ce0cf793602f44ca0f",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_22",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "δ 1 = ∂J ∂θ δ 2 = ∂J ∂z"
+      },
+      "span": {
+        "start": 2373,
+        "end": 2396
+      },
+      "source_digest": "bd19f11bf31bdb5345568a6fccdc00ce981fc131700571c7e62fc900f8cfeb10",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_23",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "δ 1 = ∂J ∂θ = (ŷ -y) T"
+      },
+      "span": {
+        "start": 2520,
+        "end": 2542
+      },
+      "source_digest": "2e40b0ca529df78c1786b7b82af621e0ae78c1d31b181f7dca395153278bce60",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_24",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "δ 2 = ∂J ∂z = ∂J ∂θ ∂θ ∂h ∂h ∂z using the chain rule = δ 1 ∂θ ∂h ∂h ∂z substituting in δ 1 = δ 1 U ∂h ∂z using identity (1) = δ 1 U • ReLU (z) using identity (4) = δ 1 U • sgn(h)"
+      },
+      "span": {
+        "start": 2567,
+        "end": 2745
+      },
+      "source_digest": "be10ef989ca3d12cf6e7d2729506b4fdec24dd5c8c71edb6cb915baa92e5197b",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_25",
+      "section_path_id": "4",
+      "section_ordinal": 3,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "∂J ∂z = δ 1 U • sgn(h) (1 × D h ) (1 × N c ) (N c × D h ) (D h )"
+      },
+      "span": {
+        "start": 2851,
+        "end": 2915
+      },
+      "source_digest": "75b42400e789121bdd1a09a347ec79caa1a7ce773264646d7d694b8deed8f499",
+      "missingness": null
+    }
+  ],
+  "formula_missingness": null,
+  "page_text_missingness": null,
+  "declared_arxiv_id": null,
+  "declared_id_missingness": "no_idno",
+  "header_authors": [
+    {
+      "name": "Kevin Clark",
+      "forename": "Kevin",
+      "surname": "Clark",
+      "source_digest": "3fce8275a53ddc729a461d4573d652d2b4e30e7cd4045e367dcaef052f5cb95a"
+    }
+  ],
+  "figures": [],
+  "visual_callouts": []
+}

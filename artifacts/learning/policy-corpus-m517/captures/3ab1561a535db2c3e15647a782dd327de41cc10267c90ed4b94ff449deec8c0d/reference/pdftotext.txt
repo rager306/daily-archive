@@ -1,0 +1,2434 @@
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question
+Answering
+
+Xin Sun 1 Zhongqi Chen 2 Xing Zheng 2 Bowen Song 2 Qiang Liu 3 Shu Wu 3 Zilei Wang 1 Weiqiang Wang 2
+Liang Wang 3
+
+1. Introduction
+
+arXiv:2512.10999v4 [cs.CL] 22 Jun 2026
+
+Abstract
+
+Knowledge Base Question Answering (KBQA) aims to answer natural language questions by retrieving facts from
+large-scale Knowledge Bases (KBs) such as Freebase and
+Wikidata. Unlike Retrieval-Augmented Generation (RAG),
+which augments Large Language Models (LLMs) with
+unstructured text snippets, KBQA requires the model to
+produce executable logical forms (e.g., SPARQL or SExpressions) that precisely navigate a KB schema. Here,
+schema elements refer to the exact relation names, entity
+types, and attributes that define the graph vocabulary (e.g.,
+film.actor.film). This makes KBQA a stringent reasoning task: a model must understand the question, choose
+schema-consistent relations, and compose multi-hop queries
+without violating the executor’s syntax or semantics.
+
+Knowledge Base Question Answering (KBQA)
+challenges models to bridge the gap between natural language and strict knowledge graph schemas
+by generating executable logical forms. While
+Large Language Models (LLMs) have advanced
+this field, current approaches often struggle with
+a dichotomy of failure: they either generate hallucinated queries without verifying schema existence or exhibit rigid, template-based reasoning that mimics synthesized traces without true
+comprehension of the environment. To address
+these limitations, we present KBQA-R1, a framework that shifts the paradigm from text imitation to interaction optimization via Reinforcement
+Learning. Treating KBQA as a multi-turn decision process, our model learns to autonomously
+navigate the knowledge base using a structured
+action space, refining its reasoning strategies
+based on concrete execution feedback rather than
+static supervision. Furthermore, we introduce
+Referenced Rejection Sampling (RRS), a data
+synthesis method that resolves cold-start challenges by strictly aligning reasoning traces with
+ground-truth action sequences. Extensive experiments on WebQSP, GrailQA, and GraphQuestions demonstrate that KBQA-R1 achieves stateof-the-art performance.
+Code and project
+page are available at https://github.
+com/sunxin000/KBQA-R1 and https://
+sunxin000.github.io/KBQA-R1/.
+
+Recent LLM-based KBQA systems have made substantial progress, but three limitations remain. First, end-toend approaches such as KB-BINDER (Li et al., 2023),
+KB-Coder (Nie et al., 2024), and ChatKBQA (Luo et al.,
+2024) generate an entire logical form in one pass. They
+are efficient, but they cannot verify schema elements during generation, which often leads to schema hallucinations:
+executable-looking queries that mention invalid or irrelevant relations. Second, prompting-based step-by-step approaches (Sun et al., 2023; Luo et al., 2023) decompose reasoning into intermediate graph-exploration steps, but they
+rely heavily on in-context heuristics and strong commercial APIs rather than learning a task-specific policy for KB
+navigation. Third, supervised or search-augmented agentic approaches (Luo et al., 2025c) improve executability
+with synthesized traces or test-time search, but their traces
+can become template-driven action announcements rather
+than genuine analysis of KB feedback, and search-based
+inference adds substantial overhead. Recent graph-retrieval
+and GraphRAG methods (Mavromatis & Karypis, 2025; Li
+et al., 2024b;a) reduce hallucination by retrieving or decoding over local subgraphs, yet they still depend on offline
+subgraph construction or retrieval pipelines whose policies
+are not directly optimized for online KB interaction.
+
+1
+University of Science and Technology of China, Hefei, China
+Independent 3 Institute of Automation, Chinese Academy of Sciences, Beijing, China. Correspondence to: Bowen Song <wdboou@gmail.com>, Shu Wu <shu.wu@nlpr.ia.ac.cn>.
+2
+
+Proceedings of the 43 rd International Conference on Machine
+Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026
+by the author(s).
+
+We present KBQA-R1, an action-centric reinforcement
+learning framework that turns KBQA into a closed-loop
+1
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+interaction problem. Instead of generating raw query code
+in one shot, KBQA-R1 operates over a compact, typed action space, where actions such as Find_Relation and
+Merge are executed against the KB and converted into verifiable S-Expression fragments. At each turn, the model
+emits reasoning and actions, receives concrete KB feedback,
+and updates its trajectory until it produces a final answer.
+By optimizing the policy with outcome-oriented reinforcement learning rather than static imitation alone, KBQA-R1
+encourages adaptive reasoning that interprets observations
+and justifies action choices based on executable feedback.
+
+2024; Chen et al., 2024; Jiang et al., 2024), and searchor graph-augmented reasoning methods that use MCTS,
+GraphRAG, or local subgraph retrieval to improve robustness (Luo et al., 2025c; Mavromatis & Karypis, 2025; Li
+et al., 2024b;a; Luo et al., 2025a). These approaches reduce schema hallucination in different ways, but they either
+rely on one-shot generation, test-time prompting/search, or
+external retrieval pipelines whose policies are not directly
+optimized for executable KB interaction. Recent variational
+views of language-model reasoning also connect rejection
+sampling and RL-style training objectives through probabilistic inference (Zhou et al., 2025); our RRS module
+shares the high-level insight that sampled reasoning traces
+can provide useful training signal, while grounding this idea
+in executable KB actions. KBQA-R1 instead trains a single
+policy to act in a typed KB environment with verifiable feedback, so the model internalizes schema-aware navigation
+during training rather than relying on heuristic exploration
+at inference time. We provide a more detailed comparison
+with these lines of work in Appendix A.
+
+To make this reinforcement learning process stable, we introduce Referenced Rejection Sampling (RRS) as a warmstart data synthesis strategy. Standard rejection sampling
+from raw prompts is inefficient for KBQA because most
+zero-shot trajectories contain malformed actions, hallucinated relations, or invalid query structures. RRS addresses
+this cold-start problem by conditioning trajectory generation on a reference sequence of ground-truth actions while
+requiring the model to reconstruct a coherent reasoning
+trace around those executable steps. Accepted trajectories
+are then stripped of reference hints before supervised finetuning, so the policy learns KB-grounded reasoning patterns
+without depending on hidden guidance at inference time.
+
+3. Preliminaries
+Knowledge Base and Executor. We consider a knowledge base (KB) as a directed multi-relational graph K =
+(E, R, F), where E is the set of entities, R is the set of relations, and F is the set of factual triples. Each triple f ∈ F
+has the form (h, r, t) with head entity h ∈ E, relation r ∈ R,
+and tail entity t ∈ E. An executor E (e.g., a SPARQL endpoint) takes a structured query over K and returns an answer
+set, which serves as the environment feedback in our framework.
+
+Our main contributions are summarized as follows:
+• We propose KBQA-R1, a multi-turn reinforcement
+learning framework that grounds LLM reasoning in
+verifiable KB actions, enabling closed-loop interaction
+with the knowledge base.
+• We introduce Referenced Rejection Sampling (RRS),
+a data synthesis strategy that aligns reasoning traces
+with ground-truth action sequences and mitigates hallucinated logic during warm-start training.
+
+KBQA Task. Given a natural language question q, the KB
+K, and a set of topic entities Eq ⊆ E mentioned in q, the
+goal of Knowledge Base Question Answering (KBQA) is
+to produce an answer set Aq ⊆ E that correctly responds to
+the question. Following the standard KGQA setting used
+by prior systems such as ToG, RoG, PoG, GNN-RAG, SubgraphRAG, and KBQA-o1 (Sun et al., 2023; Luo et al.,
+2023; Chen et al., 2024; Mavromatis & Karypis, 2025; Li
+et al., 2024b; Luo et al., 2025c), we assume that entity mentions in q are already linked to the KB and the corresponding
+topic entities Eq are given as input. In classic semanticparsing based KBQA, this task is realized by generating a
+logical form (e.g., SPARQL or S-Expression) in one shot
+and executing it against the KB. In contrast, our framework
+rephrases the task as learning a multi-step interaction policy.
+
+• Extensive experiments on WebQSP, GrailQA, and
+GraphQuestions demonstrate that KBQA-R1 achieves
+state-of-the-art performance. Moreover, RL training
+enables precise navigation on the knowledge graph:
+KBQA-R1 requires over 70% fewer LLM calls than
+GPT-4-based prompting methods (ToG, PoG), while
+achieving superior accuracy with only a Llama-3.1-8B
+backbone.
+
+2. Related Work
+KBQA has been studied through semantic parsing and
+retrieval-based methods, and recent LLM-based systems
+mainly fall into three lines: end-to-end logical-form generation (Li et al., 2023; Nie et al., 2024; Luo et al., 2024;
+Jiang et al., 2023), agentic graph exploration with interleaved reasoning and tool feedback (Gu et al., 2023b; Huang
+et al., 2024; Sun et al., 2023; Luo et al., 2023; Xiong et al.,
+
+Agentic KBQA as Sequential Decision Making. In
+our framework, we view the large language model as a
+stochastic policy πθ that interacts with the KB environment via a compact, validated action space. At each
+step t, the agent observes a context ct summarizing the
+dialogue history, including prior reasoning (<think>
+2
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+blocks), actions (<action> blocks), and tool feedback
+(<information> blocks). Conditioned on ct and the
+original question q, the policy samples an action at :
+
+that decomposes logical-form construction into a sequence
+of simple, verifiable steps. Concretely, each action corresponds to an atomic operation over the evolving logical
+expression, such as extending from an entity along a relation
+(Find_relation), intersecting two partial expressions
+(Merge), or applying aggregation and comparison operators (Order, Compare, Count, Time_constraint).
+As summarized in Table 1, every action is defined by (i)
+its arguments, (ii) a target functional update on the current
+expression (e.g., JOIN, AND, ARG, CMP, TC, COUNT), and
+(iii) the corresponding S-expression template.
+
+at ∼ πθ (· | q, ct ).
+The action at is grounded into an S-Expression fragment and
+executed by the executor E over K, yielding an observation
+ot (e.g., retrieved entities or diagnostic messages). The triple
+(ct , at , ot ) is appended to the trajectory, and the context is
+updated accordingly. This interactive loop continues until
+the agent outputs a final answer Âq or a maximum number
+of steps T is reached. We denote a complete trajectory by
+τ = {(c1 , a1 , o1 ), . . . , (cT , aT , oT )}.
+
+Actions are converted into an S-Expression list, then translated into SPARQL queries (Pérez et al., 2009) executed
+against the KB. The resulting observations are appended to
+the dialogue state visible to the model.
+
+4. Method: The KBQA-R1 Framework
+4.1.3. R ELATION R ETRIEVAL AND C ONFIDENCE
+G ATING
+
+4.1. Prompt and System Workflow
+Our system is a multi-turn agent system inspired by the
+ReAct paradigm (Yao et al., 2022). At each turn, the
+LLM emits one or more actions to interact with the KB
+environment, and the environment returns the corresponding observations, forming the Think-Action-Information
+loop shown in Figure 1. After multiple turns of KB exploration, the model outputs the final answer. Algorithm 2
+in Appendix B.8 gives the formal execution loop, and Appendix B.9 provides a complete step-by-step interaction
+trace.
+
+LLM-proposed relations can be noisy or ambiguous due to
+the well-known hallucination problem (Zhang et al., 2023b).
+To mitigate this, we introduce the Relation Retrieval and
+Confidence Gating (RRCG) module. The RRCG module
+acts as a validation layer, verifying the agent’s proposed
+textual relation before execution.
+Let ragent be the original textual relation proposed by
+the agent for the current entity ec . Let R(ec ) be
+the set of all neighboring schema relations of ec in
+the knowledge base. The core of the RRCG module is a similarity function Sim(·, ·), implemented using dense retrieval techniques (Karpukhin et al., 2020;
+Zhao et al., 2024), which scores ragent against every
+schema relation rs ∈ R(ec ). We define smax =
+maxrs ∈R(ec ) Sim(ragent , rs ) as the highest similarity score,
+with rs∗ = arg maxrs ∈R(ec ) Sim(ragent , rs ) being the bestmatching schema relation.
+
+4.1.1. P ROMPTING T EMPLATE FOR ACTION -BASED
+R EASONING
+We use a structured, action-based prompting format to
+support multi-turn interaction with the Freebase executor. At each turn, the model produces (i) a rationale
+in <think>...</think>, (ii) one or more executable
+KB exploration actions in <action>...</action>,
+and is then conditioned on the environment feedback
+returned in <information>...</information>.
+The loop repeats until the model outputs the final answer
+in <answer>...</answer>. Table 2 summarizes the
+prompt template.
+
+Based on smax and predefined thresholds τhigh and τlow
+(where τhigh > τlow ), the action is categorized into three
+confidence tiers: (1) Auto-Validation: If smax ≥ τhigh , the
+action is directly executed using rs∗ . (2) Tentative Acceptance: If τlow ≤ smax < τhigh , the action proceeds but the
+observation includes top-k candidates to signal uncertainty.
+(3) Rejection: If smax < τlow , the action is marked invalid
+and a diagnostic message with neighboring relations is returned to guide re-selection.
+
+4.1.2. ACTION S PACE
+Prior semantic parsing approaches to KBQA (Gu & Su,
+2022; Luo et al., 2024; Ye et al., 2022) typically require the
+model to emit a full, nested S-expression in a single pass.
+This design is notoriously brittle: a single token-level error
+(e.g., a typo in a relation name or a mismatched parenthesis)
+can render the entire program unexecutable and cause the
+query to fail.
+
+4.2. Rejection Sampling and Supervised Fine-Tuning
+Warm-Start
+To effectively warm-start the policy before RL and resolve
+the “cold start” problem, we propose Referenced Rejection
+Sampling (RRS), a data synthesis strategy that grounds the
+model’s reasoning in verifiable execution steps. The key in-
+
+Following the recent KBQA-o1 framework (Luo et al.,
+2025c), we instead adopt a compact, discrete action space
+3
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+Q:Music as a Weapon II and Chobits Character Song
+Collection share what content type between albums?
+
+Task Description | Action List
+
+Topic Entities:
+Chobits Character Song Collection'
+(m.01g1mj3), 'Music as a Weapon
+II' (m.01fkfkh)
+
+Think
+To determine the shared content type between Music as a Weapon
+II and Chobits Character Song Collection, I will first find the
+content types associated with Chobits Character Song Collection.
+
+Information
+Result：[ m.02jbfk (Compilation album), m.0l14gg (Soundtrack) ]
+
+Action
+
+expression1 = START('m.01g1mj3')
+expression1 = JOIN('music.album_content_type.albumsÕ, expression1)
+
+KB
+
+Find_relation [ m.01g1mj3 | music.album_content_type.albums ]
+
+Think
+The content types associated with Chobits Character Song
+Collection are Compilation album and Soundtrack. Next, I will find
+the content types associated with Music as a Weapon II.
+
+Information
+Result： [ m.02jbfk (Compilation album), m.0l14g2 (Live Album) ]
+
+Action
+
+expression2 = START('m.01fkfkhÕ)
+expression2 = JOIN('music.album_content_type.albums', expression2)
+
+KB
+
+Find_relation [ m.01fkfkh | music.album_content_type.albums ]
+
+Think
+The content types associated with Music as a Weapon II are
+Compilation album and Live Album. To find the shared content type,
+I will merge the results from both albums.
+
+Information
+Result： [ m.02jbfk (Compilation album) ]
+
+Action
+
+expression1 = AND(expression2, expression1)
+
+KB
+
+Merge [ expression2 | expression1 ]
+
+Think
+Answer
+
+The shared content type between Music as a Weapon II and
+Chobits Character Song Collection is Compilation album.
+
+m.02jbfk
+
+KBQA-R1 Multi-turn Rollout
+
+Figure 1. Overview of KBQA-R1. The agent iteratively executes a Think-Action-Information loop, selecting atomic actions and receiving
+KB feedback.
+Action
+
+Arguments
+
+Target Function
+
+Equivalent Logical Form
+
+Find_relation
+Merge
+Order
+Compare
+Time_constraint
+Count
+
+entity | relation
+expression1 | expression
+MAX/MIN | expression | relation
+le/lt/ge/gt | relation | number
+relation | time
+expression
+
+expression = JOIN(‘relation’, START(entity))
+expression = AND(expression1, expression)
+expression = ARG(‘mode’, expression, ‘relation’)
+expression = CMP(‘mode’, ‘relation’, number, expression)
+expression = TC(expression, ‘relation’, ‘time’)
+expression = COUNT(expression)
+
+(JOIN relation entity)
+(AND (expression1) (expression))
+(mode (expression) relation)
+(mode relation number (expression))
+(TC (expression) relation time)
+(COUNT (expression))
+
+Table 1. Action space of KBQA-R1.
+
+Table 2. Action-based reasoning prompt template for KBQA-R1.
+
+RRS addresses this by providing the model with a reference action sequence as implicit guidance during generation.
+This constraint forces the model to: ❶ Ground reasoning
+in execution: The model must justify why each reference action leads toward the correct answer, rather than fabricating
+post-hoc explanations. ❷ Learn action-observation correspondence: By observing the actual KB feedback for each
+ground-truth action, the model internalizes the mapping
+between actions and their environmental consequences.
+
+You are an expert assistant for querying the Freebase knowledge base using
+structured reasoning actions.
+Answer the given question about Freebase knowledge base.
+Conduct reasoning inside <think>...</think> before emitting actions.
+Provide structured actions inside <action>...</action>.
+The system returns query results between
+<information>...</information>.
+Return the final answer inside <answer>...</answer> using MIDs or
+literal values.
+Available Actions: {Action Descriptions}; Question:
+{QUESTION}.
+
+4.2.1. RRS P IPELINE
+sight behind RRS is that successful KBQA trajectories must
+align with executable action sequences. Standard rejection
+sampling (Yuan et al., 2023) from raw prompts suffers from
+very low acceptance rates due to the task complexity and
+the base LLM’s weak zero-shot ability on structured KB
+queries. Simply increasing sampling temperature or budget
+yields diminishing returns, as most generated trajectories
+contain hallucinated relations or malformed S-Expressions.
+
+Given a training example (q, A, S ∗ ) where q is the question,
+A is the gold answer set, and S ∗ is the gold S-Expression,
+the RRS pipeline proceeds as follows:
+Step 1: Action Extraction. Parse S ∗ to extract the
+ground-truth action sequence a∗ = (a∗1 , a∗2 , . . . , a∗k ),
+where each a∗i corresponds to an atomic operation (e.g.,
+Find_relation, Merge).
+4
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+Referenced Rejection Sampling
+Raw Data wo
+<think> && <info>
+Question: XXX
+Action List:
+Action1, Action2, ···
+Answer: xxx
+
+Task Description
+
+Action1
+Action2
+···
+
+Action Space
+Question
+
+Pretend you CANNOT see this reference
+sequence - generate your own natural
+reasoning path as if solving from scratch.
+
+Rollout Data
+For SFT
+
+Filter
+
+Question: XXX
+<think> XXX </think>
+<action> XXX </action>
+<info> XXX </info>
+<think> XXX </think>
+···
+<answer> xxx </answer>
+
+Exact Match & Correct Structure
+Post-processor
+
+Multi-turn KB Rollout
+
+Remove Reference
+
+Reward S1
+
+Advantage A1
+
+Reward S1
+
+Advantage A1
+
+Reward S1
+
+Advantage A1
+
+Pretrained LM
+
+Finetuned-KBQA LM
+
+Supervised Finetune
+
+GRPO
+
+Finetuned-LLM
+
+Rollout Data For SFT
+
+Reinforcement Learning
+
+Figure 2. Two-stage training pipeline. Stage 1: Referenced Rejection Sampling generates trajectories conditioned on gold action
+sequences, filtered by correctness for SFT. Stage 2: GRPO optimizes the policy via outcome-based rewards from multi-turn KB rollouts.
+
+Step 2: Referenced Rollout. Execute a rollout where the
+model generates reasoning traces (<think>) conditioned
+on observing the reference actions. At each step t, the
+prompt includes the next ground-truth action a∗t as a reference.
+
+signal using our GRPO algorithm (Shao et al., 2024).
+4.3.1. R EWARD F ORMULATION
+We define a composite reward R to guide the policy, composed of three main components: an outcome reward
+(routcome ), a format reward (rformat ). The primary component
+is routcome , which measures the factual accuracy of the final
+answer. To make this signal robust against annotation variations, it is calculated as the F1 score between the predicted
+answers Â and all available gold answer variants A for a
+given prompt. The second component is the rformat . This
+provides a bonus based on desirable structural properties,
+such as tag completeness and correct tag order. Crucially,
+this reward is applied only when routcome > 0, ensuring the
+agent is not rewarded for good syntax when the answer is
+completely wrong.
+
+Step 3: Trajectory Filtering. Accept trajectories that (a)
+successfully reach the correct answer with F1(Â, A) ≥ τ ,
+and (b) maintain correct structure format of the tags.
+Step 4: Reference Stripping. Before adding accepted
+trajectories to the SFT dataset, we strip all reference hints
+from the prompts. This ensures the model learns to reason
+independently at inference time.
+The resulting SFT dataset SRRS contains high-quality trajectories where each reasoning step is grounded in verifiable
+KB interactions. This approach achieves significantly higher
+acceptance rates compared to raw rejection sampling while
+producing more robust reasoning patterns.
+
+The total reward R for a trajectory is the weighted sum of
+these components, where I[·] is the indicator function:
+
+4.2.2. SFT T RAINING
+
+R = λoutcome · routcome + λformat · I[routcome > 0] · rformat (1)
+
+Each turn in the accepted trajectory is converted into an
+independent training sample, where the context (including
+prior turns and KB feedback) serves as input and the model’s
+response serves as the target. The SFT loss is computed only
+on response tokens. The resulting checkpoint initializes the
+policy for GRPO optimization.
+
+4.3.2. P OLICY O PTIMIZATION (GRPO)
+We optimize the policy πθ using GRPO (Shao et al., 2024).
+The overall objective maximizes the expected clipped advantage, regularized by a KL-divergence term against a frozen
+reference policy πref to ensure training stability (Ouyang
+et al., 2022):
+h
+i
+max E min rt Ât , clip(rt , 1−ϵ, 1+ϵ)Ât
+
+4.3. Reinforcement Learning Optimization
+The policy is further refined via Reinforcement Learning (Kaelbling et al., 1996), optimizing a composite reward
+
+θ
+
+− β DKL [πθ ∥πref ]
+5
+
+(2)
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+where rt = πθ (at |st )/πθold (at |st ) is the importance sampling ratio, ϵ is the clipping threshold, and β controls the
+KL penalty strength.
+
+5.1.4. T RAINING S ETUP
+We use Llama-3.1-8B-Instruct as the default backbone. We
+run RRS with a stronger instruction-following backbone
+(Qwen-2.5-72B-Instruct) to obtain high-quality trajectories,
+and then distill these trajectories into our Llama-3.1-8BInstruct policy via supervised fine-tuning. Full hyperparameters (e.g., epochs, learning-rate schedules, batch sizes, KL
+coefficient β, and clipping ratios) as well as infrastructure
+details are reported in Appendix B.3.
+
+The key feature of GRPO is its definition of the advantage
+function Ât . For a given prompt x, we execute n rollouts
+with the current policy πθ to generate n candidate trajectories {yi }ni=1 and their corresponding scalar rewards {ri }ni=1 .
+Instead of using a learned value function (as in standard
+actor-critic methods (Schulman et al., 2015)), GRPO computes the advantage by centering the rewards within this
+group, using the group’s mean reward as a baseline:
+
+5.2. Main Results Analysis
+For GrailQA dataset (Table 3), KBQA-R1 delivers consistent gains over the strongest fine-tuned baseline KBQAo1 across all three generalization levels. In the i.i.d. split,
+KBQA-R1 improves EM by about +12% and F1 by roughly
++6%. In the compositional split, which stresses recombining seen schema elements, KBQA-R1 still achieves a
+solid margin of around +5% F1. Most notably, in the
+zero-shot setting—where relations and compositions
+are unseen during training—KBQA-R1 boosts EM by
+more than +15% and F1 by about +9% over KBQAo1. Overall on GrailQA, these improvements translate
+into gains of roughly +8% F1 and +12% EM, highlighting that execution-grounded reinforcement learning
+significantly enhances out-of-distribution generalization
+rather than merely fitting the training distribution. On
+WebQSP (Table 4), KBQA-R1 attains 83.4% F1, outperforming graph-retrieval methods such as RoG, GNN-RAG,
+and SubgraphRAG, while exceeding fine-tuned systems
+such as TIARA and DecAF. Compared with the Llama-3.18B-based MCTS-KBQA, KBQA-R1 achieves about +7%
+absolute F1 improvement, suggesting that learned policies
+are more effective than MCTS search heuristics under the
+same backbone. On GraphQuestions (Table 5), which emphasizes long multi-hop queries, KBQA-R1 yields around
++5% absolute F1 gain over KBQA-o1 and consistently surpasses earlier graph-based methods such as CoTKR and
+ArcaneQA. These results indicate that KBQA-R1 effectively enhances reasoning capabilities across diverse KBQA
+challenges, including complex multi-hop queries.
+
+n
+
+1X
+Âi = ri −
+rj
+n j=1
+
+(3)
+
+5. Experiments
+5.1. Experimental Setup
+5.1.1. DATASETS
+We conduct experiments on three widely-used KBQA
+benchmarks grounded on Freebase (Bollacker et al., 2008):
+GrailQA (Gu et al., 2021), WebQSP (Yih et al., 2016), and
+GraphQuestions (Su et al., 2016). Following the experimental setup of KBQA-o1 (Luo et al., 2025c), we use the official
+splits and evaluation protocols (with GrailQA evaluated on
+the dev set as in prior work). Detailed dataset statistics and
+split sizes are provided in Appendix B.1.
+5.1.2. BASELINES
+We compare KBQA-R1 with representative KBQA baselines, including (i) fine-tune-based methods trained
+with full supervision: RnG-KBQA (Ye et al., 2022),
+DecAF (Yu et al., 2022), TIARA (Shu et al., 2022),
+SPARQA (Sun et al., 2020), BERT+Ranking (Gu et al.,
+2021), ArcaneQA (Gu & Su, 2022), and KBQA-o1 (Luo
+et al., 2025c); (ii) prompting-based methods: KBBINDER (Li et al., 2023), KB-Coder (Nie et al., 2024),
+and ARG-KBQA (Tian et al., 2024); and (iii) recent graphretrieval and agentic reasoning methods such as RoG (Luo
+et al., 2023), GNN-RAG (Mavromatis & Karypis, 2025),
+and SubgraphRAG (Li et al., 2024b). Detailed baseline
+descriptions are provided in Appendix B.2.
+
+5.3. Ablation Study
+We conduct ablation studies to quantify the contribution
+of the key components introduced in Section 4, including
+RRCG, the structured action space, the RRS warm-start,
+and GRPO-based RL optimization.
+
+5.1.3. E VALUATION M ETRICS
+We evaluate all methods using standard KBQA metrics:
+Exact Match (EM) measures the percentage of questions
+where the predicted answer set exactly matches the gold
+answer set. F1 Score computes the harmonic mean of precision and recall at the entity level, providing a more lenient
+measure that accounts for partial correctness.
+
+Agent Architecture Ablations. The most significant performance drops occur when removing core architectural
+components. (1) w/o RRCG results in an average F1 drop of
+about 18%, with GrailQA suffering the largest degradation
+(−19.0%). Without relation retrieval and confidence gating,
+
+6
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+Table 3. Performance on the dev set of GrailQA. The Bold and underlined numbers indicate the best and second-best performance.
+Method
+
+I.I.D
+
+LLM
+
+Compositional
+
+EM
+
+F1
+
+EM
+
+Zero-shot
+
+Overall
+
+F1
+
+EM
+
+F1
+
+EM
+
+F1
+
+36.6
+38.6
+41.8
+
+40.1
+42.2
+46.6
+
+44.0
+47.3
+52.1
+
+38.7
+40.1
+43.8
+
+42.2
+44.9
+48.5
+
+Prompting Methods
+KB-BINDER (Li et al., 2023)
+KB-Coder (Nie et al., 2024)
+ARG-KBQA (Tian et al., 2024)
+
+Codex-davinci-002
+GPT-3.5-turbo
+GPT-3.5-turbo
+
+40.0
+40.6
+46.6
+
+43.3
+45.5
+51.5
+
+33.9
+34.5
+36.4
+
+RnG-KBQA (Ye et al., 2022)
+DecAF (Yu et al., 2022)
+TIARA (Shu et al., 2022)
+KBQA-o1 (Luo et al., 2025c)
+
+T5-large
+T5-large
+T5-large
+Llama-3.1-8B
+
+86.7
+88.7
+88.4
+77.8 ±0.5
+
+89.0
+92.4
+91.2
+85.5 ±0.4
+
+61.7
+71.5
+66.4
+76.3 ±0.6
+
+68.9
+79.8
+74.8
+77.6 ±0.5
+
+68.8
+65.9
+73.3
+68.1 ±0.8
+
+74.7
+77.3
+80.7
+76.1 ±0.4
+
+69.5
+72.5
+75.3
+71.9 ±0.3
+
+76.9
+81.4
+81.9
+78.5 ±1.0
+
+KBQA-R1
+
+Llama-3.1-8B
+
+90.0 ±0.6
+
+91.5 ±0.4
+
+78.0 ±0.4
+
+82.5 ±0.7
+
+83.6 ±0.3
+
+85.2 ±0.4
+
+83.9 ±0.4
+
+86.1 ±0.6
+
++12.8%
+
++7.0%
+
++1.7%
+
++6.3%
+
++15.5%
+
++9.1%
+
++12.0%
+
++7.6%
+
+Fine-tune-based Methods
+
+Improv. over KBQA-o1
+
+Table 4. Results on the test set of WebQSP. The Bold and
+underlined numbers indicate the best and second-best performance.
+Method
+
+LLM
+
+quire precise relation grounding. (2) w/o Multi-turn causes
+the most dramatic decline (about −25% on average), confirming that iterative refinement through KB feedback is essential. Single-turn generation forces the model to produce
+complete S-Expressions without intermediate validation, resulting in cascading errors. GrailQA shows the steepest
+drop (−36.3%), as its compositional and zero-shot questions inherently require exploratory reasoning that cannot
+be captured in a single generation step.
+
+F1
+
+Prompting Methods
+KB-BINDER (Li et al., 2023)
+KB-Coder (Nie et al., 2024)
+ARG-KBQA (Tian et al., 2024)
+Interactive-KBQA (Xiong et al., 2024)
+
+Codex-davinci-002
+GPT-3.5-turbo
+GPT-3.5-turbo
+GPT-4-turbo
+
+52.6
+55.7
+58.8
+71.2
+
+Graph Retrieval / Reasoning Methods
+RoG (Luo et al., 2023)
+GNN-RAG (Mavromatis & Karypis, 2025)
+SubgraphRAG (Li et al., 2024b)
+SubgraphRAG (Li et al., 2024b)
+
+Llama2-7B
+Llama2-7B
+Llama-3.1-8B
+GPT-4o
+
+70.8
+71.3
+70.6
+78.2
+
+Training Strategy Ablations. Both training components
+contribute meaningfully to final performance. (1) w/o RRS
+(using standard rejection sampling instead of Referenced
+Rejection Sampling) reduces average F1 by about 5.6%.
+This validates our hypothesis that leveraging reference action list during warm-start trajectory generation produces
+higher-quality training signals. Standard rejection sampling
+often generates syntactically valid but semantically suboptimal trajectories that provide weaker supervision. (2) w/o
+SFT warm-start (training RL from scratch) incurs a larger
+penalty (about −8.6% on average). Without warm-start initialization, the RL agent begins with near-random behavior,
+requiring substantially more exploration to discover viable
+reasoning strategies.
+
+Fine-tune-based Methods
+RnG-KBQA (Ye et al., 2022)
+DecAF (Yu et al., 2022)
+TIARA (Shu et al., 2022)
+MCTS-KBQA (Gu et al., 2023a)
+KBQA-o1 (Luo et al., 2025c)
+
+T5-large
+T5-large
+T5-large
+Llama-3.1-8B
+Llama-3.1-8B
+
+75.6
+76.7
+78.9
+76.0
+57.8
+
+KBQA-R1
+Improv. over KBQA-o1
+
+Llama-3.1-8B
+
+83.4 ±0.3
++25.6%
+
+Table 5. Results on the test set of GraphQ. The Bold and
+underlined numbers indicate the best and second-best performance.
+Method
+
+LLM
+
+F1
+
+Reward Design Ablations. Removing the format reward
+(rformat = 0) causes a moderate but consistent drop (about
+−2.1% on average). The format reward supplies dense intermediate feedback that steers the agent toward syntactically
+well-formed actions and encourages necessary thinking before acting, thereby complementing the sparse outcome
+reward. Without this signal, the agent can produce incorrect
+tag ordering or incomplete tags, which prevent the system
+from correctly extracting information. The relatively smaller
+impact compared to architectural ablations suggests that the
+outcome reward remains the primary driver of learning, with
+format rewards serving as a stabilizing auxiliary signal.
+
+Prompting Methods
+KB-BINDER (Li et al., 2023)
+KB-Coder (Nie et al., 2024)
+
+Codex-davinci-002
+GPT-3.5-turbo
+
+27.1
+31.1
+
+Fine-tune-based Methods
+SPARQA (Sun et al., 2020)
+BERT+Ranking (Gu et al., 2021)
+ArcaneQA (Gu & Su, 2022)
+CoTKR (Wu et al., 2024)
+KBQA-o1 (Luo et al., 2025c)
+
+BERT-base
+BERT-base
+BERT-base
+Llama-3-8B
+Llama-3.1-8B
+
+21.5
+25.0
+31.8
+47.5
+48.7
+
+KBQA-R1
+Improv. over KBQA-o1
+
+Llama-3.1-8B
+
+53.8 ±0.7
++5.1%
+
+the agent must rely solely on the LLM’s parametric knowledge to select relations, leading to frequent hallucinations on
+unseen schema elements. The impact is particularly severe
+on GraphQ (−16.1%), where complex multi-hop queries re-
+
+Referenced RS vs. Standard RS To better understand the
+effect of Referenced Rejection Sampling (RRS) compared
+to standard Rejection Sampling (RS), we compare three
+7
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+Table 6. Component ablation study of KBQA-R1. We report Overall F1 (%) on three datasets.
+Variant
+
+WebQSP
+
+GraphQ
+
+GrailQA
+
+83.4
+
+53.8
+
+86.1
+
+64.1
+63.2
+
+37.7
+34.1
+
+67.1
+49.8
+
+78.9
+75.2
+72.1
+
+49.2
+47.3
+47.8
+
+78.3
+75.1
+80.2
+
+81.1
+
+51.6
+
+84.2
+
+Full KBQA-R1 (ours)
+Agent Architecture Ablations
+w/o RRCG (no relation retrieval & gating)
+w/o Multi-turn (single-turn action generation)
+Training Strategy Ablations
+w/o RRS (standard rejection sampling)
+w/o SFT warm-start (RL from scratch)
+w/o GRPO (only SFT)
+Reward Design Ablations
+w/o Format Reward (rformat = 0)
+
+Table 7. Standard Rejection Sampling (RS) vs. Referenced RS (RRS) across three datasets. “RS F1 (pre-SFT)” is the average F1 of raw
+RS trajectories before fine-tuning. “Filtered SFT Samples” counts trajectories with F1 > 0.9 and rformat = 0.1 used for SFT. “SFT Init F1”
+reports dev-set F1 after SFT initialized from the corresponding RS data.
+Dataset
+
+Method
+
+RS F1 (pre-SFT)
+
+# Accepted / Total
+
+Acceptance (%)
+
+SFT Init F1
+
+GrailQA
+
+Standard RS
+Referenced RS (RRS)
+
+54.2
+70.2
+
+17248 / 43851
+29384 / 43851
+
+39.3
+67.0
+
+73.8
+80.2
+
+WebQSP
+
+Standard RS
+Referenced RS (RRS)
+
+49.1
+62.5
+
+1120 / 2929
+1505 / 2929
+
+38.3
+51.4
+
+65.8
+72.1
+
+GraphQ
+
+Standard RS
+Referenced RS (RRS)
+
+48.1
+73.1
+
+986 / 2332
+1562 / 2332
+
+42.3
+67.0
+
+41.1
+47.8
+
+aspects of the training pipeline on all three datasets: (1) the
+raw F1 score obtained directly from RS trajectories before
+any SFT, (2) the number of trajectories that pass both the
+outcome filter (F1 > 0.9) and the structure reward filter
+(rformat = 0.1) and are used for SFT, and (3) the initial testset F1 after SFT trained on the corresponding RS data. As
+shown in Table 7, RRS consistently improves the quality and
+efficiency of trajectory collection across all datasets. The
+acceptance statistics reveal that RRS yields markedly more
+usable trajectories under the same filtering criteria, demonstrating that RRS is substantially more sample-efficient than
+standard RS. Finally, these higher-quality and denser trajectories translate into stronger SFT initialization. Starting RL
+from an RRS-initialized SFT checkpoint places the policy
+closer to a good solution, which complements the ablation
+result that removing RRS leads to a noticeable drop in final
+performance. Together, these observations justify RRS as
+a key component for obtaining stable and high-performing
+RL training in KBQA-R1.
+
+GraphQ
+
+I.I.D
+
+10
+
+WebQSP
+
+GrailQA
+
+30
+
+50
+
+70
+
+ZeroS.
+
+90
+
+RG-E2E
+GR-E2E
+CoT-SbS
+ToT-SbS
+MCTS
+KBQA-o1
+KBQA-R1
+
+Comp.
+
+ARG
+
+AND
+
+10
+
+CMP
+
+TC
+
+30
+
+50
+
+70
+
+90
+
+RG-E2E
+GR-E2E
+CoT-SbS
+ToT-SbS
+MCTS
+KBQA-o1
+KBQA-R1
+
+JOIN
+
+COUNT
+
+(a) F1 scores across datasets and (b) F1 scores across logical opgeneralization levels.
+eration types.
+Figure 3. Comprehensive performance comparison of KBQA-R1
+with baseline methods using Llama-3.1-8B.
+
+paradigm, while GR-E2E first generates a preliminary logical form and then refines it with KB retrieval. (2) Step-bystep prompting methods: CoT-SbS and ToT-SbS are implemented by instantiating the CoT-based QueryAgent (Huang
+et al., 2024) and the ToT-based ToG framework (Sun et al.,
+2023) on Llama-3.1-8B, prompting the model to alternate
+between intermediate thoughts and KB queries. (3) MCTSbased agentic method: MCTS corresponds to the MCTSoptimized variant in KBQA-o1 (Luo et al., 2025c) without
+incremental Finetuning. Figure 3a visualizes F1 scores
+across six evaluation dimensions. KBQA-R1 achieves the
+largest coverage area, demonstrating superior overall performance across all settings, with the most pronounced gap
+in zero-shot dimensions. This validates our hypothesis that
+RL-based training fosters more robust reasoning capabilities
+than SFT. In contrast, end-to-end and step-by-step baselines
+cluster in the inner region, reflecting limited generalization.
+
+5.4. Compared with Llama-3.1-8B based Methods
+Following the experimental setup of KBQA-o1 (Luo et al.,
+2025c), we conduct a focused comparison among methods that share the same Llama-3.1-8B backbone and Freebase execution environment. The compared baselines can
+be grouped into three categories. (1) End-to-end generation methods: RG-E2E and GR-E2E are adapted from
+DecAF (Yu et al., 2022) and ChatKBQA (Luo et al., 2024),
+respectively. RG-E2E follows a retrieve-then-generate
+8
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+Table 8. Comparison with frontier generalist agents on the 500-query subset. “Harness” uses the KBQA-R1 action space and feedback
+format with an off-the-shelf model, while KBQA-R1 uses the learned RL policy.
+
+Model
+
+WebQSP
+
+GrailQA
+
+GraphQ
+
+Avg.
+
+Turns
+
+Tokens In / Out
+
+SPARQL ReAct
+SPARQL ReAct
+SPARQL ReAct
+SPARQL ReAct
+
+GLM-5
+Kimi-K2.5
+gpt-5.3-codex
+Claude 4.6 Sonnet
+
+48.6
+49.1
+54.5
+54.2
+
+63.8
+62.3
+65.6
+65.4
+
+37.9
+36.5
+42.7
+36.4
+
+52.5
+51.9
+56.6
+55.1
+
+7.10
+6.05
+5.20
+5.79
+
+10,792 / 1,952
+7,583 / 4,615
+4,994 / 454
+8,546 / 824
+
+KBQA-R1 Harness
+KBQA-R1 Harness
+KBQA-R1 Harness
+KBQA-R1 Harness
+
+GLM-5
+Kimi-K2.5
+gpt-5.3-codex
+Claude 4.6 Sonnet
+
+64.5
+73.3
+71.1
+76.7
+
+70.2
+73.9
+73.5
+76.3
+
+48.5
+53.3
+51.5
+51.8
+
+63.6
+69.5
+68.1
+71.6
+
+8.43
+7.24
+3.43
+5.45
+
+14,235 / 977
+12,880 / 2,928
+4,537 / 374
+15,325 / 2,959
+
+KBQA-R1
+
+Llama-3.1-8B
+
+84.2
+
+85.6
+
+55.4
+
+79.0
+
+2.91
+
+3,994 / 328
+
+Similarity Score
+
+Group
+
+0.98
+
+Raw Data
+Smoothed (EMA)
+
+(mean=0.9400), the last-step distribution becomes more concentrated near 1.0 (mean=0.9827) with reduced variance,
+suggesting fewer low-confidence relation choices and more
+reliable query generation. We defer the training reward
+curve and its detailed discussion to Appendix B.6.
+
+0.96
+0.94
+0
+
+20
+
+40
+
+60
+
+Training Steps
+
+80
+
+6. Conclusion
+
+(a) Relation similarity score evo- (b) Distribution shift of similarlution during training.
+ity scores: first step vs. last step.
+Figure 4. Relation similarity analysis during RL.
+
+We presented KBQA-R1, a reinforcement learning framework for agentic knowledge base question answering. By
+integrating a structured action space, a relation retrieval and
+confidence gating module, and a novel Referenced Rejection
+Sampling warm-start strategy, KBQA-R1 effectively leverages execution feedback from the knowledge base to learn
+robust reasoning policies via the GRPO algorithm. Extensive experiments on three challenging KBQA benchmarks
+demonstrate that KBQA-R1 significantly outperforms stateof-the-art prompting and fine-tuning baselines, particularly
+in out-of-distribution generalization settings.
+
+Figure 3b breaks down performance by logical operation
+type. KBQA-R1 dominates across all categories, showing
+significant advantages in complex operations. Conversely,
+baselines struggle with rare operations, underscoring their
+inability to generalize to infrequent query patterns.
+Frontier-agent comparison. We further evaluate whether a
+strong off-the-shelf agent can close the gap when equipped
+with the same KBQA-R1 harness. The experiments in
+Table 8 use a fixed 500-query subset (200 GrailQA, 200
+WebQSP, and 100 GraphQ) because multi-turn proprietaryagent evaluation is expensive. The structured harness improves every frontier model over direct SPARQL ReAct,
+confirming that the action space and feedback state are useful independently of RL. However, even the best harnessequipped frontier model remains below the learned KBQAR1 policy while using more turns and substantially more
+tokens, indicating that KBQA-R1 internalizes graph navigation instead of relying on test-time trial and error.
+
+Acknowledgements
+This work was supported by the Beijing Natural Science
+Foundation (L252033) and the National Natural Science
+Foundation of China (62576339, 92570204).
+
+Impact Statement
+This paper presents KBQA-R1, a method for training
+language-model agents to answer questions by interacting
+with structured knowledge bases. Its intended benefit is
+to make factual question answering more reliable and auditable: instead of relying only on free-form generation, the
+model is encouraged to use executable actions and database
+feedback. This may support scientific, enterprise, and educational settings where users need answers that can be traced
+to maintained knowledge sources.
+
+5.5. Training Dynamics Analysis
+Figure 4a shows that the top-1 relation similarity of WebQSP dataset improves steadily from ∼0.94 at the SFT
+warm-start checkpoint to ∼0.98 at convergence, indicating that GRPO consistently strengthens relation grounding
+rather than introducing unstable fluctuations. Figure 4b
+further confirms this trend: compared with the first step
+
+Potential negative impacts arise when such systems are de9
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+ployed on sensitive, proprietary, outdated, or biased knowledge bases. Fluent answers from structured data can appear
+authoritative even when the underlying records are incomplete or skewed, and automated access to private knowledge bases may raise privacy, licensing, or access-control
+concerns. Training agents with repeated knowledge-base
+execution also incurs computational and energy costs.
+
+Proceedings of the Web Conference 2021, WWW ’21,
+pp. 3477–3488, New York, NY, USA, 2021. Association for Computing Machinery. ISBN 9781450383127.
+doi: 10.1145/3442381.3449992. URL https://doi.
+org/10.1145/3442381.3449992.
+Gu, Y., Deng, X., and Su, Y. Don’t generate, discriminate:
+A proposal for grounding language models to real-world
+environments. In Proceedings of the 61st annual meeting
+of the association for computational linguistics (volume
+1: long papers), pp. 4928–4949, 2023a.
+
+To mitigate these risks, deployments should expose provenance and execution failures, report uncertainty when
+grounding is weak, enforce privacy and licensing constraints,
+and keep humans in the loop for high-stakes decisions. We
+release this work in the context of public benchmarks and
+encourage downstream users to audit the data sources and
+policies before applying the method in real-world systems.
+
+Gu, Y., Deng, X., and Su, Y. Don’t generate, discriminate: A proposal for grounding language models to realworld environments. In Rogers, A., Boyd-Graber, J., and
+Okazaki, N. (eds.), Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pp. 4928–4949, Toronto, Canada,
+July 2023b. Association for Computational Linguistics.
+doi: 10.18653/v1/2023.acl-long.270. URL https:
+//aclanthology.org/2023.acl-long.270.
+
+References
+Bollacker, K., Evans, C., Paritosh, P., Sturge, T., and
+Taylor, J. Freebase: a collaboratively created graph
+database for structuring human knowledge. In Proceedings of the 2008 ACM SIGMOD International Conference on Management of Data, SIGMOD ’08, pp. 1247–
+1250, New York, NY, USA, 2008. Association for Computing Machinery. ISBN 9781605581026. doi: 10.
+1145/1376616.1376746. URL https://doi.org/
+10.1145/1376616.1376746.
+
+Hao, S., Gu, Y., Ma, H., Hong, J., Wang, Z., Wang, D., and
+Hu, Z. Reasoning with language model is planning with
+world model. In Bouamor, H., Pino, J., and Bali, K. (eds.),
+Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, pp. 8154–8173,
+Singapore, December 2023. Association for Computational Linguistics. doi: 10.18653/v1/2023.emnlp-main.
+507. URL https://aclanthology.org/2023.
+emnlp-main.507.
+
+Chen, L., Tong, P., Jin, Z., Sun, Y., Ye, J., and Xiong, H.
+Plan-on-graph: Self-correcting adaptive planning of large
+language model on knowledge graphs. In Proceedings of
+the 38th Conference on Neural Information Processing
+Systems, 2024.
+
+He, G., Lan, Y., Jiang, J., Zhao, W. X., and Wen, J.R. Improving multi-hop knowledge base question answering by learning intermediate supervision signals.
+In Proceedings of the 14th ACM International Conference on Web Search and Data Mining, WSDM ’21,
+pp. 553–561, New York, NY, USA, 2021. Association for Computing Machinery. ISBN 9781450382977.
+doi: 10.1145/3437963.3441753. URL https://doi.
+org/10.1145/3437963.3441753.
+
+Erling, O. and Mikhailov, I. Virtuoso: RDF support in a
+native RDBMS. In Semantic Web Information Management: A Model-Based Perspective, pp. 501–519. Springer,
+2009. URL https://dblp.org/rec/books/sp/
+virgilio09/ErlingM09.
+Gu, Y. and Su, Y. ArcaneQA: Dynamic program induction and contextualized encoding for knowledge base
+question answering. In Calzolari, N., Huang, C.-R.,
+Kim, H., Pustejovsky, J., Wanner, L., Choi, K.-S., Ryu,
+P.-M., Chen, H.-H., Donatelli, L., Ji, H., Kurohashi,
+S., Paggio, P., Xue, N., Kim, S., Hahm, Y., He, Z.,
+Lee, T. K., Santus, E., Bond, F., and Na, S.-H. (eds.),
+Proceedings of the 29th International Conference on
+Computational Linguistics, pp. 1718–1731, Gyeongju,
+Republic of Korea, October 2022. International Committee on Computational Linguistics. URL https:
+//aclanthology.org/2022.coling-1.148/.
+
+He, X., Tian, Y., Sun, Y., Chawla, N. V., Laurent, T., LeCun,
+Y., Bresson, X., and Hooi, B. G-retriever: Retrievalaugmented generation for textual graph understanding
+and question answering. In Advances in Neural Information Processing Systems, volume 37, 2024.
+Huang, X., Cheng, S., Huang, S., Shen, J., Xu, Y., Zhang,
+C., and Qu, Y. QueryAgent: A reliable and efficient
+reasoning framework with environmental feedback based
+self-correction. In Ku, L.-W., Martins, A., and Srikumar,
+V. (eds.), Proceedings of the 62nd Annual Meeting of
+the Association for Computational Linguistics (Volume
+1: Long Papers), pp. 5014–5035, Bangkok, Thailand,
+August 2024. Association for Computational Linguistics.
+
+Gu, Y., Kase, S., Vanni, M., Sadler, B., Liang, P., Yan,
+X., and Su, Y. Beyond i.i.d.: Three levels of generalization for question answering on knowledge bases. In
+10
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+doi: 10.18653/v1/2024.acl-long.274. URL https://
+aclanthology.org/2024.acl-long.274.
+
+Li, T., Ma, X., Zhuang, A., Gu, Y., Su, Y., and Chen, W.
+Few-shot in-context learning on knowledge base question answering. In Rogers, A., Boyd-Graber, J., and
+Okazaki, N. (eds.), Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pp. 6966–6980, Toronto, Canada,
+July 2023. Association for Computational Linguistics.
+doi: 10.18653/v1/2023.acl-long.385. URL https:
+//aclanthology.org/2023.acl-long.385.
+
+Jiang, J., Zhou, K., Dong, Z., Ye, K., Zhao, X., and Wen,
+J.-R. StructGPT: A general framework for large language model to reason over structured data. In Bouamor,
+H., Pino, J., and Bali, K. (eds.), Proceedings of the
+2023 Conference on Empirical Methods in Natural Language Processing, pp. 9237–9251, Singapore, December
+2023. Association for Computational Linguistics. doi:
+10.18653/v1/2023.emnlp-main.574. URL https://
+aclanthology.org/2023.emnlp-main.574.
+
+Li, X., Dong, G., Jin, J., Zhang, Y., Zhou, Y., Zhu, Y., Zhang,
+P., and Dou, Z. Search-o1: Agentic search-enhanced
+large reasoning models. arXiv preprint arXiv:2501.05366,
+2025.
+
+Jiang, J., Zhou, K., Zhao, W. X., Song, Y., Zhu, C., Zhu,
+H., and Wen, J.-R. Kg-agent: An efficient autonomous
+agent framework for complex reasoning over knowledge graph, 2024. URL https://arxiv.org/abs/
+2402.11163.
+
+Luo, H., E, H., Tang, Z., Peng, S., Guo, Y., Zhang, W.,
+Ma, C., Dong, G., Song, M., Lin, W., Zhu, Y., and Luu,
+A. T. ChatKBQA: A generate-then-retrieve framework for
+knowledge base question answering with fine-tuned large
+language models. In Ku, L.-W., Martins, A., and Srikumar, V. (eds.), Findings of the Association for Computational Linguistics ACL 2024, pp. 2039–2056, Bangkok,
+Thailand and virtual meeting, August 2024. Association
+for Computational Linguistics. doi: 10.18653/v1/2024.
+findings-acl.122. URL https://aclanthology.
+org/2024.findings-acl.122.
+
+Jin, B., Zeng, H., Yue, Z., Yoon, J., Arik, S., Wang, D.,
+Zamani, H., and Han, J. Search-r1: Training llms to
+reason and leverage search engines with reinforcement
+learning. arXiv preprint arXiv:2503.09516, 2025.
+Kaelbling, L. P., Littman, M. L., and Moore, A. W. Reinforcement learning: A survey. Journal of artificial
+intelligence research, 4:237–285, 1996.
+Karpukhin, V., Oguz, B., Min, S., Lewis, P. S., Wu, L.,
+Edunov, S., Chen, D., and Yih, W.-t. Dense passage
+retrieval for open-domain question answering. In EMNLP
+(1), pp. 6769–6781, 2020.
+
+Luo, H., Chen, G., Lin, Q., Guo, Y., Xu, F., Kuang, Z.,
+Song, M., Wu, X., Zhu, Y., Tuan, L. A., et al. Graphr1: Towards agentic graphrag framework via end-to-end
+reinforcement learning. arXiv preprint arXiv:2507.21892,
+2025a.
+
+Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V.,
+Goyal, N., Küttler, H., Lewis, M., Yih, W.-t., Rocktäschel,
+Luo, H., Chen, G., Zheng, Y., Wu, X., Guo, Y., Lin,
+T., Riedel, S., and Kiela, D. Retrieval-augmented generaQ., Feng, Y., Kuang, Z., Song, M., Zhu, Y., et al.
+tion for knowledge-intensive nlp tasks. In Larochelle, H.,
+Hypergraphrag: Retrieval-augmented generation via
+Ranzato, M., Hadsell, R., Balcan, M., and Lin, H. (eds.),
+hypergraph-structured knowledge representation. arXiv
+Advances in Neural Information Processing Systems,
+preprint arXiv:2503.21322, 2025b.
+volume 33, pp. 9459–9474. Curran Associates, Inc.,
+2020. URL https://proceedings.neurips. Luo, H., Guo, Y., Lin, Q., Wu, X., Mu, X., Liu, W., Song,
+cc/paper_files/paper/2020/file/
+M., Zhu, Y., Tuan, L. A., et al. Kbqa-o1: Agentic
+6b493230205f780e1bc26945df7481e5-Paper.
+knowledge base question answering with monte carlo
+pdf.
+tree search. arXiv preprint arXiv:2501.18922, 2025c.
+Li, K., Zhang, T., Wu, X., Luo, H., Glass, J., and Meng,
+H. Decoding on graphs: Faithful and sound reasoning
+on knowledge graphs through generation of well-formed
+chains. arXiv preprint arXiv:2410.18415, 2024a. doi:
+10.48550/arXiv.2410.18415. URL https://arxiv.
+org/abs/2410.18415.
+Li, M., Miao, S., and Li, P. Simple is effective: The roles of
+graphs and large language models in knowledge-graphbased retrieval-augmented generation. arXiv preprint
+arXiv:2410.20724, 2024b. doi: 10.48550/arXiv.2410.
+20724. URL https://arxiv.org/abs/2410.
+20724.
+11
+
+Luo, L., Li, Y.-F., Haffari, G., and Pan, S. Reasoning on
+graphs: Faithful and interpretable large language model
+reasoning. arXiv preprint arXiv:2310.01061, 2023.
+Ma, S. et al. Think-on-graph 2.0: Deep and faithful large language model reasoning with knowledge-guided retrieval
+augmented generation. In The Thirteenth International
+Conference on Learning Representations, 2025.
+Mavromatis, C. and Karypis, G. GNN-RAG: Graph
+neural retrieval for efficient large language model reasoning on knowledge graphs. In Findings of the Association for Computational Linguistics: ACL 2025,
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+pp. 16682–16699. Association for Computational Linguistics, 2025. doi: 10.18653/v1/2025.findings-acl.
+856. URL https://aclanthology.org/2025.
+findings-acl.856/.
+Nie, Z., Zhang, R., Wang, Z., and Liu, X. Code-style incontext learning for knowledge-based question answering.
+Proceedings of the AAAI Conference on Artificial Intelligence, 38(17):18833–18841, Mar. 2024. doi: 10.1609/
+aaai.v38i17.29848. URL https://ojs.aaai.org/
+index.php/AAAI/article/view/29848.
+
+Su, Y., Sun, H., Sadler, B., Srivatsa, M., Gür, I., Yan, Z., and
+Yan, X. On generating characteristic-rich question sets
+for QA evaluation. In Su, J., Duh, K., and Carreras, X.
+(eds.), Proceedings of the 2016 Conference on Empirical
+Methods in Natural Language Processing, pp. 562–572,
+Austin, Texas, November 2016. Association for Computational Linguistics. doi: 10.18653/v1/D16-1054. URL
+https://aclanthology.org/D16-1054/.
+Sun, H., Dhingra, B., Zaheer, M., Mazaitis, K., Salakhutdinov, R., and Cohen, W. Open domain question answering
+using early fusion of knowledge bases and text. In Proceedings of the 2018 Conference on Empirical Methods
+in Natural Language Processing, pp. 4231–4242, Brussels, Belgium, October-November 2018. Association for
+Computational Linguistics. doi: 10.18653/v1/D18-1455.
+URL https://aclanthology.org/D18-1455.
+
+Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C.,
+Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A.,
+et al. Training language models to follow instructions
+with human feedback. Advances in neural information
+processing systems, 35:27730–27744, 2022.
+Pérez, J., Arenas, M., and Gutierrez, C. Semantics and
+complexity of sparql. ACM Trans. Database Syst.,
+34(3), September 2009. ISSN 0362-5915. doi: 10.
+1145/1567274.1567278. URL https://doi.org/
+10.1145/1567274.1567278.
+Saxena, A., Tripathi, A., and Talukdar, P. Improving multihop question answering over knowledge graphs using
+knowledge base embeddings. In Proceedings of the 58th
+Annual Meeting of the Association for Computational
+Linguistics, pp. 4498–4507, Online, July 2020. Association for Computational Linguistics. doi: 10.18653/v1/
+2020.acl-main.412. URL https://aclanthology.
+org/2020.acl-main.412.
+Schick, T., Dwivedi-Yu, J., Dessì, R., Raileanu, R., Lomeli,
+M., Hambro, E., Zettlemoyer, L., Cancedda, N., and
+Scialom, T. Toolformer: Language models can teach
+themselves to use tools. Advances in Neural Information
+Processing Systems, 36:68539–68551, 2023.
+
+Sun, H., Bedrax-Weiss, T., and Cohen, W. PullNet: Open domain question answering with iterative retrieval on knowledge bases and text. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural
+Language Processing (EMNLP-IJCNLP), pp. 2380–2390,
+Hong Kong, China, November 2019. Association for
+Computational Linguistics. doi: 10.18653/v1/D19-1242.
+URL https://aclanthology.org/D19-1242.
+Sun, J., Xu, C., Tang, L., Wang, S., Lin, C., Gong, Y., Shum,
+H.-Y., and Guo, J. Think-on-graph: Deep and responsible
+reasoning of large language model on knowledge graph.
+arXiv preprint arXiv:2307.07697, 2023.
+Sun, Y., Zhang, L., Cheng, G., and Qu, Y. Sparqa: Skeletonbased semantic parsing for complex questions over knowledge bases. Proceedings of the AAAI Conference on Artificial Intelligence, 34(05):8952–8959, Apr. 2020. doi: 10.
+1609/aaai.v34i05.6426. URL https://ojs.aaai.
+org/index.php/AAAI/article/view/6426.
+
+Schulman, J., Moritz, P., Levine, S., Jordan, M., and Abbeel,
+P. High-dimensional continuous control using generalized
+advantage estimation. arXiv preprint arXiv:1506.02438,
+2015.
+
+Tian, Y., Song, D., Wu, Z., Zhou, C., Wang, H.,
+Yang, J., Xu, J., Cao, R., and Wang, H. Augmenting reasoning capabilities of LLMs with graph structures in knowledge base question answering. In AlOnaizan, Y., Bansal, M., and Chen, Y.-N. (eds.), Findings of the Association for Computational Linguistics: EMNLP 2024, pp. 11967–11977, Miami, Florida,
+USA, November 2024. Association for Computational
+Linguistics. doi: 10.18653/v1/2024.findings-emnlp.
+699. URL https://aclanthology.org/2024.
+findings-emnlp.699/.
+
+Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang,
+H., Zhang, M., Li, Y., Wu, Y., et al. Deepseekmath: Pushing the limits of mathematical reasoning in open language
+models. arXiv preprint arXiv:2402.03300, 2024.
+Shu, Y., Yu, Z., Li, Y., Karlsson, B., Ma, T., Qu, Y.,
+and Lin, C.-Y. TIARA: Multi-grained retrieval for
+robust question answering over large knowledge base.
+In Proceedings of the 2022 Conference on Empirical
+Methods in Natural Language Processing, pp. 8108–
+8121, Abu Dhabi, United Arab Emirates, December
+2022. Association for Computational Linguistics. doi:
+10.18653/v1/2022.emnlp-main.555. URL https://
+aclanthology.org/2022.emnlp-main.555.
+
+Trivedi, H., Balasubramanian, N., Khot, T., and Sabharwal,
+A. Interleaving retrieval with chain-of-thought reasoning for knowledge-intensive multi-step questions. arXiv
+preprint arXiv:2212.10509, 2022.
+12
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+Wei, J., Wang, X., Schuurmans, D., Bosma, M., ichter, b.,
+Xia, F., Chi, E., Le, Q. V., and Zhou, D. Chain-of-thought
+prompting elicits reasoning in large language models. In
+Koyejo, S., Mohamed, S., Agarwal, A., Belgrave, D.,
+Cho, K., and Oh, A. (eds.), Advances in Neural Information Processing Systems, volume 35, pp. 24824–24837.
+Curran Associates, Inc., 2022.
+
+Yu, D., Zhang, S., Ng, P., Zhu, H., Li, A. H., Wang, J., Hu,
+Y., Wang, W., Wang, Z., and Hakkani-Tur, D. Decaf:
+Joint decoding of answers and logical forms for question answering over knowledge bases. arXiv preprint
+arXiv:2210.00063, 2022.
+Yu, Q., Sun, Z., Shen, Y., Xu, R., Li, Y., Lin, J., Xiao, B.,
+Zhang, Y., Zeng, H., Wang, Z., et al. Dapo: An opensource llm reinforcement learning system at scale. arXiv
+preprint arXiv:2503.14476, 2025.
+
+Wu, Y., Huang, Y., Hu, N., Hua, Y., Qi, G., Chen, J., and
+Pan, J. Z. Cotkr: Chain-of-thought enhanced knowledge rewriting for complex knowledge graph question
+answering. In EMNLP, pp. 3501–3520. Association for
+Computational Linguistics, 2024.
+Xiong, G., Bao, J., and Zhao, W. Interactive-KBQA: Multiturn interactions for knowledge base question answering with large language models. In Ku, L.-W., Martins,
+A., and Srikumar, V. (eds.), Proceedings of the 62nd
+Annual Meeting of the Association for Computational
+Linguistics (Volume 1: Long Papers), pp. 10561–10582,
+Bangkok, Thailand, August 2024. Association for Computational Linguistics. doi: 10.18653/v1/2024.acl-long.
+569. URL https://aclanthology.org/2024.
+acl-long.569.
+Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan,
+K., and Cao, Y. React: Synergizing reasoning and acting
+in language models. arXiv preprint arXiv:2210.03629,
+2022.
+
+Yuan, Z., Yuan, H., Li, C., Dong, G., Lu, K., Tan, C., Zhou,
+C., and Zhou, J. Scaling relationship on learning mathematical reasoning with large language models. arXiv
+preprint arXiv:2308.01825, 2023.
+Zhang, J., Zhang, X., Yu, J., Tang, J., Tang, J., Li, C.,
+and Chen, H. Subgraph retrieval enhanced model for
+multi-hop knowledge base question answering. In Proceedings of the 60th Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Papers),
+pp. 5773–5784, Dublin, Ireland, May 2022. Association
+for Computational Linguistics. doi: 10.18653/v1/2022.
+acl-long.396. URL https://aclanthology.org/
+2022.acl-long.396.
+Zhang, L., Zhang, J., Wang, Y., Cao, S., Huang, X., Li,
+C., Chen, H., and Li, J. FC-KBQA: A fine-to-coarse
+composition framework for knowledge base question answering. In Proceedings of the 61st Annual Meeting
+of the Association for Computational Linguistics (Volume 1: Long Papers), pp. 1002–1017, Toronto, Canada,
+July 2023a. Association for Computational Linguistics.
+doi: 10.18653/v1/2023.acl-long.57. URL https://
+aclanthology.org/2023.acl-long.57.
+
+Yao, S., Yu, D., Zhao, J., Shafran, I., Griffiths, T., Cao, Y.,
+and Narasimhan, K. Tree of thoughts: Deliberate problem
+solving with large language models. In Oh, A., Naumann,
+T., Globerson, A., Saenko, K., Hardt, M., and Levine, S.
+(eds.), Advances in Neural Information Processing Systems, volume 36, pp. 11809–11822. Curran Associates,
+Inc., 2023.
+Ye, X., Yavuz, S., Hashimoto, K., Zhou, Y., and Xiong, C.
+RNG-KBQA: Generation augmented iterative ranking for
+knowledge base question answering. In Proceedings of
+the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pp. 6032–
+6043, Dublin, Ireland, May 2022. Association for Computational Linguistics. doi: 10.18653/v1/2022.acl-long.
+417. URL https://aclanthology.org/2022.
+acl-long.417.
+Yih, W.-t., Richardson, M., Meek, C., Chang, M.-W., and
+Suh, J. The value of semantic parse labeling for knowledge base question answering. In Proceedings of the
+54th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers), pp. 201–206,
+Berlin, Germany, August 2016. Association for Computational Linguistics. doi: 10.18653/v1/P16-2033. URL
+https://aclanthology.org/P16-2033.
+
+Zhang, Y., Li, Y., Cui, L., Cai, D., Liu, L., Fu, T., Huang,
+X., Zhao, E., Zhang, Y., Chen, Y., Wang, L., Luu, A. T.,
+Bi, W., Shi, F., and Shi, S. Siren’s song in the ai ocean: A
+survey on hallucination in large language models, 2023b.
+URL https://arxiv.org/abs/2309.01219.
+Zhao, W. X., Liu, J., Ren, R., and Wen, J.-R. Dense text
+retrieval based on pretrained language models: A survey.
+ACM Transactions on Information Systems, 42(4):1–60,
+2024.
+Zhao, Y., Gu, A., Varma, R., Luo, L., Huang, C.-C., Xu, M.,
+Wright, L., Shojanazeri, H., Ott, M., Shleifer, S., et al.
+Pytorch fsdp: Experiences on scaling fully sharded data
+parallel. Proceedings of the VLDB Endowment, 16(12):
+3848–3860, 2023.
+Zhou, X., Liu, Z., Wang, H., Du, C., Lin, M., Li, C., Wang,
+L., and Pang, T. Variational reasoning for language models, 2025. URL https://arxiv.org/abs/2509.
+22637.
+
+13
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+A. Extended Related Work
+A.1. Knowledge Base Question Answering (KBQA).
+Before the rise of LLMs, KBQA studies are commonly categorized into information-retrieval-based (IR-based) methods
+(Sun et al., 2018; 2019; Zhang et al., 2022; He et al., 2021; Saxena et al., 2020) and semantic-parsing-based (SP-based)
+methods (Ye et al., 2022; Shu et al., 2022; Gu & Su, 2022; Zhang et al., 2023a). With LLMs, three paradigms have emerged:
+(i) end-to-end approaches that directly generate logical forms via in-context learning or fine-tuning (Li et al., 2023; Nie
+et al., 2024; Luo et al., 2024; Jiang et al., 2023); (ii) step-by-step (agentic) approaches that interleave reasoning with graph
+exploration and tool use (Gu et al., 2023b; Huang et al., 2024; Sun et al., 2023; Luo et al., 2023; Xiong et al., 2024; Chen
+et al., 2024; Jiang et al., 2024); and (iii) search-augmented approaches that leverage tree search algorithms such as Monte
+Carlo Tree Search (MCTS) for systematic exploration (Luo et al., 2025c).
+While MCTS-based methods like KBQA-o1 (Luo et al., 2025c) achieve strong performance through heuristic exploration,
+they exhibit two key limitations. First, they incur significant computational overhead from multiple rollouts per
+query and require separate policy and reward models during inference. Second, their reasoning traces are often
+template-driven (e.g., “At this step, we should find the relation...”) rather than genuinely analytical—the model
+announces what action to take without explaining why based on observations. In contrast, we train a single policy via
+RL with outcome-based rewards, encouraging the model to develop adaptive reasoning that analyzes environmental
+feedback and justifies action choices, while eliminating test-time search overhead.
+A.2. LLMs, tool use, and agentic reasoning.
+Chain-of-Thought (CoT) prompting improves reasoning by eliciting intermediate steps (Wei et al., 2022); ReAct (Yao
+et al., 2022) interleaves “think” and “act” to ground reasoning in environment feedback; and heuristic search has been
+applied to agent traces (e.g., MCTS-style selection in (Hao et al., 2023) and tree-structured deliberation in (Yao et al., 2023)).
+Recent graph-augmented approaches such as Plan-on-Graph (Chen et al., 2024) incorporate self-correcting mechanisms with
+dynamic memory for adaptive planning on knowledge graphs. While these methods expand the search space or stabilize
+multi-step reasoning, free-form thoughts can overfit prompt templates and do not guarantee executability. We keep the
+interleaved think-act design but require typed, schema-aware actions with validators and an executor, turning traces into
+verifiable computations rather than narrative justifications.
+A.3. Retrieval-augmented generation and search-as-a-tool.
+Classical RAG pipelines retrieve text snippets and feed them to the model for generation (Lewis et al., 2020). Recent work
+moves toward search-as-a-tool, prompting or training LLMs to issue search calls and iterate (Trivedi et al., 2022; Yao et al.,
+2022; Schick et al., 2023; Li et al., 2025; Jin et al., 2025; Luo et al., 2025a). GraphRAG and graph-decoding approaches
+(He et al., 2024; Ma et al., 2025; Mavromatis & Karypis, 2025; Li et al., 2024b;a; Luo et al., 2025a;b) further integrate
+graph retrieval with LLM reasoning, enabling tighter coupling between structured knowledge and text-based evidence.
+These approaches reduce hallucination but depend heavily on retrieval quality, local subgraph construction, or constrained
+decoding at inference time. Our setting differs fundamentally by treating a knowledge graph as the environment: actions are
+typed and executable against the KB schema, observations are structure-grounded entity sets rather than text passages, and
+step-wise executability can be validated programmatically rather than inferred from unstructured documents.
+
+B. Experimental Details
+B.1. Datasets and Statistics
+We conduct experiments on three widely-used KBQA benchmarks, each designed to evaluate different aspects of model
+generalization and reasoning capabilities. All datasets are grounded on Freebase (Bollacker et al., 2008). GrailQA (Gu
+et al., 2021) is a large-scale dataset specifically designed to evaluate KBQA models across three generalization levels:
+i.i.d., compositional, and zero-shot. It contains 64,331 questions in total, with 44,337 training questions, 13,231 validation
+questions and 6,763 test questions. Following prior work (Luo et al., 2024; 2025c), we use the dev set for evaluation. The
+compositional and zero-shot settings are particularly challenging, requiring models to handle unseen combinations of entities
+and relations. WebQSP (Yih et al., 2016) is an enriched version of WebQuestions, providing semantic parses for 4,737
+questions. The dataset is split into 3,098 training questions and 1,639 test questions. GraphQuestions (Su et al., 2016) tests
+
+14
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+KBQA models on complex graph-structured reasoning. It contains 5,166 questions in total, with 2,508 for training and
+2,658 for testing. The dataset challenges models to navigate multi-hop relationships.
+B.2. Baselines (Detailed Descriptions)
+We compare KBQA-R1 with both fine-tune-based and prompting-based KBQA methods.
+Fine-tune-based methods. These methods are trained on the full supervision of the corresponding benchmark and are
+included as upper-bound references.
+• RnG-KBQA (Ye et al., 2022): a retrieve-and-generate framework that first retrieves relevant KB evidence and then
+generates executable logical forms.
+• DecAF (Yu et al., 2022): a multi-granular retrieval and refinement approach that progressively improves retrieved
+knowledge for robust KBQA.
+• TIARA (Shu et al., 2022): a semantic parsing method that maps questions to structured queries through iterative
+refinement.
+• CoTKR (Wu et al., 2024): a Chain-of-Thought enhanced knowledge rewriting method that trains a knowledge rewriter
+via SFT and DPO to convert KB triples into natural language reasoning text for improved QA.
+• KBQA-o1 (Luo et al., 2025c): an agentic KBQA approach based on Monte-Carlo Tree Search (MCTS) with policy
+and reward models for heuristic search.
+For GraphQuestions, following the setup in KBQA-o1 (Luo et al., 2025c), we additionally report results of SPARQA (Sun
+et al., 2020), BERT+Ranking (Gu et al., 2021), and ArcaneQA (Gu & Su, 2022).
+Prompting-based methods. These methods operate under limited or no task-specific gradient updates and are compared
+under a similar low-annotation constraint.
+• KB-BINDER (Li et al., 2023): an in-context learning method (GPT-3.5-turbo) that binds questions to KB entities and
+relations.
+• KB-Coder (Nie et al., 2024): a code-style in-context learning method (GPT-3.5-turbo) that generates executable logical
+forms.
+• ARG-KBQA (Tian et al., 2024): a prompting approach (GPT-3.5-turbo) that uses augmented reasoning graphs to
+improve KBQA.
+• Interactive-KBQA (Xiong et al., 2024): an interactive framework that decomposes complex questions into subquestions and iteratively queries the KB to gather evidence for answer generation.
+• ToG (Think-on-Graph) (Sun et al., 2023): a beam search-based method that prompts LLMs to explore multiple
+reasoning paths on the knowledge graph, selecting the most promising path at each step.
+• PoG (Plan-on-Graph) (Chen et al., 2024): an advanced graph reasoning method that first generates a reasoning plan
+and then executes it on the knowledge graph with self-correction capabilities.
+• RoG (Luo et al., 2023): a reasoning-on-graphs framework that asks LLMs to reason over graph-derived paths and
+evidence.
+• GNN-RAG (Mavromatis & Karypis, 2025): a graph neural retrieval method that retrieves question-relevant graph
+paths before LLM reasoning.
+• SubgraphRAG (Li et al., 2024b): a graph-centric RAG method that retrieves compact subgraphs for LLM answer
+prediction.
+• DoG (Li et al., 2024a): a constrained graph-decoding method that encourages LLMs to generate well-formed chains on
+knowledge graphs.
+15
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+B.3. Training Hyperparameters and Infrastructure
+B.3.1. GRPO C ONFIGURATION
+We adopt the GRPO algorithm (Shao et al., 2024) with the following hyperparameters: (1) Rollout sampling: n = 5 responses
+per prompt with temperature τ = 1.0 and top-p = 1.0; (2) Clipping: asymmetric clip ratios ϵlow = 0.2, ϵhigh = 0.28
+following DAPO (Yu et al., 2025); (3) KL regularization: KL loss coefficient β = 0.001; (4) Reward weights and gating: we
+set λoutcome = 1.0 and λformat = 0.1, and use RRCG confidence thresholds τhigh = 0.95 and τlow = 0.3 across all datasets;
+(5) Batch configuration: train batch size 256, PPO mini-batch size 128, with dynamic micro-batching enabled.
+B.3.2. I NFRASTRUCTURE
+Training is conducted on 8×NVIDIA A100-80GB GPUs with FSDP (Zhao et al., 2023) for model sharding. The Freebase
+KB backend uses Virtuoso (Erling & Mikhailov, 2009) with ODBC connection pooling (pool size 48, query timeout 600s).
+Table 9. Hyperparameters for KBQA-R1 training and inference.
+Category
+
+Hyperparameter
+
+Value
+
+GRPO
+
+Rollout samples per prompt (n)
+Temperature (τ )
+Top-p
+Clip ratio (low / high)
+KL coefficient (β)
+
+5
+1.0
+1.0
+0.2 / 0.28
+0.001
+
+Reward
+
+Outcome weight (λoutcome )
+Format weight (λformat )
+
+1.0
+0.1
+
+RRCG
+
+High threshold (τhigh )
+Low threshold (τlow )
+
+0.95
+0.3
+
+Batch
+
+Train batch size
+PPO mini-batch size
+
+256
+128
+
+Inference
+
+Max prompt length
+Max response length
+Max agent turns
+
+14,336
+1,024
+6
+
+Table 10. Average number of LLM forward calls per question. ToG and PoG results are from (Chen et al., 2024).
+Avg. LLM calls ↓
+
+Dataset
+
+Method
+
+WebQSP
+
+ToG (GPT-4)
+PoG (GPT-4)
+KBQA-o1 (Llama-3.1-8B)
+KBQA-R1 (Llama-3.1-8B)
+
+15.9
+9.0
+28.8
+2.65
+
+GrailQA
+
+ToG (GPT-4)
+PoG (GPT-4)
+KBQA-o1 (Llama-3.1-8B)
+KBQA-R1 (Llama-3.1-8B)
+
+11.1
+6.5
+32.3
+3.08
+
+GraphQ
+
+KBQA-o1 (Llama-3.1-8B)
+KBQA-R1 (Llama-3.1-8B)
+
+78.0
+3.16
+
+B.4. LLM Call Efficiency
+To quantify the computational overhead between KBQA-R1 and existing methods, we compare the number of LLM forward
+calls required during inference. Table 10 reports average calls per question on 200 randomly sampled examples for each
+dataset.
+Comparison with MCTS-based Methods. KBQA-o1 performs many LLM calls per query and additionally invokes
+separate policy and reward models, leading to substantially more LLM evaluations. In contrast, KBQA-R1 uses a single
+GRPO-trained policy without test-time search, reducing LLM calls by over 80% while achieving higher accuracy. In
+a 8-A100 GPU setup, KBQA-R1 processes about 155.6 questions per minute on GrailQA, compared to only 5.9
+questions per minute for KBQA-o1.
+Comparison with GPT-4 Prompting Methods. We further compare with state-of-the-art prompting-based methods
+ToG (Sun et al., 2023) and PoG (Chen et al., 2024) that leverage GPT-4 for knowledge graph reasoning. As shown in
+16
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+Table 11. Hits@1 (%) comparison with graph reasoning methods on GrailQA and WebQSP. ToG and PoG results are from (Chen et al.,
+2024).
+Method
+
+LLM
+
+GrailQA
+
+WebQSP
+Overall
+
+I.I.D
+
+Comp.
+
+Zero-shot
+
+56.1
+62.1
+
+72.7
+81.7
+
+Prompting KG-Augmented LLM w/GPT-3.5
+ToG (Sun et al., 2023)
+PoG (Chen et al., 2024)
+
+GPT-3.5
+GPT-3.5
+
+76.2
+82.0
+
+ToG (Sun et al., 2023)
+PoG (Chen et al., 2024)
+
+GPT-4
+GPT-4
+
+KBQA-R1 (Ours)
+
+Llama-3.1-8B
+
+68.7
+76.5
+
+70.1
+76.3
+
+Prompting KG-Augmented LLM w/GPT-4
+82.6
+87.3
+
+81.4
+84.7
+
+79.4
+87.9
+
+67.3
+69.7
+
+86.5
+88.6
+
+86.2
+
+91.2
+
+80.1
+
+86.7
+
+Fine-tuned Methods
+88.2
+
+Training Reward Curve
+Raw Data
+Smoothed (EMA)
+
+1.02
+
+Critic Mean Reward
+
+1.00
+0.98
+0.96
+0.94
+0.92
+0.90
+0
+
+20
+
+40
+
+60
+
+80
+
+Training Steps
+
+100
+
+120
+
+140
+
+Figure 5. Training reward curve on GrailQA during GRPO.
+
+Table 10, ToG requires 15.9 and 11.1 LLM calls per sample on WebQSP and GrailQA respectively, while PoG requires 9.0
+and 6.5 calls. In contrast, KBQA-R1 achieves 2.65 and 3.08 calls on the same datasets—a reduction of over 50% compared
+to PoG and over 70% compared to ToG. This significant efficiency gain stems from RL training, which enables the model
+to learn precise, goal-directed navigation on the knowledge graph rather than relying on exploratory search or iterative
+self-correction. The GRPO-trained policy internalizes effective reasoning strategies, allowing it to reach correct answers
+with fewer interaction steps.
+B.5. Extended System Comparisons
+We conduct supplementary evaluations to clarify the role of RL training and backend transfer. Unless otherwise noted,
+scores are F1 percentages.
+Table 12. Comparison with a Search-R1-style RL baseline adapted to the same action space and executor.
+Method
+
+Warm-start / Gating
+
+WebQSP
+
+GraphQ
+
+GrailQA
+
+Search-R1 adapted
+KBQA-R1
+
+Standard RS, no RRCG
+RRS + RRCG
+
+57.0
+83.4
+
+30.3
+53.8
+
+54.1
+86.1
+
+17
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+Table 13. WebQSP Hits@1 comparison after transferring the executor backend from Freebase to Wikidata.
+Method
+
+LLM
+
+ToG
+ToG
+KBQA-R1
+KBQA-R1
+
+GPT-3.5
+GPT-3.5
+Llama-3.1-8B
+Llama-3.1-8B
+
+KG Backend
+
+Hits@1
+
+Freebase
+Wikidata
+Freebase
+Wikidata
+
+76.2
+68.6
+88.2
+77.3
+
+Algorithm 1 RRS Warm-Start + GRPO Training Recipe
+Require: Base LLM πbase , Training data D = {(qi , Ai , Si∗ )}, Executor E, Reward threshold τ , Num rollouts n
+Ensure: Optimized policy πθ
+1: // Phase 1: Referenced Rejection Sampling (RRS)
+2: SRRS ← ∅
+3: for each (q, A, S ∗ ) in D do
+4:
+Extract ground-truth action sequence a∗ = (a∗1 , . . . , a∗k ) from S ∗
+5:
+// Run referenced rollout with ground-truth actions as guidance
+6:
+Generate trajectory y conditioned on a∗ using E
+7:
+if R(y) ≥ τ and valid S-Expression then
+8:
+Strip reference hints from y; add to SRRS
+9:
+end if
+10: end for
+11: // Phase 2: SFT Warm-Start
+12: πθ0 ← SFT(πbase , SRRS )
+13: // Phase 3: Reinforcement Learning (GRPO)
+14: Initialize policy πθ ← πθ0
+15: Initialize reference policy πref ← πθ0
+16: for RL iteration k = 1, . . . , N do
+17:
+Sample batch of prompts {x} from D
+18:
+for each prompt x in batch do
+19:
+Generate n trajectories {yi }ni=1 ∼ πθ (·|x) using E
+20:
+Compute rewards {Ri }ni=1 using composite reward R
+Pn
+21:
+Compute advantages {Âi }ni=1 where Âi = Ri − n1 j=1 Rj
+22:
+end for
+23:
+Update πθ by maximizing: JGRPO = E[min(rt Ât , clip(rt , 1−ϵ, 1+ϵ)Ât )] − βDKL
+24: end for
+25: return πθ
+
+B.6. Training Dynamics
+Figure 5 reports the training reward curve during GRPO on GrailQA. The rewards mean curves shows a clear upward
+trend as training progresses, and stabilizes toward the end of training, indicating policy convergence. The reward signal,
+which combines outcome reward (F1-based) and format reward, shows a clear upward trajectory from approximately 0.89
+to 1.00. The reward briefly decreases during steps 0-5, reflecting the exploration phase where the agent deviates from the
+SFT-initialized policy to discover potentially better strategies. Between steps 5-60, the reward increases rapidly, indicating
+successful policy refinement through the GRPO objective. After step 140, the reward stabilizes around 1.00 with reduced
+variance. Given the maximum achievable reward of 1.10 (1.0 for outcome and 0.1 for structure), this suggests that the policy
+has converged to a near-optimal state.
+B.7. Comparison with SOTA Graph Reasoning Methods (Hits@1)
+We additionally compare KBQA-R1 with prompting-based graph reasoning methods ToG (Sun et al., 2023) and PoG (Chen
+et al., 2024) using the Hits@1 metric, which measures whether the top-1 predicted answer matches the gold answer. As
+shown in Table 11, we report results on GrailQA and WebQSP following the experimental setup in (Chen et al., 2024). Note
+that ToG and PoG use Hits@1 as their primary metric, which differs from the F1 metric used in our main experiments. As
+18
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+Algorithm 2 KBQA-R1 Multi-Turn Rollout
+Require: Question q, policy model πθ , executor E, retrieval R, thresholds (τlow , τhigh ), max turns T
+Ensure: Answer, trajectory
+1: Initialize context C0 from template(q); function list F ← ∅; t ← 0
+2: while t < T do
+3:
+Generate continuation yt with πθ until termination token
+4:
+if </answer> in yt then
+5:
+Extract Â; break
+6:
+end if
+7:
+Parse actions At = {a(1) , . . . , a(m) } from <action>
+8:
+for i = 1 to m do
+9:
+if action contains relation parameter then
+10:
+Retrieve via R; let rbest , sbest be top-1
+11:
+if sbest < τlow then
+12:
+Mark invalid; continue {Rejected}
+13:
+else if sbest < τhigh then
+14:
+Flag uncertainty {Tentative}
+15:
+end if
+16:
+end if
+17:
+if action is Find_relation then
+18:
+Append JOIN(rbest , expr/entity) to F
+19:
+else if action is Merge then
+20:
+Append AND(expr1 , expr2 ) to F
+21:
+else if action is Compare then
+22:
+Append CMP(mode, rbest , expr) to F
+23:
+else if action is Time_constraint then
+24:
+Append TC(expr, rbest , time) to F
+25:
+else if action is Order then
+26:
+Append ARG(mode, expr, rbest ) to F
+27:
+else if action is Count then
+28:
+Append COUNT(expr) to F
+29:
+end if
+30:
+end for
+31:
+Build S-Expression St from F ; execute with E
+32:
+Build <information> block with results
+33:
+Append to context Ct+1 ; t ← t + 1
+34: end while
+35: return answer, trajectory
+
+shown in Table 11, KBQA-R1 achieves competitive or superior performance compared to GPT-4-based methods despite
+using a significantly smaller Llama-3.1-8B backbone. On WebQSP, KBQA-R1 achieves 88.2% Hits@1, outperforming
+PoG (GPT-4) by 0.9%. On GrailQA, KBQA-R1 demonstrates particularly strong performance on the I.I.D (91.2%) and
+Compositional (80.1%) settings, surpassing PoG (GPT-4) by 3.3% and 10.4% respectively. These results highlight the
+effectiveness of RL-based training: by learning precise knowledge graph navigation through environmental feedback,
+KBQA-R1 can match or exceed the reasoning capabilities of much larger commercial models while requiring substantially
+fewer LLM calls (see Table 10).
+B.8. Algorithm Pseudocode
+We provide detailed pseudocode for two core components of KBQA-R1. Algorithm 1 presents the complete training recipe,
+which includes three phases: (1) Referenced Rejection Sampling (RRS) for generating high-quality warm-start data, (2)
+SFT warm-start to initialize the policy, and (3) GRPO-based reinforcement learning for policy optimization. Algorithm 2
+describes the multi-turn rollout procedure during inference, detailing how the agent interacts with the knowledge base
+19
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+through action parsing, relation retrieval with confidence gating (RRCG), and S-Expression construction.
+B.9. Sample Interaction Trace
+We provide a complete example of a KBQA-R1 agent interaction trace to illustrate the multi-turn reasoning process. The
+question is drawn from GrailQA. This example showcases four interaction turns, including an unsuccessful action attempt
+and subsequent error recovery, demonstrating the agent’s ability to adapt its strategy based on environment feedback. We
+highlight four key modules: <think> (model reasoning), <action> (KB queries), <information> (environment
+feedback), and <answer> (final output). The agent achieves F1 = 1.0 on this example.
+
+20
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+PROMPT
+You are an expert assistant for querying the Freebase knowledge base using structured reasoning actions. Answer the given question about Freebase knowledge
+base. You must conduct reasoning inside <think>...</think> first every time you get new information. After reasoning, provide structured actions inside
+<action>...</action> tags. The system will return query results between <information>...</information>. When ready, provide the answer inside
+<answer>...</answer> using MIDs or literal values.
+Available Actions:
+
+Find_relation, Merge, Order, Compare, TIME_Constraint, Count Topic Entities: [ ‘Doing Clarence a Bit of Good’
+
+(m.09gs5j0) ] Question: What short story has a character who also is in Doing Clarence a Bit of Good?
+AGENT — Turn 1
+<think> To find the short story that shares a character with “Doing Clarence a Bit of Good,” I first need to identify the characters that appear in “Doing Clarence a Bit
+of Good.” </think>
+<action> Find_relation [ m.09gs5j0 | book.book_character.character_appearing ] </action>
+ENVIRONMENT FEEDBACK
+<information>
+functions:
+expression1 = START(’m.09gs5j0’)
+expression1 = JOIN(’book.book_character.appears_in_stories’, expression1)
+result_mid_list: [ m.0dzx0p (Reggie Pepper) ]
+</information>
+AGENT — Turn 2
+<think> I found that Reggie Pepper is a character in “Doing Clarence a Bit of Good.” Next, I need to find out which short stories this character appears in. </think>
+<action> Find_relation [ m.0dzx0p | book.short_story.characters ] </action>
+ENVIRONMENT FEEDBACK
+<information>
+functions:
+expression1 = START(’m.09gs5j0’)
+expression1 = JOIN(’book.book_character.appears_in_stories’, expression1)
+expression2 = START(’m.0dzx0p’)
+expression2 = JOIN(’book.short_story.characters’, expression2)
+result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying
+Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test
+Case), m.010rlh9d (Concealed Art) ]
+</information>
+AGENT — Turn 3
+<think> I have a list of short stories that feature Reggie Pepper, including “Doing Clarence a Bit of Good.” Now, I need to filter this list to only include stories that are
+of the type “short story” and not “Doing Clarence a Bit of Good” itself. </think>
+<action> Merge [ expression2 | book.short_story ] </action>
+ENVIRONMENT FEEDBACK
+<information>
+functions: ... (previous expressions omitted)
+expression3 = START(’book.short_story’)
+expression2 = AND(expression2, expression3)
+result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying
+Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test
+Case), m.010rlh9d (Concealed Art) ]
+</information>
+AGENT — Turn 4 (Final)
+<think> The merged results now confirm all short stories featuring Reggie Pepper. Since the question asks for stories that share a character with “Doing Clarence a Bit
+of Good,” I should exclude the story itself from the final answer and report the remaining six. </think>
+<answer> m.09gs5hv m.09gs5hy m.09gs5hr m.010r9gwy m.010rlht0 m.010rlh9d </answer>
+
+Figure 6. Sample KBQA-R1 interaction trace on a GrailQA question. The trace illustrates multi-turn reasoning with executable actions,
+environment feedback, error recovery, and final answer generation.
+
+21
+
+KBQA-R1: Reinforcing Large Language Models for Knowledge Base Question Answering
+
+B.10. Case Study: KBQA-o1 vs. KBQA-R1
+We compare KBQA-o1 and KBQA-R1 on the same GrailQA question to illustrate the impact of grounded environment
+feedback.
+What short story has a character who also is in Doing Clarence a Bit of Good?
+Topic Entity: ‘Doing Clarence a Bit of Good’ (m.09gs5j0)
+m.010r9gwy, m.010rlht0, m.010rlh9d)
+
+Gold: 6 MIDs (m.09gs5hv, m.09gs5hy, m.09gs5hr,
+
+KBQA-o1 (Incorrect, F1 = 0.0)
+Step 1
+
+Thought: At this step, we should identify a topic entity from the question to start a new expression. ✗ Rigid template
+
+Action: Extract_entity [ Doing Clarence a Bit of Good ]
+✗ Action echo, not KB results
+
+Obs: expression = START(’m.09gs5j0’)
+Step 2
+
+Thought: At this step, we should find the one-hop relation connected to the current expression. ✗ Rigid template
+
+Action: Find_relation [ book.short_story.characters ]
+Obs: expression = JOIN(‘(R book.short_story.characters)’, expr)
+Step 3
+
+✗ Action echo — wrong direction undetected
+
+Thought: At this step, we should identify a topic entity from the question. ✗ Rigid template
+
+Action: Extract_entity [ book.short_story ]
+✗ Action echo, not KB results
+
+Obs: expression1 = START(’book.short_story’)
+Step 4
+
+Thought: At this step, we conclude that it is appropriate to end and output the expression. ✗ Rigid template
+✗ Finishes expression1, discards JOIN
+
+Action: Finish [ expression1 ]
+
+✗ Empty result (F1 = 0.0)
+
+pred_answer = [ ]
+
+KBQA-R1 (Correct, F1 = 1.0)
+Step 1
+
+Think: To find the short story that shares a character with “Doing Clarence a Bit of Good,” I first need to identify the characters that appear in “Doing
+
+Clarence a Bit of Good.” ✓ Genuine reasoning
+Action: Find_relation [ m.09gs5j0 | book.book_character.appears_in_stories ]
+Info: result_mid_list:
+Step 2
+
+✓ Real KB results returned
+
+[ m.0dzx0p (Reggie Pepper) ]
+
+Think: I found that Reggie Pepper is a character in “Doing Clarence a Bit of Good.” Next, I need to find out which short stories this character appears in. ✓
+
+Adapts based on results
+
+Action: Find_relation [ m.0dzx0p | book.short_story.characters ]
+Info: result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy
+(Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0
+(The Test Case), m.010rlh9d (Concealed Art) ]
+✓ Real KB results — 7 entities
+Step 3
+
+Think: I have a list of short stories that feature Reggie Pepper, including “Doing Clarence a Bit of Good.” Now, I need to filter this list to only include stories
+
+that are of the type “short story” and not “Doing Clarence a Bit of Good” itself. ✓ Plans type constraint
+Action: Merge [ expression2 | book.short_story ]
+Info: result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy
+(Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0
+(The Test Case), m.010rlh9d (Concealed Art) ]
+✓ Type verified
+Step 4 (Final)
+
+Think: The merged results now confirm all short stories featuring Reggie Pepper. Since the question asks for stories that share a character with
+
+“Doing Clarence a Bit of Good,” I should exclude the story itself from the final answer and report the remaining six. ✓ Reasons about exclusion
+Answer: m.09gs5hv m.09gs5hy m.09gs5hr m.010r9gwy m.010rlht0 m.010rlh9d
+
+✓ Correct (F1 = 1.0)
+
+pred_answer: 6 MIDs (all correct)
+
+Key Insight. This case study illustrates that grounded environment feedback is the decisive factor. Without it, KBQAo1’s MCTS search is “flying blind”—the policy model generates plausible-looking action sequences, but neither the policy
+nor the reward model ever observes actual KB execution results. This makes errors like wrong relation directions impossible
+to detect. KBQA-R1’s multi-turn interaction paradigm enables genuine closed-loop reasoning that is both more accurate and
+dramatically more efficient.
+
+22
+
+

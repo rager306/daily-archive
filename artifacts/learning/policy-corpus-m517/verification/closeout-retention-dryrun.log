@@ -1,0 +1,12 @@
+closeout reclamation:
+  target/: 39.0 GB (cap 60 GB) — within cap
+  policy: exec 30d, quarantine 30d, activity 14d, min age 24h, build cache >= 4GB
+  plan:
+    - scratch_dirs: 0 (older than 24h)
+    - exec_captures: 0 (older than 30d (floor 24h))
+    - quarantine_runs: 0 (older than 30d (floor 24h))
+    - activity_files: 0 (older than 14d (floor 24h))
+    - build_caches: 0 (cache GC for store entries >= 4GB)
+    - package_targets: 12 (cargo clean -p per DATA package (frees second-toolchain artifacts))
+  reclaims 0.0 MB from stores + 12 package clean command(s)
+dry run — pass --apply to reclaim (cache GC + per-package clean)

@@ -1,0 +1,2436 @@
+Preprint. Under review.
+
+Talk to Right Specialists: Iterative Routing in Multi-agent
+Systems for Question Answering
+
+arXiv:2501.07813v2 [cs.MA] 6 Apr 2026
+
+Feijie Wu† Zitao Li∆ ∗ Fei Wei‡ Yaliang Li‡ Bolin Ding‡ Jing Gao†
+† Purdue University
+‡ Alibaba
+∆ Zoom Communication
+{wu1977, jinggao}@purdue.edu
+{feiwei, yaliang.li, bolin.ding}@alibaba-inc.com
+zitao.li@zoom.us
+
+Abstract
+Retrieval-augmented generation (RAG) agents are increasingly deployed to answer
+questions over local knowledge bases that cannot be centralized due to knowledgesovereignty constraints. This results in two recurring failures in production: users
+do not know which agent to consult, and complex questions require evidence
+distributed across multiple agents. To overcome these challenges, we propose
+RIRS, a training-free orchestration framework to enable a multi-agent system
+for question answering. In detail, RIRS summarizes each agent’s local corpus
+in an embedding space, enabling a user-facing server to route queries only to
+the most relevant agents, reducing latency and avoiding noisy "broadcast-to-all"
+contexts. For complicated questions, the server can iteratively aggregate responses
+to derive intermediate results and refine the question to bridge the gap toward a
+comprehensive answer. Extensive experiments demonstrate the effectiveness of
+RIRS, including its ability to precisely select agents and provide accurate responses
+to single-hop queries, and its use of an iterative strategy to achieve accurate, multistep resolutions for complex queries.
+
+1
+
+Introduction
+
+Retrieval-augmented generation (RAG) improves the reliability of large language model (LLM)
+applications by grounding model outputs in retrieved external evidence (Wu et al., 2024c; Asai
+et al., 2023a; Lewis et al., 2020; Jiang et al., 2023; Izacard & Grave, 2020; Mallen et al., 2022;
+Kasai et al., 2024; Xiong et al., 2024; Weng, 2023; Roucher, 2024; Joshi et al., 2024). In practice,
+this capability is often deployed as a RAG agent backed by a private corpus. However, enterprise
+knowledge is rarely centralized: different business units, products, or teams often maintain separate
+RAG agents over disjoint corpora, such as internal documentation, contracts, incident reports, or
+partner data (Addison et al., 2024; Wu et al., 2024a;b). Centralizing these corpora into a single
+repository (Figure 1a) is typically infeasible due to governance constraints, access controls, and
+confidentiality requirements. Moreover, as we show in Section 3.2, centralization is not only desirable
+due to knowledge sovereignty constraints, but also hurts retrieval quality and downstream reasoning.
+This setting raises a fundamental systems question: how can a user-facing server answer questions
+when the relevant evidence is distributed across multiple specialized RAG agents and cannot be
+pooled into a single repository?
+A natural orchestration strategy is broadcast-to-all: as illustrated in Figure 1b, a user-facing server
+forwards each query to every RAG agent, aggregates their responses, and repeats this process until
+a final answer is produced. In this system, each agent retains its local, domain-specific knowledge
+base, ensuring that its knowledge sovereignty is well protected and that its data are not merged into a
+centralized repository. However, broadcast-to-all is inefficient in practice: (i) it wastes computation
+and communication because many agents are irrelevant to a given query, (ii) it increases end-to-end
+latency by waiting for slow agents and processing long concatenated responses, and (iii) it can
+degrade answer quality because excessively long and noisy context makes it easy for the model to
+∗ Work was done when ZL was employed at Alibaba
+
+1
+
+Preprint. Under review.
+
+(a) Knowledge Base Collection from All Agents
+
+(b) Message Collection from All Agents
+
+(c) Message Collection from Selected Agents
+
+Figure 1: Collaboration Strategies of Multi-agent System for QA.
+overlook the right evidence (the "lost-in-the-middle" problem), as demonstrated in Section 3.3. These
+limitations motivate a distributed multi-agent system with a routing mechanism that selects only the
+most appropriate agents (treated as specialists) for each query, as illustrated in Figure 1c.
+Existing routing methods generally fall into two categories: description-based and learning-based.
+Description-based methods rely on manually written descriptions of agent capabilities, allowing an
+LLM to select the most suitable agent for a given query based on these descriptions (Patil et al.,
+2024; Lu et al., 2024a;b; Yuan et al., 2025; Wu et al., 2025; Zheng et al., 2026). In contrast, learningbased methods train a router on task-specific data to direct each user query to the most appropriate
+agent (Lu et al., 2023; Chen et al., 2024a; Ong et al., 2024; Yue et al., 2025; Mei et al., 2025; Wei
+et al., 2025; Wang et al., 2026). However, both strategies are difficult to apply in multi-RAG-agent
+settings. A textual description may not accurately capture the knowledge boundary of an agent
+whose corpus covers multiple subtopics. Learning-based methods are also problematic because the
+effective capability of a RAG agent is determined by its non-parametric local corpus, not only by
+parametric knowledge, and it is difficult to construct an effective dataset that fully covers that corpus.
+Therefore, a routing mechanism in a multi-RAG-agent system should accurately characterize an
+agent’s knowledge capabilities without requiring raw data sharing or expensive training.
+In this work, we introduce RIRS, a practical orchestration framework that turns a collection of RAG
+agents into a single, coordinated problem-solving pipeline via Routing and Iterative Refining-Solving.
+Specifically, this framework consists of two modules, namely, knowledge summarization and query
+solving. In the knowledge summarization stage, each agent encodes its local corpus, partitions
+the resulting embeddings into coherent clusters, and uploads only cluster centroids to the server.
+These centroids provide a compact embedding-space summary of the agent’s knowledge capabilities,
+while keeping raw knowledge local. In the query-solving stage, the server routes each query to the
+most relevant agents by matching the query embedding to the uploaded centroids. For complex
+queries, the server then iteratively evaluates partial responses, refines the unresolved question, and
+continues querying only the agents needed for the remaining subproblem. In this way, RIRS avoids
+broadcast-to-all, preserves knowledge sovereignty, and supports evidence composition across agents
+and across rounds.
+Contributions.
+
+We summarize the contributions of this paper as follows:
+
+• We study question answering in multi-RAG-agent systems where relevant evidence is distributed
+across specialized agents and cannot be centralized because of knowledge-sovereignty constraints.
+This setting exposes a key practical challenge: users do not know which agent to query, while
+complex questions often require evidence composition across agents.
+• We propose RIRS, a training-free framework built on two components: knowledge summarization,
+which represents each agent’s local corpus through cluster-level embedding summaries, and query
+solving, which selectively routes queries, aggregates partial progress, and refines unresolved
+questions across rounds. We also provide a theoretical analysis showing that the routing error of
+the centroid-based summary is bounded under a cluster-coherence condition.
+• We show that RIRS improves both routing quality and question answering performance. In
+particular, it enables more precise agent selection for single-hop queries and more accurate multistep resolution for complex queries, outperforming representative baselines in both effectiveness
+and efficiency.
+
+2
+
+Related Work
+
+Retrieval Augmented Generation (RAG). RAG has gained substantial interest in academic
+research as a robust framework that integrates external knowledge sources into large language models
+2
+
+Preprint. Under review.
+
+to enhance the quality and reliability of generated responses (Lewis et al., 2020; Chen et al., 2017;
+Guu et al., 2020; Karpukhin et al., 2020; Izacard & Grave, 2020; Borgeaud et al., 2022; Yu, 2022;
+Shi et al., 2023; Yan et al., 2024; Li et al., 2023b; Press et al., 2022; Chan et al., 2024; Su et al.,
+2024; Trivedi et al., 2022a; Ma et al., 2023; Shao et al., 2023; Zhang et al., 2025a), and there is a
+detailed description of how an RAG agent works in Section 3.1. Recent work has increasingly moved
+toward agentic RAG, where the model actively plans retrieval, refines queries, critiques intermediate
+results, and iterates between retrieval and reasoning to handle complex questions more effectively
+(Asai et al., 2023b; Jiang et al., 2023; Zhuang et al., 2024; Verma et al., 2024; Yang et al., 2024b;
+Singh et al., 2025; Li et al., 2025). These advances improve a single RAG pipeline, typically over a
+centralized knowledge source. In contrast, our work studies a distributed setting in which knowledge
+is partitioned across multiple RAG agents, so the main challenge is not only iterative reasoning, but
+also routing the query to the right agents and composing evidence across agents and rounds.
+Multi-agent Systems. Multi-agent systems leverage multiple specialized LLM-based agents to
+collaboratively solve complex tasks, and have attracted growing attention in recent years (Hong et al.,
+2023; Li et al., 2023a; Wu et al., 2023; Chen et al., 2023a;b; Zhao et al., 2023; Guo et al., 2024; Chen
+et al., 2024b; Li et al., 2024; Ye et al., 2025; Liu et al., 2026). In question answering, a growing
+number of studies improve answer quality through multi-agent collaboration, such as debate- or
+discussion-based frameworks in which multiple agents reason over a shared or common knowledge
+source to refine candidate answers (Zhang et al., 2025b; Iannelli et al., 2024; Du et al., 2024; Zhang
+et al., 2025a). These methods primarily emphasize better coordination and reasoning among agents
+once the knowledge source becomes accessible. Different from these works, our focus is not on
+having multiple agents reason over the same repository, but on identifying the most relevant agents
+when knowledge is inherently distributed across agents.
+
+3
+
+Preliminary and Motivations
+
+This section first reviews the pipelines of a RAG agent and a multi-RAG-agent system (Section 3.1).
+We then motivate multi-agent design by showing that multi-RAG-agent systems can consistently outperform single-agent baselines (Section 3.2), and by highlighting why an effective routing mechanism
+is crucial (Section 3.3).
+3.1
+
+Preliminary
+
+RAG Agent. An RAG agent is an advanced application that integrates retrieval mechanisms with
+LLMs to deliver accurate and contextually rich responses. Specifically, an RAG agent processes an
+input query through three steps: (i) Knowledge Retrieval: It extracts relevant knowledge pieces using
+both sparse and dense retrievers from external sources (Robertson et al., 2004; Izacard et al., 2021;
+Xu et al., 2023); (ii) Reranking: It ranks those retrieved pieces with a pretrained regression model to
+identify the likelihood of a knowledge piece helpful to the input query, thereby filtering out unhelpful
+or misleading information and allowing the generation model to focus on the most pertinent content;
+(iii) Response Generation: It combines the question and the pertinent external knowledge to produce
+an informed response with its backbone LLM. This process is also known as RankRAG (Yu et al.,
+2024). For multi-hop questions, it can adopt EfficientRAG (Zhuang et al., 2024) to iteratively refine
+the query and repeat retrieval and generation until the question is resolved.
+Multi-RAG-Agent System. A multi-RAG-agent system consists of numerous RAG agents orchestrated under a central entity (i.e., server). When a user query comes, the system should repeatedly
+follow these three steps until the query is resolved: (i) the server selects a group of agents and
+forwards the query to them; (ii) the chosen RAG agent should give a response to the best of its
+local knowledge; (iii) the server aggregates the responses from the selected agents and simplifies
+the queries. While answering a given query, an RAG agent is supposed not to expose local raw
+knowledge, thereby preserving agent privacy and knowledge sovereignty. Such a system is also
+known as the federated RAG system in some recent works (Addison et al., 2024; Shi et al., 2025;
+Jung et al., 2025; Zhao, 2024).
+3.2
+
+Single-RAG-Agent System Does NOT Work
+
+In a single-RAG-agent system (Figure 1a), one agent collects and stores all documents in a single
+repository. Such centralization is often impractical in deployments due to knowledge-sovereignty
+concerns. Additionally, we analyze its performance limitation by comparing it with a practical multi3
+
+Preprint. Under review.
+
+Table 1: Performance comparison on Natural Questions (NQ) and HotpotQA. Best results under
+Qwen-Plus and LLaMA-3.1-8B are in bold and underline, respectively, which will be applied to the
+rest of the paper without annotations.
+Methods
+
+Models
+
+CoT
+(Without RAG)
+
+Qwen-Plus
+LLaMA-3.1-8B
+Qwen-Plus
+LLaMA-3.1-8B
+Qwen-Plus
+LLaMA-3.1-8B
+
+EfficientRAG
+(Single-RAG-Agent)
+GoldRouter
+(Multi-RAG-Agent)
+
+Natural Questions
+LM
+Acc.
+52.99
+74.55
+44.41
+58.60
+62.73
+82.61
+56.48
+70.10
+63.41
+83.02
+55.13
+69.70
+
+LM
+39.68
+30.96
+57.41
+47.38
+58.17
+50.60
+
+HotpotQA
+F1
+Acc.
+43.82 54.58
+36.02 44.23
+63.01 76.55
+52.96 61.17
+63.99 81.01
+56.26 64.94
+
+2WikiMultiHopQA
+LM
+F1
+Acc.
+42.38 44.89 37.31
+31.40 34.46 25.99
+69.41 71.77 75.85
+48.45 52.04 51.13
+70.11 72.37 76.33
+49.73 52.99 52.07
+
+LM
+16.76
+13.30
+26.62
+21.38
+29.01
+23.27
+
+MuSiQue
+F1
+Acc.
+20.66 33.86
+17.76 21.86
+31.41 46.42
+26.22 29.13
+33.75 47.55
+28.18 31.46
+
+RAG-agent system. Table 1 compares three baselines that isolate retrieval and agent organization.
+Chain-of-Thought (CoT) uses only the LLM’s parametric knowledge. GoldRouter is an oracle
+upper bound for a multi-RAG-agent system that always routes each step to the relevant agents and
+aggregates their evidence.
+The results in the table confirm that RAG-based methods consistently outperform CoT, a method
+relying on a model’s intrinsic memorization and reasoning capacities. Among all RAG-based
+baselines, the table demonstrates that GoldRouter consistently outperforms EfficientRAG, achieving
+up to a 5% improvement in GPT-evaluated accuracy. Furthermore, GoldRouter shows significant
+advantages over baseline methods within single-RAG-agent systems on multi-hop QA datasets
+(i.e., HotpotQA, 2WikiMultiHopQA, MuSiQue). This performance gain underscores the inherent
+challenges of managing a large-scale knowledge repository: retrieving relevant information from
+large-scale, aggregated knowledge bases often includes irrelevant or distracting content, consequently
+limiting overall performance. Such extraneous content significantly complicates multi-hop reasoning,
+making it challenging to effectively simplify questions by discarding resolved portions of the query.
+In contrast, the multi-agent approach enables each agent to concentrate on a smaller, domain-specific
+set of documents, enhancing the relevance and precision of information retrieval. As a result, the
+multi-agent system can have a higher upper bound of the final performance.
+3.3
+
+All-Agent Participation Does NOT Work
+
+A naive way to avoid routing errors is all- Table 2: Performance comparison between GoldRouter
+agent participation (Figure 1b): the server and All-agent Participation on the NQ dataset.
+broadcasts the query to every agent and
+Methods
+Models
+LM
+Acc. Time
+aggregates all responses. Table 2 shows
+50.63
+67.76
+72.91
+Qwen-Plus
+All-agent
+that even on single-hop QA, this strategy
+Participation LLaMA-3.1-8B 46.19 56.55 40.18
+is less accurate and much slower. For exQwen-Plus
+63.41 83.02 12.97
+ample, with Qwen-Plus, accuracy drops
+GoldRouter
+LLaMA-3.1-8B 55.13 69.70 6.29
+from 83.02 to 67.76 and latency rises from
+12.97s to 72.91s; similar trends hold for
+LLaMA-3.1-8B, and the cost becomes prohibitive for multi-hop queries because broadcasting repeats
+across rounds. This gap is driven by irrelevant agent involvement: agents without useful evidence still
+consume computation, introduce distracting content, and force the server to wait for slow responses.
+The resulting long, noisy context makes evidence fusion harder and can reduce correctness. Therefore,
+a multi-RAG-agent system needs a routing mechanism that selects a small but sufficient subset of
+agents per round and supports knowledge fusion across rounds.
+
+4
+
+RIRS
+
+RIRS is designed for a practical multi-agent QA setting in which knowledge is distributed across
+specialized RAG agents, but users still expect a single accurate answer. In this setting, the main
+challenge is not only to find relevant agents, but also to combine their partial evidence into a coherent
+solution. A useful system therefore needs to do two things well: limit participation to agents that are
+likely to help, and continue reasoning when the answer must be assembled across multiple steps.
+To make this possible, RIRS decomposes the system into offline and online stages, as illustrated in
+Figure 2. At the offline stage (Figure 2a), each agent periodically summarizes the structure of its local
+knowledge in the embedding space and shares only a few lightweight representations with the server.
+At the online stage (Figure 2b), the server uses these summaries to route the query, judge the quality
+of returned responses, and iterate when necessary. In this way, routing and iterative refining-solving
+4
+
+Preprint. Under review.
+
+(a) Knowledge Summarization
+Agent A
+
+(b) Query Solving
+Routing
+
+Split into
+𝑚 chunks
+
+Agent A
+
+Selected
+
+User
+Query
+
+Unselected
+Agent C
+
+Local
+Corpus
+
+Embedding
+Model
+
+Agent B
+
+𝑚 embeddings
+
+𝑛 clusters
+
+Rewritten
+Query
+
+Split into
+𝑚 chunks
+
+Embedding
+Model
+
+Send “Rewritten Query” to
+look for appropriate agents
+
+Server
+
+Agent B
+
+Query
+
+Send “Selected Agents” to
+answer/simplify the user query
+
+Refining-Solving
+Local
+Corpus
+
+Embedding
+Model
+
+Agent C
+
+Retrieved
+Text
+
+Split into
+𝑚 chunks
+
+Collected Centroids
+Local
+Corpus
+
+Embedding
+Model
+
+𝑛 clusters
+
+Rewritten
+Query
+
+Agent B
+
+𝑛 clusters
+
+Selected:
+Agents B & C
+
+No
+
+Evaluation
+Response
+LLM
+
+Query
+Addressed?
+
+Agent C
+Retrieved
+Text
+
+Upload centroids
+and agent identifier
+
+Response
+LLM
+
+Yes
+Final
+Response
+
+Figure 2: Overview of RIRS
+are handled within a single framework rather than as two disconnected procedures. This design
+avoids the inefficiency of querying every agent while still supporting multi-step multi-agent evidence
+composition.
+4.1
+
+Offline Agent-Side Preparation: Knowledge Summarization
+
+As shown in Figure 2a, each agent periodically summarizes its local knowledge base into a small
+set of centroids for routing. Concretely, an agent splits its local corpus into m chunks and encodes
+each chunk into an embedding vector e1 , . . . , em using a shared embedding model, where these
+embeddings are cached for later retrieval process. The agent then partitions these embeddings into n
+clusters and uploads only the resulting cluster centroids (along with an agent identifier) to the server.
+This design preserves knowledge sovereignty by keeping raw knowledge pieces local, while still
+allowing the server to estimate which RAG agents are relevant to a query in the embedding space.
+To make centroids reliable routing signals, clusters must be internally coherent. If a cluster mixes
+semantically unrelated pieces, its centroid degenerates into an "average topic" and becomes a weak
+relevance signal. We therefore formulate clustering as a max-min objective that encourages every
+cluster to be tight. Let {c1 , . . . , cn } be a partition of {e1 , . . . , em } into n non-empty clusters, and let
+sim(·, ·) denote cosine similarity. We maximize the worst-case within-cluster similarity:
+
+{c⋆k }nk=1 ∈ arg max min min sim(ea , eb ) s.t. {ck }nk=1 is a partition of {e1 , . . . , em }.
+{ck }nk=1
+
+k ∈[n] ea ,eb ∈ck
+a̸=b
+
+(1)
+
+This objective prevents the optimization from sacrificing low-quality clusters because the least
+coherent cluster controls the objective value. As a result, each centroid is a faithful representative of
+a semantically consistent region of the agent’s knowledge base.
+In practice, each agent optimizes Equation (1) through an approximate max-min similarity clustering
+algorithm (Algorithm 1) to obtain n disjoint clusters over its local embeddings. Starting from singleton
+clusters, the algorithm first normalizes the embeddings, computes pairwise cosine similarities, and
+iteratively merges the pair of current clusters with the largest bottleneck similarity until only n
+clusters remain. It then performs a local refinement stage that identifies the cluster with the smallest
+within-cluster bottleneck similarity, considers reassigning one endpoint of its worst-similarity pair to
+another cluster, and accepts the move only if it improves the objective in Equation (1). After obtaining
+the final partition, the agent computes one centroid for each cluster, i.e., the mean of its member
+√
+embeddings, and uploads only these centroids to the server. In our experiments, we set n = ⌊ m⌋,
+where m is the number of local knowledge chunks. Full algorithmic details are provided in Appendix
+A.1, with pseudocode in Algorithm 1.
+4.1.1
+
+Analysis of the Effectiveness
+
+Theorem 4.1 (Query-to-Agent Routing Bound). Let u be a query embedding, and let agent α contain
+a knowledge-piece embedding e such that sim(u, e) ≥ k for some k ∈ (0, 1]. Assume e belongs to
+5
+
+Preprint. Under review.
+
+an s-coherent cluster c of agent α, meaning sim(e′ , e′′ ) ≥ s for all e′ , e′′ ∈ c, with centroid c̄. Let
+Rα (u) := max sim(u, c̄′ )
+c̄′ ∈Cα
+
+(2)
+
+be the routing score of agent α. Then
+Rα (u) ≥ sim(u, c̄) ≥ ks −
+
+q
+
+(1 − k2 )(1 − s2 ).
+
+Equivalently, the routing surrogate incurs at most
+q
+
+
+∆α (u; e) := sim(u, e) − Rα (u) + ≤ k − ks + (1 − k2 )(1 − s2 ).
+
+(3)
+
+(4)
+
+The detailed proof is provided in Appendix A.2. The theorem shows that centroid routing is a stable
+surrogate for fine-grained matching. If a query is close to a knowledge piece inside an agent, and that
+piece lies in a coherent cluster, then the agent’s centroid score cannot drop arbitrarily. Hence, the
+server can route using only uploaded centroids while incurring a bounded loss relative to routing with
+the underlying knowledge pieces.
+4.2
+
+Online Query Solving via Routing and Iterative Refining-Solving
+
+As shown in Figure 2b, the uploaded centroids provide the server with an embedding-space approximation of each agent’s knowledge capability: each centroid represents a coherent region where the
+agent is likely to contain supporting evidence. Given a query, the server embeds it and compares the
+query embedding with the uploaded centroids to identify the most appropriate agents. After receiving
+responses from the selected agents, the server evaluates whether those responses adequately address
+the query. If the query is not fully resolved, the server rewrites it to focus on the remaining unresolved
+aspects and then repeats the routing and response-evaluation process until a final answer is produced
+or no further progress can be made.
+Single-round query solving (RTA NS). Given a query q, the server embeds it as x = ϕ(q) using
+the same embedding model ϕ(·) used by agents. Let C be the set of all centroids from all RAG
+agents, and let f (c̄) map a centroid c̄ to its source agent. The server selects the TopK centroids by
+similarity and routes the query to the corresponding agents:
+
+CK (q) = TopKc̄∈C sim( x, c̄), A(q) = { f (c̄) : c̄ ∈ CK (q)}
+
+(5)
+
+Each selected RAG agent answers the query using its local knowledge and returns an evidence-backed
+response. The server then applies Response Evaluator to label each response as addressed vs. not
+addressed and curates the round output (e.g., selecting or combining addressed responses). We
+denote this single-round procedure as RTA NS (q), which includes: (i) TopK centroid-based agent
+selection, (ii) agent response generation with local evidence, (iii) server-side response evaluation, and
+(iv) response curation. For single-hop queries, a single RTA NS call is typically sufficient.
+Iterative refining-solving for multi-hop queries. For multi-hop queries, the required evidence may
+be distributed across agents and across reasoning steps, so a single RTA NS (q) call can be insufficient.
+RIRS repeats RTA NS in an iterative loop. At iteration t, the server calls RTA NS (qt ) and uses the
+Response Evaluator to label responses as fully addressed, partially addressed, or not addressed. If any
+response is fully addressed, the Response Summarizer consolidates the evidence-backed responses
+into the final answer and terminates. If only partially addressed responses exist, the server aggregates
+partial progress, invokes the Question Simplifier to produce a refined query qt+1 targeting unresolved
+aspects, and then proceeds to the next iteration. If all responses are not addressed, the server stops
+and reports that the query is unanswerable within the system scope. Full step-by-step procedures and
+server-module prompts are provided in Appendix A.
+Practical properties. RIRS has three practical advantages. First, centroid-based routing activates
+only a small set of relevant agents for each query, reducing fan-out, token usage, and interference
+from irrelevant responses. Second, for complex questions, the iterative refining-solving loop turns
+partial progress into targeted follow-up queries, enabling evidence composition across agents and
+across rounds. Third, RIRS cleanly separates offline knowledge summarization from online query
+solving: agents can update local knowledge, refresh their centroids, and synchronize them with the
+server, while the server maintains only a lightweight routing index. This separation simplifies new
+agent onboarding, supports continuous knowledge updates, and avoids centralizing raw corpora or
+retraining a router.
+6
+
+Preprint. Under review.
+
+Table 3: Performance under different numbers of selected clusters on the Natural Questions dataset
+# Sel.
+Clusters
+1
+5
+10
+
+Avg Sel. Agents
+(Eff. Rate)
+1.0 (52.69%)
+3.32 (37.47%)
+5.28 (26.76%)
+
+Agent-Level
+Ans. Rate
+52.69%
+76.47%
+84.52%
+
+5
+
+Experiments
+
+5.1
+
+Experimental Setup
+
+Avg Viewed Doc.
+(Eff. Rate)
+3.32 (21.43%)
+10.12 (11.61%)
+16.95 (7.07%)
+
+Doc.-Level
+Ans. Rate
+50.58%
+73.01%
+80.12%
+
+LLaMA-3.1-8B
+LM
+Acc.
+43.53% 60.91%
+50.98% 63.96%
+50.18% 64.74%
+
+Qwen-Plus
+LM
+Acc.
+59.90% 77.72%
+62.05% 80.05%
+62.90% 81.05%
+
+Due to space limits, this section summarizes the experimental setup needed to interpret our quantitative
+results. Full implementation details and baseline specifications are provided in Appendix B.
+Datasets. Our experiments cover both single-hop and multi-hop open-ended QA tasks within a
+unified evaluation framework. We employ the Natural Questions (NQ) dataset (Kwiatkowski et al.,
+2019) for single-hop QA to emphasize the effectiveness of the routing mechanism. For evaluating
+the performance on answering complex questions, we assess performance on four multi-hop QA
+benchmarks: HotpotQA (Yang et al., 2018), 2WikiMultiQA (Ho et al., 2020), MusiQue (Trivedi
+et al., 2022b), and Multi-Hop RAG (MHR) Benchmark (Tang & Yang, 2024). Except for MHR, all
+questions in these datasets are answerable using knowledge from Wikipedia.
+Models. We use text-embedding-v2 (Zhang et al., 2024) to compute dense representations
+for retrieval. Agents are powered by two LLM backends: llama-3.1-8b-instruct (Touvron
+et al., 2023a;b; Dubey et al., 2024) and qwen-plus-2024-12-20 (Yang et al., 2024a). All
+methods are evaluated in an off-the-shelf setting without fine-tuning.
+Multi-RAG-Agent Systems. Throughout the experiments, we construct two multi-RAG-agent
+systems tailored to different datasets.
+• WikiAgents for NQ, HotpotQA, 2WikiMultiQA and MusiQue: WikiAgents group is built upon
+a corpus of over 121K Wikipedia pages, dumped as of November 1, 2023, and made publicly
+available via the HuggingFace dataset. The system comprises exactly 64 RAG agents. This specific
+number is derived from the inherent limitation of the ORES legacy service, which can only classify
+a Wikipedia page into 64 predefined categories (Johnson et al., 2021). Consequently, each RAG
+agent is designated to handle one of these 64 categories, ensuring that the categorization of pages is
+consistent and aligned with the predefined taxonomy established by the ORES service. However,
+these agents cannot cover all required documents, and once the question cannot be answered, a
+knowledgeable agent will be called to answer the question because the existing LLMs have been
+pretrained with the Wikipedia corpus.
+• NewsAgents for MHR: NewsAgents group is constructed on a corpus of 609 news articles from
+49 distinct news media and spanning six domains (Tang & Yang, 2024). To analyze the effects
+of source and domain characteristics, we further split NewsAgent into two variants: NewsAgentSource and NewsAgent-Domain, corresponding to partitions based on news media and domain
+categories, respectively. Each agent uses LLaMAIndex to split news articles into 256-token chunks,
+with 20 overlapping tokens between consecutive chunks.
+Baselines. We compare RIRS with two representative multi-agent routing baselines. Chameleon
+(Lu et al., 2024a) is a description-based router that maintains a textual description for each agent and
+prompts an LLM to select the most relevant agents for a given query. RouterDC (Chen et al., 2024a)
+is a learning-based router that constructs agent representations from single-hop answerable questions
+and routes by embedding similarity while keeping the embedding model fixed. Both methods operate
+in the same multi-RAG-agent setting as RIRS and serve as alternative routing strategies. Further
+implementation details are provided in Appendix B.3.
+Evaluation Metrics. We report three metrics. Lexical Match (LM) measures the percentage of
+questions whose ground-truth answer string appears in the generated response. GPT Evaluation
+(Acc.) uses gpt-4o-2024-08-06 (Achiam et al., 2023) to judge correctness by comparing model
+outputs against ground-truth answers while allowing paraphrases. Time measures wall-clock latency
+from receiving the question to producing a seemingly valid response; this metric can be noisy due to
+network/API variance and runtime contention.
+7
+
+Preprint. Under review.
+
+Table 4: Performance comparison of different methods under various datasets and the knowledge
+of WikiAgents. The best results under Qwen-Plus and LLaMA-3.1-8B are Bold and underline out,
+respectively, among the methods to multiple RAG agents (i.e., Chameleon, RouterDC, and RIRS),
+which are highlighted in the grey background.
+Methods
+GoldRouter
+Chameleon
+RouterDC
+
+RIRS
+
+Models
+Qwen
+LLaMA
+Qwen
+LLaMA
+Qwen
+LLaMA
+Qwen
+LLaMA
+Mixed1
+
+Natural Questions
+LM
+Acc. Time
+63.41 83.02 12.97
+55.13 69.70 6.29
+55.48 73.92 24.90
+49.68 62.73 15.27
+53.93 71.09 24.91
+47.26 60.43 13.11
+62.05 80.05 23.30
+50.98 63.96 10.51
+55.98 73.32 20.98
+
+LM
+58.17
+50.60
+52.12
+41.08
+51.34
+38.31
+54.01
+47.57
+51.68
+
+F1
+63.99
+56.26
+57.55
+46.59
+56.84
+43.11
+59.62
+52.56
+56.65
+
+HotpotQA
+Acc. Rounds
+81.01
+1.22
+64.94
+1.55
+73.19
+1.43
+50.20
+1.85
+67.24
+1.46
+47.74
+1.78
+75.63
+1.44
+58.69
+2.04
+69.33
+1.83
+
+Time
+22.85
+17.07
+39.05
+24.77
+44.12
+23.63
+34.71
+19.93
+41.04
+
+LM
+70.11
+49.73
+56.68
+40.52
+50.97
+34.48
+61.14
+45.65
+59.48
+
+2WikiMultiHopQA
+F1
+Acc. Rounds
+72.37 76.33
+1.36
+52.99 52.07
+1.58
+59.18 60.12
+1.70
+43.49 40.27
+1.84
+53.88 52.12
+1.67
+37.35 30.59
+1.67
+63.71 65.78
+1.73
+49.10 45.65
+2.02
+61.94 62.06
+1.85
+
+Time
+30.93
+20.57
+37.53
+26.71
+45.61
+26.58
+39.76
+22.26
+39.37
+
+LM
+29.01
+23.27
+24.21
+15.69
+23.38
+15.08
+23.81
+20.16
+24.50
+
+F1
+33.75
+28.18
+28.88
+20.11
+27.69
+19.11
+28.63
+24.22
+28.57
+
+MuSiQue
+Acc. Rounds
+47.55
+1.51
+31.46
+1.86
+39.87
+1.77
+23.74
+2.08
+37.43
+1.71
+21.58
+1.98
+41.24
+1.67
+25.82
+2.48
+39.75
+2.08
+
+Time
+29.87
+21.68
+48.46
+32.81
+52.98
+29.66
+43.98
+25.14
+47.51
+
+1 The RAG agents use LLaMA-3.1-8B, while other modules in the server use Qwen-Plus.
+
+5.2
+
+Ablation Studies
+
+Choice of TopK. Table 3 shows that selecting more clusters increases both agent-level and
+document-level answerable rates, which generally improves end-to-end LM/Acc. at the cost of
+invoking more agents and viewing more documents. A key observation is that increasing TopK
+from 1 to 5 yields a substantial gain, while further increasing it from 5 to 10 brings only marginal
+improvement, suggesting diminishing returns beyond moderate agent coverage. Notably, the final
+accuracy can exceed the answerable rate because the system falls back to a CoT-only response when
+the selected agents are judged unable to answer; in such cases, the LLM may still answer correctly
+using parametric knowledge. Finally, document-level answerable rates are consistently lower than
+agent-level rates, indicating that even when the right agent is selected, retrieval within its local index
+may still miss the most relevant evidence.
+5.3 Analysis with Wikipedia-related QA
+Table 4 compares the proposed RIRS with representative multi-agent routing baselines on four
+Wikipedia-based QA benchmarks under the WikiAgents corpus. We summarize the most salient
+findings below.
+Comparison with GoldRouter. As an error-free routing mechanism, GoldRouter serves as the
+upper bound in a multi-agent system, achieving the highest scores in LM, F1, and Accuracy, as well as
+the lowest values in rounds and response time. In contrast, all other methods (Chameleon, RouterDC,
+and RIRS) experience varying degrees of performance degradation. i.e., more query rounds but with
+lower accuracy. The degradation is owed to routing errors, highlighting the importance of designing
+an effective routing mechanism and underscoring the inherent challenge of dynamically estimating
+each agent’s expertise on-the-fly.
+Comparison with other routing methods. From Table 4, the accuracy ranking among the three
+routing methods consistently follows: RIRS > Chameleon > RouterDC, under the same dataset
+and backbone LLM. The advantage of RIRS is especially clear on harder multi-hop benchmarks
+and with the weaker backbone (LLaMA-3.1-8B), where RIRS improves accuracy by up to 8% over
+Chameleon and 15% over RouterDC. These results suggest that RIRS more reliably identifies agent
+knowledge boundaries. Concretely, RIRS builds cluster-level representations to characterize each
+agent’s knowledge capacity, enabling more accurate routing. By contrast, RouterDC approximates
+agent expertise via a fixed cache of historically answerable questions, and Chameleon relies on static
+textual descriptions; both signals can be incomplete and lead to misrouting. Notably, while RIRS
+may use slightly more rounds than Chameleon, it often runs faster overall because it avoids additional
+LLM calls during agent selection.
+Comparison with various LLMs. Using a stronger backbone (Qwen-Plus) consistently improves
+all methods over LLaMA-3.1-8B, as expected. Moreover, the mixed setting, which uses a stronger
+server-side controller (Qwen-Plus) with lightweight agent models, recovers much of the performance
+of Qwen-Plus while keeping agent-side costs low. Together with the response-evaluator results in
+Table 7, this suggests that a strong evaluator/controller is critical for reducing error propagation
+when intermediate agent responses are noisy. This design makes RIRS practical for deployment:
+Lightweight models can run at the RAG agents, allowing the underlying knowledge bases to remain
+local and generating evidence-backed responses even in resource-constrained settings. Meanwhile,
+the user-facing server is equipped with a stronger model to ensure the final response is precise.
+8
+
+Preprint. Under review.
+
+5.4
+
+Analysis for Multi-hop RAG
+
+This section analyzes the performance of our proposed method, RIRS, on the MHR benchmark under
+two NewsAgents settings: NewsAgent-Source (49 agents) and NewsAgent-Domain (six agents). As
+shown in Table 5 and Figure 3, we focus on two aspects: (i) comparing RIRS with single-agent RAG
+baselines, and (ii) examining how the number of RAG agents affects performance.
+Comparison with a Single-RAG-Agent System. Table 5 compares RIRS with both singleagent and multi-agent baselines under the NewsAgent-Source and NewsAgent-Domain settings.
+In the single-agent setting, all docuNewsAgent-Source
+NewsAgent-Domain
+ments are pooled into one centralized Methods
+Models
+Acc. Hall.1 Rounds Acc. Hall.1 Rounds
+RAG system and answered with EfficientRAG. Although this removes Single-RAG-Agent System
+Qwen
+81.80 1.19
+1.57
+routing, it also enlarges the retrieval EfficientRAG
+LLaMA 66.80 6.05
+1.32
+space and increases the chance of Multi-RAG-Agent System
+introducing irrelevant evidence. By
+89.32
+1.06
+90.31
+1.12
+Qwen
+contrast, RIRS partitions knowledge GoldRouter
+LLaMA 79.53
+1.08
+80.16
+1.18
+Qwen
+76.33 5.76
+1.84
+86.24 1.15
+1.73
+among specialized agents and itera- Chameleon
+1.31
+72.91 5.20
+1.44
+LLaMA 54.52 11.37
+tively routes each query to the most
+Qwen
+84.75 0.93
+1.65
+88.78 1.07
+1.66
+relevant agents, thereby reducing re- RIRS
+1.37
+75.12 4.73
+1.39
+LLaMA 71.91 4.91
+trieval noise and cross-topic interfer1
+Hall. means a hallucination rate, indicating the proportion of null queries incorrectly
+ence. As shown in Table 5, RIRS
+judged as answerable among all queries classified as answerable.
+achieves higher accuracy and lower
+hallucination rates than the single- Table 5: Performance comparison under NewsAgent-Source
+agent baselines. The advantage is and NewsAgent-Domain. Single-agent results are reported
+especially clear for multi-hop ques- only for NewsAgent-Source because both settings use the
+tions, where source-based or domain- same knowledge repository in that case.
+based partitions help isolate the evidence needed for each reasoning
+step. Compared with Chameleon, the
+gap is particularly pronounced under NewsAgent-Source, where outletlevel descriptions are often too coarse
+because a single outlet can cover
+(a) Qwen-Plus
+(b) LLaMA-3.1-8B
+many unrelated topics. In the more
+structured NewsAgent-Domain set- Figure 3: Performance comparison on MHR under different
+ting, Chameleon becomes stronger but query types.
+still lags behind RIRS.
+Discussion of Different Numbers of RAG Agents. From Table 5 and Figure 3, we observe a tradeoff between granularity and routing reliability. Using more agents provides finer-grained coverage
+and typically reduces the number of rounds needed to locate relevant evidence. However, a larger
+agent pool also increases routing uncertainty and can hurt accuracy. Compared with GoldRouter,
+performance degradation is more pronounced under NewsAgent-Source than under NewsAgentDomain. We attribute this gap to suboptimal agent formation in NewsAgent-Source: partitioning by
+news outlets yields agents with diverse, weakly structured topic coverage, which makes it harder to
+route queries to the right agents. Besides, the much larger number of agents in NewsAgent-Source
+further amplifies routing uncertainty.
+A closer comparison between the single-RAG-agent system and NewsAgent-Domain reveals the
+existence of an optimal number of agents for a given knowledge base. Using too few agents can
+lead to overly broad domain coverage, which reintroduces the challenge of retrieving irrelevant
+information. In contrast, the domain-based configuration results in more efficient and accurate
+resolution of complex, multi-hop questions.
+
+6
+
+Conclusion
+
+We study how to reliably answer user queries when knowledge is distributed across multiple business
+units and cannot be centralized due to privacy, compliance, or ownership constraints. To this end, we
+propose RIRS, an iterative routing framework that coordinates multiple RAG agents while preserving
+knowledge sovereignty. RIRS decouples offline knowledge summarization from online query solving:
+each agent summarizes its local corpus into centroid-based representations in the embedding space
+9
+
+Preprint. Under review.
+
+and maintains these summaries independently, while a user-facing server performs iterative refiningsolving and fuses evidence across agents and rounds. Experiments show that RIRS consistently
+outperforms strong multi-agent baselines, and its architecture supports practical deployment: agents
+can run lightweight models for grounded generation with local corpora, while the server uses a
+stronger model to synthesize reliable responses.
+
+Ethics Statement
+This work studies a realistic multi-agent question-answering setting in which knowledge is distributed
+across RAG agents and cannot be centralized. The proposed framework reduces unnecessary data
+exposure by sharing embedding-space summaries for routing. However, this design does not address
+two potential risks. In an agent-in-the-wild setting, malicious agents may return incomplete, misleading, or low-quality responses, and routing or evaluation errors may propagate across iterations,
+especially for complex multi-hop questions. To reduce this risk, RIRS requires evidence-backed
+responses, filters returned outputs through a server-side evaluator, and allows the system to stop or
+declare a query unanswerable when adequate support is unavailable. A second concern is privacy
+leakage: Similar to federated learning, the proposed RIRS offers a fundamental privacy protection
+because centroid summaries are more restrictive than sharing raw documents. However, it still reveals
+partial information about local knowledge, especially under repeated probing or after updates to an
+agent’s corpus. An important direction for future work is to study how additional privacy-preserving
+mechanisms, such as Gaussian or Laplace perturbation, affect routing accuracy, and to develop
+stronger privacy-preserving summarization and access-control mechanisms that preserve comparable
+performance.
+
+Reproducibility Statement
+We make reproducibility a priority in both the algorithmic design and the experimental setup. The
+paper specifies the full RIRS pipeline, including the offline knowledge summarization stage, the
+online query solving, the clustering objective, and the corresponding approximation algorithm. The
+appendix further provides pseudocode, theoretical analysis, step-by-step procedures, and the prompt
+templates used by the server modules and the RAG agents. The experimental section reports the
+datasets, corpus construction, backbone models, baselines, evaluation metrics, and implementation
+details needed to replicate the reported results. All methods are evaluated in an off-the-shelf setting
+without task-specific fine-tuning. At the same time, exact reproduction remains challenging because
+LLM-based generation is inherently stochastic, and this variance is amplified in multi-hop settings
+where later rounds depend on earlier query rewriting and response evaluation. To reduce the impact
+of randomness, each experiment is run three times, and the paper reports average results. We also
+disclose the main system components used in our implementation, including retrieval, chunking,
+model serving, and agent orchestration, and have released our code repository at GitHub to facilitate
+close reproduction of the experiments.
+
+References
+Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman,
+Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. Gpt-4 technical report.
+arXiv preprint arXiv:2303.08774, 2023.
+Parker Addison, Minh-Tuan H Nguyen, Tomislav Medan, Mohammad T Manzari, Brendan McElrone,
+Laksh Lalwani, Aboli More, Smita Sharma, Holger R Roth, Isaac Yang, et al. C-fedrag: A
+confidential federated retrieval-augmented generation system. arXiv preprint arXiv:2412.13163,
+2024.
+Akari Asai, Sewon Min, Zexuan Zhong, and Danqi Chen. Retrieval-based language models and
+applications. In Proceedings of the 61st Annual Meeting of the Association for Computational
+Linguistics (Volume 6: Tutorial Abstracts), pp. 41–46, 2023a.
+Akari Asai, Zeqiu Wu, Yizhong Wang, Avirup Sil, and Hannaneh Hajishirzi. Self-rag: Learning to
+retrieve, generate, and critique through self-reflection. arXiv preprint arXiv:2310.11511, 2023b.
+10
+
+Preprint. Under review.
+
+Jinze Bai, Shuai Bai, Yunfei Chu, Zeyu Cui, Kai Dang, Xiaodong Deng, Yang Fan, Wenbin Ge,
+Yu Han, Fei Huang, et al. Qwen technical report. arXiv preprint arXiv:2309.16609, 2023.
+Sebastian Borgeaud, Arthur Mensch, Jordan Hoffmann, Trevor Cai, Eliza Rutherford, Katie Millican,
+George Bm Van Den Driessche, Jean-Baptiste Lespiau, Bogdan Damoc, Aidan Clark, et al.
+Improving language models by retrieving from trillions of tokens. In International conference on
+machine learning, pp. 2206–2240. PMLR, 2022.
+Chi-Min Chan, Chunpu Xu, Ruibin Yuan, Hongyin Luo, Wei Xue, Yike Guo, and Jie Fu. Rq-rag:
+Learning to refine queries for retrieval augmented generation. arXiv preprint arXiv:2404.00610,
+2024.
+Danqi Chen, Adam Fisch, Jason Weston, and Antoine Bordes. Reading Wikipedia to answer opendomain questions. In Proceedings of the 55th Annual Meeting of the Association for Computational
+Linguistics (Volume 1: Long Papers), pp. 1870–1879, 2017.
+Guangyao Chen, Siwei Dong, Yu Shu, Ge Zhang, Jaward Sesay, Börje F Karlsson, Jie Fu, and Yemin
+Shi. Autoagents: A framework for automatic agent generation. arXiv preprint arXiv:2309.17288,
+2023a.
+Shuhao Chen, Weisen Jiang, Baijiong Lin, James T Kwok, and Yu Zhang. Routerdc: Querybased router by dual contrastive learning for assembling large language models. arXiv preprint
+arXiv:2409.19886, 2024a.
+Weize Chen, Yusheng Su, Jingwei Zuo, Cheng Yang, Chenfei Yuan, Chi-Min Chan, Heyang Yu, Yaxi
+Lu, Yi-Hsin Hung, Chen Qian, et al. Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors. In The Twelfth International Conference on Learning Representations,
+2023b.
+Zehui Chen, Kuikun Liu, Qiuchen Wang, Jiangning Liu, Wenwei Zhang, Kai Chen, and Feng Zhao.
+Mindsearch: Mimicking human minds elicits deep ai searcher. arXiv preprint arXiv:2407.20183,
+2024b.
+Yilun Du, Shuang Li, Antonio Torralba, Joshua B Tenenbaum, and Igor Mordatch. Improving
+factuality and reasoning in language models through multiagent debate. In Forty-first international
+conference on machine learning, 2024.
+Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha
+Letman, Akhil Mathur, Alan Schelten, Amy Yang, Angela Fan, et al. The llama 3 herd of models.
+arXiv preprint arXiv:2407.21783, 2024.
+Brian S Everitt, Sabine Landau, Morven Leese, and Daniel Stahl. Cluster analysis. 2011.
+Dawei Gao, Zitao Li, Xuchen Pan, Weirui Kuang, Zhijian Ma, Bingchen Qian, Fei Wei, Wenhao
+Zhang, Yuexiang Xie, Daoyuan Chen, et al. Agentscope: A flexible yet robust multi-agent platform.
+arXiv preprint arXiv:2402.14034, 2024.
+Taicheng Guo, Xiuying Chen, Yaqi Wang, Ruidi Chang, Shichao Pei, Nitesh V Chawla, Olaf Wiest,
+and Xiangliang Zhang. Large language model based multi-agents: A survey of progress and
+challenges. arXiv preprint arXiv:2402.01680, 2024.
+Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat, and Mingwei Chang. Retrieval augmented
+language model pre-training. In International conference on machine learning, pp. 3929–3938.
+PMLR, 2020.
+Xanh Ho, Anh-Khoa Duong Nguyen, Saku Sugawara, and Akiko Aizawa. Constructing a multi-hop
+qa dataset for comprehensive evaluation of reasoning steps. arXiv preprint arXiv:2011.01060,
+2020.
+Sirui Hong, Xiawu Zheng, Jonathan Chen, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang,
+Steven Ka Shing Yau, Zijuan Lin, Liyang Zhou, et al. Metagpt: Meta programming for multi-agent
+collaborative framework. arXiv preprint arXiv:2308.00352, 2023.
+11
+
+Preprint. Under review.
+
+Michael Iannelli, Sneha Kuchipudi, and Vera Dvorak. Sla management in reconfigurable multi-agent
+rag: A systems approach to question answering. arXiv preprint arXiv:2412.06832, 2024.
+Gautier Izacard and Edouard Grave. Leveraging passage retrieval with generative models for open
+domain question answering. arXiv preprint arXiv:2007.01282, 2020.
+Gautier Izacard, Mathilde Caron, Lucas Hosseini, Sebastian Riedel, Piotr Bojanowski, Armand
+Joulin, and Edouard Grave. Unsupervised dense information retrieval with contrastive learning.
+arXiv preprint arXiv:2112.09118, 2021.
+Zhengbao Jiang, Frank F Xu, Luyu Gao, Zhiqing Sun, Qian Liu, Jane Dwivedi-Yu, Yiming Yang,
+Jamie Callan, and Graham Neubig. Active retrieval augmented generation. arXiv preprint
+arXiv:2305.06983, 2023.
+Isaac Johnson, Martin Gerlach, and Diego Sáez-Trumper. Language-agnostic topic classification for
+wikipedia. WWW ’21: Companion Proceedings of the Web Conference 2021, pp. 594–601, 2021.
+Ashutosh Joshi, Sheikh Muhammad Sarwar, Samarth Varshney, Sreyashi Nag, Shrivats Agrawal, and
+Juhi Naik. Reaper: Reasoning based retrieval planning for complex rag systems. In Proceedings
+of the 33rd ACM International Conference on Information and Knowledge Management, pp.
+4621–4628, 2024.
+Jincheol Jung, Hongju Jeong, and Eui-Nam Huh. Federated learning and rag integration: a scalable
+approach for medical large language models. In 2025 International Conference on Artificial
+Intelligence in Information and Communication (ICAIIC), pp. 0968–0973. IEEE, 2025.
+Vladimir Karpukhin, Barlas Oğuz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi
+Chen, and Wen-tau Yih. Dense passage retrieval for open-domain question answering. arXiv
+preprint arXiv:2004.04906, 2020.
+Jungo Kasai, Keisuke Sakaguchi, Ronan Le Bras, Akari Asai, Xinyan Yu, Dragomir Radev, Noah A
+Smith, Yejin Choi, Kentaro Inui, et al. Realtime qa: what’s the answer right now? Advances in
+Neural Information Processing Systems, 36, 2024.
+Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur Parikh, Chris
+Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, Kenton Lee, et al. Natural questions: a
+benchmark for question answering research. Transactions of the Association for Computational
+Linguistics, 7:453–466, 2019.
+Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E.
+Gonzalez, Hao Zhang, and Ion Stoica. Efficient memory management for large language model
+serving with pagedattention. In Proceedings of the ACM SIGOPS 29th Symposium on Operating
+Systems Principles, 2023.
+Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal,
+Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al. Retrieval-augmented generation for knowledge-intensive nlp tasks. Advances in Neural Information Processing Systems, 33:
+9459–9474, 2020.
+Ao Li, Yuexiang Xie, Songze Li, Fugee Tsung, Bolin Ding, and Yaliang Li. Agent-oriented planning
+in multi-agent systems. arXiv preprint arXiv:2410.02189, 2024.
+Guohao Li, Hasan Hammoud, Hani Itani, Dmitrii Khizbullin, and Bernard Ghanem. Camel: Communicative agents for" mind" exploration of large language model society. Advances in Neural
+Information Processing Systems, 36:51991–52008, 2023a.
+Xiaonan Li, Changtai Zhu, Linyang Li, Zhangyue Yin, Tianxiang Sun, and Xipeng Qiu. Llatrieval:
+Llm-verified retrieval for verifiable generation. arXiv preprint arXiv:2311.07838, 2023b.
+Yangning Li, Weizhi Zhang, Yuyao Yang, Wei-Chieh Huang, Yaozu Wu, Junyu Luo, Yuanchen Bei,
+Henry Peng Zou, Xiao Luo, Yusheng Zhao, et al. Towards agentic rag with deep reasoning: A
+survey of rag-reasoning systems in llms. arXiv preprint arXiv:2507.09477, 2, 2025.
+Jerry Liu. LlamaIndex, 11 2022. URL https://github.com/jerryjliu/llama_index.
+12
+
+Preprint. Under review.
+
+Xiaoze Liu, Ruowang Zhang, Weichen Yu, Siheng Xiong, Liu He, Feijie Wu, Hoin Jung, Matt
+Fredrikson, Xiaoqian Wang, and Jing Gao. The vision wormhole: Latent-space communication in
+heterogeneous multi-agent systems. arXiv preprint arXiv:2602.15382, 2026.
+Keming Lu, Hongyi Yuan, Runji Lin, Junyang Lin, Zheng Yuan, Chang Zhou, and Jingren Zhou.
+Routing to the expert: Efficient reward-guided ensemble of large language models. arXiv preprint
+arXiv:2311.08692, 2023.
+Pan Lu, Baolin Peng, Hao Cheng, Michel Galley, Kai-Wei Chang, Ying Nian Wu, Song-Chun Zhu,
+and Jianfeng Gao. Chameleon: Plug-and-play compositional reasoning with large language models.
+Advances in Neural Information Processing Systems, 36, 2024a.
+Yining Lu, Haoping Yu, and Daniel Khashabi. Gear: Augmenting language models with generalizable
+and efficient tool resolution. In Proceedings of the 18th Conference of the European Chapter of
+the Association for Computational Linguistics (Volume 1: Long Papers), pp. 112–138, 2024b.
+Xinbei Ma, Yeyun Gong, Pengcheng He, Hai Zhao, and Nan Duan. Query rewriting for retrievalaugmented large language models. arXiv preprint arXiv:2305.14283, 2023.
+Alex Mallen, Akari Asai, Victor Zhong, Rajarshi Das, Daniel Khashabi, and Hannaneh Hajishirzi.
+When not to trust language models: Investigating effectiveness of parametric and non-parametric
+memories. arXiv preprint arXiv:2212.10511, 2022.
+Kai Mei, Wujiang Xu, Minghao Guo, Shuhang Lin, and Yongfeng Zhang. Omnirouter: Budget
+and performance controllable multi-llm routing. ACM SIGKDD Explorations Newsletter, 27(2):
+107–116, 2025.
+Fionn Murtagh and Pedro Contreras. Algorithms for hierarchical clustering: an overview. Wiley
+interdisciplinary reviews: data mining and knowledge discovery, 2(1):86–97, 2012.
+Isaac Ong, Amjad Almahairi, Vincent Wu, Wei-Lin Chiang, Tianhao Wu, Joseph E Gonzalez,
+M Waleed Kadous, and Ion Stoica. Routellm: Learning to route llms with preference data. arXiv
+preprint arXiv:2406.18665, 2024.
+Shishir G Patil, Tianjun Zhang, Xin Wang, and Joseph E Gonzalez. Gorilla: Large language
+model connected with massive apis. Advances in Neural Information Processing Systems, 37:
+126544–126565, 2024.
+Ofir Press, Muru Zhang, Sewon Min, Ludwig Schmidt, Noah A Smith, and Mike Lewis. Measuring
+and narrowing the compositionality gap in language models. arXiv preprint arXiv:2210.03350,
+2022.
+Stephen Robertson, Hugo Zaragoza, and Michael Taylor. Simple bm25 extension to multiple
+weighted fields. In Proceedings of the thirteenth ACM international conference on Information
+and knowledge management, pp. 42–49, 2004.
+Aymeric Roucher. Agentic RAG: turbocharge your RAG with query reformulation and self-query.
+https://huggingface.co/learn/cookbook/en/agent_rag, 2024. URL https:
+//huggingface.co/learn/cookbook/en/agent_rag. Accessed: 2025-02-15.
+Zhihong Shao, Yeyun Gong, Yelong Shen, Minlie Huang, Nan Duan, and Weizhu Chen. Enhancing
+retrieval-augmented large language models with iterative retrieval-generation synergy. arXiv
+preprint arXiv:2305.15294, 2023.
+Shweta Sharma, Neha Batra, et al. Comparative study of single linkage, complete linkage, and ward
+method of agglomerative clustering. In 2019 international conference on machine learning, big
+data, cloud and parallel computing (COMITCon), pp. 568–573. IEEE, 2019.
+Weijia Shi, Sewon Min, Michihiro Yasunaga, Minjoon Seo, Rich James, Mike Lewis, Luke Zettlemoyer, and Wen-tau Yih. Replug: Retrieval-augmented black-box language models. arXiv preprint
+arXiv:2301.12652, 2023.
+13
+
+Preprint. Under review.
+
+Zitong Shi, Guancheng Wan, Wenke Huang, Guibin Zhang, Jiawei Shao, Mang Ye, and Carl
+Yang. Privacy-enhancing paradigms within federated multi-agent systems. arXiv preprint
+arXiv:2503.08175, 2025.
+Aditi Singh, Abul Ehtesham, Saket Kumar, and Tala Talaei Khoei. Agentic retrieval-augmented
+generation: A survey on agentic rag. arXiv preprint arXiv:2501.09136, 2025.
+Weihang Su, Yichen Tang, Qingyao Ai, Zhijing Wu, and Yiqun Liu. Dragin: Dynamic retrieval
+augmented generation based on the real-time information needs of large language models. arXiv
+preprint arXiv:2403.10081, 2024.
+Yixuan Tang and Yi Yang. Multihop-rag: Benchmarking retrieval-augmented generation for multi-hop
+queries. arXiv preprint arXiv:2401.15391, 2024.
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée
+Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. Llama: Open and
+efficient foundation language models. arXiv preprint arXiv:2302.13971, 2023a.
+Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay
+Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2: Open foundation
+and fine-tuned chat models. arXiv preprint arXiv:2307.09288, 2023b.
+Harsh Trivedi, Niranjan Balasubramanian, Tushar Khot, and Ashish Sabharwal. Interleaving retrieval
+with chain-of-thought reasoning for knowledge-intensive multi-step questions. arXiv preprint
+arXiv:2212.10509, 2022a.
+Harsh Trivedi, Niranjan Balasubramanian, Tushar Khot, and Ashish Sabharwal. Musique: Multihop
+questions via single-hop question composition. Transactions of the Association for Computational
+Linguistics, 10:539–554, 2022b.
+Prakhar Verma, Sukruta Prakash Midigeshi, Gaurav Sinha, Arno Solin, Nagarajan Natarajan, and
+Amit Sharma. Plan × rag: Planning-guided retrieval augmented generation. arXiv preprint
+arXiv:2410.20753, 2024.
+Chenxu Wang, Hao Li, Yiqun Zhang, Linyao Chen, Jianhao Chen, Ping Jian, Qiaosheng Zhang, and
+Shuyue Hu. Icl-router: In-context learned model representations for llm routing. In Proceedings of
+the AAAI Conference on Artificial Intelligence, volume 40, pp. 33413–33421, 2026.
+Wang Wei, Tiankai Yang, Hongjie Chen, Yue Zhao, Franck Dernoncourt, Ryan A Rossi, and Hoda
+Eldardiry. Learning to route llms from bandit feedback: One policy, many trade-offs. arXiv
+preprint arXiv:2510.07429, 2025.
+Lilian Weng. LLM powered autonomous agents. https://lilianweng.github.io/
+URL https://lilianweng.github.io/
+posts/2023-06-23-agent/, 2023.
+posts/2023-06-23-agent/. Accessed: 2025-01-09.
+Feijie Wu, Zitao Li, Yaliang Li, Bolin Ding, and Jing Gao. Fedbiot: Llm local fine-tuning in federated
+learning without full model. In Proceedings of the 30th ACM SIGKDD conference on knowledge
+discovery and data mining, pp. 3345–3355, 2024a.
+Feijie Wu, Xiaoze Liu, Haoyu Wang, Xingchen Wang, Lu Su, and Jing Gao. Towards federated rlhf
+with aggregated client preference for llms. arXiv preprint arXiv:2407.03038, 2024b.
+Feijie Wu, Weiwu Zhu, Yuxiang Zhang, Soumya Chatterjee, Jiarong Zhu, Fan Mo, Rodin Luo, and
+Jing Gao. Portool: Tool-use llm training with rewarded tree. arXiv preprint arXiv:2510.26020,
+2025.
+Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Shaokun Zhang, Erkang Zhu, Beibin Li,
+Li Jiang, Xiaoyun Zhang, and Chi Wang. Autogen: Enabling next-gen llm applications via
+multi-agent conversation framework. arXiv preprint arXiv:2308.08155, 2023.
+Shangyu Wu, Ying Xiong, Yufei Cui, Haolun Wu, Can Chen, Ye Yuan, Lianming Huang, Xue Liu,
+Tei-Wei Kuo, Nan Guan, et al. Retrieval-augmented generation for natural language processing: A
+survey. arXiv preprint arXiv:2407.13193, 2024c.
+14
+
+Preprint. Under review.
+
+Guangzhi Xiong, Qiao Jin, Zhiyong Lu, and Aidong Zhang. Benchmarking retrieval-augmented
+generation for medicine. arXiv preprint arXiv:2402.13178, 2024.
+Peng Xu, Wei Ping, Xianchao Wu, Lawrence McAfee, Chen Zhu, Zihan Liu, Sandeep Subramanian,
+Evelina Bakhturina, Mohammad Shoeybi, and Bryan Catanzaro. Retrieval meets long context
+large language models. arXiv preprint arXiv:2310.03025, 2023.
+Shi-Qi Yan, Jia-Chen Gu, Yun Zhu, and Zhen-Hua Ling. Corrective retrieval augmented generation.
+arXiv preprint arXiv:2401.15884, 2024.
+An Yang, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chengyuan Li,
+Dayiheng Liu, Fei Huang, Haoran Wei, et al. Qwen2. 5 technical report. arXiv preprint
+arXiv:2412.15115, 2024a.
+Diji Yang, Jinmeng Rao, Kezhen Chen, Xiaoyuan Guo, Yawen Zhang, Jie Yang, and Yi Zhang. Im-rag:
+Multi-round retrieval-augmented generation through learning inner monologues. In Proceedings
+of the 47th International ACM SIGIR Conference on Research and Development in Information
+Retrieval, pp. 730–740, 2024b.
+Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William W Cohen, Ruslan Salakhutdinov,
+and Christopher D Manning. Hotpotqa: A dataset for diverse, explainable multi-hop question
+answering. arXiv preprint arXiv:1809.09600, 2018.
+Rui Ye, Shuo Tang, Rui Ge, Yaxin Du, Zhenfei Yin, Siheng Chen, and Jing Shao. Mas-gpt: Training
+llms to build llm-based multi-agent systems. arXiv preprint arXiv:2503.03686, 2025.
+Wenhao Yu. Retrieval-augmented generation across heterogeneous knowledge. In Proceedings of the
+2022 conference of the North American chapter of the association for computational linguistics:
+human language technologies: student research workshop, pp. 52–58, 2022.
+Yue Yu, Wei Ping, Zihan Liu, Boxin Wang, Jiaxuan You, Chao Zhang, Mohammad Shoeybi, and
+Bryan Catanzaro. Rankrag: Unifying context ranking with retrieval-augmented generation in llms.
+arXiv preprint arXiv:2407.02485, 2024.
+Siyu Yuan, Kaitao Song, Jiangjie Chen, Xu Tan, Yongliang Shen, Kan Ren, Dongsheng Li, and Deqing
+Yang. Easytool: Enhancing llm-based agents with concise tool instruction. In Proceedings of the
+2025 Conference of the Nations of the Americas Chapter of the Association for Computational
+Linguistics: Human Language Technologies (Volume 1: Long Papers), pp. 951–972, 2025.
+Yanwei Yue, Guibin Zhang, Boyang Liu, Guancheng Wan, Kun Wang, Dawei Cheng, and Yiyan
+Qi. Masrouter: Learning to route llms for multi-agent systems. arXiv preprint arXiv:2502.11133,
+2025.
+Taolin Zhang, Dongyang Li, Qizhou Chen, Chengyu Wang, and Xiaofeng He. Belle: A bi-level multiagent reasoning framework for multi-hop question answering. arXiv preprint arXiv:2505.11811,
+2025a.
+Xin Zhang, Yanzhao Zhang, Dingkun Long, Wen Xie, Ziqi Dai, Jialong Tang, Huan Lin, Baosong
+Yang, Pengjun Xie, Fei Huang, et al. mgte: Generalized long-context text representation and
+reranking models for multilingual text retrieval. arXiv preprint arXiv:2407.19669, 2024.
+Zheyuan Zhang, Kaiwen Shi, Zhengqing Yuan, Zehong Wang, Tianyi Ma, Keerthiram Murugesan,
+Vincent Galassi, Chuxu Zhang, and Yanfang Ye. Agentrouter: A knowledge-graph-guided llm
+router for collaborative multi-agent question answering. arXiv preprint arXiv:2510.05445, 2025b.
+Dongfang Zhao. Frag: Toward federated vector database management for collaborative and secure
+retrieval-augmented generation. arXiv preprint arXiv:2410.13272, 2024.
+Qinlin Zhao, Jindong Wang, Yixuan Zhang, Yiqiao Jin, Kaijie Zhu, Hao Chen, and Xing Xie.
+Competeai: Understanding the competition behaviors in large language model-based agents. arXiv
+preprint arXiv:2310.17512, 2023.
+15
+
+Preprint. Under review.
+
+YanZhao Zheng, ZhenTao Zhang, Chao Ma, YuanQiang Yu, JiHuan Zhu, Baohua Dong, and
+Hangcheng Zhu. Skillrouter: Retrieve-and-rerank skill selection for llm agents at scale. arXiv
+preprint arXiv:2603.22455, 2026.
+Ziyuan Zhuang, Zhiyang Zhang, Sitao Cheng, Fangkai Yang, Jia Liu, Shujian Huang, Qingwei Lin,
+Saravan Rajmohan, Dongmei Zhang, and Qi Zhang. Efficientrag: Efficient retriever for multi-hop
+question answering. arXiv preprint arXiv:2408.04259, 2024.
+
+16
+
+Preprint. Under review.
+
+A
+
+More Details of RIRS
+
+This section complements Section 4 by presenting implementation-level details and additional analysis that are omitted from the main text due to space constraints. We focus on (i) why centroid-based
+knowledge clustering is a reliable routing primitive, and (ii) how the central server operationalizes
+RIRS through lightweight, knowledge-free modules (evaluation, summarization, and query refinement) that interact with routed RAG agents using quoted evidence. Throughout, we follow the
+notation and workflow in the main text.
+A.1
+
+Optimization of Equation (1): Approximate Max-Min Similarity Clustering
+
+Equation (1) seeks a partition of the local embeddings into n non-empty clusters that maximizes the
+smallest within-cluster cosine similarity. Exact optimization over all partitions is combinatorial. We
+therefore adopt a two-stage greedy approximation, summarized in Algorithm 1. The first stage is
+motivated by classic work on hierarchical clustering and greedy complete-linkage agglomeration
+(Everitt et al., 2011; Murtagh & Contreras, 2012; Sharma et al., 2019). The second stage adds an
+R-round local refinement to further improve the max-min objective.
+Let êi = ei /∥ei ∥ denote the normalized embedding of knowledge piece i, and let Sij = êi⊤ ê j be the
+cosine similarity between normalized embeddings. For any non-empty cluster C, define its bottleneck
+similarity by
+(
++∞,
+|C | ≤ 1,
+b(C ) :=
+mini,j∈C, i< j Sij , |C | ≥ 2.
+For a partition C = {C1 , . . . , Cn }, define the partition bottleneck objective
+B(C) := min b(Ck ).
+k ∈[n]
+
+Then Equation (1) is equivalent to maximizing B(C) over all partitions into n non-empty clusters.
+Stage I: Cached complete-link clustering. We initialize each embedding as a singleton cluster.
+For two current clusters A and B, define their merge score by
+g( A, B) := min Sij .
+i ∈ A, j∈ B
+
+At each step, Stage I merges the pair of active clusters with the largest value of g( A, B). This rule is
+the complete-link analogue of greedy agglomeration: it favors merges whose worst cross-cluster pair
+is as strong as possible, and thus delays deterioration of the smallest within-cluster similarity. To
+make this stage efficient, we cache inter-cluster bottleneck scores and maintain candidate merges
+in a max-heap. After a merge M = A ∪ B, the score between M and any other active cluster C is
+updated by
+g( M, C ) = min{ g( A, C ), g( B, C )},
+which is the standard complete-link recurrence. Stage I stops once only n active clusters remain.
+The first stage is greedy and does not guarantee a globally optimal solution to Equation (1). Its role is
+to construct a strong initialization that already respects the max-min structure of the objective.
+Stage II: Worst-pair local refinement. The agglomerative initialization can still be suboptimal
+because early merge decisions are irreversible. We therefore perform up to R rounds of local
+refinement. At each round, we identify the current worst cluster
+A⋆ ∈ arg min b(C ),
+C ∈C
+
+and then identify its worst pair
+
+( a⋆ , b⋆ ) ∈ arg
+
+min
+
+i,j∈ A⋆ , i < j
+
+Sij .
+
+We consider moving one endpoint of this worst pair, namely a⋆ or b⋆ , from A⋆ to another cluster D ∈
+C \ { A⋆ }. Among all such candidate moves, we select the one that yields the largest improvement
+17
+
+Preprint. Under review.
+
+Algorithm 1 Approximate Max-Min Similarity Clustering
+Require: Embeddings E = {e1 , . . . , em }, target number of clusters n, refinement rounds R ≥ 0
+Ensure: Partition C = {C1 , . . . , Cn } and centroids {c̄1 , . . . , c̄n }
+1: Normalize each embedding: êi ← ei /∥ei ∥ for all i ∈ [m]
+2: Compute cosine similarity matrix S ∈ Rm×m , where Sij = êi⊤ ê j
+
+3: Initialize C ← {1}, {2}, . . . , {m}
+4: Define cluster bottleneck
+(
++∞,
+|C | ≤ 1,
+b(C ) ←
+mini,j∈C, i< j Sij , |C | ≥ 2
+5: Stage I: Cached complete-link clustering
+6: Initialize active( A) ← true for all A ∈ C
+7: Initialize G [{i }, { j}] ← Sij for all i ̸= j
+8: Initialize an empty max-heap H
+9: for all unordered pairs of distinct clusters ( A, B) with A, B ∈ C do
+10:
+Push ( G [ A, B], A, B) into H
+11: end for
+12: while number of active clusters > n do
+13:
+repeat
+14:
+Pop the top entry (γ, A, B) from H
+15:
+until active( A) and active( B)
+16:
+M ← A∪B
+17:
+active( A) ← false, active( B) ← false, active( M ) ← true
+18:
+for all active clusters C with C ̸= M do
+19:
+G [ M, C ] ← min{ G [ A, C ], G [ B, C ]}; set G [C, M ] ← G [ M, C ]
+20:
+Push ( G [ M, C ], M, C ) into H
+21:
+end for
+22: end while
+23: C ← { A ∈ C : active( A)}
+24: Stage II: Worst-pair local refinements
+25: for r = 1 to R do
+26:
+A ← arg minC∈C b(C ) and ( a, b) ← arg mini,j∈ A, i< j Sij
+27:
+bestScore ← b( A), bestMove ← ∅
+28:
+for all p ∈ { a, b} and D ∈ C \ { A} do
+29:
+
+o
+n
+
+newScore ← min b( A \ { p}), min b( D ), min j∈ D S pj , minX ∈C\{ A,D} b( X )
+
+30:
+if newScore > bestScore then
+31:
+bestScore ← newScore, bestMove ← ( p, A, D )
+32:
+end if
+33:
+end for
+34:
+if bestMove = ∅ then
+35:
+break
+36:
+end if
+37:
+Apply bestMove by moving p from A to D
+38: end for
+39: Relabel the clusters in C as {C1 , . . . , Cn }
+40: Stage III: Centroid computation
+41: for k = 1 to n do
+42:
+Compute centroid:
+
+c̄k ←
+
+1
+ei
+|Ck | i∈∑
+C
+k
+
+43: end for
+44: return C = {C1 , . . . , Cn } and {c̄1 , . . . , c̄n }
+
+18
+
+Preprint. Under review.
+
+in B(C), and we accept it only if the objective increases strictly. If no improving move exists, the
+refinement stage terminates early.
+This refinement is motivated by the observation that the max-min objective is controlled by the weakest
+cluster and, within that cluster, by its weakest pair. Focusing local search on this bottleneck is therefore
+a direct way to improve the overall partition quality. The procedure is easiest to describe under a mild
+generic-position assumption that distinct embedding pairs have distinct cosine similarities. Under
+this assumption, the worst cluster and the worst pair at each round are uniquely defined. In practice,
+this assumption is natural for dense embeddings of different knowledge pieces, since exact equality
+between two pairwise cosine similarities is rare. If ties do occur, they can be broken arbitrarily
+without changing the procedure.
+Centroid computation. After the final partition C = {C1 , . . . , Cn } is obtained, the agent computes
+one centroid for each cluster:
+1
+c̄k =
+ei ,
+k = 1, . . . , n.
+|Ck | i∈∑
+C
+k
+
+Only these centroids are uploaded to the server for routing.
+Complexity analysis. The space complexity is O(m2 ), dominated by the pairwise similarity matrix
+and the cached inter-cluster bottleneck scores.
+The time complexity is O(m2 ( R + log m)). Computing the pairwise cosine similarity matrix requires
+O(m2 ) time. In Stage I, the heap initialization and the sequence of greedy complete-link merges
+together cost O(m2 log m). In Stage II, each refinement round evaluates candidate moves for the
+current worst pair against the remaining clusters, which leads to O(m2 ) time per round in the worst
+case. Over R rounds, this gives O( Rm2 ). Combining both stages yields the total complexity
+
+O m2 ( R + log m) .
+In our implementation, we use this two-stage approximation because it is simple, deterministic given
+tie-breaking, and directly targets the bottleneck structure of Equation (1) without introducing any
+additional learned parameters.
+A.2
+
+Effectiveness of Knowledge Summarization
+
+This subsection provides additional justification for centroid-based routing in RIRS. In the offline
+stage (Section 4.1), each RAG agent partitions its local knowledge-piece embeddings into disjoint
+clusters and uploads only the corresponding centroids to the server. At inference time, the server
+routes a user query by retrieving the most similar centroids and selecting the associated agents/clusters.
+The key intuition is that if a cluster is semantically coherent, then its centroid remains a reliable proxy
+for locating that cluster (and thus the responsible RAG agent) using cosine similarity.
+We formalize this intuition in a similarity-bounded (threshold-based) clustering setting and show
+that centroid-based search is bounded: a query cannot be simultaneously very close to a relevant
+knowledge piece and arbitrarily far from the centroid of the piece’s cluster. This bound clarifies when
+centroid routing is reliable and how clustering quality (coherence) impacts routing robustness.
+Setup and Notation. Consider an RAG agent with m knowledge pieces whose embeddings are
+{e1 , . . . , em }. Let {c1 , . . . , cn } be a partition of these embeddings into n non-empty clusters. For
+a cluster ci , its centroid is c̄i = |c1 | ∑ê∈ci ê. Let sim(·, ·) denote cosine similarity. We say ci is
+i
+s-coherent if for any two distinct embeddings ea , eb ∈ ci , sim(ea , eb ) ≥ s with s > 0.
+Theorem A.1 (Embedding-to-centroid bound). If a cluster ci is s-coherent, then for any embedding
+e ∈ ci and its centroid c̄i , we have sim(e, c̄i ) ≥ s.
+Proof. By definition, c̄i = |c1 | ∑ê∈ci ê. For any e ∈ ci ,
+i
+
+sim(e, c̄i ) =
+
+e · c̄i
+1
+e · ê
+1
+∥ê∥ · sim(e, ê)
+=
+=
+.
+∑
+∥e∥ · ∥c̄i ∥
+|ci | ê∑
+∥
+e
+∥
+·
+∥
+c̄
+∥
+|
+c
+|
+∥c̄i ∥
+i
+i ê∈c
+∈c
+i
+
+i
+
+19
+
+Preprint. Under review.
+
+Table 6: Performance under different clustering strategies on the NQ dataset (TopK= 5). Thresholdbased clustering and square-root clustering achieve marginally different accuracy, but threshold-based
+clustering requires the server to store substantially more clusters per agent, which is less practical.
+Clustering strategy
+Threshold-based (s √
+= 0.7)
+Square-root (n = ⌊ m⌋)
+
+Avg Sel. Agents
+(Eff. Rate)
+3.08 (39.61%)
+3.32 (37.47%)
+
+Agent-Level
+Ans. Rate
+75.13%
+76.47%
+
+#Clusters
+Per Agent
+113.97
+73.19
+
+Min/Max
+#Clusters
+11 / 267
+4 / 214
+
+LLaMA-3.1-8B
+LM
+Acc.
+50.17% 63.34%
+50.98% 63.96%
+
+Qwen-Plus
+LM
+Acc.
+61.83% 79.86%
+62.05% 80.05%
+
+Since ci is s-coherent, sim(e, ê) ≥ s for all ê ∈ ci , hence
+1
+
+∥ê∥
+1
+∥ê∥ · s
+|c | ∑ê∈ci
+= s· i
+≥ s,
+sim(e, c̄i ) ≥
+∑
+|ci | ê∈c ∥c̄i ∥
+∥c̄i ∥
+i
+
+where the last inequality follows from
+1
+1
+∥ê∥ ≥
+∑ ê = ∥c̄i ∥.
+|ci | ê∑
+|
+c
+i | ê∈c
+∈c
+i
+
+i
+
+Theorem A.2 (Query-to-centroid bound). Let u be a user-query embedding and e be a relevant
+knowledge-piece embedding such that sim(u, e) ≥ k for some k > 0. If e belongs to an s-coherent
+cluster with centroid c̄, then
+q
+sim(u, c̄) ≥ ks − (1 − k2 )(1 − s2 ).
+Proof. From Theorem A.1, sim(e, c̄) ≥ s. Let α be the angle√
+between e and c̄ and β√be the angle
+between u and e. Then cos α ≥ s and cos β ≥ k, so sin α ≤ 1 − s2 and sin β ≤ 1 − k2 . The
+angle between u and c̄ is α + β, hence
+q
+sim(u, c̄) = cos(α + β) = cos α cos β − sin α sin β ≥ ks − (1 − k2 )(1 − s2 ).
+
+Conclusion. Theorems A.1 and A.2 imply that centroid-based routing is bounded under the scoherence assumption: if a query is close to a relevant knowledge piece (large k) and clusters are
+coherent (large s), then the query cannot be arbitrarily far from the corresponding centroid. Therefore,
+the following failure mode cannot occur in an unbounded way: "a highly specific user query may
+be very close to the most relevant single knowledge piece but relatively far from the centroid vector
+of the entire cluster to which the knowledge piece belongs." In practice, centroids can still be less
+similar than the best individual knowledge piece (because they average multiple pieces), but the gap
+is bounded by the expression in Theorem A.2.
+Practical design choices: TopK selection and square-root clusters. While the threshold-based
+setup enables analysis, production deployment requires controllable routing cost and stable latency.
+In RIRS, we therefore adopt two practical choices.
+First, we select candidate clusters (and thus RAG agents) by TopK, as described in Section 4.2. A
+similarity-threshold rule (select all centroids with similarity greater than a designated threshold) is
+difficult to control: broad queries can match many centroids, leading to unpredictable fan-out and
+unstable latency/cost. Although Theorem A.2 relates cluster coherence to query-centroid similarity,
+any analytically "safe" threshold can be overly permissive in realistic regimes, still admitting many
+weakly related clusters. In contrast, TopK is a direct, monotone cost knob and is commonly used to
+achieve controllable latency and budget constraints.
+√
+Second, as mentioned in Section 4.1, we set the number of clusters per agent to n = ⌊ m⌋. This
+heuristic is inspired by the success of inverted file indexing in database practice: it provides a
+predictable, sublinear growth of the number of centroids, limiting server-side storage and similaritysearch cost. Intuitively, agents with more knowledge pieces may have more overlapping or redundant
+content and thus can be represented with more clusters, while agents with fewer knowledge pieces
+are often more specialized and do not require fine-grained partitioning. This design choice is also
+20
+
+Preprint. Under review.
+
+supported empirically: Table 6 shows that square-root clustering achieves comparable accuracy to
+threshold-based clustering while requiring substantially fewer clusters per agent, reducing server-side
+index/storage overhead.
+A similarity threshold can also be used to determine the number of clusters, but it is difficult to
+calibrate: a high threshold may produce many small clusters, inflating the number of uploaded
+centroids and thus the server’s index size. Moreover, under global TopK selection, an excessive
+number of clusters per agent can reduce cross-agent coverage: multiple centroids from the same agent
+may occupy the TopK list, decreasing the number of unique selected agents and harming performance
+on cross-domain queries. For these reasons, we adopt the square-root heuristic and TopK selection as
+a production-friendly default.
+A.3
+
+Server Modules
+
+RIRS coordinates multiple RAG agents using a central server. Beyond routing, the server relies on
+several server modules to (i) filter unreliable or irrelevant responses, (ii) consolidate evidence-backed
+content, and (iii) refine queries when multi-hop reasoning is required. These server modules do
+not maintain private knowledge bases; they operate only on the user query, the routed RAG agent
+responses, and the quoted evidence returned by those RAG agents. Prompt templates are provided in
+Figures 9 to 11.
+Response Evaluator (Prompt in Figure 9). The Response Evaluator is the first checkpoint after
+collecting responses from selected RAG agents. Since the server lacks domain-specific knowledge,
+the evaluator uses a common-sense and logic-based assessment with three criteria: (i) Relevance:
+whether the response helps answer the query (even if incomplete); (ii) Evidence-based support:
+whether key claims are supported by explicitly quoted evidence; and (iii) Logical coherence: whether
+the response is consistent and free of contradictions. For single-hop settings, the evaluator labels each
+response as addressed or not addressed. For multi-hop settings, it further distinguishes fully addressed
+from partially addressed among the addressed responses. This filtering is critical because irrelevant
+RAG agents may still produce plausible but misleading responses; propagating such responses can
+degrade summarization and cause error accumulation across rounds.
+Response Summarizer (Prompt in Figure 10). The Response Summarizer consolidates evaluatorapproved responses into either a final answer or an intermediate solution. When at least one response
+is labeled fully addressed, the summarizer produces the final answer by integrating evidence-backed
+content from one or more fully addressed responses. When no response is fully addressed but some
+are partially addressed, the summarizer first synthesizes a unified intermediate solution from the
+valid partial evidence and then re-evaluates whether the unified solution fully resolves the query.
+If it is deemed fully addressed, the summarizer outputs the final answer; otherwise, it outputs the
+intermediate solution for query refinement. This design benefits from evaluator filtering, since
+summarization is more reliable when the input is shorter and contains fewer irrelevant responses.
+Question Simplifier (Prompt in Figure 11). When the current query is not fully resolved, the
+Question Simplifier refines it for the next round. Given the original query and the current intermediate
+solution, it: (i) identifies which components of the query have already been addressed (with evidence),
+(ii) enumerates unresolved aspects that remain necessary for correctness, and (iii) generates a refined
+query that removes resolved parts and focuses on unresolved aspects. This on-the-fly refinement
+converts partial progress into a targeted next query, enabling iterative multi-hop progress without
+requiring a rigid precomputed question decomposition plan.
+A.4
+
+Step-by-Step Procedure for Iterative Refining-Solving
+
+The main body (Section 4.2) introduces iterative refining-solving at a high level. This subsection
+presents a step-by-step procedure that clarifies how routing and server modules interact across rounds
+for multi-hop queries.
+Inputs. A user query q0 ; a server-side centroid index (uploaded by all RAG agents); a TopK value
+K; and a maximum round limit T.
+Outputs. A final answer with supporting evidence, or an explicit unanswerable outcome within the
+current system scope.
+21
+
+Preprint. Under review.
+
+Procedure. We maintain the current query qt and an intermediate solution state (e.g., evidencebacked partial progress) across rounds.
+1. Initialize. Set t = 0 and qt = q0 . Initialize an empty progress record to store intermediate
+solutions and the evidence used so far.
+2. Route and collect responses (core of RTA NS).
+(a) Embed the current query to obtain x = ϕ(qt ).
+(b) Retrieve TopK centroids by similarity and map them to a deduplicated set of RAG agents
+(i.e., if multiple selected centroids belong to the same agent, that agent is invited only once).
+(c) Forward qt to the selected RAG agents in parallel.
+(d) Each selected RAG agent runs its local RAG pipeline (retrieval → reranking → generation)
+and returns an evidence-backed response.
+3. Evaluate responses. Apply the Response Evaluator to label each response as fully addressed,
+partially addressed, or not addressed. Discard responses labeled not addressed.
+4. Terminate or refine.
+(a) If any response is fully addressed: invoke the fully addressed summarizer to produce the final
+answer and terminate.
+(b) Else if there exist partially addressed responses: invoke the partially addressed summarizer to
+synthesize an intermediate solution. If the summarizer deems the unified solution answerable,
+output the final answer and terminate. Otherwise, proceed to Step 5.
+(c) Else (all responses not addressed): terminate with an unanswerable outcome (see Section A.5).
+5. Refine the query. Invoke the Question Simplifier using (qt , intermediate solution) to produce
+a refined query qt+1 that focuses on unresolved aspects. Set t ← t + 1 and repeat from Step 2
+unless t ≥ T.
+Operational notes. TopK is the primary cost knob for controlling fan-out and latency. The round
+limit T prevents runaway loops on ambiguous or out-of-scope queries. Deduplicating selected RAG
+agents is important when an agent uploads many clusters; otherwise, multiple centroids from a single
+agent may occupy the TopK list and reduce cross-agent coverage.
+A.5
+
+Discussion: Unhandleable Queries
+
+Even with centroid-based routing and iterative refining-solving, some queries remain unanswerable
+within the system scope or operational constraints. This can occur for several reasons: (i) the query
+falls outside the knowledge coverage of all RAG agents; (ii) the query is ambiguous, underspecified,
+or noisy (e.g., due to typos), hindering routing and retrieval; (iii) the relevant domain evolves rapidly,
+and agents’ local knowledge bases become stale; or (iv) retrieval/evaluation fails under practical
+constraints (timeouts, round limits), preventing evidence-backed progress.
+Practical handling. In practice, systems typically adopt one of two policies. First, they may
+return an explicit unanswerable response to the user and request rephrasing or additional context.
+Second, they may escalate the query to a human expert, especially in high-stakes settings, optionally
+forwarding the system’s intermediate progress and collected evidence to reduce human effort.
+What we adopt in this work. Our handling differs across settings. In WikiAgents, a true humanexpert escalation is operationally expensive. We therefore approximate this pathway by invoking a
+knowledgeable agent when RIRS fails to obtain any addressed responses (or reaches the round limit).
+For multi-hop queries, the knowledgeable agent is given a simplified query produced by the Question
+Simplifier when available, since reducing the number of reasoning steps is often beneficial (Zhuang
+et al., 2024). In NewsAgent, each input query includes a label indicating whether it is solvable. For
+queries labeled unsolvable (or when no evidence-backed, addressed responses are obtained), we
+return an explicit unanswerable response to the user rather than attempting a fallback that could
+increase hallucination risk in time-sensitive domains.
+
+B
+
+Implementations and Baselines
+
+B.1
+
+System Implementation Details
+
+Our implementation builds upon the open-source AgentScope project (Gao et al., 2024). Each agent’s
+knowledge base is processed by LLaMAIndex (Liu, 2022) and stored in ElasticSearch. We use
+22
+
+Preprint. Under review.
+
+ElasticSearch mixed retrieval (BM25 + dense vectors) for retrieval. For each selected agent, we
+retrieve 20 candidate chunks and retain the best five chunks for answer generation. Unless otherwise
+specified, no more than five agents are selected per routing iteration.
+The system is deployed in a pseudo-distributed environment using multi-threading to improve
+throughput. For model serving, we call Qwen-Plus via API (Yang et al., 2024a; Bai et al., 2023) and
+deploy LLaMA-3.1-8B locally using vLLM (Kwon et al., 2023) on four Nvidia A100 GPUs.
+B.2
+
+Agent Construction and Corpora
+
+WikiAgents. WikiAgents is built over 121K Wikipedia pages (snapshot date: Nov. 1, 2023) and
+contains exactly 64 agents. This number follows the limitation of the ORES legacy service, which
+assigns Wikipedia pages into 64 predefined categories (Johnson et al., 2021); we map each category
+to one agent so that agent specialization aligns with the ORES taxonomy. Because this taxonomy may
+not cover all documents required by downstream questions, when retrieved evidence is insufficient,
+the LLM may still respond based on its parametric knowledge. We account for this behavior in
+evaluation by reporting both lexical match and LLM-judged accuracy (Section 5.1).
+NewsAgents. NewsAgents is constructed from 609 news articles from 49 media outlets across six
+domains (Tang & Yang, 2024). We consider two partitions: NewsAgent-Source (agents grouped by
+outlet) and NewsAgent-Domain (agents grouped by domain). Each agent uses LLaMAIndex to split
+articles into 256-token chunks with 20-token overlap between consecutive chunks.
+B.3
+
+Baselines
+
+We reproduce baselines within our multi-agent evaluation framework. All methods are evaluated in
+an off-the-shelf setting: we do not train any models, and instead rely on LLM capabilities.
+Single-agent Scenarios. In the single-agent setting, the knowledge contained within all RAG
+agents is merged into a single RAG system. This provides a conventional RAG baseline that can
+retrieve from the entire corpus. Although it does not fully match the multi-agent routing scenario, it
+illustrates challenges of large-scale retrieval (e.g., longer retrieval latency and increased distractors).
+If retrieval were perfectly clean, the single-agent setup could be viewed as an approximate upper
+bound for multi-agent accuracy when judged against ground truth; in practice, however, pooling all
+documents increases the chance of retrieving distractors, especially for multi-hop queries.
+• EfficientRAG (Zhuang et al., 2024): This approach iteratively simplifies/decomposes the query,
+retrieving evidence at each step until the question becomes answerable. The simplification process is
+performed by the LLM by removing resolved parts of the query; if further progress is not possible, a
+knowledgeable agent produces the final answer. Our implementation follows EfficientRAG (Zhuang
+et al., 2024) and is conceptually related to Self-ASK (Press et al., 2022), SelfRAG (Asai et al.,
+2023b), and IM-RAG (Yang et al., 2024b).
+Multi-agent Scenarios. In the multi-agent setting, we keep the same agent backends and retrieval
+modules as RIRS, and only replace the routing mechanism.
+• Chameleon (Lu et al., 2024a): A description-based router that prompts an LLM with agent
+descriptions and selects the agents most relevant to the current query. For WikiAgents, each
+description is derived from the corresponding ORES topic category. For NewsAgents, descriptions
+are derived from either the news outlet or the domain, depending on the partition.
+• RouterDC (Chen et al., 2024a): A learning-based router that represents each candidate agent with
+a learned routing vector and selects agents by embedding similarity at inference time. To instantiate
+this baseline in our setting, we collect 100 single-hop answerable questions for each WikiAgent
+and use them to fit agent representations while keeping the embedding backbone fixed. We do
+not report RouterDC on MHR because that benchmark does not provide enough agent-specific
+supervision to train these representations reliably.
+
+C
+
+More Quantitative Results
+
+23
+
+Preprint. Under review.
+
+Table 8: Accuracy comparison on 2WikiMultiHopQA and HotpotQA.
+Methods
+CoT
+Chameleon
+RouterDC
+RIRS
+
+Models
+
+Acc.
+
+Qwen-Plus
+LLaMA-3.1-8B
+Qwen-Plus
+LLaMA-3.1-8B
+Qwen-Plus
+LLaMA-3.1-8B
+Qwen-Plus
+LLaMA-3.1-8B
+Mixed
+
+37.31
+25.99
+60.12
+40.27
+52.12
+30.59
+65.78
+45.65
+62.06
+
+(a) MuSiQue
+
+2WikiMultiHopQA
+Ans. rate
+RAG Acc. CoT Acc.
+by RAG
+37.31
+25.99
+68.92
+72.86
+31.87
+67.81
+45.89
+28.41
+62.20
+62.47
+35.63
+68.33
+34.25
+22.69
+78.98
+74.68
+31.88
+72.85
+51.62
+29.60
+76.93
+69.65
+36.74
+
+(b) 2WikiMultiHopQA
+
+Acc.
+54.58
+44.23
+73.19
+50.20
+67.24
+47.74
+75.63
+58.69
+69.33
+
+HotpotQA
+Ans. rate
+RAG Acc.
+by RAG
+84.10
+78.70
+77.75
+55.81
+72.26
+75.64
+74.51
+50.92
+82.85
+81.86
+77.33
+64.42
+80.27
+73.17
+
+CoT Acc.
+54.58
+44.23
+44.56
+30.56
+45.32
+38.51
+45.37
+39.23
+53.70
+
+(c) HotpotQA
+
+Figure 4: Data distribution v.s. Minimum required agents under different datasets
+Table 7: Ablation Study: Response Evaluator PerResponse Evaluator Performance under Dif- formance under different models on the Natural
+ferent Models. In this experiment, we eval- Questions dataset
+uate a response evaluator on a single-hop QA
+LLaMA-3.1-8B Qwen-Plus
+dataset (Natural Questions). We construct an Response-level (per response)
+evaluation set of queries from Natural QuesCorrectness
+45.60%
+79.09%
+tions, agent-generated responses, and correctAddressed Correctness
+50.92%
+88.73%
+ness annotations. The correctness labels are pro- Query-level (per query)
+Fully Correct
+16.48%
+54.03%
+vided by GPT-4o, which compares each agent
+All
+Addressed
+Correct
+16.85%
+59.98%
+response with the ground-truth answer. Notably,
+the same query may appear multiple times, each
+paired with responses from different agents. The response evaluator, implemented with either LLaMA3.1-8B or Qwen-Plus, classifies each response as addressed if it directly answers the query, and not
+addressed otherwise. We report: (i) Fully Correct, the fraction of queries for which all addressed
+responses are correct and all not-addressed responses are incorrect; (ii) All Addressed Correct, the
+fraction of queries for which every addressed response is correct; (iii) Evaluator Correction, the
+probability that the evaluator assigns the correct addressed/not-addressed label; and (iv) Evaluator
+Addressed Correctness, i.e., the probability that a response labeled as addressed is actually correct.
+As shown in Table 7, Qwen-Plus substantially outperforms LLaMA-3.1-8B as a response evaluator at
+both the response level (Evaluator Correctness and Evaluator Addressed Correctness) and the query
+level (Fully Correct and All Addressed Correct). This indicates that Qwen-Plus is more reliable at
+flagging whether an agent response truly addresses the question and, crucially, that its addressed
+predictions are much more likely to be correct. Such stronger filtering reduces error propagation
+across routing iterations and helps explain the gains of the mixed setting reported in Section 5.3.
+
+(a) Qwen-Plus
+
+(b) LLaMA-3.1-8B
+
+(c) Mixed
+
+Figure 5: Evaluation for Wikipedia-related QA (2WikiMQA, HotpotQA, and MuSiQue)
+24
+
+Preprint. Under review.
+
+Performance when Excluding Knowledgeable Agents. Table 8 compares Chameleon, RouterDC,
+and RIRS on 2WikiMultiHopQA and HotpotQA. Across both datasets, RIRS achieves the highest
+answerable rate according to RAG and the highest RAG accuracy, indicating more reliable agent
+selection and stronger evidence-grounded generation. Chameleon generally achieves higher RAG
+accuracy than RouterDC, while RIRS improves on both dimensions, which helps explain its overall
+accuracy gains. The CoT accuracy of these retrieval-based methods can be either higher or lower
+than the CoT-only baseline, with no deterministic trend: if many RAG-unanswered questions are
+still solvable via the model’s parametric knowledge, CoT accuracy can increase; conversely, if the
+remaining unanswered questions are intrinsically difficult or poorly handled without evidence, CoT
+accuracy can decrease.
+Number of Required Agents. Figure 4 illustrates the distribution of questions by the minimum
+number of required agents across three multi-hop QA datasets: MuSiQue, 2WikiMultiHopQA, and
+HotpotQA. Although all three datasets consist of multi-hop questions, the necessary knowledge
+pieces may sometimes reside within a single agent. In MuSiQue and 2WikiMultiHopQA, most
+questions can be answered using two RAG agents, and all questions require no more than four agents.
+For HotpotQA, all questions can be answered with just two agents. It is important to note that the
+number of required agents does not directly correspond to the number of query rounds. Multiple
+agents can be invoked simultaneously within a single round, and conversely, a single agent may be
+queried multiple times to perform complex reasoning before reaching the final answer.
+Query Rounds and Accuracy. Figure 5 presents the proportion of questions that can be answered
+within different numbers of query rounds, along with the corresponding answer correctness. Across
+all LLMs, most questions are resolved within the first two query rounds. Specifically, stronger models
+(e.g., Qwen-Plus) can answer more questions compared to weaker ones (e.g., LLaMA-3.1-8B) within
+fewer query rounds. Interestingly, the figure also shows that increasing the number of query rounds
+does not necessarily lead to improved answer accuracy. In fact, unless a question inherently requires
+multi-step reasoning, additional query rounds may result in even poorer performance.
+This trend is consistent with the routing-error analysis in Section 5.3: additional rounds create more
+opportunities for misrouting and for accumulating partially relevant evidence, which can distract the
+generator. Therefore, accurate answerability judgment and effective stopping criteria are crucial for
+controlling both latency and error accumulation.
+Case Study. Figures 12 and 13 illustrate how the proposed RIRS answers a single-hop question
+and a multi-hop question, respectively.
+
+25
+
+Preprint. Under review.
+
+System Prompts for Chain-of-Thought (CoT) Agent
+You’re a knowledgeable assistant. You are provided with a question, and you should answer the
+question in the following two steps. FIRST, you should utilize your knowledge and analyze the question step by step. SECOND, you should finalize an answer based on your analysis with no more than 30 words.
+Your output should be in the json format:
+```json
+{
+"analysis": "<a paragraph with no more than six sentences>",
+"answer": "<a response within 30 words>"
+}
+```
+
+Figure 6: Prompt Templates for the CoT Agents.
+
+System Prompts of Wikipedia Agents for A Single Question
+You are provided with one question and a collection of knowledge. Based on the given knowledge, you
+should try to analyze and tackle the question as thoroughly as possible, even if you cannot fully answer the
+question. Unless the given context is unrelated to the question, you must directly quote the evidence (i.e.,
+sentences) without being altered to support your analysis, enclosing it in double asterisks (**). You should
+not state any arguments that are not explicitly mentioned or implied from the pieces of evidence or without
+quoting them. The analysis should be in one paragraph with no more than ten sentences. Moreover, the
+analysis should start with "I" and not mention that the analysis is generated based on the given knowledge,
+documents, or information.
+Your output should be in the json format:
+```json
+{
+"analysis": "<one paragraph of up to ten sentences, directly quoting
+supporting evidence from the provided knowledge>"
+}
+```
+
+Figure 7: Prompt Templates for the Wikipedia Agents.
+
+26
+
+Preprint. Under review.
+
+System Prompts of News Agents for A Single Question
+You are given one question and a collection of news articles. Each article contains content along with its
+source information, including the title, news source, author, and published time. Your task is to analyze
+and address the question as thoroughly as possible based on the provided news articles, even if you cannot
+fully answer the question. Unless the given context is unrelated to the question, you must directly quote the
+evidence (i.e., sentences) without being altered to support your analysis. You should enclose quoted evidence
+(sentences) in double asterisks (**), followed by the source in brackets, including the title, news source,
+author, and published time, separated by semicolons (;). You should not state any arguments that are not
+explicitly mentioned or implied from the pieces of evidence or without quoting them. Your analysis to each
+question should be concise, limited to one paragraph per question, with no more than ten sentences. The
+analysis must begin with "I" and should not mention that the analysis is based on provided news articles,
+knowledge, or information.
+Your output should be in the json format:
+```json
+{
+"analysis": "<one paragraph of up to ten sentences, directly quoting
+supporting evidence from the provided knowledge>"
+}
+```
+
+Figure 8: Prompt Templates for the News Agents.
+
+System Prompts of Evaluator for "Fully/Partially/Not Addressed" for A Question and A Response
+You are provided with a question and a response. Your task is to evaluate the response according to the
+following steps:
+1. Assess the response against three criteria:
+- Relevance: Does the response help answer the question, even if the response does not fully resolve it?
+- Evidence-Based Support: Are statements supported by explicitly mentioned evidence enclosed in double
+asterisks (**)?
+- Logical Coherence: Is it well-structured, logically reasoned, and free from logical fallacies or contradictions?
+2. Assign one of the following ratings:
+- Fully addressed: The response meets all criteria and completely answer the question.
+- Partially addressed: The response meets all criteria but not fully resolve the question.
+- Not addressed: The response fails to meet one or more of the criteria.
+Your output should be in the json format:
+```json
+{
+"evaluation": {
+"relevance": <a sentence within 30 words>,
+"evidence_support": <a sentence within 30 words>,
+"logical_coherence": <a sentence within 30 words>
+},
+"rating": <"Fully addressed" or "Partially addressed" or "Not
+addressed">
+}
+```
+
+Figure 9: Prompt Templates for the Response Evaluator.
+
+27
+
+Preprint. Under review.
+
+System Prompts of Summarizing Fully-addressed Responses
+You are given a question, and one or more responses that fully resolve the question. Your task is to produce a
+final answer by following these steps:
+1. Analysis: Incorporate all relevant information from the given responses, quoting any supporting evidence
+word-for-word in double asterisks (**).
+2. Answer: Provide a concise conclusion in no more than 30 words that summarizes the analysis.
+Your output should be in the json format:
+```json
+{
+"analysis": "<a paragraph that directly quotes relevant evidence in
+**double asterisks**>",
+"answer": "<a concise final answer within 30 words>"
+}
+```
+
+System Prompts of Summarizing Partially-addressed Responses
+You are given a question and several partially addressed responses. Your task is to combine these responses
+to create a comprehensive solution, then evaluate its completeness. Follow these steps:
+1. Solution Synthesis:
+- Incorporate all relevant information from the provided responses to form a solution that addresses the
+question as thoroughly as possible.
+- Directly quote supporting evidence (word-for-word) using double asterisks (**).
+2. Evaluation and Justification:
+- Determine whether this combined solution fully addresses the question.
+- Provide a clear explanation of why it does or does not fully address the question.
+3. Answerability Determination:
+- Based on your evaluation, decide if the solution makes the question answerable.
+- Respond with either "yes" (if the solution fully addresses the question) or "no" (if it does not).
+- Most importantly, if the solution explicitly states that the question cannot be fully addressed or identifies
+missing aspects or necessary additional information, you must answer "no".
+4. Final Answer:
+- If the solution is deemed answerable ("yes"), provide a concise conclusion in no more than 30 words that
+summarizes the solution.
+- If the solution is not answerable ("no"), return "None" as the final answer.
+Your output should be in the json format:
+```json
+{
+"solution": "<a paragraph that integrates responses with direct
+quotes in **double asterisks**>",
+"evaluation and justification": "<a paragraph explaining whether and
+why the solution fully addresses the question>",
+"answerable": <"yes" or "no">,
+"answer": "<a final answer within 30 words if 'answerable' is 'yes',
+or 'None' if 'answerable' is 'no'>"
+}
+```
+
+Figure 10: Prompt Templates for the Response Summarizer.
+
+28
+
+Preprint. Under review.
+
+System Prompts of Question Simplifier
+You are given a question and a piece of knowledge that partially addresses the question. Your task is to
+simplify or refactor the original question so that answering the simplified question will yield the same final
+answer as answering the original one. Follow the steps below:
+1. Map Known Information:
+- Identify Answered Parts: Examine the original question and determine which parts have been explicitly
+answered by the provided solution. Extract the relevant words or phrases from the question.
+- Map to Solution: For each identified part, find the corresponding words or phrases in the provided solution
+and include supporting evidence by directly quoting the exact sentences, enclosed in double asterisks.
+- Note: If the provided knowledge does not address any aspect of the original question (i.e., you cannot
+identify the answered parts from the question), return "None" for the mapping.
+2. Identify Unresolved Aspects:
+- Determine Gaps: Identify the parts of the question that remain unanswered or unclear after considering the
+provided solution.
+- List Unresolved Points: Clearly list these unresolved aspects. They must be retained in the simplified
+question to ensure that no essential detail is lost.
+3. Generate a Simplified/Refactored Question:
+- Remove Redundancies: Remove from the original question any words or phrases that have been fully
+addressed by the solution (as determined in Step 1).
+- Incorporate Mapped Knowledge: Replace the removed parts with their corresponding mapped words or
+phrases from the solution, ensuring to preserve the supporting evidence.
+- Retain Unresolved Aspects: Ensure that any unresolved aspects identified in Step 2 are still present in the
+final simplified question.
+- Ensure Consistency: The new question must be clear, concise, and structured so that answering it will yield
+the same final answer as if the original question were fully addressed.
+- Note: If the mapping is "None" (as indicated in Step 1), keep the simplified/refactored question identical to
+the original question.
+Your output should be in the json format:
+```json
+{
+"question_knowledge_mapping": <a list of tuples in the format (words
+from given question, words from provided knowledge, supporting
+evidence) or "None">,
+"unresolved_aspects": <a list of aspects that remain unanswered>,
+"new_question": <the simplified/refactored question; remove all "
+words from given question" found in the mapping and include the
+corresponding "words from provided knowledge" to replace them,
+ensuring all unresolved aspects are retained. If mapping is "
+None", use the original question>
+}
+```
+
+Figure 11: System Prompt for Question Simplifier.
+
+29
+
+Preprint. Under review.
+
+User Input
+who is darrell brother in the walking dead
+
+Expected Answer
+Merle Dixon
+
+Agent: Culture.Media.Media*
+I learned that there is no direct mention of a character named ’darrell brother’ in the provided context related
+to ’The Walking Dead’. The content does not provide any information about characters from this series.
+Therefore, I cannot answer who darrell’s brother is based on the given information.
+
+Agent: Culture.Literature
+I learned that **Daryl Dixon is a fictional character from AMC’s horror drama series The Walking Dead,
+and the protagonist of its last three seasons.** It also mentions that **the character was introduced in the
+first season as a southerner, expert tracker, living in the shadow of his older brother, Merle.** From another
+source, it states that **Merle Dixon is a fictional character from the horror drama television series The
+Walking Dead, which aired on AMC in the United States. He was created by series developer Frank Darabont
+and was portrayed by Michael Rooker.** These sentences explicitly indicate that Merle is Daryl’s older
+brother in The Walking Dead.
+
+Server: Evaluation
+{
+"response_1": {
+"relevance": "Misinterprets the question by focusing on a
+character named 'darrell brother', which does not exist.",
+"evidence_support": "No relevant evidence provided regarding
+Darrell or his brother.",
+"logical_coherence": "The response is logically coherent but
+irrelevant to the asked question.",
+"rating": "Not addressed"
+},
+"response_2": {
+"relevance": "Identifies Merle as Daryl's older brother,
+accurately addressing the query.",
+"evidence_support": "Supports claims with multiple pieces of
+evidence from the series.",
+"logical_coherence": "Well-structured with logical flow and no
+contradictions.",
+"rating": "Fully addressed"
+}
+}
+
+Server: FullySummarizer
+{
+"analysis": "The responses collectively indicate that **Merle Dixon
+is Daryl Dixon's older brother** in The Walking Dead. They provide
+consistent information from multiple sources confirming Merle as
+the elder sibling, portrayed by Michael Rooker, and known for his
+volatile character.",
+"answer": "In The Walking Dead, Daryl's older brother is Merle Dixon,
+a volatile character portrayed by Michael Rooker."
+}
+
+Response
+In The Walking Dead, Daryl’s older brother is Merle Dixon, a volatile character portrayed by Michael
+Rooker.
+
+Figure 12: An example of single-hop QA task
+30
+
+Preprint. Under review.
+
+User Input
+Where was the director of film Rough Going born?
+
+Expected Answer
+New Hyde Park, New York
+
+Agent: Culture.Media.Films
+I found that **Rough Going is a 1925 American silent Western film directed by Wally Van**. However, the
+provided information does not specify where the director, Wally Van, was born.
+
+Agent: Culture.Media.Media*
+I learned that **Richard Rush (April 15, 1929 – April 8, 2021) was an American film director, scriptwriter,
+and producer.** This indicates that Richard Rush, the director of Rough Going, was born in the United States.
+However, the specific place of his birth is not mentioned in the provided context.
+
+Server: Evaluation
+{
+'response_1': {
+'relevance': 'Identifies the director of Rough Going but does not
+provide his place of birth.',
+'evidence_support': 'Provides relevant information about the film
+and its director, Wally Van, with evidence.',
+'logical_coherence': 'The response is logically structured and
+coherent, though it acknowledges incomplete information.',
+'rating': 'Partially addressed'
+},
+'response_2': {
+'relevance': 'Incorrectly identifies Richard Rush as the director
+of Rough Going, making it irrelevant to the question asked.',
+'evidence_support': "Offers evidence about Richard Rush's
+lifespan and profession, but this does not relate to the
+query.",
+'logical_coherence': 'Logically coherent for statements about
+Richard Rush, but fails to address the actual question.',
+'rating': 'Not addressed'
+}
+}
+
+Server: PartiallySummarizer
+{
+'solution': 'The film **Rough Going is a 1925 American silent
+Western film directed by Wally Van**. However, the provided
+information does not specify where the director, Wally Van, was
+born. This indicates a gap in the available data regarding the
+birthplace of Wally Van.',
+'evaluation and justification': 'The solution identifies the
+director of the film Rough Going as Wally Van but acknowledges
+that there is no information provided about his place of birth.
+Since the question specifically asks for the birthplace of the
+director and this detail is missing, the solution does not fully
+address the question.',
+'answerable': 'no',
+'answer': 'None'
+}
+
+31
+
+Preprint. Under review.
+
+Server: QuestionSimplifier
+{
+'question_knowledge_mapping': [
+['the director of film Rough Going', 'Wally Van', '**Rough Going
+is a 1925 American silent Western film directed by Wally Van
+**.']
+],
+'unresolved_aspects': ['The birthplace of Wally Van'],
+'new_question': "Where was Wally Van born?"
+}
+
+Agent: Culture.Biography.Biography*
+I learned that **Van was born Charles Wallace Van Nostrand on September 27, 1880, in New Hyde Park,
+New York.** This explicitly answers the question about where Wally Van was born, which is New Hyde
+Park, New York.
+
+Agent: Culture.Linguistics
+I found that **Wally Williams (water polo) (1921–2009), New Zealand water polo player** is listed,
+indicating a Wally Williams who was born in 1921 and was from New Zealand. However, there is no specific
+mention of where exactly he was born within New Zealand.
+
+Server: Evaluation
+{
+'response_1': {
+'relevance': "Directly answers the question by specifying Wally
+Van's birthplace as New Hyde Park, New York.",
+'evidence_support': 'Provides explicit evidence enclosed in
+double asterisks about Wally Van's birth details.',
+'logical_coherence': 'The response is logically coherent and
+clearly structured without contradictions.',
+'rating': 'Fully addressed'
+},
+'response_2': {
+'relevance': 'Partially relevant as it discusses a person named
+Wally but not the specific Wally Van in question.',
+'evidence_support': 'Provides evidence about Wally Williams but
+does not link this information to Wally Van.',
+'logical_coherence': "Coherent statement but fails to address the
+specific query about Wally Van's birthplace.",
+'rating': 'Not addressed'
+}
+}
+
+Server: FullySummarizer
+{
+'analysis': "The response provides explicit information about Wally
+Van's birthplace: **Van was born Charles Wallace Van Nostrand on
+September 27, 1880, in New Hyde Park, New York.**",
+'answer': 'Wally Van was born in New Hyde Park, New York.'
+}
+
+Response
+Wally Van was born in New Hyde Park, New York.
+
+Figure 13: An example of a multihop QA task using the proposed RIRS
+32
+
+

@@ -1,0 +1,2318 @@
+DrugAgent: Reliable Multi-Agent Integration of
+Conflicting Biomedical Evidence for Drug–Target
+Interaction Assessment
+Yoshitaka Inoue1,2 , Tianci Song1 , Xinling Wang3 , Rui Kuang1 , Tianfan Fu5,+ , and Augustin
+Luna2,4,+,*
+1 Department of Computer Science and Engineering, University of Minnesota, Minneapolis, MN, USA
+2 Computational Biology Branch, National Library of Medicine, Bethesda, MD, USA
+3 Khoury College of Computer Sciences, Northeastern University, Arlington, VA, USA
+
+arXiv:2408.13378v5 [cs.AI] 3 Jul 2026
+
+4 Developmental Therapeutics Branch, National Cancer Institute, Bethesda, MD, USA
+5 State Key Laboratory for Novel Software Technology at Nanjing University, School of Computer Science, Nanjing
+
+University, Nanjing, Jiangsu, China
++ These authors jointly supervised this work.
+* augustin.luna@nih.gov
+
+ABSTRACT
+Workflows in drug-target interaction (DTI) assessment require integrating heterogeneous data from predictive models, curated
+resources, and observations from experimental literature. This evidence can be incomplete or conflicting. DrugAgent is a
+large language model (LLM)-based multi-agent system focused on DTI evidence integration that integrates outputs from
+machine learning, knowledge graph, and retrieval-augmented generation (RAG) agents. DrugAgent converts agent outputs
+into interpretable representations, then summarizes conflict across the evidence.
+We evaluated DrugAgent on kinase screening data of 900 pairs spanning 178 kinases and 42 inhibitors, and an androgen
+receptor antagonist screening benchmark. On the kinase dataset, LLM-as-a-Judge evaluation indicated outputs were faithful
+to input evidence in 98.8% of cases. Biological plausibility of returned summarization was high (scores 3-4 out of 5) across
+ground-truth classes: 79% of Weak activity labels cases (81% for Moderate/77% Strong); Strong cases received higher
+scores than Weak/Moderate. Label stability showed 98% agreement across runs. Results on the antagonist benchmark were
+consistent with the kinase dataset.
+Retrieved literature provided the greatest benefit when direct drug-target evidence was available, highlighting the importance
+of evidence availability for RAG-based integration. DrugAgent provides heterogeneous evidence-grounded DTI assessment,
+complementing standalone DTI prediction. We provide strategies to model agreement, conflict, and uncertainty in biomedical
+evidence integration. Code: https://github.com/sciluna/DrugAgent.
+
+Introduction
+Drug-target interaction (DTI) assessment is a central task in early-stage drug discovery [1, 2]. Reliable DTI assessment
+often requires integrating multiple forms of evidence, including quantitative predictions from machine learning (ML) models,
+curated drug-target knowledge from knowledge graphs (KGs), and experimental findings reported in the literature [3–5]. These
+evidence sources are complementary but imperfect. ML models can provide scalable affinity estimates, but they may be poorly
+calibrated outside their training distribution [3, 6]. KGs organize curated biomedical relationships, but graph connectivity does
+not necessarily imply direct binding or functional modulation [4]. Literature evidence can provide experimental context, but it
+is unevenly distributed across drugs and targets and may contain assay-specific or conflicting findings [7, 8]. As a result, DTI
+assessment is not only a prediction problem, but also an evidence integration problem.
+In practice, researchers often need to reconcile information from distinct biological modalities (e.g., genomic vs proteomic),
+representation modalities (e.g., text, numeric, graph-based), and evidence provenances (e.g., observation, curated, or inference).
+Typically, researchers must manually check where evidence agrees, conflicts, or provides different levels of support. Large
+language models (LLMs) and multi-agent systems provide a possible interface for organizing disparate evidence [9, 10]. Typical
+use of LLMs only includes access to knowledge available as part of their training data (usually text or image data) without
+access to other data sources that can improve performance across downstream tasks [11]. Additionally, unconstrained LLM
+reasoning can obscure which evidence source supports the conclusion and may overstate weak or indirect evidence [12, 13].
+
+A
+
+KG Agent (Knowledge Graph)
+・Source: DrugBank, CTD,
+BindingDB
+・Search multi-hop paths
+and relationships
+
+Coordinator Agent
+(Task Assignment)
+
+ML Agent (Machine Learning)
+
+Drug
+
+・Source: DeepPurpose
+・Predict drug-target activity (e.g., pKd)
+・Provide affinity signal
+
+Protein
+
+RAG Agent (Literature Retrieval)
+・Source: PubMed Open Access
+full-text papers
+・Retrieve full papers and extract
+supporting or contradicting evidence
+
+Query
+
+Count (log scale)
+
+B
+
+10
+
+10
+
+10
+
+Strong
+(≤25%)
+
+4
+
+Moderate
+(25-50%)
+
+Final Output
+
+Integration
+
+(Integrated Evidence)
+
+(Cross-Source
+Validation)
+KG
+
+ML
+
+RAG
+Assess agreement,
+conflict, and source
+reliability
+
+Weak
+(50-80%)
+
+🏷 Activity Label: Moderate
+📃 Evidence summary:
+・KG: indirect (3-hop)
+・ML: pKd = 6.5
+・RAG: IC50 = 300 nM
+
+Very Weak
+(>80%)
+
+3
+
+2
+
+0
+
+20
+
+40
+60
+Remaining Kinase Activity (%)
+
+80
+
+100
+
+Figure 1. (A) Overview of DrugAgent, a structured multi-agent framework for aggregating heterogeneous evidence in
+drug-target interaction (DTI) analysis. Three specialized agents independently generate complementary signals: a knowledge
+graph (KG) agent capturing mechanistic paths, a machine learning (ML) agent providing quantitative affinity predictions (e.g.,
+pKd), and a literature retrieval (RAG) agent extracting experimental evidence. These signals are integrated through an
+integration step that enforces cross-source consistency. A reasoning module then performs structured evidence synthesis and
+decision-making, yielding a final prediction with an interpretable and reproducible rationale. (B) Histogram of remaining
+kinase activity in the kinase activity dataset, shown with log-scale counts on the y-axis. Samples are grouped into
+activity-based labels: Strong (≤ 25%), Moderate (25-50%), Weak (50-80%), and very weak (>80% remaining activity) are
+shown for context but were excluded from the balanced three-class kinase benchmark.
+
+Therefore, DTI-focused systems require mechanisms that make additional sources of biomedical information accessible to
+LLM agents in a manner that can be assessed for evidence agreement and conflict across the varied sources.
+Here, we introduce DrugAgent, a DTI-focused evidence integration system that integrates ML, KG, and retrieval-augmented
+generation (RAG)-based literature evidence for DTI assessment. DrugAgent uses specialized modules to generate sourcespecific evidence and converts its outputs into a shared structured representation. A reasoning module then summarizes
+agreement and conflict before applying rule-guided final decision-making. This approach aims to improve reliability, and
+prior work has also examined rule-guided reasoning in LLMs [14]. This design separates evidence summarization from final
+decision-making and enables inspection of how each evidence source contributes to the conclusion.
+We evaluate DrugAgent with two DTI assessment scenarios: the Anastassiadis kinase inhibition benchmark and the Tox21
+androgen receptor (AR) antagonist screening benchmark [15, 16]. The objective of this study is to evaluate whether structured
+integration can support interpretable, evidence-grounded assessment under heterogeneous and potentially conflicting evidence;
+our goal is not to introduce a new standalone DTI predictor. Additionally, we assess biological plausibility, stability, and conflict
+behavior for reasoning returned from the agent system.
+DrugAgent differs from prior DTI prediction tools that typically use a single mode of data (i.e., numeric data for predictive
+machine learning). By contrast, our multi-agent approach of treating DTI assessment as a structured evidence integration
+problem that jointly integrates ML predictions, KG-derived evidence, and RAG-based literature evidence into a shared
+representation to be integrated through LLM-based reasoning and summarization to final decision-making.
+
+2/19
+
+Related Works
+Human consideration of scientific results for DTI assessment often requires reconciling predictive algorithms, databases (e.g.,
+knowledge graphs), and literature evidence that may differ in coverage, specificity, and reliability. We organize related work
+around these evidence sources and their integration for DTI analysis.
+Machine learning for drug-target interaction prediction
+Models such as DeepDTA [6] that use convolutional neural networks (CNN) and DeepPurpose [3], which includes several
+architectures such as CNN and message passing neural networks (MPNN) to predict drug-target activity from molecular
+structures and protein sequences. These models are valuable for scalable screening and provide quantitative affinity-related
+signals. However, their predictions are constrained by the coverage and biases of the training data, and they are typically
+optimized as standalone predictors rather than as systems for combining data from distinct biological modalities, representation
+modalities, and evidence provenances (e.g., observation, curated, or inference). As a result, they do not directly expose how
+their predictions should be reconciled with curated database evidence or experimental findings from the literature. In this study,
+we utilize a DeepPurpose-based ML module as one source of DTI evidence that has a numeric representation and is inferred.
+Biomedical knowledge graphs for drug-target evidence
+Biomedical knowledge graphs integrate curated relationships among drugs, genes, diseases, and pathways with additional
+annotations such as experimental measurement values. Such data has been used for drug repurposing, link prediction, and
+mechanistic hypothesis generation [4, 17]. Knowledge graph embedding (KGE) methods such as TransE [18], ComplEx [19],
+and RotatE [20] learn latent representations for predicting missing links from graph structure. These approaches can provide
+useful graph-derived relatedness scores. Still, their latent scores are not necessarily calibrated to assay-derived activity labels
+and may not expose the specific evidence paths supporting associations between drug and targets. Path-based methods, in
+contrast, preserve explicit graph connectivity and can provide interpretable evidence, but their implementation often depends on
+design choices such as maximum path length, hub-node handling, and edge-type selection [4]. DrugAgent uses path-based KG
+evidence for traceability and reports TransE, ComplEx, and RotatE as graph-only reference baselines (Supplementary Table
+S3).
+Literature evidence and retrieval-augmented biomedical analysis
+Retrieval-augmented generation (RAG) from text enables language models to condition their outputs on retrieved documents [5].
+However, observations in scientific literature are unevenly distributed: well-studied drugs and targets may have abundant
+publications, whereas understudied pairs may have little or no direct evidence [7]. For DTI assessment, retrieved passages
+may provide direct drug-target pair evidence, one-sided drug or target context, or indirect mechanistic information, and these
+evidence types differ in reliability and specificity. DrugAgent therefore separates pair-level, drug-level, and target-level retrieval,
+allowing the system to distinguish direct interaction evidence from contextual or indirect support when aggregating evidence
+from text.
+Multi-source evidence integration for DTI assessment
+A persistent challenge in DTI is how to combine heterogeneous modalities and provenance types when they agree, conflict,
+or provide different levels of support. ML predictions, KG-derived relationships, and RAG literature evidence can each
+contribute useful information, but none is uniformly reliable across all drug-target pairs. Recent work has examined methods for
+multi-agent systems to arrive at common final answers, while improving the accuracy of multi-agent debate in domains outside
+of biology [10, 21, 22]. DrugAgent addresses these problems by standardizing outputs from ML, KG, and RAG modules into a
+shared evidence representation and explicitly modeling agreement, conflict, and uncertainty before final decision-making. This
+design emphasizes interpretable evidence integration for DTI assessment rather than general-purpose multi-agent orchestration.
+Separately, but related to the integration of data from multiple sources, is the tool use by LLMs. This is an active area of
+investigation, both in terms of LLM capability to use tools and as a means to improve LLM performance [23–25].
+
+Datasets
+Kinase Inhibition Benchmark
+For quantitative evaluation, we used a protein inhibition kinase-compound activity dataset from a large-scale profiling study [15].
+The dataset reports kinase activity as the percentage of remaining enzymatic function after compound exposure and includes
+300 human kinases and 178 small-molecule inhibitors.
+The original assay reports the percent remaining kinase activity after compound exposure. To formulate an activity label
+prediction, we discretized this continuous readout into three classes based on inhibition activity labels: Strong (remaining
+activity ≤ 25%), Moderate (25-50%), and Weak (50-80%), while pairs with > 80% remaining activity were treated as very
+3/19
+
+weak and excluded. These cutoffs are consistent with the activity ranges used to summarize kinase inhibition patterns in the
+original profiling study [15]. From 1,895 activity labels, we constructed a balanced benchmark of 900 pairs (300 per class),
+covering 178 kinases and 42 inhibitors.
+Tox21 Androgen Receptor (AR) Dataset
+The Tox21 androgen receptor (AR) dataset was constructed from the Tox21 dataset annotation and reporter assay activity
+tables [16]. We retained Tox21 AR reporter gene assays annotated with an antagonist mode of action. For each compound,
+reporter assay activity calls were represented as binary labels, with 1 indicating active and 0 indicating inactive. When multiple
+AR antagonist assay identifiers were available for a compound, their binary labels were collapsed by taking the maximum value
+across assays, such that a compound was labeled active for a gene if it was active in at least one antagonist assay.
+Compound identifiers were linked to compound names using PubChem CIDs, and the resulting drug-target activity table
+was converted into drug-target pairs. To ensure that each instance could be evaluated using the evidence sources used by
+DrugAgent, we retained only compounds whose names matched entries in the knowledge graph. We then merged the activity
+table with the literature retrieval table and used the number of downloaded literature records for each drug-target pair as a proxy
+for evidence availability.
+For the AR benchmark, we selected drug-AR pairs by ranking active and inactive pairs separately according to the number
+of downloaded literature records. The final balanced dataset consisted of 250 active and 250 inactive drug-AR pairs, yielding
+500 total pairs.
+Table 1. Summary of evaluation datasets. The kinase dataset is a controlled, class-balanced multi-class benchmark, while the
+Tox21 AR dataset is a binary screening benchmark.
+
+Total pairs
+Class distribution
+Class labels
+Unique drugs
+Unique targets
+Assay type
+Prediction task
+
+Kinase Dataset
+
+Tox21 (AR) Dataset
+
+900
+300 / 300 / 300
+Weak / Moderate / Strong
+42
+178
+Enzymatic inhibition
+Multi-class
+
+500
+250 / 250
+Active / Inactive
+500
+1 (Androgen Receptor)
+Receptor antagonism
+Binary
+
+Results
+We evaluated DrugAgent along two complementary axes. First, we assessed whether the system produced evidence-grounded
+and internally consistent outputs when integrating ML, KG, and RAG evidence. This included LLMaJ-based diagnostics
+of faithfulness and biological plausibility, stability analysis across repeated runs, and analysis of integration behavior under
+agreement and conflict among evidence sources. Second, we performed sanity-check classification analyses on the kinase
+and Tox21 AR benchmarks to quantify whether the integrated outputs retained signal related to known activity labels. These
+evaluations were designed to characterize evidence integration behavior rather than to establish DrugAgent as an optimized
+standalone DTI predictor. Of note, DrugAgent produced short summaries with word counts ranging from 71 to 128 words
+across the agents for the tested benchmarks.
+Integration Fidelity
+(1) Faithfulness. We evaluated faithfulness using an LLMaJ rubric that scored explanations on a 1-5 scale according to
+whether they (i) were grounded to the outputs from each agent, (ii) contained contradictions between input evidence and output,
+(iii) introduced unsupported claims, or (iv) omitted critical information. The LLMaJ prompt also requested Boolean indicators
+for these four criteria. We defined outputs with faithfulness scores of 4 or 5 as faithful. Under this criterion, faithfulness
+was high across all configurations: DrugAgent was judged faithful in 889 of 900 cases (98.8%), compared with 896/900 for
+KG+RAG, 857/900 for ML+RAG, and 900/900 for ML+KG.
+DrugAgent produced highly plausible and largely non-contradictory
+outputs under the prompted LLMaJ rubric (Fig. 2A). Overall, 76.3% of DrugAgent outputs were judged both not contradicted
+and plausible, and an additional 22.6% were judged plausible only. Thus, 98.9% of DrugAgent outputs were considered at least
+plausible, while only a small fraction were rated as contradicted and not plausible. Among the ablations, ML+KG showed a
+similar proportion of not-contradicted and plausible associations in the outputs (76.7%), whereas ML+RAG and KG+RAG
+(2) Biological Plausibility under a Prompted Rubric.
+
+4/19
+
+A Plausibility Judgment Distribution
+
+B Plausibility Distribution (dashed lines indicate mean scores; total N = 900)
+500
+
+76.7%
+
+17.6%
+
+60.2%
+
+KG+RAG
+
+31.1%
+
+70.7%
+
+ML+RAG
+
+8.7%
+
+23.1%
+
+76.3%
+
+DrugAgent
+
+✅
+❌
+
+300
+200
+100
+
+22.6%
+
+Not contradicted & Plausible ( )
+Contradicted & Not plausible ( )
+
+DrugAgent
+ML+RAG
+KG+RAG
+ML+KG
+
+400
+Count
+
+ML+KG
+
+0
+
+Plausible only
+
+1
+
+C Plausibility Distribution by Ground Truth Activity Label (each ablation N=900)
+DrugAgent
+
+ML+RAG
+
+2
+
+3
+Score (1-5)
+
+4
+
+KG+RAG
+
+5
+
+ML+KG
+
+Weak
+
+0%
+
+20%
+
+44%
+
+35%
+
+1%
+
+0%
+
+26%
+
+64%
+
+9%
+
+1%
+
+0%
+
+35%
+
+35%
+
+28%
+
+1%
+
+0%
+
+13%
+
+43%
+
+38%
+
+6%
+
+Moderate
+
+0%
+
+16%
+
+43%
+
+38%
+
+3%
+
+0%
+
+16%
+
+64%
+
+17%
+
+3%
+
+0%
+
+32%
+
+35%
+
+31%
+
+2%
+
+0%
+
+10%
+
+39%
+
+37%
+
+14%
+
+Strong
+
+0%
+
+9%
+
+34%
+
+43%
+
+15%
+
+0%
+
+12%
+
+49%
+
+26%
+
+13%
+
+0%
+
+28%
+
+19%
+
+41%
+
+13%
+
+0%
+
+4%
+
+33%
+
+33%
+
+30%
+
+5
+
+1
+
+2
+3
+4
+Plausibility Score
+
+4
+3
+2
+1
+
+DrugAgent
+ML + RAG
+KG + RAG
+
+0
+1-3
+4-6
+7-10
+(n=700)
+(n=107)
+(n=26)
+(n=67)
+Number of Drug-Target Pair Retrieved Papers (Total n=900)
+
+E
+
+2
+3
+4
+5
+1
+2
+3
+4
+5
+Plausibility Score
+Plausibility Score
+Mechanistic Coherence (MC) Score by the Number of Retrieved Papers
+1.00
+Average MC Score
+
+2
+3
+4
+5
+1
+Plausibility Score
+D Plausibility Score by the Number of Retrieved Papers
+5
+Average Plausibility Score
+
+1
+
+0.75
+0.50
+0.25
+
+DrugAgent
+ML + RAG
+KG + RAG
+
+0.00
+0
+1-3
+4-6
+7-10
+(n=700)
+(n=107)
+(n=26)
+(n=67)
+Number of Drug-Target Pair Retrieved Papers (Total n=900)
+
+Figure 2. Plausibility-based evaluation across model variants for the kinase dataset. (A) Distribution of LLMaJ plausibility
+outcomes for DrugAgent and ablated variants, showing the proportions of Not contradicted & Plausible, Plausible only, and
+Contradicted & Not plausible. (B) Distribution of plausibility scores (1-5) across variants; dashed vertical lines indicate the
+mean score for each variant. (C) Plausibility score distributions stratified by ground-truth activity labels (Weak, Moderate,
+Strong). Each heatmap shows the proportion of samples assigned to each plausibility score within a ground-truth class. (D)
+Average plausibility score across bins of the number of retrieved papers for each drug-target pair among RAG-containing
+settings. (E) Average mechanistic coherence (MC) score across bins of the number of retrieved papers for each drug-target pair
+among RAG-containing settings.
+
+showed lower values of 70.7% and 60.2%, respectively. Notably, removing ML increased the “contradicted and not plausible”
+fraction to 8.7%, indicating that the ML component contributes to filtering biologically inconsistent conclusions.
+The score distribution further shows that plausibility scores should not be interpreted as direct evidence of predictive
+correctness (Fig. 2B). DrugAgent scores were concentrated at 3 and 4, with relatively few scores of 5. In contrast, ML+KG
+shifted the distribution toward higher scores, including a larger number of score-5 judgments. However, this increase occurred
+despite removing retrieved literature evidence from the integration process. Therefore, higher plausibility scores in the ML+KG
+setting may reflect reduced evidential constraint or more fluent surface-level coherence, rather than stronger evidence-grounded
+reasoning.
+Stratification by ground-truth activity labels showed that plausibility scores were only weakly aligned with the actual
+ordinal activity labels (Fig. 2C). In DrugAgent, most Weak, Moderate, and Strong interactions received scores in the 3-4 range.
+Specifically, 79% of Weak cases, 81% of Moderate cases, and 77% of Strong cases were assigned scores of 3 or 4. Strong
+interactions were more likely to receive the maximum score of 5 than Weak or Moderate interactions (15% for Strong versus
+1% for Weak and 3% for Moderate), but the overall distributions remained highly overlapping.
+We further examined whether the amount of retrieved evidence was associated with judge-assigned plausibility. Across all
+variants, the average plausibility score increased with the number of retrieved papers for a drug-target pair (Fig. 2D). Pairs with
+no retrieved papers received the lowest average scores, whereas pairs supported by 7-10 retrieved papers received the highest
+5/19
+
+scores. DrugAgent consistently achieved the highest average plausibility score across evidence-count bins, suggesting that its
+retrieved context yielded more biologically plausible associations than the ablated variants.
+A similar trend was observed for mechanistic coherence (Fig. 2E). The average mechanistic coherence (MC) score increased
+as the number of retrieved papers increased, with all variants approaching high coherence scores when multiple supporting
+papers were retrieved. Differences among ablation conditions were most apparent when little or no literature evidence was
+retrieved, whereas MC converged across variants for pairs with larger numbers of retrieved papers. These results indicate
+that richer retrieved evidence was associated with higher overall biological plausibility and MC of the inferred drug-target
+associations.
+Together, DrugAgent has less contradicted and not plausible portion (Fig 2A), while judge-assigned plausibility remains
+strongly influenced by the availability of evidence retrieved by the agents (Fig 2D). Plausibility scores were not directly
+predictive of ground-truth activity labels, although there is a trend toward this pattern (Supplementary Fig. S1); this could be
+because plausibility is influenced by other available evidential support. The ablation results indicate that individual evidence
+sources provide complementary constraints: ML mostly helps suppress biological plausibility and not contradiction, followed
+by KG (Fig 2A), and RAG anchors explanations to retrieved literature (Fig 2D).
+MC showed a similar evidence-dependent pattern, increasing with retrieved-paper count and converging across variants
+when multiple supporting papers were available. At the same time, the upward shift in ML+KG plausibility scores highlights a
+limitation of LLMaJ plausibility evaluation: less constrained explanations can appear more plausible even when they are less
+grounded in evidence.
+To evaluate reproducibility, we conducted a stability analysis on a randomly sampled subset of N = 100
+drug-target pairs, running each case three times (k = 3). Label stability, defined as the fraction of cases with identical outputs
+across runs, shows a mean agreement of 0.983, a median of 1.000, and an agreement rate of 0.95 where all outputs have the
+same label, indicating near-deterministic behavior with only minor variability across runs. Reasoning stability, measured by
+cosine similarity of embeddings between explanations, yields a mean similarity of 0.881, a median of 0.884, and a minimum
+of 0.760, indicating that explanations remain highly consistent despite minor variations in phrasing. Together, these results
+demonstrate that the integration process is both label-stable and reasoning-consistent, supporting the reproducibility of the
+framework.
+(3) Stability.
+
+Figure 3 shows different aspects of label-level distribution
+after multi-source evidence integration. The bar diagram in Fig. 3A shows the activity labels for ground truth, and each
+component of DrugAgent, as well as the final DrugAgent output. Although the ground-truth set was balanced across Strong,
+Moderate, and Weak labels, the individual agent sources showed distinct redistribution patterns. ML predictions have a larger
+number of Moderate assignments, whereas the KG agent results in a larger fraction of Weak labels. RAG evidence was more
+evenly distributed, with a slight shift toward Weak and Moderate labels. After integration, DrugAgent results in 246 pairs to
+Strong, 319 to Moderate, and 335 to Weak, indicating that the final decision process does not simply mimic any single evidence
+source but instead has a unique distribution of the three activity labels.
+We next quantified how specific combinations of ML, KG, and RAG evidence labels were mapped to final DrugAgent
+outputs. In cases with completely concordant agent evidence, DrugAgent assigned the corresponding final label: patterns such
+as W|W|W, M|M|M, and S|S|S were mapped entirely to Weak, Moderate, and Strong outputs, respectively (Fig. 3B). When the
+evidence sources disagreed, DrugAgent outputs varied according to the specific configuration of ML, KG, and RAG labels
+rather than following a uniform averaging pattern. For example, patterns with two equivalent DrugAgent labels (e.g., W|W|S)
+were assigned to the most common label except the W|S|W label, although even in this case, Weak was the most commonly
+assigned label. These results indicate that DrugAgent’s final activity labels are strongly conditioned on the joint evidence
+pattern across ML, KG, and RAG.
+As shown in Fig. 3C, we next grouped cases by the degree of agreement among the three evidence sources. In cases where
+all evidence sources were in consensus, DrugAgent assigned 54% of cases to Weak, 17% to Moderate, and 29% to Strong. In
+majority-agreement cases, the final labels were more broadly distributed, with 44% Weak, 32% Moderate, and 24% Strong
+assignments. Under full conflict, DrugAgent resulted in more Moderate labels, assigning 68% of cases to Moderate and 29% to
+Strong, with only a small fraction assigned to Weak. These results indicate that DrugAgent’s integration behavior depends on
+the level of agreement among ML, KG, and RAG evidence sources, with fully conflicting evidence tending to produce more
+moderate final decisions.
+We further examined whether DrugAgent showed systematic directional bias when all three evidence sources disagreed. As
+shown in Fig. 3D, three-way conflicting patterns produced non-uniform final-label biases when comparing Strong to Weak
+labels. Several patterns showed positive bias, indicating that DrugAgent outputs were skewed toward Strong rather than a Weak
+final label. The strongest bias was observed for W|S|M and M|S|W patterns, where there was a Strong label produced by the
+KG agent. By contrast, S|W|M showed no positive bias and M|W|S showed a slight negative bias toward the Strong label. The
+(4) Evidence Combination Consistency and Conflict Dynamics.
+
+6/19
+
+A Distribution of Activity Labels for Ground Truth and DrugAgent Components
+Weak
+
+800
+
+300
+
+233
+
+Moderate
+
+B Activity Label Probabilities by Evidence Pattern
+
+Strong
+
+247
+
+Pattern
+(ML|KG|RAG)
+
+246
+
+260
+
+162
+
+265
+
+Proportion
+
+319
+
+Pattern
+
+Proportion
+
+Count
+
+M|W|W (n=103)
+W|W|W (n=68)
+429
+300
+M|W|M (n=67)
+400
+M|W|S (n=65)
+491
+375
+200
+335
+W|W|S (n=52)
+300
+238
+W|W|M (n=48)
+0
+Ground Truth
+ML
+KG
+RAG
+DrugAgent
+M|M|W (n=46)
+C Outcomes by Activity Label of Evidence Agreement D Strong-to-Weak Bias in 3-way Conflict
+M|S|M (n=43)
+(Average bias ≈ 0.02, n = 172)
+Activity Label
+S|S|W (n=39)
+Pattern
+Weak
+Moderate
+Strong
+S|W|W (n=38)
+(ML|KG|RAG)
+S|S|S (n=37)
+0.83
+W|S|M (n=12)
+M|S|W (n=36)
+0.29
+0.29
+0.24
+S|S|M (n=30)
+M|S|S (n=27)
+0.8
+0.75
+M|S|W (n=36)
+S|W|M (n=26)
+S|W|S (n=25)
+0.6
+M|M|M
+(n=22)
+0.17
+0.48
+S|M|W (n=21)
+0.32
+S|M|W (n=21)
+0.4
+M|M|S (n=20)
+W|M|W
+(n=14)
+0.17
+W|M|S (n=12)
+0.2
+W|S|S (n=13)
+0.68
+W|M|S (n=12)
+W|S|M (n=12)
+0.0
+0.00
+S|W|M
+(n=26)
+0.54
+W|S|W (n=10)
+0.44
+S|M|M (n=9)
+W|M|M (n=9)
+-0.06
+M|W|S (n=65)
+S|M|S (n=8)
+600
+
+Consensus
+Majority
+Full conflict
+(n=127)
+(n=601)
+(n=172)
+E Evidence Quality Breakdown under Conflict
+Conflict case (correct)
+Sunitinib - LRRK2
+ML
+
+Moderate
+(pKd 6.1)
+
+KG
+
+Weak
+(indirect edge)
+
+RAG
+
+Strong
+(IC50 67nM)
+
+Prediction: Strong
+Final
+
+Probability (Average)
+Weak Moderate Strong
+(W)
+(M)
+(S)
+1.00
+1.00
+0.08
+1.00
+1.00
+
+1.00
+0.91
+
+1.0
+
+1.00
+1.00
+
+0.8
+1.00
+
+1.00
+0.25
+
+1.00
+0.75
+1.00
+1.00
+
+0.6
+
+1.00
+1.00
+1.00
+0.52
+1.00
+
+0.48
+
+0.83
+0.17
+
+1.00
+0.17
+0.83
+0.20
+
+1.00
+
+0.80
+1.00
+1.00
+
+0.4
+
+0.2
+
+0.0
+
+1.00
+
+Bias
+Conflict case (Incorrect)
+Nilotinib-EPHA2
+
+✅
+
+RAG provides direct assay
+evidence, while KG is
+indirect and ML predicts
+weaker affinity.
+
+ML
+
+Moderate
+(pKd 6.8)
+
+KG
+
+Strong
+(Direct edge)
+
+RAG
+
+Weak (EPHA1
+is the target)
+
+Prediction: Moderate
+Final
+
+❎
+
+ML and KG support direct
+binding, but RAG is
+mismatched (EPHA1),
+creating uncertainty.
+
+Figure 3. Label-level decision behavior under multi-source evidence integration for the kinase dataset. (A) Bar plot showing
+activity labels for ground truth, and each of the DrugAgent components, as well as the final DrugAgent output. (B) Heatmap of
+DrugAgent output probabilities for each ML|KG|RAG evidence-label pattern. (C) Distribution of DrugAgent output labels by
+evidence-source agreement level, including consensus, majority-agreement, and full-conflict cases. (D) Directional bias under
+full conflict, defined as P(Strong) − P(Weak), for each conflicting evidence pattern. (E) Representative conflict cases showing
+successful and failed integration; red highlights indicate key text related to label decision.
+
+average bias across three-way conflict cases was close to zero (Fig. 3D), suggesting that DrugAgent did not globally favor
+stronger or weaker labels under conflict, although individual conflict patterns showed clear directional differences.
+Finally, we inspected representative drug-target pairs to illustrate how DrugAgent behaved under evidence disagreement.
+DrugAgent recovered the ground-truth activity label despite discordant ML, KG, and RAG evidence, in 43% of cases (74 out of
+172 cases), where there was a 3-way conflict of individual agent labels (Fig. 3E).
+Examples in Fig. 3E indicate evidence labels or final outputs that disagree with the ground-truth label. Text in the boxes
+labeled “Final” summarizes the reasoning used by DrugAgent. The phrases highlighted in red show elements that aided or
+harmed the ability of DrugAgent to make the correct label assignment; for the left-hand example in the figure, the observation
+7/19
+
+of direct quantitative measurements gave DrugAgent reasoning confidence to produce a “Strong” label, while in the right-hand
+example, the lack of drug-target co-mention led to uncertainty. These examples demonstrate that DrugAgent can integrate
+heterogeneous evidence to preserve or recover the correct label in some conflict settings, but its integration is not uniformly
+reliable when evidence sources disagree.
+B Plausibility Distribution (dashed lines indicate mean scores; total N = 500)
+
+A Plausibility Judgment Distribution
+38.6%
+
+36.8%
+
+24.6%
+
+250
+
+25.4%
+
+200
+
+KG+RAG
+
+31.0%
+
+ML+RAG
+
+32.2%
+
+51.2%
+
+16.6%
+
+DrugAgent
+
+34.4%
+
+46.4%
+
+19.2%
+
+43.4%
+
+✅
+❌
+
+Count
+
+ML+KG
+
+Plausible only
+
+Not contradicted & Plausible ( )
+Contradicted & Not plausible ( )
+
+DrugAgent
+ML+RAG
+KG+RAG
+ML+KG
+
+150
+100
+50
+0
+
+1
+
+2
+
+C Plausibility Distribution by Ground Truth Activity Label (each ablation N=500)
+DrugAgent
+
+ML+RAG
+
+3
+Score (1-5)
+
+4
+
+KG+RAG
+
+5
+
+ML+KG
+
+Active
+
+0%
+
+37%
+
+37%
+
+20%
+
+6%
+
+0%
+
+44%
+
+33%
+
+18%
+
+4%
+
+0%
+
+49%
+
+29%
+
+17%
+
+5%
+
+0%
+
+27%
+
+44%
+
+20%
+
+9%
+
+Inactive
+
+2%
+
+59%
+
+26%
+
+11%
+
+3%
+
+2%
+
+59%
+
+26%
+
+11%
+
+2%
+
+1%
+
+65%
+
+20%
+
+11%
+
+2%
+
+0%
+
+54%
+
+30%
+
+11%
+
+4%
+
+2
+3
+4
+Plausibility score
+
+5
+
+1
+
+2
+3
+4
+Plausibility score
+
+5
+
+1
+
+2
+3
+4
+Plausibility score
+
+5
+
+1
+
+2
+3
+4
+Plausibility score
+
+5
+
+Average Plausibility Score
+
+D Plausibility Score by the Number of Retrieved Papers
+5
+4
+
+DrugAgent
+ML+RAG
+KG+RAG
+
+3
+2
+1
+
+0
+1-3
+4-6
+7-10
+(n=245)
+(n=116)
+(n=42)
+(n=97)
+Number of Drug-Target Pair Retrieved Papers (Total n=500)
+
+E
+
+Mechanistic Coherence (MC) Score by the Number of Retrieved Papers
+1.00
+Average MC Score
+
+1
+
+0.75
+
+DrugAgent
+ML+RAG
+KG+RAG
+
+0.50
+0.25
+0.00
+
+0
+1-3
+4-6
+7-10
+(n=245)
+(n=116)
+(n=42)
+(n=97)
+Number of Drug-Target Pair Retrieved Papers (Total n=500)
+
+Figure 4. Plausibility-based evaluation across model variants for the Tox21 dataset. (A) Distribution of plausibility judgment
+states across the Tox21 AR dataset, showing the proportions of Not contradicted & Plausible, Plausible only, and Contradicted
+& Not plausible across DrugAgent and ablated variants. (B) Distribution of plausibility scores across ablation settings; dashed
+vertical lines indicate the mean score for each variant. (C) Plausibility score distributions stratified by assay label. The
+heatmaps compare Active and Inactive compounds and assess whether evidence integration reflects assay-derived activity
+labels. (D) Mean plausibility score across bins of the number of retrieved papers for each drug-target pair among
+RAG-containing settings. (E) Mean mechanistic coherence score across bins of the number of retrieved papers for each
+drug-target pair among RAG-containing settings.
+The Tox21 AR dataset was used as a use case with binary class
+labels (Fig. 4). DrugAgent produced a fraction of outputs judged “Not Contradicted & Plausible” (34.4%), while removing KG
+increased the fraction of “Plausible only” outputs to 51.2%, suggesting that KG removal weakened the evidence needed for
+outputs to satisfy both non-contradiction and plausibility criteria (Fig. 4A). In addition, compared with DrugAgent, ML+KG
+increased the fraction of “Not Contradicted & Plausible” outputs by 2.4 percentage points, but also increased the fraction of
+“Contradicted & Not plausible” outputs by 5.4 percentage points. Overall, ML+KG shifted the plausibility score distribution
+upward (mean ≃ 2.88), with more judgments assigned to scores of 3 or higher despite the increased contradiction rate (Fig. 4B).
+DrugAgent plausibility scores showed differences between Active and Inactive compounds, with Active samples having
+higher scores than Inactive samples. In DrugAgent, 63% of Active cases received scores of 3-5, compared with 40% of
+Inactive cases, whereas Inactive cases were more concentrated at score 2 (59% vs. 37% for Active). This difference appeared
+weaker when ML or KG was removed, suggesting that molecular predictive signals and structured knowledge can contribute
+to activity-related plausibility patterns in this dataset (Fig. 4C). As such, one observation regarding the plausibility scores
+reported for DrugAgent (or any of the tested ablations) is that these scores did not necessarily show an interdependence with
+the assay-derived labels. This was evidenced by the small percentages of low and high plausibility scores (scores either 1 or 5)
+throughout the ablations. This pattern was observed in both the kinase and Tox21 datasets (Fig. 2C and Fig. 4C). Readers are
+Use case (2) using the Tox21 AR Screening Dataset.
+
+8/19
+
+reminded that plausibility scores are generated from evaluation via LLMaJ. We also observe that the ML+KG ablation setting
+can result in high plausibility scoring for the Strong classification label for the kinase dataset (Fig. 2C). This suggests that
+despite excluding retrieved literature, evidence from only ML+KG can be sufficiently clear without being externally grounded
+(i.e., through publication text).
+Average plausibility scores generally increased with the number of retrieved papers, although the trend was modest and not
+strictly monotonic across all variants (Fig. 4D). Mechanistic coherence (MC) showed a clearer evidence-dependent pattern, with
+MC scores increasing from low values in the no-retrieval bin to the highest values for pairs supported by 7-10 retrieved papers
+(Fig. 4E). These results suggest that literature availability is associated with stronger judge-assigned biological plausibility and,
+more prominently, MC in the Tox21 AR setting; this is similar to the kinase dataset use case.
+Sanity-Check DTI Classification
+To assess whether LLM-as-a-Judge (LLMaJ) plausibility scores were aligned with known DTI labels, we performed a sanitycheck classification analysis on the kinase and Tox21 benchmarks(Fig. 5 and Fig. 6). The kinase benchmark used ordinal
+activity labels (Weak, Moderate, and Strong), whereas the Tox21 benchmark used binary assay labels (Inactive and Active). For
+each benchmark, we stratified predictions by LLMaJ plausibility score and ground-truth label, and computed accuracy and F1
+within each stratum for DrugAgent and the ablated variants.
+This analysis was intended to test whether higher plausibility judgments corresponded to better agreement with known
+labels, rather than to treat plausibility as a direct measure of predictive correctness. Overall performance was summarized
+using accuracy and F1, while stratum-level values were used to identify where plausibility scores did or did not align with
+label-specific predictive performance. For reference, a uniform random classifier would have an expected accuracy of 0.33 for
+the three-class kinase benchmark and 0.50 for the binary Tox21 benchmark.
+In the kinase dataset, overall performance was modest and similar across variants (Fig. 5). DrugAgent achieved an overall
+accuracy of 0.39 and F1 of 0.39, comparable to ML+KG and slightly higher than ML+RAG and KG+RAG. DrugAgent showed
+improvement over ML+KG in conditions such as low/high plausibility (score-3 and 5) Weak entries as well as low/moderate
+(score-2 and 4) plausibility Strong entries. For example, high plausibility (score-4) Strong examples (accuracy = 0.57; F1 =
+0.47; n = 128). DrugAgent also showed relatively high performance for score-3 Weak examples (accuracy = 0.63; F1 = 0.50; n
+= 131).
+In the Tox21 dataset, DrugAgent achieved an overall accuracy of 0.59 and a support-weighted F1 of 0.57 (Fig. 6). Similar
+to the kinase dataset, DrugAgent performed strongly for low plausibility (score-2) Inactive examples (accuracy = 0.97; F1 =
+0.76; n = 147); this is consistent with the expected relationship between low plausibility and inactive assay labels. Separately,
+DrugAgent performed well for score-3 Inactive examples (accuracy = 0.75; F1 = 0.55; n = 65). Additionally, each ablation
+condition for DrugAgent had high accuracy for high plausibility (scores 4 and 5) Active entries.
+Although ML+KG achieved the highest accuracy and F1 on Tox21 and tied with DrugAgent on the kinase benchmark at
+0.39 accuracy and 0.39 F1 score (Table 2), this advantage was not uniform across evidence-availability strata when accuracy was
+stratified by the number of retrieved papers (Fig. 7). DrugAgent and the RAG-based ablations showed improved performance
+as more literature evidence was available. In the kinase benchmark, DrugAgent exceeded the ML+KG baseline for all retrievedpaper count bins (from 1 to 10 publications) whereas performance was closer to or below the baseline when no papers were
+retrieved (Fig. 7A). A similar pattern was observed in Tox21, where DrugAgent exceeded the ML+KG baseline when at least
+one paper was retrieved and achieved its highest accuracy in the 4-6 retrieved-paper count bin (Fig. 7B). These results suggest
+that the apparent aggregate advantage of ML+KG is partly driven by evidence sparsity, while retrieved literature becomes
+beneficial when sufficient supporting evidence is available.
+These results suggest that selectively using RAG is beneficial. In particular, while all three types of papers (e.g., drug-only,
+gene-only, and drug-target pair papers) are always retrieved, the best overall performance can be achieved by a strategy that
+uses DrugAgent only when drug-target pair papers are available and otherwise uses ML+KG when no such papers are found.
+(Table 2). This strategy matches the best performance on the kinase dataset (accuracy = 0.39; F1 = 0.39) and substantially
+improves performance on the Tox21 dataset (accuracy = 0.67; F1 = 0.67).
+We additionally evaluated baseline methods for the task of link prediction using knowledge graph embedding (KGE) models
+(i.e., TransE, ComplEx, and RotatE), as well as supervised predictive models (Supplementary Table S3 and Supplementary
+Table S4, respectively). Standard KGE methods showed limited alignment with assay-derived labels with performance ranging
+from 0.28 to 0.31 on the kinase dataset and reaching at most 0.57 accuracy and 0.57 F1 on Tox21 AR (Supplementary Table
+S3). This analysis was conducted under a leakage-controlled graph setting (Supplementary Methods). Next, we used several
+pretrained DeepPurpose models (each with a different architecture and dataset, including one with a CNN-based architecture
+similar to DeepDTA), which showed modest performance, reaching at most 0.37 accuracy/F1 on the kinase dataset and 0.61/0.60
+accuracy/F1 on Tox21 AR (Supplementary Table S4).
+These results should therefore be interpreted with caution when DrugAgent using only KG as compared to existing
+9/19
+
+A Accuracy (Acc) by Plausibility Score & Ground-Truth Activity Label (N=900)
+DrugAgent (overall Acc=0.39)
+ML+RAG (overall=0.38)
+KG+RAG (overall=0.37)
+
+ML+KG (overall=0.39)
+
+0.25
+
+0.22
+
+0.62
+
+0.00
+
+0.57
+
+0.39
+
+0.00
+
+0.00
+
+0.84
+
+0.00
+
+0.05
+
+0.92
+
+0.10
+
+0.32
+
+0.57
+
+0.11
+
+0.69
+
+0.30
+
+0.01
+
+0.38
+
+0.55
+
+0.08
+
+0.41
+
+0.46
+
+0.63
+
+0.45
+
+0.01
+
+0.28
+
+0.57
+
+0.18
+
+0.61
+
+0.25
+
+0.04
+
+0.52
+
+0.50
+
+0.07
+
+0.78
+
+0.19
+
+0.12
+
+0.57
+
+0.44
+
+0.09
+
+0.93
+
+0.11
+
+0.00
+
+0.81
+
+0.22
+
+0.00
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+1.0
+
+Plausibility Score by LLMaJ
+
+5
+0.8
+
+4
+0.6
+
+3
+0.4
+
+2
+0.2
+
+1
+Weak Moderate Strong
+
+Weak Moderate Strong
+
+Weak Moderate Strong
+
+B F1 Score by Plausibility Score and Ground-Truth Activity Label
+DrugAgent (overall F1=0.39)
+ML+RAG (overall=0.36)
+
+KG+RAG (overall=0.37)
+
+ML+KG (overall=0.39)
+
+0.00
+
+0.00
+
+Weak Moderate Strong
+
+0.33
+
+0.13
+
+0.70
+
+0.00
+
+0.27
+
+0.55
+
+0.00
+
+0.82
+
+0.08
+
+0.72
+
+Plausibility Score by LLMaJ
+
+5
+
+0.0
+
+Sample Size
+50
+
+0.15
+
+0.30
+
+0.47
+
+0.13
+
+0.48
+
+0.39
+
+0.02
+
+0.33
+
+0.47
+
+0.14
+
+0.35
+
+0.36
+
+4
+
+100
+200
+
+0.50
+
+0.43
+
+0.02
+
+0.33
+
+0.44
+
+0.22
+
+0.46
+
+0.28
+
+0.06
+
+0.48
+
+0.42
+
+0.11
+
+0.59
+
+0.25
+
+0.17
+
+0.53
+
+0.37
+
+0.14
+
+0.55
+
+0.16
+
+0.00
+
+0.62
+
+0.29
+
+0.00
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+--
+
+3
+
+2
+
+1
+Weak Moderate Strong
+
+Weak Moderate Strong
+
+Weak Moderate Strong
+
+Weak Moderate Strong
+
+Figure 5. Stratified predictive performance across LLMaJ plausibility scores and ground-truth activity labels on the kinase
+benchmark. (A) Accuracy and (B) F1 score for DrugAgent and ablated model variants. Rows represent plausibility scores
+assigned by the LLMaJ, ranging from 5, highest plausibility, to 1, lowest plausibility. Columns represent ground-truth activity
+labels. Circle color encodes the performance metric, and circle area encodes the number of samples per cell. Cells without
+observations are shown as empty.
+
+KG link-prediction algorithms, because KG-only usage in DrugAgent is not meant to predict new links. Similarly, direct
+comparisons with pretrained ML results should be made cautiously, as such pretrained components cannot be controlled for
+data leakage.
+
+Discussion
+This study addresses a central challenge in biomedical research, which is the integration of data with distinct biological
+modalities, representation modalities, and evidence provenances (e.g., observation, curated, or inference). There are additional
+challenges in the integration of this as scientific data can be incomplete or conflicting. A major aspect of this study to address
+this challenge is the usage of LLM-based agents (i.e., ML, KG, or RAG) for structuring and reconciling these different sources
+of evidence during integration. Rather than serving as a standalone drug-target interaction (DTI) predictor, DrugAgent is
+designed as a complementary tool for evidence integration.
+DrugAgent converts ML predictions, path-based KG evidence, and retrieved literature evidence into a common data structure
+suitable for LLM-based reasoning to assess the usage of such distinct data by LLMs for uncertainty and then summarize this
+data. Consistent with this objective, DrugAgent showed high faithfulness to the provided content, stable output behavior, and
+10/19
+
+A Accuracy (Acc) by Plausibility Score & Ground-Truth Activity Label (each box N=500)
+DrugAgent
+ML+RAG
+KG+RAG
+ML+KG
+overall Acc=0.59
+overall=0.60
+overall=0.56
+overall=0.63
+1.0
+Plausibility Score by LLMaJ
+
+5
+4
+3
+2
+1
+
+0.00
+
+1.00
+
+0.00
+
+1.00
+
+0.00
+
+0.92
+
+0.00
+
+1.00
+
+0.19
+
+0.86
+
+0.14
+
+0.98
+
+0.12
+
+0.81
+
+0.15
+
+0.88
+
+0.75
+
+0.32
+
+0.21
+
+0.76
+
+0.60
+
+0.49
+
+0.27
+
+0.87
+
+0.97
+
+0.05
+
+0.60
+
+0.64
+
+0.94
+
+0.09
+
+0.67
+
+0.55
+
+1.00
+
+--
+
+1.00
+
+--
+
+1.00
+
+0.00
+
+--
+
+--
+
+Inactive Active
+
+Inactive Active
+
+Inactive Active
+
+Inactive Active
+
+B F1 Score by Plausibility Score and Ground-Truth Activity Label
+DrugAgent
+ML+RAG
+KG+RAG
+ML+KG
+overall F1=0.57
+overall=0.59
+overall=0.55
+overall=0.62
+
+Plausibility Score by LLMaJ
+
+5
+4
+3
+2
+1
+
+0.00
+
+0.82
+
+0.00
+
+0.79
+
+0.00
+
+0.79
+
+0.00
+
+0.80
+
+0.8
+0.6
+0.4
+0.2
+0.0
+
+Sample Size
+50
+
+0.26
+
+0.74
+
+0.24
+
+0.78
+
+0.16
+
+0.69
+
+0.22
+
+0.75
+
+0.55
+
+0.43
+
+0.27
+
+0.64
+
+0.51
+
+0.55
+
+0.37
+
+0.73
+
+0.76
+
+0.10
+
+0.64
+
+0.60
+
+0.71
+
+0.16
+
+0.71
+
+0.50
+
+1.00
+
+--
+
+1.00
+
+--
+
+0.86
+
+0.00
+
+--
+
+--
+
+Inactive Active
+
+Inactive Active
+
+Inactive Active
+
+100
+150
+
+Inactive Active
+
+Figure 6. Model performance across LLMaJ plausibility strata and Tox21 activity labels. (A) Accuracy and (B) F1 score were
+computed within each stratum defined by LLMaJ plausibility score and ground-truth activity label. Columns compare
+DrugAgent with ablated variants excluding KG, ML, or RAG components. Bubble color denotes the metric value, bubble area
+denotes the number of samples in each stratum, and numeric annotations indicate the corresponding metric values.
+the ability to produce interpretable summaries of individual agent results, as well as reasoning logic for included final labels.
+Limitations and Future Work
+This work has several limitations. First, the evaluation was designed to characterize evidence integration behavior rather than
+strict predictive generalization. Although we evaluated DrugAgent on both a kinase inhibition benchmark and a Tox21 androgen
+receptor antagonist benchmark, we did not perform broader generalization checks such as zero-shot evaluation, temporal splits,
+cross-dataset benchmarking using additional datasets such as DAVIS or KIBA, or target-class-level evaluations across GPCRs,
+ion channels, transporters, and nuclear receptors beyond the androgen receptor. Therefore, further work is needed to assess
+performance for additional target classes and under unseen-drug, unseen-protein, temporal, dataset-level, target-class-level, and
+modality-level splits. Second, although the KG component uses interpretable path-based evidence useful for reasoning, its
+current scoring procedure is heuristic and relies on fixed constraints related to path length and hub-node penalties.
+11/19
+
+Kinase dataset
+Acc
+F1
+
+Tox21 dataset
+Acc
+F1
+
+ML only
+KG only
+RAG only
+
+0.37
+0.38
+0.34
+
+0.37
+0.35
+0.33
+
+0.61
+0.58
+0.52
+
+0.60
+0.54
+0.48
+
+ML+KG
+ML+RAG
+KG+RAG
+
+0.39
+0.38
+0.38
+
+0.39
+0.36
+0.36
+
+0.63
+0.60
+0.56
+
+0.62
+0.59
+0.55
+
+DrugAgent
+
+0.39
+
+0.39
+
+0.59
+
+0.57
+
+DrugAgent
+(Skip RAG without DTI papers)
+
+0.39
+
+0.39
+
+0.67
+
+0.67
+
+A Kinase Dataset
+1.0
+0.8
+
+Accuracy
+
+Model
+
+DrugAgent
+ML+RAG
+KG+RAG
+
+B Tox21 Dataset
+DrugAgent
+ML+RAG
+KG+RAG
+
+ML+KG = 0.63
+
+0.6
+ML+KG = 0.39
+
+0.4
+0.2
+0.0
+
+Table 2. Ablation performance across standalone
+components, leave-one-component-out settings, and the
+full DrugAgent framework. Accuracy (Acc) and F1 are
+reported for the Kinase and Tox21 datasets. Bold values
+indicate the best performance within each dataset and
+metric.
+
+0
+1-3
+4-6
+7-10
+(n=700) (n=107) (n=26) (n=67)
+Number of Drug-Target Pair
+Retrieved Papers (Total n=900)
+
+0
+1-3
+4-6
+7-10
+(n=245) (n=116) (n=42) (n=97)
+Number of Drug-Target Pair
+Retrieved Papers (Total n=500)
+
+Figure 7. Accuracy stratified by the number of retrieved papers
+for (A) Kinase and (B) Tox21 AR datasets. Bars show the
+performance of DrugAgent and its RAG-based ablations,
+ML+RAG and KG+RAG, while the dashed red line indicates the
+ML+KG baseline.
+
+Additionally, DrugAgent does not currently learn calibrated integration weights for evidence sources; automated and
+systematic review of academic research results remains a challenge in the artificial intelligence field [26, 27]. Related to this,
+our RAG agent is constrained by the coverage and biases of the indexed literature. This may introduce publication bias, as
+well-studied proteins and drugs are more likely to be represented by numerous publications [7]. Moreover, although the retrieval
+step uses assay-related query terms, experimental context, assay type, and evidence strength are not explicitly encoded as
+structured metadata during retrieval; this is a similar issue experienced in many pathway interaction databases [28].
+Separately, DrugAgent integration remains rule-guided rather than statistically calibrated. Multi-agent execution is also
+more computationally expensive than single-model inference because ML scoring, KG path retrieval, RAG evidence retrieval,
+and LLM-based evidence synthesis introduce additional latency. The current implementation is therefore not optimized for
+high-throughput screening over very large drug-target matrices, and is better suited for evidence aggregation and interpretation
+of selected candidate pairs. Future work should explore improved source calibration and methods for improving cost and
+latency efficiency.
+There is evidence that verbose LLM explanations may inflate human confidence in the explanations provided, regardless of
+their factual correctness [29]. While we did not test this directly, we believe that the explanations written by DrugAgent are
+sufficiently short (an average of ~100 words). Additionally, we believe that the use of structured JSON as part of individual
+agent output can also aid in interpretability.
+While human expert validation would be preferable for the evaluation of all DrugAgent outputs, our evaluation framework
+utilizes LLM-as-a-Judge (LLMaJ), which is a scalable and cost-efficient method for evaluation of DrugAgent outputs. While
+deployment of LLMaJ is becoming more routine, there remain concerns about reliability and biases that may result from
+LLMaJ [30, 31]. It should be noted that these concerns are contrasted with the use of LLMaJ in the improvement of LLM
+performance [32, 33].
+Similarly, our evaluation does not include systematic human expert validation of every reasoning chain or exhaustive auditing
+of retrieved snippets and KG paths. Because pretrained ML models and LLM-based components may encode information from
+prior training corpora, their training data cannot be controlled as strictly. Future work in the areas of membership inference
+attack research and the detection of data contamination that seeks to predict whether a particular datapoint is a member of a
+target model’s training data may aid in developments to address this concern [34–36]. Although it has been suggested that
+because pretraining typically involves relatively few passes over vast and highly diverse corpora, LLMs are generally unlikely
+to memorize individual training instances; our comparisons to large tabular data of assay values from Anastassiadis et al. and
+Tox21 sought to minimize this concern [15, 16, 37]. Future development of DrugAgent with updated LLM versions needs to
+remain vigilant to these concerns in part by re-running stability and faithfulness checks.
+
+12/19
+
+Methods
+Overview of DrugAgent
+DrugAgent is a multi-agent architecture for biologically grounded assessment of drug-target interactions. The system integrates
+complementary evidence sources such as machine learning predictions, knowledge graph reasoning, and literature-derived
+signals, within a structured integration pipeline.
+A key design principle is the separation of stochastic reasoning from deterministic decision-making. Evidence from
+heterogeneous sources is first organized into a structured representation and then reconciled through a rule-guided decision
+module, enabling consistent and interpretable outputs.
+As illustrated in Fig. 1, the system follows a modular pipeline. A Coordinator Agent manages execution, while specialized
+agents independently generate complementary evidence: an ML Agent produces quantitative affinity predictions, a KG agent
+extracts mechanistic paths, and a RAG agent retrieves literature evidence. These signals are integrated by a reasoning module
+that produces the final prediction and explanation.
+The system operates in three stages: (1) coordination, which invokes specialized agents and organizes their outputs
+into a shared structured format; (2) evidence generation, where each agent produces a label and supporting rationale; and (3)
+integration, where a reasoning module synthesizes the resulting evidence and applies rule-guided fusion to produce the final
+decision.
+Pipeline.
+
+Implementation. The framework is implemented using Microsoft AutoGen [38]. All agents use an OpenAI GPT-5.2 model
+via the Azure OpenAI API. Deterministic decoding (temperature = 0.0, seed = 42) is used for all components except the
+reasoning module. The RAG pipeline uses the text-embedding-3-large model for retrieval. Additional implementation
+details are provided in the following sections. The system prompts, structured output schemas, and rule specifications used by
+each agent are provided in Supplementary Section 1.1.
+Coordinator Agent
+
+The Coordinator Agent orchestrates the overall workflow by invoking specialized agents and organizing their outputs for
+downstream reasoning. Each specialized agent is responsible for a distinct evidence source or reasoning component, and the
+Coordinator Agent ensures that their outputs are returned in a consistent, structured format. Specifically, all module outputs are
+constrained to a shared JSON schema, enabling heterogeneous evidence to be integrated and compared in the downstream
+reasoning stage.
+ML Agent
+
+The ML Agent predicts drug-target interactions using DeepPurpose [3], a pre-trained model on BindingDB [39] with a message
+passing neural network for drug and a convolutional neural network for protein sequences. It estimates continuous pKd
+values from molecular SMILES strings and protein sequences. For the kinase benchmark, predicted affinities are discretized
+into three ordinal categories following standard conventions: Strong (pKd ≥ 7.0), Moderate (6.0 ≤ pKd < 7.0), and Weak
+(pKd < 6.0) [6, 40]. For the Tox21 dataset, predictions are mapped to binary labels, where Strong is treated as Active, and
+Moderate or Weak as Inactive, consistent with assay definitions.
+KG Agent
+
+We construct a heterogeneous drug-target knowledge graph by integrating curated biomedical resources, including DrugBank [41], CTD [42], and BindingDB [39]. Nodes represent drugs and genes, while edges encode curated drug-target
+interactions together with supporting evidence, including literature-derived interaction annotations (e.g., topotecan decreases
+TOP1 protein activity in CTD) and assay-derived measurements (e.g., topotecan-TOP1 IC50 = 21 nM in BindingDB). For each
+drug-target pair, textual evidence from these sources is aggregated into structured, source-aware representations, preserving
+interpretability across curated annotations and experimental measurements.
+We perform multi-hop reasoning over this graph using breadth-first search with a maximum search depth of Dmax = 5.
+Candidate paths are ranked using a structural scoring function that favors shorter paths while penalizing paths that pass through
+high-degree intermediate hub nodes. The hub penalty reduces the influence of nonspecific connectivity through broadly
+connected biomedical entities; a topic that has been previously considered [4, 43].
+S(P) =
+
+1
+· λ hint (P) ,
+ℓ(P)
+
+where ℓ(P) is the number of edges in path P, and hint (P) is the number of intermediate nodes on the path with degree greater
+than 300. We use λ = 0.6 and retain the top-k paths (k = 3) for downstream reasoning. Sensitivity analyses showed that this
+configuration produced stable ranked path sets across a reasonable range of values (Supplementary Table S5).
+13/19
+
+To characterize KG evidence availability, we computed the shortest drug-target path length for each evaluation pair using
+the same maximum search depth. All kinase pairs and 99.0% of Tox21 AR pairs were connected within five hops. The kinase
+benchmark contained a larger fraction of direct 1-hop edges than Tox21 AR (47.0% vs. 19.2%), whereas Tox21 AR was
+dominated by indirect 3-hop paths (72.4%; Supplementary Table S1).
+The selected paths are processed by an LLM-based component to produce a structured output consisting of a categorical
+label, confidence score, and supporting rationale. This design enables interpretable, mechanism-aware reasoning while reducing
+the influence of non-specific graph connectivity.
+Rationale examples.
+
+• Direct KG interaction for drug topotecan & TOP1: “Direct, single-edge DrugBank-supported drug–target relationship
+(topotecan ↔ TOP1) with a specific, well-defined molecular mechanism (TOP1 poison/trapping).”
+• Indirect KG interaction for drug topotecan & TOP2A via copper: “One intermediate (copper) is a strong hub and its
+TOP2A effects are context/compound/organism-dependent, reducing specificity; overall evidence supports an indirect,
+non-specific association rather than a direct mechanism.”
+Compared to embedding-based link prediction methods, this path-based approach preserves explicit mechanistic interpretability, which is critical for downstream evidence integration.
+PubMed RAG Agent
+
+We construct an unstructured evidence layer using a retrieval-augmented generation (RAG) pipeline over PubMed Central
+(PMC) Open Access articles retrieved in April 2026. To address sparse direct co-mentions, we employ a multi-channel retrieval
+strategy that issues queries at three levels: drug-target pairs, drug-only, and target-only. Pair-level retrieval used both an entity
+query and an assay-enriched query, whereas drug-only and target-only retrieval used assay-enriched single-entity queries.
+Assay-related terms included binding and target-engagement terminology such as Kd, Ki, IC50, EC50, potency, selectivity,
+biochemical assay, kinase assay, enzymatic activity, inhibition, phosphorylation, and target engagement. For each query type,
+we retrieve up to 10 documents per entity type to ensure balanced coverage across sources. The multi-channel retrieval strategy
+achieved broad coverage across both the kinase and Tox21 AR domains, despite substantial differences in their data distributions
+(Supplementary Table S2). In the kinase dataset, retrieval yielded 722 drug-target pair-level papers, 333 drug-level papers, and
+1,710 gene-level papers, whereas in the Tox21 AR dataset, retrieval yielded 795 pair-level papers, 4,223 drug-level papers, and
+10 gene-level papers.
+Query embeddings were generated using the text-embedding-3-large model and searched
+against a Facebook AI Similarity Search (FAISS) index of PMC Open Access text chunks. Retrieval was performed through
+three channels: drug-target pair, drug-only, and target-only. Candidate PMC articles were selected using the maximum chunk
+similarity score (cosine similarity) within each article, with entity filters requiring the relevant drug and/or target mention when
+available. If no article satisfied the entity filter, the system fell back to the highest-scoring candidates without the filter.
+Within selected articles, candidate chunks were re-ranked using a fixed, label-independent score:
+Retrieval and Scoring
+
+schunk = sembed + bsection + bentity .
+The section term favored Results passages and mildly penalized Methods passages, while the entity term prioritized drug-target
+co-mentions over single-entity mentions. Chunks below a minimum word-count threshold were removed. The re-ranking
+score above was used only to select and order chunks for the RAG prompt, not as a ground-truth activity label. Selected
+chunks were passed to the RAG agent with explicit retrieval-channel prefixes: [PAIR EVIDENCE], [DRUG EVIDENCE],
+or [TARGET EVIDENCE]. This allows the model to distinguish direct pair-level evidence from one-sided contextual evidence.
+Unless otherwise specified, all analyses used a fixed retrieval-scoring configuration with a Results-section bonus of +0.5, a
+Methods-section penalty of −0.2, a drug-target co-mention bonus of +1.0, a single-entity mention bonus of +0.1, a minimum
+chunk length of 15 words, and top-k = 80 candidate chunks per query; the sensitivity ranges considered for these parameters
+are summarized in Supplementary Table S6.
+In a repeated-run analysis of 100 kinase pairs, retrieved evidence quotes were fully stable across runs (mean Jaccard =
+1.000 across retrieval channels), while source-level RAG labels were identical in 70% of pairs and showed at least two-of-three
+agreement in 98% (Supplementary Section 1.3).
+For the Tox21 AR scoring function, the entity name (e.g., “AR”) was expanded to include androgen receptor,
+AR-LBD, AR-LBP, and NR3C4, reducing ambiguity from the short gene symbol AR.
+Separately, it should be noted that in DrugAgent, the RAG module was invoked for all drug-target pairs. The retrieved-paper
+count used for stratified analyses denotes direct drug-target pair-level papers only. Because RAG also performs drug-only and
+target-only retrieval, pairs with zero direct pair-level papers may still receive indirect literature context. Thus, the zero-paper
+14/19
+
+DrugAgent stratum is not equivalent to the ML+KG ablation, where RAG is removed entirely from reasoning and final
+decision-making.
+Reasoning Agent
+
+The Reasoning Agent operates in two stages: structured reasoning and rule-guided decision-making. In the first stage, outputs
+from the ML, KG, and RAG modules are converted into a structured JSON format that supports consistent communication and
+downstream reasoning. Each source contributes an evidence_analysis entry that includes the evidence source, agent rationale,
+proposed action, observations, and proposed DTI label. A summarization step then adds a summary_reasoning field that
+captures agreement, conflict, and uncertainty across sources. This stage summarizes evidence but does not produce the final
+decision. In the second stage, a decision module produces the final output, including a label and supporting rationale. Decisions
+follow a rule priority order: majority agreement is applied first, followed by tie-breaking. When these rules are inconclusive, a
+constrained LLM-based fallback is applied.
+Experimental Protocol
+Evaluation design
+
+The primary objective was to evaluate whether DrugAgent produces evidence-aligned, internally consistent, and interpretable
+conclusions when integrating heterogeneous ML, KG, and literature-derived signals. The kinase benchmark served as the
+primary evaluation setting. The Tox21 AR dataset was used to assess whether the observed integration behavior persisted under
+a distinct binary, cell-based screening regime. To evaluate the contribution of each component, we performed ablation studies in
+which each module (ML, KG, or RAG) was removed from the pipeline. In each setting, the system was re-executed using only
+the remaining sources, and the removed component was excluded from both the reasoning stage and the final decision process.
+Diagnostics for Evidence-Grounded integration under LLM-as-a-Judge
+
+We evaluated DrugAgent using an LLM-as-a-Judge (LLMaJ) protocol grounded in recent analyses of evaluation reliability,
+bias, and faithfulness [30, 44, 45]. In this study, LLMaJ was used as an internal diagnostic tool rather than as an independent
+biological gold standard. The judge was not asked to determine whether a drug truly interacts with a target. Instead, it assessed
+whether each generated explanation was supported by the evidence provided to the system, whether the explanation introduced
+unsupported claims or contradictions, and whether the inferred association was biologically plausible given the available
+evidence.
+This distinction is important because evidence-grounded plausibility can differ from experimental correctness, especially
+when retrieved literature is sparse, indirect, or conflicting. We therefore interpret LLMaJ outputs as diagnostic probes of
+evidence alignment, output consistency, and reasoning behavior under heterogeneous biomedical evidence, rather than as
+definitive validation of DTI labels or integration optimality. We operationalized these diagnostics along four complementary
+dimensions.
+Faithfulness measured input-output consistency: whether the generated fusion explanation remained
+attributable to the provided ML, KG, and retrieved literature evidence [12, 30, 46]. The judge checked whether the explanation
+introduced unsupported claims, contradicted the provided evidence, or omitted critical evidence needed to justify the stated
+conclusion. Thus, faithfulness serves as an evidence-grounded hallucination check rather than a measure of biological
+correctness or integration quality. Faithfulness was scored on a five-point scale, where 1 indicated highly unfaithful and 5
+indicated fully faithful. The judge also produced binary indicators for grounding, contradiction, unsupported claims, and critical
+omissions, together with a brief rationale. Because this metric is conditioned on the evidence available to each system variant,
+high faithfulness is expected for constrained structured-output systems and should not be interpreted as evidence of better
+multiple source integration.
+(1) Faithfulness.
+
+Biological plausibility evaluated whether the inferred drug-target association could be interpreted
+as a reasonable biological or pharmacological hypothesis given the provided evidence [47]. As input, the judge receives a
+combination of the drug name, gene name, and DrugAgent’s generated final output (i.e., evidence summary). The judge
+generates three outputs: 1) a five-point plausibility score, 2) a binary indicator of whether the association was contradicted by
+the input, and 3) a binary indicator of whether the rationale was mechanistically coherent. The plausibility score ranged from
+1 to 5, with higher scores indicating that the judge rated the association as more biologically plausible and mechanistically
+coherent given the provided evidence.
+Examples of contradiction include 1) A binds B/A does not bind B or 2) A strongly binds B/A weakly binds B. Similarly,
+mechanistic coherence indicates whether the association could reasonably be considered a possible biological hypothesis based
+on the input; sources of incoherence can arise from poor supporting evidence and lack of support for direct interaction. The
+judge also provided a brief rationale for each assessment. The full judge prompts, scoring definitions, and output schemas are
+(2) Biological Plausibility.
+
+15/19
+
+provided in Supplementary Section 1.2. As with faithfulness, plausibility was interpreted as a diagnostic proxy rather than as
+experimental validation of biological correctness.
+Stability evaluated the reproducibility of integration outcomes under repeated executions. For the kinase
+benchmark, we randomly sampled N = 100 cases and ran the full integration pipeline three times (k = 3). We report label
+stability as the fraction of cases for which all runs yielded identical categorical outputs:
+(3) Stability.
+
+AgreementRate =
+
+1 N
+(1)
+(2)
+(3)
+∑ 1{ŷi = ŷi = ŷi }.
+N i=1
+
+When generated rationales were compared across repeated runs, we additionally measured reasoning stability using embeddingbased semantic similarity (i.e., cosine similarity) between explanation outputs.
+For the kinase benchmark, we analyzed integration
+behavior conditioned on combinations of module outputs (ML, KG, RAG), representing each case as a triplet of predicted
+activity labels, such as W|M|S (W: weak, M: moderate, and S: strong). For each combination, we compared the distribution of
+ground-truth labels and aggregated outputs and examined label transitions from module predictions to the final decision. This
+analysis was intended to distinguish systematic integration behavior from raw predictive performance and to identify whether
+conflict resolution was driven by consensus, majority evidence, or a shift toward intermediate activity labels under conflicting
+evidence; this fallback-to-intermediacy behavior has been observed before [21].
+(4) Evidence Combination Consistency and Conflict Dynamics.
+
+Classification Evaluation
+To quantify predictive consistency, we computed accuracy and F1 score. We compared individual modules (ML, KG, RAG),
+ablation variants (KG+RAG, ML+RAG, ML+KG), and the full DrugAgent model.
+Ground-truth interaction labels were not exposed to any agent during integration. Retrieval was restricted
+to PMC Open Access articles and curated knowledge graph sources. The LLMaJ was provided only with raw agent outputs as
+JSON and final explanations, ensuring independence from ground-truth labels. For the Tox21 Androgen Receptor (AR) dataset,
+literature availability (i.e., publication counts) was used only to ensure sufficient retrievable evidence for evaluation and was not
+used to assign activity labels. We did not perform a temporal or entity-level split that explicitly removes evaluation drug-target
+pairs from the curated KG or retrieved literature corpus. Thus, KG and RAG modules should be interpreted as evidence-access
+components rather than as predictors evaluated under a strict unseen-interaction generalization setting.
+Leakage Control.
+
+16/19
+
+References
+1. Abbasi Mesrabadi, H., Faez, K. & Pirgazi, J. Drug–target interaction prediction based on protein features, using wrapper
+feature selection. Sci. Reports 13, 3594 (2023).
+2. Inoue, Y., Hao, N., Lu, Y., Fu, T. & Luna, A. Drug discovery in the era of artificial intelligence: From target identification
+to clinical trials. Preprints DOI: 10.20944/preprints202606.0091.v1 (2026).
+3. Huang, K. et al. DeepPurpose: a deep learning library for drug–target interaction prediction. Bioinformatics 36, 5545–5547
+(2020).
+4. Himmelstein, D. S. et al. Systematic integration of biomedical knowledge prioritizes drugs for repurposing. Elife 6, e26726
+(2017).
+5. Lewis, P. et al. Retrieval-augmented generation for knowledge-intensive nlp tasks. Adv. neural information processing
+systems 33, 9459–9474 (2020).
+6. Öztürk, H., Özgür, A. & Ozkirimli, E. Deepdta: deep drug–target binding affinity prediction. Bioinformatics 34, i821–i829
+(2018).
+7. Stoeger, T., Gerlach, M., Morimoto, R. I. & Nunes Amaral, L. A. Large-scale investigation of the reasons why potentially
+important genes are ignored. PLoS biology 16, e2006643 (2018).
+8. Turner, E. H., Matthews, A. M., Linardatos, E., Tell, R. A. & Rosenthal, R. Selective publication of antidepressant trials
+and its influence on apparent efficacy. New Engl. J. Medicine 358, 252–260 (2008).
+9. Wei, J. et al. Emergent abilities of large language models. arXiv preprint arXiv:2206.07682 (2022).
+10. Du, Y., Li, S., Torralba, A., Tenenbaum, J. B. & Mordatch, I. Improving factuality and reasoning in language models
+through multiagent debate. arXiv preprint arXiv:2305.14325 (2023).
+11. Schick, T. et al. Toolformer: Language models can teach themselves to use tools. Adv. neural information processing
+systems 36, 68539–68551 (2023).
+12. Agarwal, C., Tanneru, S. H. & Lakkaraju, H. Faithfulness vs. plausibility: On the (un) reliability of explanations from
+large language models. arXiv preprint arXiv:2402.04614 (2024).
+13. Pandit, S. et al. Medhallu: A comprehensive benchmark for detecting medical hallucinations in large language models. In
+Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, 2858–2873 (2025).
+14. Zhou, R. et al. Rulearena: A benchmark for rule-guided reasoning with llms in real-world scenarios. In Proceedings of the
+63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), 550–572 (2025).
+15. Anastassiadis, T., Deacon, S. W., Devarajan, K., Ma, H. & Peterson, J. R. Comprehensive assay of kinase catalytic activity
+reveals features of kinase inhibitor selectivity. Nat. biotechnology 29, 1039–1045 (2011).
+16. Thomas, R. S. et al. The us federal tox21 program: A strategic and operational plan for continued leadership. Altex 35,
+163 (2018).
+17. Ioannidis, V. N. et al. Drkg - drug repurposing knowledge graph for covid-19. https://github.com/gnn4dr/DRKG/ (2020).
+18. Bordes, A., Usunier, N., Garcia-Duran, A., Weston, J. & Yakhnenko, O. Translating embeddings for modeling multirelational data. Adv. neural information processing systems 26 (2013).
+19. Trouillon, T., Welbl, J., Riedel, S., Gaussier, É. & Bouchard, G. Complex embeddings for simple link prediction. In
+International conference on machine learning, 2071–2080 (PMLR, 2016).
+20. Sun, Z., Deng, Z.-H., Nie, J.-Y. & Tang, J. Rotate: Knowledge graph embedding by relational rotation in complex space.
+arXiv preprint arXiv:1902.10197 (2019).
+21. Pitre, P., Ramakrishnan, N. & Wang, X. Consensagent: Towards efficient and effective consensus in multi-agent llm
+interactions through sycophancy mitigation. In Findings of the Association for Computational Linguistics: ACL 2025,
+22112–22133 (2025).
+17/19
+
+22. Yao, B. et al. Peacemaker or troublemaker: How sycophancy shapes multi-agent debate. arXiv preprint arXiv:2509.23055
+(2025).
+23. Choi, W. C. & Chang, C. I. Chatgpt-5 in education: New capabilities and opportunities for teaching and learning. Preprints
+DOI: 10.20944/preprints202508.0684.v1 (2025).
+24. OpenAI. Introducing GPT-5 (2025). Online.
+25. Patil, S. G. et al. The berkeley function calling leaderboard (bfcl): From tool use to agentic evaluation of large language
+models. In Forty-second International Conference on Machine Learning (2025).
+26. Dycke, N. & Gurevych, I. Automatic reviewers fail to detect faulty reasoning in research papers: A new counterfactual
+evaluation framework. Transactions Assoc. for Comput. Linguist. 14, 465–488, DOI: 10.1162/tacl.a.642 (2026).
+27. Ferrer, R., Turgut, D., Chen, Z. & Sonkar, S. When can we trust llm graders? calibrating confidence for automated
+assessment (2026). 2603.29559.
+28. Giudice, G., Chen, H., Koutsandreas, T. & Petsalaki, E. phuego: a network-based method to reconstruct active signaling
+pathways from phosphoproteomics datasets. Mol. & Cell. Proteomics 23, 100771 (2024).
+29. Zhao, T., He, Y., Zheng, W., Zhang, Y. & Chen, C. Wired for overconfidence: A mechanistic perspective on inflated
+verbalized confidence in llms. arXiv preprint arXiv:2604.01457 (2026).
+30. Gu, J. et al. A survey on llm-as-a-judge. The Innov. 7 (2026).
+31. Krumdick, M., Lovering, C., Reddy, V., Ebner, S. & Tanner, C. No free labels: Limitations of llm-as-a-judge without
+human grounding. arXiv preprint arXiv:2503.05061 (2025).
+32. Luo, H. et al. Arena learning: Build data flywheel for llms post-training via simulated chatbot arena. arXiv preprint
+arXiv:2407.10627 (2024).
+33. Yuan, W. et al. Self-rewarding language models. arXiv preprint arXiv:2401.10020 (2024).
+34. Duan, M. et al. Do membership inference attacks work on large language models? arXiv preprint arXiv:2402.07841
+(2024).
+35. Shokri, R., Stronati, M., Song, C. & Shmatikov, V. Membership inference attacks against machine learning models. In
+2017 IEEE symposium on security and privacy (SP), 3–18 (IEEE, 2017).
+36. Fu, Y., Uzuner, O., Yetisgen-Yildiz, M. & Xia, F. Does data contamination detection work (well) for llms? a survey
+and evaluation on detection assumptions. In Findings of the Association for Computational Linguistics: NAACL 2025,
+5235–5256 (2025).
+37. Zhang, T. M. & Abernethy, N. F. Reviewing scientific papers for critical problems with reasoning llms: Baseline approaches
+and automatic evaluation. arXiv preprint arXiv:2505.23824 (2025).
+38. Wu, Q. et al. Autogen: Enabling next-gen llm applications via multi-agent conversation framework. arXiv preprint
+arXiv:2308.08155 (2023).
+39. Liu, T. et al. Bindingdb in 2024: a fair knowledgebase of protein-small molecule binding data. Nucleic acids research 53,
+D1633–D1644 (2025).
+40. He, T., Heidemeyer, M., Ban, F., Cherkasov, A. & Ester, M. Simboost: a read-across approach for predicting drug–target
+binding affinities using gradient boosting machines. J. cheminformatics 9, 24 (2017).
+41. Knox, C. et al. Drugbank 6.0: the drugbank knowledgebase for 2024. Nucleic acids research 52, D1265–D1275 (2024).
+42. Davis, A. P. et al. Comparative toxicogenomics database (ctd): update 2023. Nucleic acids research 51, D1257–D1262
+(2023).
+43. Himmelstein, D. S. & Baranzini, S. E. Heterogeneous network edge prediction: a data integration approach to prioritize
+disease-associated genes. PLoS computational biology 11, e1004259 (2015).
+18/19
+
+44. Zheng, L. et al. Judging llm-as-a-judge with mt-bench and chatbot arena. Adv. neural information processing systems 36,
+46595–46623 (2023).
+45. Shi, L. et al. Judging the judges: A systematic study of position bias in llm-as-a-judge. In Proceedings of the 14th
+International Joint Conference on Natural Language Processing and the 4th Conference of the Asia-Pacific Chapter of the
+Association for Computational Linguistics, 292–314 (2025).
+46. Lyu, Q. et al. Faithful chain-of-thought reasoning. In Proceedings of the 13th International Joint Conference on Natural
+Language Processing and the 3rd Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics
+(Volume 1: Long Papers), 305–329 (2023).
+47. Petridis, P., Margaritis, G., Stoumpou, V. & Bertsimas, D. Holistic ai in medicine; improved performance and explainability.
+npj Digit. Medicine (2026).
+
+Data availability statement
+The kinase inhibition dataset and Tox21 assay data are publicly available from the original studies. Knowledge graph evidence
+was derived from BindingDB, DrugBank, and CTD obtained in April 2026, and literature evidence was retrieved from PubMed
+Central Open Access articles. Processed datasets and code are available at the project repository or from the corresponding
+author upon reasonable request, where redistribution restrictions apply. Sample outputs from DrugAgent are on GitHub
+repository https://github.com/sciluna/DrugAgent.
+
+Funding
+This research was partly supported by the Division of Intramural Research (DIR) of the National Library of Medicine (NLM),
+National Institutes of Health (NIH) (ZIALM240126). Tianfan Fu is supported by the Young Scientists Fund (C Class) of
+the National Natural Science Foundation of China (Grant No. 62506154), the Fundamental Research Funds for the Central
+Universities, and Nanjing University International Collaboration Initiative (Grant No. 020214380129), and the “111 Center”(3).
+
+Competing Interests
+The authors declare no competing interests.
+
+Author contributions statement
+T.F., Y.I., and A.L. conceived the original idea. Y.I., T.S., and A.L. conceived the experiment(s). Y.I., T.S., and X.W. conducted
+the experiment(s), and Y.I., T.S., X.W., R.K., and A.L. analysed the results. Y.I., T.F., T.S., R.K., and A.L. wrote the manuscript
+draft. All authors reviewed the manuscript.
+
+19/19
+
+

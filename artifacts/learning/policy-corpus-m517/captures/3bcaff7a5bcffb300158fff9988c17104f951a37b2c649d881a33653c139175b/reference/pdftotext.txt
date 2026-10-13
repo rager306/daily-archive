@@ -1,0 +1,5076 @@
+O-MAPL: Offline Multi-agent Preference Learning
+
+The Viet Bui 1 Tien Mai 1 Thanh Hong Nguyen 2
+
+arXiv:2501.18944v1 [cs.LG] 31 Jan 2025
+
+Abstract
+
+by RL algorithms, which might find ways to achieve high
+expected returns by inducing unexpected or undesirable behaviors (Hadfield-Menell et al., 2017; Turner et al., 2020).
+
+Inferring reward functions from demonstrations
+is a key challenge in reinforcement learning (RL),
+particularly in multi-agent RL (MARL), where
+large joint state-action spaces and complex interagent interactions complicate the task. While
+prior single-agent studies have explored recovering reward functions and policies from human
+preferences, similar work in MARL is limited. Existing methods often involve separate stages of supervised reward learning and MARL algorithms,
+leading to unstable training. In this work, we introduce a novel end-to-end preference-based learning framework for cooperative MARL, leveraging
+the underlying connection between reward functions and soft Q-functions. Our approach uses a
+carefully-designed multi-agent value decomposition strategy to improve training efficiency. Extensive experiments on SMAC and MAMuJoCo
+benchmarks show that our algorithm outperforms
+existing methods across various tasks.
+
+To address these challenges, many RL studies have relaxed
+the reward structure by using sparse rewards, where agents
+receive feedback periodically (Arjona-Medina et al., 2019;
+Ren et al., 2021; Zhang et al., 2024b). While this reduces
+the need for dense reward signals, it is often insufficient to
+train effective agents in complex domains. Alternatively, imitation learning (IL) has been explored, where agents learn
+to mimic an expert’s policy from demonstrations, without
+explicit reward signals (Ho & Ermon, 2016; Fu et al., 2017;
+Garg et al., 2021; Mai et al., 2024). However, achieving
+expert-level performance with IL requires a large amount of
+expert data, which can be costly and difficult to obtain.
+A recent promising approach is to train agents using human
+preference data, a more resource-efficient form of feedback called Reinforcement Learning from Human Feedback
+(RLHF). This allows agents to learn behaviors aligned with
+human intentions. RLHF has proven effective in both singleagent control (Christiano et al., 2017; Mukherjee et al., 2024;
+Lee et al., 2021; Shin et al., 2023; Hejna & Sadigh, 2024)
+and natural language tasks (Stiennon et al., 2020; Ouyang
+et al., 2022; Rafailov et al., 2024). However, RLHF in
+multi-agent environments is still underexplored, as simply
+extending single-agent methods is insufficient due to the
+complex interdependencies between agents’ policies.
+
+1. Introduction
+Reinforcement learning (RL) has been instrumental in a
+wide range of decision making tasks, where agents gradually learn to operate effectively through interactions with
+their environment (Levine et al., 2016; Silver et al., 2017;
+Kalashnikov et al., 2018; Haydari & Yılmaz, 2020). Typically, when an agent takes an action, it receives feedback
+in the form of reward signals, enabling it to adjust or revise
+its action plan (i.e., policy). However, designing an appropriate reward function is a significant challenge in many
+real-world domains. While essential for training successful
+RL agents, reward design often requires extensive instrumentation or engineering (Yahya et al., 2017; Schenck &
+Fox, 2017; Peng et al., 2020; Yu et al., 2020; Zhu et al.,
+2020). Moreover, such reward functions can be exploited
+
+Only a few recent studies have developed preference-based
+RL algorithms for multi-agent settings (Kang et al., 2024;
+Zhang et al., 2024a), typically using a two-phase learning
+framework: first, preference data trains a reward model, and
+then the policy is optimized. However, this approach has
+two main drawbacks: (i) it requires large preference datasets
+to cover the state and action spaces, and (ii) misalignment
+between the two phases can degrade policy quality.
+In this work, we investigate multi-agent preference-based
+RL (PbRL), focusing on the offline learning setting where
+agents do not interact with the environment but instead have
+access to an offline dataset of pairwise trajectory preferences.
+Unlike previous studies in multi-agent PbRL, we propose
+an end-to-end learning approach that directly trains agents’
+policies from preference data, without relying on an explicit
+reward model. Our main contributions are as follows:
+
+*
+Equal contribution 1 School of Computing and Information Systems, Singapore Management University, Singapore 2 University of
+Oregon Eugene, Oregon, United States. Correspondence to: Tien
+Mai <atmai@smu.edu.sg>.
+
+Preprint
+
+1
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+First, we introduce a new algorithm, O-MAPL (Offline
+Multi-Agent Preference Learning) for multi-agent PbRL. OMAPL exploits the inherent relationship between the reward
+and the soft-Q functions in MaxEnt RL (Garg et al., 2021;
+2023) to directly learn the soft Q-function from preference
+data, rather than recovering the reward function explicitly.
+Once the Q-function is learned, the optimal policy can be
+derived. This one-phase learning process is carried out under the centralized training with decentralized execution
+(CTDE) paradigm (Oliehoek et al., 2008; Kraemer & Banerjee, 2016), allowing effective training of local policies.
+
+approaches (Meng et al., 2023; Tseng et al., 2022).
+Preference-based reinforcement learning (PbRL).
+Early works developed general frameworks using linear
+approximations or Bayesian models to incorporate human
+feedback on policies, trajectories, and state/action pairwise
+comparisons into policy learning (Fürnkranz et al., 2012;
+Akrour et al., 2012; 2011; Wilson et al., 2012). Recent
+studies have shown the effectiveness of training deep neural
+networks in complex domains with thousands of preference
+queries, typically following a two-phase approach: first,
+supervised learning to train a reward model, then RL to
+optimize the policy. For example, (Christiano et al., 2017)
+uses the Bradley-Terry model for pairwise preferences
+and methods like A2C (Mnih, 2016) to refine the policy.
+Subsequent studies have expanded this framework to
+scenarios like preference elicitation (Mukherjee et al., 2024;
+Lee et al., 2021), few-shot learning (Hejna III & Sadigh,
+2023), data and preference augmentation (Ibarz et al.,
+2018; Zhang et al., 2023), list-wise learning (Choi et al.,
+2024), hindsight preference learning (Gao et al., 2024), and
+Transformer-based learning (Kim et al., 2023).
+
+Implementing this end-to-end process within the CTDE
+framework is far from being trivial. It requires appropriate mixing networks for value factorization to preserve the
+convexity of the preference-based learning objective and
+ensure local-global consistency in policy optimality. As a
+second contribution, we introduce a simple yet effective
+value factorization method and provide a comprehensive
+theoretical analysis of the convexity and local-global consistency requirements. This approach enables stable and
+efficient policy training.
+Finally, we conduct extensive experiments on two benchmarks, SMAC and MAMuJoCo, using preference data generated by both rule-based and large language model approaches. The results show that our O-MAPL consistently
+outperforms existing methods across various tasks.
+
+Training reward models aligned with human preferences
+can be costly, requiring large volumes of preference data,
+especially in complex domains. This has led to a shift
+towards end-to-end frameworks that directly learn optimal
+policies from preference data, bypassing explicit reward
+models. For example, (Hejna et al., 2023) and (An et al.,
+2023) use contrastive learning to eliminate reward modeling,
+while (Kang et al., 2023) employs information matching
+to learn optimal policies in one step. In (Hejna & Sadigh,
+2024), the IPL algorithm learns a Q-function directly from
+expert preferences, instead of modeling the reward function.
+
+2. Related Work
+Offline multi-agent reinforcement learning (MARL).
+Our work is related to offline MARL, relying solely on offline data to learn policies without direct interaction with the
+environment. Unlike standard offline MARL, we consider
+data only showing pairwise trajectory preferences (without
+rewards). Like offline MARL, it faces challenges such as
+distributional shift and complex interactions in large joint
+state and action spaces. Many existing MARL methods use
+the CTDE framework (Oliehoek et al., 2008; Kraemer &
+Banerjee, 2016), enabling efficient learning while allowing
+independent operation of agents. Regularization techniques
+are also applied to mitigate distributional shift (Yang et al.,
+2021; Pan et al., 2022; Shao et al., 2024; Wang et al., 2022).
+
+While preference-based RL is well-explored in single-agent
+settings, research in multi-agent settings remains limited
+due to the complexity of agent interactions and large joint
+state-action spaces. Only a few studies have extended the
+two-phase preference-based framework to multi-agent settings (Kang et al., 2024; Zhang et al., 2024a). Building
+on IPL’s success in single-agent settings (Hejna & Sadigh,
+2024), we leverage the reward-Q-function relationship to
+avoid explicit reward modeling. Adapting this to multiagent environments is challenging, requiring careful design
+of mixing networks within the CTDE framework and a thorough theoretical analysis of the preference-based learning
+objective’s convexity and global-local policy consistency.
+
+For example, some works extend CQL (Kumar et al., 2020),
+a well-known single-agent offline RL algorithm, to multiagent settings (Pan et al., 2022; Shao et al., 2024). Others
+adopt the popular DICE framework, which regulates policies
+in the occupancy space to address out-of-distribution (OOD)
+issues in both competitive and cooperative settings (Matsunaga et al., 2023; Bui et al., 2025). Additionally, (Wang
+et al., 2022) explore a policy constraint framework to tackle
+OOD problems. Some studies apply sequence modeling
+techniques to solve offline MARL using supervised learning
+
+3. Background
+Multi-agent Reinforcement Learning. We focus on cooperative MARL, modeled as a multi-agent Partially Observable Markov Decision Process (POMDP) defined by
+M = ⟨S, A, P, r, Z, O, n, N , γ⟩ where n is the number of
+2
+
+O-MAPL: Offline Multi-agent Preference Learning
+∗
+where Vtot
+is the log-sum-exp of Q∗tot . Moreover, by rearranging the Bellman equation, we get the so-called inverse
+soft Bellman-operator, formulated as follows:
+
+agents, and N = {1, . . . , n} is the set of agents. The true
+state of the environment is denoted
+by s ∈ S, and the joint
+Q
+action space is given by A = i∈N Ai , where Ai is the set
+of actions for agent i ∈ N . At each time step, every agent
+i ∈ N selects an action ai ∈ Ai , resulting in a joint action
+a = (a1 , a2 , . . . , an ) ∈ A. The transition dynamics are
+described by P (s′ |s, a) : S × A × S → [0, 1], which is the
+probability of moving to the next state s′ given the current
+state s and joint action a. The discount factor γ ∈ [0, 1)
+determines the relative importance of future rewards.
+
+(T ∗ Qtot )(s, a) = Qtot (s, a) − γEs′ ∼P (·|s,a) Vtot (s′ )
+An important observation here is the one-to-one mapping
+between any Qtot and r(s, a), i.e., r(s, a) = (T ∗ Qtot )(s, a).
+This property has been extensively utilized in inverse
+RL (Garg et al., 2021; Hejna & Sadigh, 2024; Bui et al.,
+2024). The key idea is that, rather than explicitly recovering a reward function, the unique mapping enables the
+reformulation of reward learning as a Q-learning problem.
+This approach improves stability and can directly recover
+the optimal policy from the learned Q-function using (1).
+
+In partial observability settings, each agent receives a local
+observation oi ∈ Oi based on the function Zi (s) : S → Oi ,
+and the joint observation is denoted by o = (o1 , o2 , . . . , on ).
+In cooperative MARL, agents share a global reward function r(s, a) : S × A → R. The objective is to learn a joint
+policy πtot = {π1 , . . . , πn } that maximizes
+expected disPthe
+∞
+counted cumulative rewards E(o,a)∼πtot [ t=0 γ t r(st , at )].
+In offline settings, a dataset D is pre-collected by sampling
+from a behavior policy µtot = {µ1 , . . . , µn }. Policy learning is then carried out using this dataset D only.
+
+Note that, in POMDP scenarios, the global state s is not
+directly accessible during training and is instead represented
+by the joint observations o from the agents. For notational
+convenience, we use the global state s in our formulation;
+however, in practice, it corresponds to the joint observation Z(s). Specifically, terms like πtot (s, a) and Qtot (s, a)
+actually refer to µtot (o, a) and Qtot (o, a), where o = Z(s).
+
+MaxEnt Reinforcement Learning. Standard RL optimizes a policy that maximizes
+P∞ the expected discounted cumulative rewards Eπtot [ t=0 γ t r(st , at )]1 , where (st , at )
+are sampled at each time step t from the trajectory distribution induced by the joint policy πtot . In a generalized
+MaxEnt RL, the standard reward objective is augmented
+with a KL-divergence term between the joint policy and a
+behavior µtot that generates the offline dataset, as follows:
+X
+
+
+∞
+πtot (at |st ) 
+t
+Eπtot
+γ r(st , at ) − β log
+,
+t=0
+µtot (at |st )
+
+4. Multi-agent Preference-based RL (PbRL)
+4.1. Preference-based Inverse Q-learning
+Following prior works (Christiano et al., 2017; Lee et al.,
+2021; Kang et al., 2024), we assume access to pairwise
+preference data. The data, collected from humans (or experts), consists of pairs of trajectories (σ1 , σ2 ), where σ1 is
+preferred over σ2 . Each trajectory σ is a sequence of joint
+(state, action) pairs: σ = {(s1 , a1 ), . . . , (sK , aK )}. Let P
+denote the preference dataset, comprising several pairwise
+comparisons (σ1 , σ2 ). The goal of PbRL is to recover the
+underlying reward function and expert policies from P.
+
+where β is the regularization parameter. Setting µtot to the
+uniform distribution reduces this to the standard MaxEnt RL
+objective. The regularization term enforces a conservative
+KL constraint, keeping the learned policy close to the behavior policy and addressing offline RL’s out-of-distribution
+challenges (Haarnoja et al., 2018; Neu et al., 2017).
+
+A common approach in PbRL is to model the expert’s preferences using the simple and intuitive Bradley-Terry model
+(Bradley & Terry, 1952), which computes the probability of
+the expert preferring σ1 over σ2 (denoted as σ1 ≻ σ2 ) as:
+
+In the above MaxEnt framework, the soft-Bellman operator B ∗ : RS×A → RS×A is defined as (Br∗ Qtot )(s, a) =
+r(s, a)+γEs′ ∼P (·|s,a) Vtot (s′ ), where Qtot is the soft-globalQ function and Vtot is the optimal soft-global-value function
+computed as a log-sum-exp of Qtot , as follows:
+hX
+ Q (s, a) i
+tot
+Vtot (s) = β log
+µtot (a|s) exp
+a∼µtot (·|s)
+β
+
+P (σ1 ≻ σ2 ) =
+
+e
+P
+
+e
+
+P
+
+(s,a)∈σ1 rE (s,a)
+
+(s,a)∈σ1 rE (s,a)
+
++e
+
+P
+
+(s,a)∈σ2 rE (s,a)
+
+where rE (s, a) is the reward function of the expert. Using
+this model, a direct approach to recovering the expert reward function rE involves maximizing the likelihood of the
+preference data P, which can be formulated as follows:
+X
+maxrE L(rE |P) = maxrE
+ln P (σ1 ≻ σ2 )
+
+The Bellman equation (Br∗ Qtot ) = Qtot will yield a unique
+optimal global Q-function Q∗tot and the corresponding optimal policy is given by (Haarnoja et al., 2018):
+ Q∗ (s, a) − V ∗ (s) 
+tot
+tot
+∗
+πtot
+(a|s) = µtot (a|s) exp
+. (1)
+β
+
+(σ1 ,σ2 )∈P
+
+Once the expert rewards rE are recovered, a policy can
+be learned by training a MARL algorithm. This method
+is referred to as a two-phase approach, where the reward
+learning and policy optimization are performed separately.
+
+1
+We adapt the formulas from single-agent MaxEnt RL to the
+multi-agent setting, ensuring consistency in notation.
+
+3
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+The mixing function Mw can be either a linear combination
+(single-layer) or a nonlinear combination (e.g., a two-layer
+network with ReLU activation). Our work uses the simple
+linear structure, which has two key advantages over the nonlinear approach. First, a two-layer structure often causes
+over-fitting and poor performance, especially in offline settings with limited data (Bui et al., 2025). Second, the linear
+structure ensures convexity in the learning objectives within
+the Q-space, leading to stable optimization and consistent
+training—benefits not present under a two-layer mixing
+network structure.
+
+The MaxEnt RL framework discussed above provides an
+alternative approach to integrate reward and policy recovery
+into a single learning process. This is achieved by leveraging
+the unique mapping between a reward function and a Qfunction. Multi-agent PbRL is thereby transformed into the
+Q-space, where the preference probability over a trajectory
+pair (σ1 , σ2 ) can be computed as follows:
+P (σ1 ≻ σ2 |Qtot ) =
+
+e
+P
+
+P
+
+σ1 (T
+
+∗
+
+∗
+
+Qtot )(s,a)
+P
+∗
+σ (T Qtot )(s,a)
+
+e σ1 (T Qtot )(s,a) + e 2
+After solving the maximum likelihood problem, the derived
+Qtot and Vtot can be used directly to recover a policy via
+the soft policy formula (1), eliminating the need for an
+additional MARL algorithm. This unified, single-phase
+approach integrates reward and policy learning, streamlining
+the process. It enhances training stability and consistency
+by reducing discrepancies that arise from separate reward
+and policy learning. This approach also mitigates issues
+like error propagation and misalignment between the reward
+function and policy optimization. Training in the Q-space
+has been shown to outperform training in the reward space.
+
+Overall, the training objective function, under the described
+mixing architecture, can be now expressed as follows:
+X
+X
+L(q, v, w) =
+Rw [q, v](s, a)
+(σ1 ,σ2 )∈P
+(s,a)∈σ1
+P
+P
+
+− log e σ1 Rw [q,v](s,a) + e σ2 Rw [q,v](s,a)
++ ϕ(Rw [q, v](s, a))
+where ϕ(·) is a concave regularization function used to prevent unbounded reward functions. In our experiments we
+choose a χ2 regularizer of the form ϕ(x) = − 12 x2 + x,
+which is also a commonly used regularizer in prior works.
+
+4.2. Value Factorization
+
+It is important to note that Qtot and Vtot must satisfy the
+Bellman operator, meaning that Vtot needs to be the log-sumexp of Qtot . To achieve this, we train Mw [v(s)] (or Vtot ) to
+approximate the log-sum-exp formulation:
+X
+
+Vtot (s) = β log
+µtot (a|s)eQtot (s,a)/β ,
+
+The training objective in the Q-space can be formulated as:
+X
+max L(Qtot |P) = max
+ln P (σ1 ≻ σ2 |Qtot )
+Qtot
+
+Qtot
+
+(σ1 ,σ2 )∈P
+
+While this objective works in single-agent settings, applying
+it to multi-agent scenarios is challenging due to the large
+state and action spaces. To address this, we apply value
+factorization in the CTDE framework. However, solving
+PbRL under CTDE is complex, as the objective involves
+several components tied to Qtot and Vtot . Thus, a carefully
+designed value factorization method is needed to ensure
+consistency between global and local policies.
+
+a∈A
+
+However, this can become computationally impractical in
+certain scenarios, such as environments with continuous
+action spaces. To address this, Extreme Q-Learning (XQL)
+(Garg et al., 2023) provides an efficient method to update
+the V -function. Specifically, we define the extreme-V loss
+objective under our mixing framework as follows:
+h Mw [q(s,a)]−Mw [v(s)] i
+β
+J (v) = E(s,a)∼µtot e
+h M [q(s, a)] − M [v(s)] i
+w
+w
+− E(s,a)∼µtot
+− 1.
+β
+
+To address these challenges, we propose a value factorization method, specifically designed to ensure scalability in
+multi-agent environments while preserving the alignment
+between global and local objectives, thereby enabling stable and effective learning. Our approach involves factorizing the global value functions Qtot and Vtot into local functions using a mixing network architecture. Specifically, let
+q(s, a) = {q1 (s1 , a1 ), . . . , qn (sn , an )} be a set of local Qfunctions, and v(s) = {v1 (s1 ), . . . , vn (sn )} represent a set
+of local V-functions. To enable centralized learning, we introduce a mixing network Mw , parameterized by learnable
+weights w, which combines the local functions q and v to
+construct the global value functions Qtot and Vtot as follows:
+Qtot (s, a) = Mw [q(s, a)];
+
+Minimizing J (v) over v ensures that Mw [v(s)] converges
+to the log-sum-exp value (Garg et al., 2023):
+X
+
+Mw [v(s)] = β log
+µtot (a|s)eMw [q(s,a)]/β .
+a∈A
+
+Following this approach, training the local functions q and
+v can proceed through the following alternating updates:
+
+Vtot (s) = Mw [v(s)].
+
+• Update q, w: Maximize L(q, v, w), the likelihood
+objective for preference learning.
+
+For notational simplicity, let us define:
+Rw [q, v](s, a) = Qtot (s, a) − γEs′ ∼P (·|s,a) Vtot (s′ )
+
+• Update v: Minimize the extreme-V loss J (v) to enforce consistency with the log-sum-exp equation.
+
+= Mw [q(s, a)] − γEs′ ∼P (·|s,a) Mw [v(s′ )]
+4
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+the sum of πi∗ (ai |si ) over all ai might not equal one. To
+ensure feasibility, normalization is required, but it disrupts
+the GLC principle, breaking consistency between global and
+local policies. Also, the local functions vi and qi may not
+satisfy the local Bellman equality (i.e., vi is not guaranteed
+to be the log-sum-exp of qi ), causing the soft policy formula
+to misalign with MaxEnt RL principles at the local level.
+
+The following proposition shows that the learning objective
+functions under our mixing architectures possess appealing
+properties, which contribute to stable and robust training.
+Proposition 4.1 (Convexity). The loss L(q, v, w) is concave in q and w (the parameters of the mixing networks),
+while the extreme-V loss function J (v) is convex in v.
+Given that the objective is to maximize the likelihood function L(q, v, w) and minimize the extreme-V function J (v),
+the concavity of L in q and w, and the convexity of J in v,
+guarantees unique convergence (theoretically) within the q
+and v spaces, ensures a stable training process in practice.
+
+Our weighted behavior cloning approach. We propose
+an alternative approach that offers several advantages over
+the previous method. Our policy extraction is based on BC,
+a technique commonly used in offline RL algorithms (Garg
+et al., 2023; Bui et al., 2025). This approach preserves the
+GLC property and ensures that the extracted local policies
+are valid, even with nonlinear mixing structures.
+
+It is important to note that convexity is guaranteed only
+under single-layer mixing structures, where Mw [·] is linear
+in its inputs. This result is formalized below:
+
+In general, the global policy can be extracted by solving the
+following weighted behavior cloning (WBC) problem:
+
+i
+h Qtot (s,a)−Vtot (s)
+β
+max Es,a∼µtot e
+log πtot (a|s) , (3)
+
+Proposition 4.2 (Non-convexity under two-layer mixing networks). If the mixing networks Mw [q] and Mw [v] are twolayer (or multi-layer) feed-forward networks, the preferencebased loss function L(q, v, w) is no longer concave in q or
+w, and the extreme-V loss function J (v) is not convex in v.
+
+πtot ∈Πtot
+
+where Πtot represents the feasible set of global policies. Here, we assume that Πtot contains decomposable global policies, i.e.,
+Q Πtot = {πtot | ∃πi , ∀i ∈
+N , such that πtot (a|s) = i∈N πi (ai |si )}. In other words,
+Πtot consists of global policies that can be expressed as a
+product of local policies. This decomposability is highly useful for decentralized learning and has been widely adopted
+in multi-agent reinforcement learning (MARL) (Wang et al.,
+2022; Bui et al., 2024; Zhang et al., 2021).
+
+While two-layer feed-forward mixing networks have been
+employed in several prior online MARL works, single-layer
+mixing networks (i.e., linear combinations) have been favored in recent offline MARL works (Wang et al., 2022;
+Bui et al., 2025). It was demonstrated that using a twolayer network can lead to over-fitting issues, resulting in
+worse performance compared to their single-layer counterparts (Bui et al., 2025). The results in Prop. 4.2 further
+suggest that, in offline preference-based learning, a singlelayer setup is more efficient and better suited to achieve
+robust and stable performance.
+
+While solving (3) can explicitly recover an optimal global
+policy and is practical via sampling (s, a) from the data,
+it does not support the learning of local policies, which is
+essential under the CTDE principle. To address this, we
+propose solving the following local WBC problem:
+
+4.3. Local Policy Extraction
+Simple local-value-based extraction approach. Globally optimal policies can be extracted from Qtot and Vtot
+based on (1). For decentralized execution, local policies can
+be derived from local values similarly (Wang et al., 2022):
+
+n
+
+h Qtot (s,a)−Vtot (s)
+
+max Es,a∼µtot e
+πi
+
+β
+
+log πi (ai |si )
+
+io
+
+(4)
+
+where wiq and wiv are the weights of the mixing function
+Mw [q] and Mw [v], and µi (·) are the local behavior policies. Assuming the behavior policyQ
+is decomposable into
+local components, i.e., µtot (a|s) = i µi (ai |si ), this policy extraction method guarantees global-local consistency
+(GLC) — ensuring alignment between theQoptimal global
+∗
+and local policies — such that πtot
+(a|s) = i πi∗ (ai |si ).
+
+The local WBC approach has several key advantages. First,
+Qtot (s,a)−Vtot (s)
+β
+the weighting term e
+directly influences local
+policy optimization and is computed from global observations and actions. This ensures local policies are optimized
+with global information, maintaining consistency in cooperative multi-agent systems. Furthermore, as shown in Theorem 4.3, optimizing local policies via WBC always results in
+valid policies that align with the global WBC objective, preserving global-local consistency (GLC). Importantly, these
+benefits hold regardless of the mixing structure (e.g., 1-layer
+or 2-layer networks), offering significant advantages over
+the local-value-extraction method.
+
+This approach has been used in prior work but has notable
+limitations. First, GLC holds only with a linear mixing structure; a two-layer feed-forward network breaks this property.
+Second, policies recovered from (2) may not be feasible, as
+
+Theorem 4.3 (Global-Local Consistency (GLC)). Let πi∗ be
+the optimal solution to the local WBC problemQin (4). Then,
+∗
+∗
+the global policy πtot
+, defined as πtot
+(s, a) = i πi∗ (ai |si ),
+is also optimal for the global WBC problem in (3).
+
+πi∗ (ai |si ) = µi (ai |si ) exp
+
+ wq q (s , a ) − wv v (s ) 
+i i
+
+i
+
+i
+
+i
+
+β
+
+i
+
+i
+
+,
+
+(2)
+
+5
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Algorithm 1 O-MAPL
+
+We next formally express the relationship between recovered
+local policies and value functions. We assume that
+Q the behavior policy is decomposable, i.e., µtot (a|a) = i µi (ai |si ),
+and the mixing structures are defined as
+[q(s, a)] =
+P
+P Mw
+q
+v
+i wi qi (si , ai ) + bq and Mw [v(s)] =
+i wi vi (si ) + bv .
+This relationship is formalized in the following theorem:
+Theorem 4.4. Let πi∗ be optimal to the local WBC, then the
+following equality holds for all si ∈ Si , ai ∈ Ai :
+
+1: Input: Parameters θ, ψq , ψv , ωi . Offline data P.
+2: Output: Local optimized polices πi .
+3: for a certain number of training steps do
+4:
+Update ψq and θ to maximize L(ψq , ψv , θ)
+5:
+Update ψv to minimize the Extreme-V J(ψv )
+6:
+Update ωi to maximize the local WBC loss Ψ(ωi )
+7: end for
+8: Return πi (ai |oi ; ωi ), i = 1, ..., n
+
+q
+
+πi∗ (ai |si ) =
+
+v v (s )
+w qi (si ,ai )−wi
+i i
+η(si )
+i
+β
+µi (ai |si )e
+∆(si )
+
+(5)
+
+where η(si )/∆(si ) are correction terms.2
+
+where Mθ [·] is a linear combination (or a one-layer mixing
+network) of its inputs with non-negative weights:
+
+Theorem 4.4 highlights key aspects of our approach. First,
+as seen in (2), directly computing local policies from the local value functions qi and vi alone may yield invalid policies
+that don’t form proper probability distributions. The term
+η(si )/∆(si ) in (9) acts
+Pas a correction factor, normalizing
+the policies to ensure ai πi∗ (ai |si ) = 1. Furthermore, the
+proof of Theorem 4.4 shows that both η(si )/∆(si ) and the
+local policy πi∗ (ai |si ) depend on the value functions of other
+agents. This dependency supports the principle of credit
+assignment in cooperative MARL, ensuring each agent’s
+policy accounts for the actions and rewards of others.
+
+Mθ [v(o|ψv )] = v(o|ψv )⊤ Wθo + boθ
+⊤
+
+Mθ [q(o, a|ψq )] = q(o, a|ψq )
+
+(7)
+
+The practical training objective function for the local Q
+functions can be calculated as:
+X
+X
+L(ψq , ψv , θ) =
+R(o, a, o′ )
+(σ1 ,σ2 )∈P
+(o,a,o′ )∈σ1
+P
+P
+X
+′
+′ 
+− log e σ1R(o,a,o ) + e σ2R(o,a,o ) +
+ϕ(R(o, a, o′ ))
+P
+
+where R(o, a) = Mθ [q(o, a|ψq )] − γMθ [v(o′ |ψv )]. Moreover, the extreme-V can be practically estimated as:
+h Mθ [q(o,a|ψq )]−Mθ [v(o|ψv )] i
+β
+J (ψv ) = E(o,a)∼P e
+h M [q(o, a|ψ )] − M [v(o|ψ )] i
+θ
+q
+θ
+v
+−1
+− E(o,a)∼P
+β
+
+ai ∼µi (·|si )
+
+Prop. 4.5 indicates that vi (si ) is also determined by a logη(si ) 
+sum-exp of qi (si , ai ) with an additional term log ∆(s
+.
+i)
+
+For the policy extraction, let πi (ai |oi ; ωi ) be a local policy
+network for each agent i, where ω are learnable parameters.
+We update the local policies using the following local WBC:
+
+5. Practical Algorithm
+In the context of POMDPs, we do not have direct access
+to the global states. To better reflect the practical aspects,
+we change the notation of global states used previously to
+global observations. For example, the local value function
+is now defined as a function of local observations, vi (oi ).
+
+X
+Ψ(ωi ) =
+
+h Mθ [q(o,a|ψq )]−Mθ [v(o|ψv )]
+o,a∼P
+
+e
+
+β
+
+log πi (oi |si ; ωi )
+
+i
+
+The outline of our O-MAPL is shown in Algorithm 1.
+
+We construct a local Q-value network qi (oi , ai |ψq ) and a
+local value network vi (oi |ψv ), where ψq and ψv are learnable parameters. The global Q and V functions are then
+aggregated using two mixing networks with a shared set of
+learnable parameters θ, formulated as follows:
+
+2
+
+(6)
+
+Here, Wθo , boθ , Wθo,a , bo,a
+θ are the weights of the mixing networks, modeled as hyper-networks that take the global observation o, joint action a, and the learnable parameters θ as
+inputs. In this setup, we employ the same mixing network
+Mθ to combine both the local V and Q functions, ensuring
+consistency and scalability in the aggregation process.
+
+Additionally, while Vtot is the log-sum-exp of Qtot , this
+might not be the case for the local vi and qi functions. The
+following proposition demonstrates that vi can indeed be
+expressed as a log-sum-exp of qi , along with an additional
+term that depends on the local functions of other agents.
+Proposition 4.5. Each local value vi can be expressed as a
+(modified) log-sum-exp of the local Q-function qi :
+q
+ η(s ) 
+X
+w
+β
+β
+i
+i
+vi (si ) = v log
+e β qi (si ,ai ) + v log
+wi
+wi
+∆(si )
+
+Vtot (o) = Mθ [v(o|ψv )];
+
+Wθo,a + bo,a
+θ ,
+
+6. Experiments
+We evaluate the performance of our O-MAPL in different complex MARL environments, including: multiagent StarCraft II (i.e., SMACv1 (Samvelyan et al.,
+2019), SMACv2 (Ellis et al., 2022)) and multi-agent Mujoco (de Witt et al., 2020a) benchmarks. Detailed descriptions of these benchmarks are in the appendix.
+
+Qtot (o, a) = Mθ [q(o, a|ψq )],
+
+Detailed formulations of these terms are in Appendix A.4.
+
+6
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+59.6±25.0
+16.8±18.0
+0.6±3.8
+89.3±15.5
+
+60.4±24.7
+14.3±17.0
+0.2±2.2
+89.8±15.4
+
+71.1±22.0
+16.8±18.0
+2.5±7.6
+93.9±11.6
+
+63.5±24.0
+16.0±18.9
+1.6±6.8
+49.0±22.8
+
+74.4±24.7
+19.3±19.6
+4.5±11.0
+93.2±13.5
+
+Protoss
+
+5 vs 5
+10 vs 10
+10 vs 11
+20 vs 20
+20 vs 23
+
+38.1±24.2
+38.7±24.2
+12.7±17.4
+39.8±24.9
+15.2±18.5
+
+31.4±25.2 54.5±25.9
+28.5±21.8 47.9±27.2
+12.5±16.5 22.3±21.0
+35.4±21.5 57.0±24.8
+9.0±14.2 22.7±21.7
+
+49.0±28.2
+40.6±23.2
+18.6±18.8
+38.7±23.1
+11.1±14.6
+
+Terran
+
+LLM-based
+O-MAPL
+(ours)
+
+5 vs 5
+10 vs 10
+10 vs 11
+20 vs 20
+20 vs 23
+
+27.5±24.0
+23.8±20.5
+10.2±15.4
+13.1±17.1
+3.9±10.6
+
+26.2±19.5 36.3±24.8
+21.1±20.8 25.8±19.7
+7.2±13.3 18.2±19.4
+11.9±18.2 21.5±20.4
+4.1±10.3
+5.7±11.4
+
+Zerg
+
+Rule-based
+
+5 vs 5
+10 vs 10
+10 vs 11
+20 vs 20
+20 vs 23
+
+23.4±21.1
+25.8±21.6
+19.3±20.1
+19.9±21.0
+13.1±17.7
+
+23.6±21.0
+25.8±22.5
+12.9±17.4
+11.1±16.2
+7.8±12.8
+
+Tasks
+
+31.1±20.4
+32.2±24.6
+22.5±20.5
+22.5±21.4
+12.5±15.3
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+65.6±24.6
+18.2±18.4
+0.8±4.3
+89.6±15.5
+
+60.2±25.9 77.0±21.3
+15.0±17.5 18.0±19.2
+0.4±3.1
+3.5±9.2
+90.6±13.6 94.5±12.5
+
+65.2±21.2
+17.4±19.4
+3.7±8.9
+57.6±22.2
+
+79.5±19.6
+20.7±20.5
+6.1±11.2
+94.5±11.2
+
+54.3±24.2
+53.7±23.6
+30.7±19.8
+59.8±23.2
+23.4±19.2
+
+48.4±25.9
+46.3±24.0
+22.7±22.2
+48.4±25.3
+18.0±17.4
+
+41.0±24.2
+41.0±24.4
+15.6±15.9
+43.6±23.6
+9.4±14.7
+
+58.8±24.5
+57.0±23.4
+27.3±24.7
+61.5±22.1
+23.4±21.4
+
+54.3±24.0
+52.5±22.1
+20.9±20.9
+51.8±25.0
+12.1±15.9
+
+61.5±24.8
+61.1±24.8
+34.4±24.8
+64.5±23.5
+26.4±20.8
+
+34.2±23.4
+23.2±19.6
+11.3±15.3
+8.8±13.5
+2.3±7.3
+
+39.5±24.7
+28.3±20.6
+18.2±18.7
+23.0±22.4
+7.2±12.9
+
+31.1±22.9
+25.8±20.9
+11.7±17.4
+14.5±17.3
+6.4±12.2
+
+34.8±23.0
+24.2±21.6
+10.4±15.2
+13.7±17.4
+3.5±9.2
+
+41.0±23.7
+32.0±24.4
+17.8±17.7
+21.1±20.4
+7.2±12.6
+
+36.7±24.8
+28.9±24.7
+16.4±17.8
+17.2±16.8
+4.7±10.2
+
+43.0±23.0
+33.2±23.4
+21.3±20.3
+24.4±23.1
+8.6±14.8
+
+33.0±22.5
+30.7±24.0
+19.3±18.0
+5.7±10.9
+7.6±13.1
+
+35.2±25.7
+34.8±22.1
+23.4±21.1
+24.8±20.8
+18.8±18.5
+
+31.1±22.3
+31.4±21.9
+20.1±18.2
+22.9±21.7
+15.8±18.5
+
+26.0±22.2 34.8±23.6
+31.1±24.8 35.5±23.9
+18.6±20.6 22.7±18.3
+16.0±17.3 27.3±22.0
+10.4±15.2 16.4±19.9
+
+35.0±23.2
+33.0±25.0
+23.0±21.1
+16.4±18.1
+13.7±17.4
+
+40.8±21.6
+37.9±24.0
+26.0±23.0
+31.1±24.6
+16.0±19.4
+
+BC
+
+IIPL
+
+Table 1: Win rate comparison (in percentage) for SMACv1 (first 4 tasks) & SMACv2.
+
+Methods
+
+Hopper-v2
+
+Ant-v2
+
+Specifically, we used offline datasets of varying quality from
+OMIGA (Wang et al., 2022) and ComaDICE (Bui et al.,
+2025), sampling one thousand pairs for MaMujoco tasks and
+two thousand pairs for SMAC tasks. For MaMujoco, we selected “medium-replay”, “medium”, and “expert” instances,
+while for SMACv1, we chose “poor”, “medium”, and “good”
+instances. Note that ComaDICE only provides a “medium”
+dataset for SMACv2, therefore, we generated new “poor”
+and “expert” datasets for SMACv2. Additionally, LLMbased prompts require detailed information from trajectory
+states (e.g., SMAC: remaining health points, shields, relative
+positions, cooldown time, agent types, action meanings),
+which we cannot extract from MaMujoco states. Therefore,
+we have no LLM-based dataset for MaMujoco tasks.
+
+HalfCheetah-v2
+
+BC
+808.1 ± 39.1 1303.9 ± 122.0 4119.9 ± 350.7
+IIPL
+782.0 ± 81.5 1312.0 ± 155.6 4028.8 ± 430.0
+IPL-VDN 846.6 ± 65.4 1376.1 ± 142.0 4287.5 ± 273.1
+SL-MARL 890.0 ± 88.7 1334.1 ± 150.9 4233.9 ± 303.1
+O-MAPL 1114.4 ± 154.1 1406.4 ± 163.7 4382.0 ± 189.7
+
+Table 2: Return comparisons on MaMujoco tasks
+
+BC
+
+IIPL
+BC
+
+IIPLIPL-VDNIPL-VDN SL-MARL
+SL-MARL
+
+Hopper-v2
+Hopper-v2
+1k
+
+1k
+
+500
+
+500
+
+0
+
+4k
+3.5k
+
+1k
+0
+
+50
+
+50
+
+100
+
+1k
+
+100
+
+0
+
+HalfCheetah-v2
+HalfCheetah-v2
+4.5k 4.5k
+
+1.2k
+
+1.2k
+
+0
+
+0
+
+Ant-v2
+Ant-v2
+1.4k
+
+1.4k
+
+O-MAPL
+O-MAPL(ours)
+(ours)
+
+4k
+3.5k
+3k
+
+3k
+0
+
+50
+
+50
+
+100
+
+100
+
+0
+
+0
+
+50
+
+50
+
+Baselines. We consider the following baselines for our
+evaluations: (i) Behavioral Cloning (BC) trains a policy by
+directly imitating all prefered trajectories in the dataset P;
+(ii) Independent IPL (IIPL) is a straightforward extension
+of the IPL approach (Hejna & Sadigh, 2024) to multi-agent
+learning, where the single-agent IPL algorithm is applied
+independently to each agent; (iii) Supervised Learning
+MARL (SL-MARL) is a two-phase approach where we
+first learn the reward function and then use it to train a policy
+with OMIGA (Wang et al., 2022), a state-of-the-art MARL
+algorithm, serving as the offline counterpart of the twophase approach in (Kang et al., 2024); and (iv) IPL-VDN,
+which is similar to our algorithm but without the mixing
+networks, instead employing the standard VDN approach
+(Sunehag et al., 2017) to aggregate local Q and V functions
+
+100
+
+100
+
+Figure 2: Evaluation curves (in returns) on MaMujoco tasks
+
+Dataset. There are no human-labeled preference datasets
+for MARL, so we create datasets for each task using two
+methods: (i) Rule-based method – followed by IPL (Hejna
+& Sadigh, 2024), we sample trajectory pairs from offline
+datasets of varying quality (e.g., poor, medium, expert) and
+assign binary preference labels based on dataset quality; and
+(ii) LLM-based method – followed by DPM (Kang et al.,
+2024), we sample pairs from offline datasets and use GPT4o to annotate labels with prompts constructed from the
+global state of each trajectory (details in the appendix).
+7
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Protoss
+
+BC
+
+IPL-VDNBC
+
+Hopper-v2
+
+60%
+30%
+
+IIPL
+
+SL-MARL
+(ours)
+IIPL
+IPL-VDNO-MAPL
+SL-MARL
+
+Ant-v2
+
+1k
+
+HalfCheetah-v2
+4.5k
+
+1.4k
+
+4k
+
+0%
+
+500
+0
+
+Terran
+
+O-MAPL (ours)
+
+40%
+
+50
+
+100
+
+1.2k
+50
+
+0
+
+0
+
+3.5k 0
+100
+
+50
+
+0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+50
+
+100
+
+3k
+
+1k
+
+0
+
+20%
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0%
+
+Zerg
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+40%
+20%
+0%
+0
+
+5_vs_5
+
+10_vs_10
+
+10_vs_11
+
+20_vs_20
+
+20_vs_23
+
+Figure 1: Evaluation curves (in win rates) of our O-MAPL for SMACv2 with rule-based preference data.
+via a simple linear combination with unit weights.
+
+and detailed returns and win rates for all tasks can be found
+in the appendix.
+
+Results. Overall, our experimental results demonstrate the
+effectiveness of O-MAPL in both continuous and discrete
+multi-agent reinforcement learning environments. In the
+following, we highlight some of our main results. Due to
+limited space, all remaining results are in our appendix.
+
+7. Conclusion
+Summary. We explored preference-based learning in
+multi-agent environments, proposing a novel end-to-end
+method based on the MaxEnt RL framework that eliminates the need for explicit reward modeling. To facilitate
+efficient training, we developed a new value factorization approach that learns the global preference-based loss function
+by updating local value functions. Key properties, including global-local consistency and convexity, were thoroughly
+examined. Extensive experiments on both rule-based and
+LLM-based datasets show that our algorithm outperforms
+existing methods across multiple benchmark tasks in the
+MAMuJoCo and SMAC environments.
+
+Table 1 and 2 provide a detailed comparison of win rates for
+SMACv1 and SMACv2 tasks and of returns for MaMujoco.
+O-MAPL achieves the highest win rates/returns across most
+tasks, outperforming all baseline methods. For example,
+in the 2c vs 64zg task, O-MAPL achieves a win rate of
+74.4%, significantly surpassing other methods. In corridor,
+O-MAPL achieves a win rate of 93.2%, showcasing its
+ability to handle structured navigation tasks effectively.
+Furthermore, Table 1 demonstrates that our algorithm, OMAPL, achieves higher win rates in most SMAC tasks when
+using LLM-generated data than when using the ruled-based
+generated data. This finding highlights the potential of
+leveraging LLMs for rich and cost-effective data generation, substantially improving environment understanding
+and policy learning in complex multi-agent tasks.
+
+Limitations and Future Work. The strong performance
+of LLM-based preference data suggests that leveraging
+LLMs, coupled with a systematic value factorization approach, can be highly effective for training policies in complex multi-agent environments. This opens promising avenues for using LLMs to enhance both environment understanding and policy learning. However, our work has some
+limitations that need further exploration. For example, we
+primarily focus on cooperative learning, while more challenging mixed cooperative-competitive environments would
+require different methodologies. Additionally, our method
+still depends on a large number of preference-based demonstrations for optimal policy learning. Although LLMs can
+quickly generate extensive demonstrations, improving sample efficiency remains a key challenge, particularly when
+data must be collected from real human feedback.
+
+Finally, we present evaluation curves for both SMACv2 (Figure 1) and MaMujoco tasks (Figure 2). The results show that
+O-MAPL consistently and significantly outperforms other
+baselines throughout the training process. Our algorithm
+converges faster, achieving high win rates and returns at
+earlier training stages across most tasks. This demonstrates
+the effectiveness of our multi-agent end-to-end preference
+learning approach, supported by a systematic and carefully
+designed value decomposition.
+Additional details on dataset generation, hype-parameters,
+8
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Impact Statement
+
+de Witt, C. S., Peng, B., Kamienny, P.-A., Torr, P., Böhmer,
+W., and Whiteson, S. Deep multi-agent reinforcement
+learning for decentralized continuous cooperative control.
+arXiv preprint arXiv:2003.06709, 19, 2020a.
+
+This paper presents work whose goal is to advance the field
+of Machine Learning, in particular multi-agent reinforcement learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here.
+
+de Witt, C. S., Peng, B., Kamienny, P.-A., Torr, P., Böhmer,
+W., and Whiteson, S. Deep multi-agent reinforcement
+learning for decentralized continuous cooperative control.
+arXiv preprint arXiv:2003.06709, 2020b. URL https:
+//arxiv.org/abs/2003.06709.
+
+References
+Akrour, R., Schoenauer, M., and Sebag, M. Preferencebased policy learning. In Machine Learning and Knowledge Discovery in Databases: European Conference,
+ECML PKDD 2011, Athens, Greece, September 5-9,
+2011. Proceedings, Part I 11, pp. 12–27. Springer, 2011.
+
+Ellis, B., Moalla, S., Samvelyan, M., Sun, M., Mahajan,
+A., Foerster, J. N., and Whiteson, S. Smacv2: An improved benchmark for cooperative multi-agent reinforcement learning. arXiv preprint arXiv:2212.07489, 2022.
+Fu, J., Luo, K., and Levine, S. Learning robust rewards
+with adversarial inverse reinforcement learning. arXiv
+preprint arXiv:1710.11248, 2017.
+
+Akrour, R., Schoenauer, M., and Sebag, M. April: Active
+preference learning-based reinforcement learning. In Machine Learning and Knowledge Discovery in Databases:
+European Conference, ECML PKDD 2012, Bristol, UK,
+September 24-28, 2012. Proceedings, Part II 23, pp. 116–
+131. Springer, 2012.
+
+Fürnkranz, J., Hüllermeier, E., Cheng, W., and Park, S.H. Preference-based reinforcement learning: a formal
+framework and a policy iteration algorithm. Machine
+learning, 89:123–156, 2012.
+
+An, G., Lee, J., Zuo, X., Kosaka, N., Kim, K.-M., and Song,
+H. O. Direct preference-based policy optimization without reward modeling. Advances in Neural Information
+Processing Systems, 36:70247–70266, 2023.
+
+Gao, C.-X., Fang, S., Xiao, C., Yu, Y., and Zhang, Z. Hindsight preference learning for offline preference-based reinforcement learning. arXiv preprint arXiv:2407.04451,
+2024.
+
+Arjona-Medina, J. A., Gillhofer, M., Widrich, M., Unterthiner, T., Brandstetter, J., and Hochreiter, S. Rudder:
+Return decomposition for delayed rewards. Advances in
+Neural Information Processing Systems, 32, 2019.
+
+Garg, D., Chakraborty, S., Cundy, C., Song, J., and Ermon,
+S. Iq-learn: Inverse soft-q learning for imitation. Advances in Neural Information Processing Systems, 34:
+4028–4039, 2021.
+
+Bradley, R. A. and Terry, M. E. Rank analysis of incomplete block designs: I. the method of paired comparisons.
+Biometrika, 39(3/4):324–345, 1952.
+
+Garg, D., Hejna, J., Geist, M., and Ermon, S. Extreme
+q-learning: Maxent rl without entropy. In International
+Conference on Learning Representations (ICLR), 2023.
+URL https://arxiv.org/abs/2301.02328.
+
+Bui, T. V., Mai, T., and Nguyen, T. H. Inverse factorized
+q-learning for cooperative multi-agent imitation learning.
+Advances in Neural Information Processing Systems, 38,
+2024.
+
+Haarnoja, T., Zhou, A., Hartikainen, K., Tucker, G., Ha,
+S., Tan, J., Kumar, V., Zhu, H., Gupta, A., Abbeel, P.,
+et al. Soft actor-critic algorithms and applications. arXiv
+preprint arXiv:1812.05905, 2018.
+
+Bui, T. V., Nguyen, T. H., and Mai, T. ComaDICE: Offline
+cooperative multi-agent reinforcement learning with stationary distribution shift regularization. In Proceedings
+of the International Conference on Learning Representations (ICLR), 2025.
+
+Hadfield-Menell, D., Milli, S., Abbeel, P., Russell, S. J., and
+Dragan, A. Inverse reward design. Advances in neural
+information processing systems, 30, 2017.
+
+Choi, H., Jung, S., Ahn, H., and Moon, T. Listwise reward estimation for offline preference-based reinforcement learning. arXiv preprint arXiv:2408.04190, 2024.
+
+Haydari, A. and Yılmaz, Y. Deep reinforcement learning
+for intelligent transportation systems: A survey. IEEE
+Transactions on Intelligent Transportation Systems, 23
+(1):11–32, 2020.
+
+Christiano, P. F., Leike, J., Brown, T., Martic, M., Legg,
+S., and Amodei, D. Deep reinforcement learning from
+human preferences. Advances in neural information processing systems, 30, 2017.
+
+Hejna, J. and Sadigh, D. Inverse preference learning:
+Preference-based rl without a reward function. Advances
+in Neural Information Processing Systems, 36, 2024.
+9
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Hejna, J., Rafailov, R., Sikchi, H., Finn, C., Niekum, S.,
+Knox, W. B., and Sadigh, D. Contrastive prefence learning: Learning from human feedback without rl. arXiv
+preprint arXiv:2310.13639, 2023.
+
+Matsunaga, D. E., Lee, J., Yoon, J., Leonardos, S., Abbeel,
+P., and Kim, K.-E. Alberdice: addressing out-ofdistribution joint actions in offline multi-agent rl via alternating stationary distribution correction estimation. Advances in Neural Information Processing Systems, 36:
+72648–72678, 2023.
+
+Hejna III, D. J. and Sadigh, D. Few-shot preference learning for human-in-the-loop rl. In Conference on Robot
+Learning, pp. 2014–2025. PMLR, 2023.
+
+Meng, L., Wen, M., Le, C., Li, X., Xing, D., Zhang, W.,
+Wen, Y., Zhang, H., Wang, J., Yang, Y., et al. Offline
+pre-trained multi-agent decision transformer. Machine
+Intelligence Research, 20(2):233–248, 2023.
+
+Ho, J. and Ermon, S. Generative adversarial imitation learning. Advances in neural information processing systems,
+29, 2016.
+Ibarz, B., Leike, J., Pohlen, T., Irving, G., Legg, S., and
+Amodei, D. Reward learning from human preferences and
+demonstrations in atari. Advances in neural information
+processing systems, 31, 2018.
+
+Mnih, V. Asynchronous methods for deep reinforcement
+learning. arXiv preprint arXiv:1602.01783, 2016.
+Mukherjee, S., Lalitha, A., Kalantari, K., Deshmukh, A.,
+Liu, G., Ma, Y., and Kveton, B. Optimal design for
+human preference elicitation. 2024.
+
+Kalashnikov, D., Irpan, A., Pastor, P., Ibarz, J., Herzog, A.,
+Jang, E., Quillen, D., Holly, E., Kalakrishnan, M., Vanhoucke, V., et al. Scalable deep reinforcement learning
+for vision-based robotic manipulation. In Conference on
+robot learning, pp. 651–673. PMLR, 2018.
+
+Neu, G., Jonsson, A., and Gómez, V. A unified view of
+entropy-regularized markov decision processes. arXiv
+preprint arXiv:1705.07798, 2017.
+
+Kang, S., Lee, Y., and Yun, S.-Y. Dpm: Dual preferencesbased multi-agent reinforcement learning. In ICML 2024
+Workshop on Models of Human Feedback for AI Alignment, 2024.
+
+Oliehoek, F. A., Spaan, M. T., and Vlassis, N. Optimal and
+approximate q-value functions for decentralized pomdps.
+Journal of Artificial Intelligence Research, 32:289–353,
+2008.
+
+Kang, Y., Shi, D., Liu, J., He, L., and Wang, D. Beyond
+reward: Offline preference-guided policy optimization.
+arXiv preprint arXiv:2305.16217, 2023.
+
+OpenAI. Gpt-4o. 2024. https://openai.com/
+index/hello-gpt-4o/.
+
+Kim, C., Park, J., Shin, J., Lee, H., Abbeel, P., and Lee, K.
+Preference transformer: Modeling human preferences using transformers for rl. arXiv preprint arXiv:2303.00957,
+2023.
+
+OpenAI. Openai api pricing, 2025. URL https://
+openai.com/api/pricing/. Accessed: 2025-0131.
+Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C.,
+Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A.,
+et al. Training language models to follow instructions
+with human feedback. Advances in neural information
+processing systems, 35:27730–27744, 2022.
+
+Kraemer, L. and Banerjee, B. Multi-agent reinforcement
+learning as a rehearsal for decentralized planning. Neurocomputing, 190:82–94, 2016.
+Kumar, A., Zhou, A., Tucker, G., and Levine, S. Conservative q-learning for offline reinforcement learning.
+Advances in Neural Information Processing Systems, 33:
+1179–1191, 2020.
+
+Pan, L., Huang, L., Ma, T., and Xu, H. Plan better amid
+conservatism: Offline multi-agent reinforcement learning
+with actor rectification. In International conference on
+machine learning, pp. 17221–17237. PMLR, 2022.
+
+Lee, K., Smith, L., and Abbeel, P. Pebble: Feedbackefficient interactive reinforcement learning via relabeling
+experience and unsupervised pre-training. arXiv preprint
+arXiv:2106.05091, 2021.
+
+Peng, X. B., Coumans, E., Zhang, T., Lee, T.-W., Tan, J.,
+and Levine, S. Learning agile robotic locomotion skills
+by imitating animals. arXiv preprint arXiv:2004.00784,
+2020.
+
+Levine, S., Finn, C., Darrell, T., and Abbeel, P. End-to-end
+training of deep visuomotor policies. Journal of Machine
+Learning Research, 17(39):1–40, 2016.
+
+Rafailov, R., Sharma, A., Mitchell, E., Manning, C. D., Ermon, S., and Finn, C. Direct preference optimization:
+Your language model is secretly a reward model. Advances in Neural Information Processing Systems, 36,
+2024.
+
+Mai, T. A., Nguyen, T. H., et al. Inverse factorized soft
+q-learning for cooperative multi-agent imitation learning. In The Thirty-eighth Annual Conference on Neural
+Information Processing Systems, 2024.
+10
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Ren, Z., Guo, R., Zhou, Y., and Peng, J. Learning long-term
+reward redistribution via randomized return decomposition. arXiv preprint arXiv:2111.13485, 2021.
+
+Yahya, A., Li, A., Kalakrishnan, M., Chebotar, Y., and
+Levine, S. Collective robot reinforcement learning with
+distributed asynchronous guided policy search. In 2017
+IEEE/RSJ International Conference on Intelligent Robots
+and Systems (IROS), pp. 79–86. IEEE, 2017.
+
+Samvelyan, M., Rashid, T., De Witt, C. S., Farquhar, G.,
+Nardelli, N., Rudner, T. G., Hung, C.-M., Torr, P. H.,
+Foerster, J., and Whiteson, S. The starcraft multi-agent
+challenge. arXiv preprint arXiv:1902.04043, 2019.
+
+Yang, Y., Ma, X., Li, C., Zheng, Z., Zhang, Q., Huang, G.,
+Yang, J., and Zhao, Q. Believe what you see: Implicit
+constraint approach for offline multi-agent reinforcement
+learning. Advances in Neural Information Processing
+Systems, 34:10299–10312, 2021.
+
+Schenck, C. and Fox, D. Visual closed-loop control for pouring liquids. In 2017 IEEE International Conference on
+Robotics and Automation (ICRA), pp. 2629–2636. IEEE,
+2017.
+
+Yu, C., Velu, A., Vinitsky, E., Gao, J., Wang, Y., Bayen, A.,
+and Wu, Y. The surprising effectiveness of ppo in cooperative multi-agent games. Advances in Neural Information
+Processing Systems, 35:24611–24624, 2022.
+
+Shao, J., Qu, Y., Chen, C., Zhang, H., and Ji, X. Counterfactual conservative q learning for offline multi-agent
+reinforcement learning. Advances in Neural Information
+Processing Systems, 36, 2024.
+Shin, D., Dragan, A. D., and Brown, D. S. Benchmarks and
+algorithms for offline preference-based reward learning.
+arXiv preprint arXiv:2301.01392, 2023.
+
+Yu, T., Quillen, D., He, Z., Julian, R., Hausman, K., Finn,
+C., and Levine, S. Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning. In
+Conference on robot learning, pp. 1094–1100. PMLR,
+2020.
+
+Silver, D., Schrittwieser, J., Simonyan, K., Antonoglou,
+I., Huang, A., Guez, A., Hubert, T., Baker, L., Lai, M.,
+Bolton, A., et al. Mastering the game of go without
+human knowledge. nature, 550(7676):354–359, 2017.
+
+Zhang, N., Wang, X., Cui, Q., Zhou, R., Kakade, S. M., and
+Du, S. S. Multi-agent reinforcement learning from human feedback: Data coverage and algorithmic techniques.
+arXiv preprint arXiv:2409.00717, 2024a.
+
+Stiennon, N., Ouyang, L., Wu, J., Ziegler, D., Lowe, R.,
+Voss, C., Radford, A., Amodei, D., and Christiano,
+P. F. Learning to summarize with human feedback. Advances in Neural Information Processing Systems, 33:
+3008–3021, 2020.
+
+Zhang, T., Li, Y., Wang, C., Xie, G., and Lu, Z. Fop: Factorizing optimal joint policy of maximum-entropy multiagent reinforcement learning. In International conference
+on machine learning, pp. 12491–12500. PMLR, 2021.
+Zhang, Y., Du, Y., Huang, B., Wang, Z., Wang, J., Fang, M.,
+and Pechenizkiy, M. Interpretable reward redistribution
+in reinforcement learning: a causal approach. Advances
+in Neural Information Processing Systems, 36, 2024b.
+
+Sunehag, P., Lever, G., Gruslys, A., Czarnecki, W. M., Zambaldi, V., Jaderberg, M., Lanctot, M., Sonnerat, N., Leibo,
+J. Z., Tuyls, K., et al. Value-decomposition networks
+for cooperative multi-agent learning. arXiv preprint
+arXiv:1706.05296, 2017.
+
+Zhang, Z., Sun, Y., Ye, J., Liu, T.-S., Zhang, J., and Yu,
+Y. Flow to better: Offline preference-based reinforcement learning via preferred trajectory generation. In The
+Twelfth International Conference on Learning Representations, 2023.
+
+Tseng, W.-C., Wang, T.-H. J., Lin, Y.-C., and Isola, P. Offline multi-agent reinforcement learning with knowledge
+distillation. Advances in Neural Information Processing
+Systems, 35:226–237, 2022.
+
+Zhu, H., Yu, J., Gupta, A., Shah, D., Hartikainen, K., Singh,
+A., Kumar, V., and Levine, S. The ingredients of realworld robotic reinforcement learning. arXiv preprint
+arXiv:2004.12570, 2020.
+
+Turner, A., Ratzlaff, N., and Tadepalli, P. Avoiding side
+effects in complex environments. Advances in Neural
+Information Processing Systems, 33:21406–21415, 2020.
+Wang, X., Xu, H., Zheng, Y., and Zhan, X. Offline multiagent reinforcement learning with implicit global-to-local
+value regularization. Advances in Neural Information
+Processing Systems, 36, 2022.
+Wilson, A., Fern, A., and Tadepalli, P. A bayesian approach
+for policy learning from trajectory preference queries.
+Advances in neural information processing systems, 25,
+2012.
+11
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+A. Missing Proofs
+We provide proofs that are omitted in the main paper.
+A.1. Proof of Proposition 4.1
+Proposition 4.1: The preference-based loss function L(q, v, w) is concave in q and w (the parameters of the mixing
+networks), while the extreme-V loss function J (v) is convex in v.
+Proof. We first recall that the preference-based loss function has the following form:
+ P
+
+P
+X
+X
+L(q, v, w) =
+Rw [q, v](s, a) − log e σ1 Rw [q,v](s,a) + e σ2 Rw [q,v](s,a) + ϕ(Rw [q, v](s, a)).
+(σ1 ,σ2 )∈P (s,a)∈σ1
+
+We observe that under the assumption that the mixing networks are linear in their inputs, the function Rw [q, v](s, a) is linear
+in q(s, a) and θ. This implies that for any α ∈ [0, 1] and for any two vectors of local Q values q1 , q2 , we have:
+αRw [q1 , v](s, a) + (1 − α)Rw [q2 , v](s, a) = Rw [αq1 + (1 − α)q2 , v](s, a).
+Now consider the term ϕ(Rw [q, v](s, a)). Since ϕ is concave, we have the following inequality for any α ∈ (0, 1) and two
+vectors q1 , q2 :
+
+αϕ(Rw [q1 , v](s, a)) + (1 − α)ϕ(Rw [q2 , v](s, a)) ≤ ϕ αRw [q1 , v](s, a) + (1 − α)Rw [q2 , v](s, a)
+
+≤ ϕ Rw [αq1 + (1 − α)q2 , v](s, a) ,
+(8)
+which implies the concavity of ϕ(Rw [q, v](s, a)) in q.
+ P
+
+P
+For the term log e σ1 Rw [q,v](s,a) + e σ2 Rw [q,v](s,a) , we note the following. First:
+X
+X
+X
+α
+Rw [q1 , v](s, a) + (1 − α)
+Rw [q2 , v](s, a) =
+Rw [αq1 + (1 − α)q2 , v](s, a),
+σ
+
+σ
+
+σ
+
+for any trajectory σ. Moreover, since the log-sum-exp function log(et1 + et2 ) is convex in (t1 , t2 ), we also have the
+following inequalities for any α ∈ (0, 1) and two vectors q1 , q2 :
+ P
+
+ P
+
+P
+P
+1
+1
+2
+2
+α log e σ1 Rw [q ,v](s,a) + e σ2 Rw [q ,v](s,a) + (1 − α) log e σ1 Rw [q ,v](s,a) + e σ2 Rw [q ,v](s,a)
+ P
+
+P
+P
+P
+1
+2
+1
+2
+≤ log eα σ1 Rw [q ,v](s,a)+(1−α) σ1 Rw [q ,v](s,a) + eα σ2 Rw [q ,v](s,a)+(1−α) σ2 Rw [q ,v](s,a)
+
+
+1
+2
+1
+2
+= log eRw [αq +(1−α)q ,v](s,a) + eRw [αq +(1−α)q ,v](s,a) ,
+
+ P
+P
+which implies that log e σ1 Rw [q,v](s,a) + e σ2 Rw [q,v](s,a) is convex in q.
+Putting all the above together, we see that L(q, v, w) is concave in q.
+Finally, since the mixing networks are linear in q and w, a similar argument shows that L(q, v, w) is also concave in w.
+For the convexity of the extreme-V function J (v), we rewrite the function as:
+
+
+h Mw [q(s,a)]−Mw [v(s)] i
+Mw [q(s, a)] − Mw [v(s)]
+β
+J (v) = E(s,a)∼µtot e
+− E(s,a)∼µtot
+− 1.
+β
+Since the mixing network Mw [v] is linear in v, we can see that the term
+
+
+Mw [q(s, a)] − Mw [v(s)]
+E(s,a)∼µtot
+β
+is also linear in v.
+Moreover, the exponential function ex is always convex in x. Thus, in a similar way as shown above, we can prove that
+e
+
+Mw [q(s,a)]−Mw [v(s)]
+β
+
+is convex in v. All these observations imply that J (v) is convex in v, as desired.
+12
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+A.2. Proof of Proposition 4.2
+Proposition 4.1: If the mixing networks Mw [q] and Mw [v] are two-layer (or multi-layer) feed-forward networks, the
+preference-based loss function L(q, v, w) is no longer concave in q or w, and the extreme-V loss function J (v) is not
+convex in v.
+Proof. Following standard settings in value factorization, a 2-layer mixing network is typically constructed with nonnegative weights and convex activations (e.g., ReLU). Under this setting, according to (Bui et al., 2024), Mw [q] and Mw [v]
+are convex in q and v, respectively.
+From this observation, we first recall the preference-based loss function:
+ P
+
+P
+X
+X
+L(q, v, w) =
+Rw [q, v](s, a) − log e σ1 Rw [q,v](s,a) + e σ2 Rw [q,v](s,a) + ϕ(Rw [q, v](s, a)).
+(σ1 ,σ2 )∈P (s,a)∈σ1
+
+It can be seen that the first term of L(q, v, w) involves Rw [q, v](s, a), which can be written as:
+Rw [q, v](s, a) = Mw [q(s, a)] − γEs′ [Mw [v(s′ )]] .
+Since Mw [q(s, a)] is convex in q, the first term of L(q, v, w) is convex in q, which generally implies that this function is
+not concave in q.
+In a similar way, since the the mixing function Mw [q(s, a)] is also convex in w, implying that L(q, v, w) is also not
+concave in w.
+To prove the non-convexity of the Extreme-V function J(v), we recall that:
+
+
+h Mw [q(s,a)]−Mw [v(s)] i
+Mw [q(s, a)] − Mw [v(s)]
+β
+J (v) = E(s,a)∼µtot e
+− E(s,a)∼µtot
+− 1.
+β
+We will find a counterexample to show that J(v) is not convex under a 2-layer mixing network. For simplicity, since
+Mw [q] is fixed in J(v), we select Mw [q](s, a) = 0. We then create a simple example where there is only one agent (i.e.,
+v(s) = {v1 (s1 )}), and the mixing network Mw [v] takes a one-dimensional input with a ReLU activation (a commonly
+used activation function in the context). Specifically, we can write Mw [v] as:
+(
+v1 (s1 )
+if v1 (s1 ) > 0,
+Mw [v(s)] =
+v1 (s1 )
+e
+− 1 if v1 (s1 ) ≤ 0.
+Then, for a given pair (s, a), the corresponding term in J(v) associated with (s, a) can be written as:
+e1−e
+
+v1
+
++ (ev1 − 1).
+
+Here, for simplicity, we select β = 1, omit the notation s1 in the function v1 (s1 ), and only consider the case where v1 ≤ 0.
+t
+We see that the function f (t) = e1−e + (et − 1) is not convex for t ≤ 0 (see the plot of this function in Figure 3).
+
+A.3. Proof of Theorem 4.3
+∗
+Theorem 4.3:
+πi∗ be the optimal solution to the local WBC problem in (4). Then, the global policy πtot
+, defined as
+Q Let
+∗
+∗
+πtot (s, a) = i πi (ai |si ), is also optimal for the global WBC problem in (3). In other words, the local WBC approach
+yields local policies that are consistent with the desired globally optimal policy.
+
+Proof. For notational simplicity, let G(πtot ) be the objective function of the global WBC problem:
+h Qtot (s,a)−Vtot (s)
+i
+β
+G(πtot ) = Es,a∼µtot e
+log πtot (a|s) .
+
+13
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+t
+
+Figure 3: Plot of the function f (t) = e1−e + et − 1.
+Since we are seeking a decomposable policy πtot (a|s) =
+"
+G(πtot ) = Es,a∼µtot e
+
+Q
+
+i∈N πi (ai |si ), we have, for any πtot ∈ Πtot such that πtot =
+
+Qtot (s,a)−Vtot (s)
+β
+
+Q
+
+i πi :
+
+#
+log
+
+Y
+
+πi (ai |si )
+
+i
+
+=
+
+io
+h Qtot (s,a)−Vtot (s)
+Xn
+β
+log πi (ai |si )
+Es,a∼µtot e
+i∈N
+
+(a) X n
+
+h Qtot (s,a)−Vtot (s)
+io
+β
+Es,a∼µtot e
+log πi∗ (ai |si )
+
+≤
+
+i∈N
+
+h Qtot (s,a)−Vtot (s)
+i
+∗
+β
+= Es,a∼µtot e
+log πtot
+(a|s) ,
+∗
+where (a) holds because each πi∗ is optimal for the corresponding local WBC problem. Thus, we have G(πtot ) ≤ G(πtot
+)
+∗
+for any πtot ∈ Πtot , implying that πtot is also optimal for the global WBC. This establishes the GLC, as desired.
+
+A.4. Proof of Theorem 4.4
+Theorem 4.4: Let πi∗ be optimal to the local WBC, then the following equality holds for all si ∈ Si , ai ∈ Ai :
+q
+
+πi∗ (ai |si ) =
+
+v v (s )
+w qi (si ,ai )−wi
+i i
+η(si )
+i
+β
+µi (ai |si )e
+∆(si )
+
+(9)
+
+where wiq and wiv are parameters of the mixing networks Mw [q], Mw [v], respectively. In addition, η(si )/∆(si ) is a
+correction term defined as follows:
+η(si ) =
+
+X
+s′ ,a′ |s′i =si
+
+∆(si ) =
+
+X
+
+e
+
+bq −bv
+β
+
+Y
+
+µ(a′j |s′j )e
+
+q
+v v (s′ )
+w qj (s′j ,a′j )−wj
+j j
+j
+β
+
+j∈N ,j̸=i
+
+η(si )µi (ai |si )e
+
+q
+v v (s )
+w qi (si ,ai )−wi
+i i
+i
+β
+
+.
+
+ai ∈Ai
+
+Proof. We first note that each mixing network Mw [q] or Mw [v] can be expressed as a linear function of its inputs:
+X q
+Qtot (s, a) = Mw [q](s, a) =
+wi qi (si , ai ) + bq ,
+i∈N
+
+Vtot (s) = Mw [v](s) =
+
+X
+i∈N
+
+14
+
+wiv vi (si ) + bv .
+
+(10)
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Thus,
+e
+
+Qtot (s,a)−Vtot (s)
+β
+
+=e
+
+bq −bv
+β
+
+Y
+
+e
+
+q
+v v (s )
+w qi (si ,ai )−wi
+i i
+i
+β
+
+.
+
+i∈N
+
+Now, let us consider the objective function of the local WBC and write:
+X
+
+g(πi ) =
+
+µtot (a|s)e
+
+Qtot (s,a)−Vtot (s)
+β
+
+log πi (ai |si )
+
+s∈S,a∈A
+
+X
+
+=
+
+e
+
+bq −bv
+β
+
+s∈S,a∈A
+
+Y
+
+µ(ai |si )e
+
+q
+v v (s )
+w qi (si ,ai )−wi
+i i
+i
+β
+
+log πi (ai |si ).
+
+i∈N
+
+Thus, for each agent i ∈ N and local state si ∈ Si , we extract all the components of g(πi ) that involve πi (ai |si ) as:
+g si (πi ) =
+
+X
+
+e
+
+bq −bv
+β
+
+s′ ,a′ |s′i =si
+
+Y
+
+µ(a′j |s′j )e
+
+q
+v v (s′ )
+w qj (s′j ,a′j )−wj
+j j
+j
+β
+
+j∈N ,j̸=i
+
+
+
+q
+v v (s )
+w qi (si ,a′i )−wi
+i i
+i
+′
+′
+β
+× µi (ai |si )e
+log πi (ai |si )
+
+
+q
+v v (s )
+X
+w qi (si ,a′i )−wi
+i i
+i
+′
+′
+β
+log πi (ai |si ) ,
+=
+η(si ) µi (ai |si )e
+a′i ∈Ai
+
+where
+η(si ) =
+
+X
+
+e
+
+bq −bv
+β
+
+s′ ,a′ |s′i =si
+
+Y
+
+µ(a′j |s′j )e
+
+q
+v v (s′ )
+w qj (s′j ,a′j )−wj
+j j
+j
+β
+
+,
+
+j∈N ,j̸=i
+
+which is independent of any local actions a′i .
+The local WBC problem thus becomes the problem of finding local policies πi (·|si ) that maximize g si (πi ) for any local
+state si . For notational simplicity, let
+δ(a′i , si ) = η(si )µi (a′i |si )e
+
+q
+v v (s )
+w qi (si ,a′i )−wi
+i i
+i
+β
+
+.
+
+We then write the local objective function g si (πi ) as:
+g si (πi ) =
+
+X
+
+δ(ai , si ) log πi (ai |si ).
+
+ai ∈Ai
+
+To solve the problem maxπi g si (πi ), let us consider a general version (with simplified notation):
+(
+)
+X
+X
+max g(t) =
+αi log ti t ∈ [0, 1]n ,
+ti = 1 ,
+t
+
+i
+
+i∈N
+
+where αi ≥ 0 and g(t) : [0, 1]n → R. By considering the Lagrangian dual of this problem, we can see that an optimal
+solution t∗ must satisfy the following KKT conditions:
+ ∗
+n
+
+tP ∈ (0, 1) ,
+∗
+i ti = 1,
+
+ αi = αj , ∀i, j ∈ N .
+t∗
+t∗
+i
+
+j
+
+These conditions directly imply that:
+t∗i = P
+
+αi
+
+j∈N αj
+
+15
+
+.
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+We return to the maximization of g si (πi ), which yields an optimal solution:
+πi∗ (ai |si ) = P
+
+δ(ai , si )
+,
+δ(a′i , si )
+
+∀ai ∈ Ai .
+
+a′i ∈Ai
+
+Putting everything together, we see that the following solution πi∗ is optimal for the local WBC:
+q
+v v (s )
+w qi (si ,ai )−wi
+i i
+i
+β
+
+η(si )µi (ai |si )e
+πi (ai |si ) =
+∆(si )
+where
+∆(si ) =
+
+X
+
+η(si )µi (ai |si )e
+
+,
+
+q
+v v (s )
+w qi (si ,ai )−wi
+i i
+i
+β
+
+.
+
+ai ∈Ai
+
+A.5. Proof of Proposition 4.5
+Proposition 4.5: Each local value vi can be expressed as a (modified) log-sum-exp of the local Q-function qi :
+
+
+q
+X
+w
+β
+η(si )
+β
+i
+.
+e β qi (si ,ai ) + v log
+vi (si ) = v log
+wi
+wi
+∆(si )
+
+(11)
+
+ai ∼µi (·|si )
+
+P
+Proof. Since πi∗ is a valid probability distribution, we have ai πi∗ (ai |si ) = 1. Substituting the closed-form formula of πi∗
+stated in Theorem 4.4, we have:
+q
+v v (s )
+X η(si )
+w qi (si ,ai )−wi
+i i
+i
+β
+µi (ai |si )e
+= 1.
+∆(s
+)
+i
+a
+i
+
+Taking e
+
+wiv vi (si )/β
+
+outside the summation, we get:
+X η(si )
+ai
+
+∆(si )
+
+µi (ai |si )e
+
+q
+w qi (si ,ai )
+i
+β
+
+v
+
+= ewi vi (si )/β .
+
+This directly leads to the log-sum-exp formula:
+q
+X η(si )
+w qi (si ,ai )
+β
+i
+β
+µi (ai |si )e
+vi (si ) = v log
+wi
+∆(si )
+a
+
+!
+=
+
+i
+
+β
+log
+wiv
+
+X
+ai ∼µi (·|si )
+
+q
+w
+i
+
+e β qi (si ,ai ) +
+
+β
+log
+wiv
+
+
+
+η(si )
+∆(si )
+
+
+.,
+
+as desired.
+
+B. Additional Details
+B.1. Offline Preference Multi-Agent Datasets
+In this section, we provide a detailed description of how we constructed the dataset for preference learning tasks. Our
+datasets span both discrete and continuous domains, covering the environments SMACv1, SMACv2, and MaMujoco. The
+datasets are designed to include varying qualities of data, sampled trajectory pairs, and their preference labels to facilitate
+preference learning. To create datasets suitable for preference learning, we sampled trajectory pairs from varying quality
+offline datasets and generated preference labels. The labeling process was performed using two approaches:
+• Rule-based Methods: Following IPL (Hejna & Sadigh, 2024), we sampled trajectory pairs and assigned binary
+preference labels based on dataset quality (e.g., poor, medium, expert).
+• LLM-based Methods: Following DPM (Kang et al., 2024), we sampled trajectory pairs and annotated them using
+preference policies from large language models (e.g., Llama 3, GPT-4o).
+16
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+For MaMujoco tasks, 1k trajectory pairs were sampled, while for SMAC tasks, 2k trajectory pairs were sampled. Table 3
+summarizes the dataset details, including state dimensions, action dimensions, sample sizes, and average returns.
+
+Obs. dim
+
+Act. dim
+
+Samples
+
+Max len.
+
+Avg. returns
+
+File size
+
+MaMujoco
+
+Tasks
+Hopper-v2
+Ant-v2
+HalfCheetah-v2
+
+42
+226
+138
+
+14
+113
+23
+
+1
+4
+1
+
+1000
+1000
+1000
+
+1000
+1000
+1000
+
+1354.0±1121.6
+1514.9±435.8
+1640.5±1175.7
+
+255 MB
+1003 MB
+1802 MB
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+1350
+780
+1278
+2610
+
+478
+124
+172
+346
+
+70
+12
+14
+30
+
+2000
+2000
+2000
+2000
+
+280
+36
+48
+394
+
+13.99±4.75
+13.26±5.02
+13.01±3.95
+12.69±6.30
+
+401 MB
+72 MB
+182 MB
+979 MB
+
+protoss 5 vs 5
+protoss 10 vs 10
+protoss 10 vs 11
+protoss 20 vs 20
+protoss 20 vs 23
+
+130
+310
+327
+820
+901
+
+92
+182
+191
+362
+389
+
+11
+16
+17
+26
+29
+
+2000
+2000
+2000
+2000
+2000
+
+142
+178
+146
+200
+200
+
+16.07±4.94
+15.72±4.28
+15.45±4.85
+15.63±4.76
+14.44±4.73
+
+56 MB
+209 MB
+218 MB
+726 MB
+799 MB
+
+terran 5 vs 5
+terran 10 vs 10
+terran 10 vs 11
+terran 20 vs 20
+terran 20 vs 23
+
+120
+290
+306
+780
+858
+
+82
+162
+170
+322
+346
+
+11
+16
+17
+26
+29
+
+2000
+2000
+2000
+2000
+2000
+
+200
+200
+200
+200
+200
+
+16.20±6.37
+14.86±5.78
+13.52±5.44
+13.52±5.76
+10.67±5.11
+
+44 MB
+151 MB
+165 MB
+530 MB
+563 MB
+
+zerg 5 vs 5
+zerg 10 vs 10
+zerg 10 vs 11
+zerg 20 vs 20
+zerg 20 vs 23
+
+120
+290
+306
+780
+858
+
+82
+162
+170
+322
+346
+
+11
+16
+17
+26
+29
+
+2000
+2000
+2000
+2000
+2000
+
+57
+70
+104
+134
+99
+
+14.79±7.70
+14.61±5.63
+13.67±5.71
+12.14±3.95
+10.88±4.36
+
+31 MB
+99 MB
+101 MB
+303 MB
+313 MB
+
+SMACv2
+
+State dim
+
+SMACv1
+
+The datasets constructed for this study span a diverse range of environments and tasks, ensuring comprehensive evaluation
+of preference learning algorithms. The inclusion of varying quality levels and both rule-based and LLM-based labeling
+methods provides a robust foundation for preference-based multi-agent reinforcement learning research.
+
+Table 3: Datasets
+B.1.1. SMAC DATASET
+SMACv1 (Samvelyan et al., 2019) is a benchmark environment for cooperative multi-agent reinforcement learning (MARL),
+built on Blizzard’s StarCraft II RTS game. It leverages the StarCraft II Machine Learning API and DeepMind’s PySC2 to
+enable autonomous agent interaction with StarCraft II. Unlike PySC2, SMACv1 focuses on decentralized micromanagement
+scenarios, where each unit is controlled by an individual RL agent.
+We evaluate on the following tasks: 2c vs 64zg, 5m vs 6m, 6h vs 8z, and corridor. Among these, 2c vs 64zg
+and 5m vs 6m are categorized as hard tasks, while 6h vs 8z and corridor are considered super hard. The offline
+dataset for SMACv1 was sourced from the work of Meng et al., where MAPPO was used to train agents. These agents were
+then used to generate offline datasets for the community. The dataset quality varies across poor, medium, and good levels,
+ensuring comprehensive coverage of different learning stages.
+SMACv2 (Ellis et al., 2022) builds upon SMACv1, introducing enhancements to challenge contemporary MARL algorithms.
+It incorporates randomized start positions, randomized unit types, and adjustments to unit sight and attack ranges. These
+changes increase the diversity of agent interactions and align the sight range with the true values in StarCraft II. Tasks in
+SMACv2 are grouped by factions (protoss, terran, zerg) and instances (5 vs 5, 10 vs 10, 10 vs 11, 20 vs 20,
+20 vs 23). The difficulty increases progressively from 5 vs 5 to 20 vs 23.
+The offline dataset for SMACv2 was derived from the ComaDICE paper (Bui et al., 2025), where MAPPO (Yu et al., 2022)
+was used to train agents over 10e6 steps, followed by random sampling of 1k trajectories. This dataset primarily represents
+medium-quality data. To ensure varying quality levels, we created additional datasets for poor and expert levels.
+17
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+B.1.2. M A M UJOCO DATASET
+MaMujoco (de Witt et al., 2020b) is a benchmark for continuous cooperative multi-agent robotic control. Derived from
+OpenAI Gym’s MuJoCo suite, MaMujoco introduces scenarios where multiple agents within a single robot must solve
+tasks cooperatively. We evaluate on the tasks Hopper-v2, Ant-v2, and HalfCheetah-v2. The offline dataset for
+MaMujoco was sourced from the work of Xiangsen et al., who used the HAPPO method to train agents. Each task includes
+datasets with varying quality levels: medium-replay, medium, and expert.
+B.2. LLM-based Preference Annotations
+To generate preference annotations for trajectory pairs, we utilized GPT-4o (OpenAI, 2024). This model was prompted with
+detailed trajectory state information, including key metrics such as health points, shields, relative positions, cooldown times,
+agent types, and action meanings. The inclusion of such detailed state information significantly improves the ability of the
+LLM to evaluate trajectory pairs effectively. Following the methodology of DPM (Kang et al., 2024), we extracted critical
+state details such as the health points of allied and enemy agents, the number of agent deaths (both allied and enemy), and
+the total remaining health at the final state of each trajectory. These extracted metrics were then used to construct prompts
+for the LLM, as shown in Table 5.
+The OpenAI Batch API (OpenAI, 2025) was employed to submit these prompts to GPT-4o, and the associated token usage
+and costs are summarized in Table 4. The total cost for generating LLM-based annotations across all tasks was approximately
+$42, with each dataset containing 2,000 trajectory pairs. While this approach is effective, it becomes costly when scaling to
+larger datasets or additional tasks.
+It is important to note that this method is particularly suited for environments like SMACv1 and SMACv2, where trajectory
+states provide meaningful and interpretable information. However, the approach has limitations in environments such
+as MaMujoco, which lack detailed trajectory state information. In MaMujoco tasks, the trajectory states do not include
+interpretable metrics like health points or agent-specific details, making it infeasible to construct meaningful prompts for
+LLMs. As a result, only rule-based methods were used to generate preference labels for MaMujoco datasets.
+This limitation highlights a broader challenge of the DPM approach (Kang et al., 2024): it relies on the availability
+of meaningful final state information, which restricts its applicability to specific environments. It is less suitable for
+long-horizon transitions or environments with image-based observations, where extracting detailed and interpretable state
+information is either infeasible or computationally expensive.
+B.3. Implementation Details
+All experiments were implemented using PyTorch and executed in parallel on a single NVIDIA® H100 NVL Tensor Core
+GPU to ensure computational efficiency. We developed two versions of our proposed method, O-MAPL, tailored to the
+specific characteristics of continuous and discrete action domains:
+Continuous Domain (MaMujoco): For continuous environments, we utilized a Gaussian distribution
+(torch.distributions.Normal) to model the policy. Each agent’s action is sampled from this distribution, which
+is parameterized by the mean and standard deviation outputted by the policy network.
+Discrete Domains (SMACv1 & SMACv2): For discrete environments, we employed a Categorical distribution
+(torch.distributions.Categorical) to model the policy. The probability of each action for an agent is computed
+using the softmax operation over only the available actions for that agent. Actions that are not available are assigned a
+probability of zero. This ensures that the log-likelihood calculation is accurate and avoids penalizing the agent for infeasible
+actions.
+B.4. Hyperparameters
+Table 6 reports hyperparameters used consistently across all experiments:
+B.5. Baseline Comparisons
+We compared O-MAPL against four baseline methods to evaluate its performance:
+18
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Tasks
+
+Completion Tokens
+
+Prompt Tokens
+
+Estimated API Cost
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+5,920
+5,913
+5,941
+5,926
+
+2,498,000
+1,386,000
+1,462,000
+1,772,000
+
+$3.13
+$1.74
+$1.83
+$2.22
+
+protoss 5 vs 5
+protoss 10 vs 10
+protoss 10 vs 11
+protoss 20 vs 20
+protoss 20 vs 23
+
+5,920
+5,918
+5,940
+5,901
+5,990
+
+1,460,000
+1,660,000
+1,680,000
+2,060,000
+2,122,000
+
+$1.83
+$2.08
+$2.11
+$2.58
+$2.66
+
+terran 5 vs 5
+terran 10 vs 10
+terran 10 vs 11
+terran 20 vs 20
+terran 20 vs 23
+
+5,990
+5,925
+5,930
+5,944
+5,977
+
+1,442,000
+1,642,000
+1,662,000
+2,042,000
+2,104,000
+
+$1.81
+$2.06
+$2.08
+$2.56
+$2.64
+
+zerg 5 vs 5
+zerg 10 vs 10
+zerg 10 vs 11
+zerg 20 vs 20
+zerg 20 vs 23
+
+5,940
+5,914
+5,912
+5,942
+5,913
+
+1,448,000
+1,648,000
+1,668,000
+2,048,000
+2,110,000
+
+$1.82
+$2.07
+$2.09
+$2.57
+$2.64
+
+Total
+
+112,756
+
+33,914,000
+
+$42.53
+
+Table 4: GPT-4o API costs
+• BC (Behavior Cloning): A simple BC supervised learning approach based on preferred trajectories in the dataset.
+• IIPL (Independent Inverse Preference Learning): Implements IPL (Hejna & Sadigh, 2024) independently for each
+agent without considering inter-agent coordination.
+• IPL-VDN (Inverse Preference Learning with VDN): Similar to our O-MAPL algorithm, except that the global Q
+and V functions are aggregated by summing the local Q-values of individual agents, instead of using a mixing network
+(Sunehag et al., 2017).
+• SL-MARL (Supervised Learning for MARL): A two-step approach where the reward function is first learned via
+supervised learning, followed by policy training through a MARL algorithm (i.e. OMIGA (Wang et al., 2022)), using
+the learned reward function.
+B.6. Evaluation Metrics
+We report two key metrics to assess agent performance:
+• Mean/Standard Deviation of Returns: Measures the average cumulative rewards achieved by the agents across
+episodes (applicable to all the environments).
+• Mean/Standard Deviation of Win Rates: Applicable only to competitive environments (only applicable to SMACv1
+and SMACv2). This metric evaluates the percentage of episodes where agents achieve victory.
+Each metric is computed as the average and standard deviation of the final results across all four random seeds. Additionally,
+we present evaluation curves for each method, depicting performance trends during the agent training process using offline
+datasets.
+
+19
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Prompt
+You are a helpful and honest judge of good game playing and progress in the
+StarCraft Multi-Agent Challenge game. Always answer as helpfully as possible,
+while being truthful.
+If you don’t know the answer to a question, please don’t share false information.
+I’m looking to have you evaluate a scenario in the StarCraft Multi-Agent Challenge.
+Your role will be to assess how much the actions taken by multiple agents in a
+given situation have contributed to achieving victory.
+The basic information for the evaluation is as follows.
+- Scenario : 5m_vs_6m
+- Allied Team Agent Configuration : five Marines(Marines are ranged units in
+StarCraft 2).
+- Enemy Team Agent Configuration : six Marines(Marines are ranged units in
+StarCraft 2).
+- Situation Description : The situation involves the allied team and the enemy team
+engaging in combat, where victory is achieved by defeating all the enemies.
+- Objective : Defeat all enemy agents while ensuring as many allied agents as
+possible survive.
+* Important Notice : You should prefer the trajectory where our allies’ health is
+preserved while significantly reducing the enemy’s health. In similar
+situations, you should prefer shorter trajectory lengths.
+I will provide you with two trajectories, and you should select the better
+trajectory based on the outcomes of these trajectories. Regarding the
+trajectory, it will inform you about the final states, and you should select
+the better case based on these two trajectories.
+[Trajectory 1]
+1. Final State Information
+1) Allied Agents Health : 0.000, 0.000, 0.067, 0.067, 0.000
+2) Enemy Agents Health : 0.000, 0.000, 0.000, 0.000, 0.000, 0.040
+3) Number of Allied Deaths : 3
+4) Number of Enemy Deaths : 5
+5) Total Remaining Health of Allies : 0.133
+6) Total Remaining Health of Enemies : 0.040
+2. Total Number of Steps : 28
+[Trajectory 2]
+1. Final State Information
+1) Allied Agents Health : 0.000, 0.000, 0.000, 0.000, 0.000
+2) Enemy Agents Health : 0.120, 0.000, 0.000, 0.000, 0.000, 0.200
+3) Number of Allied Deaths : 5
+4) Number of Enemy Deaths : 4
+5) Total Remaining Health of Allies : 0.000
+6) Total Remaining Health of Enemies : 0.320
+2. Total Number of Steps : 23
+Your task is to inform which one is better between [Trajectory1] and [Trajectory2]
+based on the information mentioned above. For example, if [Trajectory 1] seems
+better, output #1, and if [Trajectory 2] seems better, output #2. If it’s
+difficult to judge or they seem similar, please output #0.
+* Important : Generally, it is considered better when fewer allied agents are
+killed or injured while inflicting more damage on the enemy.
+Omit detailed explanations and just provide the answer.
+
+Table 5: Sample prompt to generate preference data in SMAC environments.
+
+20
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Hyperparameter
+
+Value
+
+Optimizer
+Learning rate (Q-value and policy networks)
+Tau (soft update target rate)
+Gamma (discount factor)
+Batch size
+Agent hidden dimension
+Mixer hidden dimension
+Number of seeds
+Number of episodes per evaluation step
+Number of evaluation steps
+
+Adam
+1e-4
+0.005
+0.99
+32
+256
+64
+4
+32
+100
+
+Table 6: Hyperparameters used in all experiments.
+Notes on Evaluation: For MaMujoco, win rates are not applicable as it is not a competitive environment. Evaluation
+scores are averaged over the results of all four seeds to ensure statistical robustness. The performance trends and comparisons
+are visualized in detailed figures to provide insights into the training dynamics of each method.
+This setup ensures a fair and comprehensive comparison between O-MAPL and the baseline methods in both continuous
+and discrete multi-agent reinforcement learning tasks.
+B.7. Recovered Rewards
+Tasks
+
+Rule-based
+Lower
+Higher
+
+LLM-based
+Lower
+Higher
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+-8.36±0.26
+-4.49±0.12
+-4.72±0.28
+-12.59±0.31
+
+9.25±0.67
+4.80±0.15
+5.15±0.22
+11.23±1.06
+
+-12.87±0.73
+-4.02±0.20
+-5.11±0.32
+-12.97±0.33
+
+14.14±0.80
+4.51±0.18
+5.28±0.16
+10.93±0.45
+
+protoss 5 vs 5
+protoss 10 vs 10
+protoss 10 vs 11
+protoss 20 vs 20
+protoss 20 vs 23
+
+-6.31±0.22
+-7.73±0.18
+-7.95±0.69
+-8.31±0.35
+-8.01±0.22
+
+6.54±0.51
+7.92±0.32
+8.31±0.91
+8.19±0.16
+9.10±0.14
+
+-8.06±0.64
+-10.65±1.15
+-11.01±0.93
+-10.57±0.86
+-12.17±0.72
+
+7.46±0.77
+9.32±0.91
+10.43±1.57
+9.54±0.74
+12.09±0.80
+
+terran 5 vs 5
+terran 10 vs 10
+terran 10 vs 11
+terran 20 vs 20
+terran 20 vs 23
+
+-6.85±0.30
+-8.25±0.82
+-8.53±0.67
+-8.59±0.36
+-8.49±0.65
+
+6.93±0.56
+7.35±0.61
+9.62±0.54
+8.44±0.22
+8.91±0.27
+
+-7.85±0.27
+-10.73±1.49
+-9.18±0.23
+-10.44±0.96
+-14.90±2.06
+
+7.82±0.57
+8.16±0.56
+10.97±1.38
+10.79±1.00
+17.95±2.91
+
+zerg 5 vs 5
+zerg 10 vs 10
+zerg 10 vs 11
+zerg 20 vs 20
+zerg 20 vs 23
+
+-3.74±0.14
+-4.16±0.16
+-4.54±0.06
+-5.31±0.08
+-4.78±0.12
+
+3.64±0.14
+4.27±0.16
+4.60±0.14
+5.25±0.20
+5.08±0.15
+
+-5.09±0.19
+-5.93±0.43
+-7.28±0.50
+-7.71±0.54
+-8.26±1.13
+
+3.51±0.06
+6.14±0.64
+6.20±0.50
+7.24±0.23
+8.00±0.43
+
+Table 7: Mean/std recovered rewards of the higher and lower preferred trajectories
+Using recovered reward function R(o, a, o′ ) = Mθ [q(o, a)] − γMθ [v(o′ )], we report the mean/std returns of the higher
+and lower preferred trajectories in Table 7. Across all tasks, the higher preferred trajectories consistently achieve positive
+rewards, while the lower preferred trajectories exhibit negative rewards. This indicates that the preference-based
+21
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+learning framework effectively captures and differentiates between preferred and less-preferred trajectories. The consistent
+separation in rewards suggests that the model successfully aligns policy learning with preference signals, reinforcing
+high-reward behaviors while penalizing undesirable ones. Moreover, the absolute values of both higher and lower preferred
+rewards tend to be more extreme in the LLM-based approach, compared to the Rule-based approach. This suggests that
+LLM-based learning amplifies both positive and negative behaviors, potentially leading to more decisive policy updates,
+which can be beneficial for clear preference-driven learning.
+There are noticeable variations in how different task domains respond to preference-based learning. The Protoss and
+Terran tasks exhibit larger reward variations, suggesting that these environments benefit more from preference learning.
+In contrast, Zerg tasks show more moderate reward differences, indicating that either the task dynamics are inherently more
+balanced or that preference signals have a weaker impact in these settings. Additionally, the corridor task, a structured
+navigation environment, shows similar performance across rule-based and LLM-based approaches.
+B.8. Additional Experimental Details
+B.8.1. RULE - BASED - R ETURNS
+We present experimental details, in terms of returns, for all tasks (MAMuJoCo, SMACv1, and SMACv2) using rule-based
+preference datasets.
+Table 8 reports the returns and Figure 4 plots the evaluation curves for MaMujoco tasks with Rule-based preference data
+and Figure The results demonstrate that O-MAPL consistently outperforms all baselines across Hopper-v2, Ant-v2, and
+HalfCheetah-v2, highlighting its effectiveness in rule-based preference learning. Notably, in Hopper-v2, O-MAPL achieves
+a 25.2% higher return than the next-best method, SL-MARL, suggesting superior preference alignment. While SL-MARL
+performs well in simpler environments, its advantage diminishes in Ant-v2 and HalfCheetah-v2, where IPL-VDN shows
+stronger results. BC significantly underperforms, reinforcing the need for preference-based learning over naive imitation.
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+Hopper-v2
+Ant-v2
+HalfCheetah-v2
+
+808.1 ± 39.1
+1303.9 ± 122.0
+4119.9 ± 350.7
+
+782.0 ± 81.5
+1312.0 ± 155.6
+4028.8 ± 430.0
+
+846.6 ± 65.4
+1376.1 ± 142.0
+4287.5 ± 273.1
+
+890.0 ± 88.7
+1334.1 ± 150.9
+4233.9 ± 303.1
+
+1114.4 ± 154.1
+1406.4 ± 163.7
+4382.0 ± 189.7
+
+Table 8: Returns for MAMujoco tasks with Rule-based preference data.
+
+BC
+
+IIPL
+BC
+
+IIPL IPL-VDN
+IPL-VDN
+
+Hopper-v2
+Hopper-v2
+1k
+
+1k
+
+1.4k
+
+500
+
+1.2k
+
+3.5k
+
+0
+
+50
+
+1k 100
+
+O-MAPL
+(ours)
+O-MAPL
+(ours)
+
+HalfCheetah-v2
+HalfCheetah-v2
+
+4.5k
+
+4.5k
+
+4k
+
+4k
+
+3.5k
+3k
+
+1k
+
+0
+
+0
+
+Ant-v2
+Ant-v2
+1.4k
+
+1.2k
+
+500
+
+SL-MARL
+SL-MARL
+
+0
+
+50
+
+100
+
+3k
+
+0
+
+50
+
+100
+
+50
+100 (returns)
+0
+50
+100
+0
+50
+100
+Figure04: Evaluation
+curves
+for MAMujoco
+tasks with
+Rule-based
+preference
+data.
+
+Table 9 report the returns and Figure 5 plots the evaluation curves for SMACv1 tasks. The results show that O-MAPL
+consistently achieves the highest returns across most SMACv1 tasks. While the performance differences are relatively small
+in simpler tasks like 2c vs 64zg and 5m vs 6m, O-MAPL outperforms all baselines in more complex scenarios such as
+6h vs 8z, where it achieves 12.1, compared to the next-best method (SL-MARL, 11.8). Notably, SL-MARL struggles in the
+corridor task, achieving a significantly lower return (14.3) than other methods, suggesting that its reliance on a separate
+reward modeling phase may be less effective in environments requiring strong coordinated behaviors.
+
+22
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+19.0 ± 1.1
+11.1 ± 2.1
+11.0 ± 0.8
+19.4 ± 1.0
+
+19.3 ± 0.8
+10.8 ± 2.0
+10.8 ± 0.7
+19.4 ± 1.0
+
+19.3 ± 1.1
+11.2 ± 2.0
+11.7 ± 1.0
+19.6 ± 1.0
+
+19.2 ± 0.8
+11.1 ± 2.1
+11.8 ± 1.0
+14.3 ± 2.8
+
+19.3 ± 1.4
+11.5 ± 2.1
+12.1 ± 1.3
+19.6 ± 0.9
+
+Table 9: Returns for SMACv1 tasks with Rule-based preference data.
+
+IIPLBC
+
+BC
+
+2c_vs_64zg
+Hopper-v2
+1k
+
+12 1.4k
+
+18
+
+8
+0
+
+50
+
+IPL-VDN
+O-MAPL
+(ours)
+SL-MARLSL-MARL O-MAPL
+(ours)
+
+5m_vs_6m
+Ant-v2
+
+20
+
+500 16
+0
+
+IIPL
+IPL-VDN
+
+100
+
+4.5k
+
+10
+
+3.5k
+
+4k
+
+1.2k
+01k
+
+6h_vs_8z HalfCheetah-v2
+corridor
+
+12
+
+20
+
+15
+
+3k
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+50
+100
+0
+50
+100
+0
+50
+100
+Figure
+5: Evaluation
+curves
+(returns)
+for SMACv1
+tasks with
+Rule-based
+preference
+data.
+
+Table 10 shows the returns and Figure 6 plots the evaluation curves for SMACv2 tasks (the most complicated ones). The
+results show that O-MAPL consistently achieves competitive performance across all SMACv2 tasks, often outperforming
+other baselines. In Protoss tasks, O-MAPL achieves the highest returns in most cases, particularly in protoss 10 vs 10 and
+protoss 10 vs 11, suggesting its effectiveness in complex team-based coordination. Similarly, in Terran tasks, O-MAPL
+consistently outperforms SL-MARL and IPL-VDN, with a noticeable advantage in terran 20 vs 20 and terran 20 vs 23. In
+Zerg environments, O-MAPL continues to show strong results, outperforming all baselines in zerg 5 vs 5, zerg 10 vs 11,
+and zerg 20 vs 20.
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+protoss 5 vs 5
+protoss 10 vs 10
+protoss 10 vs 11
+protoss 20 vs 20
+protoss 20 vs 23
+
+15.4 ± 2.4
+16.0 ± 2.0
+12.5 ± 2.3
+16.7 ± 1.8
+13.3 ± 2.1
+
+14.3 ± 2.5
+15.4 ± 2.1
+12.7 ± 2.4
+16.9 ± 1.6
+13.1 ± 1.8
+
+17.1 ± 2.7
+17.8 ± 2.3
+14.7 ± 2.3
+18.0 ± 1.5
+14.9 ± 1.9
+
+15.8 ± 2.7
+16.4 ± 2.4
+14.2 ± 2.2
+17.3 ± 1.6
+13.6 ± 1.9
+
+16.8 ± 2.4
+17.9 ± 1.9
+14.9 ± 2.0
+18.0 ± 1.5
+14.9 ± 2.0
+
+terran 5 vs 5
+terran 10 vs 10
+terran 10 vs 11
+terran 20 vs 20
+terran 20 vs 23
+
+10.2 ± 2.9
+10.9 ± 2.9
+8.3 ± 2.6
+10.1 ± 2.4
+7.6 ± 2.1
+
+11.2 ± 3.1
+10.6 ± 3.0
+8.1 ± 2.3
+10.2 ± 2.5
+7.0 ± 2.1
+
+11.9 ± 3.1
+11.6 ± 2.8
+10.1 ± 3.0
+10.7 ± 2.6
+8.7 ± 2.1
+
+13.0 ± 3.1
+11.4 ± 2.9
+9.6 ± 2.6
+10.9 ± 2.2
+7.7 ± 2.0
+
+12.8 ± 3.5
+11.8 ± 2.6
+11.0 ± 2.8
+11.8 ± 2.4
+9.4 ± 2.0
+
+zerg 5 vs 5
+zerg 10 vs 10
+zerg 10 vs 11
+zerg 20 vs 20
+zerg 20 vs 23
+
+11.2 ± 2.8
+12.9 ± 2.4
+11.1 ± 2.7
+13.0 ± 2.2
+12.1 ± 2.3
+
+10.5 ± 2.8
+12.4 ± 2.7
+10.7 ± 2.7
+12.2 ± 1.9
+11.3 ± 1.7
+
+12.1 ± 2.7
+13.0 ± 2.6
+12.1 ± 2.5
+13.8 ± 2.1
+12.1 ± 1.8
+
+12.7 ± 3.1
+13.2 ± 2.7
+11.8 ± 2.1
+12.2 ± 1.6
+12.2 ± 1.6
+
+13.1 ± 3.5
+14.0 ± 2.6
+12.8 ± 2.7
+13.9 ± 1.8
+12.7 ± 2.0
+
+Table 10: Returns for SMACv2 tasks with Rule-based preference data.
+
+23
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Protoss
+
+BC
+
+Terran
+
+O-MAPL (ours)
+
+HalfCheetah-v2
+4.5k
+
+1.4k
+
+4k
+50
+
+100
+
+50
+1.2k
+
+0
+
+8
+
+100
+
+0
+
+50
+
+100
+3.5k0
+
+0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+50
+
+100
+
+3k
+
+1k
+
+0
+
+0
+
+Zerg
+
+SL-MARL
+(ours)
+IIPL
+IPL-VDN O-MAPL
+SL-MARL
+
+Ant-v2
+
+1k
+
+0
+500
+12
+
+IPL-VDNBC
+
+Hopper-v2
+
+16
+12
+
+IIPL
+
+0
+
+50
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+12
+8
+0
+
+5_vs_5
+
+10_vs_10
+
+10_vs_11
+
+20_vs_20
+
+20_vs_23
+
+Figure 6: Evaluation curves (returns) for SMACv2 tasks with Rule-based preference data.
+B.8.2. RULE - BASED - W INRATES
+For SMACv1 and SMACv2, win rates provide a more meaningful comparison of algorithm performance. The following
+tables and figures present win rates for SMAC tasks using rule-based preference data.
+Table 11 shows the winrates and Figure 7 plots the evaluation curves (in terms of winrates) for SMACv1 tasks. The results
+indicate that O-MAPL consistently achieves the highest winrates across most tasks. In 2c vs 64zg, O-MAPL outperforms all
+baselines, achieving a win rate of 74.4, surpassing IPL-VDN and SL-MARL. Similarly, in 5m vs 6m and 6h vs 8z, O-MAPL
+achieves the highest winrates, though the performance gap is less pronounced. Notably, in the corridor task, IPL-VDN
+slightly outperforms O-MAPL, while SL-MARL struggles significantly, indicating that its two-phase approach may be less
+effective in highly structured navigation tasks. These results suggest that O-MAPL is well-suited for complex coordination
+tasks, offering robust winrates across diverse SMACv1 environments.
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+59.6 ± 25.0
+16.8 ± 18.0
+0.6 ± 3.8
+89.3 ± 15.5
+
+60.4 ± 24.7
+14.3 ± 17.0
+0.2 ± 2.2
+89.8 ± 15.4
+
+71.1 ± 22.0
+16.8 ± 18.0
+2.5 ± 7.6
+93.9 ± 11.6
+
+63.5 ± 24.0
+16.0 ± 18.9
+1.6 ± 6.8
+49.0 ± 22.8
+
+74.4 ± 24.7
+19.3 ± 19.6
+4.5 ± 11.0
+93.2 ± 13.5
+
+Table 11: Winrates for SMACv1 tasks with Rule-based preference data.
+
+IIPLBC
+
+BC
+
+2c_vs_64zg
+Hopper-v2
+
+80%
+
+1k
+
+50
+
+100
+
+1k0
+
+4.5k
+
+80%
+
+4k
+
+3%
+
+1.2k
+0
+
+6h_vs_8zHalfCheetah-v2
+corridor
+
+6%
+
+15%
+
+500
+
+IPL-VDN
+O-MAPL
+(ours)
+SL-MARLSL-MARL O-MAPL
+(ours)
+
+5m_vs_6m
+Ant-v2
+
+1.4k
+40%
+
+0
+
+30%
+
+IIPL
+IPL-VDN
+
+3.5k
+
+40%
+
+3k
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+50
+100
+0
+100
+0
+50
+100
+Figure 7:
+Evaluation
+curves
+(in winrates)
+for50SMACv1
+tasks with
+Rule-based
+preference
+data.
+
+Table 12 shows the winrates and Figure 8 plots the evaluation curves (in terms of winrates) for SMACv2 tasks. The results,
+again, show that O-MAPL consistently achieves the highest winrates across most SMACv2 tasks. In the Protoss tasks,
+24
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+O-MAPL outperforms all baselines, particularly in protoss 10 vs 11 and protoss 20 vs 20, where it shows a significant
+improvement over the other methods. In Terran tasks, O-MAPL also achieves the best performance, with notable advantages
+in terran 20 vs 20 and terran 20 vs 23, where other methods struggle to achieve high winrates. Similarly, in Zerg tasks,
+O-MAPL consistently achieves the best results, particularly in zerg 20 vs 20 and zerg 20 vs 23.
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+protoss 5 vs 5
+protoss 10 vs 10
+protoss 10 vs 11
+protoss 20 vs 20
+protoss 20 vs 23
+
+38.1 ± 24.2
+38.7 ± 24.2
+12.7 ± 17.4
+39.8 ± 24.9
+15.2 ± 18.5
+
+31.4 ± 25.2
+28.5 ± 21.8
+12.5 ± 16.5
+35.4 ± 21.5
+9.0 ± 14.2
+
+54.5 ± 25.9
+47.9 ± 27.2
+22.3 ± 21.0
+57.0 ± 24.8
+22.7 ± 21.7
+
+49.0 ± 28.2
+40.6 ± 23.2
+18.6 ± 18.8
+38.7 ± 23.1
+11.1 ± 14.6
+
+54.3 ± 24.2
+53.7 ± 23.6
+30.7 ± 19.8
+59.8 ± 23.2
+23.4 ± 19.2
+
+terran 5 vs 5
+terran 10 vs 10
+terran 10 vs 11
+terran 20 vs 20
+terran 20 vs 23
+
+27.5 ± 24.0
+23.8 ± 20.5
+10.2 ± 15.4
+13.1 ± 17.1
+3.9 ± 10.6
+
+26.2 ± 19.5
+21.1 ± 20.8
+7.2 ± 13.3
+11.9 ± 18.2
+4.1 ± 10.3
+
+36.3 ± 24.8
+25.8 ± 19.7
+18.2 ± 19.4
+21.5 ± 20.4
+5.7 ± 11.4
+
+34.2 ± 23.4
+23.2 ± 19.6
+11.3 ± 15.3
+8.8 ± 13.5
+2.3 ± 7.3
+
+39.5 ± 24.7
+28.3 ± 20.6
+18.2 ± 18.7
+23.0 ± 22.4
+7.2 ± 12.9
+
+zerg 5 vs 5
+zerg 10 vs 10
+zerg 10 vs 11
+zerg 20 vs 20
+zerg 20 vs 23
+
+23.4 ± 21.1
+25.8 ± 21.6
+19.3 ± 20.1
+19.9 ± 21.0
+13.1 ± 17.7
+
+23.6 ± 21.0
+25.8 ± 22.5
+12.9 ± 17.4
+11.1 ± 16.2
+7.8 ± 12.8
+
+31.1 ± 20.4
+32.2 ± 24.6
+22.5 ± 20.5
+22.5 ± 21.4
+12.5 ± 15.3
+
+33.0 ± 22.5
+30.7 ± 24.0
+19.3 ± 18.0
+5.7 ± 10.9
+7.6 ± 13.1
+
+35.2 ± 25.7
+34.8 ± 22.1
+23.4 ± 21.1
+24.8 ± 20.8
+18.8 ± 18.5
+
+Table 12: Winrates for SMACv2 tasks with Rule-based preference data.
+
+Protoss
+
+BC
+
+IIPL
+
+IPL-VDNBC
+
+Hopper-v2
+
+60%
+
+SL-MARL
+(ours)
+IIPL
+IPL-VDN O-MAPL
+SL-MARL
+
+Ant-v2
+
+30%
+
+1k
+
+HalfCheetah-v2
+4.5k
+
+1.4k
+
+4k
+
+0%
+
+Terran
+
+5000
+
+100
+
+50
+1.2k
+
+0
+
+0
+0
+
+100
+
+0
+
+50
+
+100
+3.5k 0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+50
+
+100
+
+3k
+
+1k
+
+0
+
+0%
+
+Zerg
+
+50
+
+40%
+20%
+
+O-MAPL (ours)
+
+0
+
+50
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+40%
+20%
+0%
+0
+
+5_vs_5
+
+10_vs_10
+
+10_vs_11
+
+20_vs_20
+
+20_vs_23
+
+Figure 8: Evaluation curves (in winrates) for SMACv2 tasks with Rule-based preference data.
+B.8.3. LLM- BASED - R ETURNS
+We present comparisons in terms of returns using LLM-based preference datasets. As noted earlier, only SMACv1 and
+SMACv2 are suitable for obtaining meaningful preference-based data from LLMs. Therefore, we report comparisons
+exclusively for SMAC tasks.
+Table 13 shows the returns and Figure 9 plots the evaluation curves (in terms of returns) for SMACv1 tasks. The results in
+Table 13 indicate that O-MAPL consistently achieves the highest or near-highest returns across all SMACv1 tasks using
+25
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+LLM-based preference data. In 6h vs 8z, O-MAPL shows a clear advantage, reaching 12.2, outperforming all baselines.
+Similarly, in corridor, it achieves the highest return (19.7), alongside IPL-VDN, while SL-MARL struggles significantly
+in this task. Across 2c vs 64zg and 5m vs 6m, performance differences are minimal, but O-MAPL remains competitive.
+These results highlight the effectiveness of O-MAPL in leveraging LLM-based preferences, particularly in more complex
+multi-agent coordination scenarios.
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+19.4 ± 0.9
+11.3 ± 2.1
+11.1 ± 0.8
+19.4 ± 1.0
+
+19.3 ± 0.9
+10.8 ± 2.0
+10.9 ± 0.7
+19.4 ± 1.0
+
+19.6 ± 1.0
+11.4 ± 2.2
+11.9 ± 1.1
+19.7 ± 0.9
+
+19.5 ± 0.7
+11.2 ± 2.1
+11.8 ± 1.2
+15.1 ± 2.4
+
+19.6 ± 1.1
+11.5 ± 2.3
+12.2 ± 1.3
+19.7 ± 0.8
+
+Table 13: Return comparison for SMACv1 tasks with LLM-based preference data.
+
+IIPLBC
+
+BC
+
+2c_vs_64zg
+Hopper-v2
+1k
+
+IIPL
+IPL-VDN
+
+5m_vs_6m
+Ant-v2
+
+20
+
+500 16
+
+8
+0
+
+0
+0
+
+50
+
+50
+
+100
+
+100
+
+6h_vs_8z HalfCheetah-v2
+corridor
+
+12
+
+12 1.4k
+
+18
+
+IPL-VDN
+O-MAPL
+(ours)
+SL-MARLSL-MARL O-MAPL
+(ours)
+
+20
+
+4.5k
+4k
+
+10
+
+1.2k
+
+15
+
+3.5k
+3k
+
+01k
+
+50
+
+0
+
+100
+
+50
+
+0
+
+50
+
+100
+
+100
+
+0
+
+0
+
+50
+
+50
+
+100
+
+100
+
+Figure 9: Evaluation curves (in returns) for SMACv1 tasks with LLM-based preference data.
+Table 14 shows the returns and Figure 10 plots the evaluation curves (in terms of returns) for SMACv1 tasks. The results
+demonstrate that O-MAPL consistently achieves the highest returns across most SMACv2 tasks. In Protoss tasks, OMAPL outperforms other methods, particularly in protoss 10 vs 11 and protoss 20 vs 20, indicating its effectiveness
+in learning structured team-based strategies. In Terran tasks, O-MAPL generally achieves the best performance, with
+notable improvements in terran 20 vs 20, suggesting its strength in complex coordination settings. In Zerg tasks, O-MAPL
+maintains strong performance, particularly in zerg 20 vs 20, where it achieves the highest return.
+
+26
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+protoss 5 vs 5
+protoss 10 vs 10
+protoss 10 vs 11
+protoss 20 vs 20
+protoss 20 vs 23
+
+16.7 ± 2.7
+16.5 ± 2.0
+14.7 ± 2.3
+17.2 ± 1.7
+14.3 ± 2.0
+
+15.9 ± 2.5
+16.6 ± 2.2
+14.5 ± 2.0
+17.6 ± 1.7
+13.4 ± 1.8
+
+17.6 ± 2.5
+17.9 ± 1.8
+15.4 ± 2.4
+18.5 ± 1.3
+15.1 ± 1.8
+
+16.9 ± 2.4
+17.5 ± 1.8
+14.0 ± 2.4
+18.2 ± 1.9
+14.3 ± 1.8
+
+17.9 ± 2.5
+18.0 ± 2.1
+16.5 ± 2.2
+18.9 ± 1.5
+15.8 ± 1.9
+
+terran 5 vs 5
+terran 10 vs 10
+terran 10 vs 11
+terran 20 vs 20
+terran 20 vs 23
+
+11.8 ± 3.3
+11.3 ± 2.6
+9.2 ± 2.8
+11.2 ± 2.3
+8.5 ± 2.4
+
+12.5 ± 3.1
+11.7 ± 3.0
+9.3 ± 2.7
+10.8 ± 2.5
+7.7 ± 2.2
+
+13.4 ± 2.9
+11.6 ± 2.7
+10.1 ± 2.6
+11.4 ± 2.4
+8.9 ± 2.1
+
+12.6 ± 3.1
+12.1 ± 2.8
+9.9 ± 2.6
+11.6 ± 2.2
+8.7 ± 1.9
+
+12.6 ± 2.6
+12.5 ± 2.7
+10.7 ± 2.5
+13.0 ± 2.8
+9.1 ± 2.3
+
+zerg 5 vs 5
+zerg 10 vs 10
+zerg 10 vs 11
+zerg 20 vs 20
+zerg 20 vs 23
+
+11.4 ± 2.7
+13.5 ± 2.6
+12.0 ± 2.3
+13.9 ± 2.3
+12.6 ± 2.0
+
+11.6 ± 3.0
+13.4 ± 2.7
+11.9 ± 2.7
+13.4 ± 1.9
+12.1 ± 1.9
+
+12.8 ± 3.3
+13.7 ± 2.5
+11.7 ± 2.0
+14.6 ± 2.0
+12.4 ± 2.3
+
+11.8 ± 2.9
+13.7 ± 3.0
+12.8 ± 2.4
+13.8 ± 2.0
+12.6 ± 1.9
+
+12.9 ± 2.6
+14.5 ± 2.6
+12.6 ± 2.5
+15.2 ± 2.4
+12.4 ± 2.2
+
+Table 14: Return comparison for SMACv2 tasks with LLM-based preference data.
+
+Protoss
+
+BC
+20
+
+Terran
+
+O-MAPL (ours)
+
+HalfCheetah-v2
+4.5k
+
+1.4k
+
+4k
+50
+
+100
+
+50
+1.2k
+
+0
+
+8
+
+100
+
+0
+
+50
+
+100
+3.5k0
+
+0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+50
+
+100
+
+3k
+
+1k
+
+0
+
+0
+
+Zerg
+
+SL-MARL
+(ours)
+IIPL
+IPL-VDN O-MAPL
+SL-MARL
+
+Ant-v2
+
+1k
+
+0
+500
+12
+
+IPL-VDNBC
+
+Hopper-v2
+
+16
+12
+
+IIPL
+
+0
+
+50
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+16
+12
+8
+0
+
+5_vs_5
+
+10_vs_10
+
+10_vs_11
+
+20_vs_20
+
+20_vs_23
+
+Figure 10: Evaluation curves (in returns) for SMACv2 tasks with LLM-based preference data.
+B.8.4. LLM- BASED - W INRATES
+We present a comparison of winrates for SMAC tasks using LLM-based preference datasets.
+Table 15 shows the returns and Figure 11 plots the evaluation curves (in terms of winrates) for SMACv1 tasks. The results
+in Table 15 indicate that O-MAPL achieves the highest win rates across most SMACv1 tasks when using LLM-based
+preference data. In 2c vs 64zg, O-MAPL outperforms all other methods, achieving a win rate of 79.5, slightly higher than
+IPL-VDN (77.0) and significantly surpassing BC and IIPL. Similarly, in 5m vs 6m and 6h vs 8z, O-MAPL achieves the best
+performance, though the overall win rates in these tasks remain low, indicating the increased difficulty of these environments.
+In the corridor task, both O-MAPL and IPL-VDN achieve the highest win rate (94.5), demonstrating their effectiveness in
+structured navigation tasks, while SL-MARL struggles significantly with a win rate of only 57.6.
+
+27
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+2c vs 64zg
+5m vs 6m
+6h vs 8z
+corridor
+
+65.6 ± 24.6
+18.2 ± 18.4
+0.8 ± 4.3
+89.6 ± 15.5
+
+60.2 ± 25.9
+15.0 ± 17.5
+0.4 ± 3.1
+90.6 ± 13.6
+
+77.0 ± 21.3
+18.0 ± 19.2
+3.5 ± 9.2
+94.5 ± 12.5
+
+65.2 ± 21.2
+17.4 ± 19.4
+3.7 ± 8.9
+57.6 ± 22.2
+
+79.5 ± 19.6
+20.7 ± 20.5
+6.1 ± 11.2
+94.5 ± 11.2
+
+Table 15: Winrate comparison for SMACv1 tasks with LLM-based preference data.
+
+IIPLBC
+
+BC
+
+2c_vs_64zg
+Hopper-v2
+1k
+
+80%
+
+30%
+
+40%
+
+15%
+
+50
+
+100
+
+1k0
+
+6h_vs_8zHalfCheetah-v2
+corridor
+
+6%
+
+4.5k
+
+80%
+
+4k
+
+3%
+
+1.2k
+0
+
+IPL-VDN
+O-MAPL
+(ours)
+SL-MARLSL-MARL O-MAPL
+(ours)
+
+5m_vs_6m
+Ant-v2
+
+1.4k
+
+500
+0
+
+IIPL
+IPL-VDN
+
+3.5k
+
+40%
+
+3k
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+50
+100
+0
+50
+100
+50
+100
+Figure 11:
+Evaluation
+curves
+(in winrates)
+for
+SMACv1
+tasks 0with LLM-based
+preference
+data.
+
+The results reported in Table 16 and Figure 12 demonstrate that O-MAPL consistently achieves the highest win rates across
+most SMACv2 tasks using LLM-based preference data. In the Protoss tasks, O-MAPL outperforms all baselines, particularly
+in protoss 10 vs 11 and protoss 20 vs 20, where it achieves substantial improvements over other methods. In Terran
+tasks, O-MAPL also shows strong performance, especially in terran 20 vs 20 and terran 20 vs 23, where other baselines
+struggle to achieve competitive win rates. In Zerg tasks, O-MAPL maintains an advantage, particularly in zerg 5 vs 5 and
+zerg 20 vs 20, suggesting that its approach generalizes well across different strategic settings. Overall, these results indicate
+that O-MAPL effectively integrates LLM-based preference data to improve decision-making and coordination in complex
+multi-agent environments.
+Tasks
+
+BC
+
+IIPL
+
+IPL-VDN
+
+SL-MARL
+
+O-MAPL
+(ours)
+
+protoss 5 vs 5
+protoss 10 vs 10
+protoss 10 vs 11
+protoss 20 vs 20
+protoss 20 vs 23
+
+48.4 ± 25.9
+46.3 ± 24.0
+22.7 ± 22.2
+48.4 ± 25.3
+18.0 ± 17.4
+
+41.0 ± 24.2
+41.0 ± 24.4
+15.6 ± 15.9
+43.6 ± 23.6
+9.4 ± 14.7
+
+58.8 ± 24.5
+57.0 ± 23.4
+27.3 ± 24.7
+61.5 ± 22.1
+23.4 ± 21.4
+
+54.3 ± 24.0
+52.5 ± 22.1
+20.9 ± 20.9
+51.8 ± 25.0
+12.1 ± 15.9
+
+61.5 ± 24.8
+61.1 ± 24.8
+34.4 ± 24.8
+64.5 ± 23.5
+26.4 ± 20.8
+
+terran 5 vs 5
+terran 10 vs 10
+terran 10 vs 11
+terran 20 vs 20
+terran 20 vs 23
+
+31.1 ± 22.9
+25.8 ± 20.9
+11.7 ± 17.4
+14.5 ± 17.3
+6.4 ± 12.2
+
+34.8 ± 23.0
+24.2 ± 21.6
+10.4 ± 15.2
+13.7 ± 17.4
+3.5 ± 9.2
+
+41.0 ± 23.7
+32.0 ± 24.4
+17.8 ± 17.7
+21.1 ± 20.4
+7.2 ± 12.6
+
+36.7 ± 24.8
+28.9 ± 24.7
+16.4 ± 17.8
+17.2 ± 16.8
+4.7 ± 10.2
+
+43.0 ± 23.0
+33.2 ± 23.4
+21.3 ± 20.3
+24.4 ± 23.1
+8.6 ± 14.8
+
+zerg 5 vs 5
+zerg 10 vs 10
+zerg 10 vs 11
+zerg 20 vs 20
+zerg 20 vs 23
+
+31.1 ± 22.3
+31.4 ± 21.9
+20.1 ± 18.2
+22.9 ± 21.7
+15.8 ± 18.5
+
+26.0 ± 22.2
+31.1 ± 24.8
+18.6 ± 20.6
+16.0 ± 17.3
+10.4 ± 15.2
+
+34.8 ± 23.6
+35.5 ± 23.9
+22.7 ± 18.3
+27.3 ± 22.0
+16.4 ± 19.9
+
+35.0 ± 23.2
+33.0 ± 25.0
+23.0 ± 21.1
+16.4 ± 18.1
+13.7 ± 17.4
+
+40.8 ± 21.6
+37.9 ± 24.0
+26.0 ± 23.0
+31.1 ± 24.6
+16.0 ± 19.4
+
+Table 16: Winrate comparison for SMACv2 tasks with LLM-based preference data.
+
+28
+
+O-MAPL: Offline Multi-agent Preference Learning
+
+Protoss
+
+BC
+
+IIPL
+
+IPL-VDNBC
+
+Hopper-v2
+
+60%
+
+SL-MARL
+(ours)
+IIPL
+IPL-VDN O-MAPL
+SL-MARL
+
+Ant-v2
+
+30%
+1k
+
+HalfCheetah-v2
+4.5k
+
+1.4k
+
+4k
+
+0%
+
+Terran
+
+5000
+
+100
+
+50
+1.2k
+
+0
+
+0
+0
+
+100
+
+0
+
+50
+
+100
+3.5k 0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+50
+
+100
+
+3k
+
+1k
+
+0
+
+0%
+
+Zerg
+
+50
+
+40%
+20%
+
+O-MAPL (ours)
+
+0
+
+50
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+50
+
+100
+
+50
+
+100
+
+0
+
+50
+
+100
+
+0
+
+40%
+20%
+0%
+0
+
+5_vs_5
+
+10_vs_10
+
+10_vs_11
+
+20_vs_20
+
+20_vs_23
+
+Figure 12: Evaluation curves (in winrates) for SMACv2 tasks with LLM-based preference data.
+
+29
+
+

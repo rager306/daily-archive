@@ -1,0 +1,4401 @@
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems
+on Real-world, Dynamic Planning and Scheduling Tasks
+Longling Geng
+
+Edward Y. Chang
+
+gll2027@stanford.edu
+Stanford University
+Stanford, CA, USA
+
+echang@cs.stanford.edu
+Stanford University
+Stanford, CA, USA
+
+arXiv:2502.18836v2 [cs.AI] 5 Aug 2025
+
+Abstract
+This benchmark suite provides a comprehensive evaluation framework for assessing both individual LLMs and multi-agent systems
+in Real-world planning and scheduling scenarios. The suite encompasses 14 designed planning and scheduling problems that
+progress from basic to highly complex, incorporating key aspects
+such as multi-agent coordination, inter-agent dependencies, and
+dynamic environmental disruptions. Each problem can be scaled
+along three dimensions: the number of parallel planning threads,
+the complexity of inter-dependencies, and the frequency of unexpected disruptions requiring Real-time adaptation. The benchmark
+includes 14 detailed problem specifications, 15 comparison methods including Random, LPT, SPT, STPT, MPSR, DRL-Liu, GP, GEP,
+LSO, SPT/TWKR, DRL-Chen, DRL-Zhang, 2+ evaluation metrics,
+and baseline implementations using 3+ LLMs including GPT-4o,
+Claude-3.7, DeepSeek-R1, and 4 contemporary frameworks including LangGraph, AutoGen, CrewAI, and Swarm, enabling rigorous
+testing of both single-agent and multi-agent planning capabilities.
+Through standardized evaluation criteria and scalable complexity,
+this benchmark aims to be opened to public, and drive progress
+in developing more adaptable, robust, and scalable AI planning
+systems for Real-world applications.
+Code:https://github.com/genglongling/REALM-Bench
+Datasets:https://github.com/genglongling/M-APPLE-OS
+
+Keywords
+LLMs, Multi-Agent Systems, Planning and Scheduling
+ACM Reference Format:
+Longling Geng and Edward Y. Chang. 2025. REALM-Bench: A Benchmark
+for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and
+Scheduling Tasks. In Proceedings of 2025 (ACM). ACM, New York, NY, USA,
+24 pages. https://doi.org/10.1145/nnnnnnn.nnnnnnn
+
+1
+
+Introduction
+
+Large language models (LLMs) today excel at single-turn interactions: answering questions, generating text, solving isolated reasoning problems, and providing explanations within individual
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than the
+author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or
+republish, to post on servers or to redistribute to lists, requires prior specific permission
+and/or a fee. Request permissions from permissions@acm.org.
+ACM,
+© 2025 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+ACM ISBN 978-x-xxxx-xxxx-x/YYYY/MM
+https://doi.org/10.1145/nnnnnnn.nnnnnnn
+
+conversations. However, real-world applications demand capabilities that current LLMs struggle with: multi-step planning over
+extended horizons, coordinated multi-agent collaboration, adaptive
+responses to dynamic environments, and sustained problem-solving
+that requires persistent state management and iterative refinement.
+Recent advances in LLMs, including OpenAI’s GPT-4o-Task [14],
+DeepSeek’s R1 [5], Anthropic’s Claude 3.5 Sonnet [1], and Gemini [18], demonstrate impressive natural language capabilities but
+remain limited when faced with complex, multi-faceted problems
+that require orchestrating multiple agents, maintaining coherent
+plans across disruptions, ensuring transaction integrity across distributed operations, and adapting strategies based on evolving constraints and objectives.
+Critical gaps persist in three key areas. First, temporal reasoning:
+current systems struggle with long-horizon planning where early
+decisions impact future possibilities and constraints evolve dynamically. Second, collaborative intelligence: while individual agents
+reason well, they fail at knowledge sharing, role specialization, and
+conflict resolution when working together. Third, resilience: systems cannot gracefully handle disruptions, maintain consistency
+across distributed decision-making, or perform effective recovery
+operations when plans fail.
+This recognition has driven the development of multi-agent
+frameworks including AutoGen [20], CAMEL [11], CrewAI [13],
+LangGraph [10], DSPy [9], and XAgent [21]. However, these systems remain largely untested in standardized and challenging problems that mirror real-world complexity.
+The evaluation gap is critical. Existing AI benchmarks focus
+on perception, language understanding, or individual reasoning
+tasks—none systematically evaluate multi-agent coordination under realistic constraints. Without comprehensive benchmarks, researchers cannot compare approaches, identify bottlenecks, or validate improvements. Practitioners cannot confidently deploy systems in high-stakes domains where coordination failures have serious consequences.
+We address this gap by introducing a comprehensive evaluation framework for multi-agent planning and coordination across
+14 challenging problems spanning logistics, scheduling, resource
+allocation, and crisis response.
+
+1.1
+
+The REALM Benchmark Suite
+
+REALM-Bench (REliable multi-Agent Logistics Management benchmark) is an extensible evaluation suite designed to test the planning,
+coordination, and adaptation abilities of LLMs and agentic systems
+under both nominal and disrupted conditions. A key distinguishing
+feature of REALM-Bench is its systematic focus on evaluating system reliability when facing unexpected events such as equipment
+
+ACM, under review,
+
+failures, resource shortages, timing conflicts, and environmental
+changes that require dynamic replanning and recovery.
+To ensure comprehensive coverage across problem domains,
+REALM-Bench incorporates two complementary benchmark categories. First, it includes ten P-series problems covering real-world
+planning scenarios that progress from static single-agent tasks to
+dynamic multi-agent coordination under severe disruptions. Second, REALM-Bench incorporates Job-Shop Scheduling Problems
+(JSSP) [6, 7] through four J-series problems, representing a canonical class of combinatorial optimization problems extensively studied
+by the operations research and manufacturing communities for over
+three decades.
+The inclusion of JSSP provides well-defined mathematical foundations for evaluating planning optimality, constraint satisfaction,
+and computational efficiency. With the emerging natural language
+reasoning and multi-agent coordination capabilities of LLMs, it is
+timely to investigate whether these models can introduce adaptive
+intelligence into traditional optimization frameworks, particularly
+for disruptive, reactive, and proactive planning scenarios that exceed the scope of conventional algorithmic approaches.
+1.1.1 Task Difficulty Progression: Static to Dynamic, Simple to Complex. REALM-Bench organizes 14 evaluation scenarios along a carefully designed difficulty progression, testing systems across five
+key dimensions: planning complexity, inter-agent dependencies,
+constraint satisfaction, dynamic disruptions, and reactive replanning requirements. These benchmark scenarios are labeled with P
+for general planning problems and J for JSSP variants.
+Tier 1: Single-Agent Static Planning (Foundational)
+• P1: Campus Tour (CT-static) – Single-agent navigation with
+time windows and spatial constraints
+• J1: JSSP Basic (static) – Basic job-shop scheduling with fixed
+machine assignments
+Tier 2: Multi-Agent Static Coordination (Moderate)
+• P2: Multi-Group Campus Tours (MCT-static) – Multiple
+coordinated tours with shared resource constraints
+• P3: Urban Ride-Sharing (URS-static) – Vehicle-passenger
+matching with capacity and timing constraints
+• P5: Wedding Reunion Logistics (WR-static) – Group coordination with shared transportation
+Tier 3: Complex Static Dependencies (Challenging)
+• P6: Thanksgiving Dinner Planning (TD-static) – Multidomain coordination with travel and preparation dependencies
+• P7: Disaster Relief Logistics (DL-static) – Resource allocation
+under uncertainty with priority constraints
+• J3: JSSP Large-scale (static) – Advanced job-shop scheduling
+with complex machine-job mappings
+Tier 4: Dynamic Disruption Handling (Advanced)
+• P4: URS with Disruptions (URS-dynamic) – Real-time replanning with traffic delays and route changes
+• P8: Wedding Logistics with Disruptions (WR-dynamic) –
+Recovery from road closures and conflicts
+• P9: Thanksgiving with Disruptions (TD-dynamic) – Flight
+delays requiring coordinated recovery
+• J2, J4: JSSP with Disruptions (dynamic) – Machine breakdowns requiring real-time rescheduling
+
+Tier 5: Large-Scale Multi-Domain Integration (Expert)
+• P10: Global Supply Chain (GSC-static/dynamic) – Enterprisescale planning with procurement, infrastructure dependencies,
+and cost-risk optimization
+1.1.2 Task Scalability: Small to Large Instances. Beyond difficulty
+progression, each problem supports scalability along instance size
+dimensions—a separate axis from difficulty. For example, urban ridesharing can scale from 3 vehicles and 10 passengers (small instance)
+to 50 vehicles and 500 passengers (large instance) while maintaining
+the same coordination complexity. Similarly, JSSP scenarios scale
+from 3×3 (jobs×machines) to 20×20 configurations.
+Crucially, small instances are not necessarily easy. A small-scale
+disaster relief scenario with complex dependencies can be more
+challenging than a large-scale ride-sharing problem with simple
+constraints. This scalability dimension enables systematic evaluation under increasing computational demands while allowing
+detailed failure analysis in manageable configurations, providing
+orthogonal stress-testing to the difficulty tiers.
+
+2
+
+Related Benchmarks
+
+Planning benchmarks have evolved from testing basic STRIPSstyle planning to evaluating increasingly sophisticated capabilities.
+The International Planning Competition (IPC) has driven planning benchmarks since 1998, using PDDL to specify domains like
+BlocksWorld, Logistics, and Rovers [17]. While valuable for classical
+planning algorithms, these benchmarks focus on deterministic environments with complete information and lack dynamic disruptions
+common in real-world scenarios.
+Recent benchmarks have expanded scope. The Process Planning
+Competition (PPC) addresses continuous processes and temporal
+constraints in manufacturing scenarios [16], while the Dynamic
+Planning Competition introduces environmental changes during
+execution [8]. The Automated Negotiation Agents Competition
+(ANAC) incorporates planning elements within supply chain scenarios [12], though it focuses primarily on bilateral negotiations
+rather than comprehensive planning under uncertainty.
+For LLM planning capabilities, TimeBench [4] tests temporal reasoning and scheduling constraints, TaskBench [15] evaluates practical task automation and step-by-step planning, and PlanBench [19]
+provides end-to-end plan evaluation across static datasets. However,
+these often rely on oversimplified synthetic scenarios.
+This landscape reveals key gaps in existing benchmarks:
+1. Limited Dynamic Complexity: Most benchmarks treat disruptions as isolated events rather than cascading, interdependent phenomena that create complex dependency networks
+requiring sophisticated coordination.
+2. Missing Transaction Properties: No benchmarks evaluate
+distributed planning systems for transactional integrity, compensation mechanisms, rollback capabilities, or state consistency across multiple agents when plans fail or require modification.
+3. Short-Lived Episode Focus: Existing benchmarks assume
+finite planning episodes with clear start/end points, ignoring
+long-lived workflows that persist across disruptions, require
+continuous adaptation, and maintain operational continuity
+indefinitely.
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+4. Representation Limitations: Simplified formats like PDDL
+cannot capture multifaceted real-world constraints, multi-objective
+optimization, or the rich semantic relationships between entities
+in complex domains.
+5. Narrow Scope Evaluation: Benchmarks focus on specific subproblems (path planning, resource allocation) rather than endto-end scenarios that combine planning, execution monitoring,
+failure recovery, and continuous replanning.
+REALM-Bench addresses these limitations by providing scenarios that combine complex dependencies, dynamic disruptions, and
+systematic scalability while remaining tractable for evaluation. This
+enables testing planning systems under conditions that better reflect real-world application challenges.
+
+3
+
+Benchmark Problem Specifications
+
+We detail the 14 benchmark problems spanning five difficulty tiers
+from foundational single-agent planning to expert-level multi-domain
+integration. Key problems are specified below, with comprehensive
+details for complex scenarios provided in the appendices.
+Table 1: Single Tour Campus Navigation Problem
+Metrics:
+- Total tour time: Minimize while meeting all constraints
+- Visit coverage: All locations must be visited
+Locations: Five campus buildings 𝐿 = {𝑆, 𝐿, 𝐵, 𝐴, 𝐷 }
+Travel Times: (mins) 𝑆 -𝐿 : 10, 𝑆 -𝐵 : 15, 𝑆 -𝐴 : 20, 𝑆 -𝐷 : 15 𝐿 -𝐵 : 10, 𝐿 -𝐴 :
+25, 𝐿 -𝐷 : 20 𝐵 -𝐴 : 15, 𝐵 -𝐷 : 25 𝐴-𝐷 : 20
+Visit Requirements:
+- Start time given
+- Each location requires 30-minute visit
+- Tour starts/ends at Student Center (𝑆 )
+- Group size: 20 people
+Time Constraints:
+- Lab Building: Only 9 AM - 4 PM
+- Library: After 10 AM
+- Total tour must complete by 5 PM
+
+Table 2: Multi-Group Campus Tour Problem
+Groups:
+- 𝐺 1 : 15 people (domestic students)
+- 𝐺 2 : 20 people (international students)
+Locations: Ten campus buildings Locations = {𝑆, 𝐿, 𝐵, 𝐴, 𝐷, 𝐶, 𝑀, 𝑅, 𝐻, 𝑃 } with
+capacities 𝑐𝑎𝑝𝑙 :
+ 40 𝑙 ∈ {𝑆, 𝐴}
+
+
+
+ 30 𝑙 ∈ {𝐿, 𝐷, 𝐶 }
+
+𝑐𝑎𝑝𝑙 =
+ 25 𝑙 ∈ {𝐵, 𝑀 }
+
+
+ 20 𝑙 ∈ {𝑅, 𝐻, 𝑃 }
+
+Constraints:
+- Tour start time for each group: between 9 AM and 10 AM
+- Total visitors must not exceed location capacity
+- Each location requires 30-minute visit
+- Both tours start/end at Student Center
+- Complete all tours by 5 PM
+Additional Requirements:
+- Lab tours (𝐵 ) only 9 AM - 4 PM
+- Dining (𝐶 ) must be visited between 11 AM - 2 PM
+- Library (𝐿 ) after 10 AM
+
+3.1
+
+P1: Campus Single-Tour Navigation Planner
+(CT-static, Table 1)
+
+Problem Statement: A single autonomous agent must navigate a
+predefined campus environment to complete a sequence of waypoints while minimizing travel time.
+
+ACM, under review,
+
+Table 3: Urban Ride Sharing Problem
+Metrics:
+- On-time performance: No penalty for early arrivals.
+- Total distance traveled.
+Locations: Seven locations: 𝑉 = {𝐴, 𝐵, 𝐶, 𝐷, 𝐸, 𝐹, 𝐺 } , where 𝐺 is Boston Logan
+Airport (BOS). Urban locations 𝐴–𝐹 are all 10 km of each other, while distances
+to BOS are 30+ km.
+
+𝐴
+𝐵
+𝐶
+𝐷
+𝐸
+𝐹 
+
+𝐴 − 𝐹 10 10 10 10 10 10
+
+
+→𝐺
+35 33 36 34 32 31
+
+Travel speed: (𝐴–𝐹 ) 60 km/h, and (𝐴–𝐹 → 𝐺 ) 100 km/h.
+Passengers: Each passenger specifies an arrival time at BOS (𝐺 ). The dispatcher
+will instruct drivers when to pick up passengers to ensure on-time arrival at BOS.
+Ride Requests (Desired BOS arrival time given):
+- 𝑟 1 : Pickup at 𝐴, to 𝐺 by 08:45; 𝑟 2 : Pickup at 𝐵 , to 𝐺 08:50
+- 𝑟 3 : Pickup at 𝐶 , to 𝐺 by 08:55; 𝑟 4 : Pickup at 𝐷 , to 𝐺 09:00
+Available Vehicles (Capacity 2 passengers):
+- 𝑘 1 : at 𝐴, 𝑘 2 : at 𝐶 , and 𝑘 3 : at 𝐸
+Scheduling Constraints: - The dispatcher determines the pickup times based on
+a feasible schedule. Pickup times must allow the driver to first reach the passenger
+location (𝐴 - 𝐹 ) and then drive to 𝐺 in time.
+
+Problem Specification:
+- Environment: Known campus map with fixed locations
+- Goal: Visit all waypoints within time frame
+- Constraints: Location opening hours, 30+ minute visits, completion before 5pm
+- Optimization Metric: Shortest path (time or distance)
+
+3.2
+
+P2: Multi-Group Campus Tour Scheduler
+(MCT-static, Table 2)
+
+Problem Statement: Multiple visitor groups require guided tours
+with optimized scheduling of tour guides.
+Problem Specification:
+- Environment: Same campus map as P1
+- Goal: Schedule tours for multiple groups simultaneously
+- Constraints: P1 constraints plus exclusive location occupancy
+by one group at a time
+- Optimization Metric: Minimize total tour time
+
+3.3
+
+P3: Urban Ride-Sharing Planner (URS-static,
+Table 3)
+
+Problem Statement: Optimize real-time ride assignments for multiple vehicles and passengers in urban environment.
+Problem Specification:
+- Environment: Map 𝐺 = (𝑉 , 𝐸) with locations and roads
+- Goal: Match vehicles to passenger requests efficiently
+- Constraints: Vehicle capacity, battery/fuel levels, pickup/dropoff times
+- Optimization Metric: Balance efficiency, fuel use, and service
+quality
+
+3.4
+
+P4: Urban Ride-Sharing with Disruptions
+(URS-dynamic, Table 4)
+
+Problem Statement: Addition to P3 with dynamic disruptions requiring real-time reactive planning. Disruptions can include traffic
+delays, road closures, and passenger cancellations, et al.
+
+ACM, under review,
+
+Table 4: Urban Ride-Sharing Reactive Planning Problem
+Vehicles: Three vehicles 𝑉 = {𝑣1 , 𝑣2 , 𝑣3 }
+- Capacity: 2 passengers each
+- Initial vehicle location: City center
+- Operating hours: all day
+Passengers: Five passengers 𝑃 = {𝑝 1 , 𝑝 2 , 𝑝 3 , 𝑝 4 , 𝑝 5 }
+- 𝑝 1 : Airport by 8:30 AM; 𝑝 2 : Airport by 9:00 AM
+- 𝑝 3 : Airport by 9:30 AM; 𝑝 4 : Airport by 9:45 AM
+- 𝑝 5 : Airport by 9:45 AM
+Travel Times:
+- City center to pickup locations: 15-30 minutes
+- Pickup locations to airport: 45-60 minutes
+- Between pickup locations: 20-30 minutes
+Disruptions:
+- Airport route traffic delay
+- Certain local road closure
+Objectives:
+- Minimize total vehicle travel time
+- Meet all passenger deadlines
+
+3.5
+
+P5: Wedding Reunion Planner and
+Scheduler (WR-static, Table 5)
+
+Problem Specification: Table 5 presents a coordinated travel problem for wedding events. Several friends arrive at different times
+and locations before a 3:00 PM wedding photo session. The challenge includes managing two vehicles for airport pick-ups (aimed
+at those who cannot drive or wish to cut costs) and completing
+critical errands, such as collecting the wedding gift and retrieving
+formal attire from the tailor. All activities must be scheduled to
+ensure that everyone arrives at the wedding venue before the photo
+session deadline.
+This problem introduces more constraints than the URS problems
+in P3 and P4, and it also lays the groundwork for a more challenging
+disruption case depicted in P8.
+
+arrival. Table 6 formalizes these challenges as a sequential planning
+problem.
+This scenario also lays the foundation for a more advanced disruption case, which has proven difficult for standalone LLMs, as
+discussed in P9.
+Table 6: Thanksgiving Dinner Coordination Problem
+Objective: Coordinate family arrivals and dinner preparation for 6:00 PM dinner
+in Boston
+Family Members and Arrivals:
+- Sarah (Mom): Host, at home
+- James (Dad): Lands at BOS 1:00 PM from SF
+- Emily (Sister): Lands at BOS 2:30 PM from Chicago
+- Michael (Brother): Driving, arrives 3:00 PM from NY
+- Grandma: Needs pickup from suburban Boston
+Cooking Requirements:
+- Turkey: 4 hours cooking time
+- Side dishes: 2 hours preparation
+- Someone must stay home during cooking
+Transportation Constraints:
+- James must rent car after landing
+- Emily requires airport pickup
+- Travel times:
+– Home to BOS Airport: 60 min
+– BOS Airport to Grandma’s: 60 min
+– Home to Grandma’s: 30 min
+Key Requirements:
+- All family members at home for 6:00 PM dinner
+- Turkey and sides ready by dinner time
+- All pickups completed with available drivers
+- Cooking supervision maintained
+
+3.7
+
+P7: Disaster Relief Logistics Planner and
+Scheduler (DL-static, Table 7 )
+
+Table 5: Wedding Reunion Logistics Problem
+Metrics:
+- On-time performance: Must be at the venue for 3:00 PM photos.
+Locations: Four locations: 𝑉 = {𝐵, 𝐺,𝑇 ,𝑊 } , where 𝐵 is Boston Airport, 𝐺 is
+Gift shop, 𝑇 is Tailor shop, and 𝑊 is Wedding venue.
+Travel time: (minutes)
+𝐵 -𝐺 : 45, 𝐵 -𝑇 : 30, 𝐵 -𝑊 : 40, 𝐺 -𝑇 : 20, 𝐺 -𝑊 : 25, 𝑇 -𝑊 : 15.
+Arrival Times:
+- Alex: At 𝐵 at 11:00 AM from Chicago (need a ride)
+- Jamie: At 𝐵 at 12:30 PM from Atlanta (need a ride)
+- Pat: At 𝑊 at 12:00 PM driving from NYC (has 5-seater car)
+Required Tasks:
+- Gift collection from 𝐺 (after 12:00 PM)
+- Clothes pickup from 𝑇 (by 2:00 PM)
+- Photos at 𝑊 (3:00 PM sharp)
+Available Resources:
+- One car (5-seater) with Pat, available after he is Boston
+- Local friend Chris (5-seater) available after 1:30 PM at 𝑊
+Scheduling Constraints: - All tasks must complete before 3:00 PM photo time Gift store opens at 12:00 PM - Tailor closes at 2:00 PM - Two cars must accommodate all transport needs
+
+3.6
+
+P6: Thanksgiving Dinner Planner and
+Scheduler (TD-static, Table 6 )
+
+Consider a Thanksgiving dinner scenario in which a family of five
+must return to their home in a Boston suburb for a 6 p.m. dinner. The
+problem involves coordinating departure times, managing travel
+logistics (including possible traffic delays), and ensuring timely
+
+Table 7: Disaster Relief Logistics Problem
+Network: 𝐺 = (𝑉 , 𝐸 ) where 𝑉 represents locations and 𝐸 represents routes
+Locations (𝑉 ):
+- Supply nodes: CW (central warehouse), AP (airport, capacity: 5 tons)
+- Demand nodes: DC1, DC2, DC3 (distribution centers)
+- Critical nodes: H1, H2 (hospitals), FS (fuel station)
+Resources:
+• 𝑐𝑎𝑝𝑡𝑟𝑢𝑐𝑘 = 4 tons, 𝜏𝑡𝑟𝑢𝑐𝑘 = 120 min
+• 𝑐𝑎𝑝ℎ𝑒𝑙𝑖 = 1 ton, 𝜏ℎ𝑒𝑙𝑖 = 30 min
+Demand Requirements:
+- DCs: food/water delivery by 𝑇𝑑𝑐 = 20 : 00
+- Hospitals: medicine within Δ𝑇ℎ = 6 hours
+- Fuel Station: refuel by 𝑇𝑓 𝑠 = 12 : 00
+Critical Deadlines:
+- Food/Water: All DCs by 8:00 PM
+- Medicine: Hospitals within 6 hours
+- Fuel: FS by 12:00 PM
+- Airport: Clear excess beyond 5 tons immediately
+Dynamic Disruptions:
+- Unpredictable donation arrivals
+- Road blockages requiring rerouting
+- Emergency hospital demands
+- Fuel shortage delays
+Key Planning Requirements:
+- Resource distribution scheduling
+- Transportation mode optimization
+- Delivery prioritization
+- Airport overflow management
+- Real-time disruption handling
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+3.8
+
+P8: Wedding Reunion Planner and
+Scheduler with Disruptions (WR-dynamic)
+
+Problem Extension: This problem extends P5 with road closures
+and dynamic rerouting.
+The disruption scenario becomes more challenging because,
+when a road closure is announced, the planner must know each
+vehicle’s current location to determine whether it is affected. Since
+LLMs are inherently stateless, they cannot keep track of previous
+scheduling events and thus struggle to adapt the plan in real-time.
+
+3.9
+
+P9: Thanksgiving Dinner Planner and
+Scheduler with Disruptions (TD-dynamic)
+
+This problem extends P6 by introducing flight delays. Specifically,
+when a flight from SFO to BOS is delayed by 𝑡 hours, the new
+arrival time is confirmed at the originally expected arrival time
+minus the flight’s scheduled duration. Although this early notice
+provides an opportunity to adjust travel and dinner plans, current
+LLM-based systems fail to leverage this information in a timely
+manner, only beginning to react at the original arrival time and
+missing the window for earlier intervention.
+For example, consider James’s flight, which was originally scheduled to arrive in Boston at 1 PM but has been delayed to 4 PM. He
+learns of this new arrival time at 10 AM EST (the flight’s intended
+departure from SFO), which offers a three-hour delay for adjustments. However, existing LLM-based solutions do not adapt the
+plan until 1 PM, thus squandering the opportunity to re-optimize
+the schedule.
+
+3.10
+
+P10: Global Supply Chain Planner and
+Scheduler (GSC-static and GSC-dynamic,
+Table 8)
+
+Problem Specification: Table 8 in Appendix A presents a comprehensive problem in data center GPU deployment that captures the
+complexity of large-scale infrastructure projects. The objective is to
+complete a 1 million GPU data center in 15 months while minimizing total costs. The problem encompasses procurement decisions
+between NVIDIA (15k/unit) and AMD (10k/unit) GPUs, where each
+vendor has different maintenance risks (20% vs 50% of unit price
+over one year) and quarterly shipment capacities.
+The construction process is organized around 50,000 GPU clusters, which require coordinated deployment of power, cooling, and
+networking infrastructure. Each cluster demands significant resources: 150 MW of power capacity and 1 million gallons per day
+of cooling water. Infrastructure development follows strict dependencies: Power and cooling systems must be operational before
+networking installation can begin, and each cluster must complete
+testing before becoming operational.
+The problem incorporates real-world complexities such as risks
+of natural disasters (10% probability per quarter for both earthquakes and typhoons), which can cause cascading delays and cost
+increases. Management can expedite various components; power
+/ cooling installation can be accelerated from 4 to 2.5 months for
+a 80% cost premium, while testing can be shortened from 2 to 1
+month by doubling the cost.
+
+ACM, under review,
+
+Table 8: Data Center Construction Problem Statement
+GPU Procurement & Shipments
+• Total GPU Target: 100,000 units
+• Vendors:
+– NVIDIA: $15k/unit, 200k/quarter, 20% maintenance risk/year
+– AMD: $10k/unit, 150k/quarter, 50% maintenance risk/year
+• Order Timing: All orders on Day 1
+• Shipment Schedule: Quarterly (e.g., 600k units = Q1, Q2, Q3)
+• Payment Terms: 50% at order, 50% at delivery
+Natural Disaster Impacts
+• Probabilities: 10% per quarter for Earthquake/Typhoon
+• Delays: 1-month cascading delay
+• Cost Impact: 30% price hike for affected shipment
+• Expedition: Expedite one shipment by 1 month (all shift)
+Cluster Construction & Infrastructure
+• Definition: 50,000 GPUs/cluster; clusters built concurrently
+Networking Infrastructure (per cluster)
+• Duration: 1 month
+• Cost: $25M
+• Dependencies: Starts after GPU, power, cooling readiness
+Power & Cooling (per cluster)
+• Need: 150 MW + 1M gallons/day cooling
+• Lead Time: Regular: 2 months at $30M; Expedited: 1 month at $75M
+Testing & Certification (per cluster)
+• Normal: 2 months, $15M
+• Expedited: 1 month, $45M
+• Options: Expedite any module (150% cost, 50% time)
+Delay Cost Model
+• Penalty: $50M revenue + $10M operations per month
+Objective
+• Minimize total cost while meeting 15-month deadline
+• Includes procurement, infra, delay penalties, expedition costs
+
+Table 9: Job Shop Scheduling Problem Simple Static (JSSPsimple-static)
+Jobs: J = { Job1, Job2, Job3 }
+Machines: M = { MachineA, MachineB, MachineC }
+Operation Sequences and Durations:
+• Job1: (A, 3) → (B, 2) → (C, 2)
+• Job2: (A, 2) → (C, 1) → (B, 4)
+• Job3: (B, 4) → (A, 1) → (C, 3)
+Constraints:
+- Precedence: Operations must follow the listed order per job.
+- Resource: Each machine processes at most one operation at a time.
+Objective: Minimize makespan:
+
+𝐶 max = max 𝐶 𝑗,last
+𝑗 ∈J
+
+Specification Notes:
+- Clear input specification (jobs, machines, durations).
+- Strict precedence and capacity constraints.
+- Supports exact and heuristic solvers.
+
+The financial implications are significant, as each month of delay
+incurs 60M in combined revenue loss and additional operating costs.
+This creates a complex optimization challenge: balancing procurement costs, expedition premiums, and risk mitigation strategies
+while adhering to physical and temporal constraints in the construction sequence.
+
+3.11
+
+J1: JSSP Basic, Sequential Planning
+(Table 9)
+
+Problem Statement: The JSSP is a foundational optimization problem where a set of jobs must be processed on a set of machines,
+
+ACM, under review,
+
+Table 10: Job Shop Scheduling Problem with Random Operation Delays (JSSP-simple-dynamic)
+Jobs: J = { Job1, Job2, Job3 }
+Machines: M = { MachineA, MachineB, MachineC }
+Operation Sequences (Base Durations):
+• Job1: (A, 3) → (B, 2) → (C, 2)
+• Job2: (A, 2) → (C, 1) → (B, 4)
+• Job3: (B, 4) → (A, 1) → (C, 3)
+Dynamic Disruption Model:
+- Each operation may experience a stochastic delay 𝛿𝑖 𝑗 ∼ Uniform (0, 2) .
+- Delay is revealed at operation start time and adds to its processing time.
+Constraints:
+- Precedence: Operations follow listed job order.
+- Resource: Each machine processes one operation at a time.
+- Reactivity: Scheduler must respond to delays at runtime.
+Objective: Minimize makespan with dynamic delay:
+
+𝐶 max = max 𝐶 𝑗,last (𝛿 )
+𝑗 ∈J
+
+Specification Notes:
+- Extends static JSSP with stochasticity and replanning needs.
+- Useful for evaluating reactive scheduling strategies.
+- Supports agent-based and Monte Carlo rollout solvers.
+
+Table 11: Enhanced Job Shop Scheduling Problem Complex
+Static (JSSP-complex-static)
+Jobs: J = {J1, J2, J3, J4, J5, J6}
+Machines: M = {M1 (Lathe), M2 (Mill), M3 (Drill), M4 (Assembly)}
+Materials: P = {RM-S, RM-A, C-X, C-Y, F}
+Operation Sequences (Simplified View):
+• J1, J3: M1 (3) → M3 (2) → M4 (4) [1x RM-S, 1x C-X, 2x F]
+• J2, J5: M2 (4) → M3 (1) → M4 (5) [1x RM-A, 1x C-Y, 3x F]
+• J4, J6: M1 (2) → M2 (3) → M3 (2) → M4 (3) [1x RM-S, 1x C-X, 1x
+C-Y, 4x F]
+Constraints:
+• Precedence: Operations must follow the sequence defined per job.
+• Resource: Each machine can process only one job at a time.
+• Material: Required materials must be available before operation
+starts.
+Objective: Minimize makespan:
+𝐶 max = max 𝐶 𝑗,last
+𝑗 ∈J
+
+each job consisting of a sequence of operations requiring exclusive
+machine access for specified durations. The objective is to minimize overall makespan while satisfying all constraints. J1 provides
+a base-level problem with small numbers of machines and jobs for
+algorithm validation and code debugging.
+
+3.12
+
+J2: JSSP Basic, with Disruptions
+
+Problem Statement: Building on J1, this variant introduces dynamic disruptions requiring reactive replanning capabilities. Disruptions include machine breakdowns, power outages, supply chain
+delays, emergency shutdowns, and weather effects, each lasting
+different durations. The objective remains makespan minimization
+while adapting to real-time changes in system availability.
+
+3.13
+
+J3: JSSP Large-scale, Sequential Planning
+
+Problem Statement: This variant scales J1 to industry-realistic
+dimensions with significantly more jobs, machines, and operations.
+The increased problem size tests algorithmic scalability and computational efficiency while maintaining the static environment assumption. The objective is makespan minimization under resource
+constraints typical of manufacturing environments.
+
+3.14
+
+J4: JSSP Large-scale, with Disruptions
+
+Problem Statement: The most challenging variant combines J3’s
+large-scale complexity with J2’s dynamic disruptions. This tests
+both computational scalability and real-time adaptation capabilities
+under realistic industrial conditions. Multiple simultaneous disruptions and cascading effects require sophisticated reactive planning
+while optimizing makespan across the extended operation horizon.
+
+4 Implementation Framework
+4.1 Standardized Evaluation Metrics
+All REALM-Bench scenarios are evaluated using consistent multiagent planning metrics to ensure comparable assessment across
+problems and systems:
+
+Specification Notes:
+• Jobs vary by product type (A, B, C).
+• Material constraints simulate supply chain dependencies.
+• Model extensible to disruptions and inventory control.
+
+Table 12: Enhanced Job Shop Scheduling with Delays and
+Material Disruptions (JSSP-complex-dynamic)
+Jobs: J = {J1, J2, J3, J4, J5, J6}
+Machines: M = {M1 (Lathe), M2 (Mill), M3 (Drill), M4 (Assembly)}
+Materials: P = {RM-S, RM-A, C-X, C-Y, F}
+Operation Sequences (Base Durations):
+• J1, J3: M1 (3) → M3 (2) → M4 (4)
+• J2, J5: M2 (4) → M3 (1) → M4 (5)
+• J4, J6: M1 (2) → M2 (3) → M3 (2) → M4 (3)
+Dynamic Disruption Model:
+• Stochastic Delays: Each operation may incur a random delay 𝛿𝑖 𝑗 ∼
+Uniform(0, 3).
+• Material Disruptions: Some materials (e.g., C-X, F) may become temporarily unavailable, requiring adaptive rescheduling or waiting.
+Constraints:
+• Precedence: Operations must respect job-specific order.
+• Resource: Machines are exclusive-use, non-preemptive.
+• Material: Materials must be present and available before operation
+start.
+• Adaptivity: Schedule must react to real-time delays and shortages.
+Objective: Minimize realized makespan:
+𝐶 max = max 𝐶 𝑗,last (𝛿, availability)
+𝑗 ∈J
+
+Specification Notes:
+• Combines resource, precedence, and stochastic material constraints.
+• Evaluates robustness and recovery of scheduling algorithms.
+• Models supply-chain aware industrial planning under uncertainty.
+
+• Planning Quality – Goal satisfaction rates and solution completeness
+• Planning Optimality – Makespan minimization and resource
+efficiency
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+ACM, under review,
+
+Table 13: REALM-Bench Problem Specifications and Results Index
+Problem
+
+Description
+
+Spec Table
+
+Results
+
+P1
+P2
+P3
+P4
+P5
+P6
+P7
+P8
+P9
+P10
+J1
+J2
+J3
+J4
+
+Campus Tour (CT-static)
+Multi-Group Campus Tours (MCT-static)
+Urban Ride-Sharing (URS-static)
+URS with Disruptions (URS-dynamic)
+Wedding Reunion Logistics (WR-static)
+Thanksgiving Dinner Planning (TD-static)
+Disaster Relief Logistics (DL-static)
+Wedding Logistics with Disruptions (WR-dynamic)
+Thanksgiving with Disruptions (TD-dynamic)
+Global Supply Chain (GSC-static/dynamic)
+JSSP Basic (static)
+JSSP Basic with Disruptions (dynamic)
+JSSP Large-scale (static)
+JSSP Large-scale with Disruptions (dynamic)
+
+Table 1
+Table 2
+Table 3
+Table 4
+Table 5
+–
+–
+–
+–
+–
+Table 9
+Table 10
+Table 11
+Table 12
+
+Github multiagent-P1
+Github multiagent-P2
+Github multiagent-P3
+Github multiagent-P4
+Github multiagent-P5
+Github multiagent-P6
+Github multiagent-P7
+Github multiagent-P8
+Github multiagent-P9
+Github multiagent-P10
+Github multiagent-J1
+Github multiagent-J2
+Github multiagent-J3
+Github multiagent-J4
+
+• Coordination Effectiveness – Inter-agent consistency and
+communication overhead
+• Constraint Satisfaction – Deadline and dependency compliance rates
+• Computational Efficiency – Planning time, memory usage,
+and scalability
+• Disruption Adaptation – Replanning speed and recovery effectiveness under failure scenarios
+• Solution Robustness – Performance degradation under uncertainty and stress conditions
+Each metric includes both quantitative measures (success rates,
+completion times, resource utilization) and qualitative assessments
+(plan coherence, communication clarity, failure handling strategies).
+
+4.2
+
+System Integration and Extensibility
+
+Multi-Agent Framework Support. REALM-Bench provides seamless integration with five major LLM-agent frameworks: LangGraph,
+OpenAI Swarm, CrewAI, AutoGen, and ALAS. The benchmark supports evaluation across 6+ LLM families including OpenAI GPT,
+Claude, Gemini, Mistral, LLaMA, and DeepSeek, enabling comprehensive cross-system comparisons.
+Extensibility Architecture. The benchmark supports extensibility through modular design components:
+• YAML/JSON-based problem definitions for easy scenario modification
+• Standardized APIs for integrating new frameworks
+• Template-based instruction generation for LLM-readable task
+specifications
+• Plugin architecture for domain extensions (healthcare, finance,
+robotics)
+Reproducibility and Data Management. All benchmark runs
+generate standardized logs with complete execution traces, enabling
+detailed failure analysis and reproducible results. The framework
+includes automated result aggregation, statistical analysis tools,
+and visualization dashboards for performance comparison.
+
+4.3
+
+Community Resources and Access
+
+Open Source Availability. REALM-Bench is available as an opensource project at github.com/realm-bench with comprehensive documentation, installation guides, and example implementations. The repository includes starter code for all supported frameworks and detailed tutorials for benchmark usage.
+Community Leaderboards. We maintain public leaderboards
+tracking system performance across all 14 benchmark problems,
+enabling researchers to compare approaches and track progress
+over time. Results include both aggregate scores and detailed permetric breakdowns with statistical significance testing.
+Continuous Updates. The benchmark suite supports community contributions through standardized problem specification formats, allowing researchers to propose new scenarios and evaluation
+metrics while maintaining compatibility with existing systems.
+
+5
+
+Results Overview and Organization
+
+This section presents the formal specification, scheduling experiments, analysis, and conclusions for the J1 JSSP-simple-static and J2
+JSSP-simple-reactive “MiniFactory” job shop scheduling instance.
+
+5.1
+
+Dataset Statistics
+
+Benchmark Dataset: REALM-Bench includes a collection of 188
+JSSP instances drawn from five widely adopted benchmarks. Examples are provided in Appendix.
+
+5.2
+
+Leaderboard for REALM-Bench
+
+Static and Dynamic Extensions: We introduce real-world disruptions by random delay, such as:
+• Machine Breakdowns: Simulated failures that invalidate
+future scheduled tasks, requiring local replanning.
+• Delay Propagation: Downstream task delays from temporary unavailability of shared machines.
+• Work-In-Progress Migration: Additional cost/penalty if
+operations are rescheduled mid-processing.
+
+ACM, under review,
+
+Evaluation Metrics: To evaluate solution quality, we report makespan
+values under Pass@1:
+
+• SeEvo (GLM3), SeEvo (GPT3.5): Prompt-based LLM schedulers. SeEvo(GPT3.5) shows more consistent performance
+on TA due to standardized job-machine mapping.
+• ALAS-static / ALAS-dynamic (ours): Claude-3.7-based
+planners with static one-shot and dynamic multi-agent variants. Dynamic shows improved performance on TA due to
+its reactivity.
+
+• Pass@1: Best valid makespan from a single inference (oneshot planning).
+• Pass@5: Best makespan from five independent inference
+iterations (reruns/sampling).
+5.2.1 Leaderboard 1: DMU Benchmark Results
+. Evaluation Baselines:
+• Random: Assigns operations to machines randomly without
+any rule. Acts as a naïve lower-bound baseline.
+• LPT (Longest Processing Time): Schedules operations
+with the longest duration first to reduce machine idleness.
+• SPT (Shortest Processing Time): Prioritizes operations
+with the shortest duration, aiming to improve average flow
+time.
+• STPT (Shortest Total Processing Time): Prefers jobs with
+the smallest total sum of processing times across all operations.
+• MPSR (Most Processing Slack Ratio): Considers urgency
+and slack, scheduling operations with lower criticality later.
+• DRL-Liu: An attention-based deep reinforcement learning
+model trained with imitation and PPO to generate effective
+scheduling policies.
+• GP (Genetic Programming): Evolves symbolic scheduling rules through genetic operations, offering interpretable
+policies.
+• GEP (Gene Expression Programming): Uses symbolic
+expression trees to encode scheduling heuristics, evolved
+over generations.
+• SeEvo (GLM3): Synthesizes dispatching logic using GLM-3
+via few-shot prompting and heuristic emulation.
+• SeEvo (GPT3.5): GPT-3.5-based LLM scheduler using prompting templates similar to SeEvo(GLM3).
+• ALAS-static (ours): Generates a full schedule in one shot
+using Claude-3.7 and fixed heuristics.
+• ALAS-dynamic (ours): Multi-agent dynamic scheduling
+that adapts to delays and disruptions using collaborative
+LLM agents.
+5.2.2 Leaderboard 2: TA Benchmark Results
+. Evaluation Baselines:
+• LSO (Least Slack Operation): Schedules the operation with
+the least remaining slack first, emphasizing deadline-critical
+tasks.
+• SPT/TWKR: Combines shortest processing time and total
+work remaining to balance task urgency and load.
+• DRL-Chen: GNN-based policy trained using PPO to capture
+relational structure across jobs and machines.
+• DRL-Zhang: Uses curriculum learning and temporal difference training to scale from simple to complex scheduling
+tasks.
+• DRL-Liu: Attention-based DRL agent trained with imitation
+and reinforcement learning, reused from Leaderboard 1.
+• GP, GEP: Genetic and evolutionary algorithms from Leaderboard 1, often tested on large structured problems.
+
+5.2.3 Leaderboard 3: ABZ, SWV, YN Benchmark Results
+. Evaluation Baselines:
+• ALAS-static (ours): Claude-3.7-based single-shot scheduler
+evaluated on standard benchmarks. Used for feasibility validation and upper-bound matching.
+• ALAS-dynamic (ours): Dynamic multi-agent Claude-based
+planning loop that adapts to disruptions (e.g., route closures,
+machine failures) during execution.
+Due to space constraints, we also provide a comprehensive index
+of results and detailed analysis in the Appendix A. Table 13 summarizes the organization of problem specifications and experimental
+results across all 14 benchmark scenarios.
+Our preliminary evaluation across representative problems demonstrates varying performance levels of current LLM-based systems,
+with particular challenges emerging in dynamic disruption handling (Tier 4) and large-scale coordination (Tier 5). Single-agent
+static problems (Tier 1) achieve 85-95% success rates, while multiagent dynamic scenarios show 45-70% success rates, highlighting
+significant opportunities for improvement in coordination under
+uncertainty.
+Detailed experimental protocols, baseline implementations, failure analysis, and performance comparisons are provided in the
+appendices. Each appendix corresponds directly to its problem
+number for easy navigation.
+
+6
+
+Conclusion
+
+REALM-Bench provides the first comprehensive benchmark for
+evaluating AI systems’ capabilities in real-world multi-agent planning scenarios. Through 14 carefully designed problems spanning
+five difficulty tiers—from single-agent static planning to large-scale
+dynamic coordination—the benchmark enables systematic assessment of planning quality, coordination effectiveness, and disruption
+adaptation using standardized metrics.
+The benchmark’s key contributions include progressive difficulty
+scaling, systematic evaluation of transaction properties and longlived workflows, and seamless integration with major multi-agent
+frameworks across diverse LLM families. Each problem supports
+scalability along multiple dimensions, allowing researchers to stresstest systems while maintaining analytical tractability.
+By establishing a common evaluation framework for both individual LLMs and multi-agent systems, REALM-Bench aims to
+accelerate progress toward more robust AI planning systems capable of handling real-world complexity and uncertainty.
+Future extensions will incorporate community feedback to expand scenario complexity, add specialized metrics for emerging
+domains, and support evolving multi-agent architectures as the
+field advances toward more sophisticated planning capabilities.
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+ACM, under review,
+
+References
+
+Appendices
+
+[1] Anthropic. 2024. Claude Technical Report. https://www.anthropic.com
+ALAS: A Stateful Multi[2] Edward Y. Chang and Longling Geng. 2025.
+LLM Agent Framework for Disruption-Aware Planning. In arXiv:2505.12501.
+arXiv:2505.12501 [cs.AI] https://arxiv.org/abs/2505.12501
+[3] Edward Y. Chang and Longling Geng. 2025. ALAS: A Stateful Multi-LLM
+Agent Framework for Disruption-Aware Planning. arXiv:2505.12501 (2025).
+arXiv:2505.12501 [cs.AI] https://arxiv.org/abs/2505.12501
+[4] Zheng Chu, Jingchang Chen, Qianglong Chen, Weijiang Yu, Haotian Wang,
+Ming Liu, and Bing Qin. 2023. Timebench: A Comprehensive Evaluation of
+Temporal Reasoning Abilities in Large Language Models. ArXiv preprint (2023).
+arXiv:2311.17667
+DeepSeek-R1:
+[5] DeepSeek-AI, Daya Guo, Dejian Yang, and more. 2025.
+Incentivizing Reasoning Capability in LLMs via Reinforcement Learning.
+arXiv:2501.12948 [cs.CL] https://arxiv.org/abs/2501.12948
+[6] Ebru Demirkol, Sanjay Mehta, and Reha Uzsoy. 1998. Benchmarks for shop
+scheduling problems. European Journal of Operational Research 109, 1 (1998),
+137–141. doi:10.1016/S0377-2217(97)00019-2
+[7] Candice Destouet, Houda Tlahig, Belgacem Bettayeb, and Bélahcène Mazari. 2023.
+Flexible job shop scheduling problem under Industry 5.0: A survey on human
+reintegration, environmental consideration and resilience improvement. J. of
+Manufacturing Systems 67 (2023), 155–173.
+[8] J. Doe and R. Roe. 2022. The Dynamic Planning Competition 2022: Challenges
+and Results. In Proceedings of the International Conference on Automated Planning
+and Scheduling (ICAPS). ICAPS, Virtual.
+[9] Omar Khattab, Arnav Singhvi, Paridhi Maheshwari, Zhiyuan Zhang, and more.
+2023. DSPy: Compiling Declarative Language Model Calls into Self-Improving
+Pipelines. arXiv:2310.03714 [cs.CL] https://arxiv.org/abs/2310.03714
+[10] LangChain AI. 2024. LangGraph: Building Structured Applications with LLMs.
+https://github.com/langchain-ai/langgraph.
+[11] Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, and
+Bernard Ghanem. 2023. CAMEL: Communicative Agents for "Mind" Exploration
+of Large Language Model Society. arXiv:2303.17760 [cs.AI] https://arxiv.org/abs/
+2303.17760
+[12] E. Miller and F. Davis. 2023. Automated Negotiation Agents Competition 2023:
+Benchmarking Negotiation Strategies. In Proceedings of the International Conference on Autonomous Agents and Multiagent Systems (AAMAS). IFAAMAS, Virtual.
+[13] Joao Moura. 2024. CrewAI Framework. https://github.com/joaomdmoura/
+crewAI.
+[14] OpenAI. 2024. Hello GPT-4o. https://openai.com/index/hello-gpt-4o/ Accessed:
+Jan. 30, 2025.
+[15] Yongliang Shen et al. 2023. Taskbench: Benchmarking large language models for
+task automation. arXiv preprint arXiv:2311.18760 (2023).
+[16] A. Smith and B. Johnson. 2020. The Process Planning Competition 2020: An
+Overview. In Proceedings of the International Conference on Automated Planning
+and Scheduling (ICAPS). ICAPS, Virtual.
+[17] Ayal Taitler, Ron Alford, Joan Espasa, Gregor Behnke, Daniel Fišer, Michael
+Gimelfarb, Florian Pommerening, Scott Sanner, Enrico Scala, Dominik Schreiber,
+Javier Segovia-Aguas, and Jendrik Seipp. 2024. The 2023 International Planning Competition. AI Magazine 45, 2 (2024), 280–296. doi:10.1002/aaai.12169
+arXiv:https://onlinelibrary.wiley.com/doi/pdf/10.1002/aaai.12169
+[18] Gemini Team, Rohan Anil, Sebastian Borgeaud, Yonghui Wu, Jean-Baptiste
+Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, et al. 2023. Gemini: A Family
+of Highly Capable Multimodal Models. arXiv:2312.11805 [cs.CL]
+[19] Karthik Valmeekam, Matthew Marquez, Alberto Olmo, Sarath Sreedharan, and
+Subbarao Kambhampati. 2023. PlanBench: An Extensible Benchmark for Evaluating Large Language Models on Planning and Reasoning about Change.
+arXiv:2206.10498 [cs.CL] https://arxiv.org/abs/2206.10498
+[20] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, and Chi Wang. 2024. AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation. In
+COLM 2024.
+[21] XAgent Team. 2023. XAgent: An Autonomous Agent for Complex Task Solving.
+https://github.com/OpenBMB/XAgent.
+
+In these Appendices, we provide sample implementations of selected problems, illustrating that each problem specification is implementable and can produce feasible solutions. This serves as a
+verification of completeness for the problem definitions. We encourage readers to review the code and use it as a reference for
+designing improved solutions to these challenges.
+The three problems selected are P3, P4, J1, and J2, representing
+sequential planning, reactive planning, and the most complex planning scenario, respectively. Full P1-P10 and J1-J4 are implemented
+in Code and Dataset link.
+
+ACM, under review,
+
+A Experiments of J1 and J2
+A.1 Case study
+Since we have presented the difference of sequential planning and
+reactive planning in Appendix B.5. This section presents the walkthrough of the J1 JSSP-simple-reactive under two levels of constraints for job shop scheduling instance.
+
+A.1.1 Experiment 1: Simple Precedence Shortest Time with Reactive
+Planning (One-shot Prompting, pass@1)
+. Prompt Setup for Experiments:
+
+You are tasked with scheduling 3 jobs (Job1, Job2, Job3) on 3
+machines (MachineA, MachineB, MachineC).
+The objective is to complete all jobs in the shortest total time
+(minimize makespan).
+Jobs and Operations:
+• Job1: Step 1 (MachineA, 3 time units) → Step 2 (MachineB, 2 time units) → Step 3 (MachineC, 2 time units)
+• Job2: Step 1 (MachineA, 2 time units) → Step 2 (MachineC, 1 time unit) → Step 3 (MachineB, 4 time units)
+• Job3: Step 1 (MachineB, 4 time units) → Step 2 (MachineA, 1 time unit) → Step 3 (MachineC, 3 time units)
+Rules:
+(1) Each job must perform its steps strictly in order (e.g.,
+Job1’s Step 2 can only begin after Step 1 finishes).
+(2) Each machine can only handle one operation at a time
+(e.g., while MachineA is running Job1-Op1 from time
+0–3, it cannot process any other operation).
+Objective: Create a schedule listing each step’s start time, end
+time, machine, and job, ensuring all jobs finish in minimum
+total time.
+Format:
+Time Interval
+
+|
+
+Task Name
+
+|
+
+Machine
+
+|
+
+Job
+
+Example:
+0–3
+
+|
+
+Job1-Op1
+
+|
+
+MachineA
+
+|
+
+Job1
+
+Reactive Event:
+At time 𝑡 = 4, MachineA breaks down and is unavailable from
+𝑡 = 4 to 𝑡 = 6. Adjust the schedule accordingly, ensuring:
+(1) Step precedence is respected.
+(2) No two operations use the same machine at the same
+time.
+
+A.1.2 Experiment 2: Simple Precedence Shortest Time with Reactive
+Planning (Second-shot Prompting, pass@2)
+. First Prompt:
+
+You are tasked with scheduling 3 jobs (Job1, Job2, Job3) on 3
+machines (MachineA, MachineB, MachineC).
+The objective is to complete all jobs in the shortest total time
+(minimize makespan).
+Jobs and Operations:
+• Job1: Step 1 (MachineA, 3 time units) → Step 2 (MachineB, 2 time units) → Step 3 (MachineC, 2 time units)
+• Job2: Step 1 (MachineA, 2 time units) → Step 2 (MachineC, 1 time unit) → Step 3 (MachineB, 4 time units)
+• Job3: Step 1 (MachineB, 4 time units) → Step 2 (MachineA, 1 time unit) → Step 3 (MachineC, 3 time units)
+Rules:
+(1) Each job must perform its steps strictly in order (e.g.,
+Job1’s Step 2 can only begin after Step 1 finishes).
+(2) Each machine can only handle one operation at a time
+(e.g., while MachineA is running Job1-Op1 from time
+0–3, it cannot process any other operation).
+(3) An operation cannot be separated.
+Objective: Create a schedule listing each step’s start time, end
+time, machine, and job, ensuring all jobs finish in minimum
+total time.
+Format:
+Time Interval
+
+|
+
+Task Name
+
+|
+
+Machine
+
+|
+
+Job
+
+Example:
+0–3
+
+|
+
+Job1-Op1
+
+|
+
+MachineA
+
+|
+
+Job1
+
+Reactive Event:
+At time 𝑡 = 4, MachineA breaks down and is unavailable from
+𝑡 = 4 to 𝑡 = 6. Adjust the schedule accordingly, ensuring:
+(1) Step precedence is respected.
+(2) No two operations use the same machine at the same
+time.
+Second Prompt:
+
+Reactive Event:
+At time 𝑡 = 4, MachineA breaks down and is unavailable from
+𝑡 = 4 to 𝑡 = 6. Adjust the schedule accordingly, ensuring:
+(1) Step precedence is respected.
+(2) No two operations use the same machine at the same
+time.
+(3) An operation cannot be separated.
+
+A.2
+
+Experiment 1: Pass@1
+
+A.2.1
+
+GPT-4o (Incorrect).
+
+A.2.2
+
+Claude 3.7 (Incorrect).
+
+A.2.3
+
+DeepSeek R1 (Incorrect).
+
+A.2.4
+
+Gemini 2.5 Pro Plan (Incorrect).
+
+A.2.5
+
+Summary of Results.
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+Table 14: GPT-4o Scheduling (Incorrect Plan)
+Time
+0-3
+0-4
+3-4
+4-6
+4-7
+6-8
+7-9
+9-10
+10-14
+
+Task
+Job1-Op1
+Job3-Op1
+Job3-Op2
+Job1-Op2
+Job3-Op3
+Job2-Op1
+Job1-Op3
+Job2-Op2
+Job2-Op3
+
+Machine
+MachineA
+MachineB
+MachineA
+MachineB
+MachineC
+MachineA
+MachineC
+MachineC
+MachineB
+
+Job
+Job1
+Job3
+Job3 (Error due to order)
+Job1
+Job3
+Job2
+Job1
+Job2
+Job2
+
+MachineA
+
+Job2-Op1
+
+Job1-Op2
+
+Job2-Op3
+
+Job3-Op3 Job1-Op3
+Job2-Op2
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+15
+
+14
+
+15
+
+14
+
+15
+
+Figure 1: Gantt Chart: GPT-4o (Incorrect)
+
+Time
+0-3
+0-4
+3-5
+4-6
+5-6
+6-7
+6-8
+6-10
+8-11
+
+MachineB
+
+Job
+Job1
+Job3
+Job2 (Error during repair)
+Job1
+Job2
+Job3
+Job1
+Job2
+Job3
+
+Job3-Op1
+
+MachineC
+
+MachineA
+
+Machine
+MachineA
+MachineB
+MachineA
+MachineB
+MachineC
+MachineA
+MachineC
+MachineB
+MachineC
+
+Job1-Op1Job3-Op2
+
+MachineB
+
+Table 15: Claude Scheduling (Incorrect Plan)
+Task
+Job1-Op1
+Job3-Op1
+Job2-Op1
+Job1-Op2
+Job2-Op2
+Job3-Op2
+Job1-Op3
+Job2-Op3
+Job3-Op3
+
+ACM, under review,
+
+Job1-Op1 Job2-Op1 Job3-Op2
+
+Job3-Op1
+
+Job1-Op2
+
+MachineC
+
+Job2-Op3
+
+Job2-Op2
+Job1-Op3 Job3-Op3
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+Figure 2: Gantt Chart: Claude 3.7 (Incorrect)
+MachineA
+
+Job1-Op1 Job2-Op1
+Job3-Op2
+
+Table 16: DeepSeek Plan (Incorrect)
+MachineB
+Time
+0-3
+3-5
+5-6
+0-4
+4-6
+5-6
+6-8
+6-10
+8-11
+
+Task
+Job1-Op1
+Job2-Op1
+Job3-Op2
+Job3-Op1
+Job1-Op2
+Job2-Op2
+Job1-Op3
+Job2-Op3
+Job3-Op3
+
+Machine
+MachineA
+MachineA
+MachineA
+MachineB
+MachineB
+MachineC
+MachineC
+MachineB
+MachineC
+
+Job
+Job1
+Job2 (Error during repair)
+Job3 (Error during repair)
+Job3
+Job1
+Job2
+Job1
+Job2
+Job3
+
+Table 17: Gemini Correct Plan
+Time
+0-3
+0-4
+3-5
+4-6
+5-6
+5-6
+6-8
+6-10
+8-11
+
+Task
+Job1-Op1
+Job3-Op1
+Job2-Op1
+Job1-Op2
+Job2-Op2
+Job3-Op2
+Job1-Op3
+Job2-Op3
+Job3-Op3
+
+Machine
+MachineA
+MachineB
+MachineA
+MachineB
+MachineC
+MachineA
+MachineC
+MachineB
+MachineC
+
+Job
+Job1
+Job3
+Job2 (Error during repair)
+Job1
+Job2
+Job3 (Error during repair)
+Job1
+Job2
+Job3
+
+Experiment 2: Pass@2
+
+A.3.1 GPT-4o (1st Incorrect, 2nd Correct).
+• Incorrect plan is generated due to constraint violation of
+“order” or “machine repair” at first prompt.
+• Correct plan is generated in second prompt.
+A.3.2 Claude 3.7 (1st Incorrect, 2nd Correct).
+• Incorrect plan is generated due to constraint violation of
+“job separation” and “machine repair” at first prompt.
+• Correct plan is generated in second prompt.
+A.3.3 DeepSeekR1 (1st Incorrect, 2nd Correct).
+• Incorrect plan is generated due to constraint violation of
+“order” or “machine repair” at first prompt.
+
+Job1-Op2
+
+MachineC
+
+Job2-Op3
+
+Job2-Op2
+Job1-Op3 Job3-Op3
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+Figure 3: Gantt Chart: DeepSeek R1 (Incorrect)
+MachineA
+
+Job1-Op1 Job2-Op1
+Job3-Op2
+
+MachineB
+
+Job3-Op1
+
+Job1-Op2
+
+MachineC
+
+Job2-Op3
+
+Job2-Op2
+Job1-Op3 Job3-Op3
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+15
+
+Figure 4: Gantt Chart: Gemini 2.5 Pro (Correct)
+Table 18: Summary of Model Performances (Pass@1)
+Model
+
+A.3
+
+Job3-Op1
+
+GPT-4o
+Claude 3.7
+DeepSeek R1
+Gemini 2.5 Pro
+
+Validation Rate
+(Pass@1)
+1/10
+2/10
+7/10
+–
+
+Correct Steps
+1
+2
+7
+-
+
+Machine Repair
+Errors
+8
+6
+0
+-
+
+Table 19: Final GPT-4o Plan (Correct)
+Time
+0–3
+3–5
+5–7
+0–4
+6–7
+7–10
+10–12
+12–13
+13–17
+
+Task
+Job1-Op1
+Job1-Op2
+Job1-Op3
+Job3-Op1
+Job3-Op2
+Job3-Op3
+Job2-Op1
+Job2-Op2
+Job2-Op3
+
+Machine
+MachineA
+MachineB
+MachineC
+MachineB
+MachineA
+MachineC
+MachineA
+MachineC
+MachineB
+
+Job
+Job1
+Job1
+Job1
+Job3
+Job3
+Job3
+Job2
+Job2
+Job2
+
+Job Order
+Errors
+1
+2
+3
+-
+
+ACM, under review,
+
+Table 20: Final Claude 3.7 Plan (Correct)
+Time
+0–2
+0–4
+2–3
+3–7
+6–9
+9–10
+9–11
+10–13
+11–13
+
+Task
+Job2-Op1
+Job3-Op1
+Job2-Op2
+Job2-Op3
+Job1-Op1
+Job3-Op2
+Job1-Op2
+Job3-Op3
+Job1-Op3
+
+Machine
+MachineA
+MachineB
+MachineC
+MachineB
+MachineA
+MachineA
+MachineB
+MachineC
+MachineC
+
+• Non-overlapping Steps Constraint (Prompt 2): For operations within same job on different machines:
+
+Job
+Job2
+Job3
+Job2
+Job2
+Job1
+Job3
+Job1
+Job3
+Job1
+
+𝑠𝑖 𝑗+1 ≥ 𝑠𝑖 𝑗 + 𝑝𝑖 𝑗
+Where variables are non-negative.
+
+A.6
+
+Table 21: Final DeepSeek R1-Plan (Correct)
+
+A.3.4
+
+Task
+Job1-Op1
+Job3-Op1
+Idle
+Job1-Op2
+Job2-Op2
+Job1-Op3
+Job2-Op1
+Job3-Op2
+Job2-Op2
+Job3-Op3
+Job2-Op3
+
+Machine
+MachineA
+MachineB
+MachineA
+MachineB
+MachineC
+MachineC
+MachineA
+MachineA
+MachineC
+MachineC
+MachineB
+
+Job
+Job1
+Job3
+–
+Job1
+Job2
+Job1
+Job2
+Job3
+Job2
+Job3
+Job2
+
+Gemini 2.5 Pro (-).
+
+• Incorrect plan is generated due to constraint violation of
+“order” or “machine repair” at first prompt.
+• Correct plan is generated in second prompt.
+
+A.4
+
+Summary of Results
+
+Table 22: Summary of Model Performances on One Instance
+(Pass@2)
+Model
+GPT-4o
+Claude 3.7
+DeepSeek R1
+Gemini 2.5 Pro
+
+A.5
+
+Correctness
+Correct
+Correct
+Correct
+–
+
+Makespan / Optimality
+Suboptimal
+Optimal
+Optimal
+–
+
+Time Usage
+∼10 sec / prompt
+∼10 sec / prompt
+>5 min / prompt
+–
+
+Meta Planner Algorithm 1 - Mathematical
+Formulation (MIP Model)
+
+Let 𝑠𝑖 𝑗 be the start time of operation 𝑗 in job 𝑖, and 𝑝𝑖 𝑗 be its processing time.
+Objective:
+Minimize max (𝑠𝑖 𝑗 + 𝑝𝑖 𝑗 )
+(1)
+𝑖,𝑗
+
+Subject to:
+• Precedence Constraint: 𝑠𝑖 𝑗+1 ≥ 𝑠𝑖 𝑗 + 𝑝𝑖 𝑗
+• Machine Conflict Constraint: For operations 𝑎 and 𝑏 on
+the same machine:
+(𝑠𝑎 ≥ 𝑠𝑏 + 𝑝𝑏 )
+
+or
+
+(𝑠𝑏 ≥ 𝑠𝑎 + 𝑝𝑎 )
+
+Error Analysis and Conclusion
+
+This case study highlights the complexity of job shop scheduling
+under dynamic and adversarial conditions, such as machine failures.
+1) Models like DeepSeek and Gemini demonstrated strong performance in adapting to changes and producing valid reactive plans.
+2) GPT-4o showed some improvements under tighter constraints
+but was less optimal, while Claude 3.7 struggled with adapting to
+both simple and strict scheduling constraints.
+Structured meta-planning (MP) with explicit constraint modeling significantly improves robustness, demonstrating the necessity
+of careful system design and constraint tracking in real-world multiagent or multi-task optimization scenarios.
+Future extensions could involve 1) adding stochastic delays (will
+introduce in next section), 2) different sub-meta planner algorithms,
+such as resource contention models, 3) different objectives such as
+First In First Out (FIFO), Dynamic Programming, 4) and complex,
+multi-objective trade-offs beyond makespan, such as energy cost
+or fairness in task allocations.
+
+• Correct plan is generated in second prompt.
+
+Time
+0–3
+0–4
+4–6
+4–6
+5–6
+6–8
+6–8
+8–9
+8–9
+9–12
+9–13
+
+(3)
+
+(2)
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+A.7
+
+Leaderboards
+
+Table 23: Leaderboard 1: ALAS-Static vs. ALAS-Dynamic
+Makespan Plan Generation Optimality Summary (ALASstatic is better on DMU)
+Dataset
+
+Size
+
+Random
+
+LPT
+
+SPT
+
+STPT
+
+MPSR
+
+DRL-Liu
+
+GP
+
+DMU03
+DMU04
+DMU08
+DMU09
+DMU13
+DMU14
+DMU18
+DMU19
+DMU23
+DMU24
+DMU28
+DMU29
+DMU33
+DMU34
+DMU38
+DMU39
+Mean
+
+20 × 15
+20 × 15
+20 × 20
+20 × 20
+30 × 15
+30 × 15
+30 × 20
+30 × 20
+40 × 15
+40 × 15
+40 × 20
+40 × 20
+50 × 15
+50 × 15
+50 × 20
+50 × 20
+NaN
+
+3827
+3889
+4228
+4094
+5451
+5306
+5326
+5174
+5948
+6078
+6737
+6602
+6890
+7523
+7685
+8097
+5803.44
+
+4592
+4047
+4551
+4511
+5580
+5591
+5810
+5787
+7045
+6484
+7322
+7386
+8779
+7991
+9051
+8514
+6440.06
+
+3630
+3541
+4714
+4283
+4813
+4583
+6231
+5126
+6250
+5503
+6558
+6565
+7361
+7026
+7954
+7592
+5733.12
+
+4232
+4642
+4459
+4690
+5207
+4811
+5480
+5203
+6521
+6595
+7697
+7690
+7631
+7740
+8555
+8908
+6253.81
+
+3435
+3355
+3999
+3869
+4759
+4238
+5003
+4930
+5383
+5358
+5927
+6107
+6282
+6359
+7604
+6953
+5222.56
+
+3303
+3321
+4098
+3753
+4708
+4124
+4800
+4837
+5240
+5319
+5948
+5824
+6458
+6284
+7275
+6776
+5129.25
+
+3540
+3406
+3802
+4196
+4765
+4289
+4696
+4666
+5391
+5560
+6017
+6236
+6109
+6327
+7267
+6941
+5200.50
+
+Gap to UB (%)
+
+–
+
+37.28
+
+52.34
+
+35.62
+
+47.93
+
+23.54
+
+21.33
+
+23.02
+
+Table 24: Leaderboard 1 (cont): ALAS-Static vs. ALASDynamic Makespan Plan Generation Optimality Summary
+(ALAS-static is better on DMU)
+Dataset
+
+Size
+
+GEP
+
+SeEvo
+(GLM3)
+
+SeEvo
+(GPT3.5)
+
+UB
+
+ALAS-dynamic
+(Claude-3.7 heuristics)
+
+ALAS-static
+(Claude-3.7 heuristics)
+
+DMU03
+DMU04
+DMU08
+DMU09
+DMU13
+DMU14
+DMU18
+DMU19
+DMU23
+DMU24
+DMU28
+DMU29
+DMU33
+DMU34
+DMU38
+DMU39
+Mean
+
+20 × 15
+20 × 15
+20 × 20
+20 × 20
+30 × 15
+30 × 15
+30 × 20
+30 × 20
+40 × 15
+40 × 15
+40 × 20
+40 × 20
+50 × 15
+50 × 15
+50 × 20
+50 × 20
+NaN
+
+3651
+3499
+4023
+4136
+4812
+4213
+4917
+5245
+5595
+5458
+6142
+6224
+6081
+6279
+7501
+7124
+5306.25
+
+3462
+3235
+3728
+3857
+4658
+3980
+4724
+4715
+5151
+5226
+5838
+5941
+6029
+6148
+7168
+6693
+5034.56
+
+3238
+3212
+3728
+3828
+4709
+3980
+4724
+4816
+5258
+5316
+5944
+5825
+6029
+6146
+7170
+6590
+5032.06
+
+2731
+2669
+3188
+3092
+3681
+3394
+3844
+3768
+4668
+4648
+4692
+4691
+5728
+5385
+5713
+5747
+4227.44
+
+3356
+3352
+3906
+3731
+4524
+4195
+4675
+4774
+5805
+5750
+5550
+5661
+7158
+6597
+7119
+6799
+5184.50
+
+3462
+3235
+3728
+3857
+4658
+3980
+4724
+4715
+5151
+5226
+5838
+5941
+6029
+6148
+7168
+6693
+5034.56
+
+Gap to UB (%)
+
+–
+
+25.52
+
+19.09
+
+19.03
+
+–
+
+22.74
+
+19.09
+
+Table 25: Leaderboard 2: ALAS-Static vs. ALAS-Dynamic
+Makespan Plan Generation Optimality Summary (ALASDynamic is better on TA)
+Dataset
+
+Size
+
+LSO
+
+SPT/TWKR
+
+DRL-Chen
+
+DRL-Zhang
+
+DRL-Liu
+
+GP
+
+TA01
+TA02
+TA51
+TA52
+TA61
+TA71
+TA72
+
+15 × 15
+15 × 15
+50 × 15
+50 × 15
+50 × 20
+100 × 20
+100 × 20
+
+1957
+1759
+3844
+3715
+4188
+6754
+6674
+
+1664
+1538
+3768
+3588
+3752
+6705
+6351
+
+1711
+1639
+3762
+3511
+3633
+6321
+6232
+
+1433
+1544
+3599
+3341
+3654
+6452
+5695
+
+1492
+1425
+3608
+3524
+3548
+6289
+6002
+
+1547
+1565
+3603
+3346
+3685
+6305
+5776
+
+Mean
+Gap to UB (%)
+
+–
+
+4127.29
+34.31
+
+3909.43
+27.23
+
+3829.86
+24.66
+
+3674
+18.48
+
+3698.29
+19.39
+
+3689.57
+20.12
+
+ACM, under review,
+
+Table 26: Leaderboard 2 (cont): ALAS-Static vs. ALASDynamic Makespan Plan Generation Optimality Summary
+(ALAS-Dynamic is better on TA)
+Dataset
+
+Size
+
+GEP
+
+SeEvo
+(GLM3)
+
+SeEvo
+(GPT3.5)
+
+UB
+
+ALAS-dynamic
+(Claude-3.7 heuristics)
+
+ALAS-static
+(Claude-3.7 heuristics)
+
+TA01
+TA02
+TA51
+TA52
+TA61
+TA71
+TA72
+
+15 × 15
+15 × 15
+50 × 15
+50 × 15
+50 × 20
+100 × 20
+100 × 20
+
+1547
+1486
+3668
+3324
+3642
+6278
+5625
+
+1427
+1465
+3364
+3286
+3529
+6071
+5604
+
+1427
+1437
+3412
+3245
+3537
+6099
+5575
+
+1231
+1244
+2760
+2756
+2868
+5464
+5181
+
+1243
+1252
+2766
+2819
+2905
+5478
+5198
+
+1231
+1244
+2760
+2756
+F
+5464
+F
+
+Mean
+Gap to UB (%)
+
+–
+–
+
+3652.86
+18.91
+
+3535.14
+15.10
+
+3533.14
+14.99
+
+3072
+–
+
+3094.43
+0.86
+
+–
+–
+
+Table 27: Leaderboard 3: ALAS-Static vs. ALAS-Dynamic
+Makespan Plan Generation Validity and Optimality on Additional Benchmark Instances (ABZ, SWV, and YN)
+Dataset
+
+Size
+
+UB
+
+Static Makespan
+
+Valid Static
+
+Dynamic Min
+
+Dynamic Max
+
+abz07
+abz08
+abz09
+swv01
+swv02
+swv03
+swv04
+swv05
+swv06
+swv07
+swv08
+swv09
+swv10
+swv11
+swv12
+swv13
+swv14
+swv15
+yn01
+yn02
+yn03
+yn04
+
+20×15
+20×15
+20×15
+20×10
+20×10
+20×10
+20×10
+20×10
+20×15
+20×15
+20×15
+20×15
+20×15
+50×10
+50×10
+50×10
+50×10
+50×10
+20×20
+20×20
+20×20
+20×20
+
+656
+667
+678
+1407
+1475
+1398
+1464
+1424
+1667
+1595
+1751
+1655
+1743
+2983
+2972
+3104
+2968
+2885
+884
+904
+892
+968
+
+656
+667
+678
+1406
+1475
+1398
+1464
+1424
+1667
+1595
+1751
+1655
+1743
+2983
+2972
+3104
+2968
+2885
+884
+904
+892
+968
+
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+True
+
+659
+701
+679
+1429
+1481
+1429
+1466
+1430
+1716
+1621
+1774
+1672
+1817
+3099
+2992
+3144
+2981
+2912
+888
+942
+900
+980
+
+978
+983
+975
+2100
+2177
+2073
+2168
+2086
+2485
+2388
+2535
+2446
+2603
+4470
+4423
+4573
+4396
+4301
+1293
+1321
+1320
+1450
+
+–
+–
+
+1662.87
+–
+
+1662.74
+–
+
+–
+–
+
+1685.00
+–
+
+2483.61
+–
+
+Mean
+Gap to UB (%)
+
+Table 28: Leaderboard 3 (cont): ALAS-Static vs. ALASDynamic Makespan Plan Generation Validity and Optimality
+on Additional Benchmark Instances (ABZ, SWV, and YN)
+Dataset
+
+Size
+
+ALAS-Static
+Valid Rate
+
+ALAS-Dynamic
+Valid Rate
+
+Static Gap
+(%)
+
+Dynamic Gap
+(%)
+
+abz07
+abz08
+abz09
+swv01
+swv02
+swv03
+swv04
+swv05
+swv06
+swv07
+swv08
+swv09
+swv10
+swv11
+swv12
+swv13
+swv14
+swv15
+yn01
+yn02
+yn03
+yn04
+
+20×15
+20×15
+20×15
+20×10
+20×10
+20×10
+20×10
+20×10
+20×15
+20×15
+20×15
+20×15
+20×15
+50×10
+50×10
+50×10
+50×10
+50×10
+20×20
+20×20
+20×20
+20×20
+
+1.0
+1.0
+1.0
+–
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+
+0.00%
+0.00%
+0.00%
+–
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+0.00%
+
+0.46%
+5.10%
+0.15%
+1.56%
+0.41%
+2.22%
+0.14%
+0.42%
+2.94%
+1.63%
+1.31%
+1.03%
+4.24%
+3.89%
+0.67%
+1.29%
+0.44%
+0.94%
+0.45%
+4.20%
+0.90%
+1.24%
+
+–
+–
+
+0.9545
+–
+
+1.0
+–
+
+–
+–
+
+–
+1.65%
+
+Mean
+Gap to UB (%)
+
+ACM, under review,
+
+A.8
+
+Datasets
+
+B
+
+We provide four examples from the following datasets in Figure 5.
+• Demirkol-DMU : Stress-tests scalability with job priority and
+routing heterogeneity across large instances (e.g., 20×15 to
+50×20, in total 80 instances).
+• Taillard (TA): Medium to large-scale JSSPs (15×15 to 100×20,
+in total 80 instances) with uniform mappings and tight constraints.
+• Adams-Pinedo (ABZ): Smaller but tightly constrained problems (e.g., 20×15, in total 3 instances) for testing core optimization.
+• Swv Benchmark (SWV): Dense overlap problem instances
+(20×10, 50×10, in total 15 instances) focusing on constraint
+satisfaction.
+• Yamada–Nakano (YN): Realistic manufacturing settings (e.g.,
+20×20, in total 4 instances) evaluating machine utilization
+vs. flow time.
+
+JSSP Problem Implementation (J1 and J2)
+
+This appendix presents an implementation of J1 and J2: Job Shop
+Scheduling without and with interrupts, using LangGraph [10]. We
+show JSSP-simple-static as an example, and we will release JSSPsimple-dynamic, JSSP-complex-static, and JSSP-complex-dynamic
+in future releases.
+
+B.1
+
+Agentic Workflow Formulation
+
+In this first stage, we define agents to manage the nodes of the
+workflow, including local working job agent, and global supervision agent. At the end, we use the » syntax to specify dependencies
+among agents. The transition from problem specifications to workflow formulation is handled automatically by MACI in LangGraph.
+The code also supports AutoGen, CrewAI, Swarm, and is extendable
+to other multi-agent framework.
+Listing 1: Datasets Preprocessing and Loading
+import sys
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+import google.generativeai as genai
+from anthropic import Anthropic
+# from deepseek import Deepseek
+from datetime import datetime
+import logging
+
+(a) rcmax_20_15_5 (J=20, M=15)
+
+# Set up project root and src path
+dir_path = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(dir_path, `..
+'))
+sys.path.append(os.path.join(project_root, `src'))
+from multi_agent.MAPLE import MAPLE
+from multi_agent.agent import Agent
+
+(b) Abz07 (J=20, M=15)
+
+# Load environment variables
+load_dotenv()
+# Configure logging
+def setup_logging(dataset):
+# Create results directory if it doesn't exist
+results_dir = ``./results''
+if not os.path.exists(results_dir):
+os.makedirs(results_dir)
+print(f``Created results directory: {results_dir}
+'')
+
+(c) Swv15 (J=50, M=10)
+
+# Create a logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+# Create file handler
+log_file = f``./results/{dataset}_dmu.txt''
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.INFO)
+
+(d) Yn04 (J=20, M=20)
+
+Figure 5: Gantt charts of optimized schedules produced by
+ALAS for four representative JSSP benchmark instances with
+varying job and machine counts. These visualizations demonstrate ALAS’s ability to efficiently allocate resources and minimize makespan across different problem scales. The larger
+instance TA72 (J=100, M=20) is available in the supplementary materials.
+
+# Create console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+# Create formatter
+formatter = logging.Formatter(`%(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+# Add handlers to logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+return logger
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+# Initialize different LLM clients
+def get_llm_client(model_type=``openai''):
+if model_type == ``openai'':
+return OpenAI()
+elif model_type == ``anthropic'':
+return Anthropic(api_key=os.getenv(``
+ANTHROPIC_API_KEY''))
+elif model_type == ``google'':
+genai.configure(api_key=os.getenv(``
+GOOGLE_API_KEY''))
+return genai
+elif model_type == ``deepseek'':
+return Deepseek(api_key=os.getenv(``
+DEEPSEEK_API_KEY''))
+else:
+raise ValueError(f``Unsupported model type: {
+model_type}'')
+# DMU dataset loader
+# [You can load TA, ABZ, SWV, YN, and other datasets in
+similar way]
+def load_dmu_dataset(filepath):
+jobs = []
+with open(filepath, `r') as f:
+lines = [line.strip() for line in f if line.strip
+()]
+n_jobs, n_machines = map(int, lines[0].split())
+for job_idx, line in enumerate(lines[1:]):
+tokens = list(map(int, line.split()))
+steps = [(f``Machine{machine}'', duration)
+for machine, duration in zip(tokens
+[::2], tokens[1::2])]
+jobs.append({`name': f`Job{job_idx+1}', `
+steps': steps})
+return jobs
+# After imports, add the list of datasets
+DATASETS = [
+``rcmax_20_15_5'', #Dmu03_
+``rcmax_20_15_8'', #Dmu04_
+``rcmax_20_20_7'', #Dmu08_
+``rcmax_20_20_8'', #Dmu09_
+``rcmax_30_15_5'', #Dmu13_
+``rcmax_30_15_4'', #Dmu14_
+``rcmax_30_20_9'', #Dmu18_
+``rcmax_30_20_8'', #Dmu19_
+``rcmax_40_15_10'',#Dmu23_
+``rcmax_40_15_8'', #Dmu24_
+``rcmax_40_20_6'', #Dmu28_
+``rcmax_40_20_2'', #Dmu29_
+``rcmax_50_15_2'', #Dmu33_
+``rcmax_50_15_4'', #Dmu34_
+``rcmax_50_20_6'', #Dmu38_
+``rcmax_50_20_9'' #Dmu39_
+]
+# Helper: create a placeholder schedule for demonstration
+# In a real system, the agent would compute this based on
+constraints
+step_labels = [`A', `B', `C', `D', `E']
+def make_placeholder_schedule(job, offset=0):
+schedule = []
+t = offset
+for idx, (machine, duration) in enumerate(job[`steps'
+]):
+schedule.append({
+`job': job[`name'],
+`step': idx+1,
+`machine': machine,
+`start': t,
+`end': t+duration,
+`precedence': f``After {job[`name']} Step {
+idx}'' if idx > 0 else None
+})
+t += duration
+return schedule
+
+ACM, under review,
+
+Listing 2: Collaborative Agents and Prompts (1)
+# Create agents for each job, with run() returning a
+standardized schedule
+class JSSPAgent(Agent):
+def __init__(self, name, backstory, task_description,
+task_expected_output, model_type=``openai''):
+super().__init__(name, backstory,
+task_description, task_expected_output)
+self.client = get_llm_client(model_type)
+self.model_type = model_type
+def run(self):
+job_idx = int(self.name.split(`Job')[1][0]) - 1
+job = jobs[job_idx]
+# Initialize schedule
+schedule = []
+current_time = 0
+# Track machine availability
+machine_availability = {name: 0 for name in
+machine_names}
+for step_idx, (machine, duration) in enumerate(
+job[`steps']):
+# Find the earliest possible start time
+considering:
+# 1. Machine availability
+# 2. Previous step completion
+# 3. No overlapping operations on the same
+machine
+start_time = max(
+machine_availability[machine],
+current_time
+)
+# Check for conflicts with other operations
+while True:
+conflict = False
+for existing_schedule in schedule:
+if (existing_schedule[`machine'] ==
+machine and
+not (start_time >=
+existing_schedule[`end'] or
+start_time + duration <=
+existing_schedule[`
+start'])):
+conflict = True
+start_time = existing_schedule[`
+end']
+break
+if not conflict:
+break
+# Update machine availability
+machine_availability[machine] = start_time +
+duration
+# Update current time for next step
+current_time = start_time + duration
+schedule.append({
+`job': job[`name'],
+`step': step_idx + 1,
+`machine': machine,
+`start': start_time,
+`end': start_time + duration,
+`precedence': f``After {job[`name']} Step
+{step_idx}'' if step_idx > 0 else
+None
+})
+# Store schedule in agent's context
+self.context = {`schedule': schedule}
+
+ACM, under review,
+
+return {`schedule': schedule}
+# algorithm 1: tabu search
+class SupervisorAgent(Agent):
+``````
+Supervisor agent that coordinates all job schedules
+to find the minimum makespan solution.
+Implements multiple scheduling algorithms and selects
+the best one.
+''''''
+def __init__(self, name, backstory, task_description,
+task_expected_output, model_type=``openai''):
+super().__init__(name, backstory,
+task_description, task_expected_output)
+self.client = get_llm_client(model_type)
+self.model_type = model_type
+self.has_run = False
+self.dataset_name = os.path.splitext(os.path.
+basename(DMU_FILE))[0]
+
+def schedule_from_order(self, job_order,
+machine_names):
+``````Helper function to create a schedule from a
+job order''''''
+machine_availability = {name: 0 for name in
+machine_names}
+job_completion = {job[`name']: 0 for job in
+job_order}
+job_step = {job[`name']: 0 for job in job_order}
+completed_jobs = set()
+schedule = []
+while len(completed_jobs) < len(job_order):
+for job in job_order:
+job_name = job[`name']
+if job_name in completed_jobs:
+continue
+current_step = job_step[job_name]
+if current_step >= len(job[`steps']):
+completed_jobs.add(job_name)
+continue
+machine, duration = job[`steps'][
+current_step]
+start_time = max(
+job_completion[job_name],
+machine_availability[machine]
+)
+# Check for conflicts
+while True:
+conflict = False
+for existing_op in schedule:
+if (existing_op[`machine'] ==
+machine and
+not (start_time >=
+existing_op[`end'] or
+start_time + duration <=
+existing_op[`start'])):
+conflict = True
+start_time = existing_op[`end
+']
+break
+if not conflict:
+break
+end_time = start_time + duration
+schedule.append({
+`job': job_name,
+`step': current_step + 1,
+`machine': machine,
+`start': start_time,
+`end': end_time,
+`precedence': f``After {job_name}
+Step {current_step}'' if
+current_step > 0 else None
+
+})
+machine_availability[machine] = end_time
+job_completion[job_name] = end_time
+job_step[job_name] += 1
+if job_step[job_name] >= len(job[`steps'
+]):
+completed_jobs.add(job_name)
+return schedule
+def run(self):
+if self.has_run and hasattr(self, `context') and
+`schedule' in self.context:
+print(``[SupervisorAgent] Using previously
+computed schedule'')
+return self.context
+# Create results directory if it doesn't exist
+results_dir = ``./results''
+if not os.path.exists(results_dir):
+os.makedirs(results_dir)
+print(f``Created results directory: {
+results_dir}'')
+# Create output file
+output_file = f``./results/{self.dataset_name}
+_dmu.txt''
+with open(output_file, `w') as f:
+f.write(f``=== JSSP Schedule Results for {
+self.dataset_name} ===\n'')
+f.write(f``Timestamp: {datetime.now().
+strftime(`%Y-%m-%d %H:%M:%S')}\n\n'')
+print(f``=== JSSP Schedule Results for {self.
+dataset_name} ==='')
+print(f``Timestamp: {datetime.now().strftime
+(`%Y-%m-%d %H:%M:%S')}\n'')
+# Get all job schedules from dependencies
+all_schedules = []
+for agent in self.dependencies:
+if hasattr(agent, `context') and isinstance(
+agent.context, dict) and `schedule' in agent.context
+:
+all_schedules.extend(agent.context[`
+schedule'])
+if not all_schedules:
+print(``Warning: No schedules found from job
+agents'')
+return {`schedule': []}
+# [Run all baselines/algorithms and track their
+results]
+# [Add your methods here]
+algorithms = {
+`Random': self.schedule_random,
+`LPT': self.schedule_lpt,
+`SPT': self.schedule_spt,
+`STPT': self.schedule_stpt,
+`MPSR': self.schedule_mpsr,
+`DRL-Liu': self.schedule_drl_liu,
+`GP': self.schedule_gp,
+`GEP': self.schedule_gep,
+`Tabu': self.schedule_tabu
+}
+results = {}
+for name, algorithm in algorithms.items():
+print(f``\nRunning {name} algorithm...'')
+schedule = algorithm(jobs, machine_names)
+makespan = max(entry.get(`end', 0) for entry
+in schedule)
+results[name] = {
+`schedule': schedule,
+`makespan': makespan
+}
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+print(f``{name} makespan: {makespan}'')
+# Find the best algorithm
+best_algorithm = min(results.items(), key=lambda
+x: x[1][`makespan'])
+best_name, best_result = best_algorithm
+print(f``\nBest algorithm: {best_name} with
+makespan {best_result[`makespan']}'')
+# Calculate upper bound
+job_sums = {}
+machine_sums = {name: 0 for name in machine_names
+}
+for job in jobs:
+job_sum = sum(duration for _, duration in job
+[`steps'])
+job_sums[job[`name']] = job_sum
+for entry in best_result[`schedule']:
+machine = entry.get(`machine')
+duration = entry.get(`end', 0) - entry.get(`
+start', 0)
+if machine in machine_sums:
+machine_sums[machine] += duration
+ub = max(max(job_sums.values()), max(machine_sums
+.values()))
+# Write results to file and print to console
+results_text = [
+``\n=== Final Results ===``,
+f``Best Algorithm: {best_name}'',
+f``Minimum Makespan found: {best_result[`
+makespan']}'',
+f``Upper Bound (UB): {ub}'',
+f``Gap to UB: {best_result[`makespan'] - ub}\
+n'',
+``=== Algorithm Comparison ===``
+]
+for name, result in results.items():
+results_text.append(f``{name}: {result[`
+makespan']}'')
+results_text.append(``\n=== Detailed Schedule ===
+'')
+with open(output_file, `a') as f:
+for line in results_text:
+print(line)
+f.write(line + ''\n'')
+# Write detailed schedule
+for entry in best_result[`schedule']:
+schedule_line = f``Job: {entry[`job']},
+Step: {entry[`step']}, Machine: {
+entry[`machine']}, Start: {entry[`
+start']}, End: {entry[`end']}''
+print(schedule_line)
+f.write(schedule_line + ''\n'')
+self.has_run = True
+self.context = {`schedule': best_result[`schedule
+']}
+return {`schedule': best_result[`schedule']}
+
+Listing 3: Collaborative Agents and Prompts (2)
+# Modify the main execution section at the bottom of the
+file
+if __name__ == ``__main__'':
+# Process each dataset
+for dataset in DATASETS:
+# Setup logging for this dataset
+logger = setup_logging(dataset)
+logger.info(f``\n{`='*50}'')
+logger.info(f``Processing dataset: {dataset}'')
+
+ACM, under review,
+
+logger.info(f``{`='*50}\n'')
+# Update DMU file path for current dataset
+DMU_FILE = os.path.join(project_root, `
+applications', `DMU', f`{dataset}.txt')
+# Load jobs for current dataset
+jobs = load_dmu_dataset(DMU_FILE)
+# After loading jobs
+all_machine_indices = set()
+for job in jobs:
+for machine, _ in job[`steps']:
+idx = int(machine.replace(`Machine', `'))
+all_machine_indices.add(idx)
+machine_names = [f``Machine{idx}'' for idx in
+sorted(all_machine_indices)]
+# Create agents for each job
+agents = []
+for job in jobs:
+agent = JSSPAgent(
+name=f``{job[`name']} Agent'',
+backstory=f``Agent for {job[`name']}
+scheduling.'',
+task_description=f``Schedule steps for {
+job[`name']} on required machines
+with precedence.'',
+task_expected_output=f``Step schedule for
+{job[`name']} respecting machine and precedence
+constraints.'',
+model_type=``openai''
+)
+agents.append(agent)
+# Add validation agent
+# validation_agent = JSSPValidationAgent(
+#
+name=``JSSP Validation Agent'',
+#
+backstory=``Validates JSSP schedules for
+constraint violations.'',
+#
+task_description=``Check all schedules for
+machine constraints, precedence constraints,
+and makespan validity.'',
+#
+task_expected_output=``Validation results
+with any detected violations.'',
+#
+model_type=``openai''
+# )
+# Add supervisor agent
+supervisor_agent = SupervisorAgent(
+name=``Supervisor Agent'',
+backstory=``Supervisor agent that coordinates
+all job schedules to find the minimum
+makespan solution.'',
+task_description=``````Find the minimum
+makespan schedule for all jobs while
+strictly following these rules:
+1. Each job steps must be completed in strict order (e.g
+., Job1 step 2 can only start after step 1 is
+completed).
+2. Each machine can only process one job step at a time (
+e.g., if MachineA is processing Job1 step 1 from
+time 0-3, it cannot process any other job steps
+during that time).
+The goal is to minimize the total completion time (
+makespan) while ensuring all jobs are completed and
+all constraints are satisfied.'''''',
+task_expected_output=``A complete schedule
+with minimum makespan that satisfies all
+constraints.'',
+model_type=``openai''
+)
+agents.extend([supervisor_agent])
+# Only job agents as initial nodes
+
+ACM, under review,
+
+nodes = [{`agent': agent, `dependencies': []} for
+agent in agents if isinstance(agent,
+JSSPAgent)]
+
+for entry in all_schedules:
+logger.info(f``{entry.get(`start', `?')
+}-{entry.get(`end', `?')} | {entry.get(`machine', `?
+')} | {entry.get(`job', `?')} | {entry.get(`step',
+`?')}'')
+else:
+logger.info(f``\nNo detailed schedules found
+for {dataset}'')
+
+# Supervisor depends on all job agents
+nodes.append({`agent': supervisor_agent, `
+dependencies': [agent.name for agent in
+agents if isinstance(agent, JSSPAgent)]})
+# Validation agent depends on supervisor
+# nodes.append({`agent': validation_agent, `
+dependencies': [supervisor_agent.name]})
+task_spec = {
+`nodes': nodes,
+`edges': [],
+`jobs': jobs,
+`disruptions': [],
+`rules': [
+`Each job must perform its steps strictly
+in order.',
+`Each machine can only handle one
+operation at a time.',
+`No two operations use the same machine
+at the same time.'
+]
+}
+# Initialize MAPLE
+maple = MAPLE(task_spec)
+# Run MAPLE
+maple.run(with_rollback=True, validate=True)
+# Extract and print overall schedule from
+supervisor agent
+context = maple.executor.context
+supervisor_output = context.get(supervisor_agent.
+name, {})
+
+logger.info(f``\nCompleted processing {dataset}''
+)
+logger.info(f``{`='*50}\n'')
+# Remove handlers to avoid duplicate logging in
+next iteration
+for handler in logger.handlers[:]:
+handler.close()
+logger.removeHandler(handler)
+
+B.2
+
+Meta Plan Execution without Disruption
+(P11)
+
+This section depicts the execution of the meta-plan (workflow) of
+JSSP problem for data sample rcmax_20_15_5.
+Listing 4: Sample JSON Output
+=== Results for rcmax_20_15_5 ===
+Timestamp: 2025-05-09 12:21:57
+| Job | Step | Machine | Time Slot | Precedence
+Constraints
+|
+|------|------|----------|-----------|----------------------------|
+
+| Job5 | 1 | Machine1 | 0-199 | None |
+| Job1 | 1 | Machine11 | 0-84 | None |
+| Job20 | 1 | Machine12 | 0-185 | None |
+| Job7 | 1 | Machine13 | 0-194 | None |
+logger.info(f``=== Results for {dataset} ==='')
+| Job2 | 1 | Machine14 | 0-95 | None |
+logger.info(f``Timestamp: {datetime.now().
+| Job18 | 1 | Machine4 | 0-42 | None |
+strftime(`%Y-%m-%d %H:%M:%S')}\n'')
+| Job6 | 1 | Machine6 | 0-113 | None |
+| Job9 | 1 | Machine7 | 0-124 | None |
+if isinstance(supervisor_output, dict) and `
+| Job17 | 1 | Machine8 | 0-104 | None |
+schedule' in supervisor_output:
+| Job11 | 1 | Machine4 | 42-132 | None |
+all_schedules = supervisor_output[`schedule']
+| Job2 | 2 | Machine0 | 95-186 | After Job2 Step 1 |
+# Sort by start time for overall schedule
+| Job14 | 1 | Machine14 | 95-104 | None |
+all_schedules.sort(key=lambda x: (x.get(`
+| Job10 | 1 | Machine14 | 104-272 | None |
+start', 0), x.get(`machine', `'), x.get(`job', `')))
+| Job14 | 2 | Machine2 | 104-267 | After Job14 Step 1 |
+| Job6 | 2 | Machine3 | 113-222 | After Job6 Step 1 |
+# Write detailed schedule
+| Job8 | 1 | Machine6 | 113-216 | None |
+logger.info(``| Job | Step | Machine | Time
+| Job16 | 1 | Machine7 | 124-169 | None |
+Slot | Precedence Constraints
+|'')
+| Job12 | 1 | Machine4 | 132-177 | None |
+logger.info
+| Job16 | 2 | Machine5 | 169-339 | After Job16 Step 1 |
+(``|------|------|----------|-----------|----------------------------|
+| Job13 | 1 | Machine7 | 169-276 | None |
+'')
+| Job1 | 2 | Machine12 | 185-304 | After Job1 Step 1 |
+for entry in all_schedules:
+| Job20 | 2 | Machine8 | 185-204 | After Job20 Step 1 |
+job = entry.get(`job', `?')
+| Job12 | 2 | Machine0 | 186-231 | After Job12 Step 1 |
+step = entry.get(`step', `?')
+| Job7 | 2 | Machine11 | 194-327 | After Job7 Step 1 |
+machine = entry.get(`machine', `?')
+| Job4 | 1 | Machine13 | 194-313 | None |
+start = entry.get(`start', `?')
+| Job2 | 3 | Machine8 | 204-357 | After Job2 Step 2 |
+end = entry.get(`end', `?')
+| Job8 | 2 | Machine4 | 216-309 | After Job8 Step 1 |
+prec = entry.get(`precedence', `None')
+| Job11 | 2 | Machine3 | 222-421 | After Job11 Step 1 |
+logger.info(f``| {job} | {step} | {
+| Job18 | 2 | Machine14 | 272-334 | After Job18 Step 1 |
+machine} | {start}-{end} | {prec} |'
+| Job13 | 2 | Machine6 | 276-413 | After Job13 Step 1 |
+')
+| Job15 | 1 | Machine7 | 276-463 | None |
+| Job1 | 3 | Machine2 | 304-432 | After Job1 Step 2 |
+# Calculate and write makespan
+| Job3 | 1 | Machine13 | 313-404 | None |
+makespan = max(entry.get(`end', 0) for entry
+| Job5 | 2 | Machine11 | 327-340 | After Job5 Step 1 |
+in all_schedules)
+| Job7 | 3 | Machine12 | 327-444 | After Job7 Step 2 |
+logger.info(f``\nBest static makespan for {
+| Job4 | 2 | Machine5 | 339-527 | After Job4 Step 1 |
+dataset}: {makespan}'')
+| Job5 | 3 | Machine10 | 340-403 | After Job5 Step 2 |
+| Job9 | 2 | Machine11 | 340-525 | After Job9 Step 1 |
+# Write Gantt chart
+| Job14 | 3 | Machine10 | 403-507 | After Job14 Step 2 |
+logger.info(``\n=== JSSP Gantt Chart/Table (
+| Job5 | 4 | Machine8 | 403-461 | After Job5 Step 3 |
+Textual) ==='')
+| Job18 | 3 | Machine13 | 404-490 | After Job18 Step 2 |
+logger.info(``Time | Machine | Job | Step'')
+| Job3 | 2 | Machine3 | 421-483 | After Job3 Step 1 |
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+| Job13 | 3 | Machine2 | 432-446 | After Job13 Step 2 |
+| Job11 | 3 | Machine12 | 444-629 | After Job11 Step 2 |
+| Job13 | 4 | Machine9 | 446-559 | After Job13 Step 3 |
+| Job15 | 2 | Machine4 | 463-518 | After Job15 Step 1 |
+| Job19 | 1 | Machine7 | 463-623 | None |
+| Job20 | 3 | Machine3 | 483-494 | After Job20 Step 2 |
+| Job16 | 3 | Machine3 | 494-629 | After Job16 Step 2 |
+| Job14 | 4 | Machine13 | 507-527 | After Job14 Step 3 |
+| Job9 | 3 | Machine6 | 525-678 | After Job9 Step 2 |
+| Job6 | 3 | Machine5 | 527-712 | After Job6 Step 2 |
+| Job19 | 2 | Machine1 | 623-742 | After Job19 Step 1 |
+| Job10 | 2 | Machine7 | 623-628 | After Job10 Step 1 |
+| Job10 | 3 | Machine4 | 628-645 | After Job10 Step 2 |
+| Job17 | 2 | Machine7 | 628-703 | After Job17 Step 1 |
+| Job8 | 3 | Machine12 | 629-650 | After Job8 Step 2 |
+| Job4 | 3 | Machine3 | 629-672 | After Job4 Step 2 |
+| Job3 | 3 | Machine4 | 645-818 | After Job3 Step 2 |
+| Job10 | 4 | Machine9 | 645-831 | After Job10 Step 3 |
+| Job8 | 4 | Machine10 | 650-798 | After Job8 Step 3 |
+| Job1 | 4 | Machine3 | 672-816 | After Job1 Step 3 |
+| Job2 | 4 | Machine6 | 678-787 | After Job2 Step 3 |
+| Job17 | 3 | Machine0 | 703-886 | After Job17 Step 2 |
+| Job12 | 3 | Machine7 | 703-860 | After Job12 Step 2 |
+| Job15 | 3 | Machine5 | 712-788 | After Job15 Step 2 |
+| Job6 | 4 | Machine8 | 712-771 | After Job6 Step 3 |
+| Job19 | 3 | Machine14 | 742-835 | After Job19 Step 2 |
+| Job6 | 5 | Machine1 | 771-774 | After Job6 Step 4 |
+| Job11 | 4 | Machine8 | 771-865 | After Job11 Step 3 |
+| Job16 | 4 | Machine6 | 787-859 | After Job16 Step 3 |
+| Job15 | 4 | Machine2 | 788-844 | After Job15 Step 3 |
+| Job9 | 4 | Machine5 | 788-931 | After Job9 Step 3 |
+| Job3 | 4 | Machine11 | 818-885 | After Job3 Step 3 |
+| Job5 | 5 | Machine4 | 818-873 | After Job5 Step 4 |
+| Job7 | 4 | Machine14 | 835-848 | After Job7 Step 3 |
+| Job19 | 4 | Machine3 | 835-857 | After Job19 Step 3 |
+| Job2 | 5 | Machine2 | 844-1026 | After Job2 Step 4 |
+| Job12 | 4 | Machine14 | 860-873 | After Job12 Step 3 |
+| Job20 | 4 | Machine7 | 860-947 | After Job20 Step 3 |
+| Job11 | 5 | Machine6 | 865-905 | After Job11 Step 4 |
+| Job4 | 4 | Machine8 | 865-883 | After Job4 Step 3 |
+| Job12 | 5 | Machine1 | 873-999 | After Job12 Step 4 |
+| Job5 | 6 | Machine9 | 873-955 | After Job5 Step 5 |
+| Job1 | 5 | Machine8 | 883-1060 | After Job1 Step 4 |
+| Job18 | 4 | Machine0 | 886-1004 | After Job18 Step 3 |
+| Job17 | 4 | Machine14 | 886-1038 | After Job17 Step 3 |
+| Job10 | 5 | Machine6 | 905-1038 | After Job10 Step 4 |
+| Job8 | 5 | Machine5 | 931-997 | After Job8 Step 4 |
+| Job20 | 5 | Machine11 | 947-1118 | After Job20 Step 4 |
+| Job7 | 5 | Machine7 | 947-1058 | After Job7 Step 4 |
+| Job6 | 6 | Machine9 | 955-979 | After Job6 Step 5 |
+| Job8 | 6 | Machine3 | 997-1026 | After Job8 Step 5 |
+| Job5 | 7 | Machine5 | 997-1019 | After Job5 Step 6 |
+| Job13 | 5 | Machine1 | 999-1137 | After Job13 Step 4 |
+| Job9 | 5 | Machine0 | 1004-1034 | After Job9 Step 4 |
+| Job18 | 5 | Machine12 | 1004-1132 | After Job18 Step 4
+|
+| Job2 | 6 | Machine10 | 1026-1073 | After Job2 Step 5 |
+| Job14 | 5 | Machine0 | 1034-1055 | After Job14 Step 4 |
+| Job17 | 5 | Machine2 | 1038-1204 | After Job17 Step 4 |
+| Job3 | 5 | Machine0 | 1055-1191 | After Job3 Step 4 |
+| Job14 | 6 | Machine3 | 1055-1103 | After Job14 Step 5 |
+| Job19 | 5 | Machine8 | 1060-1228 | After Job19 Step 4 |
+| Job2 | 7 | Machine7 | 1073-1171 | After Job2 Step 6 |
+| Job16 | 5 | Machine11 | 1118-1174 | After Job16 Step 4
+|
+| Job20 | 6 | Machine4 | 1118-1132 | After Job20 Step 5 |
+| Job4 | 5 | Machine12 | 1132-1155 | After Job4 Step 4 |
+| Job20 | 7 | Machine13 | 1132-1197 | After Job20 Step 6
+|
+| Job15 | 5 | Machine1 | 1137-1196 | After Job15 Step 4 |
+| Job4 | 6 | Machine14 | 1155-1213 | After Job4 Step 5 |
+| Job12 | 6 | Machine11 | 1174-1218 | After Job12 Step 5
+|
+| Job1 | 6 | Machine0 | 1191-1342 | After Job1 Step 5 |
+| Job3 | 6 | Machine10 | 1191-1331 | After Job3 Step 5 |
+| Job8 | 7 | Machine1 | 1196-1207 | After Job8 Step 6 |
+| Job15 | 6 | Machine12 | 1196-1207 | After Job15 Step 5
+|
+
+ACM, under review,
+
+| Job18 | 6 | Machine2 | 1204-1357 | After Job18 Step 5 |
+| Job14 | 7 | Machine1 | 1207-1338 | After Job14 Step 6 |
+| Job15 | 7 | Machine13 | 1207-1281 | After Job15 Step 6
+|
+| Job12 | 7 | Machine5 | 1218-1370 | After Job12 Step 6 |
+| Job19 | 6 | Machine12 | 1228-1366 | After Job19 Step 5
+|
+| Job9 | 6 | Machine8 | 1228-1255 | After Job9 Step 5 |
+| Job13 | 6 | Machine8 | 1255-1437 | After Job13 Step 5 |
+| Job17 | 6 | Machine10 | 1331-1341 | After Job17 Step 5
+|
+| Job20 | 8 | Machine1 | 1338-1399 | After Job20 Step 7 |
+| Job17 | 7 | Machine11 | 1341-1463 | After Job17 Step 6
+|
+| Job11 | 6 | Machine0 | 1342-1434 | After Job11 Step 5 |
+| Job1 | 7 | Machine9 | 1342-1480 | After Job1 Step 6 |
+| Job7 | 6 | Machine2 | 1357-1483 | After Job7 Step 5 |
+| Job3 | 7 | Machine12 | 1366-1481 | After Job3 Step 6 |
+| Job12 | 8 | Machine10 | 1370-1518 | After Job12 Step 7
+|
+| Job16 | 6 | Machine0 | 1434-1580 | After Job16 Step 5 |
+| Job13 | 7 | Machine4 | 1437-1616 | After Job13 Step 6 |
+| Job18 | 7 | Machine8 | 1437-1571 | After Job18 Step 6 |
+| Job2 | 8 | Machine11 | 1463-1517 | After Job2 Step 7 |
+| Job1 | 8 | Machine6 | 1480-1496 | After Job1 Step 7 |
+| Job8 | 8 | Machine9 | 1480-1484 | After Job8 Step 7 |
+| Job5 | 8 | Machine12 | 1481-1664 | After Job5 Step 7 |
+| Job11 | 7 | Machine2 | 1483-1629 | After Job11 Step 6 |
+| Job18 | 8 | Machine6 | 1571-1727 | After Job18 Step 7 |
+| Job7 | 7 | Machine8 | 1571-1672 | After Job7 Step 6 |
+| Job10 | 6 | Machine0 | 1580-1615 | After Job10 Step 5 |
+| Job6 | 7 | Machine0 | 1615-1686 | After Job6 Step 6 |
+| Job10 | 7 | Machine13 | 1615-1716 | After Job10 Step 6
+|
+| Job13 | 8 | Machine11 | 1616-1723 | After Job13 Step 7
+|
+| Job2 | 9 | Machine4 | 1616-1775 | After Job2 Step 8 |
+| Job9 | 7 | Machine2 | 1629-1698 | After Job9 Step 6 |
+| Job11 | 8 | Machine7 | 1629-1719 | After Job11 Step 7 |
+| Job5 | 9 | Machine3 | 1664-1707 | After Job5 Step 8 |
+| Job16 | 7 | Machine8 | 1672-1862 | After Job16 Step 6 |
+| Job6 | 8 | Machine14 | 1686-1784 | After Job6 Step 7 |
+| Job4 | 7 | Machine2 | 1698-1834 | After Job4 Step 6 |
+| Job9 | 8 | Machine9 | 1698-1828 | After Job9 Step 7 |
+| Job19 | 7 | Machine13 | 1716-1878 | After Job19 Step 6
+|
+| Job14 | 8 | Machine11 | 1723-1732 | After Job14 Step 7
+|
+| Job7 | 8 | Machine6 | 1727-1765 | After Job7 Step 7 |
+| Job18 | 9 | Machine11 | 1732-1812 | After Job18 Step 8
+|
+| Job14 | 9 | Machine6 | 1765-1890 | After Job14 Step 8 |
+| Job1 | 9 | Machine14 | 1784-1979 | After Job1 Step 8 |
+| Job9 | 9 | Machine12 | 1828-1881 | After Job9 Step 8 |
+| Job11 | 9 | Machine9 | 1828-1959 | After Job11 Step 8 |
+| Job4 | 8 | Machine0 | 1834-1888 | After Job4 Step 7 |
+| Job16 | 8 | Machine2 | 1862-1919 | After Job16 Step 7 |
+| Job15 | 8 | Machine8 | 1862-1864 | After Job15 Step 7 |
+| Job15 | 9 | Machine3 | 1864-2058 | After Job15 Step 8 |
+| Job10 | 8 | Machine8 | 1864-2036 | After Job10 Step 7 |
+| Job17 | 8 | Machine13 | 1878-1910 | After Job17 Step 7
+|
+| Job19 | 8 | Machine5 | 1878-1943 | After Job19 Step 7 |
+| Job9 | 10 | Machine4 | 1881-2070 | After Job9 Step 9 |
+| Job7 | 9 | Machine0 | 1888-2072 | After Job7 Step 8 |
+| Job4 | 9 | Machine6 | 1890-2084 | After Job4 Step 8 |
+| Job6 | 9 | Machine13 | 1910-1942 | After Job6 Step 8 |
+| Job3 | 8 | Machine2 | 1919-2102 | After Job3 Step 7 |
+| Job6 | 10 | Machine10 | 1942-2044 | After Job6 Step 9 |
+| Job8 | 9 | Machine13 | 1942-1970 | After Job8 Step 8 |
+| Job2 | 10 | Machine9 | 1959-2082 | After Job2 Step 9 |
+| Job16 | 9 | Machine13 | 1970-2118 | After Job16 Step 8
+|
+| Job1 | 10 | Machine5 | 1979-2072 | After Job1 Step 9 |
+| Job6 | 11 | Machine12 | 2044-2063 | After Job6 Step 10
+|
+| Job10 | 9 | Machine3 | 2058-2114 | After Job10 Step 8 |
+| Job20 | 9 | Machine0 | 2072-2106 | After Job20 Step 8 |
+
+ACM, under review,
+
+| Job18 | 10 | Machine5 | 2072-2177 | After Job18 Step 9
+|
+| Job7 | 10 | Machine9 | 2082-2217 | After Job7 Step 9 |
+| Job4 | 10 | Machine1 | 2084-2119 | After Job4 Step 9 |
+| Job19 | 9 | Machine6 | 2084-2140 | After Job19 Step 8 |
+| Job3 | 9 | Machine14 | 2102-2288 | After Job3 Step 8 |
+| Job12 | 9 | Machine2 | 2102-2224 | After Job12 Step 8 |
+| Job5 | 10 | Machine0 | 2106-2263 | After Job5 Step 9 |
+| Job10 | 10 | Machine10 | 2114-2240 | After Job10 Step 9
+|
+| Job13 | 9 | Machine13 | 2118-2236 | After Job13 Step 8
+|
+| Job17 | 9 | Machine6 | 2140-2234 | After Job17 Step 8 |
+| Job11 | 10 | Machine5 | 2177-2234 | After Job11 Step 9
+|
+| Job18 | 11 | Machine7 | 2177-2193 | After Job18 Step 10
+|
+| Job18 | 12 | Machine3 | 2193-2379 | After Job18 Step 11
+|
+| Job7 | 11 | Machine1 | 2217-2316 | After Job7 Step 10 |
+| Job20 | 10 | Machine9 | 2217-2310 | After Job20 Step 9
+|
+| Job8 | 10 | Machine2 | 2224-2317 | After Job8 Step 9 |
+| Job12 | 10 | Machine6 | 2234-2392 | After Job12 Step 9
+|
+| Job1 | 11 | Machine13 | 2236-2343 | After Job1 Step 10
+|
+| Job13 | 10 | Machine5 | 2236-2408 | After Job13 Step 9
+|
+| Job16 | 10 | Machine14 | 2288-2327 | After Job16 Step 9
+|
+| Job20 | 11 | Machine10 | 2310-2464 | After Job20 Step
+10 |
+| Job14 | 10 | Machine9 | 2310-2411 | After Job14 Step 9
+|
+| Job8 | 11 | Machine11 | 2317-2509 | After Job8 Step 10
+|
+| Job10 | 11 | Machine2 | 2317-2392 | After Job10 Step 10
+|
+| Job16 | 11 | Machine12 | 2327-2490 | After Job16 Step
+10 |
+| Job5 | 11 | Machine14 | 2327-2352 | After Job5 Step 10
+|
+| Job2 | 11 | Machine13 | 2343-2348 | After Job2 Step 10
+|
+| Job11 | 11 | Machine13 | 2348-2483 | After Job11 Step
+10 |
+| Job9 | 11 | Machine14 | 2352-2438 | After Job9 Step 10
+|
+| Job12 | 11 | Machine8 | 2392-2540 | After Job12 Step 10
+|
+| Job3 | 10 | Machine5 | 2408-2414 | After Job3 Step 9 |
+| Job14 | 11 | Machine4 | 2411-2517 | After Job14 Step 10
+|
+| Job15 | 10 | Machine9 | 2411-2424 | After Job15 Step 9
+|
+| Job3 | 11 | Machine1 | 2414-2604 | After Job3 Step 10 |
+| Job19 | 10 | Machine9 | 2424-2595 | After Job19 Step 9
+|
+| Job13 | 11 | Machine14 | 2438-2595 | After Job13 Step
+10 |
+| Job15 | 11 | Machine10 | 2464-2568 | After Job15 Step
+10 |
+| Job20 | 12 | Machine6 | 2464-2531 | After Job20 Step 11
+|
+| Job5 | 12 | Machine13 | 2483-2543 | After Job5 Step 11
+|
+| Job8 | 12 | Machine0 | 2509-2576 | After Job8 Step 11 |
+| Job4 | 11 | Machine4 | 2517-2557 | After Job4 Step 10 |
+| Job14 | 12 | Machine8 | 2540-2735 | After Job14 Step 11
+|
+| Job12 | 12 | Machine13 | 2543-2646 | After Job12 Step
+11 |
+| Job4 | 12 | Machine7 | 2557-2589 | After Job4 Step 11 |
+| Job7 | 12 | Machine10 | 2568-2660 | After Job7 Step 11
+|
+| Job15 | 12 | Machine6 | 2568-2715 | After Job15 Step 11
+|
+
+| Job19 | 11 | Machine11 | 2595-2615 | After Job19 Step
+10 |
+| Job17 | 10 | Machine9 | 2595-2756 | After Job17 Step 9
+|
+| Job1 | 12 | Machine1 | 2604-2626 | After Job1 Step 11 |
+| Job6 | 12 | Machine11 | 2615-2635 | After Job6 Step 11
+|
+| Job19 | 12 | Machine2 | 2615-2623 | After Job19 Step 11
+|
+| Job20 | 13 | Machine2 | 2623-2637 | After Job20 Step 12
+|
+| Job16 | 12 | Machine1 | 2626-2640 | After Job16 Step 11
+|
+| Job11 | 12 | Machine11 | 2635-2825 | After Job11 Step
+11 |
+| Job6 | 13 | Machine4 | 2635-2747 | After Job6 Step 12 |
+| Job10 | 12 | Machine1 | 2640-2733 | After Job10 Step 11
+|
+| Job9 | 12 | Machine10 | 2660-2738 | After Job9 Step 11
+|
+| Job3 | 12 | Machine6 | 2715-2888 | After Job3 Step 11 |
+| Job18 | 13 | Machine1 | 2733-2817 | After Job18 Step 12
+|
+| Job14 | 13 | Machine7 | 2735-2896 | After Job14 Step 12
+|
+| Job8 | 13 | Machine8 | 2735-2831 | After Job8 Step 12 |
+| Job1 | 13 | Machine10 | 2738-2875 | After Job1 Step 12
+|
+| Job16 | 13 | Machine4 | 2747-2915 | After Job16 Step 12
+|
+| Job17 | 11 | Machine12 | 2756-2906 | After Job17 Step
+10 |
+| Job4 | 13 | Machine9 | 2756-2940 | After Job4 Step 12 |
+| Job11 | 13 | Machine1 | 2825-3017 | After Job11 Step 12
+|
+| Job15 | 13 | Machine11 | 2825-2991 | After Job15 Step
+12 |
+| Job18 | 14 | Machine10 | 2875-2917 | After Job18 Step
+13 |
+| Job5 | 13 | Machine6 | 2888-3038 | After Job5 Step 12 |
+| Job2 | 12 | Machine12 | 2906-2911 | After Job2 Step 11
+|
+| Job17 | 12 | Machine3 | 2906-2907 | After Job17 Step 11
+|
+| Job12 | 13 | Machine3 | 2907-2976 | After Job12 Step 12
+|
+| Job13 | 12 | Machine12 | 2911-3089 | After Job13 Step
+11 |
+| Job2 | 13 | Machine5 | 2911-3052 | After Job2 Step 12 |
+| Job19 | 13 | Machine4 | 2915-3052 | After Job19 Step 12
+|
+| Job3 | 13 | Machine9 | 2940-3079 | After Job3 Step 12 |
+| Job4 | 14 | Machine11 | 2991-3103 | After Job4 Step 13
+|
+| Job9 | 13 | Machine1 | 3017-3172 | After Job9 Step 12 |
+| Job11 | 14 | Machine10 | 3017-3073 | After Job11 Step
+13 |
+| Job5 | 14 | Machine7 | 3038-3050 | After Job5 Step 13 |
+| Job5 | 15 | Machine2 | 3050-3165 | After Job5 Step 14 |
+| Job6 | 14 | Machine7 | 3050-3064 | After Job6 Step 13 |
+| Job1 | 14 | Machine4 | 3052-3148 | After Job1 Step 13 |
+| Job7 | 13 | Machine5 | 3052-3198 | After Job7 Step 12 |
+| Job8 | 14 | Machine7 | 3064-3080 | After Job8 Step 13 |
+| Job11 | 15 | Machine14 | 3073-3176 | After Job11 Step
+14 |
+| Job3 | 14 | Machine8 | 3079-3107 | After Job3 Step 13 |
+| Job16 | 14 | Machine9 | 3079-3180 | After Job16 Step 13
+|
+| Job10 | 13 | Machine12 | 3089-3156 | After Job10 Step
+12 |
+| Job13 | 13 | Machine3 | 3089-3216 | After Job13 Step 12
+|
+| Job1 | 15 | Machine7 | 3148-3169 | After Job1 Step 14 |
+| Job10 | 14 | Machine11 | 3156-3265 | After Job10 Step
+13 |
+| Job12 | 14 | Machine12 | 3156-3249 | After Job12 Step
+13 |
+| Job6 | 15 | Machine2 | 3165-3204 | After Job6 Step 14 |
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+| Job3 | 15 | Machine7 | 3169-3352 | After Job3 Step 14 |
+| Job17 | 13 | Machine1 | 3172-3270 | After Job17 Step 12
+|
+| Job9 | 14 | Machine13 | 3172-3259 | After Job9 Step 13
+|
+| Job8 | 15 | Machine14 | 3176-3240 | After Job8 Step 14
+|
+| Job16 | 15 | Machine10 | 3180-3279 | After Job16 Step
+14 |
+| Job18 | 15 | Machine9 | 3180-3309 | After Job18 Step 14
+|
+| Job20 | 14 | Machine5 | 3198-3334 | After Job20 Step 13
+|
+| Job13 | 14 | Machine0 | 3216-3250 | After Job13 Step 13
+|
+| Job7 | 14 | Machine3 | 3216-3260 | After Job7 Step 13 |
+| Job15 | 14 | Machine0 | 3250-3284 | After Job15 Step 13
+|
+| Job2 | 14 | Machine1 | 3270-3349 | After Job2 Step 13 |
+| Job17 | 14 | Machine4 | 3270-3383 | After Job17 Step 13
+|
+| Job13 | 15 | Machine10 | 3279-3361 | After Job13 Step
+14 |
+| Job19 | 14 | Machine0 | 3284-3477 | After Job19 Step 13
+|
+| Job12 | 15 | Machine9 | 3309-3501 | After Job12 Step 14
+|
+| Job20 | 15 | Machine14 | 3334-3361 | After Job20 Step
+14 |
+| Job14 | 14 | Machine5 | 3334-3408 | After Job14 Step 13
+|
+| Job2 | 15 | Machine3 | 3349-3509 | After Job2 Step 14 |
+| Job4 | 15 | Machine10 | 3361-3547 | After Job4 Step 14
+|
+| Job15 | 15 | Machine14 | 3361-3479 | After Job15 Step
+14 |
+| Job7 | 15 | Machine4 | 3383-3541 | After Job7 Step 14 |
+| Job14 | 15 | Machine12 | 3408-3523 | After Job14 Step
+14 |
+| Job10 | 15 | Machine5 | 3408-3535 | After Job10 Step 14
+|
+| Job9 | 15 | Machine3 | 3509-3623 | After Job9 Step 14 |
+| Job17 | 15 | Machine5 | 3535-3561 | After Job17 Step 14
+|
+| Job19 | 15 | Machine10 | 3547-3639 | After Job19 Step
+14 |
+
+ACM, under review,
+
+(1) Convert the problem statement into a formal specification:
+• Key objectives and constraints.
+• Required resources and their capabilities.
+• Performance metrics and success criteria.
+• Temporal and spatial dependencies.
+(2) Transform the specification into a workflow graph:
+• Nodes represent processing stages, decision points, or actions.
+• Edges capture dependencies, data flow, and execution sequence.
+• Agents are assigned to both nodes and edges.
+• Concrete parameters and thresholds are specified.
+(3) Select and apply solving algorithms:
+• Test multiple solution approaches (e.g., dynamic programming, Monte Carlo).
+• Evaluate solutions against specified metrics.
+• Select and validate the best-performing solution.
+• Present results with performance analyses.
+
+B.4
+
+URS Illustration Example
+
+We walk through these three steps to solve the URS problem.
+B.4.1
+
+URS Problem Specification. Already presented in Table 3.
+
+B.4.2 URS Workflow. Figure 6 shows the workflow representation
+of the URS problem.
+𝑟 2 (8:50)
+
+F
+
+B
+𝑘 1 [2] 𝑟 1 (8:45)
+
+A
+C
+
+E
+𝑘 3 [2]
+
+G (BOS)
+
+D
+
+𝑘 2 [2] 𝑟 3 (8:55)
+
+Best static makespan for rcmax_20_15_5: 3639
+
+𝑟 4 (9:00)
+
+B.3
+
+ALAS (ours) Implementation (P11)
+
+Please refer to our paper [2] for implementation of the ALAS/MAPLE
+framework.
+
+Figure 6: Consider a network 𝐺 = (𝑉 , 𝐸) with urban travel
+times 𝜏𝑖 𝑗 = 10 minutes and airport routes 𝜏𝑖𝐺 = {19, . . . , 22}
+minutes. Schedule three vehicles 𝑘𝑖 (capacity 𝑐𝑘 = 2) to deliver
+four passengers 𝑟𝑖 to airport during [8 : 45, 9 : 00].
+
+Urban Ride Sharing, Problems P3 and P4
+For a benchmark suite, we encourage users to devise novel methodologies to solve the problems. However, for this illustrative example
+of Urban Ride Sharing (URS) (P3 and P4), we employ a customized
+specification language that extends PDDL (Planning Domain Definition Language) and workflow networks to support:
+• In sequential planing (P3), we provide static constraints and
+real-time updates.
+• In reactive planning (P4), we provide dynamic constraints
+and real-time updates.
+• Integration with streaming data sources.
+• Explicit representation of uncertainty.
+• Temporal and spatial dependencies.
+The solver, whether manual or automatic, approaches the planning problem in three steps:
+
+B.4.3 URS Results. Figure 7 shows an optimal solution with a total travel distance of 87 km, outperforming both GPT-4o-Task and
+DeepSeek R1 (Figure 8) which requires 123 km, a marked improvement of 41.37%.
+Extended Materials. We also used LangGraph to implement both
+P3 and P4, as presented in Appendix B.5. Furthermore, we provide
+a solution to P11 for the prediction of the stock value in Code and
+Dataset link. These sample implementations validate the completeness of the problem statements in this benchmark.
+
+ACM, under review,
+
+k1
+
+Y
+k2
+
+Y
+
+𝑟 1 (8:45)
+
+A
+
+8:00-8:10
+
+𝑟 2 (8:50)
+
+B
+
+8:10-8
+:30
+
+𝑟 3 (8:55)
+
+𝑟 4 (9:00)
+
+C
+
+D
+
+8:00-8:10
+
+3) Vehicles: A set of available vehicles K, each
+with location, battery/fuel level, passenger
+capacity, and speed.'')
+
+G (BOS)
+:30
+8:10-8
+
+Figure 7: This solution routes showing optimal vehicle assignments. Vehicle k1 (blue) starts at A and collects passengers
+r1 and r2, while k2 (orange) starts at C and serves r3 and r4.
+Both vehicles arrive at BOS at 8:30, meeting all passenger
+arrival deadlines. Total distance traveled = 87 km (Optimal).
+
+7:40-7:50
+
+𝑟 4 (9:00)
+
+k3
+
+Y
+
+B
+
+E
+
+7:50-8:00
+
+7:50-8:10
+
+G (BOS)
+
+:19
+
+task_description=``Assign passengers to vehicles
+based on capacity constraints and route
+efficiency,''
+
+Y
+
+task_expected_output=``Vehicle assignment list
+and dispatch schedule.'')
+
+0-8
+
+8:0
+
+𝑟3
+
+:17
+
+A
+
+7:5
+
+Y
+
+𝑟 2 (8:50)
+
+D
+
+C
+
+k2
+
+Figure 8: GPT-4o-Task and DeepSeek R1 both schedule three
+routes. Vehicle k1 picks up r1 from A at 7:40, then r2 from
+B at 7:50. Vehicle k2 picks up r3 from C at 7:55. Vehicle k3
+must first drive from E to D to pick up r4 at 8:00. All meet
+deadlines. Total travel distance = 123 km.
+
+B.5
+
+# ---- Vehicle Dispatch Agent ---- #
+VD_Agent = Agent(
+name=``Vehicle Dispatch Agent'',
+backstory=``You assign passengers to vehicles and
+ensure each vehicle follows the optimal
+planned route,'',
+
+5-8
+
+𝑟 1 (8:45)
+
+k1
+
+# ---- Route Planning Agent ---- #
+RP_Agent = Agent(
+name=``Route Planning Agent'',
+backstory=``You determine optimal routes for
+vehicles to minimize total travel time while
+ensuring all passengers arrive on time.'',
+task_description=``Use traffic data and
+constraints to compute the best routes for
+each vehicle, ensuring on-time airport
+arrivals.'',
+task_expected_output=``Optimized vehicle
+assignments and travel routes.'')
+
+URS Sample Implementation
+
+This appendix presents an implementation of P3 and P4: Urban
+Ride Sharing without and with interrupts, using LangGraph [10].
+B.5.1 Agentic Workflow Formulation. In this first stage, we define
+agents to manage the nodes of the workflow, including data collection, route planning, vehicle dispatch, traffic adjustment, monitoring and alert, and logging agents. At the end, we use the » syntax to
+specify dependencies among agents. The transition from problem
+specifications to workflow formulation is handled automatically by
+ALAS [3] in LangGraph. The code also support AutoGen, CrewAI,
+Swarm, and is extendable to other multi-agent framework.
+Listing 5: Collaborative Agents and Prompts
+# ---- Data Collection Agent ---- #
+DC_Agent = Agent(
+name=``Data Collection Agent'',
+backstory=``You collect basic traffic data, road
+closure updates, and estimated travel times
+between locations in Bay Area suburb.'',
+task_description=``Retrieve traffic conditions,
+road closures, and estimated travel
+durations for all routes involved in
+passenger transport.'',
+task_expected_output=``Structured travel time
+data, including:
+1) CityMap: A graph G = (V, E), where the
+locations V and roads E have distances and
+travel times.
+2) Ride Requests: A set of requests R, each
+defined by: PassengerID, pickup/drop-off
+locations, and time windows.
+
+# ---- Traffic Adjustment Agent (e.g. disruptions,
+special cases)---- #
+TA_Agent = Agent(
+name=``Traffic Adjustment Agent'',
+backstory=``You monitor live traffic updates and
+adjust vehicle routes dynamically in case of
+delays in Bay Area suburb.'',
+task_description=``Recompute routes in real time
+when disruptions occur (traffic, road
+closures), ensuring minimal delays.'',
+task_expected_output=``Updated travel plans for
+affected vehicles.'')
+# ---- Monitoring & Alert Agent ---- #
+MA_Agent = Agent(
+name=``Monitoring & Alert Agent'',
+backstory=``You track vehicle movements and
+notify if there are risks of missing
+passenger deadlines in Bay Area suburb.'',
+task_description=``Send alerts for potential
+delays and recommend contingency plans.'',
+task_expected_output=``Timely notifications for
+alternative route adjustments or emergency
+responses.'')
+Writer_agent = Agent(
+name=``Writer Agent'',
+backstory=``You are a language model specialized
+in writing text into .json files'',
+task_description=``Write the json response into
+./p3_output.json'',
+task_expected_output=``A .json file containing
+the given string,
+tools=write_str_to_txt'')
+# ---- Define Dependencies (With Disruption) ---- #
+DC_Agent >> RP_Agent >> VD_Agent >> TA_Agent >>
+MA_Agent >> Writer_agent
+# ---- Define Dependencies (Without Disruption) ---#
+DC_Agent >> RP_Agent >> VD_Agent >> MA_Agent >>
+Writer_agent
+
+REALM-Bench: A Benchmark for Evaluating Multi-Agent Systems on Real-world, Dynamic Planning and Scheduling Tasks
+
+B.5.2 Meta Plan Execution without Disruption (P3 URS-static). Now
+that the meta-plan workflow has been constructed, the second step
+involves providing real data for workflow execution. The following
+code snippet illustrates how vehicle and passenger locations are
+specified, followed by the corresponding agent executions.
+Listing 6: Sample JSON Output from Agentic Workflow
+==================================================
+RUNNING AGENT: Data Collection Agent
+==================================================
+1) \textbf{CityMap: A graph G=(V,E)}
+- \textbf{Locations V:}
+- V1: Downtown
+- V2: Golden Gate Park
+- V3: Fisherman Wharf
+- V4: Union Square
+- V5: San Francisco Airport (SFO)
+- \textbf{Roads E with distances and travel times:}
+- E1: Downtown to Golden Gate Park, Distance: 5
+miles, Travel Time: 20 minutes
+- E2: Golden Gate Park to Fisherman Wharf, Distance:
+6 miles, Travel Time: 25 minutes
+- E3: Fisherman Wharf to Union Square, Distance: 2
+miles, Travel Time: 10 minutes
+- E4: Union Square to SFO, Distance: 15 miles,
+Travel Time: 30 minutes
+- E5: Downtown to SFO, Distance: 13 miles, Travel
+Time: 35 minutes
+2) \textbf{Ride Requests: A set of requests R}
+- Request 1:
+- PassengerID: P001
+- Pickup: Downtown
+- Drop-off: Union Square
+- Time Window: 9:00 AM - 9:30 AM
+- Request 2:
+- PassengerID: P002
+- Pickup: Golden Gate Park
+- Drop-off: SFO
+- Time Window: 10:00 AM - 11:00 AM
+- Request 3:
+- PassengerID: P003
+- Pickup: Fisherman Wharf
+- Drop-off: Downtown
+- Time Window: 1:00 PM - 1:30 PM
+3) \textbf{Vehicles: A set of available vehicles K}
+- Vehicle 1:
+- Location: Downtown
+- Battery/Fuel Level: 80%
+- Passenger Capacity: 4
+- Speed: 30 mph
+- Vehicle 2:
+- Location: Union Square
+- Battery/Fuel Level: 60%
+- Passenger Capacity: 6
+- Speed: 25 mph
+- Vehicle 3:
+- Location: SFO
+- Battery/Fuel Level: 90%
+- Passenger Capacity: 3
+- Speed: 35 mph
+This structured data provides an overview of the current
+traffic conditions, road closures, and estimated
+travel times for passenger transport in SF.
+
+ACM, under review,
+
+- Vehicle 1:
+- Assigned to Request 1
+- Route: Downtown (V1) -> Union Square (V4)
+- Estimated Travel Time: 20 minutes (E1 + E3)
+- Departure Time: 9:00 AM
+- Arrival Time: 9:20 AM
+- Vehicle 2:
+- Assigned to Request 2
+- Route: Union Square (V4) -> Golden Gate Park (V2)
+-> SFO (V5)
+- Estimated Travel Time: 55 minutes (E3 + E2 + E4)
+- Departure Time: 10:00 AM
+- Arrival Time: 10:55 AM
+- Vehicle 3:
+- Assigned to Request 3
+- Route: Fisherman Wharf (V3) -> Downtown (V1)
+- Estimated Travel Time: 10 minutes (E3)
+- Departure Time: 1:00 PM
+- Arrival Time: 1:10 PM
+2) \textbf{Travel Routes:}
+- Request 1:
+- Vehicle 1 will pick up Passenger P001 at Downtown
+and drop off at Union Square.
+- Route: V1 -> V4
+- Request 2:
+- Vehicle 2 will pick up Passenger P002 at Golden
+Gate Park and drop off at SFO.
+- Route: V4 -> V2 -> V5
+- Request 3:
+- Vehicle 3 will pick up Passenger P003 at Fisherman
+Wharf and drop off at Downtown.
+==================================================
+RUNNING AGENT: Vehicle Dispatch Agent
+==================================================
+Vehicle Assignment List and Dispatch Schedule:
+1) \textbf{Vehicle Assignments:}
+- Vehicle 1:
+- Assigned to Request 1
+- Passengers: P001
+- Route: Downtown (V1) -> Union Square (V4)
+- Estimated Travel Time: 20 minutes
+- Departure Time: ``9:00 AM''
+- Arrival Time: ``9:20 AM''
+- Vehicle 2:
+- Assigned to Request 2
+- Passengers: P002
+- Route: Union Square (V4) -> Golden Gate Park (V2)
+-> SFO (V5)
+- Estimated Travel Time: 55 minutes
+- Departure Time: ``10:00 AM''
+- Arrival Time: ``10:55 AM''
+- Vehicle 3:
+- Assigned to Request 3
+- Passengers: P003
+- Route: Fisherman Wharf (V3) -> Downtown (V1)
+- Estimated Travel Time: 10 minutes
+- Departure Time: ``1:00 PM''
+- Arrival Time: ``1:10 PM''
+2) \textbf{Dispatch Schedule:}
+
+==================================================
+RUNNING AGENT: Route Planning Agent
+==================================================
+Optimized vehicle assignments and travel routes:
+1) \textbf{Vehicle Assignments:}
+
+- 9:00 AM: Vehicle 1 departs from Downtown with
+Passenger P001.
+- 9:20 AM: Vehicle 1 arrives at Union Square.
+- 10:00 AM: Vehicle 2 departs from Union Square with
+Passenger P002.
+- 10:55 AM: Vehicle 2 arrives at SFO.
+
+ACM, under review,
+
+- 1:00 PM: Vehicle 3 departs from Fisherman Wharf with
+Passenger P003.
+- 1:10 PM: Vehicle 3 arrives at Downtown.
+These assignments and schedules ensure efficient use of
+vehicles and timely arrival of all passengers.
+==================================================
+RUNNING AGENT: Monitoring & Alert Agent
+==================================================
+\textbf{Alert Notification:}
+1) Vehicle 1:
+- Current Status: On schedule.
+- Recommendation: No action needed as the vehicle is
+expected to arrive on time.
+2) Vehicle 2:
+- Current Status: Potential delay risk due to high
+traffic expected around Golden Gate Park.
+- Recommendation: Consider adjusting the route to
+avoid traffic congestion. Possible alternative:
+Take the route via Sunset Blvd to bypass heavy
+traffic areas. Notify the passenger of the
+potential delay and the alternative route.
+3) Vehicle 3:
+- Current Status: On schedule.
+- Recommendation: No action needed as the vehicle is
+expected to arrive on time.
+\textbf{Contingency Plan:}
+Emergency Response: If Vehicle 2 faces unexpected delays
+despite the alternative route, prepare a standby
+vehicle for immediate dispatch from a nearby
+location to ensure Passenger P002 reaches SFO on
+time.
+==================================================
+RUNNING AGENT: Writer Agent
+==================================================
+Thought: I need to write the given context string into a
+JSON file named ``./p3_output.json''.
+Using Tool: write_str_to_txt
+Tool call dict: {omitted}
+Data successfully written to ``./p3_output.json''
+Tool result: None
+Observations: {0: None}
+The context string has been successfully written into
+``./p3_output.json'' as a JSON file.
+
+B.5.3 Meta Plan Execution with Disruption (P4 URS-dynamic). This
+section depicts the execution of the meta-plan (workflow) under
+traffic disruption. In this scenario, the system dynamically identifies
+traffic delays and integrates real-time updates into the planning
+process. Each agent plays a crucial role: the data collection agent
+continuously monitors traffic conditions; the route planning agent
+adjusts travel routes based on congestion data; and the dispatch
+agent ensures that vehicle assignments are optimized despite delays.
+The workflow demonstrates how coordinated agent interventions,
+including dynamic rerouting and schedule adjustments, effectively
+mitigate the impact of heavy traffic, maintaining timely transportation, and enhancing overall operational efficiency.
+Listing 7: Sample JSON Output from Agent Pipeline
+==================================================
+RUNNING AGENT: Traffic Adjustment Agent
+==================================================
+1) \textbf{Vehicle V1 (Passenger 101):}
+
+- \textbf{Current Disruption:} Heavy traffic reported
+on the route from Downtown SF to SF Airport.
+- \textbf{Updated Route:}
+- Start at Union Square
+- Travel to Downtown SF (2 miles, 15 minutes)
+- Detour via I-280 South instead of the usual route
+to SF Airport
+- Estimated travel time via detour: 30 minutes
+- \textbf{Total Updated Estimated Travel Time:} 45
+minutes
+- \textbf{Revised Departure Time:} ``08:15'' to ensure
+timely arrival within the window.
+- \textbf{Special Instructions:} Maintain
+communication with the passenger about the
+updated route and expected arrival time.
+2) \textbf{Vehicle V2 (Passenger 102):}
+- \textbf{Current Disruption:} Road closure near
+Fisherman Wharf due to an event.
+- \textbf{Updated Route:}
+- Start at Fisherman Wharf
+- Detour via Bay Street to Van Ness Avenue, then
+proceed to Golden Gate Bridge
+- Estimated travel time via detour: 15 minutes
+- \textbf{Total Updated Estimated Travel Time:} 15
+minutes
+- \textbf{Revised Departure Time:} ``09:15'' to ensure
+timely arrival within the window.
+- \textbf{Special Instructions:} Ensure fuel levels
+are adequate for the detour and communicate any
+changes to the passenger.
+
+

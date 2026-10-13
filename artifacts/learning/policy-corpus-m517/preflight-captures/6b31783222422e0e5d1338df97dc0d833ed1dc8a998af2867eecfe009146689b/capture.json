@@ -1,0 +1,91 @@
+{
+  "schema_version": "policy-corpus-capture.v1",
+  "paper_id": "2312.07559",
+  "source": {
+    "path": "/root/daily-archive/data/sources/arxiv/cs-cl/2312.07559/source/2312.07559.pdf",
+    "sha256": "6b31783222422e0e5d1338df97dc0d833ed1dc8a998af2867eecfe009146689b"
+  },
+  "source_bytes": 636723,
+  "features": {
+    "page_count": 20,
+    "toc_bookmarks": 26,
+    "text_layer_quality": 1.0,
+    "domain": ""
+  },
+  "features_error": null,
+  "exporter": {
+    "script": {
+      "path": "/root/daily-archive/scripts/m451_pdf_toc_observations.py",
+      "sha256": "2dc8d8ad53dd58dd627abcfcf5a4351830350d8ee7bb2fea46c24ba8f9f5200b"
+    },
+    "furniture_policy": {
+      "path": "/root/daily-archive/data/ontology/furniture_detectors.yaml",
+      "sha256": "df840e0c1980b4304acc963ef577bdf18fa0f8e7318efd3aadcd6752ee515d28"
+    },
+    "python": "python3",
+    "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "pymupdf_version": "1.28.0",
+    "observations": {
+      "path": "toc-observations/2312.07559.json",
+      "sha256": "f1d7be1332fa859b6fa849b22cd3b71b1f168af564cef784424d901332e40ca1"
+    }
+  },
+  "reference": {
+    "tool": "pdftotext",
+    "version": "pdftotext version 24.02.0\nCopyright 2005-2024 The Poppler Developers - http://poppler.freedesktop.org\nCopyright 1996-2011, 2022 Glyph & Cog, LLC",
+    "artifact": {
+      "path": "reference/pdftotext.txt",
+      "sha256": "02db90566c32b9687e7d2a9003aadeaddbd9b80f057d0ea5a9f8e14e3a454d9d"
+    },
+    "char_count": 65020,
+    "error": null
+  },
+  "arms": [
+    {
+      "arm": "toc",
+      "decision_code": "page_outline",
+      "grammar_profile": "page_outline",
+      "backend_profile": null,
+      "status": "success",
+      "error": null,
+      "article": {
+        "path": "toc/article.json",
+        "sha256": "4534af12c84910075d1d65fef2845e18006c13bde483b5b58c414a4035def275"
+      },
+      "evidence": {
+        "ok": true,
+        "section_count": 26,
+        "body_chars": 61342,
+        "latency_ms": 1285,
+        "backend": "1.28.0"
+      },
+      "backend_version": "1.28.0",
+      "latency_ms": 1285
+    },
+    {
+      "arm": "grobid",
+      "decision_code": "xy_cut",
+      "grammar_profile": "arxiv_pdf_dot",
+      "backend_profile": "structural",
+      "status": "success",
+      "error": null,
+      "article": {
+        "path": "grobid/article.json",
+        "sha256": "dad397b3eae843d41e70f165217838e293932cdcd5d1290d85fe098c70cd0fb1"
+      },
+      "evidence": {
+        "ok": true,
+        "section_count": 24,
+        "body_chars": 37632,
+        "latency_ms": 4828,
+        "backend": "0.9.1"
+      },
+      "backend_version": "0.9.1",
+      "latency_ms": 4828
+    }
+  ],
+  "candidate_only": true,
+  "deployed": false,
+  "import_eligible": false,
+  "graph_write": false
+}

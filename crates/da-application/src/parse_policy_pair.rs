@@ -74,6 +74,8 @@ pub enum PairError {
     MetricParse(String),
     #[error("pair metric: unsupported schema version {0}")]
     MetricSchema(String),
+    #[error("pair metric: invalid rule: {0}")]
+    InvalidMetric(String),
     #[error("pair: an arm carries no outcome evidence")]
     MissingEvidence,
 }
@@ -84,6 +86,21 @@ impl PairMetric {
             serde_yaml::from_str(yaml).map_err(|e| PairError::MetricParse(e.to_string()))?;
         if metric.schema_version != PAIR_METRIC_SCHEMA_VERSION {
             return Err(PairError::MetricSchema(metric.schema_version));
+        }
+        for (name, axis) in [
+            ("metric_one", metric.yield_rule.metric_one.as_str()),
+            ("metric_two", metric.yield_rule.metric_two.as_str()),
+        ] {
+            if !matches!(axis, "section_count" | "body_chars") {
+                return Err(PairError::InvalidMetric(format!(
+                    "{name} must be section_count or body_chars, got {axis}"
+                )));
+            }
+        }
+        if metric.yield_rule.margin < 0 {
+            return Err(PairError::InvalidMetric(
+                "margin must be nonnegative".into(),
+            ));
         }
         Ok(metric)
     }
@@ -423,6 +440,63 @@ mod tests {
         )
         .unwrap_err();
         assert!(matches!(err, PairError::MetricSchema(_)));
+    }
+
+    #[test]
+    fn metric_rejects_unknown_axes() {
+        let mut unknown_one = metric();
+        unknown_one.yield_rule.metric_one = "unknown".into();
+        let mut unknown_two = metric();
+        unknown_two.yield_rule.metric_two = "unknown".into();
+        for invalid in [unknown_one, unknown_two] {
+            let yaml = serde_yaml::to_string(&invalid).unwrap();
+            assert!(matches!(
+                PairMetric::from_yaml_str(&yaml),
+                Err(PairError::InvalidMetric(_))
+            ));
+        }
+    }
+
+    #[test]
+    fn metric_requires_nonnegative_margin() {
+        let mut invalid = metric();
+        invalid.yield_rule.margin = -1;
+        let yaml = serde_yaml::to_string(&invalid).unwrap();
+        assert!(matches!(
+            PairMetric::from_yaml_str(&yaml),
+            Err(PairError::InvalidMetric(_))
+        ));
+        for margin in [0, 5] {
+            let mut valid = metric();
+            valid.yield_rule.margin = margin;
+            let yaml = serde_yaml::to_string(&valid).unwrap();
+            assert_eq!(PairMetric::from_yaml_str(&yaml).unwrap(), valid);
+        }
+    }
+
+    #[test]
+    fn declared_primary_axis_controls_conflicting_yields() {
+        let sections_first = metric();
+        let mut chars_first = sections_first.clone();
+        chars_first.yield_rule.metric_one = "body_chars".into();
+        chars_first.yield_rule.metric_two = "section_count".into();
+        let chars_first =
+            PairMetric::from_yaml_str(&serde_yaml::to_string(&chars_first).unwrap()).unwrap();
+        let toc = ev(true, 4, 10_000);
+        let grobid = ev(true, 10, 5_000);
+        let compare = |metric: &PairMetric| {
+            score_pair(
+                metric,
+                (ParseArm::Toc, "page_outline".into(), toc.clone()),
+                (ParseArm::Grobid, "xy_cut".into(), grobid.clone()),
+            )
+        };
+        assert_eq!(
+            compare(&sections_first).arms[1].verdict,
+            PairVerdict::Winner
+        );
+        assert_eq!(compare(&chars_first).arms[0].verdict, PairVerdict::Winner);
+        assert_ne!(sections_first.digest(), chars_first.digest());
     }
 
     #[test]

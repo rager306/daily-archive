@@ -751,16 +751,16 @@ impl LearnedDecisionTable {
         let allowed = self.allowed_codes()?;
         for level in BucketLevel::CHAIN {
             let key = feature_bucket_at_level(point, features, level.code());
-            if let Some(code) = self.cells.get(&key) {
-                if allowed.contains(&code.as_str()) {
-                    let support = self.cell_support.get(&key).copied();
-                    return Some(TableCell {
-                        code: code.clone(),
-                        bucket_key_used: key,
-                        support,
-                        level,
-                    });
-                }
+            if let Some(code) = self.cells.get(&key)
+                && allowed.contains(&code.as_str())
+            {
+                let support = self.cell_support.get(&key).copied();
+                return Some(TableCell {
+                    code: code.clone(),
+                    bucket_key_used: key,
+                    support,
+                    level,
+                });
             }
         }
         None

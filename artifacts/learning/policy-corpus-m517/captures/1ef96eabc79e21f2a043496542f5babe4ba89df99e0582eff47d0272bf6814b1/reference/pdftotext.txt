@@ -1,0 +1,2463 @@
+MARS: Co-evolving Dual-System Deep Research via
+Multi-Agent Reinforcement Learning
+
+Guoxin Chen 1 2 Zile Qiao 2 Wenqing Wang 2 Donglei Yu 2 Xuanzhong Chen 2 Hao Sun 2 Minpeng Liao 2
+Kai Fan 2 Yong Jiang 2 Pengjun Xie 2 Wayne Xin Zhao 1 Ruihua Song 1 Fei Huang 2
+
+arXiv:2510.04935v2 [cs.AI] 1 Feb 2026
+
+Abstract
+
+fast, intuitive thinking, yet they still struggle with complex
+reasoning tasks (Anthropic, 2024; Hurst et al., 2024; Yang
+et al., 2024; Mesnard et al., 2024; Team, 2025). Recent advances in this direction have led to the emergence of Large
+Reasoning Models (LRMs), which specifically excel at System 2-type, deliberate reasoning when confronted with challenging problems (Jaech et al., 2024; Guo et al., 2025; Team,
+2024; Anthropic, 2025). However, when faced with simpler
+information processing tasks such as analyzing web pages
+or summarizing papers, LRMs tend to overanalyze, consuming excessive reasoning tokens that limit their capacity to
+process large volumes of external information (Chen et al.,
+2024c). In contrast, humans effortlessly switch between
+fast, intuitive processing and slow, deliberate reasoning—a
+flexibility that current LRMs lack.
+
+Large Reasoning Models (LRMs) face two fundamental limitations: excessive token consumption
+when overanalyzing simple information processing tasks, and inability to access up-to-date knowledge beyond their training data. We introduce
+MARS (Multi-Agent System for Deep ReSearch),
+a novel co-evolution framework that jointly optimizes dual cognitive systems through multi-agent
+reinforcement learning. Unlike prior approaches
+that employ fixed or independently-trained summarizers, MARS enables System 1 (fast, intuitive
+processing) and System 2 (deliberate reasoning)
+to co-adapt through shared trajectory rewards,
+developing complementary strategies where System 1 learns to distill information specifically useful for System 2’s reasoning. We extend Group
+Relative Policy Optimization (GRPO) for multiagent settings with three key innovations: (1)
+decoupled gradient computation ensuring proper
+credit assignment despite shared rewards, (2) binpacking optimization for efficient parallel information processing, and (3) advantage-weighted
+balanced sampling preventing training imbalance. Extensive experiments demonstrate that
+MARS (8B), trained under a challenging Zero
+RL setting without any supervised fine-tuning,
+achieves 8.17% on HLE—outperforming WebThinker (32B with SFT, 6.87%) and narrowing
+the gap with proprietary models like Claude 3.7
+Sonnet (7.89%)—while achieving an average gain
+of 8.9% across 7 knowledge-intensive tasks.
+
+Furthermore, developing LLMs capable of complex reasoning in rapidly changing environments remains a significant
+challenge. Since model knowledge is confined to the cut-off
+date of training data, enabling access to external information
+through retrieval-augmented generation (RAG) is emerging
+as a promising direction (Chen et al., 2025a; Li et al., 2025a;
+Jin et al., 2025; Li et al., 2025b; Qiao et al., 2025). State-ofthe-art proprietary systems (OpenAI, 2025a; Google, 2025b;
+xAI, 2025; MoonshotAI, 2025; Team et al., 2025) demonstrate the potential of agents that synthesize large volumes
+of online information for multi-step research tasks.
+Recent open-source efforts such as WebThinker (Li et al.,
+2025b) and Search-R1 (Jin et al., 2025) have attempted to
+combine reasoning models with external tools. However,
+these approaches typically employ fixed or independentlytrained information processors that are not optimized for
+the downstream reasoning task. For example, WebThinker
+uses a fixed extraction prompt to process retrieved documents, while Search-R1 directly feeds raw search results to
+the reasoning model. This architectural limitation creates
+a fundamental mismatch: the information processor cannot learn what specific details the reasoning model needs,
+leading to either information overload or critical detail loss.
+
+1. Introduction
+Large Language Models (LLMs) have demonstrated remarkable capabilities across various tasks with their System 1’s
+1
+Gaoling School of Artificial Intelligence, Renmin University of China 2 Tongyi Lab, Alibaba Group. Correspondence to:
+Guoxin Chen <chenguoxin@ruc.edu.cn>, Xin Zhao <batmanfly@gmail.com>, Zile Qiao <qiaozile.qzl@alibaba-inc.com>.
+
+Inspired by the dual-process theory of human cognition (Evans & Stanovich, 2013; Frankish, 2010), we propose
+MARS (Multi-Agent System for Deep ReSearch), a novel
+
+Preprint. February 3, 2026.
+
+1
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+framework that enables co-evolution between dual cognitive systems through multi-agent reinforcement learning.
+Unlike prior work, MARS jointly optimizes System 1 (fast,
+intuitive information processing) and System 2 (deliberate
+reasoning) through shared trajectory rewards, allowing them
+to develop complementary strategies. This co-evolutionary
+design is motivated by a key insight: the optimal information distillation strategy depends on the reasoning task, and
+both systems must co-adapt to achieve effective collaboration. Through joint optimization, System 1 learns to extract
+information that is specifically useful for System 2’s reasoning—not generic summaries, but task-relevant insights that
+emerge from their collaborative training.
+
+knowledge-intensive QA tasks, it improves performance by
+8.9% on average. Ablations further show that removing
+System 1 reduces HLE accuracy by 1.91%, indicating that
+System 1 learns task-relevant distillation rather than acting
+as a passive summarizer.
+In summary, our main contributions are:
+• We introduce MARS, a co-evolution dual-system framework that jointly trains System 1 (information processing)
+and System 2 (reasoning) with shared trajectory rewards,
+enabling task-specific information distillation.
+• We adapt GRPO to multi-agent RL with three techniques:
+decoupled gradients for credit assignment, bin-packing for
+parallel information processing, and advantage-weighted
+balanced sampling for stable joint optimization.
+• Under a Zero RL setting (no SFT), MARS (8B) achieves
+8.17% on HLE and improves 7 knowledge-intensive QA
+tasks; ablations confirm the benefit of co-evolution and
+each component.
+
+The advantages of our co-evolution framework are twofold.
+First, through learned specialization, System 1 efficiently filters and distills large volumes of retrieved information (multiple web pages or research papers per query) that would
+otherwise overwhelm System 2’s context capacity, enabling
+the model to digest comprehensive, up-to-date information
+without sacrificing reasoning quality. Second, this dualsystem synergy creates an efficient collaborative framework where each component operates within its optimal
+domain—System 1 handles high-throughput information
+processing while System 2 focuses on complex multi-step
+reasoning—resulting in both efficiency and robustness.
+
+2. Related Work
+Retrieval-Augmented Generation (RAG). RAG has
+emerged as a crucial approach to overcome knowledge limitations of large language models by integrating external
+information sources (Lewis et al., 2020; Nakano et al., 2021;
+Schick et al., 2023; Yu et al., 2024c; Asai et al., 2024; Jiang
+et al., 2024; Wei et al., 2025; Yu et al., 2024b; Chen et al.,
+2025a; Li et al., 2025b). However, existing RAG systems
+face a fundamental dilemma: they either suffer from information overload when processing multiple lengthy documents (such as entire web pages or research papers), or
+lose critical details when aggressively condensing information (Fan et al., 2024; Gao et al., 2023; Tan et al., 2024). Our
+approach addresses this through a dual-system framework
+where System 2 handles complex reasoning while System 1
+efficiently processes retrieved information, enabling MARS
+to manage larger volumes of external information while
+maintaining reasoning quality.
+
+To implement our approach, we extend Group Relative Policy Optimization (GRPO) (Shao et al., 2024) for multi-agent
+settings with three key innovations. First, we design a decoupled gradient computation mechanism where System
+1 and System 2 receive gradients from non-overlapping token sets despite sharing trajectory-level rewards, ensuring
+proper credit assignment. Second, we employ bin-packing
+optimization to efficiently organize variable-length retrieved content into optimally-sized chunks, enabling parallel processing by System 1. Third, we propose advantageweighted balanced sampling that pre-computes advantages
+for all samples before balancing, preventing either system
+from dominating the learning process while preserving statistical integrity. We also develop a data curation pipeline
+to collect diverse, graduate-level training examples from
+public sources, addressing the scarcity of high-quality data
+for challenging benchmarks like HLE.
+
+3. Methodology
+This section first overviews the pipeline, highlighting how
+System 1 and System 2 collaborate for deep research. We
+then present our optimization strategies for end-to-end training under a multi-agent reinforcement learning framework.
+
+Importantly, MARS operates under a challenging “Zero
+RL” setting: we train directly from the base model without any Supervised Fine-Tuning (SFT) or policy distillation
+from stronger models. This contrasts with prior work such
+as WebThinker (which uses SFT on curated trajectories)
+and enables direct evaluation of our multi-agent RL framework’s effectiveness. Experiments show that MARS reaches
+8.17% accuracy on Humanity’s Last Exam (HLE) with an
+8B model, surpassing WebThinker (32B with SFT, 6.87%)
+and approaching Claude 3.7 Sonnet (7.89%). Across 7
+
+3.1. Dual-System Collaborative Framework
+We design a collaborative framework that integrates System 1’s intuitive processing capabilities with System 2’s
+deliberate reasoning within a unified LLM. As illustrated
+in Figure 1, our framework establishes a synergistic workflow between these two systems to tackle complex questions
+2
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+can be processed in parallel:
+
+
+ 
+(nt )
+(1) (2)
+õti = πsys1 Bin-Packing oti , oti , ..., oti i , pi (2)
+
+External Environment
+Tool Calling
+(purpose)
+
+Python Output
+
+Webpage
+
+where õti represents the distilled information from all tool
+outputs. The specific bin-packing implementation details
+are discussed in Section 3.2.1. (4) The context is updated for
+the next turn by incorporating the reasoning, tool request,
+purpose, and the distilled information:
+
+Paper
+Bin Packing
+
+system 2's
+purpose
+
+Key Information
+
+Question
+Answer
+
+System 2
+
+Collaborative System
+within LLM
+
+System 1
+
+ci+1 = ci ⊕ {si , ti , pi , õti }
+
+Figure 1. Overview of Dual-System Collaborative Framework.
+
+(3)
+
+where ⊕ denotes context concatenation. Note that for
+Python Interpreter outputs, õti is directly the tool output
+without System 1 processing, as these results are typically
+concise and structured. This process continues iteratively
+until System 2 determines to answer the original question.
+The overall generative process can be expressed as:
+
+through external tool utilization. Specifically, System 2
+takes the lead in deliberate reasoning and strategically invokes external tools, while System 1 leverages its intuitive
+thinking to distill key information from these tool outputs.
+The communication between these two systems is facilitated
+through the “purpose” of System 2’s current tool invocation.
+This “System 2’s purpose” serves as a crucial bridge, allowing System 1 to understand precisely what information
+to extract and summarize from potentially overwhelming
+external resources.
+
+P(answer|q) =
+
+N 
+Y
+i=1
+
+πsys2 (si , ti , pi |ci )
+|
+{z
+}
+System 2: Reasoning
+
+(nt )
+(1)
+· πsys1 (õti |Bin-Packing(oti , . . . , oti i ), pi )
+
+|
+To formalize this collaborative framework, we represent
+these two systems activated within the same LLM through
+different prompts as πsys1 and πsys2 . Given an initial question q as the starting context c0 , we model the deep research
+process as a multi-turn interaction sequence. While System 2 maintains and reasons with the accumulated context
+ci (containing the question and information from previous
+turns), System 1 operates independently in each turn, focusing solely on processing the current tool outputs without
+requiring the full historical context.
+
+{z
+
+System 1: Information Processing
+
+
+
+(4)
+
+}
+
+where N is the total number of turns and the second term
+is omitted if no tool is called. This formulation clearly expresses how System 2 guides the overall reasoning process,
+while System 1 efficiently processes external information
+without maintaining the full context history.
+3.2. Dual-System Optimization Strategies
+To maximize the effectiveness of our dual-system framework, we implement several key optimization strategies:
+(1) bin-packing algorithms to enhance System 1’s parallel
+processing efficiency for variable-length retrieved content,
+and (2) advantage pre-computation and balanced sampling
+mechanism, preventing either system from dominating the
+learning process. Figure 2 illustrates our end-to-end RL
+training process, from multi-agent rollout to advantage computation and sample balancing.
+
+In the i-th turn of interaction, the process unfolds as follows:
+(1) System 2 analyzes the current context ci and generates reasoning steps si , along with an optional tool request
+(which includes both the tool parameters ti and a specific
+purpose pi ):
+si , (ti , pi ) = πsys2 (ci )
+(1)
+where ti and pi can be empty if no tool is needed at this
+turn. (2) If ti is not empty, it is executed by the external
+(nt )
+(1) (2)
+environment, producing raw outputs {oti , oti , ..., oti i }1 .
+(3) If tool outputs are available, System 1 processes them
+to extract key information based on System 2’s purpose
+pi . To efficiently handle potentially large volumes of text
+(e.g., multiple web pages or research papers), we employ
+bin-packing algorithms (Coffman Jr et al., 1984) to organize
+the variable-length outputs into optimally-sized chunks that
+
+3.2.1. E FFICIENT C ONTENT P ROCESSING WITH
+B IN -PACKING
+During rollouts, System 2 follows standard token generation
+for deliberate reasoning and tool-use planning. However,
+the subsequent tool calls often return multiple outputs of
+variable length. Processing these large volumes of variablelength text presents a significant challenge for System 1 due
+to multiple generations. To address this, we employ an efficient bin-packing strategy based on the First Fit Decreasing
+(FFD) algorithm (Coffman Jr et al., 1984). This approach
+optimizes the organization of variable-length content into
+
+1
+nti denotes the number of all outputs from request ti . In
+our setting, Google Search returns up to 10 web pages per query,
+Google Scholar returns up to 5 papers, with multiple queries supported in a single tool request.
+
+3
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+System 2's Group
+
+Multi-agent
+Rollout Module
+
+System 1's Group
+
+External Env.
+
+...
+System 1
+
+System 2
+
+...
+
+Reference
+LLM
+
+...
+
+Policy LLM
+
+Group
+Computation
+
+Reward
+Model
+
+NULL
+
+...
+
+NULL
+
+...
+
+...
+...
+
+KL
+Sample Balance
+
+Figure 2. Demonstration of GRPO with multi-agent reinforcement learning in our MARS.
+
+optimally-sized chunks to reduce the number of generations
+required by System 1.
+
+G being the group size, nk being the number of System 1
+k,j
+k
+samples in trajectory k, and rsys
+= rsys
+.
+1
+2
+
+Specifically, we begin by counting the number of tokens in
+(j)
+each tool output oti . If the token count exceeds System
+1’s maximum context length, the output is truncated and
+placed in an isolated bin. For the remaining outputs, we
+apply the FFD algorithm: all such outputs are first sorted
+in decreasing order of their lengths, then assigned to the
+first bin that can fit them, or to a new bin if no existing one
+suffices. We choose FFD over Best Fit Decreasing (BFD)
+due to its superior efficiency in practice.
+
+After computing advantages for all samples, we implement
+a balanced sampling mechanism to align the number of
+System 1 samples with System 2. Specifically,
+if the total
+PG
+number of System 1 samples M = k=1 nk exceeds G,
+we randomly downsample to exactly G samples; if M < G,
+we upsample through random duplication until reaching
+G samples. This pre-computation-then-sampling approach
+offers two key benefits: First, it ensures that advantage information from all samples contributes to the computation
+before any sampling occurs, maximizing the utilization of
+available data. Second, it preserves the statistical integrity
+of the advantage distribution, as the normalization is performed across the complete set of samples rather than being
+distorted by the sampling process.
+
+3.2.2. A DVANTAGE PRE - COMPUTATION AND BALANCED
+S AMPLING M ECHANISM
+In our MARS, following HLE’s evaluation prompt (Phan
+et al., 2025), we employ LLMs as an evaluator to assess the
+predicted answer of each trajectory. Note that all System 1
+and System 2 samples within the same trajectory share this
+trajectory-level reward to encourage both systems toward
+the same goal, rather than pursuing potentially conflicting
+individual objectives.
+
+3.2.3. M ULTI -AGENT T RAINING O BJECTIVE
+With the balanced samples from both systems, we optimize System 1 and System 2 jointly using an extended
+GRPO framework, as shown in the Figure 2. The training samples for each system are distinctly different: For
+System 2, each sample consists of the full reasoning context cN = {si , ti , pi , õti }N
+i=1 , where tokens from System
+1’s outputs õti are masked during loss computation. For
+System 1, each sample is a pair of bin-packed input and
+its corresponding output (b, õ), where b is a chunk created
+by the bin-packing algorithm and õ is System 1’s response.
+The overall training objective combines the loss functions
+for both systems:
+
+For each question q, we perform G rollout trajectories and
+yield exactly G System 2 samples and a variable number
+of System 1 samples, which depends on the number of tool
+calls per trajectory and chunks created after Bin-Packing.
+This unpredictable imbalance can lead to one system dominating the learning process, potentially undermining the collaborative dynamics essential to our multi-agent system. To
+address this, we pre-compute each system’s advantage and
+then balance System 1’s samples. Following GRPO (Shao
+et al., 2024), rewards are normalized within their corresponding groups to calculate advantage values:
+Aksys2 =
+
+k
+rsys
+− mean(rsys2 )
+2
+
+std(rsys2 )
+
+,
+
+Ak,j
+sys1 =
+
+Ltotal = Lsys2 + Lsys1
+
+(6)
+
+For each system, we apply the GRPO objective (Shao et al.,
+k,j
+rsys
+− mean(rsys1 )
+1
+, 2024):
+std(rsys1 )
+
+
+(5)
+Lsysi = E(x,y)∼Di Lpolicy (x, y, Asysi ) + λLKL (x, y) (7)
+
+1
+G
+where rsys2 = {rsys
+, . . . , rsys
+} represents all System 2
+2
+2
+
+where Di represents the balanced dataset for System i, x
+and y denote the input-output pairs, Lpolicy is the policy loss
+and LKL is a KL regularization term.
+
+k,j
+rewards for the current question, and rsys1 = {rsys
+|k ∈
+1
+[1, G], j ∈ [1, nk ]} represents all System 1 rewards, with
+
+4
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+Table 1. Comparison of training configurations across methods.
+MARS achieves superior results despite using smaller models and
+no SFT warmup.
+
+Credit Assignment via Decoupled Gradients. A natural
+question arises: how can System 1 learn useful summarization behavior when it shares the same trajectory-level
+reward as System 2? We address this through decoupled
+gradient computation, which ensures proper credit assignment despite shared rewards:
+
+Method
+
+• Non-overlapping token sets: System 2’s loss is computed only over reasoning and planning tokens {si , ti , pi },
+with System 1’s output tokens õti masked during loss
+computation. System 1’s loss is computed only over its
+distillation outputs, conditioned on the bin-packed input
+and purpose.
+• Group-specific advantage normalization: Each system’s advantage (Eq. 5-6) is normalized within its own
+sample group. This means System 1 learns “what made
+my summary better than other summaries in this group?”
+rather than simply “was the overall trajectory successful?”
+
+Model Size
+
+SFT
+
+RL
+
+Co-evolution
+
+WebThinker
+C-3PO
+Search-R1
+Search-o1
+
+32B
+72B
+7B
+7B
+
+✓
+✓
+✗
+✗
+
+✓
+✓
+✓
+✗
+
+✗
+✗
+✗
+✗
+
+MARS (Ours)
+
+7B/8B
+
+✗
+
+✓
+
+✓
+
+and powerful proprietary models (DeepSeek-R1-671B (Guo
+et al., 2025), GPT-4o (Hurst et al., 2024), o1 (OpenAI,
+2024), Claude 3.7 Sonnet (Anthropic, 2025), Gemini 2.5
+Pro (Google, 2025a), o3(high) (OpenAI, 2025b)), and o4mini(high) (OpenAI, 2025c). (2) Advanced RAG Reasoning Methods: We consider the standard RAG that retrieve top-10 documents based on the question, and several
+iterative RAG methods, including Self-RAG (Asai et al.,
+2024), InstructRAG (Wei et al., 2025), Auto-RAG (Yu et al.,
+2024b) and C-3PO (Chen et al., 2025a). (3) R1-like Reasoning with Search: Methods that integrate external knowledge into R1-like reasoning, including Search-o1 (Li et al.,
+2025a), Search-R1 (Jin et al., 2025), WebThinker (Li et al.,
+2025b), and OpenAI Deep Research (OpenAI, 2025a).
+
+Together, the shared reward aligns both systems toward
+correct problem solving, while decoupled gradients provide
+role-specific learning signals: System 2 improves planning
+and reasoning, and System 1 improves the utility of its
+distillation. This enables co-evolution: System 2 learns
+better purposes pi , and System 1 learns more task-relevant
+extractions.
+
+Implementation and Fair Comparison. We initialize our
+policy model with Qwen2.5-7B-Instruct (Yang et al., 2024)
+and Qwen3-8B (Yang et al., 2025) and design dedicated
+prompts for System 1 and System 2 (Appendix E) to facilitate multi-agent reinforcement learning. Crucially, MARS
+operates under a “Zero RL” setting: we train directly from
+the base model without any Supervised Fine-Tuning (SFT)
+or policy distillation from stronger models. This contrasts
+with baselines such as WebThinker, which employs SFT
+on curated trajectories before RL training. Table 1 summarizes the key differences in training configurations. Despite
+using smaller models (7B/8B vs. 32B/72B) and no SFT
+warmup, MARS achieves superior performance, validating
+the effectiveness of our multi-agent RL framework rather
+than relying on model scale or supervised data. All training
+data are curated from public sources (Appendix B), ensuring
+data source parity with baselines. Additional implementation details are provided in Appendix C.
+
+4. Experiments
+4.1. Evaluation Datasets and Metrics
+We evaluate our MARS on several challenging benchmarks
+that require sophisticated multi-step reasoning and external knowledge: (1) Humanity’s Last Exam (HLE) (Phan
+et al., 2025) is an extremely challenging dataset containing advanced problems. We utilize its text-only subset with 2,154 questions. (2) Single-Hop Question Answering, including NQ (Kwiatkowski et al., 2019), TriviaQA (Joshi et al., 2017), and PopQA (Mallen et al.,
+2023). (3) Multi-Hop Question Answering, including
+HotpotQA (Yang et al., 2018), 2WikiMultiHopQA (Ho
+et al., 2020), Musique (Trivedi et al., 2022), and Bamboogle (Press et al., 2023). For evaluation, we follow different protocols for different benchmarks. For HLE, we adopt
+its official evaluation prompt (Phan et al., 2025) with GPT4o (Hurst et al., 2024) as the judge. For other QA datasets,
+following (Chen et al., 2025a), we employ Qwen2.5-72BInstruct (Yang et al., 2024) as the evaluation model.
+
+4.3. Main Results on Humanity’s Last Exam
+Table 2 compares MARS with various baselines on HLE, a
+challenging benchmark requiring sophisticated reasoning
+and up-to-date knowledge across multiple disciplines.
+
+4.2. Baselines and Implementation Details
+To evaluate the effectiveness of MARS, we compare our
+method with the following baselines. (1) Direct Reasoning: Models that directly answer questions without external knowledge, including open-source models (Qwen2.5
+series (Yang et al., 2024) and QwQ-32B (Team, 2024))
+
+MARS achieves 7.38% accuracy (8.17% with Qwen38B), a 3.86% improvement over the base model, outperforming larger models including WebThinker (32B) and
+C-3PO (72B). The performance gap with proprietary models
+5
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+Table 2. Main Results on HLE (evaluated with official evaluation prompt (Phan et al., 2025) by GPT-4o). Results for proprietary models
+are from the official leaderboard for reference. For open-source models, the best results are in bold and the second-best are underlined.
+MARS operates under Zero RL (no SFT) with smaller models yet outperforms larger SFT-trained baselines.
+Humanity’s Last Exam
+Method
+
+Bio/Med
+
+Chem.
+
+CS/AI
+
+Engineering
+
+Humanities
+
+Math
+
+Physics
+
+Other
+
+Avg.
+
+-
+
+-
+
+-
+
+-
+
+26.60
+20.57
+18.90
+18.38
+8.54
+7.89
+7.75
+4.91
+2.32
+
+6.21
+7.25
+4.66
+5.69
+
+4.92
+3.07
+3.58
+4.21
+
+4.95
+3.96
+1.98
+3.46
+
+3.42
+2.28
+4.00
+2.85
+
+5.28
+4.27
+3.52
+4.31
+
+Proprietary Models (For Reference)
+OpenAI Deep Research
+o3 (high)
+o4-mini (high)
+Gemini 2.5 Pro
+Deepseek R1
+Claude 3.7 Sonnet
+o1
+GPT-4.1
+GPT-4o
+
+-
+
+-
+
+-
+
+9.05
+11.31
+5.42
+6.78
+
+6.00
+6.00
+3.00
+4.00
+
+4.86
+1.76
+1.76
+3.53
+
+-
+
+Open-Source Models
+QwQ-32B
+Qwen2.5-72B
+Qwen2.5-7B
+Qwen3-8B
+
+1.61
+1.61
+3.22
+3.22
+
+R1-like Reasoning with Search
+WebThinker(QwQ-32B)
+C-3PO (Qwen2.5-72B)
+Search-o1(Qwen2.5-7B)
+Search-R1(Qwen2.5-7B)
+
+14.47
+9.95
+9.95
+6.33
+
+8.00
+7.00
+2.00
+6.00
+
+4.42
+4.86
+2.67
+4.42
+
+6.45
+9.67
+1.61
+6.45
+
+10.88
+4.66
+4.14
+3.62
+
+4.51
+5.43
+4.41
+3.59
+
+1.98
+3.46
+3.98
+1.48
+
+14.28
+5.71
+7.42
+4.00
+
+6.87
+5.79
+4.79
+3.99
+
+MARS (Qwen2.5-7B)
+MARS (Qwen3-8B)
+
+12.66
+13.12
+
+3.00
+6.00
+
+5.75
+8.84
+
+4.83
+6.45
+
+11.92
+8.29
+
+6.46
+7.17
+
+6.43
+7.92
+
+7.42
+8.57
+
+7.38
+8.17
+
+like Claude 3.7 Sonnet (7.89%) and o1 (7.75%) is notably
+small, especially considering MARS uses only 7B/8B parameters. Beyond the overall score, Table 2 suggests that
+our gains are broad rather than isolated to a single subject
+area, consistent with the goal of building a general deepresearch agent. We attribute these improvements to the
+complementary roles of the two systems: System 2 concentrates its long-form reasoning budget on planning and synthesis, while System 1 absorbs the high-throughput reading
+burden by filtering and compressing retrieved content. Importantly, this separation mitigates a common failure mode
+of tool-augmented reasoning—context dilution. Instead
+of appending raw documents into the reasoning context,
+System 1 produces purpose-conditioned evidence snippets,
+which makes subsequent reasoning steps more stable and
+less sensitive to retrieval noise.
+
+tions. These results highlight that the benefit of co-evolution
+is not limited to HLE. On single-hop QA, our method improves factual recall by using lightweight, purpose-guided
+retrieval and distillation, reducing hallucinations caused by
+relying on stale parametric knowledge. On multi-hop QA,
+the advantage is larger because errors compound across
+steps: missing one entity or relation early can derail the
+entire chain.
+We attribute the improvements to two complementary behaviors learned during joint training. First, System 2 learns
+to decompose questions into targeted sub-queries and to
+interleave tool use with reasoning, maintaining a coherent
+reasoning trace instead of attempting to “read everything” incontext. Second, System 1 learns purpose-conditioned distillation that preserves entities, relations, and intermediate constraints (rather than producing generic summaries), which
+is critical for multi-hop settings where fine-grained details
+determine whether subsequent hops are correct. Overall,
+these trends suggest that MARS improves both evidence acquisition (better tool-use decisions) and evidence utilization
+(more faithful, task-relevant distillation), leading to robust
+gains across diverse knowledge-intensive benchmarks.
+
+4.4. Main Results on Knowledge-intensive Reasoning
+Table 3 presents results on 7 knowledge-intensive QA tasks
+covering both single-hop and multi-hop reasoning. MARS
+consistently outperforms all baselines, achieving 8.95%
+average improvement over C-3PO. The gains are particularly pronounced on multi-hop tasks (+12.2% over C-3PO),
+demonstrating that our framework excels at complex reasoning chains that require multiple retrieval–reasoning itera6
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+Table 3. Main Results on Knowledge-intensive Tasks.
+
+Single-Hop QA
+Method
+
+Avg.
+
+NQ
+
+TriviaQA
+
+PopQA
+
+HotpotQA
+
+2Wiki
+
+Musique
+
+Bamboogle
+
+Direct Answer
+Standard RAG
+
+29.6
+45.6
+
+50.0
+72.0
+
+30.8
+46.2
+
+30.6
+43.4
+
+28.4
+29.4
+
+13.4
+25.6
+
+30.4
+41.6
+
+30.45
+43.40
+
+Self-RAG
+InstructRAG
+Auto-RAG
+
+49.4
+47.8
+52.4
+
+66.2
+66.6
+62.2
+
+38.6
+39.6
+36.8
+
+44.4
+
+35.8
+46.8
+
+-
+
+-
+
+51.40
+47.45
+48.52
+
+Search-o1
+Search-R1
+C-3PO
+
+42.4
+51.6
+47.4
+
+64.6
+72.6
+75.0
+
+38.2
+56.8
+56.8
+
+46.8
+46.6
+48.2
+
+52.8
+50.4
+52.6
+
+26.2
+28.4
+33.2
+
+56.0
+57.4
+60.8
+
+46.71
+51.97
+53.42
+
+MARS (Qwen2.5-7B)
+MARS (Qwen3-8B)
+
+60.6
+63.2
+
+76.4
+78.6
+
+64.4
+66.8
+
+60.4
+63.6
+
+66.4
+69.2
+
+39.6
+42.4
+
+68.8
+71.2
+
+62.37
+65.00
+
+75
+
+100 125 150
+
+12
+
+2.25
+
+8
+6
+4
+0
+
+25
+
+50
+
+75
+
+100 125 150
+
+(a) HLE Score Progression
+
+Tools per Question
+
+0.5
+
+10
+Train Reward
+
+HLE (320 questions) %
+
+Multi-Hop QA
+
+0.4
+0.3
+0.2
+0.1
+
+0
+
+25
+
+50
+
+75
+
+100 125 150
+
+(b) Training Reward Curve
+
+2.00
+1.75
+1.50
+1.25
+1.00
+0.75
+
+0
+
+25
+
+50
+
+(c) #Tools per Question
+
+Figure 3. Analysis of our RL training process. The x-axis represents training steps. (a) HLE score progression (evaluated on 320 random
+questions) shows consistent improvement from ∼2% to over 10%. (b) Training reward stabilizes around 0.4 after initial increase. (c) Tool
+usage per question increases from ∼1 to over 2, indicating that MARS learns to leverage multiple tools for complex questions. Extended
+analysis including tool selection preferences and response length dynamics is provided in Appendix D.1.
+
+4.5. Analysis of Multi-agent RL Process
+
+in planning/tool-use, while System 1 specializes in highthroughput information processing. We find this behavior
+important because naive tool-augmented reasoning often
+fails due to noisy retrieval: issuing more tool calls can easily increase irrelevant context and distract reasoning. In
+MARS, System 1 mitigates this risk by purpose-conditioned
+distillation, while the balanced sampling and decoupledgradient design ensures that System 1 is directly optimized
+for utility to System 2 rather than for generic summarization.
+Extended analysis of RL dynamics (tool preferences and
+response-length trends) is provided in Appendix D.1.
+
+Figure 3 illustrates key aspects of our multi-agent RL training dynamics. We observe consistent improvement in HLE
+score from approximately 2% to over 10%, correlating with
+reward stabilization around 0.4. Meanwhile, the average
+number of tools used per question increases from ∼1 to over
+2, suggesting a shift from “single-shot” retrieval toward iterative evidence gathering.
+Beyond the overall upward trend, Figure 3 reveals two qualitative phases. In early training, the model is conservative in tool use and often under-explores external evidence,
+leading to low reward and slow score improvement. As
+training proceeds, the policy learns to invoke tools more
+frequently on harder questions and to sustain longer interaction trajectories; this coincides with higher reward and
+improved accuracy. Notably, these trends are aligned: as
+training progresses, the model not only becomes better at
+deciding when to use tools, but also improves how to use
+them (i.e., decomposing a question into multiple targeted
+queries and integrating the resulting evidence). This is consistent with our design goal that System 2 should specialize
+
+4.6. Ablation Study
+Tool Ablation on HLE. Table 4 shows that using all three
+tools achieves the best performance (7.38%), highlighting
+that complex questions often require both reliable retrieval
+(Search/Scholar) and precise computation (Python). Several patterns are worth noting. (1) Google Search is the
+strongest single tool: removing Search yields the largest
+overall drop, consistent with Search providing broad, highrecall coverage across domains. (2) Python is domain-
+
+7
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+Table 4. Ablation Study on Tools for HLE.
+
+Tools
+
+Humanity’s Last Exam
+
+Python
+
+Search
+
+Scholar Bio/Med Chem. CS/AI Engineering Humanities Math Physics Other Avg.
+
+✓
+
+✓
+
+✓
+
+12.66
+
+3.00
+
+5.75
+
+4.83
+
+11.92
+
+6.46
+
+6.43
+
+7.42
+
+7.38
+
+✗
+✓
+✓
+
+✓
+✗
+✓
+
+✓
+✓
+✗
+
+13.12
+11.31
+11.76
+
+5.00
+6.00
+7.00
+
+5.31
+7.07
+4.42
+
+4.83
+3.22
+4.83
+
+8.29
+6.73
+8.81
+
+4.92
+4.92
+6.05
+
+5.45
+3.47
+4.45
+
+5.14
+6.85
+8.00
+
+6.21
+5.99
+6.72
+
+✓
+✗
+✗
+
+✗
+✓
+✗
+
+✗
+✗
+✓
+
+4.54
+12.66
+12.21
+
+4.00
+6.00
+7.00
+
+3.98
+5.31
+4.42
+
+6.45
+3.22
+4.83
+
+4.14
+7.77
+5.69
+
+5.02
+4.41
+4.51
+
+3.96
+5.94
+5.44
+
+4.57
+8.00
+4.57
+
+4.64
+6.12
+5.61
+
+Table 5. Ablation on System 1 co-evolution (HLE).
+Method
+Qwen2.5-7B (Base)
+MARS (Full)
+w/o System 1
+
+Bio/Med
+
+Chem.
+
+CS/AI
+
+Eng.
+
+Hum.
+
+Math
+
+Phys.
+
+Other
+
+Avg.
+
+5.42
+12.66
+9.95
+
+3.00
+3.00
+5.00
+
+1.76
+5.75
+3.98
+
+3.22
+4.83
+6.45
+
+4.66
+11.92
+7.77
+
+3.58
+6.46
+4.92
+
+1.98
+6.43
+3.46
+
+4.00
+7.42
+4.57
+
+3.52
+7.38
+5.47
+
+Table 6. Information Volume per Question
+Dataset
+
+Web Pages
+
+Papers
+
+Python
+
+PopQA
+hotpotqa
+HLE
+
+18.81
+17.38
+22.31
+
+0.04
+0.12
+0.17
+
+0.0
+0.002
+0.05
+
+Our bin-packing + System 1 distillation pipeline makes the
+information volume tractable by converting many long documents into a small set of evidence-focused chunks that
+System 2 can reliably consume.
+4.7. Ablation on System 1 Co-evolution
+To validate whether System 1 actively contributes through
+co-evolution (vs. passive compression), we conduct an
+ablation where System 2 processes raw tool outputs directly without System 1’s distillation. As shown in Table 5,
+removing System 1 causes a 1.91% performance drop
+(7.38%→5.47%). This confirms that System 1 actively
+co-evolves with System 2, learning to extract task-relevant
+information that specifically supports reasoning—beyond
+what fixed extraction prompts could achieve. Importantly,
+this ablation maintains access to all tools but removes
+learned collaboration, confirming that our MARL-based coevolution—not merely tool availability—is the key driver
+of improvement.
+
+specialized: its removal hurts Math/Physics most, indicating that many questions require exact arithmetic, symbolic
+manipulation, or unit-aware calculations that are brittle under purely textual reasoning. (3) Scholar complements
+Search: although Scholar is used less frequently, it benefits research-heavy categories (e.g., CS/AI, Other) where
+reliable answers may depend on technical terminology and
+up-to-date academic evidence. A key takeaway is that tools
+are not simply additive: removing a tool can sometimes improve a subset of categories, reflecting that the model must
+learn both tool selection and tool orchestration. This can
+happen when a weaker tool policy introduces noisy evidence
+or distracts the reasoning process. Our joint training setup
+mitigates this by encouraging System 2 to learn when a tool
+is worth the latency/cost and by training System 1 to extract
+only task-relevant evidence from tool outputs, reducing the
+chance that retrieval noise dilutes System 2’s context.
+
+5. Conclusion
+We presented MARS, a co-evolution framework that jointly
+trains System 1 (efficient information processing) and System 2 (deliberate reasoning) via multi-agent RL, with decoupled gradients, bin-packing, and advantage-balanced
+sampling to enable effective collaboration. Under a Zero
+RL setting (no SFT), MARS (8B) achieves 8.17% on HLE
+and improves performance by 8.9% on average across 7
+knowledge-intensive QA tasks; ablations (e.g., removing
+System 1) confirm that the gains come from learned coevolution rather than tool access alone.
+
+Information Volume. Table 6 shows that MARS processes
+substantial external information per question (e.g., many
+full web pages/papers), motivating the need for System
+1’s efficient distillation. This analysis highlights a practical constraint for deep research: naively concatenating
+retrieved documents quickly saturates the context window
+and degrades reasoning due to irrelevant or redundant text.
+8
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+Impact Statement
+
+Chen, X., Xu, J., Liang, T., He, Z., Pang, J., Yu, D., Song,
+L., Liu, Q., Zhou, M., Zhang, Z., et al. Do not think
+that much for 2+ 3=? on the overthinking of o1-like llms.
+arXiv preprint arXiv:2412.21187, 2024c.
+
+Our work improves the reliability of deep research by
+enabling language models to efficiently synthesize up-todate information from external tools while maintaining
+strong multi-step reasoning. This capability may benefit
+knowledge-intensive applications such as education and scientific literature review. Potential risks include misuse for
+scalable misinformation or low-quality automated reports,
+and errors introduced by noisy retrieval or imperfect tool outputs. We therefore emphasize transparent evaluation, careful
+deployment with human oversight in high-stakes settings,
+and continued research on robustness and provenance-aware
+information distillation.
+
+Coffman Jr, E. G., Garey, M. R., and Johnson, D. S. Approximation algorithms for bin-packing—an updated survey.
+In Algorithm design for computer system design, pp. 49–
+106. Springer, 1984.
+Du, X., Yao, Y., Ma, K., Wang, B., Zheng, T., Zhu, K., Liu,
+M., Liang, Y., Jin, X., Wei, Z., et al. Supergpqa: Scaling
+llm evaluation across 285 graduate disciplines. arXiv
+preprint arXiv:2502.14739, 2025.
+Du, Y., Li, S., Torralba, A., Tenenbaum, J. B., and Mordatch,
+I. Improving factuality and reasoning in language models
+through multiagent debate. In Forty-first International
+Conference on Machine Learning, 2023.
+
+References
+Anthropic. Introducing computer use, a new claude 3.5
+sonnet, and claude 3.5 haiku. October 2024.
+
+Evans, J. S. B. and Stanovich, K. E. Dual-process theories
+of higher cognition: Advancing the debate. Perspectives
+on psychological science, 8(3):223–241, 2013.
+
+Anthropic.
+Claude 3.7 sonnet and claude code.
+https://www.anthropic.com/news/
+claude-3-7-sonnet, February 2025.
+
+Fan, W., Ding, Y., Ning, L., Wang, S., Li, H., Yin,
+D., Chua, T., and Li, Q. A survey on RAG meeting
+llms: Towards retrieval-augmented large language models. In Baeza-Yates, R. and Bonchi, F. (eds.), Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining, KDD 2024, Barcelona,
+Spain, August 25-29, 2024, pp. 6491–6501. ACM, 2024.
+doi: 10.1145/3637528.3671470. URL https://doi.
+org/10.1145/3637528.3671470.
+
+Asai, A., Wu, Z., Wang, Y., Sil, A., and Hajishirzi, H. Selfrag: Learning to retrieve, generate, and critique through
+self-reflection. In The Twelfth International Conference
+on Learning Representations, ICLR 2024, Vienna, Austria,
+May 7-11, 2024. OpenReview.net, 2024. URL https:
+//openreview.net/forum?id=hSyW5go0v8.
+Chen, G., Liao, M., Li, C., and Fan, K. Alphamath almost
+zero: process supervision without process. Advances
+in Neural Information Processing Systems, 37:27689–
+27724, 2024a.
+
+Frankish, K. Dual-process and dual-system theories of
+reasoning. Philosophy Compass, 5(10):914–926, 2010.
+
+Chen, G., Liao, M., Li, C., and Fan, K. Step-level value
+preference optimization for mathematical reasoning. In
+Findings of the Association for Computational Linguistics: EMNLP 2024, pp. 7889–7903, 2024b.
+
+Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y.,
+Sun, J., Wang, H., and Wang, H. Retrieval-augmented
+generation for large language models: A survey. arXiv
+preprint arXiv:2312.10997, 2:1, 2023.
+
+Chen, G., Liao, M., Yu, P., Wang, D., Qiao, Z., Yang,
+C., Zhao, X., and Fan, K. C-3PO: Compact plug-andplay proxy optimization to achieve human-like retrievalaugmented generation. In Forty-second International
+Conference on Machine Learning, 2025a. URL https:
+//openreview.net/forum?id=hlpwAmQ4wr.
+
+Google.
+Gemini 2.5 pro.
+https://deepmind.
+google/technologies/gemini/pro/, April
+2025a.
+Google.
+Deep research is now available on
+gemini 2.5 pro experimental., 2025b.
+URL
+https://blog.google/products/gemini/
+deep-research-gemini-2-5-pro-experimental/.
+
+Chen, G., Qiao, Z., Chen, X., Yu, D., Xu, H., Zhao, W. X.,
+Song, R., Yin, W., Yin, H., Zhang, L., et al. Iterresearch:
+Rethinking long-horizon agents via markovian state reconstruction. arXiv preprint arXiv:2511.07327, 2025b.
+
+Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R.,
+Zhu, Q., Ma, S., Wang, P., Bi, X., et al. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement
+learning. arXiv preprint arXiv:2501.12948, 2025.
+
+Chen, G., Wu, J., Chen, X., Zhao, W. X., Song, R., Li,
+C., Fan, K., Liu, D., and Liao, M. Reform: Reflective
+autoformalization with prospective bounded sequence
+optimization. arXiv preprint arXiv:2510.24592, 2025c.
+
+Han, S., Zhang, Q., Yao, Y., Jin, W., Xu, Z., and He, C.
+Llm multi-agent systems: Challenges and open problems.
+arXiv preprint arXiv:2402.03578, 2024.
+9
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+Ho, X., Nguyen, A. D., Sugawara, S., and Aizawa, A.
+Constructing A multi-hop QA dataset for comprehensive evaluation of reasoning steps. In Scott, D., Bel, N.,
+and Zong, C. (eds.), Proceedings of the 28th International Conference on Computational Linguistics, COLING 2020, Barcelona, Spain (Online), December 8-13,
+2020, pp. 6609–6625. International Committee on Computational Linguistics, 2020. doi: 10.18653/V1/2020.
+COLING-MAIN.580. URL https://doi.org/10.
+18653/v1/2020.coling-main.580.
+Hong, S., Zheng, X., Chen, J., Cheng, Y., Wang, J., Zhang,
+C., Wang, Z., Yau, S. K. S., Lin, Z., Zhou, L., et al.
+Metagpt: Meta programming for multi-agent collaborative framework. arXiv preprint arXiv:2308.00352, 3(4):
+6, 2023.
+
+reason and leverage search engines with reinforcement
+learning. arXiv preprint arXiv:2503.09516, 2025.
+Joshi, M., Choi, E., Weld, D. S., and Zettlemoyer, L. Triviaqa: A large scale distantly supervised challenge dataset
+for reading comprehension. In Barzilay, R. and Kan, M.
+(eds.), Proceedings of the 55th Annual Meeting of the
+Association for Computational Linguistics, ACL 2017,
+Vancouver, Canada, July 30 - August 4, Volume 1: Long
+Papers, pp. 1601–1611. Association for Computational
+Linguistics, 2017. doi: 10.18653/V1/P17-1147. URL
+https://doi.org/10.18653/v1/P17-1147.
+Kwiatkowski, T., Palomaki, J., Redfield, O., Collins, M.,
+Parikh, A. P., Alberti, C., Epstein, D., Polosukhin, I.,
+Devlin, J., Lee, K., Toutanova, K., Jones, L., Kelcey,
+M., Chang, M., Dai, A. M., Uszkoreit, J., Le, Q., and
+Petrov, S. Natural questions: a benchmark for question
+answering research. Trans. Assoc. Comput. Linguistics,
+7:452–466, 2019. doi: 10.1162/TACL\ A\ 00276. URL
+https://doi.org/10.1162/tacl_a_00276.
+
+Hurst, A., Lerer, A., Goucher, A. P., Perelman, A., Ramesh,
+A., Clark, A., Ostrow, A., Welihinda, A., Hayes, A.,
+Radford, A., Madry, A., Baker-Whitcomb, A., Beutel,
+A., Borzunov, A., Carney, A., Chow, A., Kirillov, A.,
+Nichol, A., Paino, A., Renzin, A., Passos, A. T., Kirillov, A., Christakis, A., Conneau, A., Kamali, A., Jabri,
+A., Moyer, A., Tam, A., Crookes, A., Tootoonchian, A.,
+Kumar, A., Vallone, A., Karpathy, A., Braunstein, A.,
+Cann, A., Codispoti, A., Galu, A., Kondrich, A., Tulloch, A., Mishchenko, A., Baek, A., Jiang, A., Pelisse,
+A., Woodford, A., Gosalia, A., Dhar, A., Pantuliano,
+A., Nayak, A., Oliver, A., Zoph, B., Ghorbani, B., Leimberger, B., Rossen, B., Sokolowsky, B., Wang, B.,
+Zweig, B., Hoover, B., Samic, B., McGrew, B., Spero,
+B., Giertler, B., Cheng, B., Lightcap, B., Walkin, B.,
+Quinn, B., Guarraci, B., Hsu, B., Kellogg, B., Eastman,
+B., Lugaresi, C., Wainwright, C. L., Bassin, C., Hudson,
+C., Chu, C., Nelson, C., Li, C., Shern, C. J., Conger, C.,
+Barette, C., Voss, C., Ding, C., Lu, C., Zhang, C., Beaumont, C., Hallacy, C., Koch, C., Gibson, C., Kim, C.,
+Choi, C., McLeavey, C., Hesse, C., Fischer, C., Winter, C.,
+Czarnecki, C., Jarvis, C., Wei, C., Koumouzelis, C., and
+Sherburn, D. Gpt-4o system card. CoRR, abs/2410.21276,
+2024. doi: 10.48550/ARXIV.2410.21276. URL https:
+//doi.org/10.48550/arXiv.2410.21276.
+
+Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V.,
+Goyal, N., Küttler, H., Lewis, M., Yih, W.-t., Rocktäschel,
+T., et al. Retrieval-augmented generation for knowledgeintensive nlp tasks. Advances in neural information processing systems, 33:9459–9474, 2020.
+Li, G., Hammoud, H., Itani, H., Khizbullin, D., and Ghanem,
+B. Camel: Communicative agents for” mind” exploration
+of large language model society. Advances in Neural
+Information Processing Systems, 36:51991–52008, 2023.
+Li, X., Wang, S., Zeng, S., Wu, Y., and Yang, Y. A survey on
+llm-based multi-agent systems: workflow, infrastructure,
+and challenges. Vicinagearth, 1(1):9, 2024.
+Li, X., Dong, G., Jin, J., Zhang, Y., Zhou, Y., Zhu, Y., Zhang,
+P., and Dou, Z. Search-o1: Agentic search-enhanced
+large reasoning models. arXiv preprint arXiv:2501.05366,
+2025a.
+Li, X., Jin, J., Dong, G., Qian, H., Zhu, Y., Wu, Y., Wen, J.R., and Dou, Z. Webthinker: Empowering large reasoning
+models with deep research capability. arXiv preprint
+arXiv:2504.21776, 2025b.
+
+Jaech, A., Kalai, A., Lerer, A., Richardson, A., El-Kishky,
+A., Low, A., Helyar, A., Madry, A., Beutel, A., Carney, A., et al. Openai o1 system card. arXiv preprint
+arXiv:2412.16720, 2024.
+
+Li, Z.-Z., Zhang, D., Zhang, M.-L., Zhang, J., Liu, Z., Yao,
+Y., Xu, H., Zheng, J., Wang, P.-J., Chen, X., et al. From
+system 1 to system 2: A survey of reasoning large language models. arXiv preprint arXiv:2502.17419, 2025c.
+
+Jiang, J., Chen, J., Li, J., Ren, R., Wang, S., Zhao, W. X.,
+Song, Y., and Zhang, T. Rag-star: Enhancing deliberative reasoning with retrieval augmented verification and
+refinement. arXiv preprint arXiv:2412.12881, 2024.
+
+Liu, H., Zhang, Y., Luo, Y., and Yao, A. C. Augmenting
+math word problems via iterative question composing. In
+Proceedings of the AAAI Conference on Artificial Intelligence, volume 39, pp. 24605–24613, 2025.
+
+Jin, B., Zeng, H., Yue, Z., Yoon, J., Arik, S., Wang, D.,
+Zamani, H., and Han, J. Search-r1: Training llms to
+10
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+Mallen, A., Asai, A., Zhong, V., Das, R., Khashabi, D.,
+and Hajishirzi, H. When not to trust language models: Investigating effectiveness of parametric and nonparametric memories. In Rogers, A., Boyd-Graber, J. L.,
+and Okazaki, N. (eds.), Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2023, Toronto,
+Canada, July 9-14, 2023, pp. 9802–9822. Association
+for Computational Linguistics, 2023. doi: 10.18653/
+V1/2023.ACL-LONG.546. URL https://doi.org/
+10.18653/v1/2023.acl-long.546.
+
+Perets, O., Shoham, O. B., Grinberg, N., and Rappoport,
+N. Cupcase: Clinically uncommon patient cases and
+diagnoses dataset. In Proceedings of the AAAI Conference
+on Artificial Intelligence, volume 39, pp. 28293–28301,
+2025.
+Phan, L., Gatti, A., Han, Z., Li, N., Hu, J., Zhang, H., Zhang,
+C. B. C., Shaaban, M., Ling, J., Shi, S., et al. Humanity’s
+last exam. arXiv preprint arXiv:2501.14249, 2025.
+Press, O., Zhang, M., Min, S., Schmidt, L., Smith, N. A.,
+and Lewis, M. Measuring and narrowing the compositionality gap in language models. In Bouamor, H., Pino, J.,
+and Bali, K. (eds.), Findings of the Association for Computational Linguistics: EMNLP 2023, Singapore, December 6-10, 2023, pp. 5687–5711. Association for Computational Linguistics, 2023. doi: 10.18653/V1/2023.
+FINDINGS-EMNLP.378. URL https://doi.org/
+10.18653/v1/2023.findings-emnlp.378.
+
+Mesnard, T., Hardin, C., Dadashi, R., Bhupatiraju, S.,
+Pathak, S., Sifre, L., Rivière, M., Kale, M. S., Love,
+J., Tafti, P., Hussenot, L., Chowdhery, A., Roberts, A.,
+Barua, A., Botev, A., Castro-Ros, A., Slone, A., Héliou,
+A., Tacchetti, A., Bulanova, A., Paterson, A., Tsai, B.,
+Shahriari, B., Lan, C. L., Choquette-Choo, C. A., Crepy,
+C., Cer, D., Ippolito, D., Reid, D., Buchatskaya, E.,
+Ni, E., Noland, E., Yan, G., Tucker, G., Muraru, G.,
+Rozhdestvenskiy, G., Michalewski, H., Tenney, I., Grishchenko, I., Austin, J., Keeling, J., Labanowski, J.,
+Lespiau, J., Stanway, J., Brennan, J., Chen, J., Ferret,
+J., Chiu, J., and et al. Gemma: Open models based on
+gemini research and technology. CoRR, abs/2403.08295,
+2024. doi: 10.48550/ARXIV.2403.08295. URL https:
+//doi.org/10.48550/arXiv.2403.08295.
+MoonshotAI.
+Kimi-researcher, 2025.
+https://moonshotai.github.io/
+Kimi-Researcher/.
+
+Qian, C., Cong, X., Yang, C., Chen, W., Su, Y., Xu, J.,
+Liu, Z., and Sun, M. Communicative agents for software
+development. arXiv preprint arXiv:2307.07924, 6(3),
+2023.
+Qiao, Z., Chen, G., Chen, X., Yu, D., Yin, W., Wang,
+X., Zhang, Z., Li, B., Yin, H., Li, K., et al. Webresearcher: Unleashing unbounded reasoning capability in
+long-horizon agents. arXiv preprint arXiv:2509.13309,
+2025.
+
+URL
+
+Reese, J. T., Chimirri, L., Danis, D., Caufield, J. H., Wissink,
+K., Casiraghi, E., Valentini, G., Haendel, M. A., Mungall,
+C. J., and Robinson, P. N. Evaluation of the diagnostic
+accuracy of gpt-4 in five thousand rare disease cases.
+medRxiv, pp. 2024–07, 2024.
+
+Nakano, R., Hilton, J., Balaji, S., Wu, J., Ouyang, L., Kim,
+C., Hesse, C., Jain, S., Kosaraju, V., Saunders, W., et al.
+Webgpt: Browser-assisted question-answering with human feedback. arXiv preprint arXiv:2112.09332, 2021.
+
+Schick, T., Dwivedi-Yu, J., Dessı̀, R., Raileanu, R., Lomeli,
+M., Hambro, E., Zettlemoyer, L., Cancedda, N., and
+Scialom, T. Toolformer: Language models can teach
+themselves to use tools. Advances in Neural Information
+Processing Systems, 36:68539–68551, 2023.
+
+OpenAI.
+Learning
+to
+reason
+with
+llms.
+https://openai.com/index/
+learning-to-reason-with-llms,
+September 2024.
+OpenAI. Introducing deep research. https://openai.
+com/index/introducing-deep-research/,
+2025a.
+OpenAI. Openai o3-mini. https://openai.com/
+index/openai-o3-mini, January 2025b.
+
+Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang,
+H., Zhang, M., Li, Y., Wu, Y., et al. Deepseekmath: Pushing the limits of mathematical reasoning in open language
+models. arXiv preprint arXiv:2402.03300, 2024.
+Tan, J., Dou, Z., Zhu, Y., Guo, P., Fang, K., and Wen, J.
+Small models, big insights: Leveraging slim proxy models to decide when and what to retrieve for llms. In Ku,
+L., Martins, A., and Srikumar, V. (eds.), Proceedings of
+the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2024,
+Bangkok, Thailand, August 11-16, 2024, pp. 4420–4436.
+Association for Computational Linguistics, 2024. doi: 10.
+18653/V1/2024.ACL-LONG.242. URL https://doi.
+org/10.18653/v1/2024.acl-long.242.
+
+OpenAI.
+Introducing openai o3 and o4mini.
+https://openai.com/index/
+introducing-o3-and-o4-mini/, April 2025c.
+Park, J. S., O’Brien, J., Cai, C. J., Morris, M. R., Liang,
+P., and Bernstein, M. S. Generative agents: Interactive
+simulacra of human behavior. In Proceedings of the 36th
+annual acm symposium on user interface software and
+technology, pp. 1–22, 2023.
+11
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+Team, M.
+The llama 4 herd: The beginning
+of a new era of natively multimodal ai innovation.
+https://ai.meta.com/blog/
+llama-4-multimodal-intelligence/, April
+2025.
+
+Yu, P., Xu, J., Weston, J., and Kulikov, I. Distilling system 2
+into system 1. arXiv preprint arXiv:2407.06023, 2024a.
+Yu, T., Zhang, S., and Feng, Y. Auto-rag: Autonomous
+retrieval-augmented generation for large language models. 2024b. URL https://arxiv.org/abs/2411.
+19443.
+
+Team, Q. QwQ: Reflect deeply on the boundaries of the
+unknown. Hugging Face, 2024.
+
+Yu, Y., Ping, W., Liu, Z., Wang, B., You, J., Zhang, C.,
+Shoeybi, M., and Catanzaro, B. Rankrag: Unifying context ranking with retrieval-augmented generation in llms.
+Advances in Neural Information Processing Systems, 37:
+121156–121184, 2024c.
+
+Team, T. D., Li, B., Zhang, B., Zhang, D., Huang, F., Li, G.,
+Chen, G., Yin, H., Wu, J., Zhou, J., et al. Tongyi deepresearch technical report. arXiv preprint arXiv:2510.24701,
+2025.
+Trivedi, H., Balasubramanian, N., Khot, T., and Sabharwal,
+A. MuSiQue: Multihop questions via single-hop question composition. Transactions of the Association for
+Computational Linguistics, 10:539–554, 2022. doi: 10.
+1162/tacl a 00475. URL https://aclanthology.
+org/2022.tacl-1.31/.
+
+Yuan, L., Zhang, Z., Li, L., Guan, C., and Yu, Y. A survey of progress on cooperative multi-agent reinforcement
+learning in open environment. CoRR, abs/2312.01058,
+2023. doi: 10.48550/ARXIV.2312.01058. URL https:
+//doi.org/10.48550/arXiv.2312.01058.
+Yue, X., Zheng, T., Zhang, G., and Chen, W. Mammoth2:
+Scaling instructions from the web. Advances in Neural
+Information Processing Systems, 37:90629–90660, 2024.
+
+Wang, G., Xie, Y., Jiang, Y., Mandlekar, A., Xiao, C., Zhu,
+Y., Fan, L., and Anandkumar, A. Voyager: An openended embodied agent with large language models. arXiv
+preprint arXiv:2305.16291, 2023.
+
+Zhu, C., Dastani, M., and Wang, S. A survey of multi-agent
+deep reinforcement learning with communication. Auton.
+Agents Multi Agent Syst., 38(1):4, 2024. doi: 10.1007/
+S10458-023-09633-6. URL https://doi.org/10.
+1007/s10458-023-09633-6.
+
+Wei, Z., Chen, W.-L., and Meng, Y. InstructRAG: Instructing retrieval-augmented generation via self-synthesized
+rationales. In The Thirteenth International Conference
+on Learning Representations, 2025. URL https://
+openreview.net/forum?id=P1qhkp8gQT.
+
+Ziabari, A. S., Ghazizadeh, N., Sourati, Z., KarimiMalekabadi, F., Piray, P., and Dehghani, M. Reasoning
+on a spectrum: Aligning llms to system 1 and system 2
+thinking. arXiv preprint arXiv:2502.12470, 2025.
+
+Wu, Q., Bansal, G., Zhang, J., Wu, Y., Li, B., Zhu, E., Jiang,
+L., Zhang, X., Zhang, S., Liu, J., et al. Autogen: Enabling
+next-gen llm applications via multi-agent conversation.
+arXiv preprint arXiv:2308.08155, 2023.
+xAI. Grok 3 beta — the age of reasoning agents, 2025. URL
+https://x.ai/news/grok-3.
+Yang, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu,
+B., Li, C., Liu, D., Huang, F., Wei, H., et al. Qwen2. 5
+technical report. arXiv preprint arXiv:2412.15115, 2024.
+Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B.,
+Yu, B., Gao, C., Huang, C., Lv, C., et al. Qwen3 technical
+report. arXiv preprint arXiv:2505.09388, 2025.
+Yang, Z., Qi, P., Zhang, S., Bengio, Y., Cohen, W.,
+Salakhutdinov, R., and Manning, C. D. HotpotQA: A
+dataset for diverse, explainable multi-hop question answering. In Riloff, E., Chiang, D., Hockenmaier, J.,
+and Tsujii, J. (eds.), Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing, pp. 2369–2380, Brussels, Belgium, OctoberNovember 2018. Association for Computational Linguistics. doi: 10.18653/v1/D18-1259. URL https:
+//aclanthology.org/D18-1259/.
+12
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+A. Additional Related Work
+Language Reasoning Models (LRMs). Recent advances in language models have witnessed the emergence of LRMs,
+which specifically excel at deliberate, System 2-type thinking (Jaech et al., 2024; Yu et al., 2024a; Guo et al., 2025; Team,
+2024; Anthropic, 2025; Li et al., 2025c; Ziabari et al., 2025; Chen et al., 2025c). Despite these advances, current LRMs rely
+on static, parameterized knowledge acquired during pre-training, without access to external world information (Chen et al.,
+2025a; Li et al., 2025a; Jin et al., 2025; Li et al., 2025b). Furthermore, when faced with simpler tasks, such as analyzing web
+pages or reading papers, LRMs may tend to overanalyze, consuming excessive reasoning tokens that limit their capacity to
+process large volumes of information. Our work addresses these limitations by integrating System 1’s fast, intuitive thinking
+with System 2’s deliberate reasoning in a multi-agent framework that leverages external knowledge sources.
+Reasoning Models with External Tools. Recent work has explored integrating external tools into reasoning models (Chen
+et al., 2024a;b; Li et al., 2025a; Jin et al., 2025; Li et al., 2025b; Chen et al., 2025a;b). Search-R1 (Jin et al., 2025) and
+Search-o1 (Li et al., 2025a) directly feed raw search results to reasoning models, which can overwhelm the context with
+irrelevant information. WebThinker (Li et al., 2025b) relies on a fixed extraction prompt to process retrieved documents
+before reasoning, while C-3PO (Chen et al., 2025a) uses supervised fine-tuning with curated trajectories but does not
+co-evolve the information processor and reasoner. In contrast, MARS enables co-evolution between System 1 and System 2
+through multi-agent RL, allowing System 1 to learn task-specific information distillation that adapts to System 2’s needs.
+Multi-agent Systems. Multi-agent systems have gained significant attention in the LLM community as a means to tackle
+complex tasks through collaborative problem-solving (Park et al., 2023; Wu et al., 2023; Li et al., 2023; Hong et al., 2023;
+Qian et al., 2023; Han et al., 2024; Li et al., 2024; Chen et al., 2025a). Recent work has explored various agent architectures,
+from simple role-playing approaches (Li et al., 2023; Du et al., 2023) to more sophisticated frameworks with specialized
+agents handling different aspects of complex tasks (Hong et al., 2023; Wang et al., 2023). However, most existing multi-agent
+systems employ agents with similar cognitive architectures, typically all operating in a intuitive, System1-type thinking
+or deliberate, System 2-like reasoning mode. This homogeneity limits their ability to efficiently process large volumes of
+information while maintaining complex reasoning capabilities. Our approach diverges by implementing a heterogeneous
+multi-agent system where System 1 and System 2 agents possess complementary cognitive abilities, optimized through
+reinforcement learning (Yuan et al., 2023; Zhu et al., 2024; Shao et al., 2024) to collaboratively tackle complex research
+tasks requiring both efficient information processing and deliberate reasoning.
+
+B. Training Data Filtering Pipeline
+Candidate Data
+
+Clarity Filtering
+
+Graduate-level
+Filtering
+
+LLM-as-Judge
+
+LLM-as-Judge
+
+Challenge and Correctness
+Verification
++
+
+Training Data
+
+BoN
+
+Figure 4. Our data curation pipeline.
+
+Given the absence of specialized training datasets for enhancing model capabilities required for challenging benchmarks
+such as HLE (Phan et al., 2025) (which demands web browsing, reasoning, and computation skills), we propose a data
+curation pipeline that selectively identifies suitable training examples from open-source datasets. As illustrated in Figure 4,
+our pipeline evaluates candidate examples based on three key dimensions: clarity of presentation, problem complexity, and
+solution correctness.
+All candidate data are sourced from publicly available datasets, including MMIQC (Liu et al., 2025), WebInstructSub (Yue
+et al., 2024), GeneralThought2 , and SuperGPQA (Du et al., 2025). To ensure quality for our dual-system training, we
+implement a rigorous multi-stage filtering process:
+1. Initial filtering by academic level: Starting from an initial pool of 5 million examples, we categorize each prompt by
+academic discipline and retain only those that may meet undergraduate or graduate-level difficulty standards, reducing
+the dataset to 237K examples.
+2. Deduplication: We remove near-identical prompts that differ only in phrasing or superficial elements, yielding 155K
+2
+
+https://huggingface.co/datasets/GeneralReasoning/GeneralThought-430K
+
+13
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+3500
+
+3377
+
+3000
+
+Frequency
+
+2500
+2000
+1500
+1079
+
+1000
+
+1079
+720
+
+614 563 534
+609 675
+490 483 465 475 490 508 537
+
+2
+
+3
+
+500
+0
+
+0
+
+1
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+Correct Number of BoN (N=16)
+
+12
+
+13
+
+14
+
+817
+
+15
+
+16
+
+Figure 5. Distribution of Correct Number in Best-of-N (N = 16). Questions answered correctly 1-12 times were retained for training,
+while those answered 0 times (potentially ambiguous or lacking definitive solutions) or ¿12 times (too trivial) were excluded.
+
+unique prompts.
+3. Clarity assessment: We employ an LLM (Qwen2.5-72B-Instruct (Yang et al., 2024)) to systematically evaluate the
+clarity of each prompt, filtering out those deemed ambiguous or poorly formulated, resulting in 99K high-quality prompts.
+4. Graduate-level Filtering: We further use the same LLM to assess the challenge level of each prompt, retaining only
+those that meet graduate-level standards in their respective disciplines, resulting in 81K prompts of appropriate difficulty.
+5. Challenge and Correctness Verification: To ensure both appropriate difficulty and answer verifiability, we perform a
+best-of-16 (BoN) sampling procedure using Qwen2.5-72B-Instruct with Google Search access. As shown in Figure 5, we
+plot the distribution of how many times (out of 16 attempts) the model correctly answers each question. We retain only
+questions with moderate difficulty (correctly answered 1-12 times out of 16 attempts), which serves two critical purposes:
+(1) eliminating trivial questions (answered correctly ¿12 times) and excessively difficult ones (never answered correctly),
+and (2) identifying questions with consistent, verifiable answers, as those never answered correctly may lack definitive
+solutions or contain ambiguous information.
+6. The final dataset comprises 40K carefully curated prompts spanning diverse academic disciplines and difficulty levels,
+specifically designed to support high-quality dual-system training for complex reasoning tasks.
+To facilitate research advancement and reproducibility, we have open-sourced our curated 40K dataset. The detailed prompts
+used throughout our data curation pipeline are provided in Appendix E.2.
+
+C. More Implementation Details
+In this section, we provide a comprehensive implementation details of our proposed method. For additional insights and
+more intricate details, we refer the reader to our supplementary materials.
+C.1. Overall Algorithm
+Our dual-system approach leverages the complementary strengths of two distinct cognitive systems within the same large
+language model. Algorithm 1 presents the complete multi-agent rollout process that orchestrates the interaction between
+System 1 (fast, intuitive processing) and System 2 (deliberate, analytical reasoning).
+Inspired by human cognition, our MARS assigns distinct roles to each system: System 2 manages strategic reasoning and
+decision-making, while System 1 efficiently processes and distills large volumes of information. The algorithm enables
+System 2 to independently continue reasoning when no tool is required, and terminates either when an answer is reached or
+after the maximum number of turns is exhausted. The parallel processing capability of System 1 is particularly valuable
+14
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+Algorithm 1 Multi-agent Rollout Process
+Require: Question q, System 1 πsys1 and System 2 πsys2 in the same LLM, candidate tools, Maximum interaction turns
+Nmax .
+1: i ← 0 {Initialize interaction turns}
+2: c0 ← {q} {Initialize reasoning context for System 2}
+3: csys1 ← ∅ {Initialize collection of System 1 input-output pairs}
+4: while i < Nmax do
+5:
+si , (ti , pi ) ← πsys2 (ci ) {System 2 generates reasoning step si , optional tool request ti and purpose pi }
+6:
+if ti and pi are not Empty then
+(nt )
+(1) (2)
+7:
+{oti , oti , . . . , oti i } ← Tool Call(ti ) {Execute tool call}
+(1)
+
+(nt )
+
+8:
+{b1 , . . . , bm } ← Bin-Packing(oti , . . . , oti i ) {m chunks}
+9:
+{d1 , . . . , dm } ← {πsys1 (b1 ), . . . , πsys1 (bm )} {Parallel distillation}
+10:
+csys1 ← csys1 ∪ {(bj , dj )}m
+j=1 {Collect input-output pairs}
+11:
+õti ← ∪m
+d
+{Combine
+distilled information}
+j
+j=1
+12:
+ci+1 ← ci ∪ {si , ti , pi , õti } {Update context with tool results}
+13:
+else
+14:
+ci+1 ← ci ∪ {si } {Update context with reasoning only}
+15:
+if answer tag detected in si then
+16:
+break {Answer provided}
+17:
+end if
+18:
+end if
+19:
+i←i+1
+20: end while
+21: return Rollout trajectory ci and System 1 input-output pairs csys1
+
+when handling extensive tool-retrieved information. By distributing information processing across multiple parallel instances
+of System 1, our approach efficiently manages complex information needs without exceeding context window limitations.
+C.2. Bin-Packing Details
+As mentioned in Section 3.2.1, we employ a First Fit Decreasing (FFD) algorithm to efficiently organize variable-length tool
+outputs into optimally-sized chunks. Our bin-packing implementation follows these key steps:
+(j)
+
+1. Token counting: For each tool output oti , we count the number of tokens using the model’s tokenizer.
+2. Large output handling: If any single output exceeds the maximum context length of System 1, it is truncated and placed
+in a dedicated bin.
+3. Sorting: Remaining outputs are sorted in decreasing order of their token lengths.
+4. Bin assignment: Each output is assigned to the first bin that can accommodate it without exceeding the context length
+limit. If no existing bin has sufficient space, a new bin is created.
+C.3. Reward Design
+We introduce a straightforward yet effective reward design for our multi-agent RL training. For each rollout trajectory, we
+employ LLMs (Qwen2.5-72B-Instruct) as evaluators to assess the correctness of the predicted final answer following HLE’s
+official prompt (Phan et al., 2025). The reward function is defined as:
+(
+1, if EvalLLM = Correct
+r(cN , ground truth) =
+(8)
+0, otherwise
+where cN is the final reasoning trajectory, N is the number of interaction turns. We will extract the answer part between
+<answer> and </answer> tags for evaluation.
+All System 1 and System 2 samples within the same trajectory share this trajectory-level reward. This design reflects the
+inherently collaborative nature of our dual-system framework, where the final answer quality depends on both System 2’s
+15
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+reasoning and System 1’s information processing. By sharing rewards, we encourage both systems to optimize toward the
+same goal—producing correct final answers—rather than pursuing potentially conflicting individual objectives. This binary
+reward signal creates a clear learning objective for both systems: System 2 learns to generate better reasoning steps and
+more effective tool-use plans, while System 1 learns to distill information more accurately and concisely to support System
+2’s reasoning. The simplicity of this reward function helps avoid the common pitfalls of overly complex reward engineering
+while maintaining focus on the ultimate goal of correct problem-solving.
+C.4. RL Loss
+We write the policy loss of one single rollout trajectory as follows.
+"
+|y|
+πsys (yj |x, y<j )
+1 X
+Lpolicy (x, y, Asysi ) =
+min oldi
+Asysi , clip
+|y| j=1
+πsysi (yj |x, y<j )
+
+!
+#
+πsysi (yj |x, y<j )
+, 1 − ϵ, 1 + ϵ Asysi
+old (y |x, y )
+πsys
+j
+<j
+i
+
+(9)
+
+where yj is the j-th token of LLM output y. Similarly, we write the KL loss as follows.
+|y|
+
+LKL (x, y) = −
+
+
+
+1 X
+ref
+(y
+|x,
+y
+)
+DKL πsysi (yj |x, y<j )∥πsys
+j
+<j
+i
+|y| j=1
+
+(10)
+
+In practical implementation, the expectation in Eq. (7) is achieved via averaging over a group of G rollouts as well as a
+batch training examples.
+C.5. Implementation Details
+Table 7. Key hyperparameters in the RL phase.
+
+Hyperparameter
+
+Value
+
+Learning Rate of Policy model
+Base model
+Batch size
+G
+temperature
+KL loss coefficient λ
+entropy coefficient
+Maximum Prompt Length of System 1
+Maximum Response Length of System 1
+Maximum Prompt Length of System 2
+Maximum Response Length of System 2
+Maximum interaction turns
+
+1e-6
+Qwen2.5-7B-Instruct
+32
+16
+1.0
+0.
+0.
+23,552
+8192
+3072
+28,672
+10
+
+This section provides comprehensive implementation details of our MARS. We initialize our policy model with Qwen2.57B-Instruct (Yang et al., 2024), which serves as the foundation for both System 1 and System 2. Furthermore, we provide
+external tools such as Google Search, Google Scholar via the SerpAPI3 , and Python code interpreter for supporting
+autonomous tool selection during the reasoning process. We employ the GRPO algorithm (Shao et al., 2024) with the
+following hyperparameters: learning rate of 1e-6, batch size of 32, sampled responses per prompt (group size G) of 16,
+temperature of 1.0, top-p of 0.95, and both KL loss coefficient and entropy coefficient set to 0. Additionally, we set different
+maximum lengths for System 1 and System 2: prompt lengths of 23,552 and 3,072 tokens, and response lengths of 8,192
+and 28,672 tokens, respectively. This configuration enables System 1 to better incorporate external knowledge while
+allowing System 2 to focus on sophisticated multi-step reasoning. For all baselines, we maintain their original settings
+in their respective papers to ensure optimal performance. Table 7 summarizes the key hyperparameters used during the
+reinforcement learning phase.
+3
+
+https://serpapi.com/
+
+16
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+The asymmetric prompt and response length configurations between System 1 and System 2 are designed to leverage their
+complementary roles. System 2, with its shorter prompt length (3,072 tokens) but longer response capability (28,672 tokens),
+is optimized for detailed reasoning and solution generation. Conversely, System 1, with its extended prompt length (23,552
+tokens) but more concise response limit (8,192 tokens), excels at processing and summarizing large volumes of information.
+This configuration aligns with cognitive science theories where System 2 handles deliberate reasoning while System 1
+processes information rapidly.
+C.6. Baseline Comparisons and Fairness
+We provide detailed clarifications on the fairness of our experimental comparisons, addressing potential concerns about
+model size, training methodology, and tool availability.
+Zero RL Setting. A critical distinction of MARS is that we adopt a “Zero RL” training paradigm: we initialize from the
+base model (Qwen2.5-7B-Instruct or Qwen3-8B) and train directly with RL without any Supervised Fine-Tuning (SFT). This
+is a significantly more challenging setting than approaches that use SFT warmup:
+• WebThinker uses SFT on curated trajectories before RL training, providing a strong initialization.
+• C-3PO relies on SFT with a 72B model, leveraging both scale and supervised data.
+• MARS trains from scratch with RL only, yet outperforms these larger, SFT-trained models.
+This demonstrates that our multi-agent RL framework, rather than model scale or supervised data quality, is the key driver
+of performance.
+Model Size Comparison. We use 7B/8B models, significantly smaller than WebThinker (32B) and C-3PO (72B). The
+fact that MARS outperforms these larger models despite the parameter disadvantage further validates our architectural and
+algorithmic contributions.
+Data Source Parity. Our training data is curated exclusively from public sources (Appendix B), including MMIQC,
+WebInstructSub, GeneralThought, and standard QA datasets. We do not use proprietary data or expensive human annotations.
+This ensures fair comparison with baselines that also use public data sources.
+Tool Availability. MARS uses three tools: Google Search, Google Scholar, and Python Interpreter. Some baselines (e.g.,
+WebThinker) do not use Google Scholar. This difference stems from architectural constraints: baselines without a learned
+information processor cannot effectively handle the large volume of academic papers that Scholar returns. Our System 1 can
+efficiently distill this information, enabling effective use of Scholar. Importantly, as shown in our ablation (Section 3.6),
+the performance gains come from our co-evolution framework, not merely tool availability—the “w/o System 1” setting
+maintains all tools but shows significant performance degradation.
+WebThinker Score Discrepancy. Readers may notice that our reported WebThinker results differ from the original
+paper (Li et al., 2025b). This stems from two factors:
+1. Evaluation scale: We evaluate on the complete HLE text-based question set (2,154 questions), rather than the 500question sample used in the original paper.
+2. Evaluation criteria: We strictly use HLE’s official evaluation prompt for all models. The original WebThinker paper
+used a custom prompt that resulted in more lenient scoring.
+Why Share a Single Checkpoint for System 1 and System 2? Our design choice to implement both systems within a
+single LLM (activated through different prompts) is deliberate and motivated by several factors:
+• Alignment with dual-process theory: In cognitive science, System 1 and System 2 are not separate brains but different
+modes of the same mind. Our single-model design reflects this—one model that can operate in both modes.
+• Synergistic optimization: Sharing parameters enables tighter co-adaptation. System 2 learns to generate purposes that
+System 1 (sharing the same knowledge) can effectively interpret, and vice versa.
+• Practical efficiency: A two-model design would double memory requirements and inference complexity, limiting practical
+deployment.
+17
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+• Empirical validation: WebThinker’s two-component design (separate reasoning model + fixed extractor) underperforms
+our unified approach despite using a larger model (32B vs. 8B), suggesting our single-model co-evolution is more effective.
+C.7. Dataset Details
+Our training data consists of two complementary components: (1) a curated collection of complex reasoning examples
+filtered through our specialized pipeline, as shown in Appendix B, and (2) several established open-source single-hop,
+multi-hop, and Biology & Medicine datasets that enhance the model’s knowledge retrieval and reasoning capabilities.
+Table 8 summarizes the key statistics of our complete training dataset.
+Table 8. Data Statistics.
+
+Data Type
+Data Name
+Sampled Number
+
+Our curated data
+2000
+
+Single-Hop QA
+Multi-Hop QA
+Biology&Medicine
+Total
+TriviaQA PopQA HotpotQA 2Wiki Musique PubMedQA CUPCase
+400
+
+400
+
+500
+
+500
+
+500
+
+500
+
+250
+
+5050
+
+As shown in Table 8, we randomly sampled a total of 5,050 training examples across eight distinct datasets. The composition
+is carefully balanced to ensure comprehensive coverage of different reasoning types and knowledge domains.
+• Our curated data (2,000 examples, 39.6%): These examples were selected from our pipeline-filtered corpus described in
+Appendix B, which contains high-quality, graduate-level complex reasoning tasks vetted through our rigorous multi-stage
+filtering process.
+• Single-Hop QA (800 examples, 15.8%): We incorporated 400 randomly sampled examples each from TriviaQA (Joshi
+et al., 2017) and PopQA (Mallen et al., 2023). These datasets focus on direct factual knowledge retrieval, with TriviaQA
+covering a broad range of trivia questions and PopQA specifically targeting popular entities and common knowledge.
+• Multi-Hop QA (1,500 examples, 29.7%): To strengthen the model’s multi-step reasoning capabilities, we included 500
+examples each from HotpotQA (Yang et al., 2018), 2WikiMultihopQA (Ho et al., 2020), and MuSiQue (Trivedi et al.,
+2022). These datasets require reasoning across multiple documents or knowledge pieces to arrive at the correct answer.
+• Biology & Medicine (750 examples, 14.9%): To enhance domain-specific knowledge, we sampled 500 examples from
+PubMedQA (Reese et al., 2024) and 250 examples from CUPCase (Perets et al., 2025), covering biomedical research
+questions and clinical case analysis respectively.
+C.8. Experiment Environments
+All experiments were conducted on Ubuntu 22.04 equipped with NVIDIA A100 GPUs. Our implementation relies on Python
+3.104 and PyTorch 2.6.05 , while extending VeRL6 for our multi-agent reinforcement learning framework. For efficient
+execution, we implemented rollout procedures based on Qwen-Agent7 and use vLLM8 and SGLang9 as our inference
+engines. We use Code Sandbox10 for Python Interpreter.
+
+D. Additional Experimental Results
+D.1. Extended RL Training Analysis
+Figure 6(a–c) shows how the learned policy allocates tool usage over training. Early in training, the model often relies on a
+narrow subset of tools (typically Google Search) and under-utilizes specialized tools, reflecting limited exploration and weak
+credit assignment under trajectory-level rewards. As training progresses, the tool distribution becomes more structured:
+Google Search remains the default high-recall tool, while Python and Scholar are invoked selectively when the question
+demands exact computation or academic evidence.
+4
+
+https://www.python.org/
+https://pytorch.org/
+6
+https://github.com/volcengine/verl
+7
+https://github.com/QwenLM/Qwen-Agent
+8
+https://github.com/vllm-project/vllm
+9
+https://github.com/sgl-project/sglang
+10
+https://github.com/bytedance/SandboxFusion
+5
+
+18
+
+25
+
+50
+
+75
+
+100 125 150
+
+90
+80
+70
+60
+50
+0
+
+50
+
+75
+
+100 125 150
+
+(b) Usage Ratio of Google Search
+
+80
+60
+40
+
+5k
+4k
+3k
+2k
+
+25
+
+50
+
+75
+
+100 125 150
+
+30
+20
+10
+0
+
+0
+
+25
+
+50
+
+75
+
+100 125 150
+
+25k
+20k
+15k
+10k
+5k
+
+1k
+0
+
+40
+
+(c) Usage Ratio of Google Scholar
+
+6k
+
+100
+
+Mean Response Len.
+
+Min. Response Len.
+
+(a) Usage Ratio of Python
+
+25
+
+Usage Ratio of Google Scholar (%)
+
+0
+
+100
+
+Max. Response Len.
+
+17.5
+15.0
+12.5
+10.0
+7.5
+5.0
+2.5
+0.0
+
+Usage Ratio of Google Search (%)
+
+Usage Ratio of Python (%)
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+0
+
+(d) Min. Response Len. (Sys. 1)
+
+25
+
+50
+
+75
+
+100 125 150
+
+(e) Mean Response Len.
+
+0
+
+25
+
+50
+
+75
+
+100 125 150
+
+(f) Max. Response Len. (Sys. 2)
+
+Figure 6. Extended analysis of RL training dynamics. (a-c) Evolution of tool selection preferences. While Google Search emerges as the
+predominantly chosen tool, the model maintains capability to utilize Python and Google Scholar when appropriate. (d-f) Response length
+distributions showing that both systems learn to generate more comprehensive outputs as training advances.
+
+Figure 6(d–f) reports the evolution of response lengths. We observe that System 1’s minimum response length increases over
+training, suggesting that it learns to consistently produce non-trivial, purpose-conditioned distillations (rather than empty or
+overly short summaries). Meanwhile, the mean response length increases and System 2’s maximum response length grows,
+indicating that System 2 learns to sustain longer multi-step reasoning and to integrate evidence across multiple tool calls.
+Together, these trends support two conclusions. First, the performance gains are not solely due to calling tools more
+frequently; instead, training improves the quality of tool use (better timing, better specialization, and better evidence
+integration). Second, the co-evolution design stabilizes learning under noisy retrieval: System 2 can expand its search when
+needed, while System 1 limits context dilution by filtering irrelevant content and preserving task-critical entities/constraints.
+
+E. Instruction Templates
+E.1. Instruction of System 1 & 2 in our MARS
+Instruction for System 1
+<System Prompt>
+You are an expert information extractor. Your sole task is to extract only the information that directly supports the
+tool call’s purpose or answers the user’s question.
+## Task Guidelines
+1. **Match Each Query**: For every query, extract information directly relevant to it and record its source (e.g.,
+title, section name).
+2. **Content Scanning**: Locate the **specific sections/data** directly related to the user’s goal within the content.
+3. **Key Extraction**: Identify and extract the **most relevant information** from the content, you never miss any
+important information
+4. **Verbatim Key Content**: Preserve the original wording of key definitions, claims, formulas, data points.
+5. **Preserve Detail**: Include relevant data, numbers, metrics, or formulas.
+6. **Output Structure**: Organize the extracted content per query in a clear and nested way.
+
+19
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+<User Prompt>
+{tool outputs}
+# User Question: {question}
+
+Instruction for System 2
+<System Prompt>
+You are an expert researcher who combines rigorous analytical reasoning with thorough information seeking
+abilities. You excel at solving complex problems through logical thinking, careful analysis, and responsible tool use.
+You are known for your careful and thorough approach, never rushing to conclusions without complete analysis.
+{tool description}
+When performing a search:
+1. **Persistent Actions for Answers**: You can engage in multiple search iterations, delving deeply into the topic
+to explore all possible aspects until a satisfactory answer is found.
+2. **Repeated Verification**: Before presenting a Final Answer, you will **cross-check** and **validate the
+information** you’ve gathered to confirm its accuracy and reliability.
+3. **Attention to Detail**: You will carefully analyze each information source to ensure that all data is current,
+relevant, and from credible origins.
+Your reasoning process should be enclosed within ¡think¿ ¡/think¿ tags. If you need external support, make tool calls
+inside ¡tool call¿ ¡/tool call¿ tags. After a tool call, always reassess the result critically and continue your analysis in
+a new ¡think¿ section. Tools are helpful but not always reliable — treat their output with scrutiny.
+Finally, present your key reasoning and final answer inside ¡answer¿ ¡/answer¿ tags.
+Do not nest tags. Each tag block must be independent.
+<User Prompt>
+{question}
+
+E.2. Instruction for our data curtion pipeline
+In our data curation pipeline, we employed specific instructions for each filtering stage to ensure consistent evaluation
+criteria. Below, we provide the detailed prompts used for Clarity Filtering and Graduate-level Filtering stages, which were
+directly provided to Qwen2.5-72B-Instruct for assessment.
+For the Challenge and Correctness Verification stage (Best-of-16 sampling), we utilized a different approach. Rather
+than using a standalone evaluation prompt, we leveraged our dual-system framework itself, combining the System 1 and
+System 2 instructions (detailed in Appendix E) with Google Search integration. This allowed Qwen2.5-72B-Instruct to
+perform complete reasoning attempts on each question, providing a more authentic assessment of difficulty level and answer
+verifiability than a static evaluation would allow.
+Instruction of Clarity Filtering
+### Instruction ###
+You are a domain expert proficient in various subjects such as Math, Physics, Biology, Humanities, Computer
+Science, Engineering, and Chemistry. You will be given a question and its corresponding answer. Please identify
+whether the given QA-pair exhibits ”Clarity”. Only output 1 for yes and 0 for no.
+### Definition ###
+
+20
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+”Clarity” is defined as the question being clearly and unambiguously stated, and the answer being unique.
+### Examples ###
+{Few-shot Examples}
+### QA-pair ###
+{Input QA-pair}
+### Your Judgment ###
+Instruction of Graduate-level Filtering
+### Instruction ###
+You are a domain expert proficient in various subjects such as Math, Physics, Biology, Humanities, Computer
+Science, Engineering, and Chemistry. You will be given a question and its corresponding answer. Please identify
+whether the given QA-pair contains ”Expert-level Knowledge.” Only output 1 for yes and 0 for no.
+### Definition ###
+”Expert-level Knowledge” is defined as core theories, cutting-edge research, and complex applications studied
+during advanced undergraduate and graduate levels, typically mastered only by experts or senior researchers in the
+field.
+### Examples ###
+{Few-shot Examples}
+### QA Pair ###
+{Input QA-pair}
+### Your Judgment ###
+
+E.3. Instruction for Reward Model
+For our reward model, we strictly adhere to the official evaluation criteria from the Humanity’s Last Exam (HLE) benchmark
+(Phan et al., 2025).
+Instruction of Reward Model (official Instruction from HLE)
+Judge whether the following [response] to [question] is correct or not based on the precise and unambiguous
+[correct answer] below.
+[question]: {question}
+[response]: {response}
+Your judgement must be in the format and criteria specified below:
+extracted final answer: The final exact answer extracted from the [response]. Put the extracted answer as ’None’ if
+there is no exact, final answer to extract from the response.
+[correct answer]: {correct answer}
+reasoning: Explain why the extracted final answer is correct or incorrect based on [correct answer], focusing only
+on if there are meaningful differences between [correct answer] and the extracted final answer. Do not comment on
+
+21
+
+MARS: Co-evolving Dual-System Deep Research via Multi-Agent Reinforcement Learning
+
+any background to the problem, do not attempt to solve the problem, do not argue for any answer different than
+[correct answer], focus only on whether the answers match.
+correct: Answer ’yes’ if extracted final answer matches the [correct answer] given above, or is within a small
+margin of error for numerical problems. Answer ’no’ otherwise, i.e. if there if there is any inconsistency, ambiguity,
+non-equivalency, or if the extracted answer is incorrect.
+confidence: The extracted confidence score between 0—%— and 100—%— from [response]. Put 100 if there is no
+confidence score available.
+
+22
+
+

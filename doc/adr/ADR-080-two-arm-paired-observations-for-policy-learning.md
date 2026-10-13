@@ -530,6 +530,78 @@ rather than from hardcoded thresholds.
 The owner decides whether to adopt it (env-gated opt-in or DATA promotion).
 All locks stand: deployed=false, import_eligible=false.
 
+### Post-M516 correction — paired-policy evaluation and isolated corpus cycles
+
+The earlier 61.1% `measured_gain` claim is **withdrawn**. It measured
+agreement with recorded arm codes, not the winning arm or selected reward.
+On the covered validation records, 28 complete pairs each contribute one
+agreement and 16 one-arm records each contribute one: `44 / (56 + 16)`.
+That ratio describes arm availability. It cannot establish policy quality.
+`table_mean_reward` also averaged both arms regardless of the selected code.
+Operational health counted winner rewards, not successful parse outcomes.
+
+The original journals remain unchanged. The last 40 pair records reran old
+PDF IDs, raising records from 257 to 321 without adding documents. The
+190 pairs contain 150 unique IDs; repeat runs carry changed, unmeasured
+features. Rank-modulo splits move when the corpus grows. Earlier gain,
+no-gain and feature-sufficiency conclusions are therefore not validated.
+The new experiment uses a separate cohort, not a deletion or relabeling of
+historical evidence.
+
+For M517 the implementation and experiment must:
+
+- Compute mean reward from observations of the **selected code only**.
+  Keep code agreement as a diagnostic, not accuracy or gain.
+- Derive operational success from `outcome.ok`; a successfully parsed losing
+  arm is still a successful parse. Missing outcome evidence is not success.
+- Repair ROUGE-L against an independent LCS oracle before using it.
+- Bind document identity to PDF SHA-256. Freeze the selected corpus order and
+  validation membership before cycles; never rank-split each growing prefix.
+- Capture each arm directly into an isolated output directory. Retain source,
+  backend version, reference extractor identity, per-arm output hashes and
+  failures. Empty TOC means NotApplicable; other errors mean failure.
+- Count the TOC export in its end-to-end latency. Never change process-global
+  environment to suppress journaling and never overwrite production parsed
+  articles. The legacy `policy pair` is not used for the new cohort.
+- Compare learned decisions, with native fallback, to actual native DATA
+  decisions on the same held-out PDFs. GrammarRoute `xy_cut` and
+  `grobid_structural` may map to the captured GROBID structural arm only under
+  an explicitly recorded execution equivalence: both currently dispatch the
+  Java structural parser, while `xy_cut` has no executable XY-cut CLI.
+- Freeze metric variants separately: section yield, body-character yield,
+  D511 body-character throughput, token-overlap F1 and ordered 5-token-gram
+  F1 against independent `pdftotext`. The latter are text-extraction
+  diagnostics, not publisher ground truth or scientific KG readiness.
+  Raw text volume and throughput are not fidelity measurements.
+- Report coverage, forced choices, selected reward, regret and native reward
+  on one denominator. Mark per-document regressions between cycles under
+  unchanged metrics. Do not select a production metric by holdout results.
+
+The existing `parse_pair_metric.yaml` is retained unchanged: its DATA makes
+sections/ms primary, contrary to D511's body_chars/ms prose. The new frozen
+experiment configuration records the alternatives rather than silently
+changing the meaning of old pair digests.
+
+Research source: GROBID end-to-end evaluation compares publisher JATS/NLM
+or Pub2TEI references and explicitly warns that inconsistent fulltext
+annotations limit absolute scores:
+<https://grobid.readthedocs.io/en/latest/End-to-end-evaluation/>.
+
+All ADR-076 and ADR-078 locks remain: candidate-only, `deployed=false`,
+`import_eligible=false`, `auto_promote=forbidden`, `graph_write=forbidden`.
+This correction does not activate later DecisionPoints or change production
+routing. The unsafe `da policy pair` and `gold-pair` actions are retired:
+they invoked a Python reference extractor from product code, overwrote
+`data/processed`, and lacked source-bound outputs. Those actions now refuse
+without running a parser. The isolated offline examples are the only M517
+measurement entry points. The capture example explicitly fixes
+`GrobidProfile::structural()` without consulting learned policy: each paired
+arm must be measured independently of the policy being evaluated. This
+candidate-only constructor is a named architecture-test exception, not a new
+production constructor. Production corpus callers still use
+`corpus_grobid_parser()`. The gold scorer remains a secondary diagnostic,
+not an adopted parse-quality oracle.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.

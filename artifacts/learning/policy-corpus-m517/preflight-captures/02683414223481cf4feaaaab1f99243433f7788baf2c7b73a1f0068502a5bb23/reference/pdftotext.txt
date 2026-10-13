@@ -1,0 +1,826 @@
+Q*: Improving Multi-step Reasoning for LLMs with
+Deliberative Planning
+
+Chaojie Wang1∗∗ Yanchen Deng2∗ Zhiyi Lyu2
+
+arXiv:2406.14283v4 [cs.AI] 22 Jul 2024
+
+Shuicheng Yan1
+1
+
+Skywork AI
+
+2
+
+Liang Zeng1
+
+Jujie He1
+
+Bo An12
+
+Nanyang Technological University
+
+Abstract
+Large Language Models (LLMs) have demonstrated impressive capability in many
+natural language tasks. However, the auto-regressive generation process makes
+LLMs prone to produce errors, hallucinations and inconsistent statements when
+performing multi-step reasoning. In this paper, by casting multi-step reasoning of
+LLMs as a heuristic search problem, we aim to alleviate the pathology by introducing Q*, a general, versatile and agile framework for guiding LLMs decoding
+process with deliberative planning. By learning a plug-and-play Q-value model as
+heuristic function for estimating expected future rewards, our Q* can effectively
+guide LLMs to select the most promising next reasoning step without fine-tuning
+LLMs for the current task, which avoids the significant computational overhead and
+potential risk of performance degeneration on other tasks. Extensive experiments
+on GSM8K, MATH and MBPP demonstrate the superiority of our method, contributing to improving the reasoning performance of existing open-source LLMs.
+
+1
+
+Introduction
+
+Large Language Models (LLMs) have exhibited impressive capabilities in solving various reasoning
+tasks encoded in natural languages, including math word problems [1–6], code generation [7–9] and
+planning [10–12]. Unfortunately, even the most advanced LLMs still face significant challenges and
+are prone to introduce errors, hallucinations and inconsistent statements as the number of reasoning
+steps grows due to their auto-regressive nature [13, 14]. In fact, the auto-regressive generation process
+of LLMs can be characterized by “System 1" [15], a mode of thought which is fast, instinctive but less
+accurate. Most of recent works focus on improving LLMs’ “System 1” capability by (1) constructing
+sophisticated prompts with extensive expertise to trigger the potential capacities of LLMs without
+modifying their parameters [16–19], (2) fine-tuning LLMs with massive task-specific corpus at the
+price of significant computational burdens and the potential risk of performance degeneration on
+other tasks [5, 6, 20, 21], or (3) training reward models to rank the candidate responses [4, 22–24].
+On the other hand, solving complex reasoning problems requires more in-depth, deliberative and
+logical thinking steps, i.e., the “System 2" mode [15]. Taking solving math word problems as an
+example, any incorrect intermediate reasoning step (e.g., calculation errors, mis-interpretations) can
+potentially lead to incorrect final answers. Prior attempts [25–28] for enhancing “System 2” reasoning
+capability includes performing deliberation with basic tree search algorithms (e.g., BFS or DFS),
+Monte Carlo Tree Search (MCTS) [29], and A* [30]. Nonetheless, the utility functions used in these
+methods often require laborious expertise to design for each specific task, which are difficult to be
+extended to new scenarios. Furthermore, deliberation with MCTS would require significant number
+∗
+
+The first two authors contributed equally, and the order of authors was determined by a coin toss.
+
+Preprint. Under review.
+
+of rollouts before finding high-quality responses when solving the problems with many reasoning
+steps, which substantially slows down the overall decoding process.
+In light of this, we propose Q*, a general, versatile and agile framework for improving the multi-step
+reasoning capability of LLMs with deliberative planning. Different from the existing deliberation
+methods, our method does not rely on domain knowledge to design the heuristic function. Besides, by
+leveraging plug-and-play Q-value models as heuristic function, our Q* can effectively solve various
+tasks via guiding LLMs to select the most promising next step without fine-tuning LLMs beforehand,
+which avoids the significant computational overhead and potential risk of performance degeneration
+in other tasks. Finally, Q* considers only one single step when performing deliberation, which is
+much cheaper than completing rollouts in MCTS. Specifically, the main contributions of our work
+are summarized as follows:
+• We formalize the multi-step reasoning of LLMs as a Markov Decision Process (MDP) where
+the state is the concatenation of input prompt and the reasoning steps generated so far, the
+action is the next reasoning step and the reward measures how well the task is solved.
+• We present several general approaches to estimate the optimal Q-value of state-action pairs,
+i.e., offline reinforcement learning, the best sequence from rollouts, and completion with
+stronger LLMs. It is noteworthy that our methods only need the ground-truth of training
+problems and can be easily applied to various reasoning tasks without modification.
+• We cast solving multi-step reasoning tasks as a heuristic search problem, where the objective
+is to find the most proper reasoning trace with maximum utility. Built upon A* search, our
+deliberation framework, Q*, leverages plug-and-play Q-value models as heuristic function
+and guides LLMs to select the most promising next reasoning step in best-first fashion.
+• We conduct extensive experiments on math reasoning and code generation tasks, demonstrating that Q* can significantly improve the multi-step reasoning capability of existing
+open-sourced LLMs.
+
+2
+
+Related Works
+
+LLM alignment. Alignment has become an important technique to prevent the output of LLMs
+deviates from human’s expectation. Supervised Fine-Tuning (SFT) is probably the most fundamental
+alignment approach that directly minimizes the cross-entropy loss between the output and groundtruth. Reinforcement learning from Human Feedback (RLHF) [31], on the other hand, firstly learns a
+reward model (RM) from human preferences and then optimizes the SFT model with reinforcement
+learning algorithms to maximize the cumulative rewards from RM. Direct Preference Optimization
+(DPO) [32] aligns LLMs directly according to the ranking information from human feedback without
+explicitly learning RM. Recently, Aligner [33] came out as a model-agnostic alignment method
+by learning to re-write LLMs’ output. Compared to these methods, our Q* achieves the goal of
+alignment with distinct merits. Different from SFT and Aligner, Q* does not rely on massive human
+annotated preference pairs which are expensive to collect; different from RLHF and DPO, our Q*
+does not modify the parameters of LLMs, which avoids the potential risk of performance degeneration
+on other tasks.
+Enhancing LLMs with planning. Tree-of-thoughts (ToT) [25] improves the LLMs’ reasoning
+capability by exploring the intermediate steps towards problem solving with basic tree-search algorithms. In the same vein, A* search and MCTS are applied to serve as a planning technique to enhance
+the performance of LLMs when solving challenging complex reasoning problems [26–28, 34]. Unfortunately, the utility function used in these methods is either constructed from LLMs’ feedback
+(e.g., [25, 27]), which could be highly-inaccurate in complex problems, or specific to each individual
+task (e.g., [28, 34]). Moreover, planning with MCTS often requires to perform costly rollout, which
+can significantly slow down the overall decoding process. In contrast, our Q* solely relies on training
+a Q-value model to guide LLMs to select the most promising next reasoning step and the pipeline can
+be easily applied to various reasoning tasks without modification. Besides, we consider only a single
+step each time in Q*, which is much cheaper than complete rollout in MCTS-based methods.
+LLMs for math reasoning & code generation. Math reasoning and code generation require
+LLMs to perform multi-step reasoning on relations, quantities and logics which are inherently
+2
+
+challenging. Current techniques include: 1) prompt engineering which triggers the potential capacities
+of LLMs with sophisticated prompts [16–19, 35, 36]. However, constructing such prompt needs
+extensive expertise and case-by-case tuning, which is difficult to generalize to different tasks; 2)
+Fine-tuning LLMs with massive math/code corpus [5, 6, 8, 9, 20, 21, 37], which usually comes
+at the price of significant computational burden and may compromise the performance on other
+tasks; 3) training RMs/verifiers to rank the candidate solutions without providing any guidance in
+intermediate steps [4, 22–24]. Differently, our Q* leverages a plug-and-play Q-value model to direct
+the deliberation process of LLMs, which effectively provides guidance for each intermediate step
+without modifying the parameters of LLMs. Moreover, by casting multi-step reasoning of LLMs as a
+heuristic search problem, our method can be generalized to various reasoning tasks without laborious
+prompt engineering.
+
+3
+
+Preliminary
+
+3.1
+
+Formulate the Multi-step Reasoning of LLMs as an MDP
+
+Taking the question q as input, the answer generation process of LLMs can be broken down into
+multiple reasoning steps, where the final answer sequence a can be treated as the concatenation of
+these T single-step reasoning steps, formulated as a = [a1 ; a2 ; . . . ; aT ]. Each step can be a single
+line or fixed number of tokens outputted by LLMs. Under this perspective, we can conceptualize
+the multi-step reasoning process of LLMs as a Markov Decision Process (MDP) ⟨S, A, T , R, γ⟩,
+where the state st ∈ S denotes the concatenation of the input question and the partial reasoning trace
+already generated by timestep t − 1 (i.e., st = [q; a1 ; . . . ; at−1 ]) with the special case s1 = q, the
+action at ∈ A denotes the next reasoning step generated by LLMs taking the current state st as input,
+the deterministic state transition T from the current state st to the next state st+1 is accomplished
+through a simple operation of concatenation, R is the reward function to measure how well the
+question is solved and γ is the discount factor. The reward function is often outcome-based. That is,
+it gives reward by comparing the final results with ground-truth:
+
+1 t = T ∧ [st ; at ] matches the ground-truth
+R(st , at ) =
+,
+(1)
+0 otherwise
+In particular, we assign a reward of 1 if the generated code passes all test cases (for code generation
+tasks) or the final answer matches the ground-truth (for math reasoning tasks) which is a common
+practise in previous studies [4, 22]. Finally, the policy πθ is embodied by an LLM, which produces
+reasoning sequence conditioned on the input question:
+πθ (at |st ) = LLM(at |st ), πθ (a|q) =
+
+T
+Y
+
+πθ (at |st ).
+
+(2)
+
+t=1
+
+Given the MDP andhLLM policy πθ , the value
+i of state-action pair (st , at ) is given by a Q-function
+PT
+πθ
+T −t′
+Q (st , at ) = Eπθ
+R(st′ , at′ ) . The Q-function of an optimal policy π ∗ is called
+t′ =t γ
+optimal Q-function and satisfies the Bellman optimality equation:
+Q∗ (st , at ) = R(st , at ) + γ max Q∗ (st+1 , at+1 ),
+at+1 ∈A
+
+(3)
+
+which gives the value of starting state st , taking action at and then following the optimal policy π ∗ .
+3.2
+
+A* Search
+
+A* [30] is an important heuristic search algorithm in deliberative planning [38], multi-agent pathfinding [39], and constraint reasoning [40]. Originally, A* is proposed for finding the shortest path
+from source s to goal g in path planning problems. It associates each frontier vertex n with a value
+f (n) = g(n) + h(n), where g(n) is the accumulated path cost from source s and h(n) is a heuristic
+value that estimates the cost of the shortest path from n to goal g. The algorithm adopts a best-first
+search strategy, i.e., in each iteration it always picks the vertex with minimum f -value to explore until
+reaching the goal. When the heuristic h(·) is admissible [41], A* guarantees to find the optimal path.
+3
+
+Figure 1: Overview of Q*. (a): the deliberation process of Q*. Each state is associated with an
+f -value which is the weighted sum of the aggregated utility (cf. Eq. (5)) and the heuristic value
+(cf. Eq. (6)). (b-d): estimating optimal Q-value with fitted-Q-iteration, rollout and completion with
+stronger LLMs.
+
+4
+
+Q*: A General, Versatile and Agile Deliberation Framework for LLMs
+
+Most of modern LLMs generate natural languages in an auto-regressive way, i.e., predict the next
+token in a sequence given the previously generated tokens (cf. Eq. (2)). Therefore, when applied to
+multi-step reasoning problem, LLMs can potentially introduce errors, hallucinations and inconsistent
+statements in the subsequent reasoning trace if any previous step is incorrect, which may fail to solve
+the current problem. Indeed, given the fact that LLMs produce each token with limited computation
+resources, there is no way to devote more computational efforts to solve difficult problems. In
+short, LLMs cannot perform in-depth deliberation which is essential for solving complex multi-step
+reasoning problems.
+We address this issue by presenting Q*, a general, versatile and agile deliberation framework based
+on A* to effectively guide LLMs to select the most promising next step when performing multi-step
+reasoning without costly fine-tuning LLMs for each task beforehand. In more detail, we cast finding
+the most proper reasoning sequence for a given problem as a heuristic search process, where each
+state st is associated with a f -value estimating how much utility will be attained if we expand st :
+f (st ) = g(st ) + λh(st ),
+(4)
+where g(st ) denotes the aggregated utility from the initial state s1 ; h(st ) is the heuristic value for
+measuring the probability of reaching the correct answer derived from st ; λ is a coefficient to balance
+the importance of g(st ) and h(st ) terms.
+Specifically, we propose to use process-based reward function RP that encodes the prior knowledge
+or preference of the reasoning task to compute the aggregated utility g(st ). That is,
+g(st ) = Agg(RP (s1 ), . . . , RP (si ), . . . , RP (st )),
+(5)
+P
+where Agg ∈ {min, max, , [−1]}, with [−1] standing for assigning the reward of last state as the
+utility, is the aggregation function to summarize the rewards in the path from s1 to st , and si−1 is
+the prefix of si , 1 < i ≤ t. Such process-based reward function RP could be learned from human
+feedback [22, 23, 42], ground-truth [4, 24], rules, or simply be the logits of a reasoning step which
+reflects the confidence of the LLM. Furthermore, we use the optimal Q-value of state st (cf. Eq. (3))
+as the heuristic value h(st ). In other words, the f -value is given by:
+f (st ) = g(st ) + λ max Q∗ (st , at ).
+(6)
+at ∈A
+
+Since enumerating all possible next reasoning steps is intractable, in practice we restrict the alternatives to the top-K of all step candidates returned by LLM, and thus Eq. (6) can be written as
+f (st ) = g(st ) + λ maxat ∈top-K(πθ (·|st )) Q∗ (st , at ).
+4
+
+4.1
+
+Estimation of Optimal Q-value
+
+A critical challenge of implementing Q* is to estimate the optimal Q-value of state-action pairs
+(cf. Eq. (6)) with a frozen LLM policy πθ which could be suboptimal on the given reasoning
+problems. Therefore, we aim to learn a proxy Q-value model Q̂ to approximate Q∗ from a dataset
+N
+D = {qi , {aij }M
+j=1 }i=1 , where qi is a training problem and aij ∼ πθ (·|qi ) is a trajectory sampled
+from the LLM policy πθ . Formally:
+N M
+1 XX X
+2
+Q̂ = arg min
+(Q(st , at ) − ŷ(st , at )) ,
+Q NMT
+i=1 j=1 a ∈a
+t
+
+(7)
+
+ij
+
+where st = [qi ; a1 ; . . . ; at−1 ] is the partial reasoning trace by timestep t − 1 in aij and ŷ(st , at ) is
+the label that approximates the true optimal Q-value, specifically Q∗ (st , at ).
+In more detail, we effectively construct Q-value labels ŷ(st , at ) for question qi in the following ways:
+Offline reinforcement learning. Given the offline dataset D, we learn the proxy Q-value model Q̂
+using Fitted Q-iteration [43]. Specifically, for each iteration ℓ, we construct Q-value label as:
+
+R(st , at )
+t=T
+ŷℓ (st , at ) =
+,
+(8)
+R(st , at ) + γ maxat+1 ∈top-K(πθ (·|st+1 )) Q̂ℓ−1 (st+1 , at+1 ) otherwise
+where Q̂ℓ−1 is the proxy Q-value model learned in iteration ℓ − 1. After that, we train a new proxy
+model Q̂ℓ according to Eq. (7). Such two phases will be alternated for L iterations, and we use Q̂L as
+the proxy Q-value model when performing deliberation.
+Learning from rollout. Staring from the state-action pair (st , at ), we first perform random rollout
+or MCTS [26, 27] with policy πθ for enough iterations, forming a trajectory pool P . After that, we
+use the best reasoning sequence with the highest accumulated rewards to construct the Q-value label:
+" T
+#
+X
+T −t′
+ŷ(st , at ) = R(st , at ) + max
+γ
+R(st′ , at′ ) .
+(9)
+τ ∼P
+(st′ ,at′ )∈τ
+
+t′ =t+1
+
+Approximating optimal policy with stronger LLMs. By exploiting the fact that the optimal
+Q-values are derived from an optimal policy, one can estimate the optimal Q-value of state-action
+pair (st , at ) by completing the trajectory with another stronger LLM πθ∗ (e.g., GPT-4) if available:
+T
+X
+
+ŷ(st , at ) = R(st , at ) +
+
+′
+
+γ T −t R(s∗t′ , a∗t′ ),
+
+(10)
+
+t′ =t+1
+
+where s∗t′ = [st ; at ; a∗t+1 ; . . . ; a∗t′ −1 ] and a∗t′ ∼ πθ∗ (·|s∗t′ ).
+4.2
+
+Deliberative Planning with A*
+
+Once obtaining the proxy Q-value model Q̂, we can plug it to Eq. (6) to compute the f -value of each
+state and perform best-first search with A*. Alg. 1 illustrates the deliberative planning process.
+Specifically, we maintain a set for storing state candidates to be explored, denoted as unvisited,
+which initially only contains the input question q, and another set visited to record the visited states.
+Each step we pick the state s with the maximum f -value from the set unvisited and expand it by
+querying the top-K alternatives with the LLM policy πθ . After that, both visited and unvisited sets
+will be updated and this process repeats until the terminal state (a complete trajectory) is reached.
+Finally, we extract the answer part of the terminal state s as the result.
+
+5
+
+Experiments
+
+5.1
+
+Experimental Settings
+
+Datasets. We evaluate the effectiveness of Q* on two math reasoning and one code generation
+tasks, where the dataset statistics have been summarized in Table 1. 1) GSM8K [2] is a dataset of
+5
+
+Algorithm 1 Deliberative planning for LLMs with A*
+Input: question q, LLM policy πθ , proxy Q-value model Q̂
+1: unvisited ← {q}, visited ← ∅
+2: while unvisited ̸= ∅ do
+3:
+s ← arg maxs′ ∈unvisited f (s′ )
+4:
+unvisited ← unvisited\{s}, visited ← visited ∪ {s}
+5:
+if s is a terminal state then return the complete trajectory s
+6:
+for each a ∈ top-K(πθ (·|s)) do
+7:
+s′ ← [s; a]
+8:
+if s′ ∈
+/ visited then unvisited ← unvisited ∪ {s′ }
+
+grade school math problems, where the solution is given in a one-line-per-step format with an exact
+numerical answer in the last line; 2) MATH [3] is a dataset consisting of math problems of high
+school math competitions, where the solutions are given in a format that mixes latex code and natural
+language; 3) MBPP [44] is an entry-level Python programming dataset, where the questions are
+coding challenges along with a test case that defines the function format. The solutions are Python
+code that is excepted to pass the pre-collected test cases of each question.
+Table 1: Statistics of datasets.
+Dataset
+
+GSM8K
+
+MATH
+
+MBPP
+
+Domain
+Training
+Testing
+Average Steps
+
+Math Reasoning
+5000
+1319
+4.5
+
+Math Reasoning
+8000
+5000
+11.0
+
+Code Generation
+374
+500
+7.0
+
+Implementation Details. The implementation of Q* method mainly includes three steps: 1) Q-value
+estimation. As discussed in Section 4.1, we propose several ways for estimating Q values and will
+illustrate the implementation details in the next paragraph; 2) Utility aggregation for each step (cf.
+Eq. (5)). For GSM8K dataset, we adopt a process reward model (PRM) trained on PRM800K [22] to
+model RP to provide an intermediate signal for each reasoning step, and use min as the aggregation
+function; For MATH dataset, we set g(st ) = 0 for all passed states {si }ti=1 in each trajectory for
+fairness, because PRM800K contains data samples constructed from MATH testing set and there
+is a potential risk of data leakage; For MBPP dataset, we tokenize the code generated so far with
+function tokenize.generate_tokens and give a penalty of -0.5 if TokenError is raised, which
+is often the case that there are mismatched delimiters (e.g., parentheses, quotation marks) and invalid
+indention in the code. We use [−1] as the aggregation function to cancel the previous penalties since
+the code is generated on-the-fly and mismatched delimiters may be fixed in subsequent steps. 3) A*
+planning. For GSM8K and MATH datasets, we treat a single line outputted by the LLM as an action,
+while the action in MBPP is defined as a code snippet with 24 tokens when planning. Besides, in all
+experiments, we set λ = 1 when computing f -values and expand a state with K = 6 actions at each
+reasoning step. Finally, following the common practice of Best-of-N , we perform planning to collect
+N = 6 trajectories for each question, and select the one with the maximum f -value as the final result
+for evaluation.
+For Q-value estimation, in our practice, we find that learning from rollout could be the most effective
+and robust way to collect precise Q-value labels. Specifically, given the prompt of questions, we
+will firstly perform random rollout to obtain complete trajectories with LLM, denoted as πθ , under
+the setting of high temperature, e.g., τ = 0.9 for math reasoning and τ = 0.2 for code generation,
+and split each trajectory into a series of states according to the newline token “\n”. Then, for each
+state-action pair in a trajectory, denoted as (st , at ), we can perform random rollout or MCTS with the
+same LLM to collect a pool P of trajectories, and then select the best reasoning path with the highest
+accumulated rewards to construct the corresponding Q-value label of the current state-action pair.
+Note that the reward R(st , at ) is given as 1 only if the obtained math numerical answer is correct or
+the program passes all test cases, indicating that the Q value of a state-action pair can be 1 only if it
+has the potential to generate a trajectory containing the correct answer.
+6
+
+Table 2: Comparison of Q* and other baselines on GSM8K dataset.
+Base Model
+
+SFT
+
+Alignment
+
+Verification
+
+Accuracy
+
+GPT-3.5 (5-shot) [50]
+ChatGPT-instruct (0-shot) [46]
+ChatGPT-turbo (0-shot) [46]
+GPT-4 (0-shot) [46]
+GPT-4 (5-shot) [50]
+
+Unknown
+Unknown
+Unknown
+Unknown
+Unknown
+
+PPO (RM) [31]
+PPO (RM) [31]
+PPO (RM) [31]
+PPO (RM) [31]
+PPO (RM) [31]
+
+-
+
+57.1%
+71.3%
+77.7%
+91.9%
+92.0%
+
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+
+MetaMath[5]
+MetaMath[5]
+MetaMath[5]
+MetaMath[5]
+MetaMath[5]
+MetaMath[5]
+MetaMath[5]
+
+PPO (PRM) [31]
+PPO (QVM) [31]
+-
+
+Best-of-N (PRM) [22]
+Best-of-N (QVM) [22]
+Q* (QVM)
+Q* (PRM+QVM)
+
+49.5%
+65.2%
+67.2%
+67.6%
+72.1%
+74.5%
+78.8%
+80.8%
+
+5.2
+
+Experimental Results
+
+GSM8K. For the comparison on GSM8K dataset, we select Llama-2-7b [45] as our base model,
+whose accuracy can achieve 65.2% after finetuning on MetaMath [5]. Then, we treat Llama-2-7b
+finetuned on MetaMath as policy πθ , and perform random rollout to collect Q-value labels for training
+Q-value model (QVM). For utility aggregation, we train a process reward model (PRM) on PRM800K
+[22] to provide intermediate signal for each reasoning step. With PRM and QVM in hand, traditional
+methods tend to treat either of them as a verifier to select the Best-of-N trajectory or utilize them
+to perform PPO training of RLHF. As the results shown in Table 2, we can find that with the same
+PRM/QVM, using it for verification performs significantly better than using it for alignment. Further,
+in the comparison of planning-based methods, we can find that with the same QVM, Q* method
+with constant aggregated utility can still outperform Best-of-N method. With the PRM trained
+on PRM800K determining whether the intermediate reasoning steps are correct, Q* method that
+combines PRM and QVM achieves the best performance among all methods based on the same LLM,
+helping Llama-2-7b surpass the performance of close-sourced ChatGPT-turbo [46] and reaching an
+accuracy of 80.8%.
+MATH. As the results shown in Table 3, considering the weak performance of Llama-2-7b finetuned with MetaMath for the MATH dataset, we seek for two other stronger LLMs to evaluate the
+effectiveness of our Q* method. One is Llama-2-7b fine-tuned on Synthetic Data [47], which is
+constructed following the instruction of scaling up the SFT data, and achieves 41.9% accuracy on
+MATH dataset, approaching the performance of GPT-4 [48]. The other base model is DeepSeekMath-7b [49], which could be the most powerful open-source 7b model for math reasoning on MATH
+dataset, achieving 50.8% accuracy in our evaluation. From the results shown in the second and third
+blocks of Table 3, we can find that Q* can still lead to further performance improvement compared to
+the Best-of-N method on either of base models. Additionally, it is noteworthy that the performance
+of DeepSeek-Math-7b enhanced with Q* has already surpassed a series of closed-source models on
+the leaderboard of MATH dataset 2 , such as Gemini Ultra (4-shot), reaching an accuracy of 55.4% .
+MBPP. As for the comparison on MBPP dataset, we also choose the most powerful open-source LLM
+in the aspect of code generation, specifically CodeQwen1.5-7b-Chat, as our base model for evaluating
+the effectiveness of Q*. Following a similar procedure of math reasoning, we train a QVM for Q-value
+estimation and manually construct the utility function as described in the previous part of implementation details (tokenize the code generated so far with function tokenize.generate_tokens and
+give a penalty of -0.5 if TokenError is raised). From the results shown in Table 4, we can find that
+Q* can still outperform Best-of-N method in the aspect of code generation, and help CodeQwen1.57b-Chat to achieve 77.0% accuracy on MBPP dataset, which is also a promising performance in the
+leaderboard of MPBB 3 .
+2
+3
+
+https://paperswithcode.com/sota/math-word-problem-solving-on-math
+https://paperswithcode.com/sota/code-generation-on-mbpp
+
+7
+
+Table 3: Comparison of Q* and other baselines on MATH dataset.
+Base Model
+
+SFT
+
+Alignment
+
+Verification
+
+Accuracy
+
+GPT-3.5 (0-shot) [48]
+GPT-4 (0-shot) [48]
+Gemini Ultra (4-shot) [51]
+
+Unknown
+Unknown
+Unknown
+
+PPO (RM) [31]
+PPO (RM) [31]
+PPO (RM) [31]
+
+-
+
+23.5%
+42.5%
+53.2%
+
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+Llama-2-7b (0-shot)
+
+MetaMath[5]
+Synthetic Data[47]
+Synthetic Data[47]
+Synthetic Data[47]
+Synthetic Data[47]
+
+PPO (QVM) [31]
+-
+
+Best-of-N (QVM) [22]
+Q* (QVM)
+
+7.9%
+20.0%
+41.9%
+42.5%
+46.8%
+49.1%
+
+DeepSeek-Math-7b (0-shot)
+DeepSeek-Math-7b (0-shot)
+DeepSeek-Math-7b (0-shot)
+
+Unknown
+Unknown
+Unknown
+
+PPO (QVM) [31]
+PPO (QVM) [31]
+PPO (QVM) [31]
+
+Best-of-N (QVM) [22]
+Q* (QVM) [22]
+
+50.8%
+54.3%
+55.4%
+
+Table 4: Comparison of Q* and other baselines on MBPP dataset.
+
+6
+
+Base Model
+
+SFT
+
+Alignment
+
+Verification
+
+Accuracy
+
+GPT-3.5 Turbo (self-debug) [52]
+GPT-4 (self-debug) [52]
+
+Unknown
+Unknown
+
+PPO (RM) [31]
+PPO (RM) [31]
+
+-
+
+72.8%
+80.2%
+
+CodeQwen1.5-7b-Chat (0-shot)
+CodeQwen1.5-7b-Chat (0-shot)
+CodeQwen1.5-7b-Chat (0-shot)
+
+Unknown
+Unknown
+Unknown
+
+PPO (QVM) [31]
+PPO (QVM) [31]
+PPO (QVM) [31]
+
+Best-of-N (QVM) [22]
+Q* (PRM+QVM) [22]
+
+74.6%
+75.0%
+77.0%
+
+Conclusion
+
+Solving challenging multi-step reasoning problems requires LLMs to perform in-depth deliberation
+beyond auto-regressive token generation. In this paper, we present Q*, a general, versatile and
+agile deliberation framework for LLMs. Unlike existing deliberation methods which need extensive
+expertise to design a utility function for each specific task, Q* relies on ground-truth solely to train
+value model and can be easily applied to various reasoning tasks without modification. Moreover, by
+leveraging plug-and-play Q-value models as the heuristic function, Q* can effectively guide LLMs
+to solve various tasks without fine-tuning LLMs beforehand, which avoids potential performance
+degeneration on other tasks. Finally, our Q* is agile because we consider only a single step each time
+rather than complete rollouts (e.g., simulation in MCTS). Extensive empirical evaluations on math
+reasoning and code generation tasks confirm the superiority of our method.
+
+References
+[1] Janice Ahn, Rishu Verma, Renze Lou, Di Liu, Rui Zhang, and Wenpeng Yin. Large
+language models for mathematical reasoning: Progresses and challenges. arXiv preprint
+arXiv:2402.00157, 2024.
+[2] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser,
+Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, et al. Training verifiers to
+solve math word problems. arXiv preprint arXiv:2110.14168, 2021.
+[3] Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn
+Song, and Jacob Steinhardt. Measuring mathematical problem solving with the math dataset.
+arXiv preprint arXiv:2103.03874, 2021.
+[4] Peiyi Wang, Lei Li, Zhihong Shao, RX Xu, Damai Dai, Yifei Li, Deli Chen, Y Wu, and Zhifang
+Sui. Math-shepherd: A label-free step-by-step verifier for LLMs in mathematical reasoning.
+arXiv preprint arXiv:2312.08935, 2023.
+[5] Longhui Yu, Weisen Jiang, Han Shi, Jincheng Yu, Zhengying Liu, Yu Zhang, James T Kwok,
+Zhenguo Li, Adrian Weller, and Weiyang Liu. Metamath: Bootstrap your own mathematical
+questions for large language models. arXiv preprint arXiv:2309.12284, 2023.
+8
+
+[6] Haipeng Luo, Qingfeng Sun, Can Xu, Pu Zhao, Jianguang Lou, Chongyang Tao, Xiubo Geng,
+Qingwei Lin, Shifeng Chen, and Dongmei Zhang. Wizardmath: Empowering mathematical reasoning for large language models via reinforced evol-instruct. arXiv preprint arXiv:2308.09583,
+2023.
+[7] Ziyang Luo, Can Xu, Pu Zhao, Qingfeng Sun, Xiubo Geng, Wenxiang Hu, Chongyang Tao, Jing
+Ma, Qingwei Lin, and Daxin Jiang. Wizardcoder: Empowering code large language models
+with evol-instruct. arXiv preprint arXiv:2306.08568, 2023.
+[8] Baptiste Roziere, Jonas Gehring, Fabian Gloeckle, Sten Sootla, Itai Gat, Xiaoqing Ellen Tan,
+Yossi Adi, Jingyu Liu, Tal Remez, Jérémy Rapin, et al. Code llama: Open foundation models
+for code. arXiv preprint arXiv:2308.12950, 2023.
+[9] CodeGemma Team, Ale Jakse Hartman, Andrea Hu, Christopher A. Choquette-Choo, Heri
+Zhao, Jane Fine, Jeffrey Hui, Jingyue Shen, et al. Codegemma: Open code models based on
+gemma. 2024. URL https://goo.gle/codegemma.
+[10] Jian Xie, Kai Zhang, Jiangjie Chen, Tinghui Zhu, Renze Lou, Yuandong Tian, Yanghua Xiao,
+and Yu Su. TravelPlanner: A benchmark for real-world planning with language agents. arXiv
+preprint arXiv:2402.01622, 2024.
+[11] Bo Liu, Yuqian Jiang, Xiaohan Zhang, Qiang Liu, Shiqi Zhang, Joydeep Biswas, and Peter
+Stone. LLM+P: Empowering large language models with optimal planning proficiency. arXiv
+preprint arXiv:2304.11477, 2023.
+[12] Lin Guan, Karthik Valmeekam, Sarath Sreedharan, and Subbarao Kambhampati. Leveraging
+pre-trained large language models to construct and utilize world models for model-based task
+planning. In NeurIPS, pages 79081–79094, 2023.
+[13] Karthik Valmeekam, Matthew Marquez, Sarath Sreedharan, and Subbarao Kambhampati. On
+the planning abilities of large language models - A critical investigation. In NeurIPS, pages
+75993–76005, 2023.
+[14] Kaya Stechly, Karthik Valmeekam, and Subbarao Kambhampati. Chain of thoughtlessness: An
+analysis of CoT in planning. arXiv preprint arXiv:2405.04776, 2024.
+[15] Kahneman Daniel. Thinking, Fast and Slow. Macmillan, 2011.
+[16] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le,
+Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. In
+NeurIPS, pages 24824–24837, 2022.
+[17] Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, Sharan Narang, Aakanksha
+Chowdhery, and Denny Zhou. Self-consistency improves chain of thought reasoning in language
+models. arXiv preprint arXiv:2203.11171, 2022.
+[18] Yao Fu, Hao Peng, Ashish Sabharwal, Peter Clark, and Tushar Khot. Complexity-based
+prompting for multi-step reasoning. In ICLR, 2022.
+[19] Denny Zhou, Nathanael Schärli, Le Hou, Jason Wei, Nathan Scales, Xuezhi Wang, Dale
+Schuurmans, Claire Cui, Olivier Bousquet, Quoc Le, et al. Least-to-most prompting enables
+complex reasoning in large language models. arXiv preprint arXiv:2205.10625, 2022.
+[20] Zhangir Azerbayev, Hailey Schoelkopf, Keiran Paster, Marco Dos Santos, Stephen McAleer,
+Albert Q Jiang, Jia Deng, Stella Biderman, and Sean Welleck. Llemma: An open language
+model for mathematics. arXiv preprint arXiv:2310.10631, 2023.
+[21] Xiang Yue, Xingwei Qu, Ge Zhang, Yao Fu, Wenhao Huang, Huan Sun, Yu Su, and Wenhu
+Chen. Mammoth: Building math generalist models through hybrid instruction tuning. arXiv
+preprint arXiv:2309.05653, 2023.
+[22] Hunter Lightman, Vineet Kosaraju, Yura Burda, Harri Edwards, Bowen Baker, Teddy Lee, Jan
+Leike, John Schulman, Ilya Sutskever, and Karl Cobbe. Let’s verify step by step. arXiv preprint
+arXiv:2305.20050, 2023.
+9
+
+[23] Jonathan Uesato, Nate Kushman, Ramana Kumar, Francis Song, Noah Siegel, Lisa Wang,
+Antonia Creswell, Geoffrey Irving, and Irina Higgins. Solving math word problems with
+process-and outcome-based feedback. arXiv preprint arXiv:2211.14275, 2022.
+[24] Muhammad Khalifa, Lajanugen Logeswaran, Moontae Lee, Honglak Lee, and Lu Wang.
+Discriminator-guided multi-step reasoning with language models.
+arXiv preprint
+arXiv:2305.14934, 2023.
+[25] Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Tom Griffiths, Yuan Cao, and Karthik
+Narasimhan. Tree of thoughts: Deliberate problem solving with large language models. In
+NeurIPS, 2023.
+[26] Xidong Feng, Ziyu Wan, Muning Wen, Ying Wen, Weinan Zhang, and Jun Wang. AlphaZerolike tree-search can guide large language model decoding and training. arXiv preprint
+arXiv:2309.17179, 2023.
+[27] Shibo Hao, Yi Gu, Haodi Ma, Joshua Jiahua Hong, Zhen Wang, Daisy Zhe Wang, and Zhiting Hu. Reasoning with language model is planning with world model. arXiv preprint
+arXiv:2305.14992, 2023.
+[28] Yuchen Zhuang, Xiang Chen, Tong Yu, Saayan Mitra, Victor Bursztyn, Ryan A Rossi, Somdeb
+Sarkhel, and Chao Zhang. Toolchain*: Efficient action space navigation in large language
+models with A* search. arXiv preprint arXiv:2310.13227, 2023.
+[29] Cameron B Browne, Edward Powley, Daniel Whitehouse, Simon M Lucas, Peter I Cowling,
+Philipp Rohlfshagen, Stephen Tavener, Diego Perez, Spyridon Samothrakis, and Simon Colton.
+A survey of monte carlo tree search methods. IEEE Transactions on Computational Intelligence
+and AI in Games, 4(1):1–43, 2012.
+[30] Peter E Hart, Nils J Nilsson, and Bertram Raphael. A formal basis for the heuristic determination
+of minimum cost paths. IEEE Transactions on Systems Science and Cybernetics, 4(2):100–107,
+1968.
+[31] Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin,
+Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al. Training language models to
+follow instructions with human feedback. In NeurIPS, pages 27730–27744, 2022.
+[32] Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D Manning, and
+Chelsea Finn. Direct preference optimization: Your language model is secretly a reward model.
+arXiv preprint arXiv:2305.18290, 2023.
+[33] Jiaming Ji, Boyuan Chen, Hantao Lou, Donghai Hong, Borong Zhang, Xuehai Pan, Juntao Dai,
+and Yaodong Yang. Aligner: Achieving efficient alignment through weak-to-strong correction.
+arXiv preprint arXiv:2402.02416, 2024.
+[34] Rishi Hazra, Pedro Zuidberg Dos Martires, and Luc De Raedt. SayCanPay: Heuristic planning
+with large language models using learnable domain knowledge. In AAAI, pages 20123–20133,
+2024.
+[35] Dong Huang, Qingwen Bu, Jie M Zhang, Michael Luck, and Heming Cui. Agentcoder:
+Multi-agent-based code generation with iterative testing and optimisation. arXiv preprint
+arXiv:2312.13010, 2023.
+[36] Noah Shinn, Federico Cassano, Beck Labash, Ashwin Gopinath, Karthik Narasimhan, and
+Shunyu Yao. Reflexion: Language agents with verbal reinforcement learning. arXiv preprint
+cs.AI/2303.11366, 2023.
+[37] Qwen Team. Code with codeqwen1.5, April 2024. URL https://qwenlm.github.io/
+blog/codeqwen1.5/.
+[38] Blai Bonet and Héctor Geffner. Planning as heuristic search. Artificial Intelligence, 129(1-2):
+5–33, 2001.
+[39] David Silver. Cooperative pathfinding. In AAAI-AIIDE, pages 117–122, 2005.
+10
+
+[40] Bobak Pezeshki, Radu Marinescu, Alexander Ihler, and Rina Dechter. AND/OR branch-andbound for computational protein design optimizing K. In UAI, pages 1602–1612, 2022.
+[41] Stuart J Russell and Peter Norvig. Artificial Intelligence: A Modern Approach. Pearson, 2016.
+[42] Zeqiu Wu, Yushi Hu, Weijia Shi, Nouha Dziri, Alane Suhr, Prithviraj Ammanabrolu, Noah A
+Smith, Mari Ostendorf, and Hannaneh Hajishirzi. Fine-grained human feedback gives better
+rewards for language model training. arXiv preprint arXiv:2306.01693, 2023.
+[43] Martin Riedmiller. Neural fitted Q iteration–first experiences with a data efficient neural
+reinforcement learning method. In ECML, pages 317–328, 2005.
+[44] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David
+Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, et al. Program synthesis with large
+language models. arXiv preprint arXiv:2108.07732, 2021.
+[45] Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei,
+Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2: Open
+foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288, 2023.
+[46] Kumar Shridhar, Koustuv Sinha, Andrew Cohen, Tianlu Wang, Ping Yu, Ram Pasunuru,
+Mrinmaya Sachan, Jason Weston, and Asli Celikyilmaz. The art of LLM refinement: Ask,
+refine, and trust. arXiv preprint arXiv:2311.07961, 2023.
+[47] Chen Li, Weiqi Wang, Jingcheng Hu, Yixuan Wei, Nanning Zheng, Han Hu, Zheng Zhang, and
+Houwen Peng. Common 7b language models already possess strong math capabilities. arXiv
+preprint arXiv:2403.04706, 2024.
+[48] Sébastien Bubeck, Varun Chandrasekaran, Ronen Eldan, Johannes Gehrke, Eric Horvitz, Ece
+Kamar, Peter Lee, Yin Tat Lee, Yuanzhi Li, Scott Lundberg, et al. Sparks of artificial general
+intelligence: Early experiments with GPT-4. arXiv preprint arXiv:2303.12712, 2023.
+[49] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Mingchuan Zhang, YK Li,
+Y Wu, and Daya Guo. Deepseekmath: Pushing the limits of mathematical reasoning in open
+language models. arXiv preprint arXiv:2402.03300, 2024.
+[50] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni
+Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. GPT-4
+technical report. arXiv preprint arXiv:2303.08774, 2023.
+[51] Gemini Team, Rohan Anil, Sebastian Borgeaud, Yonghui Wu, Jean-Baptiste Alayrac, Jiahui Yu,
+Radu Soricut, Johan Schalkwyk, Andrew M Dai, Anja Hauth, et al. Gemini: A family of highly
+capable multimodal models. arXiv preprint arXiv:2312.11805, 2023.
+[52] Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. Teaching large language
+models to self-debug. arXiv preprint arXiv:2304.05128, 2023.
+
+11
+
+

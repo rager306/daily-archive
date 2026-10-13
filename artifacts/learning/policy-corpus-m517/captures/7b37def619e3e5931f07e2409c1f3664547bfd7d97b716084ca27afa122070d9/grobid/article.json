@@ -1,0 +1,2450 @@
+{
+  "paper_id": "2401.16107",
+  "title": "Beyond Direct Diagnosis: LLM-based Multi-Specialist Agent Consultation for Automatic Diagnosis",
+  "abstract_text": "Automatic diagnosis is a significant application of AI in healthcare, where diagnoses are generated based on the symptom description of patients. Previous works have approached this task directly by modeling the relationship between the normalized symptoms and all possible diseases. However, in the clinical diagnostic process, patients are initially consulted by a general practitioner and, if necessary, referred to specialists in specific domains for a more comprehensive evaluation. The final diagnosis often emerges from a collaborative consultation among medical specialist groups. Recently, large language models have shown impressive capabilities in natural language understanding. In this study, we adopt tuning-free LLMbased agents as medical practitioners and propose the Agent-derived Multi-Specialist Consultation (AMSC) framework to model the diagnosis process in the real world by adaptively fusing probability distributions of agents over potential diseases. Experimental results demonstrate the superiority of our approach compared with baselines. Notably, our approach requires significantly less parameter updating and training time, enhancing efficiency and practical utility. Furthermore, we delve into a novel perspective on the role of implicit symptoms within the context of automatic diagnosis.",
+  "body_text": "IntroductionThe utilization of artificial intelligence in healthcare, specifically in the realm of automatic diagnosis, has represented a pivotal advancement. Healthcare agents towards automatic diagnosis are designed to interact with patients, eliciting information about symptom presence and formulating diagnoses based on these patient-reported discomforts, termed as complaints. Such AI-driven automatic diagnostic systems are poised to assume a critical role in primary healthcare, offering the potential to mitigate the challenges posed by medical resource scarcity, particularly in economically disadvantaged regions [Wang et al., 2023c;Organization, 2016].\n* Corresponding authorThe task of automatic diagnosis is derived from the process in real-world online consultation platforms, which is depicted in Figure 1. It involves the annotation of dialogue data between the patients and practitioners including three distinct components: (1) Explicit Symptoms -those symptoms presented in the initial patient complaint; (2) Implicit Symptoms -additional symptoms ascertained through subsequent practitioner inquiries; (3) Target Disease -the diagnosis predicted by the practitioner, based on a comprehensive assessment of symptoms. Previous research predominantly addresses the automatic diagnosis task by initially predicting implicit symptoms using explicit symptoms. Subsequently, a diagnosis is formulated leveraging all symptoms, employing methodologies such as reinforcement learning [Tang et al., 2016;Wei et al., 2018;Hou et al., 2021] or sequence generation [Chen et al., 2022;Wang et al., 2023c]. Existing approaches tend to model the dynamics of symptom-disease relationships but ignore the diagnosis process in real-life clinical settings. Respiratory Doctor: You may get the Covid-19 …… Patient: I have fever, diarrhea, fatigue, …… A. Individual Practitioner Consultation Doctor A …… General Surgeon: You may get the appendicitis ……. Endocrinologist: You may get the hyperthyroidism …… General Practitioner: You may just catch a cold, but you can consult specialists for further suggestion. Doctor B …… Doctor D …… Doctor C …… B. Practitioner Group Consultation C. Agent-based Group Consultation Agent with Knowledge for Disease A: Agent with Knowledge for Disease B: Agent with Knowledge for Disease C: Agent with Knowledge for Disease D: Distribution fusion Figure 2: Scenarios of three medical diagnostic processes. A. Individual Practitioner Consultation: a singular general practitioner or specialist formulates the diagnosis; B. Practitioner Group Consultation: a group of professionals collaboratively arriving at a diagnostic conclusion; C. Agent-based Group Consultation: the diagnosis is derived from the decision fusion from multiple agent-based specialists.In clinical practice, when a patient presents with symptoms necessitating medical intervention, the customary procedure commences with an initial evaluation by a general practitioner. This primary assessment aims to establish a preliminary diagnosis. Subsequently, the general practitioner typically refers the patient to a specialist with expertise in the relevant medical domain for advanced consultation and management if necessary, as depicted in Scenario A of Figure 2. Furthermore, for instances involving multifaceted medical conditions, it is standard to convene a multidisciplinary team of practitioners, each contributing diverse expertise and experience. This collaborative approach facilitates a holistic assessment and culminates in a consensus diagnosis, as illustrated in Scenario B of Figure 2.In recent advancements, Large Language Models (LLMs) have demonstrated exceptional capabilities in both comprehending and generating natural language across diverse tasks [Brown et al., 2020;Touvron et al., 2023;Chowdhery et al., 2023;OpenAI, 2023]. Moreover, their application within the medical field has garnered significant research interest [Wang et al., 2023a;Bao et al., 2023]. Building upon this foundation, this study introduces the Agent-derived Multi-Specialist Consultation (AMSC) model, conceptualized from real-world clinical scenarios. In this model, we envision open-source LLMs as primary care physicians, while specialized LLM-based agents, each equipped with distinct medical knowledge, function akin to medical specialists. These agents, each possessing expertise in different medical domains, generate predictive distributions for possible diseases or medical categories without parameter updating of LLMs. Subsequently, we propose an adaptive probability distribution fusion method that integrates the agent predictions, offering a refined decision-making process for disease diagnosis. Additionally, we scrutinize the influence of implicit symptoms on automated diagnosis, investigating the impact of various symptoms on the diagnostic outcomes.In summary, our contributions are outlined as follows:• We introduce an agent-based multi-specialist consul-tation model employing open-source LLMs following real-world clinical scenarios, coupled with an adaptive predictive distribution fusion method for disease diagnosis.• Experimental results demonstrate that our approach surpasses existing baselines in performance. Notably, as the model only requires parameter training on the distribution fusion, it is also more efficient in terms of training costs.• We also conduct a comprehensive analysis of symptomatology in automated diagnosis, exploring the differential impacts of various symptoms on diagnostic results.2 Related Work\nAutomatic DiagnosisAutomatic diagnosis using reinforcement learning (RL) has evolved significantly. Initial work by [Tang et al., 2016] used RL for neural symptom checking, followed by hierarchical RL approaches for joint diagnostics and symptom inquiry [Kao et al., 2018;Liao et al., 2020]. [Wei et al., 2018] introduced a Deep Q-Network for symptom collection, while [Xu et al., 2019] emphasized integrating prior medical knowledge into policy learning. Further advancements include decoupling symptoms and diseases using dense representations [Chen et al., 2023], policy gradient frameworks [Xia et al., 2020], multi-level reward models [Hou et al., 2021], and dialog data customization [Teixeira et al., 2021]. Beyond RL, [Chen et al., 2022] and [Hou et al., 2023] explored sequence generation and multi-task frameworks for diagnosis, respectively. [Wang et al., 2023c] proposed a joint symptom-disease generation model. However, existing research lacks focus on cross-specialist knowledge integration in automatic diagnosis. Our study addresses this gap by exploring the fusion of diagnoses with agent specialists. Agent-derived URTI Specialist Agent-derived Bronchitis Specialist Agent-derived Dyspepsia Specialist LLM-derived General Practitioner Agent-derived Diarrhea Specialist Disease Knowledge for diarrhea: Symptoms of diarrhea includes abdominal pain, watery stool, vomiting, poor appetite, loss of appetite, fever, ….. Question: The complaints of patients include fever, fatigue, cough and running nose. Then, the patient may have A. Diarrhea B. Dyspepsia C. Bronchitis D. URTI Answer: C. Bronchitis Disease knowledge for profile of specialist agent Diagnosis question with symptoms Options for diagnosis 0.28 0.12 0.56 0.04 A B C D Normalized candidate option probabilitybased diagnosis Agent-derived Multiple Specialist Consultation Diarrhea Specialist 0.28 0.12 0.56 0.04 Dyspepsia Specialist 0.08 0.23 0.45 0.24 0.23 0.1 0.36 0.31 Bronchitis Specialist URTI Specialist 0.09 0.1 0.3 0.51 .23 .10 .36 .31 .08 .23 .45 .24 .28 .12 .56 .04 .09 .10 .60 .51 0.11 0.12 0.6 0.17 A B C D Adaptive Probability Distribution Fusion C. Bronchitis \nMedical Large Language ModelsRecent study has underscored the efficacy of Large Language Models (LLMs) within the medical field [Thirunavukarasu et al., 2023;Bao et al., 2023], manifesting in diverse applications, including diagnostic processes [Singhal et al., 2023], medical reasoning [Liévin et al., 2022], and the summarization of medical evidence [Tang et al., 2023]. In the context of knowledge-augmented methodologies, [Wang et al., 2023b] demonstrated the generation of informed responses via queries to knowledge bases. Furthermore, [Kang et al., 2023] fine-tuned smaller LLMs with rationales derived from retrieved knowledge. Another notable advancement is [Jin et al., 2023] GeneGPT, which instructs LLMs to integrate Web APIs, thereby enhancing performance. Despite these advancements, the medical application faces inherent privacy challenges, particularly concerning the uploading of personal health information to online LLMs. To address this, we introduce the AMSC framework, tailored for open-source LLMs and deployed locally and privately without privacy concern.\nAgent-derived Multi-specialist Consultation FrameworkIn this section, we delve into an Agent-derived Multi-Specialist Consultation (AMSC) framework, including refining the task of automatic diagnosis, implementing an agentderived specialist, and finally describing the fusion of multispecialist decisions derived from these agents in medical diagnostics mimicking the procedure in the real-life diagnosis by multiple specialists.\nRefinement of Automatic DiagnosisThe task of automatic diagnosis involves processing patientspecific data, denoted as p i . This data encompasses the target disease d i , an array of explicit symptoms s exp i = {exp 1 , exp 2 , ......}, and a collection of implicit symptomss imp i = {imp 1 , imp 2 , ......}.Explicit symptoms are direct manifestations reported by patients, while implicit symptoms are deduced from interactive dialogues between patients and practitioners. Both categories of symptoms undergo standardization to medical terminologies from their original natural language descriptions.Recent advancements in LLMs have demonstrated remarkable efficacy in natural language processing within medical contexts [Bao et al., 2023;Wang et al., 2023a]. In our approach, we leverage these LLMs as virtual medical practitioners. Given the finite nature of disease possibilities in automatic diagnosis tasks, we restructure the task into a Multiple-Choice Question-Answering (MCQA) framework, as illustrated in Figure 3, which involves constructing symptombased question templates and selecting the results from answer options, formulated as p diseasei = LLM (q, opts; i) j LLM (q, opts; j) where q represents the symptom-inclusive query question for the LLM, opts denotes the array of possible disease diagnoses, LLM refers to the process that large language model generates the probability of each token within its vocabulary and i, j are indices corresponding to the specific token options for disease diagnosis.For tasks involving a broader array of choices, we employ a hierarchical MCQA structure based on ICD-10-CM codes [Organization, 2004]. Meanwhile, recent research demonstrates that the effectiveness of MCQAs in leveraging the capability of LLMs is subject to the Multiple-Choice Symbol Binding (MCSB) proficiency of the model (the capability of LLMs to associate the answer options with the alphabetic symbols), which significantly varies across different models [Robinson and Wingate, 2023;Zheng et al., 2023]. Therefore, we selectively utilize models with superior multiplechoice symbol binding capabilities and empirically evaluate their Proportion of Plurality Agreement (PPA) value [Robinson and Wingate, 2023] (further details are provided in the experimental section).\nAgent-derived Specialist for DiagnosisWhile LLM-based practitioners possess a foundational understanding of medical knowledge akin to general practitioners, they lack the depth of expertise characteristic of specialists in particular diseases. To address this, we enhance the LLMs with specialized disease knowledge profiles from the National Institutes of Health 1 , thereby transforming them into distinct specialist agents as depicted in Figure 3. Each agentspecialist is endowed with expertise in a singular disease domain. For a question for diagnosis, an agent-specialist outputs a distribution on all the possible answer options, and the corresponding disease for the option with the highest probability is the diagnostic result, denoted ask n = d n , (sym n1 , sym n2 , ...) Agent n = Agent-specialist(LLM, k n ) p n diseasei =Agent n (q, opts; i) j Agent n (q, opts; j) where a disease knowledge k n includes a disease d n and a series of symptoms (sym n1 , sym n2 , ...) of the disease d n . Agent n represents an agent-derived specialist with a LLM and specific disease knowledge k n .To assess whether an agent specialist exhibits enhanced knowledge in its respective disease area as a human specialist, we conduct experiments on the most widely used automatic diagnosis dataset MuZhi-4 [Wei et al., 2018], which includes four target diseases. Figure 4 presents the recall value achieved by these agent specialists for each disease, using distinct symbols. The results indicate that an agent with specialized knowledge in a particular disease significantly outperforms those with knowledge of other diseases and the LLMbased general practitioner without such specialization, affirming the capability of agent-derived specialists to effectively assimilate and apply specialized knowledge.\nMulti-Specialist Decision FusionLike in the real world where multiple specialists may yield different diagnoses for the same patient, in the realm of the Agent-derived Multi-Specialist Consultation (AMSC) framework, each agent conceptualized as a specialist, yields a probabilistic distribution over a range of potential diagnoses. This process results in the formation of a diagnosis distribution matrix when multiple agents are involved. Analogous to the consensus-building process among human medical specialists through extensive deliberation, we introduce an innovative approach for reaching a conclusive diagnostic decision from this fusion of agent-specialist inputs. Our methodology employs a self-attention-based Adaptive Probability Distribution Fusion (APDF) technique. We consider a diagnosis distribution matrix denoted as M = {m 1 , m 2 , ...}, where m n represents the diagnostic probability distribution contributed by the n th agentspecialist. The following equations delineate our method:Q, K, V = Linear q,k,v (M ) p diseasei = Linear(sof tmax( QK T √ d k )V ; i)Here, Q, K, V represent the linear projections of the distribution matrix M corresponding to the query, key, and value components respectively, utilizing the transformation Linear q,k,v . The final diagnostic outcome is derived from an adaptively weighted fusion of the diagnostic distributions sourced from multiple agent specialists, capitalizing on the self-attention mechanism's capacity to discern and emphasize relevant features within the distribution matrix.\nExperiment\nDatasetsWe evaluate our approach on three datasets derived from reallife contexts:• MuZhi-4 [Wei et al., 2018], a meticulously annotated dataset collected from an online platform Baidu MuZhi Doctorfoot_0 which focuses on four diseases in the pediatric domain; • MuZhi-10 is an augmented iteration of the MuZhi-4 dataset, extending to ten diseases, spanning respiratory, digestive and endocrine systems; • Dxy [Xu et al., 2019] is a medical dialogue dataset curated from Dingxiang Doctor platform. 3A thorough statistical analysis of the datasets is presented in Table 1. Additionally, prior research has engaged in experimental analysis utilizing synthetic datasets [Liao et al., 2020;Chen et al., 2022] fabricated by symptom-disease database Symcatfoot_2 . Notably, as depicted in Table 1, the datasets derived from real-life contexts exhibit an average of 2.36 explicit symptoms per patient complaint. In stark contrast, the synthetic dataset only contains 1 explicit symptom per case. This indicates that during medical consultations, patients tend to articulate their ailments with greater specificity in reallife scenarios, as opposed to the limited expressiveness observed in synthetic datasets. Such a discrepancy underscores a significant divergence in the distribution of data between synthetic and real-life datasets. Consequently, our study focuses exclusively on datasets derived from real-life scenarios, thereby ensuring a more realistic and applicable analysis.MZ-4 MZ-10 Dxy Synthetic # Disease 4 10 5 90 # Symptom 66 331 41 266 # Training 568 3704 423 24000 # Tr avg exp 2.39 1.72 3.09 1.00 # Tr avg imp 3.28 5.29 1.65 2.61 # Test 142 412 104 6000 # T avg exp 2.20 1.77 3.00 1.00 # T avg imp 3.20 5.18 1.76 2.59 Table 1: Statistics of the datasets, including three real-life datasets and one synthetic dataset. #Tr avg exp: the average number of explicit symptoms in the training set; #Tr avg imp: the average number of implicit symptoms in the training set; #T avg exp: the average number of explicit symptoms in the test set; #T avg imp: the average number of implicit symptoms in the test set.\nBaselinesIn this research, we present an analytical comparison of our experimental results with a spectrum of established baseline models in the domain of automatic medical diagnosis. These benchmarks include:• DQN model [Wei et al., 2018], which employs a Deep Q-Network framework for symptom validation and diagnostic processes.• HRL approach [Liao et al., 2020], which implements a DQN-based hierarchical policy to separately predict symptoms and diagnose diseases.• PPO model [Schulman et al., 2017], which utilizes proximal policy optimization techniques for the development of a diagnostic model.• DxFormer [Chen et al., 2023], a novel model that decouples the processes of symptom inquiry and disease diagnosis through dense symptom representation.• Diaformer [Chen et al., 2022], which conceptualizes the task through sequence generation methodology.• CoAD [Wang et al., 2023c], which integrates symptom and disease generation with label alignment for a comprehensive diagnostic model.\nSelection of Backbone ModelConsidering the language of automatic diagnosis datasets utilized, our selection for the backbone model is the Baichuan2chat, a large language model with 13 billion parameters [Yang et al., 2023]. This model demonstrates robust performance in both languages. We also evaluate the multiple-choice symbol binding ability of the model using the metric of mean Proportion of Plurality Agreement (PPA) values [Robinson and Wingate, 2023], with n answer options across the automatic diagnosis datasets. The results ranged from 0.78 to 0.94, indicating a notable consistency in the model performance regardless of the order of answer options, thereby affirming its reliability in MCQA tasks.\nImplementation of Diagnostic FrameworkFor the agent-specialist of our AMSC framework, we employ the corresponding output logits of the answer option index of the last token in the last layer of Baichuan2 to formulate a diagnostic distribution for potential diseases. In our adaptive probability distribution fusion mechanism, the input dimension, denoted as d input , is calculated as the product of the number of potential diseases and the number of agent specialists. The dimensions of the query, key, and value matrices (q, k, v) are set to d input × d input . The learning rate for this implementation ranges between 1e-1 and 1e-3.\nMain ResultsWe present an empirical evaluation of the AMSC framework, comparing its performance against established baselines across three real-world datasets. This evaluation encompasses several key metrics: diagnostic accuracy, training duration (denoted as Ttime), and the average number of turns required for implicit symptom inquiry (referred to as Turn). Additionally, we introduce a novel metric, the number of training parameters (#Params), to further assess the efficiency of the automatic diagnosis system. Table 2 delineates the comparative performance of the AMSC framework and the baseline methodologies. In terms of diagnostic accuracy, the AMSC framework demonstrates superior efficacy, outperforming existing systems on all three datasets, with an enhancement in performance of up to 3.2%. Regarding training time, since the LLM is frozen and only the APDF module requires training, the AMSC framework exhibits a significant reduction, saving up to 95.5% training time compared with the baseline models, equating to a mere 0.09 minutes on the DXY dataset. Furthermore, the demand for AMSC for training parameters is notably efficient, scaling proportionally with the number of diseases. For a dataset encompassing n diseases, the AMSC requires 3n 4 + n 3 training parameters, which signifies a reduction of up to 99.99% in parameter training. Concerning the mean turn of symptom inquiry, the AMSC relies solely on explicit symptoms, obviating the need for implicit symptom inquiries. This approach is substantiated by experimental findings, affirming the feasi- bility of an automatic diagnosis framework operating without the integration of implicit symptoms. By now, the AMSC framework has not incorporated implicit symptoms in its diagnostic process. However, prior work [Chen et al., 2022;Chen et al., 2023;Wang et al., 2023c] suggests that implicit symptoms could enhance the performance of automatic diagnosis systems, which is also intuitive. Therefore, we will explore how the implicit symptoms will affect the performance of our AMSC framework in the following section.\nDiscussion5.1 Impact of Implicit Symptoms Model LLM Single agent AMSC AMSC † 0.632 0.676 0.773 implicit symptoms -all 0.631 0.669 0.752 -pos 0.638 0.647 0.760 medical knowledge -reordered † N/A 0.641 0.718 -all N/A 0.662 0.724 -irrelevant † N/A 0.585 0.702 -all N/A 0.627 0.693Table 3: Accuracy of LLM, Single agent, and AMSC with specific settings for the implicit symptoms and medical knowledge on the MuZhi-4 dataset. †: with no implicit symptom. -all: with both explicit and implicit symptoms. -pos: only with the positive symptoms in the explicit and implicit symptoms. N/A: not applicable.Experimental results have demonstrated that our AMSC framework can work well on the automatic diagnosis task even without the implicit symptoms. In this subsection, we will scrutinize how the implicit symptoms affect the performance of our AMSC with two settings on the MuZhi-4 dataset:• all symptoms, denoted as \"-all\", includes entire explicit and implicit symptoms;• positive symptoms, denoted as \"-pos\", only involves the positive symptoms inside the explicit and implicit symptoms.Interestingly, our results, as outlined in Table 3 reveal that the inclusion of a full spectrum of symptoms does not necessarily enhance the performance of AMSC framework. Also, configurations relying solely on positive symptoms yielded similar outcomes. The p-values of results of the paired t-test between the (AMSC †, AMSC -all) and (AMSC †, AMSCpos) are 0.244 and 0.357 respectively, which means that there is no statistically significant difference between the result with and without implicit symptom.These findings have profound implications for the use of Large Language Models (LLMs) in medical diagnostics. In clinical practice, a comprehensive collection of symptoms is vital for accurate diagnosis. However, for LLMs, the abundance of symptoms, especially without differentiated weighting, poses interpretative challenges. Our analysis reveals that 59.1% of symptoms are common across all four studied diseases in MuZhi-4, with decreasing proportions for three, two, and one disease of 25.8%, 10.6%, and 4.5% respectively. This significant overlap complicates the task of accurate diagnosis with LLMs. For example, the symptom \"cough\" is present in 95.8% of bronchitis cases and 53.1% of Upper Respiratory Tract Infections (URTI). Furthermore, explicit symptoms, which are primarily patient-reported and considered dominant, can effectively reflect a condition of the patient to a specialist agent, demonstrating a notable aspect for LLMbased diagnostic systems.\nImpact of Medical KnowledgeThe medical knowledge has been proven to be helpful for the agent specialist with the experiment in Table 2 and Figure 4. Here we investigate the influence of medical knowledge on the performance of LLM-based automatic diagnosis systems from another angle. Utilizing the MuZhi-4 dataset, we explore two distinct strategies for medical knowledge:• Reordered Knowledge: We assign medical knowledge of one disease to another, creating mismatched knowl-edge for the LLMs. This is formulated as:k reordered n = d n , (sym m1 , sym m2 , . . .)where (sym m1 , sym m2 , . . .) are symptoms of disease d m different from the target disease d n .• Irrelevant Knowledge: Here, the automatic diagnosis system is provided with accurate medical knowledge of diseases not included in the automatic diagnosis task. It simulates a scenario where specialists unrelated to the specific diseases are consulted. This is represented as:k other o = d o , (sym o1 , sym o2 , . . .)where (sym o1 , sym o2 , . . .) are symptoms of a nontarget disease d o .As shown in Table 3, the use of reordered or irrelevant medical knowledge adversely affects the diagnostic accuracy of both single-agent systems and AMSC configurations. While agents with reordered knowledge exhibit slightly better performance than those with entirely irrelevant knowledge, their effectiveness is significantly compromised due to the deliberate misalignment of disease-knowledge pairings.\nDecision Fusion TechniquesWe introduce and evaluate the Adaptive Probability Distribution Fusion (APDF) method, which is designed to amalgamate probability distributions of potential diseases, derived from a group of agent specialists. In parallel, we also conduct empirical evaluations with alternative fusion methodologies: (1) Majority Decision Fusion, wherein predominant decisions override minority opinions, (2) Mean Decision Fusion, which determines disease diagnoses based on the average distribution across multiple specialists, and (3) Linear Classifier Fusion.Figure 5 represents the comparative accuracy achieved by these diverse decision fusion methods. It is observed that our proposed APDF method consistently surpasses the three baselines mentioned above approaches in terms of performance efficiency. Notably, the Linear Classifier Fusion demonstrates superior efficacy compared to both Majority and Mean Decision Fusions. The results above underscore the significant contribution of our APDF method to enhance the AMSC framework's effectiveness.\nGeneralization on the Real-world ScenarioAutomated diagnosis datasets have converted patientpractitioner dialogues, which are inherently natural languagebased, into normalized symptom labels to align with the methodologies established in prior work. However, a significant challenge arises in annotating the symptoms in the dialogues: it necessitates the involvement of highly skilled human experts, which renders the process cost-intensive and less feasible for real-world application. Our proposed framework AMSC, which utilizes a question template for symptom labels, can seamlessly integrate with natural language descriptions of symptoms. Notably, only the DXY dataset includes original self-reported symptom descriptions in natural language. Thus, we apply the AMSC to this dataset and compare the efficacy of the AMSC framework on normalized symptom labels and symptoms in natural language along with those of \"Single agent\" and \"LLM\". The results are detailed in Table 4, which underscores the capability of AMSC to perform comparably with natural language symptom descriptions and demonstrates its potential for generalization in real-world scenarios.LLM Single agent AMSC Normalized 0.724 0.776 0.861 Natural language 0.726 0.781 0.857Table 4: Accuracy of automatic diagnosis with inputs of normalized symptom label and natural language for the LLM, Single agent and the AMSC on DXY dataset.\nConclusionIn this paper, we employ agent-derived specialists for the automatic diagnosis tasks with open-source LLMs and medical knowledge for possible diseases. We introduce an agentderived multi-specialist consultation framework, designed to assimilate and adaptively merge the probability distributions generated by these agent specialists in the diagnostic process, mimicking the real-life medical scene of a patient with multiple specialists. Experimental results demonstrate that our approach not only surpasses existing benchmarks in diagnostic accuracy but also significantly reduces the requisite training duration. Additionally, our in-depth analysis sheds light on an intriguing facet: the contribution of implicit symptom prediction toward diagnostic efficacy may be less substantial than previously anticipated. This revelation opens new avenues for exploration in the realm of automated diagnostic tasks.Figure 1 :Figure 2 :12Figure 1: An example of data for automatic diagnosis from online consulting platforms.\nFigure 3 :3Figure 3: Illustration of LLM-derived General Practitioner, Agent-derived Specialist and Agent-derived Multiple Specialist Consultation.\nFigure 4 :4Figure4: Recall for the four agent-derived specialists on the diseases of the MuZhi-4 dataset with corresponding knowledge for a specific disease and for an LLM-derived general practitioner without knowledge (\"None\" in the figure).\nFigure 5 :5Figure 5: Accuracy for automatic diagnosis with various decision fusion techniques.\nTable 2 :2Experimental results on three real-life datasets. Acc is the accuracy of diagnosis; Ttime denotes the training time, m for minute; #Params indicates the number of updated parameters, M for million; Turn represents the mean turn of symptom inquiry. The results of accuracy are reported by baselines. Single agent: the performance of agent-derived specialist without distribution fusion ( †: with no implicit symptom. ‡: best performance of multiple agents). LLM: the performance of original LLM.ModelMuZhi-4DxyMuZhi-10AccTtime #Params TurnAccTtime #Params TurnAccTtime #Params TurnDQN0.69082m-2.00.720 141m-1.30.408--9.7HRL0.694 162m-3.50.69535m-2.40.556--7.0PPO0.732--6.30.746--3.3----Diaformer0.7422m62M15.3 0.8292m62M13.1----CoAD0.7532m43M13.40.8523m43M10.5 0.628 156m43M20.0DxFormer0.74339m9.8M8.70.81714m9.8M6.30.63355m9.8M7.6AMSC  †0.773 0.15m83200.861 0.09m200000.6529m0.031M0-Single agent  † ‡ 0.6760m000.7760m000.5060m00-LLM  †0.6320m000.7240m000.4270m00\n\t\t\thttps://muzhi.baidu.com/\n\t\t\thttps://dxy.com\n\t\t\thttps://www.symcat.com",
+  "sections": [
+    {
+      "title": "Introduction",
+      "text": "The utilization of artificial intelligence in healthcare, specifically in the realm of automatic diagnosis, has represented a pivotal advancement. Healthcare agents towards automatic diagnosis are designed to interact with patients, eliciting information about symptom presence and formulating diagnoses based on these patient-reported discomforts, termed as complaints. Such AI-driven automatic diagnostic systems are poised to assume a critical role in primary healthcare, offering the potential to mitigate the challenges posed by medical resource scarcity, particularly in economically disadvantaged regions [Wang et al., 2023c;Organization, 2016].",
+      "level": 1,
+      "path_id": "1",
+      "parent_section_id": null,
+      "order_in_parent": 0,
+      "section_id": "sec-1"
+    },
+    {
+      "title": "* Corresponding author",
+      "text": "The task of automatic diagnosis is derived from the process in real-world online consultation platforms, which is depicted in Figure 1. It involves the annotation of dialogue data between the patients and practitioners including three distinct components: (1) Explicit Symptoms -those symptoms presented in the initial patient complaint; (2) Implicit Symptoms -additional symptoms ascertained through subsequent practitioner inquiries; (3) Target Disease -the diagnosis predicted by the practitioner, based on a comprehensive assessment of symptoms. Previous research predominantly addresses the automatic diagnosis task by initially predicting implicit symptoms using explicit symptoms. Subsequently, a diagnosis is formulated leveraging all symptoms, employing methodologies such as reinforcement learning [Tang et al., 2016;Wei et al., 2018;Hou et al., 2021] or sequence generation [Chen et al., 2022;Wang et al., 2023c]. Existing approaches tend to model the dynamics of symptom-disease relationships but ignore the diagnosis process in real-life clinical settings. Respiratory Doctor: You may get the Covid-19 …… Patient: I have fever, diarrhea, fatigue, …… A. Individual Practitioner Consultation Doctor A …… General Surgeon: You may get the appendicitis ……. Endocrinologist: You may get the hyperthyroidism …… General Practitioner: You may just catch a cold, but you can consult specialists for further suggestion. Doctor B …… Doctor D …… Doctor C …… B. Practitioner Group Consultation C. Agent-based Group Consultation Agent with Knowledge for Disease A: Agent with Knowledge for Disease B: Agent with Knowledge for Disease C: Agent with Knowledge for Disease D: Distribution fusion Figure 2: Scenarios of three medical diagnostic processes. A. Individual Practitioner Consultation: a singular general practitioner or specialist formulates the diagnosis; B. Practitioner Group Consultation: a group of professionals collaboratively arriving at a diagnostic conclusion; C. Agent-based Group Consultation: the diagnosis is derived from the decision fusion from multiple agent-based specialists.In clinical practice, when a patient presents with symptoms necessitating medical intervention, the customary procedure commences with an initial evaluation by a general practitioner. This primary assessment aims to establish a preliminary diagnosis. Subsequently, the general practitioner typically refers the patient to a specialist with expertise in the relevant medical domain for advanced consultation and management if necessary, as depicted in Scenario A of Figure 2. Furthermore, for instances involving multifaceted medical conditions, it is standard to convene a multidisciplinary team of practitioners, each contributing diverse expertise and experience. This collaborative approach facilitates a holistic assessment and culminates in a consensus diagnosis, as illustrated in Scenario B of Figure 2.In recent advancements, Large Language Models (LLMs) have demonstrated exceptional capabilities in both comprehending and generating natural language across diverse tasks [Brown et al., 2020;Touvron et al., 2023;Chowdhery et al., 2023;OpenAI, 2023]. Moreover, their application within the medical field has garnered significant research interest [Wang et al., 2023a;Bao et al., 2023]. Building upon this foundation, this study introduces the Agent-derived Multi-Specialist Consultation (AMSC) model, conceptualized from real-world clinical scenarios. In this model, we envision open-source LLMs as primary care physicians, while specialized LLM-based agents, each equipped with distinct medical knowledge, function akin to medical specialists. These agents, each possessing expertise in different medical domains, generate predictive distributions for possible diseases or medical categories without parameter updating of LLMs. Subsequently, we propose an adaptive probability distribution fusion method that integrates the agent predictions, offering a refined decision-making process for disease diagnosis. Additionally, we scrutinize the influence of implicit symptoms on automated diagnosis, investigating the impact of various symptoms on the diagnostic outcomes.In summary, our contributions are outlined as follows:• We introduce an agent-based multi-specialist consul-tation model employing open-source LLMs following real-world clinical scenarios, coupled with an adaptive predictive distribution fusion method for disease diagnosis.• Experimental results demonstrate that our approach surpasses existing baselines in performance. Notably, as the model only requires parameter training on the distribution fusion, it is also more efficient in terms of training costs.• We also conduct a comprehensive analysis of symptomatology in automated diagnosis, exploring the differential impacts of various symptoms on diagnostic results.2 Related Work",
+      "level": 1,
+      "path_id": "1~2",
+      "parent_section_id": null,
+      "order_in_parent": 1,
+      "section_id": "sec-1~2"
+    },
+    {
+      "title": "Automatic Diagnosis",
+      "text": "Automatic diagnosis using reinforcement learning (RL) has evolved significantly. Initial work by [Tang et al., 2016] used RL for neural symptom checking, followed by hierarchical RL approaches for joint diagnostics and symptom inquiry [Kao et al., 2018;Liao et al., 2020]. [Wei et al., 2018] introduced a Deep Q-Network for symptom collection, while [Xu et al., 2019] emphasized integrating prior medical knowledge into policy learning. Further advancements include decoupling symptoms and diseases using dense representations [Chen et al., 2023], policy gradient frameworks [Xia et al., 2020], multi-level reward models [Hou et al., 2021], and dialog data customization [Teixeira et al., 2021]. Beyond RL, [Chen et al., 2022] and [Hou et al., 2023] explored sequence generation and multi-task frameworks for diagnosis, respectively. [Wang et al., 2023c] proposed a joint symptom-disease generation model. However, existing research lacks focus on cross-specialist knowledge integration in automatic diagnosis. Our study addresses this gap by exploring the fusion of diagnoses with agent specialists. Agent-derived URTI Specialist Agent-derived Bronchitis Specialist Agent-derived Dyspepsia Specialist LLM-derived General Practitioner Agent-derived Diarrhea Specialist Disease Knowledge for diarrhea: Symptoms of diarrhea includes abdominal pain, watery stool, vomiting, poor appetite, loss of appetite, fever, ….. Question: The complaints of patients include fever, fatigue, cough and running nose. Then, the patient may have A. Diarrhea B. Dyspepsia C. Bronchitis D. URTI Answer: C. Bronchitis Disease knowledge for profile of specialist agent Diagnosis question with symptoms Options for diagnosis 0.28 0.12 0.56 0.04 A B C D Normalized candidate option probabilitybased diagnosis Agent-derived Multiple Specialist Consultation Diarrhea Specialist 0.28 0.12 0.56 0.04 Dyspepsia Specialist 0.08 0.23 0.45 0.24 0.23 0.1 0.36 0.31 Bronchitis Specialist URTI Specialist 0.09 0.1 0.3 0.51 .23 .10 .36 .31 .08 .23 .45 .24 .28 .12 .56 .04 .09 .10 .60 .51 0.11 0.12 0.6 0.17 A B C D Adaptive Probability Distribution Fusion C. Bronchitis",
+      "level": 2,
+      "path_id": "2.1",
+      "parent_section_id": "sec-2",
+      "order_in_parent": 0,
+      "section_id": "sec-2.1"
+    },
+    {
+      "title": "Medical Large Language Models",
+      "text": "Recent study has underscored the efficacy of Large Language Models (LLMs) within the medical field [Thirunavukarasu et al., 2023;Bao et al., 2023], manifesting in diverse applications, including diagnostic processes [Singhal et al., 2023], medical reasoning [Liévin et al., 2022], and the summarization of medical evidence [Tang et al., 2023]. In the context of knowledge-augmented methodologies, [Wang et al., 2023b] demonstrated the generation of informed responses via queries to knowledge bases. Furthermore, [Kang et al., 2023] fine-tuned smaller LLMs with rationales derived from retrieved knowledge. Another notable advancement is [Jin et al., 2023] GeneGPT, which instructs LLMs to integrate Web APIs, thereby enhancing performance. Despite these advancements, the medical application faces inherent privacy challenges, particularly concerning the uploading of personal health information to online LLMs. To address this, we introduce the AMSC framework, tailored for open-source LLMs and deployed locally and privately without privacy concern.",
+      "level": 2,
+      "path_id": "2.2",
+      "parent_section_id": "sec-2",
+      "order_in_parent": 1,
+      "section_id": "sec-2.2"
+    },
+    {
+      "title": "Agent-derived Multi-specialist Consultation Framework",
+      "text": "In this section, we delve into an Agent-derived Multi-Specialist Consultation (AMSC) framework, including refining the task of automatic diagnosis, implementing an agentderived specialist, and finally describing the fusion of multispecialist decisions derived from these agents in medical diagnostics mimicking the procedure in the real-life diagnosis by multiple specialists.",
+      "level": 3,
+      "path_id": "3",
+      "parent_section_id": null,
+      "order_in_parent": 2,
+      "section_id": "sec-3"
+    },
+    {
+      "title": "Refinement of Automatic Diagnosis",
+      "text": "The task of automatic diagnosis involves processing patientspecific data, denoted as p i . This data encompasses the target disease d i , an array of explicit symptoms s exp i = {exp 1 , exp 2 , ......}, and a collection of implicit symptomss imp i = {imp 1 , imp 2 , ......}.Explicit symptoms are direct manifestations reported by patients, while implicit symptoms are deduced from interactive dialogues between patients and practitioners. Both categories of symptoms undergo standardization to medical terminologies from their original natural language descriptions.Recent advancements in LLMs have demonstrated remarkable efficacy in natural language processing within medical contexts [Bao et al., 2023;Wang et al., 2023a]. In our approach, we leverage these LLMs as virtual medical practitioners. Given the finite nature of disease possibilities in automatic diagnosis tasks, we restructure the task into a Multiple-Choice Question-Answering (MCQA) framework, as illustrated in Figure 3, which involves constructing symptombased question templates and selecting the results from answer options, formulated as p diseasei = LLM (q, opts; i) j LLM (q, opts; j) where q represents the symptom-inclusive query question for the LLM, opts denotes the array of possible disease diagnoses, LLM refers to the process that large language model generates the probability of each token within its vocabulary and i, j are indices corresponding to the specific token options for disease diagnosis.For tasks involving a broader array of choices, we employ a hierarchical MCQA structure based on ICD-10-CM codes [Organization, 2004]. Meanwhile, recent research demonstrates that the effectiveness of MCQAs in leveraging the capability of LLMs is subject to the Multiple-Choice Symbol Binding (MCSB) proficiency of the model (the capability of LLMs to associate the answer options with the alphabetic symbols), which significantly varies across different models [Robinson and Wingate, 2023;Zheng et al., 2023]. Therefore, we selectively utilize models with superior multiplechoice symbol binding capabilities and empirically evaluate their Proportion of Plurality Agreement (PPA) value [Robinson and Wingate, 2023] (further details are provided in the experimental section).",
+      "level": 2,
+      "path_id": "3.1",
+      "parent_section_id": "sec-3",
+      "order_in_parent": 0,
+      "section_id": "sec-3.1"
+    },
+    {
+      "title": "Agent-derived Specialist for Diagnosis",
+      "text": "While LLM-based practitioners possess a foundational understanding of medical knowledge akin to general practitioners, they lack the depth of expertise characteristic of specialists in particular diseases. To address this, we enhance the LLMs with specialized disease knowledge profiles from the National Institutes of Health 1 , thereby transforming them into distinct specialist agents as depicted in Figure 3. Each agentspecialist is endowed with expertise in a singular disease domain. For a question for diagnosis, an agent-specialist outputs a distribution on all the possible answer options, and the corresponding disease for the option with the highest probability is the diagnostic result, denoted ask n = d n , (sym n1 , sym n2 , ...) Agent n = Agent-specialist(LLM, k n ) p n diseasei =Agent n (q, opts; i) j Agent n (q, opts; j) where a disease knowledge k n includes a disease d n and a series of symptoms (sym n1 , sym n2 , ...) of the disease d n . Agent n represents an agent-derived specialist with a LLM and specific disease knowledge k n .To assess whether an agent specialist exhibits enhanced knowledge in its respective disease area as a human specialist, we conduct experiments on the most widely used automatic diagnosis dataset MuZhi-4 [Wei et al., 2018], which includes four target diseases. Figure 4 presents the recall value achieved by these agent specialists for each disease, using distinct symbols. The results indicate that an agent with specialized knowledge in a particular disease significantly outperforms those with knowledge of other diseases and the LLMbased general practitioner without such specialization, affirming the capability of agent-derived specialists to effectively assimilate and apply specialized knowledge.",
+      "level": 2,
+      "path_id": "3.2",
+      "parent_section_id": "sec-3",
+      "order_in_parent": 1,
+      "section_id": "sec-3.2"
+    },
+    {
+      "title": "Multi-Specialist Decision Fusion",
+      "text": "Like in the real world where multiple specialists may yield different diagnoses for the same patient, in the realm of the Agent-derived Multi-Specialist Consultation (AMSC) framework, each agent conceptualized as a specialist, yields a probabilistic distribution over a range of potential diagnoses. This process results in the formation of a diagnosis distribution matrix when multiple agents are involved. Analogous to the consensus-building process among human medical specialists through extensive deliberation, we introduce an innovative approach for reaching a conclusive diagnostic decision from this fusion of agent-specialist inputs. Our methodology employs a self-attention-based Adaptive Probability Distribution Fusion (APDF) technique. We consider a diagnosis distribution matrix denoted as M = {m 1 , m 2 , ...}, where m n represents the diagnostic probability distribution contributed by the n th agentspecialist. The following equations delineate our method:Q, K, V = Linear q,k,v (M ) p diseasei = Linear(sof tmax( QK T √ d k )V ; i)Here, Q, K, V represent the linear projections of the distribution matrix M corresponding to the query, key, and value components respectively, utilizing the transformation Linear q,k,v . The final diagnostic outcome is derived from an adaptively weighted fusion of the diagnostic distributions sourced from multiple agent specialists, capitalizing on the self-attention mechanism's capacity to discern and emphasize relevant features within the distribution matrix.",
+      "level": 2,
+      "path_id": "3.3",
+      "parent_section_id": "sec-3",
+      "order_in_parent": 2,
+      "section_id": "sec-3.3"
+    },
+    {
+      "title": "Experiment",
+      "text": "",
+      "level": 4,
+      "path_id": "4",
+      "parent_section_id": null,
+      "order_in_parent": 3,
+      "section_id": "sec-4"
+    },
+    {
+      "title": "Datasets",
+      "text": "We evaluate our approach on three datasets derived from reallife contexts:• MuZhi-4 [Wei et al., 2018], a meticulously annotated dataset collected from an online platform Baidu MuZhi Doctorfoot_0 which focuses on four diseases in the pediatric domain; • MuZhi-10 is an augmented iteration of the MuZhi-4 dataset, extending to ten diseases, spanning respiratory, digestive and endocrine systems; • Dxy [Xu et al., 2019] is a medical dialogue dataset curated from Dingxiang Doctor platform. 3A thorough statistical analysis of the datasets is presented in Table 1. Additionally, prior research has engaged in experimental analysis utilizing synthetic datasets [Liao et al., 2020;Chen et al., 2022] fabricated by symptom-disease database Symcatfoot_2 . Notably, as depicted in Table 1, the datasets derived from real-life contexts exhibit an average of 2.36 explicit symptoms per patient complaint. In stark contrast, the synthetic dataset only contains 1 explicit symptom per case. This indicates that during medical consultations, patients tend to articulate their ailments with greater specificity in reallife scenarios, as opposed to the limited expressiveness observed in synthetic datasets. Such a discrepancy underscores a significant divergence in the distribution of data between synthetic and real-life datasets. Consequently, our study focuses exclusively on datasets derived from real-life scenarios, thereby ensuring a more realistic and applicable analysis.MZ-4 MZ-10 Dxy Synthetic # Disease 4 10 5 90 # Symptom 66 331 41 266 # Training 568 3704 423 24000 # Tr avg exp 2.39 1.72 3.09 1.00 # Tr avg imp 3.28 5.29 1.65 2.61 # Test 142 412 104 6000 # T avg exp 2.20 1.77 3.00 1.00 # T avg imp 3.20 5.18 1.76 2.59 Table 1: Statistics of the datasets, including three real-life datasets and one synthetic dataset. #Tr avg exp: the average number of explicit symptoms in the training set; #Tr avg imp: the average number of implicit symptoms in the training set; #T avg exp: the average number of explicit symptoms in the test set; #T avg imp: the average number of implicit symptoms in the test set.",
+      "level": 2,
+      "path_id": "4.1",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 0,
+      "section_id": "sec-4.1"
+    },
+    {
+      "title": "Baselines",
+      "text": "In this research, we present an analytical comparison of our experimental results with a spectrum of established baseline models in the domain of automatic medical diagnosis. These benchmarks include:• DQN model [Wei et al., 2018], which employs a Deep Q-Network framework for symptom validation and diagnostic processes.• HRL approach [Liao et al., 2020], which implements a DQN-based hierarchical policy to separately predict symptoms and diagnose diseases.• PPO model [Schulman et al., 2017], which utilizes proximal policy optimization techniques for the development of a diagnostic model.• DxFormer [Chen et al., 2023], a novel model that decouples the processes of symptom inquiry and disease diagnosis through dense symptom representation.• Diaformer [Chen et al., 2022], which conceptualizes the task through sequence generation methodology.• CoAD [Wang et al., 2023c], which integrates symptom and disease generation with label alignment for a comprehensive diagnostic model.",
+      "level": 2,
+      "path_id": "4.2",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 1,
+      "section_id": "sec-4.2"
+    },
+    {
+      "title": "Selection of Backbone Model",
+      "text": "Considering the language of automatic diagnosis datasets utilized, our selection for the backbone model is the Baichuan2chat, a large language model with 13 billion parameters [Yang et al., 2023]. This model demonstrates robust performance in both languages. We also evaluate the multiple-choice symbol binding ability of the model using the metric of mean Proportion of Plurality Agreement (PPA) values [Robinson and Wingate, 2023], with n answer options across the automatic diagnosis datasets. The results ranged from 0.78 to 0.94, indicating a notable consistency in the model performance regardless of the order of answer options, thereby affirming its reliability in MCQA tasks.",
+      "level": 2,
+      "path_id": "4.3",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 2,
+      "section_id": "sec-4.3"
+    },
+    {
+      "title": "Implementation of Diagnostic Framework",
+      "text": "For the agent-specialist of our AMSC framework, we employ the corresponding output logits of the answer option index of the last token in the last layer of Baichuan2 to formulate a diagnostic distribution for potential diseases. In our adaptive probability distribution fusion mechanism, the input dimension, denoted as d input , is calculated as the product of the number of potential diseases and the number of agent specialists. The dimensions of the query, key, and value matrices (q, k, v) are set to d input × d input . The learning rate for this implementation ranges between 1e-1 and 1e-3.",
+      "level": 2,
+      "path_id": "4.4",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 3,
+      "section_id": "sec-4.4"
+    },
+    {
+      "title": "Main Results",
+      "text": "We present an empirical evaluation of the AMSC framework, comparing its performance against established baselines across three real-world datasets. This evaluation encompasses several key metrics: diagnostic accuracy, training duration (denoted as Ttime), and the average number of turns required for implicit symptom inquiry (referred to as Turn). Additionally, we introduce a novel metric, the number of training parameters (#Params), to further assess the efficiency of the automatic diagnosis system. Table 2 delineates the comparative performance of the AMSC framework and the baseline methodologies. In terms of diagnostic accuracy, the AMSC framework demonstrates superior efficacy, outperforming existing systems on all three datasets, with an enhancement in performance of up to 3.2%. Regarding training time, since the LLM is frozen and only the APDF module requires training, the AMSC framework exhibits a significant reduction, saving up to 95.5% training time compared with the baseline models, equating to a mere 0.09 minutes on the DXY dataset. Furthermore, the demand for AMSC for training parameters is notably efficient, scaling proportionally with the number of diseases. For a dataset encompassing n diseases, the AMSC requires 3n 4 + n 3 training parameters, which signifies a reduction of up to 99.99% in parameter training. Concerning the mean turn of symptom inquiry, the AMSC relies solely on explicit symptoms, obviating the need for implicit symptom inquiries. This approach is substantiated by experimental findings, affirming the feasi- bility of an automatic diagnosis framework operating without the integration of implicit symptoms. By now, the AMSC framework has not incorporated implicit symptoms in its diagnostic process. However, prior work [Chen et al., 2022;Chen et al., 2023;Wang et al., 2023c] suggests that implicit symptoms could enhance the performance of automatic diagnosis systems, which is also intuitive. Therefore, we will explore how the implicit symptoms will affect the performance of our AMSC framework in the following section.",
+      "level": 2,
+      "path_id": "4.5",
+      "parent_section_id": "sec-4",
+      "order_in_parent": 4,
+      "section_id": "sec-4.5"
+    },
+    {
+      "title": "Discussion",
+      "text": "5.1 Impact of Implicit Symptoms Model LLM Single agent AMSC AMSC † 0.632 0.676 0.773 implicit symptoms -all 0.631 0.669 0.752 -pos 0.638 0.647 0.760 medical knowledge -reordered † N/A 0.641 0.718 -all N/A 0.662 0.724 -irrelevant † N/A 0.585 0.702 -all N/A 0.627 0.693Table 3: Accuracy of LLM, Single agent, and AMSC with specific settings for the implicit symptoms and medical knowledge on the MuZhi-4 dataset. †: with no implicit symptom. -all: with both explicit and implicit symptoms. -pos: only with the positive symptoms in the explicit and implicit symptoms. N/A: not applicable.Experimental results have demonstrated that our AMSC framework can work well on the automatic diagnosis task even without the implicit symptoms. In this subsection, we will scrutinize how the implicit symptoms affect the performance of our AMSC with two settings on the MuZhi-4 dataset:• all symptoms, denoted as \"-all\", includes entire explicit and implicit symptoms;• positive symptoms, denoted as \"-pos\", only involves the positive symptoms inside the explicit and implicit symptoms.Interestingly, our results, as outlined in Table 3 reveal that the inclusion of a full spectrum of symptoms does not necessarily enhance the performance of AMSC framework. Also, configurations relying solely on positive symptoms yielded similar outcomes. The p-values of results of the paired t-test between the (AMSC †, AMSC -all) and (AMSC †, AMSCpos) are 0.244 and 0.357 respectively, which means that there is no statistically significant difference between the result with and without implicit symptom.These findings have profound implications for the use of Large Language Models (LLMs) in medical diagnostics. In clinical practice, a comprehensive collection of symptoms is vital for accurate diagnosis. However, for LLMs, the abundance of symptoms, especially without differentiated weighting, poses interpretative challenges. Our analysis reveals that 59.1% of symptoms are common across all four studied diseases in MuZhi-4, with decreasing proportions for three, two, and one disease of 25.8%, 10.6%, and 4.5% respectively. This significant overlap complicates the task of accurate diagnosis with LLMs. For example, the symptom \"cough\" is present in 95.8% of bronchitis cases and 53.1% of Upper Respiratory Tract Infections (URTI). Furthermore, explicit symptoms, which are primarily patient-reported and considered dominant, can effectively reflect a condition of the patient to a specialist agent, demonstrating a notable aspect for LLMbased diagnostic systems.",
+      "level": 5,
+      "path_id": "5",
+      "parent_section_id": null,
+      "order_in_parent": 4,
+      "section_id": "sec-5"
+    },
+    {
+      "title": "Impact of Medical Knowledge",
+      "text": "The medical knowledge has been proven to be helpful for the agent specialist with the experiment in Table 2 and Figure 4. Here we investigate the influence of medical knowledge on the performance of LLM-based automatic diagnosis systems from another angle. Utilizing the MuZhi-4 dataset, we explore two distinct strategies for medical knowledge:• Reordered Knowledge: We assign medical knowledge of one disease to another, creating mismatched knowl-edge for the LLMs. This is formulated as:k reordered n = d n , (sym m1 , sym m2 , . . .)where (sym m1 , sym m2 , . . .) are symptoms of disease d m different from the target disease d n .• Irrelevant Knowledge: Here, the automatic diagnosis system is provided with accurate medical knowledge of diseases not included in the automatic diagnosis task. It simulates a scenario where specialists unrelated to the specific diseases are consulted. This is represented as:k other o = d o , (sym o1 , sym o2 , . . .)where (sym o1 , sym o2 , . . .) are symptoms of a nontarget disease d o .As shown in Table 3, the use of reordered or irrelevant medical knowledge adversely affects the diagnostic accuracy of both single-agent systems and AMSC configurations. While agents with reordered knowledge exhibit slightly better performance than those with entirely irrelevant knowledge, their effectiveness is significantly compromised due to the deliberate misalignment of disease-knowledge pairings.",
+      "level": 2,
+      "path_id": "5.2",
+      "parent_section_id": "sec-5",
+      "order_in_parent": 0,
+      "section_id": "sec-5.2"
+    },
+    {
+      "title": "Decision Fusion Techniques",
+      "text": "We introduce and evaluate the Adaptive Probability Distribution Fusion (APDF) method, which is designed to amalgamate probability distributions of potential diseases, derived from a group of agent specialists. In parallel, we also conduct empirical evaluations with alternative fusion methodologies: (1) Majority Decision Fusion, wherein predominant decisions override minority opinions, (2) Mean Decision Fusion, which determines disease diagnoses based on the average distribution across multiple specialists, and (3) Linear Classifier Fusion.Figure 5 represents the comparative accuracy achieved by these diverse decision fusion methods. It is observed that our proposed APDF method consistently surpasses the three baselines mentioned above approaches in terms of performance efficiency. Notably, the Linear Classifier Fusion demonstrates superior efficacy compared to both Majority and Mean Decision Fusions. The results above underscore the significant contribution of our APDF method to enhance the AMSC framework's effectiveness.",
+      "level": 2,
+      "path_id": "5.3",
+      "parent_section_id": "sec-5",
+      "order_in_parent": 1,
+      "section_id": "sec-5.3"
+    },
+    {
+      "title": "Generalization on the Real-world Scenario",
+      "text": "Automated diagnosis datasets have converted patientpractitioner dialogues, which are inherently natural languagebased, into normalized symptom labels to align with the methodologies established in prior work. However, a significant challenge arises in annotating the symptoms in the dialogues: it necessitates the involvement of highly skilled human experts, which renders the process cost-intensive and less feasible for real-world application. Our proposed framework AMSC, which utilizes a question template for symptom labels, can seamlessly integrate with natural language descriptions of symptoms. Notably, only the DXY dataset includes original self-reported symptom descriptions in natural language. Thus, we apply the AMSC to this dataset and compare the efficacy of the AMSC framework on normalized symptom labels and symptoms in natural language along with those of \"Single agent\" and \"LLM\". The results are detailed in Table 4, which underscores the capability of AMSC to perform comparably with natural language symptom descriptions and demonstrates its potential for generalization in real-world scenarios.LLM Single agent AMSC Normalized 0.724 0.776 0.861 Natural language 0.726 0.781 0.857Table 4: Accuracy of automatic diagnosis with inputs of normalized symptom label and natural language for the LLM, Single agent and the AMSC on DXY dataset.",
+      "level": 2,
+      "path_id": "5.4",
+      "parent_section_id": "sec-5",
+      "order_in_parent": 2,
+      "section_id": "sec-5.4"
+    },
+    {
+      "title": "Conclusion",
+      "text": "In this paper, we employ agent-derived specialists for the automatic diagnosis tasks with open-source LLMs and medical knowledge for possible diseases. We introduce an agentderived multi-specialist consultation framework, designed to assimilate and adaptively merge the probability distributions generated by these agent specialists in the diagnostic process, mimicking the real-life medical scene of a patient with multiple specialists. Experimental results demonstrate that our approach not only surpasses existing benchmarks in diagnostic accuracy but also significantly reduces the requisite training duration. Additionally, our in-depth analysis sheds light on an intriguing facet: the contribution of implicit symptom prediction toward diagnostic efficacy may be less substantial than previously anticipated. This revelation opens new avenues for exploration in the realm of automated diagnostic tasks.Figure 1 :Figure 2 :12Figure 1: An example of data for automatic diagnosis from online consulting platforms.\nFigure 3 :3Figure 3: Illustration of LLM-derived General Practitioner, Agent-derived Specialist and Agent-derived Multiple Specialist Consultation.\nFigure 4 :4Figure4: Recall for the four agent-derived specialists on the diseases of the MuZhi-4 dataset with corresponding knowledge for a specific disease and for an LLM-derived general practitioner without knowledge (\"None\" in the figure).\nFigure 5 :5Figure 5: Accuracy for automatic diagnosis with various decision fusion techniques.\nTable 2 :2Experimental results on three real-life datasets. Acc is the accuracy of diagnosis; Ttime denotes the training time, m for minute; #Params indicates the number of updated parameters, M for million; Turn represents the mean turn of symptom inquiry. The results of accuracy are reported by baselines. Single agent: the performance of agent-derived specialist without distribution fusion ( †: with no implicit symptom. ‡: best performance of multiple agents). LLM: the performance of original LLM.ModelMuZhi-4DxyMuZhi-10AccTtime #Params TurnAccTtime #Params TurnAccTtime #Params TurnDQN0.69082m-2.00.720 141m-1.30.408--9.7HRL0.694 162m-3.50.69535m-2.40.556--7.0PPO0.732--6.30.746--3.3----Diaformer0.7422m62M15.3 0.8292m62M13.1----CoAD0.7532m43M13.40.8523m43M10.5 0.628 156m43M20.0DxFormer0.74339m9.8M8.70.81714m9.8M6.30.63355m9.8M7.6AMSC  †0.773 0.15m83200.861 0.09m200000.6529m0.031M0-Single agent  † ‡ 0.6760m000.7760m000.5060m00-LLM  †0.6320m000.7240m000.4270m00\n\t\t\thttps://muzhi.baidu.com/\n\t\t\thttps://dxy.com\n\t\t\thttps://www.symcat.com",
+      "level": 6,
+      "path_id": "6",
+      "parent_section_id": null,
+      "order_in_parent": 5,
+      "section_id": "sec-6"
+    }
+  ],
+  "citations": [
+    {
+      "raw_text": "Disc-medllm: Bridging general large language models and real-world medical consultation\n\t\t\n\t\t\tBao\n\t\t\n\t\tarXiv:2308.14346\n\t\t\n\t\t\t2023. 2023. 2020\n\t\t\t33\n\t\t\t\n\t\t\tTom Brown, Benjamin Mann, Nick Ry-\n\t\t\n\t\n\tarXiv preprint\n\tBrown et al., 2020 Language models are few-shot learners Advances in neural information processing systems",
+      "doi": null,
+      "arxiv_id": "2308.14346",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b0",
+          "section_path_id": "1~2",
+          "quote": "Bao et al., 2023]",
+          "offset": 3276
+        },
+        {
+          "ref_id": "b0",
+          "section_path_id": "2.2",
+          "quote": "Bao et al., 2023]",
+          "offset": 129
+        },
+        {
+          "ref_id": "b0",
+          "section_path_id": "3.1",
+          "quote": "[Bao et al., 2023;",
+          "offset": 689
+        }
+      ]
+    },
+    {
+      "raw_text": "Diaformer: Automatic diagnosis via symptoms sequence generation\n\t\t\n\t\t\tChen\n\t\t\n\t\n\t\n\t\tProceedings of the AAAI Conference on Artificial Intelligence\n\t\tthe AAAI Conference on Artificial Intelligence\n\t\t\n\t\t\t2022. 2022\n\t\t\t36",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Diaformer: Automatic diagnosis via symptoms sequence generation",
+      "anchors": [
+        {
+          "ref_id": "b1",
+          "section_path_id": "1~2",
+          "quote": "[Chen et al., 2022;",
+          "offset": 885
+        },
+        {
+          "ref_id": "b1",
+          "section_path_id": "4.1",
+          "quote": "Chen et al., 2022]",
+          "offset": 677
+        },
+        {
+          "ref_id": "b1",
+          "section_path_id": "4.2",
+          "quote": "[Chen et al., 2022]",
+          "offset": 758
+        },
+        {
+          "ref_id": "b1",
+          "section_path_id": "4.5",
+          "quote": "[Chen et al., 2022;",
+          "offset": 1778
+        }
+      ]
+    },
+    {
+      "raw_text": "Dxformer: a decoupled automatic diagnostic system based on decoder-encoder transformer with dense symptom representations\n\t\t\n\t\t\tChen\n\t\t\n\t\n\t\n\t\tProceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies\n\t\tthe 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies\n\t\t\n\t\t\t2023. 2023. 2023. 2021. 2023\n\t\t\t39\n\t\t\t\n\t\t\n\t\n\tChowdhery et al., 2023 Palm: Scaling language modeling with pathways Bioinformatics Hou et al., 2021] Zhengxu Hou Imperfect also deserves reward: Multi-level and sequential reward modeling for better dialog management Hou et al., 2023] Zhenyu Hou Mtdiag: An effective multi-task framework for automatic diagnosis Proceedings of the AAAI Conference on Artificial Intelligence",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Dxformer: a decoupled automatic diagnostic system based on decoder-encoder transformer with dense symptom representations",
+      "anchors": [
+        {
+          "ref_id": "b2",
+          "section_path_id": "1~2",
+          "quote": "Chowdhery et al., 2023;",
+          "offset": 3122
+        },
+        {
+          "ref_id": "b2",
+          "section_path_id": "4.2",
+          "quote": "[Chen et al., 2023]",
+          "offset": 604
+        },
+        {
+          "ref_id": "b2",
+          "section_path_id": "4.5",
+          "quote": "Chen et al., 2023;",
+          "offset": 1797
+        }
+      ]
+    },
+    {
+      "raw_text": "Genegpt: Augmenting large language models with domain tools for improved access to biomedical information\n\t\t\n\t\t\tJin\n\t\t\n\t\tarXiv:2305.18395\n\t\n\t\n\t\tArXiv\n\t\t\n\t\t\t2023. 2023. 2023. 2023\n\t\t\n\t\n\tarXiv preprint\n\tKnowledgeaugmented reasoning distillation for small language models in knowledge-intensive tasks",
+      "doi": null,
+      "arxiv_id": "2305.18395",
+      "title": "Genegpt: Augmenting large language models with domain tools for improved access to biomedical information",
+      "anchors": [
+        {
+          "ref_id": "b3",
+          "section_path_id": "2.2",
+          "quote": "[Kang et al., 2023]",
+          "offset": 513
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "2.2",
+          "quote": "[Jin et al., 2023]",
+          "offset": 638
+        }
+      ]
+    },
+    {
+      "raw_text": "Context-aware symptom checking for disease diagnosis using hierarchical reinforcement learning\n\t\t\n\t\t\tKao\n\t\t\n\t\n\t\n\t\tProceedings of the AAAI conference on artificial intelligence\n\t\tthe AAAI conference on artificial intelligence\n\t\t\n\t\t\t2018. 2018\n\t\t\t32",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Context-aware symptom checking for disease diagnosis using hierarchical reinforcement learning",
+      "anchors": [
+        {
+          "ref_id": "b4",
+          "section_path_id": "2.1",
+          "quote": "[Kao et al., 2018;",
+          "offset": 235
+        }
+      ]
+    },
+    {
+      "raw_text": "Liao\n\t\t\n\t\tarXiv:2004.14254\n\t\tTask-oriented dialogue system for automatic disease diagnosis via hierarchical reinforcement learning\n\t\t\n\t\t\t2020. 2020\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2004.14254",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b5",
+          "section_path_id": "2.1",
+          "quote": "Liao et al., 2020]",
+          "offset": 253
+        },
+        {
+          "ref_id": "b5",
+          "section_path_id": "4.1",
+          "quote": "[Liao et al., 2020;",
+          "offset": 658
+        },
+        {
+          "ref_id": "b5",
+          "section_path_id": "4.2",
+          "quote": "[Liao et al., 2020]",
+          "offset": 336
+        }
+      ]
+    },
+    {
+      "raw_text": "Liévin\n\t\t\n\t\tarXiv:2207.08143\n\t\tCan large language models reason about medical questions? arXiv preprint\n\t\t\n\t\t\t2022. 2022",
+      "doi": null,
+      "arxiv_id": "2207.08143",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b6",
+          "section_path_id": "2.2",
+          "quote": "[Liévin et al., 2022]",
+          "offset": 258
+        }
+      ]
+    },
+    {
+      "raw_text": "Organization, 2004] World Health Organization. International Statistical Classification of Diseases and related health problems: Alphabetical index\n\t\t\n\t\t\tOpenai\n\t\t\n\t\n\t\n\t\tOpenAI. Gpt-4 technical report\n\t\t\n\t\t\tWorld Health Organization\n\t\t\t2023. 2023. 2004\n\t\t\t3",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Organization, 2004] World Health Organization. International Statistical Classification of Diseases and related health problems: Alphabetical index",
+      "anchors": [
+        {
+          "ref_id": "b7",
+          "section_path_id": "1~2",
+          "quote": "OpenAI, 2023]",
+          "offset": 3145
+        }
+      ]
+    },
+    {
+      "raw_text": "Health workforce requirements for universal health coverage and the sustainable development goals.(human resources for health observer\n\t\t\n\t\t\tOrganization\n\t\t\n\t\tarXiv:1707.06347\n\t\n\t\n\t\tThe Eleventh International Conference on Learning Representations\n\t\t\n\t\t\tFilipSchulman\n\t\t\n\t\t\n\t\t\tPrafullaWolski\n\t\t\n\t\t\n\t\t\tAlecDhariwal\n\t\t\n\t\t\n\t\t\tOlegRadford\n\t\t\n\t\t\n\t\t\tKlimov\n\t\t\n\t\t\n\t\t\tWorld Health Organization\n\t\t\t2016. 2016. 2023. 2017\n\t\t\t17\n\t\t\n\t\n\tarXiv preprint\n\tLeveraging large language models for multiple choice question answering Schulman et al., 2017 Proximal policy optimization algorithms",
+      "doi": null,
+      "arxiv_id": "1707.06347",
+      "title": "Health workforce requirements for universal health coverage and the sustainable development goals.(human resources for health observer",
+      "anchors": [
+        {
+          "ref_id": "b8",
+          "section_path_id": "1",
+          "quote": "Organization, 2016]",
+          "offset": 632
+        }
+      ]
+    },
+    {
+      "raw_text": "Inquire and diagnose: Neural symptom checking ensemble using deep reinforcement learning\n\t\t\n\t\t\tSinghal\n\t\t\n\t\n\t\n\t\tNIPS workshop on deep reinforcement learning\n\t\t\n\t\t\t2023. 2023. 2016. 2016\n\t\t\t620\n\t\t\t\n\t\t\n\t\n\tLarge language models encode clinical knowledge",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Inquire and diagnose: Neural symptom checking ensemble using deep reinforcement learning",
+      "anchors": [
+        {
+          "ref_id": "b9",
+          "section_path_id": "1~2",
+          "quote": "[Tang et al., 2016;",
+          "offset": 808
+        },
+        {
+          "ref_id": "b9",
+          "section_path_id": "2.1",
+          "quote": "[Tang et al., 2016]",
+          "offset": 97
+        },
+        {
+          "ref_id": "b9",
+          "section_path_id": "2.2",
+          "quote": "[Singhal et al., 2023]",
+          "offset": 216
+        }
+      ]
+    },
+    {
+      "raw_text": "The interplay of a conversational ontology and ai planning for health dialogue management\n\t\t\n\t\t\tTang\n\t\t\n\t\tarXiv:2302.13971\n\t\n\t\n\t\tFaisal Azhar, et al. Llama: Open and efficient foundation language models\n\t\t\n\t\t\tChiWang\n\t\t\n\t\t\n\t\t\tNuwaLiu\n\t\t\n\t\t\n\t\t\tXi\n\t\t\n\t\t\n\t\t\tEric Hambro\n\t\t\t2023. 2023. 2021. 2023. 2023. 2023\n\t\t\t6\n\t\t\t\n\t\t\n\t\n\tarXiv preprint\n\tTeixeira et al., 2021 Evaluating large language models on medical evidence summarization Large language models in medicine Nature medicine Touvron et al., 2023 Proceedings of the 36th annual ACM symposium on applied computing Zewen Qiang, Sendong Zhao, Bing Qin, and Ting Liu. Huatuo: Tuning llama model with chinese medical knowledge",
+      "doi": null,
+      "arxiv_id": "2302.13971",
+      "title": "The interplay of a conversational ontology and ai planning for health dialogue management",
+      "anchors": [
+        {
+          "ref_id": "b10",
+          "section_path_id": "2.2",
+          "quote": "[Tang et al., 2023]",
+          "offset": 323
+        }
+      ]
+    },
+    {
+      "raw_text": "Knowledgetuning large language models with structured medical knowledge bases for reliable response generation in chinese\n\t\t\n\t\t\tWang\n\t\t\n\t\tarXiv:2309.04175\n\t\n\t\n\t\tProceedings of the 61st Annual Meeting of the Association for Computational Linguistics\n\t\t\n\t\t\tWaiWang\n\t\t\n\t\t\n\t\t\tKam-FaiChung Kwan\n\t\t\n\t\t\n\t\t\tYefengWong\n\t\t\n\t\t\n\t\t\tZheng\n\t\t\n\t\tthe 61st Annual Meeting of the Association for Computational Linguistics\n\t\t\n\t\t\t2023. 2023. 2023. 2023\n\t\t\t1\n\t\t\t\n\t\t\n\t\n\tarXiv preprint\n\tCoad: Automatic diagnosis through symptom and disease collaborative generation Long Papers)",
+      "doi": null,
+      "arxiv_id": "2309.04175",
+      "title": "Knowledgetuning large language models with structured medical knowledge bases for reliable response generation in chinese",
+      "anchors": []
+    },
+    {
+      "raw_text": "Generative adversarial regularized mutual information policy gradient framework for automatic diagnosis\n\t\t\n\t\t\tWei\n\t\t\n\t\n\t\n\t\tProceedings of the 56th Annual Meeting of the Association for Computational Linguistics\n\t\tthe 56th Annual Meeting of the Association for Computational Linguistics\n\t\t\n\t\t\t2018. 2018. 2020\n\t\t\t2\n\t\t\t\n\t\t\n\t\n\tShort Papers) Xia et al., 2020 Task-oriented dialogue system for automatic diagnosis Proceedings of the AAAI conference on artificial intelligence",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Generative adversarial regularized mutual information policy gradient framework for automatic diagnosis",
+      "anchors": [
+        {
+          "ref_id": "b12",
+          "section_path_id": "1~2",
+          "quote": "Wei et al., 2018;",
+          "offset": 827
+        },
+        {
+          "ref_id": "b12",
+          "section_path_id": "2.1",
+          "quote": "[Wei et al., 2018]",
+          "offset": 273
+        },
+        {
+          "ref_id": "b12",
+          "section_path_id": "3.2",
+          "quote": "[Wei et al., 2018]",
+          "offset": 1261
+        },
+        {
+          "ref_id": "b12",
+          "section_path_id": "4.1",
+          "quote": "[Wei et al., 2018]",
+          "offset": 84
+        },
+        {
+          "ref_id": "b12",
+          "section_path_id": "4.2",
+          "quote": "[Wei et al., 2018]",
+          "offset": 212
+        }
+      ]
+    },
+    {
+      "raw_text": "End-to-end knowledge-routed relational dialogue system for automatic diagnosis\n\t\t\n\t\t\tXu\n\t\t\n\t\tarXiv:2309.10305\n\t\tarXiv:2309.03882\n\t\n\t\n\t\tProceedings of the AAAI conference on artificial intelligence\n\t\tthe AAAI conference on artificial intelligence\n\t\t\n\t\t\t2019. 2019. 2023. 2023. 2023\n\t\t\t33\n\t\t\t\n\t\t\n\t\n\tarXiv preprint\n\tOpen largescale language models Zheng et al., 2023 On large language models&apos; selection bias in multi-choice questions",
+      "doi": null,
+      "arxiv_id": "2309.10305",
+      "title": "End-to-end knowledge-routed relational dialogue system for automatic diagnosis",
+      "anchors": [
+        {
+          "ref_id": "b13",
+          "section_path_id": "2.1",
+          "quote": "[Xu et al., 2019]",
+          "offset": 350
+        },
+        {
+          "ref_id": "b13",
+          "section_path_id": "4.1",
+          "quote": "[Xu et al., 2019]",
+          "offset": 401
+        }
+      ]
+    }
+  ],
+  "layout_json": null,
+  "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Beyond Direct Diagnosis: LLM-based Multi-Specialist Agent Consultation for Automatic Diagnosis</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability status=\"unknown\"><licence/></availability>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Haochun</forename><surname>Wang</surname></persName>\n\t\t\t\t\t\t\t<email>hcwang@ir.hit.edu.cn</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Research Center for Social Computing and Information Retrieval</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Harbin Institute of Technology</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Sendong</forename><surname>Zhao</surname></persName>\n\t\t\t\t\t\t\t<email>sdzhao@ir.hit.edu.cn</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Research Center for Social Computing and Information Retrieval</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Harbin Institute of Technology</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Zewen</forename><surname>Qiang</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Research Center for Social Computing and Information Retrieval</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Harbin Institute of Technology</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Nuwa</forename><surname>Xi</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Research Center for Social Computing and Information Retrieval</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Harbin Institute of Technology</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Bing</forename><surname>Qin</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Research Center for Social Computing and Information Retrieval</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Harbin Institute of Technology</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Ting</forename><surname>Liu</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Research Center for Social Computing and Information Retrieval</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Harbin Institute of Technology</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Beyond Direct Diagnosis: LLM-based Multi-Specialist Agent Consultation for Automatic Diagnosis</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date/>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">B6421BD9A0F516EE106BFB45D063639B</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.1\" ident=\"GROBID\" when=\"2026-10-13T11:27+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.1</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null, debugLabelingCollector=disabled</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Automatic diagnosis is a significant application of AI in healthcare, where diagnoses are generated based on the symptom description of patients. Previous works have approached this task directly by modeling the relationship between the normalized symptoms and all possible diseases. However, in the clinical diagnostic process, patients are initially consulted by a general practitioner and, if necessary, referred to specialists in specific domains for a more comprehensive evaluation. The final diagnosis often emerges from a collaborative consultation among medical specialist groups. Recently, large language models have shown impressive capabilities in natural language understanding. In this study, we adopt tuning-free LLMbased agents as medical practitioners and propose the Agent-derived Multi-Specialist Consultation (AMSC) framework to model the diagnosis process in the real world by adaptively fusing probability distributions of agents over potential diseases. Experimental results demonstrate the superiority of our approach compared with baselines. Notably, our approach requires significantly less parameter updating and training time, enhancing efficiency and practical utility. Furthermore, we delve into a novel perspective on the role of implicit symptoms within the context of automatic diagnosis.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>The utilization of artificial intelligence in healthcare, specifically in the realm of automatic diagnosis, has represented a pivotal advancement. Healthcare agents towards automatic diagnosis are designed to interact with patients, eliciting information about symptom presence and formulating diagnoses based on these patient-reported discomforts, termed as complaints. Such AI-driven automatic diagnostic systems are poised to assume a critical role in primary healthcare, offering the potential to mitigate the challenges posed by medical resource scarcity, particularly in economically disadvantaged regions <ref type=\"bibr\">[Wang et al., 2023c;</ref><ref type=\"bibr\" target=\"#b8\">Organization, 2016]</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>* Corresponding author</head><p>The task of automatic diagnosis is derived from the process in real-world online consultation platforms, which is depicted in Figure <ref type=\"figure\">1</ref>. It involves the annotation of dialogue data between the patients and practitioners including three distinct components: (1) Explicit Symptoms -those symptoms presented in the initial patient complaint; (2) Implicit Symptoms -additional symptoms ascertained through subsequent practitioner inquiries; (3) Target Disease -the diagnosis predicted by the practitioner, based on a comprehensive assessment of symptoms. Previous research predominantly addresses the automatic diagnosis task by initially predicting implicit symptoms using explicit symptoms. Subsequently, a diagnosis is formulated leveraging all symptoms, employing methodologies such as reinforcement learning <ref type=\"bibr\" target=\"#b9\">[Tang et al., 2016;</ref><ref type=\"bibr\" target=\"#b12\">Wei et al., 2018;</ref><ref type=\"bibr\">Hou et al., 2021]</ref> or sequence generation <ref type=\"bibr\" target=\"#b1\">[Chen et al., 2022;</ref><ref type=\"bibr\">Wang et al., 2023c]</ref>. Existing approaches tend to model the dynamics of symptom-disease relationships but ignore the diagnosis process in real-life clinical settings. Respiratory Doctor: You may get the Covid-19 …… Patient: I have fever, diarrhea, fatigue, …… A. Individual Practitioner Consultation Doctor A …… General Surgeon: You may get the appendicitis ……. Endocrinologist: You may get the hyperthyroidism …… General Practitioner: You may just catch a cold, but you can consult specialists for further suggestion. Doctor B …… Doctor D …… Doctor C …… B. Practitioner Group Consultation C. Agent-based Group Consultation Agent with Knowledge for Disease A: Agent with Knowledge for Disease B: Agent with Knowledge for Disease C: Agent with Knowledge for Disease D: Distribution fusion Figure 2: Scenarios of three medical diagnostic processes. A. Individual Practitioner Consultation: a singular general practitioner or specialist formulates the diagnosis; B. Practitioner Group Consultation: a group of professionals collaboratively arriving at a diagnostic conclusion; C. Agent-based Group Consultation: the diagnosis is derived from the decision fusion from multiple agent-based specialists.</p><p>In clinical practice, when a patient presents with symptoms necessitating medical intervention, the customary procedure commences with an initial evaluation by a general practitioner. This primary assessment aims to establish a preliminary diagnosis. Subsequently, the general practitioner typically refers the patient to a specialist with expertise in the relevant medical domain for advanced consultation and management if necessary, as depicted in Scenario A of Figure <ref type=\"figure\">2</ref>. Furthermore, for instances involving multifaceted medical conditions, it is standard to convene a multidisciplinary team of practitioners, each contributing diverse expertise and experience. This collaborative approach facilitates a holistic assessment and culminates in a consensus diagnosis, as illustrated in Scenario B of Figure <ref type=\"figure\">2</ref>.</p><p>In recent advancements, Large Language Models (LLMs) have demonstrated exceptional capabilities in both comprehending and generating natural language across diverse tasks <ref type=\"bibr\">[Brown et al., 2020;</ref><ref type=\"bibr\">Touvron et al., 2023;</ref><ref type=\"bibr\" target=\"#b2\">Chowdhery et al., 2023;</ref><ref type=\"bibr\" target=\"#b7\">OpenAI, 2023]</ref>. Moreover, their application within the medical field has garnered significant research interest <ref type=\"bibr\">[Wang et al., 2023a;</ref><ref type=\"bibr\" target=\"#b0\">Bao et al., 2023]</ref>. Building upon this foundation, this study introduces the Agent-derived Multi-Specialist Consultation (AMSC) model, conceptualized from real-world clinical scenarios. In this model, we envision open-source LLMs as primary care physicians, while specialized LLM-based agents, each equipped with distinct medical knowledge, function akin to medical specialists. These agents, each possessing expertise in different medical domains, generate predictive distributions for possible diseases or medical categories without parameter updating of LLMs. Subsequently, we propose an adaptive probability distribution fusion method that integrates the agent predictions, offering a refined decision-making process for disease diagnosis. Additionally, we scrutinize the influence of implicit symptoms on automated diagnosis, investigating the impact of various symptoms on the diagnostic outcomes.</p><p>In summary, our contributions are outlined as follows:</p><p>• We introduce an agent-based multi-specialist consul-tation model employing open-source LLMs following real-world clinical scenarios, coupled with an adaptive predictive distribution fusion method for disease diagnosis.</p><p>• Experimental results demonstrate that our approach surpasses existing baselines in performance. Notably, as the model only requires parameter training on the distribution fusion, it is also more efficient in terms of training costs.</p><p>• We also conduct a comprehensive analysis of symptomatology in automated diagnosis, exploring the differential impacts of various symptoms on diagnostic results.</p><p>2 Related Work</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.1\">Automatic Diagnosis</head><p>Automatic diagnosis using reinforcement learning (RL) has evolved significantly. Initial work by <ref type=\"bibr\" target=\"#b9\">[Tang et al., 2016]</ref> used RL for neural symptom checking, followed by hierarchical RL approaches for joint diagnostics and symptom inquiry <ref type=\"bibr\" target=\"#b4\">[Kao et al., 2018;</ref><ref type=\"bibr\" target=\"#b5\">Liao et al., 2020]</ref>. <ref type=\"bibr\" target=\"#b12\">[Wei et al., 2018]</ref> introduced a Deep Q-Network for symptom collection, while <ref type=\"bibr\" target=\"#b13\">[Xu et al., 2019]</ref> emphasized integrating prior medical knowledge into policy learning. Further advancements include decoupling symptoms and diseases using dense representations [Chen et al., 2023], policy gradient frameworks [Xia et al., 2020], multi-level reward models [Hou et al., 2021], and dialog data customization [Teixeira et al., 2021]. Beyond RL, [Chen et al., 2022] and [Hou et al., 2023] explored sequence generation and multi-task frameworks for diagnosis, respectively. [Wang et al., 2023c] proposed a joint symptom-disease generation model. However, existing research lacks focus on cross-specialist knowledge integration in automatic diagnosis. Our study addresses this gap by exploring the fusion of diagnoses with agent specialists. Agent-derived URTI Specialist Agent-derived Bronchitis Specialist Agent-derived Dyspepsia Specialist LLM-derived General Practitioner Agent-derived Diarrhea Specialist Disease Knowledge for diarrhea: Symptoms of diarrhea includes abdominal pain, watery stool, vomiting, poor appetite, loss of appetite, fever, ….. Question: The complaints of patients include fever, fatigue, cough and running nose. Then, the patient may have A. Diarrhea B. Dyspepsia C. Bronchitis D. URTI Answer: C. Bronchitis Disease knowledge for profile of specialist agent Diagnosis question with symptoms Options for diagnosis 0.28 0.12 0.56 0.04 A B C D Normalized candidate option probabilitybased diagnosis Agent-derived Multiple Specialist Consultation Diarrhea Specialist 0.28 0.12 0.56 0.04 Dyspepsia Specialist 0.08 0.23 0.45 0.24 0.23 0.1 0.36 0.31 Bronchitis Specialist URTI Specialist 0.09 0.1 0.3 0.51 .23 .10 .36 .31 .08 .23 .45 .24 .28 .12 .56 .04 .09 .10 .60 .51 0.11 0.12 0.6 0.17 A B C D Adaptive Probability Distribution Fusion C. Bronchitis </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2\">Medical Large Language Models</head><p>Recent study has underscored the efficacy of Large Language Models (LLMs) within the medical field <ref type=\"bibr\">[Thirunavukarasu et al., 2023;</ref><ref type=\"bibr\" target=\"#b0\">Bao et al., 2023]</ref>, manifesting in diverse applications, including diagnostic processes <ref type=\"bibr\" target=\"#b9\">[Singhal et al., 2023]</ref>, medical reasoning <ref type=\"bibr\" target=\"#b6\">[Liévin et al., 2022]</ref>, and the summarization of medical evidence <ref type=\"bibr\" target=\"#b10\">[Tang et al., 2023]</ref>. In the context of knowledge-augmented methodologies, <ref type=\"bibr\">[Wang et al., 2023b]</ref> demonstrated the generation of informed responses via queries to knowledge bases. Furthermore, <ref type=\"bibr\" target=\"#b3\">[Kang et al., 2023]</ref> fine-tuned smaller LLMs with rationales derived from retrieved knowledge. Another notable advancement is <ref type=\"bibr\" target=\"#b3\">[Jin et al., 2023]</ref> GeneGPT, which instructs LLMs to integrate Web APIs, thereby enhancing performance. Despite these advancements, the medical application faces inherent privacy challenges, particularly concerning the uploading of personal health information to online LLMs. To address this, we introduce the AMSC framework, tailored for open-source LLMs and deployed locally and privately without privacy concern.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Agent-derived Multi-specialist Consultation Framework</head><p>In this section, we delve into an Agent-derived Multi-Specialist Consultation (AMSC) framework, including refining the task of automatic diagnosis, implementing an agentderived specialist, and finally describing the fusion of multispecialist decisions derived from these agents in medical diagnostics mimicking the procedure in the real-life diagnosis by multiple specialists.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1\">Refinement of Automatic Diagnosis</head><p>The task of automatic diagnosis involves processing patientspecific data, denoted as p i . This data encompasses the target disease d i , an array of explicit symptoms s exp i = {exp 1 , exp 2 , ......}, and a collection of implicit symptoms</p><formula xml:id=\"formula_0\">s imp i = {imp 1 , imp 2 , ......}.</formula><p>Explicit symptoms are direct manifestations reported by patients, while implicit symptoms are deduced from interactive dialogues between patients and practitioners. Both categories of symptoms undergo standardization to medical terminologies from their original natural language descriptions.</p><p>Recent advancements in LLMs have demonstrated remarkable efficacy in natural language processing within medical contexts <ref type=\"bibr\" target=\"#b0\">[Bao et al., 2023;</ref><ref type=\"bibr\">Wang et al., 2023a]</ref>. In our approach, we leverage these LLMs as virtual medical practitioners. Given the finite nature of disease possibilities in automatic diagnosis tasks, we restructure the task into a Multiple-Choice Question-Answering (MCQA) framework, as illustrated in Figure <ref type=\"figure\" target=\"#fig_1\">3</ref>, which involves constructing symptombased question templates and selecting the results from answer options, formulated as p diseasei = LLM (q, opts; i) j LLM (q, opts; j) where q represents the symptom-inclusive query question for the LLM, opts denotes the array of possible disease diagnoses, LLM refers to the process that large language model generates the probability of each token within its vocabulary and i, j are indices corresponding to the specific token options for disease diagnosis.</p><p>For tasks involving a broader array of choices, we employ a hierarchical MCQA structure based on ICD-10-CM codes <ref type=\"bibr\">[Organization, 2004]</ref>. Meanwhile, recent research demonstrates that the effectiveness of MCQAs in leveraging the capability of LLMs is subject to the Multiple-Choice Symbol Binding (MCSB) proficiency of the model (the capability of LLMs to associate the answer options with the alphabetic symbols), which significantly varies across different models <ref type=\"bibr\">[Robinson and Wingate, 2023;</ref><ref type=\"bibr\">Zheng et al., 2023]</ref>. Therefore, we selectively utilize models with superior multiplechoice symbol binding capabilities and empirically evaluate their Proportion of Plurality Agreement (PPA) value [Robinson and Wingate, 2023] (further details are provided in the experimental section).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.2\">Agent-derived Specialist for Diagnosis</head><p>While LLM-based practitioners possess a foundational understanding of medical knowledge akin to general practitioners, they lack the depth of expertise characteristic of specialists in particular diseases. To address this, we enhance the LLMs with specialized disease knowledge profiles from the National Institutes of Health 1 , thereby transforming them into distinct specialist agents as depicted in Figure <ref type=\"figure\" target=\"#fig_1\">3</ref>. Each agentspecialist is endowed with expertise in a singular disease domain. For a question for diagnosis, an agent-specialist outputs a distribution on all the possible answer options, and the corresponding disease for the option with the highest probability is the diagnostic result, denoted as</p><formula xml:id=\"formula_1\">k n = d n , (sym n1 , sym n2 , ...) Agent n = Agent-specialist(LLM, k n ) p n diseasei =</formula><p>Agent n (q, opts; i) j Agent n (q, opts; j) where a disease knowledge k n includes a disease d n and a series of symptoms (sym n1 , sym n2 , ...) of the disease d n . Agent n represents an agent-derived specialist with a LLM and specific disease knowledge k n .</p><p>To assess whether an agent specialist exhibits enhanced knowledge in its respective disease area as a human specialist, we conduct experiments on the most widely used automatic diagnosis dataset MuZhi-4 <ref type=\"bibr\" target=\"#b12\">[Wei et al., 2018]</ref>, which includes four target diseases. Figure <ref type=\"figure\" target=\"#fig_2\">4</ref> presents the recall value achieved by these agent specialists for each disease, using distinct symbols. The results indicate that an agent with specialized knowledge in a particular disease significantly outperforms those with knowledge of other diseases and the LLMbased general practitioner without such specialization, affirming the capability of agent-derived specialists to effectively assimilate and apply specialized knowledge.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.3\">Multi-Specialist Decision Fusion</head><p>Like in the real world where multiple specialists may yield different diagnoses for the same patient, in the realm of the Agent-derived Multi-Specialist Consultation (AMSC) framework, each agent conceptualized as a specialist, yields a probabilistic distribution over a range of potential diagnoses. This process results in the formation of a diagnosis distribution matrix when multiple agents are involved. Analogous to the consensus-building process among human medical specialists through extensive deliberation, we introduce an innovative approach for reaching a conclusive diagnostic decision from this fusion of agent-specialist inputs. Our methodology employs a self-attention-based Adaptive Probability Distribution Fusion (APDF) technique. We consider a diagnosis distribution matrix denoted as M = {m 1 , m 2 , ...}, where m n represents the diagnostic probability distribution contributed by the n th agentspecialist. The following equations delineate our method:</p><formula xml:id=\"formula_2\">Q, K, V = Linear q,k,v (M ) p diseasei = Linear(sof tmax( QK T √ d k )V ; i)</formula><p>Here, Q, K, V represent the linear projections of the distribution matrix M corresponding to the query, key, and value components respectively, utilizing the transformation Linear q,k,v . The final diagnostic outcome is derived from an adaptively weighted fusion of the diagnostic distributions sourced from multiple agent specialists, capitalizing on the self-attention mechanism's capacity to discern and emphasize relevant features within the distribution matrix.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Experiment</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.1\">Datasets</head><p>We evaluate our approach on three datasets derived from reallife contexts:</p><p>• MuZhi-4 <ref type=\"bibr\" target=\"#b12\">[Wei et al., 2018]</ref>, a meticulously annotated dataset collected from an online platform Baidu MuZhi Doctor<ref type=\"foot\" target=\"#foot_0\">foot_0</ref> which focuses on four diseases in the pediatric domain; • MuZhi-10 is an augmented iteration of the MuZhi-4 dataset, extending to ten diseases, spanning respiratory, digestive and endocrine systems; • Dxy <ref type=\"bibr\" target=\"#b13\">[Xu et al., 2019]</ref> is a medical dialogue dataset curated from Dingxiang Doctor platform. <ref type=\"foot\" target=\"#foot_1\">3</ref>A thorough statistical analysis of the datasets is presented in Table <ref type=\"table\">1</ref>. Additionally, prior research has engaged in experimental analysis utilizing synthetic datasets <ref type=\"bibr\" target=\"#b5\">[Liao et al., 2020;</ref><ref type=\"bibr\" target=\"#b1\">Chen et al., 2022]</ref> fabricated by symptom-disease database Symcat<ref type=\"foot\" target=\"#foot_2\">foot_2</ref> . Notably, as depicted in Table <ref type=\"table\">1</ref>, the datasets derived from real-life contexts exhibit an average of 2.36 explicit symptoms per patient complaint. In stark contrast, the synthetic dataset only contains 1 explicit symptom per case. This indicates that during medical consultations, patients tend to articulate their ailments with greater specificity in reallife scenarios, as opposed to the limited expressiveness observed in synthetic datasets. Such a discrepancy underscores a significant divergence in the distribution of data between synthetic and real-life datasets. Consequently, our study focuses exclusively on datasets derived from real-life scenarios, thereby ensuring a more realistic and applicable analysis.</p><p>MZ-4 MZ-10 Dxy Synthetic # Disease 4 10 5 90 # Symptom 66 331 41 266 # Training 568 3704 423 24000 # Tr avg exp 2.39 1.72 3.09 1.00 # Tr avg imp 3.28 5.29 1.65 2.61 # Test 142 412 104 6000 # T avg exp 2.20 1.77 3.00 1.00 # T avg imp 3.20 5.18 1.76 2.59 Table 1: Statistics of the datasets, including three real-life datasets and one synthetic dataset. #Tr avg exp: the average number of explicit symptoms in the training set; #Tr avg imp: the average number of implicit symptoms in the training set; #T avg exp: the average number of explicit symptoms in the test set; #T avg imp: the average number of implicit symptoms in the test set.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.2\">Baselines</head><p>In this research, we present an analytical comparison of our experimental results with a spectrum of established baseline models in the domain of automatic medical diagnosis. These benchmarks include:</p><p>• DQN model <ref type=\"bibr\" target=\"#b12\">[Wei et al., 2018]</ref>, which employs a Deep Q-Network framework for symptom validation and diagnostic processes.</p><p>• HRL approach <ref type=\"bibr\" target=\"#b5\">[Liao et al., 2020]</ref>, which implements a DQN-based hierarchical policy to separately predict symptoms and diagnose diseases.</p><p>• PPO model <ref type=\"bibr\">[Schulman et al., 2017]</ref>, which utilizes proximal policy optimization techniques for the development of a diagnostic model.</p><p>• DxFormer <ref type=\"bibr\" target=\"#b2\">[Chen et al., 2023]</ref>, a novel model that decouples the processes of symptom inquiry and disease diagnosis through dense symptom representation.</p><p>• Diaformer <ref type=\"bibr\" target=\"#b1\">[Chen et al., 2022]</ref>, which conceptualizes the task through sequence generation methodology.</p><p>• CoAD <ref type=\"bibr\">[Wang et al., 2023c]</ref>, which integrates symptom and disease generation with label alignment for a comprehensive diagnostic model.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.3\">Selection of Backbone Model</head><p>Considering the language of automatic diagnosis datasets utilized, our selection for the backbone model is the Baichuan2chat, a large language model with 13 billion parameters <ref type=\"bibr\">[Yang et al., 2023]</ref>. This model demonstrates robust performance in both languages. We also evaluate the multiple-choice symbol binding ability of the model using the metric of mean Proportion of Plurality Agreement (PPA) values <ref type=\"bibr\">[Robinson and Wingate, 2023]</ref>, with n answer options across the automatic diagnosis datasets. The results ranged from 0.78 to 0.94, indicating a notable consistency in the model performance regardless of the order of answer options, thereby affirming its reliability in MCQA tasks.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.4\">Implementation of Diagnostic Framework</head><p>For the agent-specialist of our AMSC framework, we employ the corresponding output logits of the answer option index of the last token in the last layer of Baichuan2 to formulate a diagnostic distribution for potential diseases. In our adaptive probability distribution fusion mechanism, the input dimension, denoted as d input , is calculated as the product of the number of potential diseases and the number of agent specialists. The dimensions of the query, key, and value matrices (q, k, v) are set to d input × d input . The learning rate for this implementation ranges between 1e-1 and 1e-3.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.5\">Main Results</head><p>We present an empirical evaluation of the AMSC framework, comparing its performance against established baselines across three real-world datasets. This evaluation encompasses several key metrics: diagnostic accuracy, training duration (denoted as Ttime), and the average number of turns required for implicit symptom inquiry (referred to as Turn). Additionally, we introduce a novel metric, the number of training parameters (#Params), to further assess the efficiency of the automatic diagnosis system. Table <ref type=\"table\" target=\"#tab_0\">2</ref> delineates the comparative performance of the AMSC framework and the baseline methodologies. In terms of diagnostic accuracy, the AMSC framework demonstrates superior efficacy, outperforming existing systems on all three datasets, with an enhancement in performance of up to 3.2%. Regarding training time, since the LLM is frozen and only the APDF module requires training, the AMSC framework exhibits a significant reduction, saving up to 95.5% training time compared with the baseline models, equating to a mere 0.09 minutes on the DXY dataset. Furthermore, the demand for AMSC for training parameters is notably efficient, scaling proportionally with the number of diseases. For a dataset encompassing n diseases, the AMSC requires 3n 4 + n 3 training parameters, which signifies a reduction of up to 99.99% in parameter training. Concerning the mean turn of symptom inquiry, the AMSC relies solely on explicit symptoms, obviating the need for implicit symptom inquiries. This approach is substantiated by experimental findings, affirming the feasi- bility of an automatic diagnosis framework operating without the integration of implicit symptoms. By now, the AMSC framework has not incorporated implicit symptoms in its diagnostic process. However, prior work <ref type=\"bibr\" target=\"#b1\">[Chen et al., 2022;</ref><ref type=\"bibr\" target=\"#b2\">Chen et al., 2023;</ref><ref type=\"bibr\">Wang et al., 2023c]</ref> suggests that implicit symptoms could enhance the performance of automatic diagnosis systems, which is also intuitive. Therefore, we will explore how the implicit symptoms will affect the performance of our AMSC framework in the following section.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">Discussion</head><p>5.1 Impact of Implicit Symptoms Model LLM Single agent AMSC AMSC † 0.632 0.676 0.773 implicit symptoms -all 0.631 0.669 0.752 -pos 0.638 0.647 0.760 medical knowledge -reordered † N/A 0.641 0.718 -all N/A 0.662 0.724 -irrelevant † N/A 0.585 0.702 -all N/A 0.627 0.693</p><p>Table 3: Accuracy of LLM, Single agent, and AMSC with specific settings for the implicit symptoms and medical knowledge on the MuZhi-4 dataset. †: with no implicit symptom. -all: with both explicit and implicit symptoms. -pos: only with the positive symptoms in the explicit and implicit symptoms. N/A: not applicable.</p><p>Experimental results have demonstrated that our AMSC framework can work well on the automatic diagnosis task even without the implicit symptoms. In this subsection, we will scrutinize how the implicit symptoms affect the performance of our AMSC with two settings on the MuZhi-4 dataset:</p><p>• all symptoms, denoted as \"-all\", includes entire explicit and implicit symptoms;</p><p>• positive symptoms, denoted as \"-pos\", only involves the positive symptoms inside the explicit and implicit symptoms.</p><p>Interestingly, our results, as outlined in Table <ref type=\"table\">3</ref> reveal that the inclusion of a full spectrum of symptoms does not necessarily enhance the performance of AMSC framework. Also, configurations relying solely on positive symptoms yielded similar outcomes. The p-values of results of the paired t-test between the (AMSC †, AMSC -all) and (AMSC †, AMSCpos) are 0.244 and 0.357 respectively, which means that there is no statistically significant difference between the result with and without implicit symptom.</p><p>These findings have profound implications for the use of Large Language Models (LLMs) in medical diagnostics. In clinical practice, a comprehensive collection of symptoms is vital for accurate diagnosis. However, for LLMs, the abundance of symptoms, especially without differentiated weighting, poses interpretative challenges. Our analysis reveals that 59.1% of symptoms are common across all four studied diseases in MuZhi-4, with decreasing proportions for three, two, and one disease of 25.8%, 10.6%, and 4.5% respectively. This significant overlap complicates the task of accurate diagnosis with LLMs. For example, the symptom \"cough\" is present in 95.8% of bronchitis cases and 53.1% of Upper Respiratory Tract Infections (URTI). Furthermore, explicit symptoms, which are primarily patient-reported and considered dominant, can effectively reflect a condition of the patient to a specialist agent, demonstrating a notable aspect for LLMbased diagnostic systems.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5.2\">Impact of Medical Knowledge</head><p>The medical knowledge has been proven to be helpful for the agent specialist with the experiment in Table <ref type=\"table\" target=\"#tab_0\">2</ref> and Figure <ref type=\"figure\" target=\"#fig_2\">4</ref>. Here we investigate the influence of medical knowledge on the performance of LLM-based automatic diagnosis systems from another angle. Utilizing the MuZhi-4 dataset, we explore two distinct strategies for medical knowledge:</p><p>• Reordered Knowledge: We assign medical knowledge of one disease to another, creating mismatched knowl-edge for the LLMs. This is formulated as:</p><formula xml:id=\"formula_3\">k reordered n = d n , (sym m1 , sym m2 , . . .)</formula><p>where (sym m1 , sym m2 , . . .) are symptoms of disease d m different from the target disease d n .</p><p>• Irrelevant Knowledge: Here, the automatic diagnosis system is provided with accurate medical knowledge of diseases not included in the automatic diagnosis task. It simulates a scenario where specialists unrelated to the specific diseases are consulted. This is represented as:</p><formula xml:id=\"formula_4\">k other o = d o , (sym o1 , sym o2 , . . .)</formula><p>where (sym o1 , sym o2 , . . .) are symptoms of a nontarget disease d o .</p><p>As shown in Table <ref type=\"table\">3</ref>, the use of reordered or irrelevant medical knowledge adversely affects the diagnostic accuracy of both single-agent systems and AMSC configurations. While agents with reordered knowledge exhibit slightly better performance than those with entirely irrelevant knowledge, their effectiveness is significantly compromised due to the deliberate misalignment of disease-knowledge pairings.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5.3\">Decision Fusion Techniques</head><p>We introduce and evaluate the Adaptive Probability Distribution Fusion (APDF) method, which is designed to amalgamate probability distributions of potential diseases, derived from a group of agent specialists. In parallel, we also conduct empirical evaluations with alternative fusion methodologies: (1) Majority Decision Fusion, wherein predominant decisions override minority opinions, (2) Mean Decision Fusion, which determines disease diagnoses based on the average distribution across multiple specialists, and (3) Linear Classifier Fusion.</p><p>Figure <ref type=\"figure\" target=\"#fig_3\">5</ref> represents the comparative accuracy achieved by these diverse decision fusion methods. It is observed that our proposed APDF method consistently surpasses the three baselines mentioned above approaches in terms of performance efficiency. Notably, the Linear Classifier Fusion demonstrates superior efficacy compared to both Majority and Mean Decision Fusions. The results above underscore the significant contribution of our APDF method to enhance the AMSC framework's effectiveness.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5.4\">Generalization on the Real-world Scenario</head><p>Automated diagnosis datasets have converted patientpractitioner dialogues, which are inherently natural languagebased, into normalized symptom labels to align with the methodologies established in prior work. However, a significant challenge arises in annotating the symptoms in the dialogues: it necessitates the involvement of highly skilled human experts, which renders the process cost-intensive and less feasible for real-world application. Our proposed framework AMSC, which utilizes a question template for symptom labels, can seamlessly integrate with natural language descriptions of symptoms. Notably, only the DXY dataset includes original self-reported symptom descriptions in natural language. Thus, we apply the AMSC to this dataset and compare the efficacy of the AMSC framework on normalized symptom labels and symptoms in natural language along with those of \"Single agent\" and \"LLM\". The results are detailed in Table <ref type=\"table\">4</ref>, which underscores the capability of AMSC to perform comparably with natural language symptom descriptions and demonstrates its potential for generalization in real-world scenarios.</p><p>LLM Single agent AMSC Normalized 0.724 0.776 0.861 Natural language 0.726 0.781 0.857</p><p>Table 4: Accuracy of automatic diagnosis with inputs of normalized symptom label and natural language for the LLM, Single agent and the AMSC on DXY dataset.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"6\">Conclusion</head><p>In this paper, we employ agent-derived specialists for the automatic diagnosis tasks with open-source LLMs and medical knowledge for possible diseases. We introduce an agentderived multi-specialist consultation framework, designed to assimilate and adaptively merge the probability distributions generated by these agent specialists in the diagnostic process, mimicking the real-life medical scene of a patient with multiple specialists. Experimental results demonstrate that our approach not only surpasses existing benchmarks in diagnostic accuracy but also significantly reduces the requisite training duration. Additionally, our in-depth analysis sheds light on an intriguing facet: the contribution of implicit symptom prediction toward diagnostic efficacy may be less substantial than previously anticipated. This revelation opens new avenues for exploration in the realm of automated diagnostic tasks.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :Figure 2 :</head><label>12</label><figDesc>Figure 1: An example of data for automatic diagnosis from online consulting platforms.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Illustration of LLM-derived General Practitioner, Agent-derived Specialist and Agent-derived Multiple Specialist Consultation.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Recall for the four agent-derived specialists on the diseases of the MuZhi-4 dataset with corresponding knowledge for a specific disease and for an LLM-derived general practitioner without knowledge (\"None\" in the figure).</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Accuracy for automatic diagnosis with various decision fusion techniques.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 2 :</head><label>2</label><figDesc>Experimental results on three real-life datasets. Acc is the accuracy of diagnosis; Ttime denotes the training time, m for minute; #Params indicates the number of updated parameters, M for million; Turn represents the mean turn of symptom inquiry. The results of accuracy are reported by baselines. Single agent: the performance of agent-derived specialist without distribution fusion ( †: with no implicit symptom. ‡: best performance of multiple agents). LLM: the performance of original LLM.</figDesc><table><row><cell>Model</cell><cell></cell><cell cols=\"2\">MuZhi-4</cell><cell></cell><cell></cell><cell>Dxy</cell><cell></cell><cell></cell><cell></cell><cell cols=\"2\">MuZhi-10</cell><cell></cell></row><row><cell></cell><cell>Acc</cell><cell cols=\"3\">Ttime #Params Turn</cell><cell>Acc</cell><cell cols=\"3\">Ttime #Params Turn</cell><cell>Acc</cell><cell cols=\"3\">Ttime #Params Turn</cell></row><row><cell>DQN</cell><cell>0.690</cell><cell>82m</cell><cell>-</cell><cell>2.0</cell><cell cols=\"2\">0.720 141m</cell><cell>-</cell><cell>1.3</cell><cell>0.408</cell><cell>-</cell><cell>-</cell><cell>9.7</cell></row><row><cell>HRL</cell><cell cols=\"2\">0.694 162m</cell><cell>-</cell><cell>3.5</cell><cell>0.695</cell><cell>35m</cell><cell>-</cell><cell>2.4</cell><cell>0.556</cell><cell>-</cell><cell>-</cell><cell>7.0</cell></row><row><cell>PPO</cell><cell>0.732</cell><cell>-</cell><cell>-</cell><cell>6.3</cell><cell>0.746</cell><cell>-</cell><cell>-</cell><cell>3.3</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Diaformer</cell><cell>0.742</cell><cell>2m</cell><cell>62M</cell><cell cols=\"2\">15.3 0.829</cell><cell>2m</cell><cell>62M</cell><cell>13.1</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>CoAD</cell><cell>0.75</cell><cell>32m</cell><cell>43M</cell><cell>13.4</cell><cell>0.85</cell><cell>23m</cell><cell>43M</cell><cell cols=\"3\">10.5 0.628 156m</cell><cell>43M</cell><cell>20.0</cell></row><row><cell>DxFormer</cell><cell>0.743</cell><cell>39m</cell><cell>9.8M</cell><cell>8.7</cell><cell>0.817</cell><cell>14m</cell><cell>9.8M</cell><cell>6.3</cell><cell>0.633</cell><cell>55m</cell><cell>9.8M</cell><cell>7.6</cell></row><row><cell>AMSC  †</cell><cell cols=\"2\">0.773 0.15m</cell><cell>832</cell><cell>0</cell><cell cols=\"2\">0.861 0.09m</cell><cell>2000</cell><cell>0</cell><cell>0.652</cell><cell>9m</cell><cell>0.031M</cell><cell>0</cell></row><row><cell cols=\"2\">-Single agent  † ‡ 0.676</cell><cell>0m</cell><cell>0</cell><cell>0</cell><cell>0.776</cell><cell>0m</cell><cell>0</cell><cell>0</cell><cell>0.506</cell><cell>0m</cell><cell>0</cell><cell>0</cell></row><row><cell>-LLM  †</cell><cell>0.632</cell><cell>0m</cell><cell>0</cell><cell>0</cell><cell>0.724</cell><cell>0m</cell><cell>0</cell><cell>0</cell><cell>0.427</cell><cell>0m</cell><cell>0</cell><cell>0</cell></row></table></figure>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"2\" xml:id=\"foot_0\"><p>https://muzhi.baidu.com/</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"3\" xml:id=\"foot_1\"><p>https://dxy.com</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"4\" xml:id=\"foot_2\"><p>https://www.symcat.com</p></note>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"annex\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Ethics Statement</head><p>This study is fundamentally an academic inquiry and is not designed for practical clinical diagnostic applications. The medical information employed herein is derived from publicly available medical knowledge repositories and reputable medical advisories. It must be underscored that diagnoses generated by LLMs should not be misconstrued as definitive. Should individuals encounter any form of discomfort or ailment, it is imperative to consult a certified healthcare practitioner.</p></div>\t\t\t</div>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Disc-medllm: Bridging general large language models and real-world medical consultation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Bao</forename></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2308.14346</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2020\">2023. 2023. 2020</date>\n\t\t\t<biblScope unit=\"volume\">33</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1877\" to=\"1901\" />\n\t\t\t<pubPlace>Tom Brown, Benjamin Mann, Nick Ry-</pubPlace>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Brown et al., 2020 Language models are few-shot learners Advances in neural information processing systems</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Diaformer: Automatic diagnosis via symptoms sequence generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chen</forename></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the AAAI Conference on Artificial Intelligence</title>\n\t\t<meeting>the AAAI Conference on Artificial Intelligence</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022. 2022</date>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"4432\" to=\"4440\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Dxformer: a decoupled automatic diagnostic system based on decoder-encoder transformer with dense symptom representations</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chen</forename></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>\n\t\t<meeting>the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2023. 2023. 2023. 2021. 2023</date>\n\t\t\t<biblScope unit=\"volume\">39</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"14241\" to=\"14248\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>Chowdhery et al., 2023 Palm: Scaling language modeling with pathways Bioinformatics Hou et al., 2021] Zhengxu Hou Imperfect also deserves reward: Multi-level and sequential reward modeling for better dialog management Hou et al., 2023] Zhenyu Hou Mtdiag: An effective multi-task framework for automatic diagnosis Proceedings of the AAAI Conference on Artificial Intelligence</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Genegpt: Augmenting large language models with domain tools for improved access to biomedical information</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jin</forename></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2305.18395</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">ArXiv</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023. 2023. 2023. 2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Knowledgeaugmented reasoning distillation for small language models in knowledge-intensive tasks</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Context-aware symptom checking for disease diagnosis using hierarchical reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><surname>Kao</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the AAAI conference on artificial intelligence</title>\n\t\t<meeting>the AAAI conference on artificial intelligence</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2018\">2018. 2018</date>\n\t\t\t<biblScope unit=\"volume\">32</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><surname>Liao</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2004.14254</idno>\n\t\t<title level=\"m\">Task-oriented dialogue system for automatic disease diagnosis via hierarchical reinforcement learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2020\">2020. 2020</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><surname>Liévin</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2207.08143</idno>\n\t\t<title level=\"m\">Can large language models reason about medical questions? arXiv preprint</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022. 2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Organization, 2004] World Health Organization. International Statistical Classification of Diseases and related health problems: Alphabetical index</title>\n\t\t<author>\n\t\t\t<persName><surname>Openai</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">OpenAI. Gpt-4 technical report</title>\n\t\t<imprint>\n\t\t\t<publisher>World Health Organization</publisher>\n\t\t\t<date type=\"published\" when=\"2004\">2023. 2023. 2004</date>\n\t\t\t<biblScope unit=\"volume\">3</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Health workforce requirements for universal health coverage and the sustainable development goals.(human resources for health observer</title>\n\t\t<author>\n\t\t\t<persName><surname>Organization</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1707.06347</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">The Eleventh International Conference on Learning Representations</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Filip</forename><surname>Schulman</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Prafulla</forename><surname>Wolski</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Alec</forename><surname>Dhariwal</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Oleg</forename><surname>Radford</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><surname>Klimov</surname></persName>\n\t\t</editor>\n\t\t<imprint>\n\t\t\t<publisher>World Health Organization</publisher>\n\t\t\t<date type=\"published\" when=\"2016\">2016. 2016. 2023. 2017</date>\n\t\t\t<biblScope unit=\"page\">17</biblScope>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Leveraging large language models for multiple choice question answering Schulman et al., 2017 Proximal policy optimization algorithms</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Inquire and diagnose: Neural symptom checking ensemble using deep reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><surname>Singhal</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">NIPS workshop on deep reinforcement learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2016\">2023. 2023. 2016. 2016</date>\n\t\t\t<biblScope unit=\"volume\">620</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"172\" to=\"180\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>Large language models encode clinical knowledge</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The interplay of a conversational ontology and ai planning for health dialogue management</title>\n\t\t<author>\n\t\t\t<persName><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2302.13971</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Faisal Azhar, et al. Llama: Open and efficient foundation language models</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Chi</forename><surname>Wang</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Nuwa</forename><surname>Liu</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><surname>Xi</surname></persName>\n\t\t</editor>\n\t\t<imprint>\n\t\t\t<publisher>Eric Hambro</publisher>\n\t\t\t<date type=\"published\" when=\"2021\">2023. 2023. 2021. 2023. 2023. 2023</date>\n\t\t\t<biblScope unit=\"volume\">6</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1930\" to=\"1940\" />\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Teixeira et al., 2021 Evaluating large language models on medical evidence summarization Large language models in medicine Nature medicine Touvron et al., 2023 Proceedings of the 36th annual ACM symposium on applied computing Zewen Qiang, Sendong Zhao, Bing Qin, and Ting Liu. Huatuo: Tuning llama model with chinese medical knowledge</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Knowledgetuning large language models with structured medical knowledge bases for reliable response generation in chinese</title>\n\t\t<author>\n\t\t\t<persName><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2309.04175</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Wai</forename><surname>Wang</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Kam-Fai</forename><surname>Chung Kwan</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Yefeng</forename><surname>Wong</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><surname>Zheng</surname></persName>\n\t\t</editor>\n\t\t<meeting>the 61st Annual Meeting of the Association for Computational Linguistics</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023. 2023. 2023. 2023</date>\n\t\t\t<biblScope unit=\"volume\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"6348\" to=\"6361\" />\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Coad: Automatic diagnosis through symptom and disease collaborative generation Long Papers)</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Generative adversarial regularized mutual information policy gradient framework for automatic diagnosis</title>\n\t\t<author>\n\t\t\t<persName><surname>Wei</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics</title>\n\t\t<meeting>the 56th Annual Meeting of the Association for Computational Linguistics</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2018\">2018. 2018. 2020</date>\n\t\t\t<biblScope unit=\"volume\">2</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1062\" to=\"1069\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>Short Papers) Xia et al., 2020 Task-oriented dialogue system for automatic diagnosis Proceedings of the AAAI conference on artificial intelligence</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">End-to-end knowledge-routed relational dialogue system for automatic diagnosis</title>\n\t\t<author>\n\t\t\t<persName><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2309.10305</idno>\n\t\t<idno>arXiv:2309.03882</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the AAAI conference on artificial intelligence</title>\n\t\t<meeting>the AAAI conference on artificial intelligence</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2019\">2019. 2019. 2023. 2023. 2023</date>\n\t\t\t<biblScope unit=\"volume\">33</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"7346\" to=\"7353\" />\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Open largescale language models Zheng et al., 2023 On large language models&apos; selection bias in multi-choice questions</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+  "pdf_hash": "7b37def619e3e5931f07e2409c1f3664547bfd7d97b716084ca27afa122070d9",
+  "tables": [
+    {
+      "table_id": "tab_0",
+      "section_path_id": "6",
+      "section_ordinal": 18,
+      "caption": "Table 2 :",
+      "coordinates": null,
+      "cells": [
+        {
+          "row": 0,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Model",
+          "coordinates": null,
+          "span": {
+            "start": 2007,
+            "end": 2012
+          },
+          "digest": "74afbc17928f31a6022088a15e51a1f6418a187392f08d3a5c83b9d581947aa9"
+        },
+        {
+          "row": 0,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2012,
+            "end": 2012
+          },
+          "digest": "7e8d5b72d290ba59f0edbe3d6f961eea1a534c250a6ef2cac5b85c0c2111735f"
+        },
+        {
+          "row": 0,
+          "column": 2,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "MuZhi-4",
+          "coordinates": null,
+          "span": {
+            "start": 2012,
+            "end": 2019
+          },
+          "digest": "c636c5ed6a4bede89d8ce1522f015b22175bd4eb70a729d8bbe62ce506e625f6"
+        },
+        {
+          "row": 0,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2019,
+            "end": 2019
+          },
+          "digest": "88c96206703760cb8f5605d1da87798886ba263df19974a6fa1ce0d47c580261"
+        },
+        {
+          "row": 0,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2019,
+            "end": 2019
+          },
+          "digest": "eb71df8bab690d4fb0739206468d7b153927f36e2c66221a63e5a901a3018e45"
+        },
+        {
+          "row": 0,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Dxy",
+          "coordinates": null,
+          "span": {
+            "start": 2019,
+            "end": 2022
+          },
+          "digest": "ab8f18621abfad443f8ec11f8bf73e5db3309b9bd7b0f6aaceb54965e48b7ede"
+        },
+        {
+          "row": 0,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2022,
+            "end": 2022
+          },
+          "digest": "9cf3f4af6ec022fb558951955c2b32adb49e669f919c751a249c07c01bb911e9"
+        },
+        {
+          "row": 0,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2022,
+            "end": 2022
+          },
+          "digest": "f27780ad26309bc8d7983cb379e058ba928df20c9880369c004c6aa656e1d6c9"
+        },
+        {
+          "row": 0,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2022,
+            "end": 2022
+          },
+          "digest": "0274929900f475683f5b126c3fd2ec283f3da78ef0b5a81c20616113c35b9417"
+        },
+        {
+          "row": 0,
+          "column": 10,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "MuZhi-10",
+          "coordinates": null,
+          "span": {
+            "start": 2022,
+            "end": 2030
+          },
+          "digest": "55ede817666416b5225fc469d6d8ba3b9c666bf5fde77aba14880c9bd6cb5c32"
+        },
+        {
+          "row": 0,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2030,
+            "end": 2030
+          },
+          "digest": "52396a801a549c00ba00659e49f6b4e5de8e63310b5dc93c6ae586088b397ef3"
+        },
+        {
+          "row": 1,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 2030,
+            "end": 2030
+          },
+          "digest": "c942b58bc8713f389c3702ee97885b2f4dcfcc6f6ff08fc4665baca5d7a24971"
+        },
+        {
+          "row": 1,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Acc",
+          "coordinates": null,
+          "span": {
+            "start": 2030,
+            "end": 2033
+          },
+          "digest": "5b52e742db0012b0d296b346b329101dfbbe48cc3734cab32072743bb47fbda5"
+        },
+        {
+          "row": 1,
+          "column": 2,
+          "colspan": 3,
+          "rowspan": 1,
+          "text": "Ttime #Params Turn",
+          "coordinates": null,
+          "span": {
+            "start": 2033,
+            "end": 2051
+          },
+          "digest": "7afa13b67dd5bfb4e5eba31d211c08df4651276da42dc67322a23c6d19946928"
+        },
+        {
+          "row": 1,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Acc",
+          "coordinates": null,
+          "span": {
+            "start": 2051,
+            "end": 2054
+          },
+          "digest": "a47d1fc13136c15ad67281caad3fecdfa766410b5c9f6fcd81d49edf597ea678"
+        },
+        {
+          "row": 1,
+          "column": 6,
+          "colspan": 3,
+          "rowspan": 1,
+          "text": "Ttime #Params Turn",
+          "coordinates": null,
+          "span": {
+            "start": 2054,
+            "end": 2072
+          },
+          "digest": "11548c6306606f6b847da31e0bf0e9cb20232da4f4484be62a414015c56e8907"
+        },
+        {
+          "row": 1,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Acc",
+          "coordinates": null,
+          "span": {
+            "start": 2072,
+            "end": 2075
+          },
+          "digest": "1fa9c3d154273ba3853fa00d38b3ba4370b5b72432f9c3037f916a1c19c2ec70"
+        },
+        {
+          "row": 1,
+          "column": 10,
+          "colspan": 3,
+          "rowspan": 1,
+          "text": "Ttime #Params Turn",
+          "coordinates": null,
+          "span": {
+            "start": 2075,
+            "end": 2093
+          },
+          "digest": "ec3ee004bb69822b14fbd8a79e8a0735f1a23b4759ab9a1cccf9df652b60f3da"
+        },
+        {
+          "row": 2,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "DQN",
+          "coordinates": null,
+          "span": {
+            "start": 2093,
+            "end": 2096
+          },
+          "digest": "3e1fddaf84a2f4831b6ff09616681ef5f4364347b399be0b0b03a764032f572b"
+        },
+        {
+          "row": 2,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.690",
+          "coordinates": null,
+          "span": {
+            "start": 2096,
+            "end": 2101
+          },
+          "digest": "371660f54ca71e98aad2c8633f080ceb07f187db03d762173699b96bcd8be52c"
+        },
+        {
+          "row": 2,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "82m",
+          "coordinates": null,
+          "span": {
+            "start": 2101,
+            "end": 2104
+          },
+          "digest": "2c709780e972bf79639449981ab8f2688a4193880b1a1fb2f9c3ac23bcf6feac"
+        },
+        {
+          "row": 2,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2104,
+            "end": 2105
+          },
+          "digest": "334033f601aef574996b5e3c9bcd2e070db1df865c4a3f41871743f435f48c4d"
+        },
+        {
+          "row": 2,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "2.0",
+          "coordinates": null,
+          "span": {
+            "start": 2105,
+            "end": 2108
+          },
+          "digest": "3655d64a229f597043d1c8778d9959b987acf16f3c8aeaa1f69f3fe5dc72c178"
+        },
+        {
+          "row": 2,
+          "column": 5,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "0.720 141m",
+          "coordinates": null,
+          "span": {
+            "start": 2108,
+            "end": 2118
+          },
+          "digest": "ec7f08ac8f7c17e46a73abbaca9b3bb9abb713e442c0b2330cdca3a6c40276c6"
+        },
+        {
+          "row": 2,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2118,
+            "end": 2119
+          },
+          "digest": "45b6fae926412473a0d1b942f3f75d5ce1cdac6922027c13afcc00b68e8593bd"
+        },
+        {
+          "row": 2,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "1.3",
+          "coordinates": null,
+          "span": {
+            "start": 2119,
+            "end": 2122
+          },
+          "digest": "95dd5afca3aa8e64e5e6ff5f207c8809abfa50e4a3ff07f89506add3a52831fa"
+        },
+        {
+          "row": 2,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.408",
+          "coordinates": null,
+          "span": {
+            "start": 2122,
+            "end": 2127
+          },
+          "digest": "dc8ebe6411d6f29d760977a53feb0c43910751a8692cd2628ec6e9ba24aeea34"
+        },
+        {
+          "row": 2,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2127,
+            "end": 2128
+          },
+          "digest": "7f8517a4fab8f9dcab912275c5168423e033a3093c2c2072247a685d2584eb18"
+        },
+        {
+          "row": 2,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2128,
+            "end": 2129
+          },
+          "digest": "34091d3e3982d2a6457c4bfebe71dbd4a9cee9234c2d815885a8cce6e75d325a"
+        },
+        {
+          "row": 2,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "9.7",
+          "coordinates": null,
+          "span": {
+            "start": 2129,
+            "end": 2132
+          },
+          "digest": "aba27d7f3366a4eb987ff96df3ca0cb8948c3461382345827ecad0173ee6fb6b"
+        },
+        {
+          "row": 3,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "HRL",
+          "coordinates": null,
+          "span": {
+            "start": 2132,
+            "end": 2135
+          },
+          "digest": "e14fd47361f33b695e00f7d42ce23e74efefda1b5bf24cfd3a160b047d082075"
+        },
+        {
+          "row": 3,
+          "column": 1,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "0.694 162m",
+          "coordinates": null,
+          "span": {
+            "start": 2135,
+            "end": 2145
+          },
+          "digest": "390d03411cba3d4485a3ca33b753759d598d2205cba5d37f08b37a63b1d7a841"
+        },
+        {
+          "row": 3,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2145,
+            "end": 2146
+          },
+          "digest": "e20bc60a9d01d5e92bebedd756cab4f2b28f4512c8b7ebd619d6dcd2e466d8b4"
+        },
+        {
+          "row": 3,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "3.5",
+          "coordinates": null,
+          "span": {
+            "start": 2146,
+            "end": 2149
+          },
+          "digest": "615e16873c27a508da8a34b72426bb8e436bbd4c6f5711a86b5dcba376f7a814"
+        },
+        {
+          "row": 3,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.695",
+          "coordinates": null,
+          "span": {
+            "start": 2149,
+            "end": 2154
+          },
+          "digest": "8d42a555c0e0c564aff09a2c4b41aee6d582506e4fb9e08eeedd9c72c7884063"
+        },
+        {
+          "row": 3,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "35m",
+          "coordinates": null,
+          "span": {
+            "start": 2154,
+            "end": 2157
+          },
+          "digest": "667b52e9c5a0594590ad8e694bd46b4f33d5a48cc081b6b84f9cfe8d85855579"
+        },
+        {
+          "row": 3,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2157,
+            "end": 2158
+          },
+          "digest": "c6b57a6f6784437556a2427ea6abb3ec3dae2bc88772f7abf163b288e351ff7e"
+        },
+        {
+          "row": 3,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "2.4",
+          "coordinates": null,
+          "span": {
+            "start": 2158,
+            "end": 2161
+          },
+          "digest": "d67771297c451b0d8e13f4c6dc40d91f60ea3954cbab391299b8f5ec1ead64bf"
+        },
+        {
+          "row": 3,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.556",
+          "coordinates": null,
+          "span": {
+            "start": 2161,
+            "end": 2166
+          },
+          "digest": "eaeaf696f62b166693482b4612709be6e43042131e359696fd4ec349162dd62e"
+        },
+        {
+          "row": 3,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2166,
+            "end": 2167
+          },
+          "digest": "f7964713b85129dab32bbde00cfdc519e160f458e7682a103cb40b5d8f6b8d49"
+        },
+        {
+          "row": 3,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2167,
+            "end": 2168
+          },
+          "digest": "5fab28f51fe406d58ce40019b95a12cad06fa33661807f434a833e1499274c2a"
+        },
+        {
+          "row": 3,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "7.0",
+          "coordinates": null,
+          "span": {
+            "start": 2168,
+            "end": 2171
+          },
+          "digest": "5f5bfc804d90af68cd0d257daefd8fc147f27c530e558aebb44800e0295dbd77"
+        },
+        {
+          "row": 4,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "PPO",
+          "coordinates": null,
+          "span": {
+            "start": 2171,
+            "end": 2174
+          },
+          "digest": "744f148a58cb2d29b229913e8699bc0980e44e2cd5c3a5b398b7cb2fc06f79d5"
+        },
+        {
+          "row": 4,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.732",
+          "coordinates": null,
+          "span": {
+            "start": 2174,
+            "end": 2179
+          },
+          "digest": "d5ef8d61adb44345e1ba9d986fb355bfbefc9bd1c16bf4c95edd7b88e29a4aea"
+        },
+        {
+          "row": 4,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2179,
+            "end": 2180
+          },
+          "digest": "2eb497ea51d32bc925696f43056f1212fbfb269393f2d67da7286e16eee1bbb2"
+        },
+        {
+          "row": 4,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2180,
+            "end": 2181
+          },
+          "digest": "8d40b0473da7077f02a4bc5532e325d1e8baf54b110b1ec5d1cbf7ced05b8381"
+        },
+        {
+          "row": 4,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "6.3",
+          "coordinates": null,
+          "span": {
+            "start": 2181,
+            "end": 2184
+          },
+          "digest": "62efe88d069653220bf9b8f024d170b7eea36f0b7342af30126f476ef4d52283"
+        },
+        {
+          "row": 4,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.746",
+          "coordinates": null,
+          "span": {
+            "start": 2184,
+            "end": 2189
+          },
+          "digest": "1ea12988e52d5d8dca9cc82225893c94a8bedaa09a7ce98439befe22dd256919"
+        },
+        {
+          "row": 4,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2189,
+            "end": 2190
+          },
+          "digest": "d3a4f73c1ae5c404e50f012e698da4b99cb4b4f24a4134adb3444083cbb9fb19"
+        },
+        {
+          "row": 4,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2190,
+            "end": 2191
+          },
+          "digest": "d339fbb5b283f453970a874f3c58a8f8a2ff5567baf60f835284778cdff305f4"
+        },
+        {
+          "row": 4,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "3.3",
+          "coordinates": null,
+          "span": {
+            "start": 2191,
+            "end": 2194
+          },
+          "digest": "cd1cffca2551a09045937ca897795dd3b4f8b28a1286489ffe30876fbd925cca"
+        },
+        {
+          "row": 4,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2194,
+            "end": 2195
+          },
+          "digest": "e0c6094bc611d32b055af0bee2c6f8f93bada092d14baa915ea1de926019bddd"
+        },
+        {
+          "row": 4,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2195,
+            "end": 2196
+          },
+          "digest": "1731cce2216c5dd136d8257f3909e0da1ad4a56ade92d8ad9659613bc2bda1e1"
+        },
+        {
+          "row": 4,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2196,
+            "end": 2197
+          },
+          "digest": "86131922e9933e75e8f9708b6a5d09a3f9a87b1308d0830a8bb0015eb5935ea4"
+        },
+        {
+          "row": 4,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2197,
+            "end": 2198
+          },
+          "digest": "1df5ba4a39b262058878823514d52b48723af6314a26404533a704f0338379eb"
+        },
+        {
+          "row": 5,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Diaformer",
+          "coordinates": null,
+          "span": {
+            "start": 2198,
+            "end": 2207
+          },
+          "digest": "395ac686a6485af9b4e36efa0547bf585bdf3e876830a3717739730e4ae9a59c"
+        },
+        {
+          "row": 5,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.742",
+          "coordinates": null,
+          "span": {
+            "start": 2207,
+            "end": 2212
+          },
+          "digest": "a4821f794ccc05a0a579e9fbac9ce3e5eda5a8e4fe2d2d2c6f7aa99bc1c93dc8"
+        },
+        {
+          "row": 5,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "2m",
+          "coordinates": null,
+          "span": {
+            "start": 2212,
+            "end": 2214
+          },
+          "digest": "3706f238e334c6724fcce894a49cc151ab9946f0a6b181104dcc03719ba051b6"
+        },
+        {
+          "row": 5,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "62M",
+          "coordinates": null,
+          "span": {
+            "start": 2214,
+            "end": 2217
+          },
+          "digest": "4b95ee66d160242ac4f43806d0345b58f5003db590f6e5c16249c03eb12fbf58"
+        },
+        {
+          "row": 5,
+          "column": 4,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "15.3 0.829",
+          "coordinates": null,
+          "span": {
+            "start": 2217,
+            "end": 2227
+          },
+          "digest": "7597221c35108a38b80474b38acf87dc88c021b90aa49f2f29f7ce44c0d54e92"
+        },
+        {
+          "row": 5,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "2m",
+          "coordinates": null,
+          "span": {
+            "start": 2227,
+            "end": 2229
+          },
+          "digest": "9bebd2bcd5a751a5aac3ae633a166284b7f7f0ed130794035e955c4b09f2855a"
+        },
+        {
+          "row": 5,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "62M",
+          "coordinates": null,
+          "span": {
+            "start": 2229,
+            "end": 2232
+          },
+          "digest": "c06ada48f714cc160e0b9126fafc4320a8e9534881728b343c4764d041e7fbdd"
+        },
+        {
+          "row": 5,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "13.1",
+          "coordinates": null,
+          "span": {
+            "start": 2232,
+            "end": 2236
+          },
+          "digest": "0027160cf060bcaaa1cb706dd5c5a6ebdfcf7a4586f7ac46e54e9f31ec110615"
+        },
+        {
+          "row": 5,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2236,
+            "end": 2237
+          },
+          "digest": "fafd5b142ea95fc2c99adb454cda2ec81caa83286ed4f891fcfb7d3dac1d5627"
+        },
+        {
+          "row": 5,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2237,
+            "end": 2238
+          },
+          "digest": "b721e43baf9b344e68a924627ac35dad150302c580b2162b5040598db54c1131"
+        },
+        {
+          "row": 5,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2238,
+            "end": 2239
+          },
+          "digest": "0956e1dc3402ee69670c49e81df4c4e48de40680e5bbb295f2791ecc7787aa9c"
+        },
+        {
+          "row": 5,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-",
+          "coordinates": null,
+          "span": {
+            "start": 2239,
+            "end": 2240
+          },
+          "digest": "0bb0ef55fa25938fce17f01c252b11e4880c2201d9ee0b1dc5104e5bebca6363"
+        },
+        {
+          "row": 6,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "CoAD",
+          "coordinates": null,
+          "span": {
+            "start": 2240,
+            "end": 2244
+          },
+          "digest": "8efc844d9f0c58286b70373edbe7654989ada5e3e8bec1f1762f71eaa8a92a3d"
+        },
+        {
+          "row": 6,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.75",
+          "coordinates": null,
+          "span": {
+            "start": 2244,
+            "end": 2248
+          },
+          "digest": "3106199c276a2d0d6c57c35ff2159492e119f5804a1eea665010f856b48ba0f3"
+        },
+        {
+          "row": 6,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "32m",
+          "coordinates": null,
+          "span": {
+            "start": 2248,
+            "end": 2251
+          },
+          "digest": "910fb363872f77beea5f2dd812b06a7608fa3b83b5e8979f20c9b369c618fc92"
+        },
+        {
+          "row": 6,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "43M",
+          "coordinates": null,
+          "span": {
+            "start": 2251,
+            "end": 2254
+          },
+          "digest": "6a4b5f4405434f29b56eb8768284ba4d8563fffc927faf5f1e739745d5f6c714"
+        },
+        {
+          "row": 6,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "13.4",
+          "coordinates": null,
+          "span": {
+            "start": 2254,
+            "end": 2258
+          },
+          "digest": "12ad0328a8a3c58e3a448a2258b44db375c83086326d42b7923fa529efffd81a"
+        },
+        {
+          "row": 6,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.85",
+          "coordinates": null,
+          "span": {
+            "start": 2258,
+            "end": 2262
+          },
+          "digest": "440d7d47a12a816e435f71e67e88469ef475ffc38424247e7b544b7e9e3a38e1"
+        },
+        {
+          "row": 6,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "23m",
+          "coordinates": null,
+          "span": {
+            "start": 2262,
+            "end": 2265
+          },
+          "digest": "c1f23a2ec0aae6eec4270613b0e57e0caef632f12378ecc75851a7d189ea9f76"
+        },
+        {
+          "row": 6,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "43M",
+          "coordinates": null,
+          "span": {
+            "start": 2265,
+            "end": 2268
+          },
+          "digest": "c312111f1e21643d34e4db3c66c426b7e481afa72460858028793efd5bbf042b"
+        },
+        {
+          "row": 6,
+          "column": 8,
+          "colspan": 3,
+          "rowspan": 1,
+          "text": "10.5 0.628 156m",
+          "coordinates": null,
+          "span": {
+            "start": 2268,
+            "end": 2283
+          },
+          "digest": "bd0c8a16a0a36b79943289369e8250ff61fb14bf9e8b7533da605e03b7a19cb8"
+        },
+        {
+          "row": 6,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "43M",
+          "coordinates": null,
+          "span": {
+            "start": 2283,
+            "end": 2286
+          },
+          "digest": "6b28c181bfc9cb2cc99d50f0972b8528529ea0a7c03a5d39650ba255a2ffb4e9"
+        },
+        {
+          "row": 6,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "20.0",
+          "coordinates": null,
+          "span": {
+            "start": 2286,
+            "end": 2290
+          },
+          "digest": "92981d385f1e82f416ef2afe7614038bcb55c7fe677329dfbe3f58d1f935d169"
+        },
+        {
+          "row": 7,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "DxFormer",
+          "coordinates": null,
+          "span": {
+            "start": 2290,
+            "end": 2298
+          },
+          "digest": "bd851b27b5355b4411214585db97c3e6f6c52ca26c9a6ae621157a6917d7b9d0"
+        },
+        {
+          "row": 7,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.743",
+          "coordinates": null,
+          "span": {
+            "start": 2298,
+            "end": 2303
+          },
+          "digest": "1f56a0f95f6ab88718914d6938a8ceb64495d646cecc8b64cd1df02a63b7c51c"
+        },
+        {
+          "row": 7,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "39m",
+          "coordinates": null,
+          "span": {
+            "start": 2303,
+            "end": 2306
+          },
+          "digest": "702e301388ac6707c4eec16789a6e699c91b13f25be12e4da1159331a5dee621"
+        },
+        {
+          "row": 7,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "9.8M",
+          "coordinates": null,
+          "span": {
+            "start": 2306,
+            "end": 2310
+          },
+          "digest": "6526bb92834f143b6c91c1f5fc41851a94a5a0b21b549b5a7ede45c60b9cc36e"
+        },
+        {
+          "row": 7,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "8.7",
+          "coordinates": null,
+          "span": {
+            "start": 2310,
+            "end": 2313
+          },
+          "digest": "aed3bf5c67d4666bb764c66a84dcf2c925bdbee534ae1312e0aa67ea97cd6f65"
+        },
+        {
+          "row": 7,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.817",
+          "coordinates": null,
+          "span": {
+            "start": 2313,
+            "end": 2318
+          },
+          "digest": "f466a91df50ea6108b84913d8b6a901fc9041c4bdfc3e33c184e5347a13b1c1c"
+        },
+        {
+          "row": 7,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "14m",
+          "coordinates": null,
+          "span": {
+            "start": 2318,
+            "end": 2321
+          },
+          "digest": "2b00bc999e7afb618f6fe329d9e9b39ac991083ebb87246814953658c569e75b"
+        },
+        {
+          "row": 7,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "9.8M",
+          "coordinates": null,
+          "span": {
+            "start": 2321,
+            "end": 2325
+          },
+          "digest": "4ed387a56bc7e482326dfd904d02aca62df57d30f65b0970964769e568e1f6a9"
+        },
+        {
+          "row": 7,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "6.3",
+          "coordinates": null,
+          "span": {
+            "start": 2325,
+            "end": 2328
+          },
+          "digest": "a840cd2352e6647f550860729d68247059eba64a9bbd6874585d5750d3e0c825"
+        },
+        {
+          "row": 7,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.633",
+          "coordinates": null,
+          "span": {
+            "start": 2328,
+            "end": 2333
+          },
+          "digest": "54aaf1519ace8e6e09f351addfaf42d88b4a9e823b03138500c823b26394ef92"
+        },
+        {
+          "row": 7,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "55m",
+          "coordinates": null,
+          "span": {
+            "start": 2333,
+            "end": 2336
+          },
+          "digest": "42b87cffe9a12bf91ec2b01066291a9d30cba3c388a5503867a35c88c5b59d3f"
+        },
+        {
+          "row": 7,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "9.8M",
+          "coordinates": null,
+          "span": {
+            "start": 2336,
+            "end": 2340
+          },
+          "digest": "734ecf743bf5095d496a047684b794f77eb701e9b4c17172904d3218f6c9a014"
+        },
+        {
+          "row": 7,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "7.6",
+          "coordinates": null,
+          "span": {
+            "start": 2340,
+            "end": 2343
+          },
+          "digest": "d6a8dc3e75cb77bdae4b474289d58cccb59cfc5bac7bb957e801340d9bb19fe9"
+        },
+        {
+          "row": 8,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "AMSC  †",
+          "coordinates": null,
+          "span": {
+            "start": 2343,
+            "end": 2350
+          },
+          "digest": "b344487a8b568c49dd7aa6c6cd4b2479d6d21353abfb66904b0defd300ca6ec9"
+        },
+        {
+          "row": 8,
+          "column": 1,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "0.773 0.15m",
+          "coordinates": null,
+          "span": {
+            "start": 2350,
+            "end": 2361
+          },
+          "digest": "a0d5f5d872347e955798ff25b3d8240283c5c0bee0206470e4476f79dbcb5103"
+        },
+        {
+          "row": 8,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "832",
+          "coordinates": null,
+          "span": {
+            "start": 2361,
+            "end": 2364
+          },
+          "digest": "a0d089f892a8afeea0699d41058e56df7c65b6dc2e3ef2b71f39831725551f0c"
+        },
+        {
+          "row": 8,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2364,
+            "end": 2365
+          },
+          "digest": "2879bbe74fb1019c54e90a1337dc3cc7fddb24384af55e4c592cb0907da19da3"
+        },
+        {
+          "row": 8,
+          "column": 5,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "0.861 0.09m",
+          "coordinates": null,
+          "span": {
+            "start": 2365,
+            "end": 2376
+          },
+          "digest": "4eeae703936bb4cdfed640a5da285eef9d8fc1ea88b0b4eb045d572a4513e46d"
+        },
+        {
+          "row": 8,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "2000",
+          "coordinates": null,
+          "span": {
+            "start": 2376,
+            "end": 2380
+          },
+          "digest": "af2c3dd5dcb3487e87936f13902c41b6ee3470ce3a543bb3dc748c131cece354"
+        },
+        {
+          "row": 8,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2380,
+            "end": 2381
+          },
+          "digest": "00f63094f90af08a35bace1518cc564419ea30882de94d5e014e4c539c525cc7"
+        },
+        {
+          "row": 8,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.652",
+          "coordinates": null,
+          "span": {
+            "start": 2381,
+            "end": 2386
+          },
+          "digest": "ed38dbc1923740190eb9ea64b2bfa44daf3d104cb9842e34a6fea0873a3956ba"
+        },
+        {
+          "row": 8,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "9m",
+          "coordinates": null,
+          "span": {
+            "start": 2386,
+            "end": 2388
+          },
+          "digest": "2e05d2ac8c6a93aeed250bb536fb3d171fc58f34440cd3c6ab2b10452f0a979b"
+        },
+        {
+          "row": 8,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.031M",
+          "coordinates": null,
+          "span": {
+            "start": 2388,
+            "end": 2394
+          },
+          "digest": "04fab40ed20dcf760cf6931cafe794e9b20efb3cb5380726461d624f56b50351"
+        },
+        {
+          "row": 8,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2394,
+            "end": 2395
+          },
+          "digest": "952ac59f36ff1392fe0ba15f4eb1fc1a2d090dfe7f1bc5a1db0b14f75abd1e4a"
+        },
+        {
+          "row": 9,
+          "column": 0,
+          "colspan": 2,
+          "rowspan": 1,
+          "text": "-Single agent  † ‡ 0.676",
+          "coordinates": null,
+          "span": {
+            "start": 2395,
+            "end": 2419
+          },
+          "digest": "9f473aad10de958a3ee71b4c415d3d1160b0db17784b78fb1863264cff561dc7"
+        },
+        {
+          "row": 9,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0m",
+          "coordinates": null,
+          "span": {
+            "start": 2419,
+            "end": 2421
+          },
+          "digest": "d4821e7b1c46d654ff53f8099db278c34b7a77e5573b89938b2a57312035e55f"
+        },
+        {
+          "row": 9,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2421,
+            "end": 2422
+          },
+          "digest": "566a58904e165e819e48e0b1f3ceb60d0216b18f424407ebbf71e6e4c7fd474f"
+        },
+        {
+          "row": 9,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2422,
+            "end": 2423
+          },
+          "digest": "265db6b817104c07057424f7d5bde963296abd14c1f532b63649c246c4f92939"
+        },
+        {
+          "row": 9,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.776",
+          "coordinates": null,
+          "span": {
+            "start": 2423,
+            "end": 2428
+          },
+          "digest": "7d832e353c0a5b538e43fd3540fc55b1ba5d758799283dbbb1d99b6a67ade3f4"
+        },
+        {
+          "row": 9,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0m",
+          "coordinates": null,
+          "span": {
+            "start": 2428,
+            "end": 2430
+          },
+          "digest": "5a7689dee4207e448cb06a9cf860dd9be26d3dd16689a9d48d49c7f488c4c2c2"
+        },
+        {
+          "row": 9,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2430,
+            "end": 2431
+          },
+          "digest": "1424a616ac63b788590f4e7c013e1b08a92015054c30966820a543f77518ad36"
+        },
+        {
+          "row": 9,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2431,
+            "end": 2432
+          },
+          "digest": "4f0d1e82aff0dbc44bbe742098cdef22f2a550d58baa461db4a5e08d81cb285d"
+        },
+        {
+          "row": 9,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.506",
+          "coordinates": null,
+          "span": {
+            "start": 2432,
+            "end": 2437
+          },
+          "digest": "128a039a59beaf4a373a21fe41524f1d8ec44e8ecdaeafd5fadd0a1e823b44c9"
+        },
+        {
+          "row": 9,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0m",
+          "coordinates": null,
+          "span": {
+            "start": 2437,
+            "end": 2439
+          },
+          "digest": "d17d4e1bb3c15ed9b494c7a0d685e2dc2c1cf3c46f56a0163444ff7cf06c412e"
+        },
+        {
+          "row": 9,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2439,
+            "end": 2440
+          },
+          "digest": "e5400e1f0c9cc674e59acd3112eb1574374284ac9419398e2e330ae55d25d395"
+        },
+        {
+          "row": 9,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2440,
+            "end": 2441
+          },
+          "digest": "6aabdb5b5f18707c3d189cc69d0202eec0eb14a3b8ac5d91cabb0e06376605d2"
+        },
+        {
+          "row": 10,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "-LLM  †",
+          "coordinates": null,
+          "span": {
+            "start": 2441,
+            "end": 2448
+          },
+          "digest": "b323301c411e4c0c9ab6f443d42431c382f8664819f34df2a278428bbdbbb2d8"
+        },
+        {
+          "row": 10,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.632",
+          "coordinates": null,
+          "span": {
+            "start": 2448,
+            "end": 2453
+          },
+          "digest": "7e881cc31bb780376789b7835ff4b6524b3036f258990c2437f6e432c38a3b9e"
+        },
+        {
+          "row": 10,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0m",
+          "coordinates": null,
+          "span": {
+            "start": 2453,
+            "end": 2455
+          },
+          "digest": "fd1d69ddf22801d219374e1cb05aa80e202a96a662cba149671d7e5f026ca596"
+        },
+        {
+          "row": 10,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2455,
+            "end": 2456
+          },
+          "digest": "410e6e20d2bb951c2985be01ed1458dc348730dafba0b4819bb3fdd9022e8118"
+        },
+        {
+          "row": 10,
+          "column": 4,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2456,
+            "end": 2457
+          },
+          "digest": "66e805b37d7c7d08e4cd6cd6e9ab6666b2a9643271eda12ef713fe23efa65adc"
+        },
+        {
+          "row": 10,
+          "column": 5,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.724",
+          "coordinates": null,
+          "span": {
+            "start": 2457,
+            "end": 2462
+          },
+          "digest": "f84750c7e557e581b8a862f2b9b2c8b34080922ae3cc58c0f98d855d25a57b03"
+        },
+        {
+          "row": 10,
+          "column": 6,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0m",
+          "coordinates": null,
+          "span": {
+            "start": 2462,
+            "end": 2464
+          },
+          "digest": "1d540d445136f06e68d30e330772e4185632b65c22d6cf7a66ab67d2873c3e81"
+        },
+        {
+          "row": 10,
+          "column": 7,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2464,
+            "end": 2465
+          },
+          "digest": "f8e9df696db4d3006ca93cbeb99a126531807256f510f7a39b30ba6ad0c16915"
+        },
+        {
+          "row": 10,
+          "column": 8,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2465,
+            "end": 2466
+          },
+          "digest": "a7a894d897658f91146abc456aca60f17875a4386eb625e09d69f6f180492ec5"
+        },
+        {
+          "row": 10,
+          "column": 9,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0.427",
+          "coordinates": null,
+          "span": {
+            "start": 2466,
+            "end": 2471
+          },
+          "digest": "eb2d95e94a0a99221337578f2eaeff3a88403a0888d981b1573c7ab5a78ca4f8"
+        },
+        {
+          "row": 10,
+          "column": 10,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0m",
+          "coordinates": null,
+          "span": {
+            "start": 2471,
+            "end": 2473
+          },
+          "digest": "867f16f4d3e51962a917c41fd0aef245cd2d3c2edcc8864f30b8b237a8166311"
+        },
+        {
+          "row": 10,
+          "column": 11,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2473,
+            "end": 2474
+          },
+          "digest": "ec662c9737b8a604db1a328ff5bead285cbb79cf999ccd09f9449dfbbbc04930"
+        },
+        {
+          "row": 10,
+          "column": 12,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "0",
+          "coordinates": null,
+          "span": {
+            "start": 2474,
+            "end": 2475
+          },
+          "digest": "164114a29448e59e9c4d9a1bcf8c963101f01b5e0a1df00d35150381f6b53727"
+        }
+      ],
+      "source_digest": "a43065b0d3afae6f59ace9e840c1154ded68c101be13744db3d682451915c838",
+      "missingness": null
+    }
+  ],
+  "table_missingness": null,
+  "formulas": [
+    {
+      "formula_id": "formula_0",
+      "section_path_id": "3.1",
+      "section_ordinal": 5,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "s imp i = {imp 1 , imp 2 , ......}."
+      },
+      "span": {
+        "start": 241,
+        "end": 276
+      },
+      "source_digest": "3b2d6944c2fc121b636bbe95c7b9c1128c0af737ca7d50850a62004ea5842d3e",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_1",
+      "section_path_id": "3.2",
+      "section_ordinal": 6,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "k n = d n , (sym n1 , sym n2 , ...) Agent n = Agent-specialist(LLM, k n ) p n diseasei ="
+      },
+      "span": {
+        "start": 709,
+        "end": 797
+      },
+      "source_digest": "a735b976c88cee1d29c178d822f3ee3ddfa9bbbce6c1dc59d89ffa563e022979",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_2",
+      "section_path_id": "3.3",
+      "section_ordinal": 7,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "Q, K, V = Linear q,k,v (M ) p diseasei = Linear(sof tmax( QK T √ d k )V ; i)"
+      },
+      "span": {
+        "start": 974,
+        "end": 1050
+      },
+      "source_digest": "ea2c255465d21c14bfbc4961044bfca650a514a31496f8ce8ce4bc123ae6e484",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_3",
+      "section_path_id": "5.2",
+      "section_ordinal": 15,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "k reordered n = d n , (sym m1 , sym m2 , . . .)"
+      },
+      "span": {
+        "start": 490,
+        "end": 537
+      },
+      "source_digest": "d93c1581746385eb799c4868f16de0cf21933c95a758fe2b711076e995a6f361",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_4",
+      "section_path_id": "5.2",
+      "section_ordinal": 15,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "k other o = d o , (sym o1 , sym o2 , . . .)"
+      },
+      "span": {
+        "start": 914,
+        "end": 957
+      },
+      "source_digest": "287a9c524d3eb82b53e30938f48b6614e45c767c11b268e7f686c99ac0ab583b",
+      "missingness": null
+    }
+  ],
+  "formula_missingness": null,
+  "page_text_missingness": null,
+  "declared_arxiv_id": null,
+  "declared_id_missingness": "no_idno",
+  "header_authors": [
+    {
+      "name": "Haochun Wang",
+      "forename": "Haochun",
+      "surname": "Wang",
+      "source_digest": "b69790f690ee0073425249f6f72162fdae79de180bb6b3013bb09ba74555b1b1"
+    },
+    {
+      "name": "Sendong Zhao",
+      "forename": "Sendong",
+      "surname": "Zhao",
+      "source_digest": "11c78ed9767fd505c9429619daa3053514dca8665adb1f3eb64a7ddb9bd383b1"
+    },
+    {
+      "name": "Zewen Qiang",
+      "forename": "Zewen",
+      "surname": "Qiang",
+      "source_digest": "5eaafc77e1d8e87eac6fb63f5e51464cdbe1c3b294202a1693556c0d9fe9168d"
+    },
+    {
+      "name": "Nuwa Xi",
+      "forename": "Nuwa",
+      "surname": "Xi",
+      "source_digest": "2ecbc5dab133d3812f6ee1a3e7d3f1dec72f93af774b90273281346d544d0039"
+    },
+    {
+      "name": "Bing Qin",
+      "forename": "Bing",
+      "surname": "Qin",
+      "source_digest": "6868e87714613ec38c4e6c51ede10f8e1cfe328b95c833c08d7064a3f8ec1000"
+    },
+    {
+      "name": "Ting Liu",
+      "forename": "Ting",
+      "surname": "Liu",
+      "source_digest": "be2300da353acce6e31b3a09061169c716acd0ad5a0c36be981e0b4ccfd42371"
+    }
+  ],
+  "figures": [
+    {
+      "figure_id": "fig_0",
+      "label": "12",
+      "caption": "Figure 1 :Figure 2 :",
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "2adfdf9772d147f3a49852e51badcabd63edac4a654de070a95fe5094e0fa7b5"
+    },
+    {
+      "figure_id": "fig_1",
+      "label": "3",
+      "caption": "Figure 3 :",
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "83bdf0a1457848664174c8898f08bb0365cf465624eb3c7aee92582712b40df8"
+    },
+    {
+      "figure_id": "fig_2",
+      "label": "4",
+      "caption": "Figure 4 :",
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "e8d2d52c6ce67143549e51cad6a76defbfbbaeac92e6b4fdd060bf2cb6850c42"
+    },
+    {
+      "figure_id": "fig_3",
+      "label": "5",
+      "caption": "Figure 5 :",
+      "coordinates": null,
+      "graphic_missingness": "no_graphic_child",
+      "source_digest": "80447f8937aa6b52acb218fc216a2f11a92e7a62d1a6f650ba3712e42ee3900c"
+    }
+  ],
+  "visual_callouts": [
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 133,
+      "section_path_id": "1~2",
+      "section_ordinal": 1,
+      "source_digest": "362adc1785bdb4ce2d05b84de6add51186138ba897df4575baf9160ef52120c6"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "2",
+      "offset": 2572,
+      "section_path_id": "1~2",
+      "section_ordinal": 1,
+      "source_digest": "f24798b9e2cf254736aa2f0722811cb9667d48b971bf3973d5d40481c227f69d"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "2",
+      "offset": 2908,
+      "section_path_id": "1~2",
+      "section_ordinal": 1,
+      "source_digest": "f9dbab54d4359b495af29bcd7a4f305eb0e2221c91dff6215d7bf41345463fbb"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_1",
+      "unresolved": null,
+      "quote": "3",
+      "offset": 990,
+      "section_path_id": "3.1",
+      "section_ordinal": 5,
+      "source_digest": "5c870e6f986c8198e85c6fa74ed68770730016e9d0aac199157201ab76826293"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_1",
+      "unresolved": null,
+      "quote": "3",
+      "offset": 410,
+      "section_path_id": "3.2",
+      "section_ordinal": 6,
+      "source_digest": "1a23e826e3cbbf8d051654ae7b8645147bec0de8372e27d291f3e7b324b46852"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_2",
+      "unresolved": null,
+      "quote": "4",
+      "offset": 1325,
+      "section_path_id": "3.2",
+      "section_ordinal": 6,
+      "source_digest": "075c94f8a44127bfc983ed81ba5dd9c9bd291ff223b0e7e52084926b76fe8435"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 560,
+      "section_path_id": "4.1",
+      "section_ordinal": 9,
+      "source_digest": "c852c38216bb51d39d6a74795060ae825bd586892716ef9232a39377d87f11f4"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 780,
+      "section_path_id": "4.1",
+      "section_ordinal": 9,
+      "source_digest": "e6b1d7361cf925cc07288e936c04218b30c8f3a21cc0f5f4769eaade1313f851"
+    },
+    {
+      "kind": "table",
+      "target": "tab_0",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 511,
+      "section_path_id": "4.5",
+      "section_ordinal": 13,
+      "source_digest": "89d1ac421e8e8951e3e5fb9cfd651b613052e5c291a05478413baea34a4a6806"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "3",
+      "offset": 1120,
+      "section_path_id": "5",
+      "section_ordinal": 14,
+      "source_digest": "e0e1417abcbc227707bbc620eaa3bc1163b2c560e3cfa9adb0bc7c3294eceb60"
+    },
+    {
+      "kind": "table",
+      "target": "tab_0",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 106,
+      "section_path_id": "5.2",
+      "section_ordinal": 15,
+      "source_digest": "b14b3c7be9a83254ac297ddfd8896b706b4781a97c76e168eca2ecdb6dce760b"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_2",
+      "unresolved": null,
+      "quote": "4",
+      "offset": 119,
+      "section_path_id": "5.2",
+      "section_ordinal": 15,
+      "source_digest": "f62d719aab788757958a05f63e282c829150c65e00e2a4df4a01e2cef03b6660"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "3",
+      "offset": 1048,
+      "section_path_id": "5.2",
+      "section_ordinal": 15,
+      "source_digest": "b659873c050704327ff1d0d50811d6bd0b430dfcec668ac7c5e6170d4062d335"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_3",
+      "unresolved": null,
+      "quote": "5",
+      "offset": 552,
+      "section_path_id": "5.3",
+      "section_ordinal": 16,
+      "source_digest": "13425f1e93048d8c2d3b2c913cbcec31837bc22902355b0ed1e7f74248c4fec3"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "4",
+      "offset": 936,
+      "section_path_id": "5.4",
+      "section_ordinal": 17,
+      "source_digest": "67a05ce3ff34eb126a3254ac10ff2136126b9157f1ba94667b771dce3045cdd8"
+    }
+  ]
+}

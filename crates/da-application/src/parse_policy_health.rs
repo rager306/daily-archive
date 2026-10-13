@@ -19,6 +19,8 @@ pub const PARSE_HEALTH_SCHEMA_VERSION: &str = "parse-health-report.v1";
 pub enum HealthError {
     #[error("health: the journal slice is empty — nothing to report")]
     EmptyJournal,
+    #[error("health: document {document_identity} has no outcome evidence")]
+    MissingOutcomeEvidence { document_identity: String },
 }
 
 /// DATA-declared alarm thresholds (ADR-079 R146: thresholds live in DATA).
@@ -116,7 +118,9 @@ pub struct ParseHealthReport {
 /// Nearest-rank percentile of a non-empty sorted slice (1-based rank).
 fn nearest_rank(sorted: &[u64], p: u64) -> u64 {
     debug_assert!(!sorted.is_empty());
-    let rank = ((p as usize * sorted.len() + 99) / 100).clamp(1, sorted.len());
+    let rank = (p as usize * sorted.len())
+        .div_ceil(100)
+        .clamp(1, sorted.len());
     sorted[rank - 1]
 }
 
@@ -137,6 +141,11 @@ pub fn parse_health(
     if observations.is_empty() {
         return Err(HealthError::EmptyJournal);
     }
+    if let Some(observation) = observations.iter().find(|obs| obs.outcome.is_none()) {
+        return Err(HealthError::MissingOutcomeEvidence {
+            document_identity: observation.document_identity.clone(),
+        });
+    }
 
     let mut points: BTreeMap<String, (u64, u64, f64)> = BTreeMap::new();
     let mut backends: BTreeMap<String, (u64, u64, Vec<u64>)> = BTreeMap::new();
@@ -144,7 +153,7 @@ pub fn parse_health(
 
     for obs in observations {
         let latency = obs.outcome.as_ref().map(|o| o.latency_ms).unwrap_or(0);
-        let ok = obs.reward >= 1.0;
+        let ok = obs.outcome.as_ref().is_some_and(|outcome| outcome.ok);
         let ok_u = u64::from(ok);
 
         let p = points
@@ -354,8 +363,6 @@ mod tests {
     use super::*;
     use crate::parse_policy_table::PolicyOutcomeEvidence;
     use da_domain::fsm_policy::{ArticleFeatures, DecisionPoint};
-    use proptest::prelude::*;
-    use proptest::prelude::*;
     use proptest::{prop_assert, prop_assert_eq};
 
     fn obs(backend: Option<&str>, latency: u64, ok: bool, pages: u32) -> PolicyObservation {
@@ -401,6 +408,36 @@ mod tests {
             "18p and 700p land in different buckets"
         );
         assert!(report.drift_alarms.is_empty(), "single backend, no alarm");
+    }
+
+    #[test]
+    fn health_success_comes_from_outcome_not_pair_reward() {
+        let mut winner = obs(Some("0.9.1"), 100, true, 18);
+        winner.reward = 1.0;
+        let mut loser = obs(Some("0.9.1"), 200, true, 18);
+        loser.reward = 0.0;
+        let mut tie = obs(Some("0.9.1"), 300, true, 18);
+        tie.reward = 0.5;
+        let mut failed = obs(Some("0.9.1"), 400, false, 18);
+        failed.reward = 1.0;
+        let report =
+            parse_health(&[winner, loser, tie, failed], &HealthThresholds::default()).unwrap();
+        assert_eq!(report.points["grammar_route"].total, 4);
+        assert_eq!(report.points["grammar_route"].ok, 3);
+        assert_eq!(report.backends["0.9.1"].ok, 3);
+        assert_eq!(report.buckets.values().next().unwrap().ok, 3);
+    }
+
+    #[test]
+    fn missing_outcome_evidence_is_refused() {
+        let mut unknown = obs(Some("0.9.1"), 100, true, 18);
+        unknown.reward = 1.0;
+        unknown.outcome = None;
+        let document_identity = unknown.document_identity.clone();
+        assert_eq!(
+            parse_health(&[unknown], &HealthThresholds::default()),
+            Err(HealthError::MissingOutcomeEvidence { document_identity }),
+        );
     }
 
     #[test]
@@ -506,7 +543,7 @@ mod tests {
         fn report_digest_is_permutation_invariant(
             order in proptest::collection::vec(0usize..6, 1..30),
         ) {
-            let base = vec![
+            let base = [
                 obs(Some("0.9.1"), 100, true, 18),
                 obs(Some("0.9.1"), 250, false, 18),
                 obs(Some("0.9.0"), 400, true, 700),

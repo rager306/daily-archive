@@ -1,0 +1,1096 @@
+SFR-RAG: Towards Contextually Faithful LLMs
+
+Xuan-Phi Nguyen∗
+
+arXiv:2409.09916v1 [cs.CL] 16 Sep 2024
+
+Hailin Chen
+
+Shrey Pandit
+
+Yifei Ming
+
+Senthil Purushwalkam
+
+Zixuan Ke
+
+Silvio Savarese
+
+Austin Xu
+Caiming Xong
+
+Shafiq Joty
+Salesforce AI Research
+
+Abstract
+Retrieval Augmented Generation (RAG), a paradigm that integrates external
+contextual information with large language models (LLMs) to enhance factual
+accuracy and relevance, has emerged as a pivotal area in generative AI. The LLMs
+used in RAG applications are required to faithfully and completely comprehend the
+provided context and users’ questions, avoid hallucination, handle unanswerable,
+counterfactual or otherwise low-quality and irrelevant contexts, perform complex
+multi-hop reasoning and produce reliable citations. In this paper, we introduce SFRRAG, a small LLM that is instruction-tuned with an emphasis on context-grounded
+generation and hallucination minimization. We also present ContextualBench,
+a new evaluation framework compiling multiple popular and diverse RAG
+benchmarks, such as HotpotQA and TriviaQA, with consistent RAG settings
+to ensure reproducibility and consistency in model assessments. Experimental
+results demonstrate that our SFR-RAG-9B model outperforms leading baselines
+such as Command-R+ (104B) and GPT-4o, achieving state-of-the-art results in 3
+out of 7 benchmarks in ContextualBench with significantly fewer parameters. The
+model is also shown to be resilient to alteration in the contextual information and
+behave appropriately when relevant context is removed. Additionally, the SFRRAG model maintains competitive performance in general instruction-following
+tasks and function-calling capabilities.
+
+1
+
+Introduction
+
+Retrieval Augmented Generation (RAG) has recently garnered significant attention as one of the
+most prominent areas of research in generative AI [53, 54], driven by the latest advancements in
+foundational large language models (LLMs) [4, 39, 29, 30, 40, 9, 14, 2]. RAG frameworks are wellsuited for solving knowledge-dependent problems or questions, where external contextual information
+is provided and the generated answer is expected to be factually grounded on the contextual cues. In
+practice, the RAG setup is designed such that a generator LLM works in tandem with a knowledge
+retriever. The retriever [26, 46, 5, 21] is tasked with retrieving passages relevant to a given query from
+a database of documents (potentially the entire internet). The LLM interacts with users, formulates
+queries for the retriever to gather knowledge, and finally answers users’ questions. To retrieve the
+most accurate context information, the retriever typically relies on an embedding model [28, 26, 5, 21],
+and optionally employs a re-ranker to get a refined list of context documents [24]. Recent research
+has also led to the development of more sophisticated RAG frameworks [1, 13, 22, 47, 16, 45] that
+involve multiple inference steps to improve the reliability of answers.
+∗
+
+Corresponding author: xnguyen@salesforce.com
+
+Technical Report.
+
+2WikiHopQA
+TruthfulQA
+
+TriviaQA
+
+NQ
+
+PopQA
+
+MuSiQue
+
+HotpotQA
+
+SFR-RAG-9B
+GPT-4o
+
+Command R+ (104B)
+Command R (35B)
+
+Figure 1: Our SFR-RAG-9B model exhibits strong overall performance on an ContextualBench,
+our comprehensive evaluation suite of seven contextual tasks under a standardized setup. Notably,
+SFR-RAG achieves state-of-the-art performance on three of seven tasks, with extremely competitive
+performance on the rest, despite having far fewer parameters than competitive baselines.
+
+In this work, we focus our efforts on the generator LLM component of the RAG framework.
+Traditional general-purpose LLMs trained for chat often struggle when directly applied to the
+RAG framework. This can be attributed to several potential factors, including:
+• The knowledge in the context obtained from the retriever might conflict with the training data used
+for the LLM.
+• The LLM is not trained to deal with conflicting or redundant facts from the retriever.
+• In scenarios where the retrieved knowledge is insufficient, the LLMs revert to answering questions
+based on its training data.
+• It may also fail to provide adequate citations or to call appropriate functions and parameters to
+retrieve appropriate contexts in an agentic environment [50], in which the model may use provided
+functions or tools to perform tasks.
+Recent attempts have focused on training LLMs specifically tuned to succeed in the RAG framework,
+such as Command-R(+) [36] and RAG-2.0 [37]. Such RAG-specific LLMs not only serve as the
+foundation for generating up-to-date and factual AI responses, but also enable quick adoption in
+different domains, avoid the need to increase model capacity, context length or fine-tune an LLM on
+potentially proprietary data.
+In this work, we introduce SFR-RAG1 , a 9-billion-parameter language model trained with a significant
+emphasis on reliable, precise and faithful contextual generation abilities specific to RAG and relevant
+agentic tasks. Beyond contextual tasks, SFR-RAG is also trained to serve as a competitive AI
+assistant in regular tasks [12, 7]. We develop a comprehensive recipe, on both data synthesis and
+training procedures, to train the base LLM so that it is familiar and adaptable to diverse real-life
+RAG use cases. This includes precise factual knowledge extraction, distinguishing relevant against
+distracting contexts, citing appropriate sources along with answers, producing complex and multi-hop
+reasoning over multiple contexts, consistent format following, as well as refraining from hallucination
+over unanswerable queries. SFR-RAG is also equipped with function calling and agentic abilities,
+which enable it to proactively search for knowledge from external tools, as well as conduct complex
+inference and reasoning strategies similar to Self-RAG [1], ReAct [50] and alike [22, 51, 20, 34].
+1
+
+The model will be made available via API and later fully open-sourced.
+
+2
+
+Figure 2: Example of the chat format used by SFR-RAG, with additional Thought and
+Observation turns (roles). The former indicates the model’s “inner” thought or reasoning,
+actions and tool use syntax that are not typically meant to be shown to users. The latter indicates all
+external information retrieved and returned by performing a search or function call. The Assistant
+turn, therefore, is relieved to only be responsible to generate user-friendly responses. During training,
+Thought and Assistant turns are trained while the others are masked out.
+There is limited well established evaluation standards for measuring progress in contextual
+comprehension qualities of LLMs. It is worth noting that Command-R(+) [36] and RAG-2.0 [37]
+evaluated their proposed models on non-overlapping metrics [49, 23] with inconsistent or undisclosed
+setups, which causes difficulties in aligning results and comparisons across different studies. To
+reliably evaluate our SFR-RAG model as well as other well-known baselines, in this work, we
+also introduce ContextualBench2 , which is a compilation of many popular RAG and contextual
+benchmarks, such as HotpotQA and TriviaQA [49, 15, 25, 23, 13, 42, 18], that standardizes the
+evaluation setup leading to consistent and reproducible evaluation results. In experiments, we show
+that our SFR-RAG-9B model is both a well-rounded and high performing model, achieving stateof-the-art performance in three of the seven benchmarks in ContextualBench; see Figure 1 for a
+preview of our results. SFR-RAG-9B outperforms or is competitive with GPT-4o [30] on all tasks
+in ContextualBench. It also outperforms powerful contextual models, such as Command-R+ [36],
+on a variety of tasks despite having 10 times fewer parameters. Compared to comparable baselines,
+our model is also shown to be resilient to factual alterations and unanswerability tests in the context.
+Lastly, despite being trained with a focus on RAG and contextual applications, our model is still
+competitive as a regular instruction-tuned LLM, with strong and comparable performances in standard
+benchmarks like MMLU or GSM8K [12, 7, 6], as well as function-calling ability [48].
+
+2
+
+SFR-RAG
+
+In this section, we provide more insights into SFR-RAG. First, we introduce a novel chat template
+comprising two new chat roles with specific functions (§2.1). Then, we briefly discuss the training
+process of SFR-RAG (§2.2).
+2.1
+
+SFR-RAG Chat Template
+
+Most instruction-tuned language models often feature a chat template that allows for three
+conversational roles: (i) System role, typically specified once at the beginning, is used to define the
+general characteristics of the AI assistant with general instructions on how to respond to user inputs,
+(ii) User role specifies where user messages reside, and (iii) Assistant turn is where the model
+responds to the user’s query in accordance to the guidelines given by the System turn.
+However, as more complex applications with (potentially multi-step) retrieval or function calling are
+being employed, such roles may have to handle increasingly complex and confusing data formats.
+For example, in retrieval tasks, external context information may be injected into the System or
+User turn, or may even form a part of the Assistant turn if the context is retrieved following a
+2
+
+https://huggingface.co/datasets/Salesforce/ContextualBench
+
+3
+
+model’s function call [36, 50]. This may cause confusion and distraction from the actual instruction
+or question queried by the user in the User turn. In other words, there have been no generally
+agreed-upon position to store the contextual information in such tasks. In another example of agentic
+function calling tasks, the Assistant turn has to produce responses that use specific tool syntax
+and expects to receive the function call’s results following that [50]. This makes the fine-tuning
+process tricky as the function’s results, which are part of Assistant turn and typically contain
+answer clues, need to be masked out from the loss to prevent memorization [40]. Furthermore, for
+certain applications, practitioners may prefer to hide the model’s reasoning, or intermediate actions
+invoked by the model from the user and only show user-friendly responses. Having all data processing
+steps enclosed within the Assistant turn may hinder such use cases. Reliability is also an issue
+as the model may fail to produce specific key words consistently in inference strategies like ReAct
+[50].3 Furthermore, the ambiguities in roles, functions and privileges may lead to the model failing to
+comply with the System prompt and surrendering to jailbreaks injected via the User turn or tool
+outputs [44].
+To overcome such complexities, we introduce two more optional roles (turns) in the conversational
+template for SFR-RAG: Thought and Observation. As shown in Figure 2, the Observation
+role is designated to house any contextual information acquired from external sources, which can be
+either retrieved documents for retrieval use case or function call’s results in agentic tool use scenario.
+Meanwhile, the Thought role is designed for the model to speak out any internal reasoning, or tool
+use syntax to invoke certain function calls. The benefits of this change are manifold. First, it allows
+easy masking during training. Specifically, System, User and Observation turns may not be
+trainable as they are input information for the model to generate responses. Like Assistant, on the
+other hand, Thought turns are to be included in the fine-tuning loss to train the model to produce
+such “thoughts”. Second, the separation and clarification of roles facilitate instruction hierarchy
+enforcement [44], making LLMs safer by ensuring them to respect the System prompt and refuse to
+follow malicious instructions injected in User and Observation turns. Third, the additional roles
+streamline the process of building reliable and secure RAG and agentic applications, by allowing
+developers to display or hide internal data processing steps, and avoid having to parse customized
+key words from the Assistant output.
+2.2
+
+SFR-RAG Fine-tuning Process
+
+One of the most important goals of SFR-RAG is to make full use and complete comprehension
+of any provided contextual information in the real-world RAG scenarios. This trait includes many
+capabilities, among which are (i) extracting relevant information from arbitrary long contexts,
+(ii) recognizing the lack of relevant information and abstaining from hallucinated generation,
+(iii) recognizing potential conflicting information in contextual passages, and (iv) being resilient to
+distracting, counter-intuitive information or contents that are out-of-distribution from the pre-training
+process. We fine-tuned SFR-RAG via standard supervised fine-tuning and preference learning
+[40, 9, 31], using extensive instruction-following data that mimic real-world retrieval question
+answering applications.
+
+3
+
+Evaluation
+
+3.1
+
+Contextual Evaluation Suite - ContextualBench
+
+There are already several evaluation protocols available to measure performance of LLMs and RAG
+systems on contextual understanding across different domains and complexities [15, 23, 25, 49, 13,
+42, 6, 18]. However, prior studies [36, 37, 1, 50] have reported results on non-overlapping measures,
+datasets and inconsistent setups, especially on which contextual content to present to the LLMs and
+model hyper-parameters. This causes challenges in directly comparing results from different studies.
+To offer a better common ground, we propose ContextualBench, which is primarily an aggregation
+of 7 popular contextual question answering tasks, namely HotpotQA, TriviaQA, TruthfulQA, PopQA,
+2WikiHopQA, Musique and Natural Questions (NQ) [15, 23, 25, 49, 13, 42, 18]. There are a few key
+3
+ReAct uses arbitrarily literal phrases like “Thought:”, “Result:” and “Final Answer:” within the
+Assistant turn to parse reasoning, tool outputs and answers respectively, which the LLM may not always
+comply with.
+
+4
+
+contributions that make ContextualBench stand out as a comprehensive benchmarking framework for
+contextual LLMs:
+• The measures in ContextualBench are evaluated under the same instruction with contextual contents
+being consistently specified. The contextual contents include the original context documents of
+each benchmark if provided, or otherwise they are retrieved from a much larger Wikipedia database
+with an embedding model of choice.
+• As it is not trivial to evaluate assistant-style LLMs with a wide range of verbosity in the generated
+output, ContextualBench offers multiple scoring methods to account for variations in answers
+compared to the ground truths. These scoring methods are (i) Exact Match (EM) of the generated
+answer with the ground truth, (ii) Easy match (EasyM) to check if the ground truth is in the
+generated answer, and (iii) the F1 score, with room for further addition. The Appendix provides
+the complete results for all of these metrics.
+• ContextualBench offers multiple setups common in the RAG scenarios, among which is whether to
+retrieve top-k chunks using consistent embedding models or feed the entire available contextual
+documents directly to the LLM (no retrieval needed).
+The variety of measures and tasks in ContextualBench enables both holistic and specific evaluation
+of contextual LLMs. By weighing each task and measure equally, ContextualBench allows for
+direct comparison of model performance in general. On the other hand, depending on practitioner
+use-case and domain specifications, certain measures or datasets may be prioritized, allowing for
+quick identification of the best task-specific models.
+Dataset Specific Settings. For 2WikiHopQA, HotpotQA and Musique, the context documents are
+already provided for each question, so we use them directly as contextual sources. For TriviaQA,
+TruthfulQA, and NQ, the questions come with their respective Wikipedia article or source URL. We
+scraped the web content from these sources and used Cohere embedding [35] to retrieve top-10 chunks
+from the contextual sources where each chunk is 512 tokens long. Meanwhile, PopQA itself does not
+come with context documents, so we make use of the off-the-shelf context documents produced by
+the Self-RAG retriever [1]. For each task, we use the test set if they are complete with gold labels,
+otherwise we use the entire validation set to measure models’ performance. This is different from
+Command-R’s report [36], where HotpotQA evaluation was conducted on a 100-sample subset of
+validation set, with no details about the context documents disclosed.
+Note that ContextualBench contains popular existing benchmarks, such as TriviaQA and TruthfulQA,
+where evaluation utilizes certain contexts to which models are expected to be faithful. That is,
+models are expected to utilize only the information found in such contexts, in contrast to traditional
+closed-book QA settings, where the parametric knowledge of LLMs are evaluated sans provided
+contexts. In other words, the presence of these contexts may cause the scores to differ significantly.
+3.2
+
+Experimental Results on ContextualBench
+
+Table 1 compares the performance of our 9B SFR-RAG model on ContextualBench against stateof-the-art large models as well as comparable ones across the 7 question answering tasks. PopQA
+scores are measured in easy matching, while the remaining are measured in exact matching. As
+shown, GPT-4o [30] unsurprisingly aces most of the benchmarks. However, given its small size, our
+SFR-RAG-9B model significantly outperforms strong open-source baselines such as Command-R
+and Command-R+ that have up to 10 times larger parameter counts. Remarkably, it achieves the
+state of the art in TruthfulQA, 2WikihopQA and HotpotQA in contextual settings. Overall, it also
+achieves the state of the art average performance, demonstrating our model’s strong ability across
+many contextual tasks. In particular, our model excels at 2WikiHopQA, with nearly a 25% increase
+in performance compared to GPT-4o. Meanwhile, our 9B model consistently outperforms Llama-3.1
+8B Instruct and gemma-2-9b-it across most benchmarks.
+3.3
+
+Resilience to Unanswerable, Conflicting and Counterfactual Contexts
+
+Because most QA benchmarks are realistically based on real-world facts, understanding LLMs
+performance in contextual QA tasks may be ambiguous because high scores may be attributed to
+either (i) the ability to seek accurate facts from the contextual documents and content, or (ii) the
+5
+
+Table 1: Performances of SFR-RAG-9B and various open- and closed-source baselines across 7
+contextual question answering tasks in ContextualBench. Bold numbers mean best of all, while
+underlined numbers mean best among open-source models. PopQA is measured in easy-match
+accuracy (EasyEM), while the rest are measured in exact-match accuracy (EM). The Appendix
+presents the full results in metrics.
+Model
+
+TriviaQA
+
+TruthfulQA
+
+NQ
+
+PopQA HotpotQA
+
+Average
+
+GPT-4o
+GPT 4 Turbo
+GPT-4o-mini
+GPT 3.5 Turbo
+
+81.73
+78.34
+72.55
+77.43
+
+76.47
+76.13
+61.02
+47.00
+
+2WikiHopQA MuSiQue
+62.40
+59.90
+46.60
+41.20
+
+44.40
+37.10
+32.10
+22.60
+
+51.85
+48.23
+30.75
+40.40
+
+42.24
+53.82
+54.75
+53.39
+
+57.20
+54.20
+49.80
+48.10
+
+59.47
+58.25
+49.65
+47.16
+
+Command R (35B)
+Command R+ (104B)
+gemma-2-9b-it
+Llama3 8B Instruct
+Llama3.1 8B Instruct
+
+71.75
+76.34
+77.66
+72.28
+71.33
+
+51.65
+56.30
+59.43
+51.52
+59.43
+
+41.50
+47.50
+49.70
+27.90
+17.70
+
+14.60
+29.00
+30.50
+9.90
+9.40
+
+35.76
+47.44
+37.37
+31.01
+44.41
+
+52.60
+59.18
+53.75
+52.82
+59.68
+
+48.20
+52.50
+52.60
+45.90
+46.70
+
+45.15
+52.61
+51.57
+41.62
+44.09
+
+SFR-RAG-9B
+
+79.24
+
+77.45
+
+79.50
+
+42.90
+
+48.01
+
+53.97
+
+65.70
+
+63.44
+
+99.2
+
+EasyM Accuracy
+
+100
+
+93.2
+85.8
+
+80
+
+73.6
+
+70.6
+59.9
+
+56.6
+
+60
+
+55.7
+
+47.2
+
+40
+
+48.7 50.7
+
+40
+
+Command-R+
+
+GPT-4o
+
+gemma-2-9b-it
+
+Counterfactual
+
+Unknown
+
+SFR-RAG-9B
+
+Conflict
+
+Figure 3: FaithEval [27]: average easy match accuracy scores of different models when contextual
+facts are fabricated (Counterfactual), removed (Unknown) or when the facts are contradicting
+(Conflict). Small variations between those settings and overall high absolute scores indicate that
+SFR-RAG-9B is resilient to changes in contextual information.
+
+intrinsic parametric knowledge of the model acquired during pre-training, of which large and state-ofthe-art models like GPT-4o often have significant advantages.
+Ming et al. [27] recently proposed FaithEval, an evaluation suite that measures how LLMs remain
+faithful to the context if the facts of the contexts are changed. The benchmark evaluate LLMs on three
+scenarios: (i) “Unknown” where the relevant facts are removed and the original question becomes
+unanswerable; (ii) “Conflict” where multiple context documents are provided that contains conflicting
+or contradicting information and the model is expected to recognize that; and (iii) “Counterfactual”
+where certain commonsense facts are altered by introducing a falsely fabricated context document.
+For instance, “The Moon is Made of Marshmallows.” is considered a counterfactual context and the
+LLM under evaluation is expected to remain faithful to that “fact”, if prompted to do so. Following
+Ming et al. [27], the “Unknown” and “Conflict” tasks are averaged over 10 benchmarks [43, 8, 49,
+18, 41, 19, 32, 10, 17, 15], while the “Counterfactual” task is evaluated using the ARC-C dataset [6].
+Figure 3 shows the average non-strict matching accuracy scores of different LLMs over 3 tasks under
+FaithEval suite. As shown, other baselines such as GPT-4o exhibit high variations when the facts
+change in Counterfactual and Unknown settings. Particularly, GPT-4o scores low in Counterfactual
+setting perhaps because large models may have higher knowledge inertia and stronger resistance to
+factual changes. Meanwhile, our SFR-RAG-9B scores consistently highly, even when the context
+information is altered. This demonstrates that our model is usefully resilient and faithful to unseen
+contextual information. It also means that the model is more adaptable to the ever-changing world.
+Plus, our model is more capable of identifying contradiction in the contexts, as well as resisting
+6
+
+Table 2: Standard LM-eval-harness benchmarks [11]: SFR-RAG-9B maintains relative
+competitiveness in standard world knowledge and reasoning abilities against comparable baselines.
+Model
+
+MMLU
+
+GSM8K
+
+Winogrande
+
+TruthfulQA
+
+Hellaswag
+
+ARC-C
+
+Command-R (35B)
+Llama-3-8b-instruct
+Llama-3.1-8B-Instruct
+gemma-2-9b-it
+
+68.20
+67.07
+68.22
+70.80
+
+56.63
+68.69
+71.04
+76.88
+
+81.53
+74.51
+78.06
+77.50
+
+52.32
+51.65
+54.58
+60.11
+
+87.00
+78.55
+80.47
+81.78
+
+65.53
+60.75
+60.92
+71.20
+
+SFR-RAG-9B
+
+70.15
+
+82.56
+
+78.46
+
+56.49
+
+81.58
+
+69.12
+
+Table 3: Scores on Berkeley function calling benchmark [48]: SFR-RAG-9B exhibits competitive
+function calling abilities.
+Model
+Executable AST Relevance
+GPT 4 Turbo
+GPT 3.5 Turbo
+Command R + (104B)
+xLam 7B
+Mistral Medium
+gemma-2-9b-it
+Meta-Llama-3-8B-Instruct
+Meta-Llama-3.1-8B-Instruct
+
+86.04
+81.38
+77.33
+87.12
+73.47
+70.50
+65.13
+75.17
+
+90.73
+75.23
+84.50
+89.46
+84.48
+69.69
+61.63
+77.56
+
+62.50
+87.80
+63.75
+85.00
+88.33
+90.00
+26.60
+40.00
+
+SFR-RAG-9B
+
+70.88
+
+71.69
+
+72.50
+
+against its own parametric knowledge when contextual information presented is counter-intuitive.
+In other words, the model remains more faithful to the context even if the context contradicts its
+pre-trained knowledge.
+3.4
+
+Standard Benchmarks
+
+We also evaluate our SFR-RAG model in the traditional few-shot prompting benchmarks [12, 7] to
+measure its parametric knowledge as well as general instruction following and reasoning abilities.
+Using the similar setups in the Open LLM leaderboard [3], we employ the standard evaluation harness
+[11] to evaluate our model in MMLU (5 shots), GSM8K (5 shots with strict matching), Winogrande
+(5 shots), TruthfulQA (0 shot MC2), Hellaswag (10 shots with normalized accuracy) and ARC-C (25
+shots with normalized accuracy) [12, 7, 33, 23, 52, 6].
+As shown in Table 2, our SFR-RAG model performs competitively in terms of world knowledge,
+common sense and reasoning abilities, despite the fact that it is optimized for contextual and retrieval
+use cases. Particularly, our 9B model outperforms Command-R [36] with 35B parameters in MMLU,
+GSM8K, TruthfulQA as well as ARC-C. Meanwhile it remains competitive to Llama-3.1-Instruct [9]
+and gemma-2-9b-it [38].
+Our model is also trained with function calling with a focus to support dynamic and multi-hop
+interactions with external tools to retrieve high-quality contextual information. As such, we compare
+our model with certain popular baselines in the Berkeley function calling task [48]. As reported in
+Table 3, our SFR-RAG performs competitively against comparable baselines such as Llama-3-8BInstruct [9]
+
+4
+
+Conclusion
+
+We present SFR-RAG, a LLM fine-tuned with an emphasis on faithful contextual comprehension and
+understanding for retrieval augmented generation applications. The SFR-RAG model is trained to
+minimize hallucination, effectively handle unanswerable, counterfactual or low-quality and irrelevant
+contexts. It is also capable of performing complex multi-hop reasoning and producing citations
+reliably and accurately. We also introduce ContextualBench, which is a compilation of various
+popular RAG benchmarks evaluated under consistent and appropriate settings. The experiments show
+7
+
+that our 9B SFR-RAG model outperforms notable baselines, including Command-R+ and GPT-4o,
+and achieves the state of the art in 3 out of 7 benchmarks in ContextualBench. Our evaluation with
+FaithEval also shows that our model is resilient to changes in the context information and able to
+identify unanswerable questions. Lastly, the SFR-RAG model maintains competitive performance in
+general instruction-tuned tasks and function-calling capabilities, compared to baselines of similar
+sizes.
+
+References
+[1] Akari Asai, Zeqiu Wu, Yizhong Wang, Avirup Sil, and Hannaneh Hajishirzi. Self-rag: Learning
+to retrieve, generate, and critique through self-reflection. arXiv preprint arXiv:2310.11511,
+2023.
+[2] Jinze Bai, Shuai Bai, Yunfei Chu, Zeyu Cui, Kai Dang, Xiaodong Deng, Yang Fan, Wenbin Ge,
+Yu Han, Fei Huang, et al. Qwen technical report. arXiv preprint arXiv:2309.16609, 2023.
+[3] Edward Beeching, Clémentine Fourrier, Nathan Habib, Sheon Han, Nathan Lambert,
+Nazneen Rajani, Omar Sanseviero, Lewis Tunstall, and Thomas Wolf. Open llm leaderboard.
+https://huggingface.co/spaces/open-llm-leaderboard-old/open_
+llm_leaderboard, 2023.
+[4] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal,
+Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are
+few-shot learners. Advances in neural information processing systems, 33:1877–1901, 2020.
+[5] Jianlv Chen, Shitao Xiao, Peitian Zhang, Kun Luo, Defu Lian, and Zheng Liu. Bge m3embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through
+self-knowledge distillation, 2024.
+[6] Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot, Ashish Sabharwal, Carissa Schoenick,
+and Oyvind Tafjord. Think you have solved question answering? try arc, the ai2 reasoning
+challenge. arXiv preprint arXiv:1803.05457, 2018.
+[7] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser,
+Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John
+Schulman. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168,
+2021.
+[8] Dheeru Dua, Yizhong Wang, Pradeep Dasigi, Gabriel Stanovsky, Sameer Singh, and Matt
+Gardner. Drop: A reading comprehension benchmark requiring discrete reasoning over
+paragraphs. arXiv preprint arXiv:1903.00161, 2019.
+[9] Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle,
+Aiesha Letman, Akhil Mathur, Alan Schelten, Amy Yang, Angela Fan, et al. The llama 3 herd
+of models. arXiv preprint arXiv:2407.21783, 2024.
+[10] Matthew Dunn, Levent Sagun, Mike Higgins, V Ugur Guney, Volkan Cirik, and Kyunghyun
+Cho. Searchqa: A new q&a dataset augmented with context from a search engine. arXiv
+preprint arXiv:1704.05179, 2017.
+[11] Leo Gao, Jonathan Tow, Baber Abbasi, Stella Biderman, Sid Black, Anthony DiPofi, Charles
+Foster, Laurence Golding, Jeffrey Hsu, Alain Le Noac’h, Haonan Li, Kyle McDonell, Niklas
+Muennighoff, Chris Ociepa, Jason Phang, Laria Reynolds, Hailey Schoelkopf, Aviya Skowron,
+Lintang Sutawika, Eric Tang, Anish Thite, Ben Wang, Kevin Wang, and Andy Zou. A
+framework for few-shot language model evaluation, 07 2024. URL https://zenodo.
+org/records/12608602.
+[12] Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and
+Jacob Steinhardt. Measuring massive multitask language understanding. Proceedings of the
+International Conference on Learning Representations (ICLR), 2021.
+8
+
+[13] Xanh Ho, Anh-Khoa Duong Nguyen, Saku Sugawara, and Akiko Aizawa. Constructing
+a multi-hop QA dataset for comprehensive evaluation of reasoning steps. In Donia Scott,
+Nuria Bel, and Chengqing Zong, editors, Proceedings of the 28th International Conference
+on Computational Linguistics, pages 6609–6625, Barcelona, Spain (Online), December 2020.
+International Committee on Computational Linguistics. doi: 10.18653/v1/2020.coling-main.580.
+URL https://aclanthology.org/2020.coling-main.580.
+[14] Albert Q Jiang, Alexandre Sablayrolles, Arthur Mensch, Chris Bamford, Devendra Singh
+Chaplot, Diego de las Casas, Florian Bressand, Gianna Lengyel, Guillaume Lample, Lucile
+Saulnier, et al. Mistral 7b. arXiv preprint arXiv:2310.06825, 2023.
+[15] Mandar Joshi, Eunsol Choi, Daniel S Weld, and Luke Zettlemoyer. Triviaqa: A large
+scale distantly supervised challenge dataset for reading comprehension. arXiv preprint
+arXiv:1705.03551, 2017.
+[16] Zixuan Ke, Weize Kong, Cheng Li, Mingyang Zhang, Qiaozhu Mei, and Michael Bendersky.
+Bridging the preference gap between retrievers and llms. arXiv preprint arXiv:2401.06954,
+2024.
+[17] Aniruddha Kembhavi, Minjoon Seo, Dustin Schwenk, Jonghyun Choi, Ali Farhadi, and
+Hannaneh Hajishirzi. Are you smarter than a sixth grader? textbook question answering
+for multimodal machine comprehension. In Proceedings of the IEEE Conference on Computer
+Vision and Pattern recognition, pages 4999–5007, 2017.
+[18] Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur Parikh, Chris
+Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, Kenton Lee, et al. Natural questions: a
+benchmark for question answering research. Transactions of the Association for Computational
+Linguistics, 7:453–466, 2019.
+[19] Guokun Lai, Qizhe Xie, Hanxiao Liu, Yiming Yang, and Eduard Hovy. RACE: Large-scale
+ReAding comprehension dataset from examinations. In Proceedings of the 2017 Conference on
+Empirical Methods in Natural Language Processing, pages 785–794, Copenhagen, Denmark,
+September 2017. Association for Computational Linguistics. doi: 10.18653/v1/D17-1082. URL
+https://aclanthology.org/D17-1082.
+[20] Myeonghwa Lee, Seonho An, and Min-Soo Kim. Planrag: A plan-then-retrieval augmented
+generation for generative large language models as decision makers. arXiv preprint
+arXiv:2406.12430, 2024.
+[21] Chaofan Li, Zheng Liu, Shitao Xiao, and Yingxia Shao. Making large language models a better
+foundation for dense retrieval, 2023.
+[22] Xingxuan Li, Ruochen Zhao, Yew Ken Chia, Bosheng Ding, Shafiq Joty, Soujanya Poria, and
+Lidong Bing. Chain-of-knowledge: Grounding large language models via dynamic knowledge
+adapting over heterogeneous sources. arXiv preprint arXiv:2305.13269, 2023.
+[23] Stephanie Lin, Jacob Hilton, and Owain Evans. Truthfulqa: Measuring how models mimic
+human falsehoods. arXiv preprint arXiv:2109.07958, 2021.
+[24] Yubo Ma, Yixin Cao, YongChing Hong, and Aixin Sun. Large language model is not a
+good few-shot information extractor, but a good reranker for hard samples! arXiv preprint
+arXiv:2303.08559, 2023.
+[25] Alex Mallen, Akari Asai, Victor Zhong, Rajarshi Das, Daniel Khashabi, and Hannaneh
+Hajishirzi. When not to trust language models: Investigating effectiveness of parametric
+and non-parametric memories. arXiv preprint arXiv:2212.10511, 2022.
+[26] Rui Meng, Ye Liu, Shafiq Rayhan Joty, Caiming Xiong, Yingbo Zhou, and Semih
+Yavuz. Sfr-embedding-mistral:enhance text retrieval with transfer learning. Salesforce
+AI Research Blog, 2024. URL https://blog.salesforceairesearch.com/
+sfr-embedded-mistral/.
+9
+
+[27] Yifei Ming, Senthil Purushwalkam, Shrey Pandit, Zixuan Ke, Xuan-Phi Nguyen, Caiming
+Xiong, and Shafiq Rayhan Joty. Faitheval: Can your language model stay faithful to context,
+even if "the moon is made of marshmallows"? 2024.
+[28] Niklas Muennighoff, Nouamane Tazi, Loïc Magne, and Nils Reimers. Mteb: Massive text
+embedding benchmark. arXiv preprint arXiv:2210.07316, 2022. doi: 10.48550/ARXIV.2210.
+07316. URL https://arxiv.org/abs/2210.07316.
+[29] OpenAI. Chatgpt (june 2023 version, 2023.
+[30] OpenAI. Gpt-4 technical report. arXiv preprint, 2023.
+[31] Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D Manning, and
+Chelsea Finn. Direct preference optimization: Your language model is secretly a reward model.
+arXiv preprint arXiv:2305.18290, 2023.
+[32] Pranav Rajpurkar, Jian Zhang, Konstantin Lopyrev, and Percy Liang. Squad: 100,000+ questions
+for machine comprehension of text. arXiv preprint arXiv:1606.05250, 2016.
+[33] Keisuke Sakaguchi, Ronan Le Bras, Chandra Bhagavatula, and Yejin Choi. Winogrande: An
+adversarial winograd schema challenge at scale. Communications of the ACM, 64(9):99–106,
+2021.
+[34] Weijia Shi, Sewon Min, Michihiro Yasunaga, Minjoon Seo, Rich James, Mike Lewis, Luke
+Zettlemoyer, and Wen-tau Yih. Replug: Retrieval-augmented black-box language models. arXiv
+preprint arXiv:2301.12652, 2023.
+[35] Cohere Team. Introducing embed v3, 2024.
+introducing-embed-v3/.
+
+URL https://cohere.com/blog/
+
+[36] Cohere Team. Command r: Retrieval-augmented generation at production scale, 2024. URL
+https://cohere.com/blog/command-r/.
+[37] Contextual AI Team. Introducing rag 2.0, 2024. URL https://contextual.ai/
+introducing-rag2/.
+[38] Gemma Team, Thomas Mesnard, Cassidy Hardin, Robert Dadashi, Surya Bhupatiraju, Shreya
+Pathak, Laurent Sifre, Morgane Rivière, Mihir Sanjay Kale, Juliette Love, et al. Gemma: Open
+models based on gemini research and technology. arXiv preprint arXiv:2403.08295, 2024.
+[39] Romal Thoppilan, Daniel De Freitas, Jamie Hall, Noam Shazeer, Apoorv Kulshreshtha, HengTze Cheng, Alicia Jin, Taylor Bos, Leslie Baker, Yu Du, et al. Lamda: Language models for
+dialog applications. arXiv preprint arXiv:2201.08239, 2022.
+[40] Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei,
+Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2: Open
+foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288, 2023.
+[41] Adam Trischler, Tong Wang, Xingdi Yuan, Justin Harris, Alessandro Sordoni, Philip
+Bachman, and Kaheer Suleman. Newsqa: A machine comprehension dataset. arXiv preprint
+arXiv:1611.09830, 2016.
+[42] Harsh Trivedi, Niranjan Balasubramanian, Tushar Khot, and Ashish Sabharwal. Musique:
+Multihop questions via single-hop question composition. Transactions of the Association for
+Computational Linguistics, 10:539–554, 2022.
+[43] George Tsatsaronis, Michael Schroeder, Georgios Paliouras, Yannis Almirantis, Ion
+Androutsopoulos, Eric Gaussier, Patrick Gallinari, Thierry Artieres, Michael R Alvers, Matthias
+Zschunke, et al. Bioasq: A challenge on large-scale biomedical semantic indexing and question
+answering. In 2012 AAAI Fall Symposium Series, 2012.
+[44] Eric Wallace, Kai Xiao, Reimar Leike, Lilian Weng, Johannes Heidecke, and Alex Beutel.
+The instruction hierarchy: Training llms to prioritize privileged instructions. arXiv preprint
+arXiv:2404.13208, 2024.
+10
+
+[45] Shi Weijia, Min Sewon, Yasunaga Michihiro, Seo Minjoon, James Rich, Lewis Mike, and Yih
+Wen-tau. Replug: Retrieval-augmented black-box language models. ArXiv: 2301.12652, 2023.
+[46] Shitao Xiao, Zheng Liu, Peitian Zhang, and Niklas Muennighoff. C-pack: Packaged resources
+to advance general chinese embedding, 2023.
+[47] Fangyuan Xu, Weijia Shi, and Eunsol Choi. Recomp: Improving retrieval-augmented lms with
+compression and selective augmentation. arXiv preprint arXiv:2310.04408, 2023.
+[48] Fanjia Yan, Huanzhi Mao, Charlie Cheng-Jie Ji, Tianjun Zhang, Shishir G. Patil, Ion Stoica,
+and Joseph E. Gonzalez. Berkeley function calling leaderboard. 2024.
+[49] Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William W. Cohen, Ruslan
+Salakhutdinov, and Christopher D. Manning. HotpotQA: A dataset for diverse, explainable
+multi-hop question answering. In Conference on Empirical Methods in Natural Language
+Processing (EMNLP), 2018.
+[50] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao.
+React: Synergizing reasoning and acting in language models. arXiv preprint arXiv:2210.03629,
+2022.
+[51] Yue Yu, Wei Ping, Zihan Liu, Boxin Wang, Jiaxuan You, Chao Zhang, Mohammad Shoeybi,
+and Bryan Catanzaro. Rankrag: Unifying context ranking with retrieval-augmented generation
+in llms. arXiv preprint arXiv:2407.02485, 2024.
+[52] Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. Hellaswag: Can a
+machine really finish your sentence? arXiv preprint arXiv:1905.07830, 2019.
+[53] Penghao Zhao, Hailin Zhang, Qinhan Yu, Zhengren Wang, Yunteng Geng, Fangcheng Fu, Ling
+Yang, Wentao Zhang, and Bin Cui. Retrieval-augmented generation for ai-generated content: A
+survey. arXiv preprint arXiv:2402.19473, 2024.
+[54] Ruochen Zhao, Hailin Chen, Weishi Wang, Fangkai Jiao, Xuan Long Do, Chengwei Qin,
+Bosheng Ding, Xiaobao Guo, Minzhi Li, Xingxuan Li, and Shafiq Joty. Retrieving multimodal
+information for augmented generation: A survey. In Houda Bouamor, Juan Pino, and Kalika
+Bali, editors, Findings of the Association for Computational Linguistics: EMNLP 2023,
+pages 4736–4756, Singapore, December 2023. Association for Computational Linguistics.
+doi: 10.18653/v1/2023.findings-emnlp.314. URL https://aclanthology.org/2023.
+findings-emnlp.314.
+
+11
+
+A
+
+Appendix
+
+Table 4: ContextualBench scores for HotpotQA, 2WikihopQA and Musique, as measured in easy
+matching, strict matching accuracy and the F1 score.
+HotpotQA
+
+Model
+
+2WikiHopQA
+
+MuSiQue
+
+EasyM
+
+EM
+
+F1
+
+EasyM
+
+EM
+
+F1
+
+EasyM
+
+EM
+
+F1
+
+GPT 4 Turbo
+GPT 4o
+GPT-4o-mini
+GPT 3.5 Turbo
+
+70.90
+72.70
+68.70
+63.10
+
+54.20
+57.2
+49.80
+48.10
+
+69.00
+71.40
+65.50
+61.80
+
+73.00
+74.70
+57.70
+50.50
+
+59.90 69.60
+62.40 70.90
+46.60 56.50
+41.20 49.70
+
+53.10
+60.20
+48.30
+34.90
+
+37.10
+44.40
+32.10
+22.60
+
+52.70
+58.60
+48.90
+35.90
+
+Command R (35B)
+Command R + (104B)
+LLama3 8B Instruct (8B)
+LLama3.1 8B Instruct (8B)
+gemma-2-9b-it
+
+63.10
+67.30
+58.80
+64.80
+67.20
+
+48.20
+52.50
+45.90
+46.70
+52.60
+
+63.00
+66.60
+60.00
+62.00
+66.10
+
+55.70
+60.80
+46.50
+51.70
+59.60
+
+41.50 52.30
+47.50 57.30
+27.90 42.20
+17.70 38.30
+49.70 58.10
+
+36.70
+46.30
+29.30
+38.00
+47.00
+
+14.60
+29.00
+9.90
+9.40
+30.50
+
+34.10
+43.60
+25.30
+29.00
+43.50
+
+SFR-RAG-9B
+
+83.60
+
+65.70
+
+79.90
+
+86.20
+
+79.50
+
+57.40
+
+42.90
+
+53.50
+
+84.60
+
+Table 5: ContextualBench scores for TriviaQA, TruthfulQA, PopQA and NQ, as measured in easy
+matching, strict matching accuracy and the F1 score.
+
+Model
+
+TriviaQA
+EM
+
+TruthfulQA PopQA
+
+NQ
+
+F1
+
+EM
+
+EasyM
+
+EM
+
+F1
+
+GPT 4 Turbo
+GPT 4o
+GPT-4o-mini
+GPT 3.5 Turbo
+
+78.34 86.30
+81.73 88.20
+72.55 81.77
+77.43 84.70
+
+76.13
+76.47
+61.02
+47.00
+
+53.82
+42.24
+54.75
+53.39
+
+48.23
+51.85
+30.75
+40.40
+
+67.20
+69.75
+54.90
+60.69
+
+Command R (35B)
+Command R + (104B)
+LLama3 8B Instruct (8B)
+LLama3.1 8B Instruct (8B)
+gemma-2-9b-it
+
+71.75
+76.34
+72.28
+71.33
+77.66
+
+79.81
+83.05
+79.07
+78.33
+83.23
+
+51.65
+56.30
+51.52
+59.43
+59.43
+
+52.60
+59.18
+52.82
+59.68
+53.75
+
+35.76
+47.44
+31.01
+44.41
+37.37
+
+55.50
+63.21
+48.22
+61.60
+53.15
+
+SFR-RAG-9B
+
+79.24
+
+84.35
+
+77.45
+
+53.97
+
+48.01 59.66
+
+Tables 4 and 5 present the complete results of ContextualBench across 7 benchmarks as measured in
+different metrics. As these metrics measure different aspects of the question-answering responses, the
+numbers provide more insights into the performance comparison between for models. For instance, a
+model that is too verbose may score low in EM and high in F1, and vice-versa.
+
+12
+
+

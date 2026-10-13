@@ -1121,371 +1121,15 @@ fn require_fd_api_key_for_ingest() {
     }
 }
 
-/// ADR-078: `da policy learn` — train a candidate decision table from the
-/// observation journal. The run prints the honest measurement (including
-/// measured_no_gain when the table equals the observed policy) and never
-/// promotes: the artifact is candidate-only, deployed=false, import_eligible=
-/// false. Wiring the artifact into a consult is a separate explicit env opt-in.
-/// ADR-080 metric v2: run both arms on a gold paper, extract entities from
-/// each parsed article with the SAME RuleBasedExtractor, score F1 against the
-/// frozen gold entities, and append the verdict. Candidate-only.
-fn run_policy_gold_pair(pdf: &str, paper_id: &str) -> anyhow::Result<()> {
-    use da_application::parse_policy_gold_f1::{
-        ArmF1, GOLD_PAIR_SCHEMA_VERSION, GoldEntity, GoldPairVerdict, arm_f1, score_gold_pair,
-    };
-    use da_ports::parser::ParserPort;
-    use std::sync::Arc;
-
-    // gold
-    let gold_path = format!("data/gold_standard/{paper_id}.gold.json");
-    let gold_text = std::fs::read_to_string(&gold_path)
-        .map_err(|e| anyhow::anyhow!("gold {gold_path}: {e}"))?;
-    let gold_json: serde_json::Value =
-        serde_json::from_str(&gold_text).map_err(|e| anyhow::anyhow!("gold parse: {e}"))?;
-    let gold_entities: Vec<GoldEntity> = gold_json
-        .get("entities")
-        .and_then(|e| e.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|e| {
-                    Some(GoldEntity {
-                        label: e.get("label")?.as_str()?.to_string(),
-                        entity_type: e.get("entity_type")?.as_str()?.to_string(),
-                    })
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-    anyhow::ensure!(
-        !gold_entities.is_empty(),
-        "gold has no entities: {gold_path}"
-    );
-
-    let rt = tokio::runtime::Runtime::new()?;
-    // Arm A: TOC
-    let toc_code = std::process::Command::new("python3")
-        .args([
-            "scripts/m451_pdf_toc_observations.py",
-            "--pdf",
-            pdf,
-            "--id",
-            paper_id,
-        ])
-        .output();
-    let _ = toc_code; // the exporter may not know this id; the TOC arm will
-    // fail with 'empty toc' if its cache is absent — recorded
-    // as not applicable through the evidence path below.
-    let toc_started = std::time::Instant::now();
-    let toc_result = da_cli::source_cli::run_parse_pdf_toc(paper_id);
-    let toc_latency = toc_started.elapsed().as_millis() as u64;
-    let toc_parsed = if toc_result.is_ok() {
-        let text = std::fs::read_to_string(
-            std::path::Path::new("data/processed")
-                .join(paper_id)
-                .join("parsed/article.json"),
-        )
-        .ok();
-        text.and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
-    } else {
-        None
-    };
-
-    // Arm B: GROBID
-    let gb_started = std::time::Instant::now();
-    let gb_result = rt.block_on(async {
-        let parser = da_cli::parse_profile::corpus_grobid_parser();
-        parser.parse_pdf(pdf, paper_id).await
-    });
-    let gb_latency = gb_started.elapsed().as_millis() as u64;
-    let gb_parsed = gb_result
-        .as_ref()
-        .ok()
-        .and_then(|p| serde_json::to_value(p).ok());
-
-    // Same extractor on both parsed articles. Uses the Extractor trait
-    // (async extract) on the RuleBasedExtractor implementation.
-    let to_predicted = |v: Option<serde_json::Value>| -> Vec<(String, String)> {
-        let sections: Vec<(String, String)> = v
-            .and_then(|v| {
-                let sections = v.get("sections")?.as_array()?.clone();
-                Some(
-                    sections
-                        .iter()
-                        .filter_map(|s| {
-                            Some((
-                                s.get("title")?.as_str()?.to_string(),
-                                s.get("text")?.as_str()?.to_string(),
-                            ))
-                        })
-                        .collect(),
-                )
-            })
-            .unwrap_or_default();
-        if sections.is_empty() {
-            return Vec::new();
-        }
-        let extractor = da_adapters::RuleBasedExtractor::new();
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            use da_ports::extractor::Extractor;
-            extractor
-                .extract(&sections)
-                .await
-                .map(|e| {
-                    e.iter()
-                        .map(|x| (x.label.clone(), format!("{:?}", x.entity_type)))
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default()
-        })
-    };
-    let toc_pred = to_predicted(toc_parsed.clone());
-    let gb_pred = to_predicted(gb_parsed.clone());
-
-    let toc_f1 = arm_f1("toc", &gold_entities, &toc_pred);
-    let gb_f1 = arm_f1("grobid", &gold_entities, &gb_pred);
-    let winner = da_application::parse_policy_gold_f1::f1_winner(&toc_f1, &gb_f1)
-        .unwrap_or_else(|| "tie".into());
-    let verdict = GoldPairVerdict {
-        schema_version: GOLD_PAIR_SCHEMA_VERSION.into(),
-        document_identity: paper_id.into(),
-        toc: toc_f1.clone(),
-        grobid: gb_f1.clone(),
-        winner: winner.clone(),
-    };
-    println!(
-        "gold-pair {paper_id}: toc F1={:.2} (P{:.2}/R{:.2}) grobid F1={:.2} (P{:.2}/R{:.2}) -> winner={winner}",
-        toc_f1.f1, toc_f1.precision, toc_f1.recall, gb_f1.f1, gb_f1.precision, gb_f1.recall
-    );
-    let dir = std::path::Path::new("data/agent_memory/policy");
-    std::fs::create_dir_all(dir)?;
-    let path = dir.join("gold_pairs.jsonl");
-    let line = serde_json::to_string(&verdict)?;
-    std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&path)
-        .and_then(|mut f| std::io::Write::write_all(&mut f, format!("{line}\n").as_bytes()))?;
-    println!("gold pairs: {}", path.display());
-    Ok(())
-}
-
-/// ADR-080 F4 harness: run both parse arms on one document/// ADR-080 F4 harness: run both parse arms on one document, score them under
-/// the frozen metric, and append the paired observations to the journal. The
-/// single-arm journaling of both runs is suppressed so the journal holds the
-/// pair, not a doubled echo. Candidate-only: nothing here changes a route.
-fn run_policy_pair(pdf: &str, paper_id: &str, journal: &str) -> anyhow::Result<()> {
-    use da_application::parse_policy_pair::{
-        PairMetric, ParseArm, pair_to_observations, score_pair_optional,
-    };
-
-    let metric = PairMetric::from_yaml_str(
-        &std::fs::read_to_string("data/policies/parse_pair_metric.yaml")
-            .map_err(|e| anyhow::anyhow!("pair metric: {e}"))?,
-    )
-    .map_err(|e| anyhow::anyhow!("{e}"))?;
-
-    // Suppress single-arm journaling for the whole harness run.
-    // SAFETY: single-threaded CLI entry point.
-    unsafe { std::env::set_var("DA_POLICY_PAIR_SUPPRESS_JOURNAL", "1") };
-
-    // Arm A: TOC. Export observations for this PDF through the reference
-    // extractor module (its CLI maps fixed ids; the module takes any PDF).
-    let code = format!(
-        "import importlib.util, pathlib\n\
-         spec=importlib.util.spec_from_file_location('m','scripts/m451_pdf_toc_observations.py')\n\
-         m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)\n\
-         m.export(pathlib.Path({pdf:?}), {paper_id:?})"
-    );
-    let export = std::process::Command::new("python3")
-        .arg("-c")
-        .arg(&code)
-        .output()
-        .map_err(|e| anyhow::anyhow!("toc export: {e}"))?;
-    if !export.status.success() {
-        anyhow::bail!(
-            "toc observation export failed: {}",
-            String::from_utf8_lossy(&export.stderr)
-        );
-    }
-
-    // The TOC arm needs outline bookmarks. A PDF without an outline is an
-    // honest NotApplicable (ADR-080 §5), not a failure: the arm cannot run on
-    // this document, so the GROBID arm is the only applicable one.
-    let toc_started = std::time::Instant::now();
-    let toc_ev = match da_cli::source_cli::run_parse_pdf_toc(paper_id) {
-        Ok(()) => {
-            let latency = toc_started.elapsed().as_millis() as u64;
-            evidence_from_parsed(paper_id, latency, Some("pymupdf")).ok()
-        }
-        Err(e) => {
-            println!("toc arm not applicable: {e}");
-            None
-        }
-    };
-
-    // Arm B: GROBID.
-    let gb_started = std::time::Instant::now();
-    da_cli::source_cli::run_parse_pdf(paper_id, Some(pdf), None, None, None)
-        .map_err(|e| anyhow::anyhow!("grobid arm: {e}"))?;
-    let gb_latency = gb_started.elapsed().as_millis() as u64;
-    let gb_ev = evidence_from_parsed(paper_id, gb_latency, None)?;
-
-    let pair = score_pair_optional(
-        &metric,
-        toc_ev.map(|e| (ParseArm::Toc, ParseArm::Toc.decision_code().to_string(), e)),
-        Some((
-            ParseArm::Grobid,
-            ParseArm::Grobid.decision_code().to_string(),
-            gb_ev,
-        )),
-    );
-    let Some(mut pair) = pair else {
-        anyhow::bail!("neither arm produced an outcome for {paper_id}");
-    };
-    pair.document_identity = paper_id.to_string();
-    // The decision condition: prefer the measured classification artifact
-    // (written by ingest); otherwise classify the PDF right here, so the pair
-    // carries real features instead of the not-measured defaults. The harness
-    // owns the PDF, so it can always measure the condition.
-    let features_path = std::path::Path::new("artifacts/pipeline_cache/pdf_policy_features")
-        .join(format!("{paper_id}.json"));
-    let from_artifact = std::fs::read_to_string(&features_path)
-        .ok()
-        .and_then(|t| serde_json::from_str::<da_domain::fsm_policy::ArticleFeatures>(&t).ok());
-    let mut features = match from_artifact {
-        Some(f) => f,
-        None => classify_features(pdf).unwrap_or(da_domain::fsm_policy::ArticleFeatures {
-            page_count: 0,
-            toc_bookmarks: 0,
-            text_layer_quality: 0.0,
-            domain: String::new(),
-        }),
-    };
-    // The outline bookmark count is the TOC arm's precondition and its strongest
-    // separating feature (ADR-080 §5: the four features did not separate the
-    // TOC wins; the bookmark count does). The TOC exporter already measured it,
-    // so read it from the observation cache the arm just wrote. It is a MEASURED
-    // count, never a guess: absent observation -> keep 0 (typed absence).
-    if let Some(count) = toc_bookmark_count(paper_id) {
-        features.toc_bookmarks = count;
-    }
-    pair.features = features;
-
-    // Append the pair and its two counterfactual observations.
-    let dir = std::path::Path::new("data/agent_memory/policy");
-    std::fs::create_dir_all(dir)?;
-    let pairs_path = dir.join("pairs.jsonl");
-    let obs_path = std::path::Path::new(journal);
-    let mut pairs_lines = serde_json::to_string(&pair)?;
-    pairs_lines.push('\n');
-    std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&pairs_path)
-        .and_then(|mut f| std::io::Write::write_all(&mut f, pairs_lines.as_bytes()))?;
-    let mut obs_lines = String::new();
-    for obs in pair_to_observations(&pair) {
-        obs_lines.push_str(&serde_json::to_string(&obs)?);
-        obs_lines.push('\n');
-    }
-    std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(obs_path)
-        .and_then(|mut f| std::io::Write::write_all(&mut f, obs_lines.as_bytes()))?;
-
-    println!(
-        "pair {paper_id}: toc={:?} grobid={:?} (metric {})",
-        pair.arms[0].verdict,
-        pair.arms[1].verdict,
-        &pair.metric_digest[..16]
-    );
-    println!("pairs: {}", pairs_path.display());
-    println!("observations appended: 2 -> {journal}");
-    Ok(())
-}
-
-/// The outline bookmark count the TOC arm measured for this document, from the
-/// observation cache it wrote (`artifacts/pipeline_cache/pdf_toc_observations`).
-/// `None` when the export is absent or unreadable — never a fabricated count.
-fn toc_bookmark_count(paper_id: &str) -> Option<u32> {
-    let path = std::path::Path::new("artifacts/pipeline_cache/pdf_toc_observations")
-        .join(format!("{paper_id}.json"));
-    let text = std::fs::read_to_string(path).ok()?;
-    let value: serde_json::Value = serde_json::from_str(&text).ok()?;
-    let entries = value.get("toc")?.as_array()?;
-    u32::try_from(entries.len()).ok()
-}
-
-/// Classify a PDF into the policy's decision features (ADR-080: the harness
-/// measures the condition itself when no ingest artifact exists). Behind the
-/// `pdf-classifier` feature; without it the caller falls back to the honest
-/// not-measured defaults.
-#[cfg(feature = "pdf-classifier")]
-fn classify_features(pdf: &str) -> Option<da_domain::fsm_policy::ArticleFeatures> {
-    use da_ports::PdfClassificationPort;
-    let bytes = std::fs::read(pdf).ok()?;
-    let classifier = da_adapters::PdfInspectorClassifier::new();
-    let rt = tokio::runtime::Runtime::new().ok()?;
-    let classification = rt.block_on(classifier.classify(&bytes)).ok()?;
-    Some(
-        da_application::parse_policy_observation::features_from_classification(&classification, ""),
-    )
-}
-
-#[cfg(not(feature = "pdf-classifier"))]
-fn classify_features(_pdf: &str) -> Option<da_domain::fsm_policy::ArticleFeatures> {
-    None
-}
-
-/// Read `data/processed/<id>/parsed/article.json` and turn it into outcome
-/// evidence. `ok` is true when the file exists and carries at least one
-/// section; sections and body chars come from the shared schema.
-fn evidence_from_parsed(
-    paper_id: &str,
-    latency_ms: u64,
-    backend: Option<&str>,
-) -> anyhow::Result<da_application::parse_policy_table::PolicyOutcomeEvidence> {
-    let path = std::path::Path::new("data/processed")
-        .join(paper_id)
-        .join("parsed/article.json");
-    let text =
-        std::fs::read_to_string(&path).map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
-    let value: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("parsed article: {e}"))?;
-    let sections = value
-        .get("sections")
-        .and_then(|s| s.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let body_chars = sections
-        .iter()
-        .map(|s| {
-            s.get("text")
-                .and_then(|t| t.as_str())
-                .map(str::chars)
-                .map(Iterator::count)
-                .unwrap_or(0)
-        })
-        .sum();
-    Ok(da_application::parse_policy_table::PolicyOutcomeEvidence {
-        ok: !sections.is_empty(),
-        section_count: sections.len(),
-        body_chars,
-        latency_ms,
-        backend: backend.map(str::to_string),
-    })
-}
-
+/// Observational journal diagnostics; paired quality is measured offline.
 fn policy_command(
     action: &str,
     point: &str,
     journal: &str,
     min_support: usize,
     out: Option<&str>,
-    pdf: Option<&str>,
-    paper_id: Option<&str>,
+    _pdf: Option<&str>,
+    _paper_id: Option<&str>,
 ) {
     match action {
         "learn" => {
@@ -1557,12 +1201,13 @@ fn policy_command(
                 println!("validation: no covered buckets (table narrower than validation)");
             } else {
                 println!(
-                    "validation accuracy: {}/{} = {:.1}%",
+                    "recorded-action agreement (not policy quality): {}/{} = {:.1}%",
                     agree,
                     covered,
                     100.0 * agree as f64 / covered as f64
                 );
             }
+            println!("gain: not assessed; paired same-document baseline evaluation required");
             println!("locks: candidate-only, deployed=false, import_eligible=false");
 
             let out_path = out.map(str::to_string).unwrap_or_else(|| {
@@ -1581,38 +1226,11 @@ fn policy_command(
                 "opt-in consult: DA_LEARNED_POLICY_TABLE={out_path} (never production by default)"
             );
         }
-        "pair" => {
-            // ADR-080: two-arm pair harness. Needs --pdf and an id; the id is
-            // passed via --point's sibling `paper_id`? No: the CLI Policy
-            // command has no paper_id, so the harness reads them from env-free
-            // args carried in `journal` and `out`? Keep it explicit: the pair
-            // action takes the PDF and id from DA_POLICY_PAIR_PDF/_ID.
-            let pdf = pdf.unwrap_or_else(|| {
-                eprintln!("pair requires --pdf <path>");
-                std::process::exit(2)
-            });
-            let id = paper_id.unwrap_or_else(|| {
-                eprintln!("pair requires --paper-id <id>");
-                std::process::exit(2)
-            });
-            run_policy_pair(pdf, id, journal).unwrap_or_else(|e| {
-                eprintln!("pair failed: {e}");
-                std::process::exit(1);
-            });
-        }
-        "gold-pair" => {
-            let pdf = pdf.unwrap_or_else(|| {
-                eprintln!("gold-pair requires --pdf <path>");
-                std::process::exit(2)
-            });
-            let id = paper_id.unwrap_or_else(|| {
-                eprintln!("gold-pair requires --paper-id <id>");
-                std::process::exit(2)
-            });
-            run_policy_gold_pair(pdf, id).unwrap_or_else(|e| {
-                eprintln!("gold-pair failed: {e}");
-                std::process::exit(1);
-            });
+        "pair" | "gold-pair" => {
+            eprintln!(
+                "{action} retired: unisolated, unverified captures cannot train a policy; use the policy_corpus_capture and policy_corpus_evaluate offline examples"
+            );
+            std::process::exit(2);
         }
         "health" => {
             use da_application::parse_policy_health::{HealthThresholds, parse_health};
@@ -1667,7 +1285,7 @@ fn policy_command(
                         if let Some(parent) = std::path::Path::new(&out_json).parent() {
                             let _ = std::fs::create_dir_all(parent);
                         }
-                        std::fs::write(&out_json, bytes)
+                        std::fs::write(out_json, bytes)
                             .unwrap_or_else(|e| panic!("write health report {out_json}: {e}"));
                         println!("report: {out_json}");
                     }

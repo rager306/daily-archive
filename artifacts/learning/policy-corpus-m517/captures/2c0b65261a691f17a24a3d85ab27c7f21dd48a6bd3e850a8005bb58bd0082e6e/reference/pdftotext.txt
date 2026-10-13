@@ -1,0 +1,1258 @@
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026
+
+1
+
+SurgRAW: Multi-Agent Workflow with Chain of Thought Reasoning
+for Robotic Surgical Video Analysis
+
+arXiv:2503.10265v2 [cs.AI] 18 Feb 2026
+
+Chang Han Low1 , Ziyue Wang1 , Tianyi Zhang1,2 , Zhu Zhuo1 , Zhitao Zeng1 , Evangelos B. Mazomenos3 , and
+Yueming Jin1
+
+Abstract—Robotic-assisted surgery (RAS) is central to modern
+surgery, driving the need for intelligent systems with accurate
+scene understanding. Most existing surgical AI methods rely on
+isolated, task-specific models, leading to fragmented pipelines
+with limited interpretability and no unified understanding of
+RAS scene. Vision-Language Models (VLMs) offer strong zeroshot reasoning, but struggle with hallucinations, domain gaps
+and weak task-interdependency modeling. To address the lack
+of unified data for RAS scene understanding, we introduce
+SurgCoTBench, the first reasoning-focused benchmark in RAS,
+covering 14256 QA pairs with frame-level annotations across five
+major surgical tasks. Building on SurgCoTBench, we propose
+SurgRAW, a clinically aligned Chain-of-Thought (CoT) driven
+agentic workflow for zero-shot multi-task reasoning in surgery.
+SurgRAW employs a hierarchical reasoning workflow where
+an orchestrator divides surgical scene understanding into two
+reasoning streams and directs specialized agents to generate
+task-level reasoning, while higher-level agents capture workflow
+interdependencies or ground output clinically. Specifically, we
+propose a panel discussion mechanism to ensure task-specific
+agents collaborate synergistically and leverage on task interdependencies. Similarly, we incorporate a retrieval-augmented
+generation module to enrich agents with surgical knowledge
+and alleviate domain gaps in general VLMs. We design taskspecific CoT prompts grounded in surgical domain to ensure
+clinically aligned reasoning, reduce hallucinations and enhance
+interpretability. Extensive experiments show that SurgRAW surpasses mainstream VLMs and agentic systems and outperforms
+a supervised model by 14.61% accuracy. Dataset and code is
+available at https://github.com/jinlab-imvr/SurgRAW.git .
+Index Terms—Robotic Surgery, Surgical Data Science, Agentic
+AI, Datasets for Robotic Vision
+
+I. I NTRODUCTION
+
+R
+
+OBOTIC surgical systems like da Vinci [1] have driven
+the rapid adoption of robot-assisted surgery (RAS) in
+modern operating rooms, offering surgeons enhanced precision, dexterity, and access to anatomically challenging regions.
+Despite these advantages, the effectiveness of RAS ultimately
+Manuscript received: December 2, 2025; Accepted February 11, 2026.
+This paper was recommended for publication by Editor Jessica BurgnerKahrs upon evaluation of the Associate Editor and Reviewers’ comments.
+This work was supported by Ministry of Education Tier 2 grant, Singapore
+(T2EP20224-0028), and Ministry of Education Tier 1 grant, Singapore (230651-P0001). (Corresponding author: Yueming Jin)
+1 C. H. Low, Z. Wang, T. Zhang, Z. Zhu, Z. Zeng and Y. Jin are with the
+National University of Singapore, Singapore (ymjin@nus.edu.sg).
+2 T. Zhang is with the Bioinformatics Institute (BII), Agency for Science,
+Technology and Research (A*STAR), Singapore.
+3 E. B. Mazomenos is with the Wellcome/EPSRC Centre for Interventional
+and Surgical Sciences (WEISS) and the Department of Medical Physics and
+Biomedical Engineering, University College London, UK.
+Digital Object Identifier (DOI): 10.1109/LRA.2026.3665443
+
+depends on the surgeon’s ability to accurately interpret complex intraoperative scenes. Thus, the next frontier for advancing RAS lies in reliable, interpretable scene understanding
+that can provide meaningful cognitive assistance to surgeons.
+However, achieving robust surgical scene understanding remains challenging. Robotic surgical videos exhibit high visual
+complexity such as instruments and anatomical structures frequently overlapping or occluding one another, and their spatial
+relationships change rapidly across fine-grained surgical actions. These characteristics make intraoperative interpretation
+demanding even for experienced surgeons and underscore the
+need for computer-assisted approaches that can assist with
+dependable and interpretable surgical scene understanding.
+Motivated by this need, AI-driven approaches [2]–[4] have
+been developed to tackle surgical vision tasks such as workflow recognition, instrument presence detection, and error
+detection [2], [5]–[12]. However, these methods employ endto-end networks to generate results without providing further
+explanations, limiting interpretability. Yet the model architectures for different tasks vary significantly, necessitating careful
+design and task-specific data collection for training. Moreover,
+most existing surgical datasets [8], [13]–[15] only provide oneto-three-task labels within the same scene. Thereby resulting
+in fragmentation which hampers the development of a unified,
+explainable surgical intelligence framework for RAS.
+Large Language Models (LLMs) have recently gained attention for their strong interaction capabilities in the zeroshot setting [16]. Prompting techniques like Chain-of-Thought
+(CoT) [17], [18] can elicit structured reasoning in generaldomain LLMs. Vision-Language Models (VLMs) extend these
+capabilities to visual inputs and are increasingly applied to
+medical domains. In principle, these models offer cross-task
+generalizability and interpretability that overcomes the limitations of task-specific approaches. Yet despite their promise,
+VLMs remain difficult to deploy reliably in RAS, due to
+several persistent and domain-specific challenges: (i) Existing
+VLMs are primarily trained on natural scenes, resulting in
+substantial domain gaps when applied to robotic surgery.
+Although domain-specific finetuning efforts such as LLaVAMed [19], LLaVA-Surg [20] and SurgVLM [21] which aim to
+reduce this gap, they require large amounts of high-quality
+labeled surgical data [4], [22], [23] which are scarce. (ii)
+VLMs are also prone to hallucinations and prompt sensitivity,
+undermining their reliability in safety-critical surgical settings.
+Prompt engineering methods like LLaVA-CoT [18] attempt
+to mitigate these issues by automatically generating CoT
+for each query. However, these auto-generated explanations
+often exacerbate hallucinations rather than reduce them in the
+
+2
+
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026
+
+surgical domain, as the model lacks the domain understanding
+needed to reason accurately. (iii) VLMs typically treat surgical
+tasks independently, overlooking the workflow dependencies
+and hierarchical reasoning structure inherent in surgery. In
+contrast, multi-agent LLM frameworks like MDAgents [24]
+and MedAgents [25] demonstrate that coordinated, specialized
+agents can decompose complex problems and maintain contextual consistency. However, their potential for surgical scene
+understanding remains largely underexplored, in part because
+existing surgical datasets do not offer unified, multi-task
+workflow annotations that would enable systematic evaluation
+of such reasoning capabilities.
+To address these issues, we propose a Reasoning multiAgent Workflow for Surgical intelligence, termed SurgRAW.
+Designed for RAS, SurgRAW implements a hierarchical reasoning framework involving a central orchestrator which divides surgical scene understanding tasks into two streams,
+namely Visual-Semantic (VS) and Cognitive-Inference (CI).
+Subsequently, the respective coordinators of the streams will
+further delegate the tasks to specialized VLM agents for
+task-level reasoning while higher level agents account for
+workflow-level dependencies or reinforce clinical grounding.
+Specifically, we introduce a novel panel discussion mechanism for VS pathway to initiate multi-agent collaboration and
+debate, explicitly leveraging task interdependencies to refine
+collective reasoning. By verifying the consistency between
+responses and intermediate steps across different agents, SurgRAW facilitates rich interactions among agents, enabling a
+comprehensive analysis of robotic surgical videos. For CI
+pathway, we integrate Retrieval-Augmented Generation (RAG)
+to bridge the domain gap, ensuring that decisions are grounded
+in clinically-aligned surgical guidelines.
+Rather than fine-tuning VLMs or relying on LLM-generated
+CoTs, we designed task-specific CoT prompts tailored to
+key elements of RAS such as instruments, tissue and action
+recognition. These structured prompts mitigate hallucinations
+by dividing surgical tasks from classification into a series of
+conductable observation and analysis. By guiding step-by-step
+logical deductions, CoT enhances explainability and accuracy.
+Overall, our contribution can be summarized as below:
+• We introduce SurgCoTBench, the first reasoning-focused
+benchmark for RAS, unifying five major vision tasks
+within unified robotic surgical scenarios for systematic
+evaluation.
+• We propose SurgRAW, one-of-the-first agentic frameworks for RAS capable of addressing key tasks across
+the surgical workflow with structured explainability.
+• We introduce a panel discussion mechanism and an RAG
+module to enable agents to share insights and generate
+reliable responses.
+• We equip VLM agents with task-specific CoT prompts
+designed to enhance transparent, step-by-step reasoning
+that is consistent with RAS workflow structure.
+II. R ELATED W ORK
+A. Surgical Scene Understanding
+Surgical scene understanding has evolved through taskspecific solutions including foundation model-based segmen-
+
+tation approaches like SurgicalSAM [26], spatiotemporal networks for action recognition, and temporal convolutional
+networks for phase classification [2], [5]–[7], [9]. However,
+these isolated approaches differ significantly in architecture
+and design principles while overlooking intrinsic correlations
+among surgical tasks, hindering real-world deployment where
+multiple tasks should be addressed simultaneously.
+B. LLM-based AI Agents
+LLM-based agents have demonstrated remarkable reasoning and decision-making capabilities across diverse applications including industrial engineering [27] and embodied agents [28], [29]. Recent medical LLM-based agentic
+frameworks [24], [25], [30] further highlight the potential
+of multi-agent LLM systems in medical settings, showcasing
+improved clinical reasoning and coordinated decision-making.
+Despite these advancements, such agent-based approaches
+remain largely unexplored in surgical domains. The inherent
+reasoning capabilities of LLMs demonstrates the potential
+for developing intelligent surgical systems that can provide
+contextual guidance and enhance surgical outcomes.
+C. Medical and Surgical VLMs
+Recent advances in medical and surgical VLMs highlight
+growing interest in multimodal clinical reasoning. Generalpurpose medical VLMs such as Med-Gemma [31] and LLaVAMed [19] aim to extend open-source architectures to radiology and pathology image interpretation. Similarly, Surgical
+VLMs [21], [32]–[35] demonstrate promising visual–language
+understanding but remain focused on narrow perceptual tasks.
+However, existing surgical VLMs require large-scale training
+data and substantial computational resources, yet still lack
+extensive reasoning supervision across diverse procedures.
+III. M ETHODOLOGY
+A. SurgCOTBench Dataset
+Existing surgical video datasets [4], [8], [13]–[15] are
+fragmented in scope, typically annotating only one to three
+vision tasks such as instrument or action recognition, and
+none capturing the multi-step reasoning processes essential
+for surgical decision-making. As a result, they are insufficient
+for evaluating holistic surgical understanding or developing
+models capable of generalizing across different surgical tasks.
+To address these gaps, we introduce SurgCoTBench, a framelevel, multi-task reasoning benchmark for robotic-assisted
+surgery. The dataset is constructed from 12 patient videos
+across prostatectomy and lobectomy procedures. In total,
+SurgCoTBench contains 2,277 curated frames and 14,256
+vision-language Question-Answer (QA) pairs spanning five
+core reasoning tasks, as shown in Table I. Following established data collection practices [20], [36], [37], surgical
+recordings were sourced from publicly available da Vinci
+prostatectomy and lobectomy videos. Transcripts were extracted using WhisperX [38], and videos were downsampled
+to 1 frames per second (FPS). Frames were selected to capture
+clinically meaningful phases such as bladder neck dissection
+
+LOW et al.: SURGRAW: MULTI-AGENT WORKFLOW WITH CHAIN OF THOUGHT REASONING FOR ROBOTIC SURGICAL VIDEO ANALYSIS
+
+Surgical Workflow Image and Question Pair
+
+Inquirer
+
+VS Coordinator
+
+Instrument
+Specialist
+
+Patient Detail
+What is the patient’s age?
+
+Action
+Interpreter
+
+Instrument Recognition
+What is the left instrument?
+
+Orchestrator
+
+CI Coordinator
+
+Action
+Predictor
+
+Action Recognition
+What is the ongoing action?
+
+Action Prediction
+What is the next surgical step?
+
+Surgical Outcome
+What is the intended goal?
+
+Comprehensive Surgical Workflow Questions
+
+Vector
+Database
+
+Patient
+Advocate
+
+Semantic
+Search
+
+Document
+Retrieval &
+Chunks
+Augment
+Surgical
+Library
+
+Orchestrators
+
+Outcome
+Analyst
+CoT-Embedded Agents
+
+Action
+Evaluator
+
+3
+
+1. Knowledge Graph Check:
+
+4Maps instruments to their functions.
+
+2. Inter-Chain Coherence:
+Is inter-chain logic contradiction-free?
+3. Inter-Agents Collaborative Synergy:
+Do agents reinforce each other?
+Rating: 1–5.
+
+Panel Discussion
+Visual-Semantic
+General CoT Framework
+
+Cognitive-Inference
+General CoT Framework
+
+Chain 1: Question Analysis
+Chain 2: Image Feature
+Extraction
+Chain 3: Cross-Referencing
+with Visual Cues
+Chain 4: Option Elimination
+Chain 5: Final Answer
+Verification
+
+Chain 1: Question Decomposition
+Chain 2: Image Feature Extraction
+Chain 3: Addressing Sub-question
+Chain 4: Cross-Referencing with
+Retrieved Domain Insights
+Chain 5: Option Elimination
+Chain 6: Final Answer Verification
+
+Expertise Reinforcement
+
+Fig. 1: The overall structure of SurgRAW processes surgical queries through hierarchical orchestrators and CoT-embedded
+expert agents, with RAG and panel discussions enhancing accuracy and domain reliability.
+
+in prostatectomy and lymph-node dissection in lobectomy. For
+supervised models, the dataset is split by patient, with 8 videos
+for training and 4 videos for testing.
+TABLE I: Distribution of SurgCoTBench
+Category
+Action Recognition
+Instrument Recognition
+Action Prediction
+Surgical Outcome
+Patient Detail
+Procedure Overview
+Category
+Action Recognition
+Instrument Recognition
+Action Prediction
+Surgical Outcome
+Patient Detail
+Procedure Overview
+Overall
+
+Prostatectomy
+#Frames
+#QA Pairs
+1,692
+2,484
+1,692
+2,777
+1,692
+1,772
+1,692
+1,692
+1,692
+1,692
+1,692
+10,417
+Lobectomy
+#Frames
+#QA Pairs
+585
+1,024
+585
+1,060
+585
+585
+585
+585
+585
+585
+585
+3,839
+2,277
+14,256
+
+TABLE II: SurgCoTBench reasoning task categories.
+Task Category
+Action Recognition
+Instrument
+Recognition
+
+#Left
+1,271
+1,274
+–
+–
+–
+–
+
+#Right
+1,213
+1,503
+–
+–
+–
+
+#Left
+485
+488
+–
+–
+–
+–
+–
+
+#Right
+539
+572
+–
+–
+–
+–
+–
+
+1) Reasoning Taxonomy in SurgCoTBench: We develop a
+structured taxonomy of five surgical reasoning tasks including
+instrument recognition, action recognition, action prediction,
+patient-detail extraction, and outcome assessment, shown in
+Table II. This reflects the hierarchy of perceptual, spatial, and
+semantic decisions routinely made during robotic surgery. Instrument and action recognition tasks are further disaggregated
+into left- and right-arm perspectives to capture fine-grained bimanual reasoning. This taxonomy ensures clinical validity and
+comprehensive coverage of intraoperative reasoning demands.
+2) SurgCoTBench Construction: For each selected frame,
+GPT-4o [16] generates structured multiple-choice questions
+across all task types, producing up to seven QA pairs per
+frame. Notably, the surgical YouTube videos featured detailed
+real-time verbal explanations from the operating surgeon.
+When transcribed using Whisper [38], these narrations yield
+content-rich, clinically accurate captions that provides semantic grounding well beyond the raw visual stream, enabling
+high-quality question generation. The constructed data shows
+
+Action Prediction
+Patient Detail
+Surgical
+Outcome
+
+Description
+Determining the specific maneuver performed by each
+instrument, structured for both left- and right-arm
+perspectives.
+Identifying surgical instruments attached to robotic
+arms based on visual appearance, tool geometry, and
+contextual cues.
+Anticipating the next surgical action from current
+tool configuration, anatomy exposure, and procedural
+context, evaluating temporal and planning reasoning.
+Inferring demographic and clinical attributes (e.g., age
+group) from anatomical appearance, organ characteristics, and visual context.
+Identifying the primary surgical outcome visible in
+the frame based on tool–tissue interactions, anatomical state, and procedural cues.
+
+high reliability. First, the narrations originate from operating surgeons, therefore the transcription naturally reflects
+clinically correct terminology and procedural interpretation,
+providing a trustworthy foundation for question generation.
+Second, SurgCoTBench undergoes manual review by two
+clinicians who jointly verify semantic correctness, instrument
+terminology, alignment with the visual scene, and consistency
+across procedures, establishing consensus through collaborative review. Finally, the five reasoning tasks in SurgCoTBench
+are aligned with mainstream surgical AI tasks, while also
+extending the scope of existing benchmarks. In particular,
+Patient Detail and Surgical Outcome represent forms of implicit contextual reasoning, as the required information is not
+directly visible in the frame. The model must infer using
+indirect visual cues such as tissue, instrument, and anatomy.
+These tasks therefore extend the benchmark beyond explicit
+recognition toward more nuanced, context-dependent reasoning that reflects higher-level intraoperative understanding.
+B. Surgical Multi-Agent Workflow
+In this work, we observe that surgical scene understanding
+involves two different streams of reasoning. The first stream
+
+4
+
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026
+
+Visual-Semantic Question (Action Recognition)
+<Question> What is the most likely ongoing action of the
+surgical instrument attached to the left robotic arm?
+(a) Retraction ... (d) Grasping (e) … (g)
+
+Cognitive-Inference Question (Action Prediction)
+<Question> After the current surgical phase occurs in
+this frame, predict the most likely next surgical step?
+(a) Dissection and mobilization of the prostate. (b) … (d)
+
+<General Classification> Vision-Semantic Coordinator
+
+<General Classification> Cognitive-Inference Coordinator
+
+<Specific Agent> Multi Agent Collaboration: Instrument Specialist,
+Action Interpreter, Action Evaluator
+<CoT Reasoning> Chain 1: …
+<CoT Reasoning> Chain 1: …
+<Answer> Action: Cauterization
+<Answer> Instrument: Graspers
+
+<Specific Agent> Action Predictor
+<RAG> Querying surgical library for additional domain insights …
+Retrieved Content 1: … Retrieved Content 2: …
+<Executing Agent> Retrieved content is passed to Action Predictor for
+reference and analysis
+<CoT Reasoning>
+Chain 1 (Question Decomposition): Identify current phase & next step.
+Chain 2 (Current Procedure Identification): Electrocautery used to divide
+or coagulate tissue … Surrounding tissue suggests it is in pelvic region
+Chain 3 (Addressing Sub-question): Dissection is occurring… Next is
+prostate mobilization before DVC suturing or urethral anastomosis.
+Chain 4 (Cross-referencing with Retrieved Domain Insights):
+Retrieved knowledge indicates that after the current surgical phase, the
+most likely next surgical step would be dissection and mobilization of the
+prostate. This aligns with the standard approach in a radical
+prostatectomy where, once vascular structures like the DVC are addressed,
+prostate mobilization follows. (COT reasoning serves as a validation mechanism
+
+<Knowledge Graph Consistency Check> False
+Graspers: ['grasping', 'retraction', 'tool manipulation’]
+<Coherence Rubrics> 2 / 5
+<Collaborative Synergy Rubrics> 1 / 5
+<Criteria: Failed> Detected inconsistency or weak collaboration. Triggering
+action refinement and multi-agent collaboration
+
+<CoT Reasoning> Chain 1: … Chain 2: … <Answer> Instrument: Graspers
+<CoT Reasoning> Chain 1: … Chain 2: … <Answer> Action: Grasping
+<Knowledge Graph Consistency Check> TRUE
+Graspers: ['grasping', 'retraction', 'tool manipulation’]
+<Coherence Rubrics> 5 / 5
+<Collaborative Synergy Rubrics> 4 / 5
+<Criteria: Passed> This refinement meets our quality thresholds. Exiting
+refinement loop early. Selected candidate #2
+
+rather than blindly accepting retrieved knowledge.)
+
+Chain 5 (Option Elimination): Suturing & closure ruled out.
+Chain 6 (Final Answer Verification): Dissection & mobilization of prostate
+
+Fig. 2: Chat board demonstrating SurgRAW’s overall workflow and intermediate reasoning for both reasoning streams.
+
+consists of VS tasks, which focus on perceptual analysis such
+as identifying instruments, recognizing actions, and describing
+what is visible in the frame. The second stream consists of CI
+tasks which rely on understanding procedural logic, patientrelated context or predicting surgical outcome from implicit
+cues. To holistically integrate and handle these two levels of
+reasoning tasks within a single unified framework, we propose
+a hierarchical multi-agent system named SurgRAW. As shown
+in Fig. 1, SurgRAW begins with a top-level orchestrator that
+classifies each incoming question as either a VS or a CI
+task. Based on this classification, the question is subsequently
+routed to one of two secondary orchestrators, the VS Coordinator or the CI Coordinator, which then assigns the question
+to the appropriate task-specific agent.
+In this work, we focus on five key surgical vision tasks,
+each handled by a dedicated task-specific agent: the Instrument Specialist, Action Interpreter, Action Predictor, Patient
+Advocate and Outcome Analyst. As VS and CI tasks have
+fundamentally different characteristics, they require different
+forms of reasoning mechanism. VS tasks often involve ambiguous visual cues. Hence, we add an auxiliary evaluator
+agent that conducts and moderates a panel discussion to crosscheck the outputs of the VS agents. To reinforce accuracy in
+VS tasks, the evaluator uses a compact surgical knowledge
+graph (KG) that encodes valid instrument–action relationships.
+This serves as a lightweight constraint module that filters
+out unlikely predictions and maintains clinical plausibility. In
+contrast, CI tasks rely on contextual or procedural cues that
+cannot be inferred from visual information alone. For these
+tasks, SurgRAW integrates RAG to provide external surgical
+knowledge that helps the CI agents reason about patient
+details, outcomes, or procedural logic. The final response is
+produced after these intermediate supporting steps.
+To improve the transparency and reliability of each agent,
+we incorporate task-specific CoT prompts. Instead of relying
+
+on generic CoT generated by LLMs [18], we design structured
+CoT tailored to the characteristics of each task. These CoT
+guide the agents to explain their reasoning step by step,
+reduce hallucinations, and make the decision process easier to
+verify. VS agents follow CoT focused on visual inspection and
+evidence extraction, while CI agents use CoT that emphasize
+contextual reasoning and clinical logic.
+C. Expertise Reinforcement through Supplementary Modules
+Panel Discussion for Visual-Semantic Tasks. Despite
+acquiring strong reasoning abilities through CoT, multi-agent
+collaboration can further benefit task-level agents to achieve
+a more comprehensive analysis [39], [40]. VS tasks, in particular, demand contextual awareness and cross-verification
+to ensure accuracy. For instance, the Action Interpreter may
+consult the Instrument Specialist to confirm the identity or
+presence of a surgical instrument before proceeding.
+To tackle the challenge, SurgRAW introduces an Action
+Evaluator to conduct panel discussion from three perspectives: i) To safeguard prediction-level consistency, the Action
+Evaluator integrates a surgical knowledge graph detailing permissible instrument-action relationships which is derived from
+the Da Vinci surgical robot’s official specifications [1]. This
+encourages different task-level agents to cross-reference their
+predictions and check for procedural alignment. ii) To enhance
+consistency and quality at the reasoning level, the Action
+Evaluator employs two additional structured rubrics: the InterChain Coherence rubric evaluates the logical alignment of
+CoT results within a task, ensuring a reliable and logical
+reasoning process. Meanwhile, the Inter-Agents Collaborative Synergy rubric assesses how well agents reinforce
+each other’s predictions while mitigating error propagation,
+preventing early inconsistencies from affecting final decisions.
+During the panel discussion, the Action Evaluator pass the
+information between task-level agents to refine the response
+
+LOW et al.: SURGRAW: MULTI-AGENT WORKFLOW WITH CHAIN OF THOUGHT REASONING FOR ROBOTIC SURGICAL VIDEO ANALYSIS
+
+until the KG check reaches true, and the two rubrics are
+higher than their corresponding threshold of 3 out of 5. The
+conversation will be interrupted if max iteration of 3 runs is
+reached. This maximum iteration cap is imposed as a pragmatic safeguard to bound refinement and prevent unproductive
+repeated disagreement. These evaluations foster inter-agent
+synergy and further reinforce evidence-based reasoning.
+RAG for Cognitive-Inference Tasks. To strengthen cognitiveinference decision-making, SurgRAW integrates a RAG module to improve reliability and relevance of responses [41], [42].
+The CI Coordinator queries repository populated with medical
+resources from MedlinePlus [43], [44].The retrieved content
+is dynamically incorporated into the corresponding CoTembedded VLM agents, allowing them to refine outputs by
+cross-referencing validated medical information. This ensures
+alignment with established medical standards while reducing
+hallucinations. Through visual evidence validation and crossreferencing medically grounded retrieved documents, RAG
+improves SurgRAW’s dependability and makes AI-driven surgical assistance more transparent and clinically actionable.
+D. Chain-of-Thought Prompt Design for Surgery
+Surgical scene understanding requires contextual assessment, anatomical understanding, prior domain knowledge, and
+the ability to make sense of unclear visual cues [43], [45]–
+[47]. Our CoT prompting framework structures the model’s
+reasoning by guiding VLMs such as GPT-4o [16] through
+sequential analytical steps [48]. Although each of the five
+task employs its own chain definitions, we identify distinct
+overarching reasoning structure for VS and CI categories,
+which govern the CoTs design of the specific tasks (see Fig. 1).
+VS CoTs (Action Recognition and Instrument Recognition)
+follow a unified five-stage reasoning structure. The process
+begins with question analysis, where the model interprets
+the intent and constraints of the query. This is followed by
+image feature extraction, in which relevant objects, spatial
+relations, and visual attributes are identified. The third stage
+cross-references these extracted features with the expectations
+implied by the question, ensuring alignment between visual
+evidence and task requirements. The CoT then proceeds to
+option elimination, removing options that are incompatible
+with the established visual-contextual cues. Finally, the answer
+is verified through a consistency check against the visual
+scene. The VS tasks adhere to this CoT generation process,
+while each specific task extends or specializes some stages.
+1) Action Recognition.: Chain 1 analyzes the question
+to determine which surgical action is being queried and what
+visual or procedural cues are relevant. Chain 2 extracts
+image features such as instrument motion, interaction point
+and spatial relationships that are indicative of ongoing actions.Chain 3 cross-references these features with the action
+candidates, checking whether the observed instrument–tissue
+interactions match the expected patterns implied by the question. Chain 4 eliminates action options that conflict with visible motion cues or violate typical workflow logic. Chain 5
+verifies the final choice by confirming its consistency with the
+overall scene context and current phase.
+
+5
+
+2) Instrument Recognition.: Chain 1 identifies what
+instrument-related information the question is asking for.
+Chain 2.1 localizes the visible parts of the instrument,
+even when partially occluded, and Chain 2.2 extracts key
+structural cues such as surface texture, jaw and shaft geometry. Chain 2.3 infers missing or occluded parts based on
+typical instrument designs, and Chain 3.1 evaluates how
+the instrument interacts with tissue to narrow its functional
+category. Chain 3.2 resolves ambiguities between functionally similar tools based on visual features. Chain 3.3
+cross-verifies these cues against expected functions within the
+phase. Chain 4 eliminates conflicting candidates. Chain 5
+performs a final verification and selects the instrument that best
+matches all observed features and contextual evidence.
+CI CoTs (Surgical Plan, Surgical Outcome, Patient Detail)
+follow a structured reasoning process that differs from VS
+tasks in how they begin. Unlike VS CoTs, which explicitly
+analyze the input questions and visible elements, CI tasks
+often involve information that is implicit or only partly visible.
+Therefore, CI CoTs start by decomposing the question into
+its clinical components. The chain then extracts the visual
+cues relevant to each component, addresses the resulting subquestions, and refines these intermediate conclusions using
+procedural norms or retrieved surgical knowledge. Next, the
+process eliminates answer options that conflict with either the
+visual evidence or retrieved content. The reasoning concludes
+with a final verification step to ensure the selected answer is
+consistent with the overall surgical context.
+3) Action Prediction.: Chain 1 deconstructs the question
+into sub-questions about the current and the next expected
+phase. Chain 2 identifies the current procedural phase by
+examining instrument–tissue interactions. Chain 3 answers
+these sub-components using visual and contextual evidence.
+Chain 4 refines these answers by referencing procedural
+standards or retrieved surgical knowledge.
+4) Surgical Outcome.: Chain 1 splits the questions
+into granular sub-questions for a multi-perspective analysis.
+Chain 2 extracts the relevant visual evidence by determining the ongoing action and the tissue involved. Chain 3
+addresses the sub-questions by combining these visual cues
+obtaining intermediate inferences. Chain 4 cross-reference
+the intermediate inferences with retrieved knowledge.
+5) Patient Detail.: Chain 1 decomposes the question
+by identifying the specific patient attributes being requested.
+Chain 2 extracts relevant visual information. Chain 3
+addresses the decomposed sub-question by matching the extracted visual cues to the candidate options. Chain 4 refines
+these matches by interpreting unclear or partial cues using
+retrieved content.
+Across all CI tasks, Chain 5 removes options that conflict
+with procedural reasoning or retrieved knowledge, reducing
+hallucination. Chain 6 synthesizes the final conclusion.
+IV. E XPERIMENT
+A. Implementation and Evaluation Metrics
+We compare SurgRAW against five categories of state-ofthe-art approaches: (1) general VLMs, including GPT-4o [16]
+
+6
+
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026
+
+TABLE III: Comparison results on SurgCoTBench (% mean accuracy). Best results are bolded. Second-best results are
+underlined.All models are evaluated in a zero-shot setting, except the supervised baseline which requires task-specific training.
+Methods
+
+Cognitive-Inference Tasks
+
+Overall
+Act. Pred.
+
+Out.
+
+Visual-Semantic Tasks
+
+Pat.
+
+Avg.
+
+Act. Rec.
+
+Inst. Rec.
+
+Avg.
+
+58.76±11.18
+
+38.31±3.54
+
+34.42±1.13
+
+30.37±1.79
+
+Supervised Method (Training-Required)
+Surgical-VQA [5] (Supervised)
+
+47.12±5.46
+
+50.58±2.16
+
+49.83±1.91
+
+73.87±2.40
+
+Zero-Shot Setting
+General VLMs
+GPT-4o [16]
+Qwen3VL-8B [49]
+LLava-OV-7B [50]
+
+31.44±2.57
+35.69±0.47
+27.63±0.56
+
+32.98±5.81
+26.45±2.10
+19.00±1.69
+
+17.92±7.33
+23.63±1.66
+39.63±2.01
+
+9.44±5.62
+40.41±0.45
+30.23±1.44
+
+20.11±2.98
+30.16±1.10
+30.74±1.03
+
+37.21±7.94
+30.16±0.91
+19.16±1.59
+
+43.57±8.83
+59.46±0.06
+30.88±1.10
+
+40.39±3.04
+44.81±0.48
+25.12±1.21
+
+Domain-adapted Medical VLMs
+MedGemma-4B [31]
+LLaVA-Med-7B [19]
+
+24.17±0.99
+12.46±0.13
+
+20.28±1.27
+15.39±1.47
+
+39.74±1.25
+16.69±1.32
+
+34.01±0.88
+21.94±0.07
+
+31.91±1.13
+18.01±2.83
+
+32.85±0.72
+8.44±2.43
+
+0.33±0.64
+7.42±4.32
+
+16.59±0.68
+7.93±0.51
+
+Prompt Engineering Technique
+LLaVa-CoT [18] (GPT-4o)
+LLaVa-CoT [18] (Qwen3VL-8B)
+
+38.92±1.83
+34.91±0.12
+
+34.11±2.48
+18.56±0.64
+
+23.94±2.97
+44.31±0.05
+
+62.18±3.91
+52.89±0.49
+
+40.74±2.02
+38.59±0.23
+
+35.62±2.71
+8.30±0.07
+
+33.48±3.05
+52.67±0.12
+
+34.55±1.81
+31.48±0.08
+
+Agentic frameworks
+MDAgents [24] (GPT-4o)
+MedAgents [25] (GPT-4o)
+
+32.88±2.31
+31.96±2.85
+
+34.27±5.92
+34.10±6.40
+
+19.84±7.51
+18.35±7.90
+
+7.02±5.11
+7.88±5.92
+
+20.38±2.72
+20.11±3.21
+
+39.14±7.88
+38.02±8.65
+
+46.92±9.13
+45.40±9.72
+
+41.77±3.01
+41.71±3.44
+
+Ours
+SurgRAW-GPT4o
+SurgRAW-Qwen3VL-8B
+
+61.73 ±2.42
+64.03±1.51
+
+70.48±2.81
+51.65 ±1.25
+
+42.87±3.11
+50.82±5.33
+
+96.21±3.53
+86.12±2.84
+
+70.39±2.16
+62.86±2.06
+
+44.52±2.88
+62.47±1.70
+
+54.13±1.93
+67.33±3.92
+
+49.81±2.31
+65.01±2.20
+
+and Qwen3VL-8B [49]; (2) domain-adapted medical VLMs,
+such as MedGemma [31] and LLaVA-Med [19]; (3) CoTbased prompting approaches, including LLaVA-CoT [18]; (4)
+medical agentic reasoning frameworks, including MDAgents
+[24] and MedAgents [25]; and (5) a supervised baseline,
+Surgical-VQA [5]. All compared methods adhere strictly to
+their original setting. For all open-source VLMs, we adopt a
+unified configuration with a maximum token limit of 2048,
+top-k of 40, and both top-p and temperature set to 0.8 to
+ensure fair comparison. For SurgicalVQA [5], we follow the
+original training settings. All experiments on VLMs were
+conducted in a zero-shot setting. SurgRAW incurs additional
+inference overhead compared to a single-pass VLM due to
+multi-agent system. Model inferences for open-sourced VLMs
+are performed on a single NVIDIA A6000 GPU. Evaluation
+is based on accuracy rate (Acc) and all reported standard
+deviations are computed over three independent runs.
+B. Comparison with State-of-the-Art Methods
+We evaluate SurgRAW against aforementioned fourcategory models: general VLMs, domain-adapted medical
+VLMs, CoT-based approaches, and agentic reasoning frameworks (Table III). General VLMs perform moderately on VS
+tasks but struggle with CI due to missing surgical priors.
+Domain-adapted medical VLMs do not close this gap and often underperform general VLMs, showing that broad medical
+adaptation is insufficient for surgical reasoning. LLaVA-CoT
+[18] yields limited gains through structured prompting, and
+existing agentic frameworks in the medical domain [24], [25]
+still transfer poorly to real surgical workflows. In contrast, SurgRAW yields substantial improvements regardless on closedsourced VLM [16] or open-sourced VLM [49]. Across
+
+matched VLM backbones, SurgRAW yields an average overall
+improvement of 29.32% over standard VLMs. Performance
+gains are most pronounced for CI task where SurgRAWGPT4o achieves a 37.50% increase in Action Prediction and
+a remarkable 86.77% boost in Patient Detail Extraction compared to its baseline GPT4o. Regardless of VLM backbone in a
+zeroshot setting, SurgRAW surpasses the supervised SurgicalVQA [5] across all metrics. Crucially, SurgRAW demonstrates
+remarkable reliability. Unlike Surgical-VQA [5], a supervised
+baseline which exhibits high standard deviation (±5.46%),
+our method maintains consistent performance (±1.51%) even
+while achieving state-of-the-art accuracy We also show the
+qualitative examples in Fig. 3, where SurgRAW generates
+coherent and clinically aligned reasoning traces.
+TABLE IV: Ablation study results (% mean accuracy) using
+SurgRAW-GPT4o. RAG denotes Retrieval-Augmented Generation, PD denotes Panel Discussion. Best results are bolded.
+Settings
+CoT RAG
+✓
+✓
+✓
+✓
+Settings
+CoT
+PD
+✓
+✓
+✓
+
+✓
+
+Act. Pred.
+32.98±5.81
+35.68±4.91
+49.66±4.27
+70.48±2.81
+Act. Rec.
+37.21±7.94
+39.33±6.85
+41.25±5.61
+44.52±2.88
+
+Cognitive-Inference Tasks
+Out.
+Pat.
+Avg.
+17.92±7.33
+9.44±5.62
+20.11±2.98
+37.83±5.14 56.04±4.00 41.32±2.52
+41.51±4.4
+78.16±3.4
+58.97±2.2
+42.87±3.11 96.21±3.53 70.39±2.16
+Visual-Semantic Tasks
+Inst. Rec.
+Avg.
+43.57±8.83
+40.39±3.04
+43.57±8.83
+40.74±3.01
+54.13±1.93
+46.72±2.81
+54.13±1.93
+49.81±2.31
+
+C. Ablation Study
+Table IV reveals distinct yet complementary component
+roles. CoT prompting emerges as the most significant con-
+
+LOW et al.: SURGRAW: MULTI-AGENT WORKFLOW WITH CHAIN OF THOUGHT REASONING FOR ROBOTIC SURGICAL VIDEO ANALYSIS
+
+Example MCQ Questions
+INSTRUMENT RECOGNITION
+
+What is the most likely
+surgical instrument attached
+to the left robotic arm?
+(a) … (b) Monopolar Curved
+Scissors. (c) Needle Driver.
+(d) Forceps…
+
+7
+
+Answer with SurgCOT CoT Prompt
+Answer from GPT-4o
+MCQ without Prompt Instrument Chain 1 (Question Analysis): The question asks about the instrument on the left robotic arm
+appears to have a sharp tip which Chain 2.1 (Localize the Instrument): Left robotic arm appears to hold an instrument that is
+is characteristic of scissors... The interacting with the tissue. The tip of the instrument is partially visible…
+answer is: Option (b) Monopolar Chain 2.2 (Feature Extraction Beyond Tip Shape): … appears to have serrated jaws that are
+firmly grasping tissue… gripping area is textured and flat suggests grasping.
+Curved Scissors.
+Chain 2.3 (Infer Obscured Details): The absence of sharp elements or a curved blade rules
+LLaVA-COT Prompt:
+out Monopolar Curved Scissors or Cautery Hook.
+<SUMMARY> Analyze
+Chain 3.1 (Functional Context): The instrument is grasping tissue firmly without cutting.
+instrument tip, position and
+Chain 3.2 (Ambiguity Resolution): Monopolar scissors have a curved blade and cutting
+interaction.
+<CAPTION> Pointed-tipped tool mechanism, neither of which is present. The instrument is holding the tissue securely,
+pointing to a forceps-type instrument.
+<REASONING> Shape suggests
+Chain 3.3 (Visual-to-Text Alignment): Function involves grasping and holding soft tissue
+precision cutting.
+Chain 4 (Option Elimination): Scissors? No cutting blades. Forceps? Highly probable
+<CONCLUSION> (b) Monopolar
+Chain 5 (Final Answer Verification): The broad jaw design, coupled with the gripping
+Curved Scissors
+action, confirms this identification. Hence, most accurate match remains "Forceps“.
+The answer is: Option (d) Forceps.
+
+MCQ without Prompt
+Chain 1 (Question Analysis): The question asks about the ongoing action…
+Tool on right arm cutting tissue... Chain 2 (Image Feature Extraction): The instrument appears to be holding or manipulating
+The answer is: Option (e)Cutting tissue. There is no visible sign of cutting, suturing, or heat application like smoke
+Chain 3 (Visual-to-Text Alignment): Retraction and grasping are oriented towards holding or
+LLaVA-COT Prompt:
+<SUMMARY> Analyze instrument maneuvering tissue… The image shows the tool interacting with tissue but without clear
+signs of cutting, suturing, or cauterization.
+What is the most likely ongoing tip and interaction.
+Chain 4 (Option Elimination): ... Cutting: No edge of a blade or cutting motion is visible…
+action of the surgical instrument <CAPTION> Scissor-like tool
+attached to the left robotic arm? <REASONING> suggests cutting. Chain 5 (Final Answer Verification): Given grasping aligns most closely with the appearance
+The answer is: Option (d) Grasping.
+<CONCLUSION> (e) Cutting
+(a)…(d) Grasping (e) Cutting
+ACTION RECOGNITION
+
+MCQ without Prompt Next step
+after dissection: suturing... The
+answer is: Option (d) Suturing
+the DVC
+LLaVA-COT Prompt:
+After the current surgical phase <SUMMARY> Identify phase,
+predict next step.
+occurs in this surgical frame,
+<CAPTION> manipulating tissue.
+predict the most likely next
+surgical step. (a) Dissection and <REASONING> Suturing follows.
+<CONCLUSION> (d) Suturing the
+mobilization of the prostate.
+DVC
+(b)... (d) Suturing the DVC
+ACTION PREDICTION
+
+Chain 1 (Question Decomposition): What step is currently being performed? What tools …
+Chain 2 (Current Procedure Identification): Instruments seem to be manipulating the
+prostate. Observed structures, like the dorsal venous complex (DVC), are being dissected.
+Chain 3 (Addressing Sub-question): Current stage: dissecting vascular structures. Anatomy
+involved: visible vascularized tissue. Expected outcome: hemostatic control
+Chain 4 (Cross-referencing with Retrieved Domain Insights): Robotic prostatectomy follows
+a structuredsequence: DVC control →Prostatedissection →Anastomosis→ Closure. DVC suturing
+is ongoing, the next step is prostatedissection and mobilisation.
+Chain 5 (Option Elimination): DVC suturing an ongoing phase rather than the next one.
+Chain 6 (Final Answer Verification): Based on…, suturing DVC in progress, next step…
+The answer is: Option (a) Dissection and mobilization of the prostate.
+
+Fig. 3: Case study for three tasks under different prompts. Red denotes incorrect answers, while green denotes correct answers.
+
+tributor, improving average performance by 38.86% for CI
+tasks (20.11% to 58.97%) and 6.33% for VS tasks (40.39%
+to 46.72%). These gains underscore how structured logical
+inference addresses complex surgical vision tasks. Within CI
+tasks, RAG provides complementary improvements, with optimal performance achieved through the RAG-CoT combination
+with an average accuracy of 70.39%, suggesting retrieval
+mechanisms are most effective when integrated with systematic reasoning frameworks. For VS tasks, panel discussion is
+crucial for action recognition, yielding synergistic effects when
+implemented with CoT-enabled agents to achieve the best
+performance (49.81%). This shows the complementary roles
+of supplementary modules in visually ambiguous scenarios.
+V. C ONCLUSION AND F UTURE W ORKS
+We introduced SurgRAW, the first agentic system for zeroshot reasoning across major robotic surgical workflow tasks,
+supporting post-operative analysis and surgical education.
+While SurgRAW operates on frame-level inputs, these frames
+are sampled from continuous surgical videos and interpreted
+within procedural workflow context. CoT prompting is the
+main contributor to performance gains, with RAG and panel
+discussion providing complementary support. SurgRAW surpasses prior methods, setting a new benchmark for robotic
+surgical video understanding. Future work includes broadening
+SurgCoTBench with more procedures and exploring temporal
+reasoning, efficiency improvements and incorporating surgeonin-the-loop feedback to enhance reliability and clinical impact.
+
+R EFERENCES
+[1] I. Intuitive Surgical, “Da vinci instruments,” 2024, accessed:
+27-Feb-2025. [Online]. Available: https://www.intuitive.com/en-us/
+products-and-services/da-vinci/instruments
+[2] Y. Jin, Q. Dou, H. Chen, L. Yu, J. Qin, C.-W. Fu, and P.-A. Heng,
+“Sv-rcnet: workflow recognition from surgical videos using recurrent
+convolutional network,” IEEE transactions on medical imaging, vol. 37,
+no. 5, pp. 1114–1126, 2017.
+[3] Y. Jin, H. Li, Q. Dou, H. Chen, J. Qin, C.-W. Fu, and P.-A. Heng, “Multitask recurrent convolutional network with correlation loss for surgical
+video analysis,” Medical image analysis, vol. 59, p. 101572, 2020.
+[4] A. P. Twinanda, S. Shehata, D. Mutter, J. Marescaux, M. De Mathelin,
+and N. Padoy, “Endonet: a deep architecture for recognition tasks on
+laparoscopic videos,” IEEE transactions on medical imaging, vol. 36,
+no. 1, pp. 86–97, 2016.
+[5] L. Seenivasan, M. Islam, A. K. Krishna, and H. Ren, “Surgical-vqa:
+Visual question answering in surgical scenes using transformer,” in
+International Conference on Medical Image Computing and ComputerAssisted Intervention. Springer, 2022, pp. 33–43.
+[6] K. Chen, Y. Du, T. You, M. Islam, Z. Guo, Y. Jin, G. Chen, and P.-A.
+Heng, “Llm-assisted multi-teacher continual learning for visual question
+answering in robotic surgery,” in 2024 IEEE International Conference
+on Robotics and Automation (ICRA). IEEE, 2024, pp. 10 772–10 778.
+[7] X. Gao, Y. Jin, Y. Long, Q. Dou, and P.-A. Heng, “Trans-svnet:
+Accurate phase recognition from surgical videos via hybrid embedding
+aggregation transformer,” in Medical Image Computing and Computer
+Assisted Intervention–MICCAI 2021: 24th International Conference,
+Strasbourg, France, September 27–October 1, 2021, Proceedings, Part
+IV 24. Springer, 2021, pp. 593–603.
+[8] D. Psychogyios, E. Colleoni, B. Van Amsterdam, C.-Y. Li, S.-Y. Huang,
+Y. Li, F. Jia, B. Zou, G. Wang, Y. Liu et al., “Sar-rarp50: Segmentation of
+surgical instrumentation and action recognition on robot-assisted radical
+prostatectomy challenge,” arXiv preprint arXiv:2401.00496, 2023.
+[9] Z. Shao, J. Xu, D. Stoyanov, E. B. Mazomenos, and Y. Jin, “Think
+step by step: Chain-of-gesture prompting for error detection in robotic
+surgical videos,” IEEE Robotics and Automation Letters, 2024.
+
+8
+
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED FEBRUARY, 2026
+
+[10] F. Holm, G. Ghazaei, T. Czempiel, E. Özsoy, S. Saur, and N. Navab,
+“Dynamic scene graph representation for surgical video,” in Proceedings
+of the IEEE/CVF international conference on computer vision, 2023, pp.
+81–87.
+[11] K. Yuan, N. Navab, N. Padoy et al., “Procedure-aware surgical videolanguage pretraining with hierarchical knowledge augmentation,” Advances in Neural Information Processing Systems, vol. 37, pp. 122 952–
+122 983, 2025.
+[12] C. H. Low, Z. Zhuo, Z. Wang, J. Xu, H. Liu, N. Sirajudeen, M. Boal,
+P. J. Edwards, D. Stoyanov, N. Francis et al., “Cares: Collaborative agentic reasoning for error detection in surgery,” arXiv preprint
+arXiv:2508.08764, 2025.
+[13] N. Ayobi, S. Rodrı́guez, A. Pérez, I. Hernández, N. Aparicio, E. Dessevres, S. Peña, J. Santander, J. Caicedo, N. Fernández et al., “Pixel-wise
+recognition for holistic surgical scene understanding. arxiv (2024).”
+[14] N. Valderrama, P. Ruiz Puentes, I. Hernández, N. Ayobi, M. Verlyck,
+J. Santander, J. Caicedo, N. Fernández, and P. Arbeláez, “Towards
+holistic surgical scene understanding,” in International conference on
+medical image computing and computer-assisted intervention. Springer,
+2022, pp. 442–452.
+[15] J. Zhang, M. Xu, Y. Wang, and Q. Dou, “Csap-assist: Instrumentagent dialogue empowered vision-language models for collaborative
+surgical action planning,” in International Conference on Medical Image
+Computing and Computer-Assisted Intervention. Springer, 2025, pp.
+139–148.
+[16] J. Achiam, S. Adler, S. Agarwal, L. Ahmad, I. Akkaya, F. L. Aleman,
+D. Almeida, J. Altenschmidt, S. Altman, S. Anadkat et al., “Gpt-4
+technical report,” arXiv preprint arXiv:2303.08774, 2023.
+[17] J. Wei, X. Wang, D. Schuurmans, M. Bosma, F. Xia, E. Chi, Q. V. Le,
+D. Zhou et al., “Chain-of-thought prompting elicits reasoning in large
+language models,” Advances in neural information processing systems,
+vol. 35, pp. 24 824–24 837, 2022.
+[18] G. Xu, P. Jin, L. Hao, Y. Song, L. Sun, and L. Yuan, “Llavao1: Let vision language models reason step-by-step,” arXiv preprint
+arXiv:2411.10440, 2024.
+[19] C. Li, C. Wong, S. Zhang, N. Usuyama, H. Liu, J. Yang, T. Naumann,
+H. Poon, and J. Gao, “Llava-med: Training a large language-and-vision
+assistant for biomedicine in one day,” Advances in Neural Information
+Processing Systems, vol. 36, pp. 28 541–28 564, 2023.
+[20] J. Li, G. Skinner, G. Yang, B. R. Quaranto, S. D. Schwaitzberg, P. C.
+Kim, and J. Xiong, “Llava-surg: towards multimodal surgical assistant
+via structured surgical video learning,” arXiv preprint arXiv:2408.07981,
+2024.
+[21] Z. Zeng, Z. Zhuo, X. Jia, E. Zhang, J. Wu, J. Zhang, Y. Wang, C. H.
+Low, J. Jiang, Z. Zheng et al., “Surgvlm: A large vision-language model
+and systematic evaluation benchmark for surgical intelligence,” arXiv
+preprint arXiv:2506.02555, 2025.
+[22] N. Padoy, “Machine and deep learning for workflow recognition during
+surgery,” Minimally Invasive Therapy & Allied Technologies, vol. 28,
+no. 2, pp. 82–90, 2019.
+[23] F. A. Ahmed, M. Yousef, M. A. Ahmed, H. O. Ali, A. Mahboob, H. Ali,
+Z. Shah, O. Aboumarzouk, A. Al Ansari, and S. Balakrishnan, “Deep
+learning for surgical instrument recognition and segmentation in roboticassisted surgeries: a systematic review,” Artificial Intelligence Review,
+vol. 58, no. 1, p. 1, 2024.
+[24] Y. Kim, C. Park, H. Jeong, Y. S. Chan, X. Xu, D. McDuff, H. Lee,
+M. Ghassemi, C. Breazeal, and H. W. Park, “Mdagents: An adaptive
+collaboration of llms for medical decision-making,” Advances in Neural
+Information Processing Systems, vol. 37, pp. 79 410–79 452, 2024.
+[25] X. Tang, A. Zou, Z. Zhang, Z. Li, Y. Zhao, X. Zhang, A. Cohan,
+and M. Gerstein, “Medagents: Large language models as collaborators
+for zero-shot medical reasoning,” in Findings of the Association for
+Computational Linguistics: ACL 2024, 2024, pp. 599–621.
+[26] W. Yue, J. Zhang, K. Hu, Y. Xia, J. Luo, and Z. Wang, “Surgicalsam: Efficient class promptable surgical instrument segmentation,” in
+Proceedings of the AAAI Conference on Artificial Intelligence, vol. 38,
+no. 7, 2024, pp. 6890–6898.
+[27] N. Mehta, M. Teruel, P. F. Sanz, X. Deng, A. H. Awadallah, and J. Kiseleva, “Improving grounded language understanding in a collaborative
+environment by interacting with agents through help feedback,” arXiv
+preprint arXiv:2304.10750, 2023.
+[28] A. Brohan, Y. Chebotar, C. Finn, K. Hausman, A. Herzog, D. Ho,
+J. Ibarz, A. Irpan, E. Jang, R. Julian et al., “Do as i can, not as i say:
+Grounding language in robotic affordances,” in Conference on robot
+learning. PMLR, 2023, pp. 287–318.
+[29] J. Wu, R. Antonova, A. Kan, M. Lepert, A. Zeng, S. Song, J. Bohg,
+S. Rusinkiewicz, and T. Funkhouser, “Tidybot: Personalized robot assis-
+
+tance with large language models,” Autonomous Robots, vol. 47, no. 8,
+pp. 1087–1102, 2023.
+[30] Z. Wang, J. Wu, L. Cai, C. H. Low, X. Yang, Q. Li, and Y. Jin,
+“Medagent-pro: Towards evidence-based multi-modal medical diagnosis
+via reasoning agentic workflow,” arXiv preprint arXiv:2503.18968,
+2025.
+[31] A. Sellergren, S. Kazemzadeh, T. Jaroensri, A. Kiraly, M. Traverse,
+T. Kohlberger, S. Xu, F. Jamil, C. Hughes, C. Lau et al., “Medgemma
+technical report,” arXiv preprint arXiv:2507.05201, 2025.
+[32] G. Wang, L. Bai, J. Wang, K. Yuan, Z. Li, T. Jiang, X. He, J. Wu,
+Z. Chen, Z. Lei et al., “Endochat: Grounded multimodal large language
+model for endoscopic surgery,” arXiv preprint arXiv:2501.11347, 2025.
+[33] J. Li, G. Skinner, G. Yang, B. R. Quaranto, S. D. Schwaitzberg, P. C.
+Kim, and J. Xiong, “Llava-surg: towards multimodal surgical assistant
+via structured surgical video learning,” arXiv preprint arXiv:2408.07981,
+2024.
+[34] Y. Li, X. Yang, D. Xu, Y. Yu, L. Zhao, X. Hu, J. Li, and P.-A.
+Heng, “Surgpub-video: A comprehensive surgical video dataset for
+enhanced surgical intelligence in vision-language model,” arXiv preprint
+arXiv:2508.10054, 2025.
+[35] G. Wang, J. Wang, W. Mo, L. Bai, K. Yuan, M. Hu, J. Wu, J. He,
+Y. Huang, N. Padoy et al., “Surgvidlm: Towards multi-grained surgical video understanding with large language model,” arXiv preprint
+arXiv:2506.17873, 2025.
+[36] K. Yuan, V. Srivastav, T. Yu, J. L. Lavanchy, P. Mascagni, N. Navab, and
+N. Padoy, “Learning multi-modal representations by watching hundreds
+of surgical video lectures,” arXiv preprint arXiv:2307.15220, 2023.
+[37] S. Schmidgall, J. W. Kim, J. Jopling, and A. Krieger, “General surgery
+vision transformer: A video pre-trained foundation model for general
+surgery,” arXiv preprint arXiv:2403.05949, 2024.
+[38] A. Radford, J. W. Kim, T. Xu, G. Brockman, C. McLeavey, and
+I. Sutskever, “Robust speech recognition via large-scale weak supervision,” in International conference on machine learning. PMLR, 2023,
+pp. 28 492–28 518.
+[39] Y. Kim, C. Park, H. Jeong, Y. S. Chan, X. Xu, D. McDuff, H. Lee,
+M. Ghassemi, C. Breazeal, H. Park et al., “Mdagents: An adaptive
+collaboration of llms for medical decision-making,” Advances in Neural
+Information Processing Systems, vol. 37, pp. 79 410–79 452, 2025.
+[40] B. Li, T. Yan, Y. Pan, J. Luo, R. Ji, J. Ding, Z. Xu, S. Liu, H. Dong,
+Z. Lin et al., “Mmedagent: Learning to use medical tools with multimodal agent,” arXiv preprint arXiv:2407.02483, 2024.
+[41] Y. Gao, Y. Xiong, X. Gao, K. Jia, J. Pan, Y. Bi, Y. Dai, J. Sun,
+H. Wang, and H. Wang, “Retrieval-augmented generation for large
+language models: A survey,” arXiv preprint arXiv:2312.10997, vol. 2,
+2023.
+[42] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal,
+H. Küttler, M. Lewis, W.-t. Yih, T. Rocktäschel et al., “Retrievalaugmented generation for knowledge-intensive nlp tasks,” Advances in
+neural information processing systems, vol. 33, pp. 9459–9474, 2020.
+[43] N. L. of Medicine (US). Friends, MedlinePlus. National Institutes of
+Health and the Friends of the National Library of . . . , 2006, vol. 5,
+no. 1.
+[44] N. Miller, E.-M. Lacroix, and J. E. Backus, “Medlineplus: building and
+maintaining the national library of medicine’s consumer health web
+service,” Bulletin of the Medical Library Association, vol. 88, no. 1,
+p. 11, 2000.
+[45] D. A. Hashimoto, G. Rosman, D. Rus, and O. R. Meireles, “Artificial
+intelligence in surgery: promises and perils,” Annals of surgery, vol. 268,
+no. 1, pp. 70–76, 2018.
+[46] Z. Liu, K. Chen, S. Wang, Y. Xiao, and G. Zhang, “Deep learning in surgical process modeling: A systematic review of workflow recognition,”
+Journal of Biomedical Informatics, p. 104779, 2025.
+[47] D. Manning, “Cognitive factors in reading medical images: thinking
+processes in image interpretation,” The handbook of medical image
+perception and techniques, pp. 107–120, 2009.
+[48] S. Sivarajkumar, M. Kelley, A. Samolyk-Mazzanti, S. Visweswaran,
+and Y. Wang, “An empirical evaluation of prompting strategies for
+large language models in zero-shot clinical natural language processing:
+algorithm development and validation study,” JMIR Medical Informatics,
+vol. 12, p. e55318, 2024.
+[49] A. Yang, A. Li, B. Yang, B. Zhang, B. Hui, B. Zheng, B. Yu, C. Gao,
+C. Huang, C. Lv et al., “Qwen3 technical report,” arXiv preprint
+arXiv:2505.09388, 2025.
+[50] B. Li, Y. Zhang, D. Guo, R. Zhang, F. Li, H. Zhang, K. Zhang, P. Zhang,
+Y. Li, Z. Liu et al., “Llava-onevision: Easy visual task transfer,” arXiv
+preprint arXiv:2408.03326, 2024.
+
+

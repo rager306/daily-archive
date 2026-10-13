@@ -1,0 +1,2489 @@
+Formal Mathematical Reasoning:
+A New Frontier in AI
+
+arXiv:2412.16075v1 [cs.AI] 20 Dec 2024
+
+Kaiyu Yang1 , Gabriel Poesia2 , Jingxuan He3 ,
+Wenda Li4 , Kristin Lauter1 , Swarat Chaudhuri5 , Dawn Song3
+1
+Meta FAIR, 2 Stanford University, 3 UC Berkeley, 4 University of Edinburgh, 5 UT Austin
+
+Abstract
+AI for Mathematics (AI4Math) is not only intriguing intellectually but also crucial
+for AI-driven discovery in science, engineering, and beyond. Extensive efforts on
+AI4Math have mirrored techniques in NLP, in particular, training large language
+models on carefully curated math datasets in text form. As a complementary yet
+less explored avenue, formal mathematical reasoning is grounded in formal systems
+such as proof assistants, which can verify the correctness of reasoning and provide
+automatic feedback. In this position paper, we advocate for formal mathematical
+reasoning and argue that it is indispensable for advancing AI4Math to the next
+level. In recent years, we have seen steady progress in using AI to perform formal
+reasoning, including core tasks such as theorem proving and autoformalization, as
+well as emerging applications such as verifiable generation of code and hardware
+designs. However, significant challenges remain to be solved for AI to truly master
+mathematics and achieve broader impact. We summarize existing progress, discuss
+open challenges, and envision critical milestones to measure future success. At
+this inflection point for formal mathematical reasoning, we call on the research
+community to come together to drive transformative advancements in this field.
+
+1
+
+Introduction
+
+Since the early days of AI, researchers have dreamed of building AI systems that can automate
+mathematical reasoning. The first AI program in history was Newell and Simon’s Logic Theorist [1],
+a theorem proving system that could prove 38 theorems in Principia Mathematica [2]. In the decades
+since then, the center of AI has shifted from symbolic methods to machine learning, and a new field
+of statistical AI for mathematics (AI4Math) has emerged. One appeal of the field is that mathematical
+problems are a proxy for a broad array of reasoning and planning tasks. Another attraction is that math
+plays a foundational role in quantitative disciplines, so AI4Math has the potential to revolutionize
+AI for science, engineering, and beyond. For these reasons, designers of large language models
+(LLMs) [3, 4] have frequently highlighted LLMs’ success in math problems, and there have also
+been efforts to build AI systems that outperform humans at math competitions [5–7].
+Given the importance of AI4Math, substantial research has been dedicated to developing math LLMs,
+using techniques borrowed from natural language processing (NLP). A common approach is to
+continue pretraining LLMs on math data, such as arXiv papers and web pages from MathOverflow,
+and then finetune the model on curated datasets of math problems with detailed, step-by-step solutions.
+We call this the “informal” approach to distinguish it from the formal approach that will be introduced
+later (Sec. 2). Just like LLMs in general, math LLMs have a simple recipe, but the secret sauce is
+often data curation [8–11]. Carefully curated training data plus inference-time techniques, including
+chain-of-thought prompting [12], self-consistency [13], and tool use [14], have led to remarkable
+success on widely used benchmarks such as GSM8K [15] and MATH [16], as well as in the AIMO
+Progress Prize [6]. However, at the time of writing, the success of the informal approach has been
+Preprint. Under review.
+
+mostly limited to high school math not exceeding the AIME level.1 This raises a key question:
+How far can we go by scaling up the informal approach? Will it enable math LLMs to solve
+more challenging competition problems (e.g., IMO, International Mathematical Olympiad) or even
+problems in mathematical research?
+Moving from high school to more advanced mathematics, the informal approach faces challenges that
+are hard to resolve by merely scaling up the training. First, training math LLMs requires high-quality
+data, which is scarce in advanced mathematics. For novel research math problems, it is infeasible
+to find solutions to similar problems on the Internet or manually annotate the data on a large scale.
+Without scaling up the data, we cannot fully benefit from the scaling laws for LLMs [18, 19]. Second,
+solutions to many advanced problems are not numbers that can be evaluated by comparing them with
+the ground truth. Instead, they carry out a chain of intricate reasoning steps, e.g., a proof. LLMs are
+notorious for hallucinating seemingly valid reasoning steps, making it challenging to evaluate the
+correctness of model output or collect useful feedback for learning. These challenges are difficult to
+address by scaling up the informal approach during training. If training-time scaling is not enough,
+what else do we need? One emerging direction, exemplified by OpenAI o1 [17], is to scale up the
+informal approach during inference, potentially combining search with neural verifiers to mitigate
+hallucinated reasoning [15]. While this approach has gained traction, its effectiveness on advanced
+mathematical problems is an open question. In this position paper, we focus on a complementary
+approach that is less explored: formal mathematical reasoning.
+We consider formal mathematical reasoning broadly as mathematical reasoning grounded in formal
+systems, including but not limited to first/higher-order logic [20], dependent type theory [21], and
+computer programs annotated with formal specifications [22]. Such formal systems provide environments that can verify the model’s reasoning and provide automatic feedback. They stand apart
+from the “tools” used by modern LLMs [23] in their ability to model the provable truth or falsity of
+a broad class of propositions. The feedback provided by such systems can mitigate data scarcity;
+also, such systems enable rigorous test-time checks that resist hallucination. In contrast, informal
+mathematics refers to math text commonly found in textbooks, research papers, and online math
+forums. Informal math interleaves natural language with symbols (e.g., LATEX), but these symbols do
+not have a self-contained formal semantics, instead relying on informal text to convey significant
+parts of their meaning.
+AlphaProof [7] and AlphaGeometry [5] are two prominent examples of the success of this idea. Before
+these systems, there were many failed attempts to use LLMs to solve olympiad-level math problems.
+The key differentiator in the aforementioned systems is the principled use of symbolic representations
+and proof-checking frameworks. The symbolic components (Lean [24, 25] for AlphaProof; a domainspecific geometry system for AlphaGeometry) are used to execute a neural network’s reasoning steps
+and generate high-quality synthetic data, leading to unprecedented mathematical reasoning abilities.
+AlphaProof and AlphaGeometry follow in the footsteps of a broader literature on the synergistic
+use of formal methods and machine learning in mathematical tasks [26–33]. This literature includes research on neural theorem proving, i.e., generating formal proofs given formal theorem
+statements [34–36], and autoformalization, i.e., automatically translating informal mathematics into
+formal mathematics [37]. The advent of LLMs has significantly accelerated research in this area.
+For example, autoformalization was long hampered by the lack of aligned informal-formal pairs
+for finetuning. LLMs can mitigate this problem by either synthesizing the data [38] or performing
+autoformalization without finetuning [37]. As a result, we are starting to realize autoformalization’s
+potential in bootstrapping the capability of neural theorem provers [39]. LLMs are also powerful
+tools for theorem proving; in particular, recent approaches have exploited LLMs to predict proof
+steps and fix buggy proofs without explicit training on formal proof data [36, 40].
+The research infrastructure around LLMs and formal reasoning is rapidly maturing. Lean [24, 25]—
+a language for writing formal proofs—has gained popularity among mathematicians, leading to
+formalized research mathematics [41] and general-purpose mathematical libraries [42]. There are now
+multiple frameworks [35, 36] that support the interaction between LLMs and Lean. These frameworks
+allow the extraction of training data from human-written formal proofs, as well as theorem proving
+via interaction with the formal environment. Multilingual infrastructures for proof languages like
+Coq [21] and Isabelle [20] in addition to Lean are also beginning to be built [36]. Finally, LLMs have
+1
+
+Some of the most difficult problems in MATH and the AIMO Progress Prize are at the level of AIME
+(American Invitational Mathematics Examination). OpenAI o1 [17] was also evaluated on AIME problems.
+
+2
+
+been used to assist human mathematicians in writing formal proofs [43], potentially initiating a data
+flywheel where growing human-written formal math data leads to more capable LLMs, which in turn
+eases the creation of more data.
+The emerging opportunities of AI for formal mathematical reasoning have led to booming research
+activities. As a recent survey [44] shows, the number of publications in this field almost doubled
+in 2023 and is likely to double again in 2024. By combining autoformlization with reinforcement
+learning, AlphaProof [7] is the first AI to achieve the level of silver medal in IMO. Developments in
+this field also have immediate applications in formal verification [45–48], a core computer science
+problem that has traditionally been among the foremost applications of formal mathematics. While
+formal verification can lead to software and hardware systems that are exceedingly robust and secure,
+it has historically been too costly to deploy in all but the most safety-critical applications. AI can
+drastically reduce this cost by substantially automating the formalization and proof effort needed to
+formally certify complex systems. This can lead to a future in which mass-produced software and
+hardware systems are far more robust than they are today.
+For all these reasons, we believe AI-based formal mathematical reasoning has reached an
+inflection point, with significant progress to come in the next few years. However, substantial
+work remains to be done. This position paper maps out open challenges in data and algorithms,
+as well as potential routes for future progress. It is not meant to be a comprehensive survey but to
+provide perspectives on where the field may go next and call on the community to unite to accelerate
+the progress. While we celebrate the promise of formal mathematical reasoning, it should be seen
+as complementary to the informal approach. For example, future models could combine natural
+language reasoning with autoformalization to solve informal problems rigorously (Sec. 3.3 and 5.2).
+The remainder of this paper is organized as follows: Sec. 2 discusses the informal approach in detail
+and introduces formal mathematical reasoning. Sec. 3 reviews recent progress in using AI to reason
+formally. Sec. 4 explores open challenges and future directions, and Sec. 5 proposes milestones for
+measuring AI’s capabilities in formal mathematical reasoning.
+
+2
+
+AI for Mathematics (AI4Math) and the Formal Turn
+
+Mathematical reasoning is a challenge at the frontier of AI research. In this section, we begin
+by examining the informal approach to AI4Math and its limitations. Then, we introduce formal
+mathematical reasoning as a promising path for advancing AI4Math.
+2.1
+
+State-of-the-art Math LLMs and Their Limitations
+
+A Case Study of NuminaMath. NuminaMath [49] is a math LLM that won the first AIMO
+Progress Prize in July 2024, successfully solving 29 out of 50 test problems. The test problems were
+intermediate-level high school math problems newly created and kept private before the evaluation.
+Therefore, they have very little risk of data contamination compared to public benchmarks such as
+GSM8K [15] and MATH [16]. NuminaMath is an excellent example of state-of-the-art math LLMs,
+as it encompasses many key ingredients such as math pretraining [10, 50–52], finetuning [8, 9], and
+tool-integrated reasoning [14, 53] (Fig. 1). Next, we use NuminaMath as an example to elaborate on
+each ingredient, highlighting the critical role of data.2
+1. Math pretraining (Fig. 1 Left): Starting from a generic LLM (or a coding LLM such as
+Code Llama [54]), one can continue to pretrain the model on a large corpus of math-related
+documents from the web. The result is referred to as the base math LLM. NuminaMath and
+other top contestants in the AIMO Progress Prize unanimously adopted DeepSeekMath-Base
+7B [11] as the base math LLM. Critical to DeepSeekMath’s success is data. To retrieve highquality math documents from Common Crawl, the authors of DeepSeekMath engineered a
+data selection pipeline that combined automatic filtering and manual annotation.
+2. Finetuning on step-by-step solutions (Fig. 1 Middle): The base math LLM has been exposed
+to a vast amount of mathematical content during pretraining, but it is not yet capable of
+generating well-structured solutions to math problems. To align the model with problem
+2
+
+OpenAI o1 [17] demonstrated impressive math capabilities on AIME. It has likely incorporated additional
+techniques beyond those in Sec. 2.1, but public information on its inner workings remains limited.
+
+3
+
+Math-related
+web documents
+Problems w/ stepby-step solutions
+
+Problem: Suppose that the sum of the squares of two
+complex numbers 𝑥 and 𝑦 is 7, and the sum of their cubes is
+10. List all possible values for 𝑥 + 𝑦, separated by commas.
+
+Problems w/ toolintegrated solutions
+
+Solution: Let’s use `sympy` to calculate and print all
+possible values for 𝑥 + 𝑦.
+
+>>> [-5, -5, 1, 1, 4, 4]
+
+LLM pretrained
+on text and code
+
+Base math LLM
+
+Finetuned
+math LLM
+
+Tool-integrated
+math LLM
+
+Removing duplicates, the possible values for 𝑥 + 𝑦 are
+\boxed{-5, 1, 4}
+
+Figure 1: State-of-the-art math LLMs such as NuminaMath [49] typically undergo three stages: math
+pretraining, finetuning on step-by-step solutions, and further finetuning on tool-integrated solutions
+that interleave natural language reasoning with Python tool invocation.
+
+solving, one can finetune it on a carefully curated dataset consisting of math problems with
+detailed, step-by-step solutions, e.g., in the form of chain-of-thought [12]. This dataset can
+be constructed by preprocessing and combining heterogeneous sources of problems, e.g.,
+online forums, high school exams, math competitions, problem sets, and manual annotations.
+The problems and solutions are then augmented and reformatted by LLMs like GPT-4 [3].
+NuminaMath, for example, has constructed a large dataset of 860K problems and solutions
+covering high school and competition math [55].
+3. Tool-integrated reasoning (Fig. 1 Right): Finetuned math LLMs have acquired general
+problem-solving skills, but they may still struggle with precise calculation (e.g., 162 × 731)
+and symbol manipulation (e.g., expanding (x + 2)8 into powers of x). A simple solution is
+to outsource these operations to external tools such as SymPy [56]. NuminaMath performs
+tool-integrated reasoning that interleaves reasoning in natural language with tool invocation
+in Python. The key is, again, data. The model is finetuned on tool-integrated solutions
+consisting of natural language combined with tool invocation trajectories. NuminaMath
+follows the approaches in ToRA [14] and MuMath-Code [53] to collect this dataset of math
+problems with tool-integrated solutions.
+Data Scarcity. The NuminaMath team summarized: “Good data is all you need” [49]. Indeed,
+training data plays a pivotal role throughout all ingredients of the informal approach. As a result,
+the success of this approach has been limited to domains where abundant high-quality data can be
+obtained at low costs. For pre-college math, it is relatively easy to collect problems and solutions on
+the Internet or annotate them manually. However, it is difficult to extend the informal approach to
+data-scarce domains such as advanced mathematics.
+Advanced mathematics forms the foundation of numerous scientific disciplines. For example, climate
+modeling depends on partial differential equations. To unlock AI’s full potential in scientific discovery,
+it must be able to learn and apply advanced mathematics. Moreover, the long-term goal of developing
+human-level AI mathematicians requires AI to handle novel aspects of mathematics. Novelty, by
+definition, implies difficulty in collecting in-distribution training data. Therefore, moving forward,
+we see data scarcity as a major roadblock to the informal approach to AI4Math.
+Lack of Correctness Verifiability. Besides data scarcity, another challenge is in evaluation, which
+is essential for AI to make measurable progress. Existing math LLMs are evaluated on benchmarks
+such as GSM8K and MATH, which consist of math problems whose solution is a single number (or
+expression). Therefore, evaluation can be done easily, by comparing the model-generated number
+against the ground truth. While this approach is suitable for pre-college mathematics, it is not directly
+applicable to more advanced mathematics. Recent work has attempted to adapt this evaluation
+framework for advanced problems by restricting to problems that have numeric solutions [57].
+4
+
+However, this deviates from common practice in mathematical research. After all, almost all AIME
+problems have numeric solutions, but none of the Millennium Prize Problems do.
+Rather than restricting to numeric solutions, advanced mathematics frequently deals with abstract
+conjectures and proofs. Verifying proofs can be a daunting task, even for experienced mathematicians.
+This is evident in the lengthy review process for mathematical manuscripts and the controversies
+surrounding certain proofs, such as the proof of the abc conjecture [58]. The situation becomes even
+more complicated when LLMs are used to generate proofs, as they are known to hallucinate plausibly.
+To address the verification difficulty, researchers have explored self-verification or self-correction.
+These approaches use LLMs to detect and correct reasoning errors in proofs, based on the assumption
+that verifying proofs may be easier than generating them. While self-verification has been studied
+extensively, the results have been mixed [59–61]. A growing body of work suggests that current
+LLMs struggle with intrinsic self-verification, i.e., verifying their own generations without relying on
+external feedback [62–66]. Therefore, it is still an open question whether rigorous proof verification
+can be achieved within the informal approach.
+2.2
+
+AI for Formal Mathematical Reasoning
+
+From Informal to Formal. Due to the challenges in data and evaluation, it is difficult to directly
+extend the informal approach to advanced mathematics. Formal mathematical reasoning helps address
+these challenges. In this paper, it refers to mathematical reasoning grounded in formal systems,
+which have a syntax for well-formed formulas and can perform reasoning by manipulating formulas
+following a set of well-defined inference rules. Examples of formal systems include axiomatic set
+theory [67, 68], higher-order logic [69–71], and dependent type theory [72–74]. They are widely used
+in mathematics and computer programming. In math, they can express axioms, theorems, and proofs.
+In programming, they are used to specify programs and reason about semantics. The connection
+between mathematical proofs and computer programs is deepened by theoretical results such as the
+Curry–Howard correspondence [75].
+Mathematics expressed in formal systems is called formal mathematics. It is expressive: Almost all
+mathematics can be expressed by first-order logic with ZFC set theory [76]. At the same time, it
+enforces formal constraints: Formulas must conform to grammar rules, and their manipulation must
+conform to inference rules that capture valid reasoning. This is similar to how board games like chess
+and Go are played within predetermined rules and moves. The success of AI on board games [77, 78]
+suggests that a similar approach could be applied to formal mathematics, even though mathematics,
+with an infinite number of configurations and moves, can be much more challenging than Go.
+Specifically, formal systems can be useful environments for AI to learn mathematics. A formal
+environment can guarantee the soundness of reasoning, provide automatic feedback, and check if
+the goal has been achieved. This is crucial to addressing the two challenges faced by the informal
+approach: data scarcity and evaluation. Automatic feedback can serve as learning signals and alleviate
+the need for human-annotated training data. Rigorous proof verification allows us to evaluate the
+model’s reasoning without worrying about hallucination.
+Proof Assistants and Lean. A concrete type of formal systems is called proof assistants, also known
+as interactive theorem provers. These are software tools that enable humans to write formal proofs
+about mathematics or verified software. Common examples of proof assistants include Coq [21],
+Isabelle [20], and Lean [24, 25]. They have different logical foundations but share similarities from a
+user’s perspective, regardless of whether the “user” is human or AI. For simplicity, we will frequently
+use Lean as an example to explain key concepts in formal mathematical reasoning, though many
+ideas can be applied to other proof assistants or formal systems in general.
+Fig. 2 demonstrates how Lean is used to formalize mathematics. At its core, Lean is a functional
+programming language with dependent types [79], making it suitable for writing not only conventional
+programs but also mathematical definitions, theorems, and proofs. Fig. 2 (Middle) is an example
+Lean file. First, it defines natural numbers (Nat) as either zero or the successor of another natural
+number. Then, it defines addition between two natural numbers (add) as a recursive function. Finally,
+it states and proves the theorem add_zero (∀n ∈ N, 0 + n = n). Lean can automatically check if
+the proof is correct with respect to the theorem statement. Technically, due to the Curry-Howard
+5
+
+Lean file
+
+Proof tree
+n:ℕ
+⊢ add 0 n = n
+
+Project
+
+Local context
+⊢ Goal
+
+Tactic
+
+induction n
+⊢ add 0 0 = 0
+
+n’ : ℕ
+ih: add 0 n’ = n’
+⊢ add 0 (n’+1) = n’+1
+
+rfl
+
+simp [add, ih]
+
+Figure 2: Formalizing mathematics using the Lean proof assistant [24, 25].
+
+correspondence, statements in Lean are types, and proofs are expressions. As a result, proof checking
+is essentially type checking, i.e., verifying if an expression has the specified type.
+Let’s take a closer look at the proof of add_zero (Fig. 2 Left). In Lean, theorem proving is a
+backward and interactive process. It begins with the theorem statement as the initial goal, and the user
+enters a proof step, known as a "tactic". When executed by Lean, the tactic transforms the current
+goal into a list of sub-goals that are hopefully simpler. The user then inspects the new goals and
+enters new tactics, repeating this process until there are no goals left. This process implicitly defines
+a proof tree whose nodes are goals and edges are tactics (Fig. 2 Left). The user plays a key role
+in theorem proving. While proof assistants like Lean were designed with human users in mind, in
+formal mathematical reasoning, the user can also be AI or humans in collaboration with AI (Sec. 4.3).
+Formalizing mathematics using Lean is similar to software development, as shown in Fig. 2 (Right).
+Lean files are organized into larger code units such as libraries and projects, which can be opensourced on GitHub and reused by other projects. For example, the formalization of cutting-edge
+mathematical research like pfr (the Polynomial Freiman-Ruzsa conjecture [80]) often builds upon the
+basic concepts formalized in mathlib [42], Lean’s general-purpose mathematical library. Mathlib
+currently contains 82,847 definitions and 161,483 theorems, covering a wide range of topics including
+analysis, algebra, and geometry. It is one of the largest monolithic repositories of formal mathematics
+and includes a substantial portion of postgraduate-level mathematics.
+AI Meets Formal Mathematics. Integrating AI with proof assistants such as Lean can benefit
+both AI researchers and the proof assistant community (mathematicians, computer scientists, and
+formal verification engineers). On the one hand, proof assistants provide data and environments
+for developing AI for formal mathematical reasoning. On the other hand, AI can enhance the user
+experience of proof assistants by automating simple proofs and suggesting useful lemmas.
+Theorem proving
+Autoformalization
+
+Formal theorem
+statement
+
+Formal proof
+
+Informal math
+
+Formal math library
+
+Figure 3: Common tasks using AI for formal mathematical reasoning in proof assistants.
+Fig. 3 includes common tasks at the intersection of AI and formal mathematics in proof assistants.
+Given informal mathematics written by humans (e.g., textbooks and papers), autoformalization
+automatically translates it into formal theorems and proofs. Given theorem statements, theorem
+proving aims to generate formal proofs. In addition to the statement, a theorem prover may have
+access to a large library of existing definitions and lemmas, such as mathlib, and can select useful
+definitions and lemmas from the library. Furthermore, AI for autoformalization and theorem proving
+can lead to new theorems and/or proofs that can enrich the library and bootstrap its own capability.
+6
+
+Proof search
+
+ind
+uc
+t io
+nn
+
+⊢ add 0 0 = 0
+
+n:ℕ
+⊢ add 0 n = n
+
+cases n
+
+n’ : ℕ
+ih: add 0 n’ = n’
+⊢ add 0 (n’+1) = n’+1
+
+rfl
+
+n’ : ℕ
+ih: add 0 n’ = n’
+⊢ add 0 (n’+1) = n’+1
+…
+
+…
+
+…
+
+n’ : ℕ
+ih: add 0 n’ = n’
+⊢ add 0 (n’+1) = n’+1
+
+…
+
+Local context + goal
+
+Tactic generation
+simp [add, ih]
+rw [ih]
+linarith
+
+…
+
+so
+fal
+ex
+
+Language model
+
+…
+
+n:ℕ
+⊢ false
+
+…
+
+…
+
+⊢ add 0 0 = 0
+n’ : ℕ
+⊢ add 0 (n’+1) = n’+1
+
+ih]
+d,
+ad
+p[
+m
+si
+rw [ih]
+lin
+ari
+th
+
+…
+
+Tactic
+suggestions
+
+Formal math library
+…
+
+Figure 4: A neural theorem prover that combines tactic generation and proof search. This architecture
+is adopted by the majority of existing methods, with only a handful of exceptions [39, 40].
+
+Fig. 4 illustrates an architecture commonly adopted by recent neural theorem provers, consisting of
+two parts: tactic generation and proof search. Given the current proof goal (and optionally a library
+of definitions and lemmas), a neural network generates suggestions for the next tactic. The network
+is often trained on human-written proofs and can be further finetuned using reinforcement learning.
+The generated tactics are assembled into a complete proof by the proof search algorithm. It starts
+from the theorem statement as the root and grows a search tree iteratively by executing tactics to
+expand nodes, until a proof is found. The order of expansion is decided by the search algorithm, e.g.,
+classical algorithms such as best-first search (BFS) and Monte Carlo tree search (MCTS).
+
+Formal theorem (and proof)
+Informal math
+
+Figure 5: Autoformalization translates informal math to formal theorems and/or proofs automatically.
+
+Fig. 5 illustrates the task of autoformalization, i.e., translating from informal to formal. It takes
+informal mathematics (e.g., textbooks and papers) and translate it into theorem statements in a formal
+system such as Lean. In some settings, autoformalization also translates the proof [81, 82], which
+can be viewed as a form of theorem proving given informal proofs as hints.
+The formal and informal approaches to reasoning should not be viewed as mutually exclusive, nor do
+we argue that formal reasoning should entirely supplant informal reasoning. Instead, these approaches
+can potentially complement each other to enable complex reasoning that is both general and rigorous.
+For example, autoformalization can be integrated with theorem proving to solve problems formulated
+in natural language [83]. The model can generate reasoning steps in natural language while attempting
+to autoformalize part of the reasoning, which obtains feedback from the formal environment and
+helps filter out invalid reasoning. We refer to this integration of formal and informal reasoning as
+verified reasoning in natural language, which is discussed in detail in Sec. 3.3 and 5.2.
+7
+
+2.3
+
+Other Directions in AI for Mathematics
+
+While we have highlighted the distinction between informal and formal approaches, AI4Math is a
+broad and open-ended research field that does not fit neatly into this dichotomy. For example, in addition to generating solutions or proofs, neural networks can also be used to approximate mathematical
+functions. This includes simple functions such as greatest common divisor [84], eigenvalues [85],
+and modular arithmetic [86]. These functions can be computed by well-known algorithms; however,
+approximating them through neural networks offers valuable insights into the model’s capabilities and
+mechanistic interpretability. Furthermore, neural networks can approximate more complex functions
+for which we do not have efficient algorithms, with applications in cryptography [87], theoretical
+physics [88], control theory [89], and partial differential equations [90].
+Collaborative efforts between AI researchers and mathematicians have led to notable progress on
+open problems in mathematics. For example, FunSearch [91] uncovered new solutions to the cap
+set problem, a long-standing open problem in additive combinatorics [92]. It represents solutions as
+programs and leverages LLMs to generate new programs from existing ones, using an automated
+evaluator to assess the quality of solutions. Gukov et al. [93] use reinforcement learning (RL)
+to generate transformations for knot simplification in topology, while Wagner [94] uses RL to
+find counterexamples to open conjectures in graph theory. PatternBoost [95] finds mathematical
+constructions by combining Transformers with classical local search algorithms, demonstrating
+effectiveness on open problems in graph theory and combinatorics [96]. These works share similarities
+with formal mathematical reasoning: They also represent mathematical objects as symbols and
+manipulate them according to well-defined inference rules. However, they are tailored to specific
+subdomains rather than relying on general-purpose mathematical languages like Lean. Incorporating
+domain-specific mathematical insights can be valuable, as further discussed in Sec. 4.2.
+
+3
+
+Recent Progress in AI for Formal Mathematical Reasoning
+
+AI has made substantial progress in formal mathematical reasoning. First, we discuss the progress in
+two key tasks: autoformalization and theorem proving. Then, we sample two adjacent areas—natural
+language and code generation—that benefit from verifiable reasoning enabled by the formal approach.
+3.1
+
+Autoformalization
+
+Pinpointing the origin of the phrase “autoformalization” is challenging, but the pioneers of automated
+theorem proving in the 1950s and 60s clearly conceived the idea:
+The original aim of the writer was to take mathematical textbooks such as Landau
+on the number system, Hardy-Wright on number theory, Hardy on the calculus,
+Veblen-Young on projective geometry, the volumes by Bourbaki, as outlines and
+make the machine formalize all the proofs (fill in the gaps).
+— Hao Wang [97]
+Nevertheless, it was not until the rise of interactive theorem proving (e.g., Automath [98]) that people
+began to seriously consider automating the labor-intensive formalization process [99].
+Rule-Based Autoformalization. Mohan Ganesalingam [100] explored a linguistic foundation
+for mathematical texts, introducing a theory of types to eliminate ambiguities in both words and
+symbols. To address the flexibility and complexity of natural languages, many systems have adopted
+controlled natural language—a restricted subset of natural language governed by formal grammar—to
+allow users to express mathematical proofs in a way that is both natural and formal. Examples of
+such systems include Mizar [101], NaProChe [102], ForTheL [103], MathNat [104], and Verbose
+Lean [105]. Strictly speaking, these systems may not qualify as autoformalization since they do not
+directly handle natural language in its entirety. Simultaneously, a high-level grammar-writing tool
+called the Grammatical Framework (GF) [106] has been gaining attention. This tool allows for the
+flexible development of customized grammars to parse mathematical texts directly. GF-based systems
+include GLIF [107], a framework for symbolic natural language understanding and processing, and
+GFLean [108], an autoformalization framework that translates natural language statements into
+Lean’s formal language.
+8
+
+Neural and LLM-based Autoformalization. Kaliszyk et al. [109, 110] conducted early experiments using machine learning to parse informal mathematical texts, followed by Wang et al.
+[111, 112], who applied neural machine translation techniques to convert informal mathematical
+statements into the Mizar language. Unlike rule-based methods, machine learning approaches are
+more flexible and can capture edge cases in natural language that experts might miss when creating
+rules. Although Wang et al. [112] explored unsupervised machine translation [113], most early
+machine learning methods for autoformalization relied heavily on an aligned corpus of informal and
+formal statements, which is difficult to obtain on a large scale.
+LLMs like GPT-4 [3] represent a new paradigm of machine learning. These autoregressive models
+are pretrained on vast amounts of Internet data and can be quickly adapted to various downstream
+tasks through a few demonstrations, without requiring parameter updates—a capability known as
+in-context learning. Wu et at. [37] showed that, with fewer than five expert-crafted examples, LLMs
+can translate between formal and informal mathematical statements to some extent. This finding
+is promising, as it suggests that we may not need to collect a large aligned corpus of informalformal statements—an almost impossible task given the variety of formal systems—to achieve
+autoformalization. Another notable observation in Wu et al. [37] is that (auto-)informalization
+is generally easier than (auto-)formalization. With the same model, about 30% accuracy was
+achieved in formalizing competition-level math statements, while over 70% accuracy was achieved
+in informalizing even more challenging undergraduate-level math problems. This insight prompted
+follow-up research utilizing LLMs-based back-translation, where synthetic aligned corpora were
+generated by auto-informalizing existing formal statements [38, 114]. Finetuning a smaller model
+on this synthetic data led to notable improvements in autoformalization performance. Building on a
+synthetic corpus, Lu et al. [115] further incorporated additional signals from the formal environment
+to develop a process-driven autoformalizer.
+LLMs have also significantly advanced the translation of natural languages into formal domainspecific languages (DSLs) like SQL [116] and linear temporal logic [117, 118]. In this paper, we
+primarily focus on the more expressive formal languages used in foundational proof assistants. These
+languages are capable of accommodating both statements and proofs of modern mathematics, but
+come with the challenge of non-static vocabularies (definitions and proof tactics can evolve or expand
+over time). Nevertheless, autoformalization and NL-to-DSL translation are closely related, sharing
+techniques such as self-consistency and self-correction.
+Application of Autoformalization. Autoformalization serves as a bridge between informal and
+formal mathematical knowledge, resulting in three immediate applications: (1) data argumentation for
+training neural proving agents (via autoformalizing informal theorem statements) [37, 39], (2) guiding
+formal theorem proving via informal proofs [81, 82], and (3) validating informal reasoning [83, 119].
+The first two applications are closely related to neural theorem proving, which will be discussed in
+detail in the next section (Sec. 3.2). The third application will be examined in Sec. 3.3.
+3.2
+
+Neural Theorem Proving
+
+Proving theorems in any sufficiently expressive formal system is undecidable [120]. Thus, theorem
+proving inevitably requires heuristics. Deep learning has been widely used for learning heuristics to
+find proofs in formal systems. Holophrasm [121] was the first system to demonstrate the feasibility
+of training deep neural networks to guide proof search. Holophrasm used the Metamath formal
+language [68] as its logical backbone, training gated recurrent unit (GRU) networks [122] on humanwritten formal proofs to serve as policy and value networks in Monte Carlo Tree Search (MCTS)—the
+same search algorithm used in AlphaGo [78]. This training paradigm was expanded in GPT-f [34],
+which trained a single Transformer model for predicting proof steps in Metamath. GPT-f enjoyed
+substantial gains from pretraining on informal math-related data (arXiv Math, Math StackExchange,
+Github). Subsequent approaches have trained richer architectures such as retrieval-augmented
+Transformers [35] and also exploited zero-shot prompting of general-purpose LLMs [36, 40]. We
+now highlight several prominent ideas in this literature.
+Expert Iteration. Since a formal theorem proving environment can guarantee the validity of proofs,
+whenever a model finds a proof of a new theorem, that proof can be used as new training data. In the
+context of theorem proving, expert iteration consists of alternating between (a) attempting a set of
+unsolved problems, and (b) finetuning the model using new training data produced during the first
+9
+
+phase. This has been shown to lead to improvements in formal theorem proving [123, 124], including
+in the recent work of AlphaProof [7]. However, gains tend to diminish after a few iterations. It is still
+an open problem to obtain continuous improvements, leveraging the potentially unlimited feedback
+that a formal verifier can provide.
+
+Learning from Mistakes. A key benefit of formal proof environments is that they can provide error
+messages when a proof step fails. COPRA [36], an approach that repeatedly asks a frontier LLM to
+predict proof steps from within a search loop, uses such error messages as part of the LLM’s prompts.
+COPRA is also equipped with a memory that stores a subset of the incorrect predictions that it made
+while proving a particular theorem, and this memory is included in the LLM’s prompt. Because
+of frontier LLMs’ ability to learn in context, these strategies reduce the odds of similar mistakes
+being repeated again and again. However, not all mistakes result in immediate failures; many lead
+to distractions or unproductive paths without making meaningful progress toward the proof goal.
+Identifying and learning from such mistakes remains a challenge.
+
+Informal Proof Sketches. Neural theorem proving in formal languages has also benefited from
+informal proofs, generated in natural language. Notably, Draft, Sketch and Prove (DSP) [81] proposed
+to first have the LLM generate a “proof sketch”, in natural language, to then attempt to formalize this
+sketch in Isabelle. Lean-STaR [125] proposed to interleave formal and informal reasoning steps in
+theorem proving in Lean. COPRA, mentioned above, also takes in informal proofs as an optional
+input and uses them as part of zero-shot proof-step-prediction queries to a general-purpose LLM.
+
+Library Learning. Human mathematicians can leverage a continuously growing library of mathematical results to find new ones. Each new theorem potentially enters this library for reuse later in
+higher-level work. Building towards this behavior, research in AI for formal mathematics has started
+to explore the idea of library learning, where not only the search heuristics (neural policy and value
+functions) improve with more data, but also the symbolic library that is available. Library learning
+first gained popularity in the context of program synthesis, with systems such as DreamCoder [126]
+that are capable of discovering increasingly higher-level abstractions from its solutions to previous
+tasks. For theorem proving, LEGO-Prover [127] demonstrated this idea in Isabelle, by proposing potentially reusable lemmas to aid in the proof of a theorem at hand. Besides new theorems, researchers
+have also explored learning tactics—procedural proof-generation strategies that shorten otherwise
+lengthy low-level proofs, often tailored to a particular mathematical domain. Tactic induction has
+been demonstrated to work in simpler formalisms [128, 129], but has not yet been developed for
+full-fledged environments such as the tactic languages in Lean or Coq.
+
+Premise Selection and Retrieval. A large, changing library of theorems poses challenges for
+training neural theorem proving models, since the prover should not be limited solely by the lemmas
+and definitions it was given at training time. One architecture that can accommodate a changing
+library is retrieval-augmented generation (RAG). In RAG, before attempting to generate (e.g., a proof
+for a target theorem), we first retrieve potentially useful pieces of data from a database (e.g., lemmas
+from a mathematical library), putting these in the context that is given to the LLM. Retrieving lemmas
+that are likely to be used to prove a target theorem is a problem known as premise selection [130],
+which has been extensively studied both in learning-guided [29, 131, 132] and symbolic [133–135]
+theorem provers. Even before neural networks were directly applied to generating proofs, they had
+been shown to be effective as premise selection models in earlier works like DeepMath [29].
+ReProver, the architecture introduced in LeanDojo [35], applied retrieval for neural theorem proving,
+where it first retrieves lemmas from a mathematical library. The COPRA [36] approach also uses
+retrieved lemmas as part of LLM queries. One desideratum in such retrieval-based approaches,
+originally identified in LeanDojo, is success on a train/test split named “new premises”, where
+each theorem seen at test time requires at least one premise that has not been seen during training.
+This setup is closer to real use cases for a theorem prover, where human mathematicians might be
+formalizing a new domain, frequently building on recently proved lemmas that did not exist in the
+original training data.
+10
+
+3.3
+
+Verified Reasoning in Natural Language
+
+Many reasoning problems expressed in unstructured natural language are difficult to formalize
+completely. In such cases, it is desirable to still have some form of verification for natural language
+reasoning. Several works have proposed to “verify” natural language reasoning via trained, few-shot
+prompted, or symbolic verifiers. For example, the paper introduced the GSM8K dataset [15] of
+grade-school mathematical word problems proposed finetuning GPT-3 to verify a partial solution.
+Combining GPT-3 as a solution generator with the finetuned verifier produced substantial accuracy
+gains. On this line of work, OpenAI later released PRM800K, a large-scale dataset of humanwritten feedback on step-by-step mathematical solutions, which has been used to explore training
+verifiers [136]. For logical reasoning in natural language, NLProofS [137] proposed a step-wise
+verifier, trained to evaluate whether a given conclusion is entailed by a set of premises, using it to
+guide a step-by-step prover. Step-by-step verifiers can also be obtained by prompting an LLM in a
+context dedicated to verification, as done in Natural Programs [61]. In all of these works, while the
+verifier cannot formally guarantee the validity of the reasoning, it nonetheless provided a boost in
+overall performance and faithfulness of the responses.
+As opposed to verifying directly in natural language, another line of work has explored using LLMs to
+first formalize a problem given in natural language, then leverage a symbolic solver to find solutions.
+In this thread, SatLM [138] and LINC [119] have both leveraged SAT/SMT solvers as a logical
+backend for reasoning problems, with the LLM only being responsible for parsing the original
+problem into an appropriate formal counterpart. In both methods, however, the system does not
+provide a step-by-step solution, since all the reasoning happens inside the solver, in a form that is
+challenging to translate back to natural language. LogicGuide [139] proposed to use a formal system
+to constrain the step-by-step deductions from the LLM, producing chain-of-thought reasoning that
+alternates between formal and natural language. In all of these systems, while the formal reasoning is
+guaranteed to be sound, it is still difficult to assess whether the natural language problem has been
+properly formalized. This typically stems from the fact that natural language allows for ambiguity and
+reliance on common sense or general world knowledge, whereas the formal problem must be fully
+unambiguous and all of the assumptions must be fully written down, which is typically challenging.
+3.4
+
+Formal System Verification and Verified Generation
+
+The formal verification of software [140–142] and hardware systems [143, 144] has long been among
+the foremost applications of formal mathematics. In this area, one first specifies the correctness and
+security requirements of a system as formal assertions. Next, theorem proving and model-checking
+techniques are used to prove that the system satisfies its requirements or, alternatively, to find bugs.
+Specifically, deductive theorem proving has been applied to a range of critical systems, including
+microprocessor designs [145], file systems [146, 147], OS kernels [46, 148], cryptographic implementations [149, 150], compilers [47], distributed systems [151], and network infrastructure [152, 153].
+However, writing formal specifications and proofs that are necessary for verification requires substantial manual effort. For instance, verifying the seL4 OS kernel involved more than 20 person-years of
+intricate engineering work [154].
+AI for formal mathematical reasoning offers a promising way to automate many tedious aspects of
+theorem proving applied to system verification, drastically reducing its costs. Advances in neural
+theorem proving, as detailed in Sec. 3.2, can be effectively harnessed in software and hardware
+verification efforts that use formal mathematics, facilitating the generation of initial proofs [36,
+155, 156] and the refinement of existing proofs [40, 157]. Moreover, LLMs are useful for assisting
+with various SMT-based verification tasks, including inferring necessary loop invariants [158–161],
+generating helpful assertions [162], and translating natural language to formal specifications [163].
+A closely related challenge is employing AI to simultaneously generate code with formal proofs
+of correctness and security. For example, LLMs have recently made remarkable progress in programming tasks [164]. However, LLM-generated code can be buggy and insecure [165, 166], and
+some recent research finds LLM-generated code to exhibit more vulnerabilities than human-written
+code [167]. Coupling generation with formal verification is a natural way to prevent such failures.
+One possibility here is to first develop a formally verified program (or design) in a framework like
+Coq and Lean, with AI assistance, and then to translate the developed artifact into a more efficient
+lower-level implementation using standard compilers. This approach establishes a direct arc between
+11
+
+theorem proving and generation. Another possibility is to incorporate LLM-based code and proof
+generation into a high-level verification-friendly language like Dafny [168] or Verus [169].
+The design of formal specifications is a particularly challenging aspect of formal methods. However,
+the autoformalization techniques mentioned in Sec. 3.1 can help generate formal specifications from
+natural language or code. There are also settings such as transpilation [170] in which specifications
+come for “free”. In transpilation, one starts with code for a system in a source language and uses AI
+to generate code in a different target language. The two systems are required to be equivalent; thus,
+the source-language code forms a complete specification for the target-language code.
+
+4
+
+Open Challenges and Future Directions
+
+Formal mathematical reasoning presents a wealth of challenging problems for AI. Here, we explore several open challenges and promising directions, including data and algorithms for formal
+mathematical reasoning, AI tools for assisting human mathematicians and proof engineers, as well
+as integrating AI and formal methods to generate verifiable code. While the discussion inevitably
+reflects our own perspectives and preferences, we hope it will provide inspiration and a roadmap for
+the broader community to advance in this field.
+4.1
+
+Data
+How to overcome the scarcity of formal data?
+
+• Autoformalizing informal math from textbooks, research papers, and lecture notes.
+• Generating synthetic conjectures and proofs from mathematical axioms.
+• Knowledge transfer from different proof frameworks and data-rich modalities such as code.
+A key driver of the performance improvements in LLMs has been captured in empirical scaling laws:
+LLM performance tends to broadly and consistently improve when we grow the model size and
+data size together [18, 19]. However, this pace of improvement due to scale alone faces significant
+challenges when applied to formal mathematics, due to the scarcity of human-created formal proof
+data. For instance, the Proof Pile dataset [10], which aggregated proofs from six different formal
+languages (Lean, Coq, Isabelle, HOL Light, Mizar [171], and Metamath [8]), collected only 500MB
+of formal proofs. This is orders of magnitude smaller than relevant datasets for training LLMs in other
+domains, such as Python code available on GitHub. The data scarcity issue is even more pronounced
+in research-level mathematics, where even informal data is limited. At the research frontier, data will
+arguably always be scarce; by the time we have abundant data on a particular domain, there might
+not be much novel research left to be done there.
+Researchers have been exploring a few different strategies to overcome data scarcity. The first is
+autoformalization: attempting to automatically formalize informal mathematical texts. We have
+substantially more informal math data available on the web in the form of textbooks, research papers,
+lecture notes, and other resources, far exceeding the current formal math libraries. One of the hopes
+in the field is to create a positive reinforcement loop when attempting to automatically formalize these
+sources. Since formal proofs can be mechanically checked, if a system successfully translates even a
+small subset of the available informal math data, it can learn from those translations for training in an
+expert iteration loop, potentially covering an increasingly larger set with each iteration (Sec. 3.2).
+The second approach relies on synthetic data generation using a formal system. AlphaGeometry [5]
+recently took this approach, completely eschewing pretraining on human-written problems and instead
+relying solely on synthetically generated geometry problems and solutions. This strategy leverages
+the fact that mathematical axioms contain, in principle, infinite potential data, since they entail all of
+the provable facts in the domain. If it can be generalized, a significant benefit of this approach would
+be its applicability to completely new domains of mathematics, where even informal data (such as
+research papers) might be scarce. By generating synthetic data, AI systems can potentially explore
+and learn from the vast space of possible mathematical problems and solutions, at a scale that can
+drastically surpass the pace of human-generated training data.
+12
+
+Autoformalization and synthetic data generation were combined in AlphaProof [7], which autoformalized one million IMO-like informal problems into one hundred million formal theorems,
+whereas proofs were synthetically generated in an expert iteration loop. It remains an open question
+to generalize this approach beyond domains where a large number of human-written problems are
+available, as will be the case in research mathematics. For those domains, we will likely also depend
+on conjecturing new, unseen statements [172].
+A third approach is the use of multilingual data. Different formal proof frameworks tend to have
+different distributions of proof data; for example, formal software verification efforts have historically
+used Coq and Isabelle more than Lean, while recent efforts to formalize research mathematics are
+largely Lean-based. Building AI systems that can interact with different proof environments [36]
+is one way to get the best of different proof frameworks. An alternative path is to translate formal
+theorems and proofs across frameworks, but this direction remains relatively unexplored as of now.
+Another promising strategy to enhance AI’s capabilities in formal mathematical reasoning is transferring knowledge from different modalities. Specifically, the code modality is closely related to formal
+mathematics as both require symbolic reasoning. This similarity has been exploited to improve AI’s
+skills in mathematics during both inference [173] and training phases [174, 175]. Prior research has
+shown that multi-lingual code models often outperform mono-lingual models when provided with
+equivalent training resources [176] and knowledge of high-resource languages can be transferred to
+low-resource ones using program translation [177]. This raises an interesting research question: how
+can we leverage datasets of data-rich programming languages such as Python and C/C++ to enhance
+reasoning in formal mathematical languages? Moreover, considering that current AI models for
+formal mathematics typically focus on single languages [32, 35, 178], there is a promising opportunity
+to develop a multi-lingual model (e.g., combining Lean, Coq, and Isabelle), potentially boosting
+performance across all these languages.
+4.2
+
+Algorithms
+How to scale up autoformalization?
+
+• Automatic metrics for evaluating autoformliazed statements.
+• Breaking the autoformalization process into small steps (like in chain-of-thought).
+• Autoformalizing with more interaction with the formal system.
+
+Autoformalization at Scale. As a bridge between informal and formal mathematics, it should
+be emphasized that autoformalization is a task beyond pattern matching. For example, given an
+informal statement we might formalize it in multiple ways that are syntactically different but logically
+equivalent. Alternatively, two syntactically similar formal statements can certainly bear opposite
+logical meanings. As Jiang et al. [38] observed, neither classic automatic machine translation metric
+like BLEU [179] nor compiling success rate really correlates with human evaluation, but relying on
+human evaluation is obviously not scalable. Without an automatic metric to evaluate autoformalized
+statements, it would be challenging to build a robust statement formalization pipelines. Nevertheless,
+wrongly autoformalized statements can still be utilized: In AlphaProof [7], DeepSeek-Prover [39],
+and Lean Workbook [180], agents attempt to simultaneously prove and disprove autoformalized
+statements, and either will leave a trace to further reinforce the neural proof agents. Still, we want to
+have an automatic metric more aligned with human judgment so that the quality of autoformalized
+statements can be truly evaluated at scale. Possible ideas include checking logical equivalence via
+automated theorem provers [82, 181].
+Depending on the level of mathematical abstraction, autoformalization can range from a relatively
+straightforward translation task (e.g., formalizing ‘1 + · · · + n = n(n + 1)/2’) to a hard reasoning
+task (e.g., formalizing ‘every finite group of odd order is solvable’) that requires retrieving existing
+definitions or even inventing new ones. For a hard reasoning task, it is natural to break down the
+autoformalization process into smaller steps, like in chain-of-thought prompting. For example, Wu
+et al. [37] observed that a common source of errors in autoformalizing statements is the mismatch
+between informal and formal definitions, which might be alleviated by retrieving definitions before
+attempting to formalize the statement. When autoformalizing proofs, a natural approach is to convert a
+13
+
+large piece of informal proof into a formal sketch before attempting to fill in the details. An alternative
+approach, used in Lean-STaR [125], is to sample one natural-language step each time and use it to
+synthesize the next proof tactic. We envision that through smaller steps and process supervision [136],
+the performance of existing autoformalization models could be further improved [115].
+Finally, given that formalization is an interactive process for human experts, often involving extensive
+trial and error with the proof assistant, we believe that a good autoformalizer should inherently support
+such interactivity. Formalizing statements may require introducing new definitions and data types
+(e.g., in the 2024 IMO P5), while autoformalizing proofs could benefit from a recursive approach to
+address gaps in informal proofs. Both aspects call for autoformalization to be more interactive [182].
+How to improve the model architecture for mathematical reasoning?
+• Multi-step reasoning, long contexts, abstractions, and hierarchical planning.
+• Controlled studies on synthetic benchmarks for diagnosing reasoning failures.
+• Scaffolding the model with inference-time techniques such as retrieval and search.
+Models for Mathematical Reasoning. Machine learning models for mathematics should possess
+two key capabilities: First, the model should be capable of memorization, allowing it to store mathematical knowledge, such as facts, definitions, and existing theorems. Second, the model should be
+able to reason effectively about its knowledge, which necessitates multi-step reasoning, handling long
+contexts, learning abstractions, and hierarchical planning. In recent years, Transformer-based Language models [183] have become the leading architecture for AI mathematical reasoning [34, 37, 50].
+Transformers excel at memorization: They are the most scalable architectures to date for Internet-scale
+pretraining [18, 19], during which their model parameters are adapted to internalize mathematical
+knowledge in the pretraining data. Although a precise understanding of how Transformers extract and
+memorize knowledge is still nascent [184], their effectiveness is widely recognized in practice [185].
+However, whether Transformers can reason logically is an open question. On the one hand, they
+have demonstrated exceptional performance on numerous reasoning benchmarks [16, 186]. On the
+other hand, they still exhibit reasoning flaws, even in simple settings [187]. For example, Wang et al.
+[188] show that Transformers learn to reason only through grokking, which occurs when a model is
+trained far beyond the point of overfitting—a scenario not applicable to pretrained LLMs. Zhang
+et al. [189] find that Transformers fail to learn true reasoning that is generalizable across different
+data distributions. Furthermore, LLMs have been found to fall short on planning [190–192].
+Formal mathematics provides a valuable domain for understanding and improving Transformers’
+capabilities in reasoning and planning, as well as for developing alternative architectures [193–
+197]. When experimenting with new architectures, we often face the dilemma that these models
+underperform standard LLMs because they do not readily benefit from large-scale pretraining, whereas
+limiting to pretrained models would restrict the model choice. Formal mathematical reasoning
+may help address this dilemma through synthetic benchmarks [198]. These benchmarks can be
+procedurally generated based on the formal system’s inference rules, and they can have adjustable
+knobs for controlling the difficulty levels or testing a specific capability, such as generalization to
+longer reasoning chains [199]. Additionally, performing well on these simple benchmarks typically
+requires only small models that can be trained within days using a few GPUs. This setup enables
+controlled scientific experiments, which help diagnose the model’s failures and discover insights that
+can potentially be scaled up in follow-up studies.
+Besides designing an architecture that inherently excels at reasoning, another highly effective approach
+is to scaffold the model with external techniques like chain-of-thought [12], retrieval [35], and
+search [124]. Next, we will discuss some of these topics in detail.
+How to search for proofs effectively?
+• Scaling up the search to leverage more test-time compute.
+• Systematic evaluation of models, search algorithms, and hyperparameters.
+• Value models for assessing and prioritizing proof goals.
+
+14
+
+Proof Search and Test-Time Compute.
+Search and learning are the two most important classes of techniques for utilizing
+massive amounts of computation in AI research.
+— Richard Sutton [200]
+Proof search is fundamental to many formal reasoning systems. In particular, most existing neural
+theorem provers (Fig. 4) generate proofs by combining tactic generation with search algorithms
+such as breadth-first search [201], best-first search [35], or Monte Carlo Tree Search (MCTS) [124].
+Scaling up the proof search to leverage an enormous amount of test-time compute has been crucial
+to the success of AlphaGeometry [5] and AlphaProof [7] on IMO problems. Furthermore, despite
+originating from formal reasoning [202], proof search has recently gained prominence in natural
+language reasoning [136, 137, 203, 204]. There, LLMs’ reasoning is scored by a verifier model
+(also referred to as “process-supervised reward model”) and is searched to arrive at a final solution,
+much like searching for a proof. Scaling test-time computation during search has led to promising
+results [205] and is likely a key component of OpenAI o1 [17].3
+Despite the importance of proof search, many myths and trade-offs surrounding it remain unexplored.
+First, is proof search truly necessary? Baldur [40] and DeepSeek-Prover [39] use LLMs to generate
+whole proofs directly, without search. This approach offers substantially lower latency, making it
+attractive in interactive applications such as proof completion in code editors. A widely held belief
+supporting proof search is that decomposing proofs into individual steps can improve data efficiency
+and generalization. While plausible, we are unaware of empirical evidence from a systematic
+comparison between search and whole-proof generation. Second, should we use small models or
+big models in proof search [206]? Given a fixed compute budget, smaller models allow exploring
+more steps. For instance, Graph2Tac [207] suggests that simple models like k-nearest neighbors can
+perform competitively with Transformers. In addition, how do different search algorithms compare
+(e.g., MCTS vs. best-first search) ? What is the effect of decoding algorithms (e.g., sampling vs. beam
+search) and hyperparameters (e.g., temperature)? How to search for proofs efficiently with access to
+high-end GPUs (typical in AI research) vs. consumer CPUs (typical among Lean users)?
+To resolve these myths, it is necessary to systematically evaluate existing theorem proving methods,
+as this will provide clarity and guide the development of future provers. However, such an evaluation
+is currently lacking and would require substantial effort. Conducting a fair and unified evaluation of
+theorem provers presents significant challenges. It is unclear how to compare provers targeting different proof assistants. While cross-system benchmarks like MiniF2F [208] and PutnamBench [209]
+have formalized problems across multiple proof assistants such as Isabelle and Lean, this alone does
+not imply the results are comparable. The difficulty of proving a theorem can vary widely between
+proof assistants due to the varying levels of proof automation. Even within a single proof assistant, a
+theorem prover’s performance is multifaceted and depends on resource constraints (e.g., hardware
+and time limits), making it difficult to consolidate performance into a single metric. A comprehensive
+evaluation that carefully addresses these challenges would be immensely valuable to the community.
+Despite the challenges in evaluation, researchers have been exploring various directions to improve
+proof search. Effective search requires prioritizing the most promising goals for further exploration.
+Mathematicians often rely on intuition to gauge a goal’s promise, and the popular MCTS algorithm
+can be viewed as its Monte Carlo estimation. One fruitful direction is developing value models for
+assessing proof goals, through finetuning [124, 210] or by prompting instruction-following LLMs as
+demonstrated in Tree of Thoughts [211]. However, assessing the promise of proof goals remains a
+challenging task. Minor changes in the goal can impact its provability. Furthermore, while positive
+examples (promising goals) can be extracted from existing proofs, negative examples are much harder
+to obtain. One approach is to use the current model to generate negative examples during proof search
+and try to bootstrap the model carefully. Alternatively, when working in a narrow domain, we can
+leverage domain-specific knowledge to evaluate proof goals (more on domain-specific provers later).
+Proof search is important, but it alone does not solve theorem proving. Unlike Go, a fundamental
+challenge in theorem proving is a discrete, infinite action space whose structure is not fully understood.
+This unbounded nature makes it difficult for models to generate effective actions through supervised
+learning or exploration via reinforcement learning. Proof search cannot succeed if the model cannot
+produce high-quality actions in the first place. Many believe that mathematics requires creativity, and
+in the context of theorem proving, creativity can manifest as actions exceeding the current model’s
+3
+
+This is largely speculative, as there is limited public information about the internals of o1.
+
+15
+
+capabilities, akin to the “divine move (神之一手)”—a legendary concept in Go. We would not expect
+to find them if the action space were an infinite, unstructured list. Fortunately, mathematics is highly
+structured, making it possible—though still challenging—to find the divine moves [212]. In the
+remainder of this subsection, we will explore several ways to leverage structures in mathematics,
+including hierarchies, abstractions, external knowledge, and domain-specific knowledge.
+How to exploit hierarchies in theorem proving?
+• Decomposing large, high-level proof goals into smaller goals progressively.
+
+Exploiting Hierarchies in Theorem Proving. Theorem proving can benefit from exploiting the
+natural hierarchies that organize mathematical results: Big theorems follow from smaller lemmas,
+and even those lemmas can be thought of as progressively accomplishing smaller sub-goals during the
+proof, until each goal is small enough to be “obvious” in informal proofs, or closed in a single step in
+a proof assistant. Several existing theorem proving systems attempted to exploit this hierarchy. For
+example, Draft, Sketch, and Prove (DSP) [81] used an informal proof (written by LLMs or humans)
+to obtain a formal “proof sketch”—a skeleton of the formal proof with “holes”, i.e., open goals left
+unproven, which yields a hierarchical structure for the formal proof. However, even a single open goal
+in the proof sketch might require significant effort to prove. POETRY [213] proposed to recursively
+decompose proof goals using an LLM. It verifies that each of the intermediate decompositions is valid:
+When a larger proof goal is decomposed into several smaller goals, it must be provable, assuming the
+smaller goals can be proved. On another use of hierarchy, LEGO-prover [127] proposes separate,
+potentially helpful lemmas, that it tries to prove first when it fails to prove a given theorem directly.
+While these works have begun to exploit the potential of hierarchical decomposition, it is still a
+significant challenge to decompose realistic high-level goals (or sometimes even individual informal
+proof steps) with the current capabilities of LLMs. Ideally, we would like humans to be able to
+provide high-level targets, and let AI do the work of progressively closing the gaps between what is
+currently known (e.g., the current proof state, or the existing library) and what it needs to achieve.
+How to learn mathematical abstractions?
+• Learning to construct new definitions, lemmas, and tactics in full-fledged proof assistants.
+
+Learning Mathematical Abstractions. While learning mathematics, humans can learn progressively more sophisticated mathematical abstractions. We start learning and operating on natural
+numbers by counting; years later, those operations show up in solving equations, but don’t require as
+much attention anymore. Later on, even solving entire systems of equations becomes the simplest step
+in the context of harder problems. One research challenge is how to allow machines to progressively
+construct these abstractions. In interactive theorem provers, these abstractions are encapsulated in
+new definitions, lemmas, and tactics—these encode proof strategies that are helpful in a particular
+domain or kind of proof goal. In principle, these forms of abstraction aren’t essential for formally
+representing mathematics, since what they do can always be repeated inline in a given context. Yet,
+progressively developing new abstractions is central to the human practice of mathematics.
+Most theorem proving systems focus on taking in a set of definitions, lemmas, and tactics, leveraging
+those to prove new theorems. However, several recent lines of research have proposed methods for
+learning abstractions. The interactive theorem proving community has developed several methods
+for lemma synthesis [214], typically with the goal of helping a user prove a particular theorem
+interactively [215]. In AI for mathematics, LEGO-Prover recently used LLMs to propose and prove
+new lemmas that also get added to its library, helping it prove further theorems. Lemma mining from
+existing proof corpora has also been explored, such as in HOL Light [216] and Metamath [217]:
+these lemmas, not explicitly factored out by humans, are still useful for automation. On learning
+tactics, Peano [128] and LEMMA [218] have proposed to learn simple proof strategies from an
+agent’s own solutions to past mathematical problems, in a bootstrapping fashion. These so far have
+been demonstrated only in simpler formal systems, and it is still an open challenge to synthesize
+entirely new tactics in full-fledged formal theorem proving languages.
+16
+
+How to utilize existing mathematical knowledge?
+• Tailored retrievers for formal mathematical reasoning.
+• Handling dynamically growing knowledge bases.
+Incorporating Information from Knowledge Bases. Another direction is to explicitly incorporate
+knowledge from databases of pre-existing lemmas and definitions. To some extent, LLMs used in
+math reasoning tasks are repositories of mathematical knowledge. However, some of the knowledge
+relevant to proofs may not be represented in the LLM’s pretraining data; even if this knowledge were
+present, it may not be easy to retrieve. Therefore, the use of an explicit retrieval mechanism can help.
+Among existing methods, ReProver [35] and COPRA [36] use retrieval mechanisms and achieve
+nontrivial performance gains from their use. These approaches use standard retrieval mechanisms,
+such as BM25 [219] and Dense Passage Retrieval [220]. It is possible that retrieval mechanisms
+more tailored to formal mathematics would perform better. For example, one can imagine developing
+retrieval methods based on structured, neurosymbolic embeddings that use vector representations of
+math facts while also allowing symbolic methods to filter out irrelevant facts.
+Another angle is to consider scenarios in which the external knowledge base grows over time.
+For example, one can imagine a mathematical reasoning system that decomposes high-level proof
+objectives into subgoals, caches a subset of these subgoals as modules, and appropriate modules for
+use in subsequent (or concurrent) proof efforts. Deciding which subgoals are “interesting” enough to
+be modularized in this way is an interesting challenge.
+How to reconcile the specialist and generalist approaches?
+• Generalist methods for identifying cross-domain connections.
+• Specialists for effectiveness in individual domains and collaboration with mathematicians.
+• Combining generalists and specialists, e.g., by equipping LLMs with domain-specific tools.
+Generalist vs. Specialist. Mathematics encompasses a wide range of subdomains, and so far, our
+discussions have largely remained domain-agnostic. In principle, most mathematical domains can
+be formalized in proof assistants such as Lean, enabling LLMs to perform tasks such as theorem
+proving and autoformalization. LLMs only need to process the data as plain text, without accounting
+for the specifics of each domain. This “generalist” approach has clear merits: it is generally
+applicable and facilitates knowledge sharing across domains. Modern mathematics is too vast for any
+individual to master everything. LLMs, however, with massive training data, can easily surpass human
+mathematicians in terms of breadth of knowledge. Numerous historical mathematical breakthroughs
+resulted from uncovering connections between seemingly unrelated subjects. For example, Wiles’s
+proof of Fermat’s Last Theorem [221] emerged from identifying connections between elliptic curves
+and modular forms. In the long term, it is desirable to have LLM-powered generalist AI to augment
+human mathematicians in identifying such cross-domain connections.
+However, each mathematical domain possesses its own idiosyncrasies and unique techniques. The
+generalist approach risks missing the opportunity to exploit these domain-specific insights. Many
+AI4Math systems are specialists in a particular domain. A notable example is AlphaGeometry [5],
+which specializes in proving Euclidean geometry theorems in math olympiads. It consists of three
+key components: (1) an algorithm that generates synthetic theorems and proofs; (2) a symbolic
+reasoning engine for deducing basic geometric properties; and (3) a Transformer model for introducing
+auxiliary constructions (points, lines, or circles not present in the original problem). Each component
+is designed specifically for 2D Euclidean geometry and leverages domain knowledge to achieve
+efficiency. While some high-level ideas in AlphaGeometry could potentially be applied to other
+domains, adapting the entire system would require substantial redesign.
+Specialists like AlphaGeometry are highly effective in their domains, often solving problems that
+are currently challenging to address in a fully general manner. These systems leverage domain
+knowledge in various ways, e.g., for proof automation, evaluation, finding counterexamples, or
+numerical computation [82, 94, 222, 223]. Building specialists for other mathematical domains will
+17
+
+continue to be a fruitful research direction, particularly for collaborating with mathematicians who
+want to use AI for their domain of interest (Sec. 2.3). In addition, narrow domains offer a rich set of
+controllable tasks and environments [198] for investigating the reasoning capabilities of AI models.
+The Bitter Lesson [200] stresses the great power of general-purpose methods, and AI researchers
+always strive for generality. Even when designing specialists, we value insights that have the potential
+to generalize. Despite this, we anticipate that AI math specialists will coexist with generalists in the
+foreseeable future. An exciting avenue lies in combining the two, such as by equipping a general
+LLM with domain-specific algorithms as tools. Ultimately, AI might become powerful enough to
+learn and exploit the unique characteristics of each domain in a universal way.
+4.3
+
+Tools for Assisting Human Mathematicians
+How can AI better assist humans in formal mathematics?
+
+• Resources, incentives, and engineering efforts to improve usability and user-friendliness.
+• Behavioral studies of how mathematicians work with formal tools.
+• Tools that enable large, distributed collaboration.
+While improving performance on standardized benchmarks is a means to coordinate efforts and
+measure progress in AI, many significant challenges only arise when trying to build tools that
+integrate with the workflow of mathematicians using proof assistants. Working mathematicians often
+report that the bottleneck for the adoption of tools, rather than technical features, is their usability
+and user-friendliness [224, 225]. To productively integrate AI tools for assisting mathematicians,
+the field can drastically benefit from behavioral studies of mathematicians working with formal
+tools in an ecological fashion. We note that the Human-Computer Interaction and Programming
+Languages communities have both collaborated in such studies for users of regular programming
+languages, leading to insights into how human programmers learn and conceptualize their tools [226],
+their confusions and challenges, and ultimately how to improve these tools and the way we teach
+them [227]. We envision that many methodologies from such work can be transported to proof
+assistants, ensuring that the tools we build serve the needs of human mathematicians.
+Besides aiding the workflows of individuals, one key advantage of proof assistants that has been
+highlighted is that they enable large-scale collaboration among mathematicians [224, 228]. Tools
+such as Lean Blueprints [229] allow large mathematical projects to be conceptually broken down into
+modular components, and each of those can be worked out independently. Trust in other’s work, which
+traditionally has either required personal trust or understanding and checking all of their work, is now
+facilitated by a formal proof checker. These tools are likely to be just a first generation of what formal
+proof assistants can provide for collaboration in mathematics. In the future, collaboration might
+happen between both humans and computers in a distributed fashion [228]; AI agents might make
+autonomous contributions to human projects, and vice-versa, mediated by formal tools that guarantee
+correctness. This vision can likely borrow from previous experiences in distributed, collaborative
+computing platforms from other fields, like Folding@Home [230], where anyone can contribute
+computing power to protein folding. The same is possible for proving mathematical theorems.
+4.4
+
+Formal Verification and Verified Generation
+How can AI assist humans in developing correct and secure software?
+
+• Incorporating formal methods into AI-aided system design and implementation.
+• Enhancing AI capabilities for formal software and hardware verification.
+• Coupling AI-based generation and formal verification.
+In alignment with our stand for AI4Math, we envision a growing necessity for developing formal
+reasoning techniques for AI-based software and hardware generation. These techniques can provide
+developers with assurance on the correctness and security of generated artifacts—an indispensable
+step for deployment, which currently often requires significant manual effort. While syntactical
+18
+
+correctness can be guaranteed by constrained decoding [231, 232], ensuring other semantic properties,
+such as those validated by static analysis and compilers, remains an open challenge. Moreover,
+formal reasoning can assist programmers in understanding AI-generated code that they did not write
+themselves. Recent research demonstrates this through the live demonstration of runtime values [233].
+It is a promising direction to explore the use of other kinds of formal methods in this context.
+Formal verification bears some resemblance to the research mathematics setting but also poses unique
+challenges. For example, a necessary but challenging step for formal verification is encoding the
+target system semantics and the correctness requirements in the proof assistant. This process is akin
+to formalization of informal mathematics [37]; however, while statements in mathematics research
+tend to assert properties of established mathematical objects, theorems in formal verification typically
+concern bespoke procedures and datatypes. Also, proofs in formal verification tend to be more
+repetitive and heavy on case-splits and inductive reasoning about recursive functions and datatypes.
+Finally, unlike statements in mathematics research, real-world software and hardware systems are
+characterized by large codebases and frequent changes. For instance, the verification of the seL4 [46]
+operating system kernel consists of about 200,000 lines of specifications and proofs in Isabelle.
+Verification of these systems requires not only theorem proving but also rigorous management of
+specifications and proofs [142]. An exciting yet underexplored direction is leveraging AI’s strong
+capabilities in code and mathematics to enhance the entire process of proof engineering [142].
+It is natural to couple formal verification and AI-based generation into approaches that simultaneously
+generate code (or designs), formal specifications (i.e., pre-/post-conditions, loop invariants, and helper
+assertions), and proofs. Given these generated artifacts, a program verifier or a theorem prover can
+be called to check if the code is consistent with the specifications and proofs. This approach has
+been explored in recent research [168, 234–236] and holds great potential in reducing verification
+efforts and enhancing software and hardware reliability. However, a key challenge is ensuring the
+trustworthiness of the generated specifications—that they are neither too strong nor too weak and
+accurately reflect developers’ intent.
+
+5
+
+Milestones and Success Measures
+
+Having outlined directions for advancing this field, a key question is: how can we effectively measure
+progress? Inspired by the levels of automation for self-driving cars [237], we propose a framework for
+categorizing AI’s capabilities in formal mathematical reasoning. Focusing on individual areas such
+as theorem proving and autoformalization, we define various capability levels and review existing
+benchmarks for evaluation. Existing benchmarks fall short when it comes to evaluating higher-level
+capabilities, particularly in nascent areas like conjecturing. To address these gaps, we highlight the
+pressing need for new benchmarks and, in many cases, new evaluation methodologies.
+5.1
+
+Theorem Proving
+
+Table 1: Theorem proving: capability levels and benchmarks for evaluation.
+Level
+
+Capability
+
+Evaluation and benchmarks
+
+0
+
+Checking formal proofs
+
+Achieved by modern proof assistants
+
+1
+
+Assisting humans to develop proofs by suggesting definitions, lemmas, proof steps, etc.
+
+Human-centered evaluation
+
+2
+
+Human-implemented tactics for automating
+domain-specific proof goals
+
+Domain-specific benchmarks
+
+3
+
+Proving simple theorems automatically in a
+domain-general fashion
+
+CoqGym [33], LeanDojo [35], MiniF2F [208],
+PutnamBench [209], TPTP [238], FIMO [239]
+
+4
+
+Contributing to formalization projects autonomously
+
+New benchmarks of code and metadata from
+GitHub, similar to SWE-bench [240]
+
+5
+
+Solving problems and discovering new math beyond the human level
+
+New benchmarks and evaluation methodology
+for unknown territories
+
+19
+
+Most of the current effort in AI for formal mathematics has been centered around automated theorem
+proving. Here, given a theorem, we want AI to produce a proof. Formal systems, such as Lean, offer
+an immense advantage to pose this problem, since once a proof is found, it is guaranteed to be correct,
+even if it might be difficult to parse by humans. We now discuss milestones and benchmarks in AI
+for formal theorem proving (Table 1).
+The most basic capability level (Level 0) is simply recognizing a correct formal proof. It is
+already present in systems such as Lean [24, 25], Coq [21], Isabelle [20], Agda [241], and many
+others, and can be obtained from a wide range of logical foundations. Though proof checking is
+essentially a solved problem for formal proofs, it can still be incredibly challenging to fully formalize
+even existing, well-understood informal proofs, to the level where they can be mechanically verified
+by a formal system. Human mathematicians, in contrast, are able to evaluate incomplete, “hand-wavy”
+arguments, often being able to find flaws and point out counterexamples even in the absence of a
+complete proof. Thus, even our proof checking systems can still be improved in this direction by
+requiring less effort from the user and putting more responsibility on the verifier. We currently do
+not have a good benchmark for the verification of incomplete, high-level proofs. Since these proofs
+often have large gaps that are left unwritten, checking them requires being able to fill those gaps,
+which is generally equivalent to the full problem of producing proofs (which the next capability levels
+are about). For benchmarking progress in formalizing mathematics, one folkloric standard used to
+compare different proof assistants is Freek Wiedijk’s list [242] of one hundred theorems. As of today,
+all theorems in the list have already been formalized (by humans) in at least one proof assistant.
+Moving beyond giving feedback on proof correctness, we can think of varying levels of systems
+that can help humans develop proofs. Level 1 would be to suggest potentially useful pieces of
+data, without attempting to write proofs yet. Here we include library search engines, such as
+Moogle [243], Loogle [244], and LeanSearch [245], which can find useful theorems or definitions, or
+“copilots” [43, 246] that can generate contextual completions interactively. One common use case is
+to search for relevant definitions from the current goal and see what is already known about those
+(e.g., see theorems involving the sin function). These tools can be highly helpful, though the main
+job of deciding what to search for and how to develop the proof is still a human responsibility.
+Capability Level 2 and above contain systems that generate proofs, either fully or partially. The
+most basic level of proof automation is (human-implemented) tactics: domain-specific procedures
+that are capable of automating certain classes of proofs, often serving as simpler steps in larger proofs.
+An example would be a tactic such as omega in Lean and Coq, which can automatically solve a large
+class of equality and inequality proof goals, or hammer tactics [247], which outsource the current
+proof goal to an external (most commonly first-order) automated theorem prover. While limited in
+domain, these procedures can already lower the burden on human users to formalize results. Still, up
+to this level, no learning-based system is involved: this level of automation mostly reflects the human
+ingenuity required to engineer domain-specific methods for producing proofs.
+At Level 3, we include systems that can automatically prove theorems in a domain-general
+fashion, albeit still limited to simple theorems. This encompasses most current neural theorem
+provers [35, 213, 222]: current systems are typically trained on human-written proofs, and can
+generally be applied to any domain. Several of the most recent benchmarks in neural theorem proving
+target this level of capability: CoqGym [33], LeanDojo [35], MiniF2F [208], PutnamBench [209],
+TPTP [238] and FIMO [239] are prominent examples of such evaluations. However, in practice, we
+are still limited to relatively simple proofs, typically not the most time-consuming ones in the context
+of a larger project. Moreover, current systems generally assume a static library of definitions and
+previous lemmas, and they target well-posed statements (in fact, in these evaluation benchmarks, we
+know all the statements to be true, since humans have already proved them). These systems can still
+be helpful by proving technical lemmas or closing gaps in larger proofs.
+Level 3 is the last capability level covered by existing evaluations. One level above, we have all
+the activities that human mathematicians engage in while developing formalization projects. These
+go much beyond proving lemmas that are given to them, as evaluated in neural theorem proving
+benchmarks. In a new formalization, a large part of the effort lies in choosing how to formally describe
+the domain of interest in the first place: what definitions to use, and how to break down the main
+
+20
+
+results of interest into sufficiently small lemmas.4 These activities happen at the formal and informal
+levels simultaneously: for instance, in Lean, mathematicians have been using Blueprints [229] as a
+way to structure projects, divide up the work, and generally reason about how a large result might be
+broken down into manageable components. A system of capability Level 4 should be able to plan
+and execute formalization projects autonomously, breaking down larger results, stating new
+definitions and lemmas, and potentially exploring different alternatives as the project develops.
+This would already significantly accelerate progress in formal mathematics. For instance, we can
+expect recent papers to be formalized by AI at this stage. To evaluate Level 4 systems, it would be
+helpful to have new benchmarks constructed from the GitHub metadata, such as issues and commits,
+of real-world formalization projects. SWE-bench [240], a benchmark from software engineering,
+offers a model, but similar benchmarks for formal mathematics are yet to be created.
+Finally, we might one day expect to have systems that go beyond what human mathematicians
+have been able to accomplish, solving existing open problems, or perhaps even formulating new
+interesting problems on their own. Currently, formal systems are typically used to formalize results
+that human mathematicians have first done informally. If one day AI becomes able to autonomously
+make mathematical discoveries, we can expect these discoveries to be made in a formal system.
+Otherwise, the cost of checking AI outputs will be too high, just as it currently is for verifying human
+mathematical proofs at the highest levels. Being able to solve problems beyond human level would
+constitute capability Level 5. While this seems categorically out of reach for any of the current AI
+systems, one fundamental challenge will be to be able to measure progress meaningfully towards this
+open-ended goal. A major difficulty with measuring progress towards mathematical discovery is that
+our current evaluations only test knowledge of current mathematics, while at this level we will want
+systems to be able to reason about new domains, which we ourselves might not know much about.
+5.2
+
+Verified Reasoning in Natural Language
+
+Table 2: Verified reasoning in natural language: capability levels and benchmarks for evaluation.
+Level
+
+Capability
+
+Evaluation and benchmarks
+
+0
+
+Stepwise natural language reasoning w/o verification
+
+GSM8K [15], AQuA [248]
+
+1
+
+Stepwise natural language reasoning with neural verification
+
+MATH [16], Fallacies [249], ProcessBench [65]
+
+2
+
+Tool-integrated reasoning using SymPy, NumPy, etc.
+
+MATH [16], AIMO Progress Prize [250]
+
+3
+
+Reasoning seamlessly in natural language and formal systems such as Lean
+
+New benchmarks for evaluating final answers and intermediate steps; problems difficult to formalize, e.g., IMO combinatorics
+
+4
+
+Complex mathematical reasoning and planning in
+real-world applications
+
+Downstream applications such as travel planning and calendar scheduling
+
+Theorem proving requires both the problem and the solution to be fully formalized, which can
+be overly rigid for many real-world applications. Even highly structured domains, such as IMO,
+have problems that are difficult to formalize (e.g., geometry and combinatorics problems), let alone
+everyday applications. How can we enable complex, rigorous reasoning without formalizing every
+aspect of a problem? A promising direction is to use AI to reason seamlessly between formal systems
+and natural language. Such AI should be able to conduct logical reasoning, perform numerical
+calculations, and generate solutions in a way that is both rigorous and human-understandable. While
+the resulting reasoning chain may not constitute a formal proof, it could still include parts that can be
+verified semi-automatically, potentially under human oversight. We refer to this capability as verified
+reasoning in natural language and propose a framework for understanding its varying levels (Table 2).
+Level 0 involves generating step-by-step reasoning in natural language without verification.
+The prevalent approach is to combine LLMs with chain-of-thought [12], but it frequently generates
+reasoning steps that are brittle, incorrect, or unfaithful [61, 251, 252]. To address these limitations,
+4
+Many definitions that are mathematically equivalent turn out to be very different in how easily formalizable
+they are in formal systems (e.g., formalizing real numbers as Cauchy sequences turns out to be easier in type
+theory than as Dedekind cuts, even though mathematically the theory of reals can be developed either way).
+
+21
+
+Level 1 capability introduces verification alongside generation, requiring AI to assess the
+correctness of reasoning steps. This verification can be done by the same model that generates
+the reasoning [253] or by a different model [136]. The result of verification can be used to improve
+reasoning. For example, we can generate many reasoning chains and use the verifier to select the best
+one [15]; the model can iteratively correct its own reasoning [254]; or it can search for solutions step
+by step, maximizing a correctness score produced by the verifier [137, 203].
+Many existing benchmarks can be useful for evaluating Level 0 and Level 1, e.g., math word problems
+in GSM8K [15] and AQuA [248], as well as commonsense reasoning and question answering benchmarks like CommonSenseQA [255] and HotpotQA [256]. Level 1 particularly requires benchmarks
+that are challenging for autoregressive generation. For instance, the MATH dataset [16] includes
+competition-level math problems that require complex reasoning and planning, where the verification
+capability in Level 1 becomes essential [136]. In addition to evaluating Level 1 indirectly through the
+final answer accuracy, it is valuable to directly measure whether the model can identify reasoning
+errors; Fallacies [249] and ProcessBench [65] are initial steps in that direction.
+One limitation with standard benchmarks like MATH is data contamination [257], which may have
+partially contributed to LLMs’ impressive, near-saturating performance. While data contamination
+is widely recognized, it is difficult to measure or fully eliminate its impact on evaluation outcomes.
+To mitigate data contamination, it is useful to dynamically generate benchmarks in a controllable
+manner. For example, the GSM-Symbolic [187] benchmark is generated by substituting various
+numbers into GSM8K-style templates. It effectively reveals reasoning flaws in current LLMs, calling
+into question whether they have achieved Level 0 and Level 1 robustly. Another potential solution to
+data contamination, adopted by FrontierMath [57] and the AIMO Progress Prize [6], is to keep the
+benchmark private and allows the model to access it during evaluation via a secure mechanism.
+Moving to higher capability levels, we aim to make reasoning more rigorous and trustworthy.
+Relying solely on neural networks for verification becomes insufficient due to their brittleness
+and lack of interpretability. To address this limitation, the model can generate reasoning that
+can be partially verified by external tools. These tools, built on well-established algorithms and
+thoroughly tested implementations, offer greater interpretability and trustworthiness than neural
+networks alone. In Level 2, models can leverage external tools to perform computation that
+neural networks struggle to learn reliably, such as numerical calculations with NumPy [258] and
+symbol manipulation with SymPy [56]. Many recent math LLMs adopt this approach (called toolintegrated reasoning in Sec. 2.1). Their performance can be evaluated on math problems requiring
+intricate computations, such as those in the MATH dataset or AIME.
+Tools like NumPy and SymPy are effective for computation but not suited for reasoning. In Level
+3, models should be able to use external tools to perform rigorous logical reasoning. For
+instance, when generating reasoning chains, the model could interleave natural language with
+formal reasoning steps in Lean. Unlike theorem proving, where theorem statements are predefined,
+here the model dynamically generates the “statements” during inference. Furthermore, instead of
+formalizing the entire problem, the model can selectively determine which parts of reasoning to
+process using formal systems versus natural language, seamlessly integrating them to construct the
+solution. To our knowledge, no existing systems has achieved this kind of integration. Current
+approaches [83, 119, 138, 259] attempt to autoformalize the entire problem and apply theorem
+proving techniques, which is challenging for problems that cannot be fully formalized.
+With recent advances in tool-using LLM agents [14], the seamless integration of formal and informal
+reasoning may soon be within reach. However, new benchmarks are required to evaluate this
+capability. Unlike current benchmarks like MATH, these new benchmarks should evaluate not only
+the final answer but also the quality of reasoning that led to it. Additionally, they should include math
+problems that resist complete formalization. A promising candidate for such a benchmark could be
+IMO in the same format as human contestants,5 aligning with the evaluation protocol in the AIMO
+Prize [6]. During evaluation, human graders can bypass the formal reasoning steps and focus on
+checking the natural language reasoning and their interface with formal steps. Beyond correctness,
+we could also use verification effort as an additional metric: an ideal solution would be both correct
+and easily verifiable with minimal human effort.
+5
+
+Instead of the original IMO problems, AlphaGeometry [5] and AlphaProof [7] used problems manually
+formalized by human experts, which did not include combinatorics problems.
+
+22
+
+Real-world applications that involve complex reasoning are often not purely mathematical problems,
+yet they contain significant mathematical components along with other components such as commonsense and human preferences. Level 4 requires AI to recognize the mathematics in everyday tasks
+and apply rigorous reasoning. For example, in scenarios like travel planning [192] or calendar
+scheduling [260], AI can potentially formulate these tasks as constraint satisfaction problems and
+solve them using appropriate solvers such as mixed-integer linear programming (MILP) solvers.
+Achieving this capability would open up a wide range of new AI applications.
+5.3
+
+Autoformalization
+Table 3: Autoformalization: capability levels and benchmarks for evaluation.
+
+Level
+
+Capability
+
+Evaluation and benchmarks
+
+0
+
+Representing knowledge in formal systems to
+support manual formalization
+
+Achieved by modern proof assistants
+
+1
+
+Generating autoformalization candidates and
+collecting human feedback
+
+Infrastructure to collect and store human feedback
+
+2
+
+Robust and faithful translations between informal and formal
+
+ProofNet [114], Herald [261]; automatic evaluation of formal statements by equivalence checking
+
+3
+
+Inferring missing information and flagging situations when a gap cannot be filled
+
+New benchmarks constructed from real-world formalization projects
+
+4
+
+Self-correcting erroneous or inconsistent inputs by understanding human intentions
+
+5
+
+Proposing novel definitions that can reduce
+proof complexity
+
+Autoformalization involves automatic translation between informal and formal representation of
+mathematical knowledge. In Table 3, the most basic capability level (Level 0) is to store (i.e.,
+encode and check) formal knowledge so that manual formalization is viable with enough
+human effort. With the maturity of modern proof assistants, almost all mathematical proofs can be
+formally encoded and checked, thanks to the expressiveness of the underlying logic of those systems.
+Admittedly, some proofs involving diagrams or higher-dimensional structures could be challenging
+to formalize in existing systems, and may even require further study in alternative foundations, e.g.,
+homotopy type theory [262]. We argue that most proofs with an axiomatic foundation can be tweaked
+into existing formal frameworks (the results may not look as natural as the informal proofs). With a
+formal encoding being viable, it is a matter of human efforts to transform the knowledge in different
+representations; therefore we consider this level to be mostly achieved.
+At Level 1, models should generate reasonable candidates for auto-(in)formalization, supported
+by an infrastructure to continuously gather and store human feedback, enabling a virtuous
+feedback loop to improve model performance over time. Being exposed to both informal and
+formal knowledge, existing LLMs have already learned to align concepts and generate reasonable
+syntactical translation given formal/informal counterparts. However, what is mainly lacking at this
+level is a system to gather and store the feedback: humans might have interacted with the model to
+get the revised candidates and use them in a formal or informal setting (e.g., writing a paper), but
+neither the interaction process nor the end results (i.e., aligned informal-formal pairs) have been
+properly recorded. The Isabelle Parallel Corpus [263] has been an early attempt to build a non-static
+parallel corpus. The Formal Abstracts project [264], initiated by Tom Hales, aimed to link standard
+mathematical publications with a Lean-based formulation that includes the main theorems but omits
+their proofs. By focusing solely on the statements, this project offered a potential framework for
+aligning contemporary mathematical statements with formalized counterparts. Unfortunately, the
+Formal Abstracts project did not gain traction for various reasons. As a less ambitious but more
+practical framework, Lean Blueprint [229] focuses on individual formalization projects, allowing users
+to create human-readable “blueprints” that can later be linked to Lean formalizations. This approach
+has been successfully applied in high-profile projects such as the Liquid Tensor Experiment [41]
+and the formalization of the Polynomial Freiman-Ruzsa conjecture.6 However, Lean Blueprint is
+6
+
+https://teorth.github.io/pfr
+
+23
+
+used primarily as a one-off project planning tool, and informal proofs are not synchronized with their
+formal counterparts after the final formal proofs are integrated into Lean’s Mathlib. In short, current
+autoformalization pipelines are not yet mature enough for daily use. Even when autoformalization
+techniques are applied in a project (e.g., in Lean Blueprint), the results are recorded statically and
+in various formats (e.g., briefly mentioned in the comment sections of formal proofs), making them
+difficult to collect and prone to desynchronization as the formal statements evolve. A milestone we
+envision for this level is a centralized system that enables automatic translation between informal
+statements and, ideally, multiple formal representations. This system would allow users to submit
+revised results, and it would keep informal-formal pairs synchronized as the formal statements
+continue to develop.
+Using the aligned corpus collected in Level 1, AI models at Level 2 should be capable of performing
+robust and faithful translations between informal and formal statements, approaching humanlevel accuracy. The main obstacle anticipated at this level is the automatic evaluation of translated
+(formal) statements. Early experiments have shown a misalignment between automatic metrics, such
+as parsing rate and BLEU scores, and human evaluations. Fortunately, recent work incorporating
+symbolic equivalence [82, 181, 265] may help establish a standard automatic metric that aligns better
+with human preferences for evaluating translated formal statements. Model performance at this level
+could be assessed using human-curated benchmarks, including challenges from the ICML 2024
+Math-AI workshop [266, 267], ProofNet [114], Herald [261], and Con-NF [265].
+Levels 3, 4, and 5 go beyond pattern matching and focus more on reasoning. Level 3 models should
+be capable of inferring missing information when autoformalizing statements and proofs, and
+can flag situations where an information gap cannot be filled. When formalizing mathematics, we
+frequently deal with underspecified problems with missing or implicit assumptions in mathematical
+statements and hand-waived steps in proofs. Bridging these information gaps requires robust theorem
+proving and reasoning capabilities in the AI models: Proof gaps may be addressed through neural or
+symbolic theorem proving (Sec. 5.1), while missing assumptions can be resolved using abductive
+reasoning or counterexamples [268, 269]. The main challenge at this level is for the models to identify
+information gaps—such as assessing the likelihood that a statement is provable or can be adjusted—
+even when the reasoning model cannot bridge the gap immediately. This challenge is closely related
+to conjecturing (see Sec. 5.4) and has been examined briefly in some early explorations [270]. At
+Level 4, AI models should be able to self-correct when they encounter erroneous or inconsistent
+inputs. At this stage, the autoformalization model focuses more on capturing human intentions and
+may rely on its own self-consistency to eliminate errors. Advancements here will be closely linked
+to natural language reasoning (Sec. 5.2). Finally, at Level 5, AI models should be able to invent
+novel mathematical definitions that can potentially reduce proof complexity. At this level, an AI
+model is closer to a “theory builder” that can reshape the proving process through better abstraction
+or concept formulation. For instance, filters (i.e., a set of sets satisfying certain properties) are rarely
+taught in standard math curriculum. However, as a convenient abstraction in mathematical analysis,
+they have become a widely adopted concept for formalizing limits in various proof systems, including
+Isabelle [271], Lean [42], HOL Light [272], and Coq [273]. Automatically devising definitions like
+filters is what we hope an AI model can achieve at this stage.
+5.4
+
+Conjecturing
+Table 4: Conjecturing: capability levels and benchmarks for evaluation.
+
+Level
+
+Capability
+
+Evaluation and benchmarks
+
+0
+
+Generating conjectures useful for proving a target theorem
+
+Existing theorem proving benchmarks
+
+1
+
+Generating conjectures useful for proving theorems in a
+particular domain
+
+2
+
+Understanding interestingness computationally and generating interesting conjectures in new mathematical domains
+
+New benchmarks and evaluation
+methodology for unknown territories
+
+While proving theorems is a significant part of doing mathematics, a task that necessarily comes
+before proving a statement is coming up with the statement to prove in the first place. At that
+stage (before a proof), such a statement is a conjecture, and we hope that AI agents might be able
+to formulate conjectures by themselves. Conjectures must not only be novel in a formal sense
+24
+
+(e.g., different from all those made before), since it is possible to systematically generate new but
+uninteresting or unimportant conjectures. Interesting conjectures, such as Fermat’s last theorem or
+the Kepler conjecture [274], can often drive the work of mathematicians for centuries, as the pursuit
+of a proof or disproof unravels. But one fundamental challenge here is exactly in understanding
+what interesting means in this context, and finding ways to evaluate it. Tackling this challenge
+would answer questions such as: How do we computationally define interestingness? What is the
+relationship between interestingness and usefulness? How does interestingness change over time,
+e.g., as special cases are proved or analogous results in other domains are disproved?
+In Table 4, Level 0 would be to formulate conjectures in the context of a problem, or a particular
+target result. These conjectures might be lemmas that, if proved, would help in proving a larger
+theorem of interest. This is related to how LEGO-Prover [127] proposes lemmas for itself to attempt
+as helpers in the context of the current theorem. These simpler, targeted conjectures can be evaluated
+in the extent that they facilitate proving the theorems they were meant to support.
+More generally, at Level 1, we might expect a conjecturing agent to be able to formulate
+conjectures in a given domain, without necessarily aiming at a particular theorem [275]. While
+difficult to evaluate directly, these conjectures might still be evaluated in (a) how often the system can
+prove those conjectures and (b) whether the proofs of those conjectures, when found, serve as useful
+training data for proving other theorems in that domain. Minimo [172] is a system that implements
+this conjecturing-proving loop, showing that such conjectures can be generated only from the axioms
+of a given arbitrary domain, their difficulty can be targeted by a language model attempting to
+generate increasingly harder but provable conjectures, and that training on them improves the agent at
+unseen theorems. This paradigm has the potential to allow us to train systems for domains that have
+little or no human data available, which will necessarily be the case in new mathematical domains.
+However, this so far has only been shown to be practical in relatively small domains (on the order of
+a few dozens of axioms). It is still an open challenge to do this at the level of large libraries, such as
+Lean’s mathlib, and to maintain steady progress after many iterations of conjecturing (Minimo was
+tested with up to 5, and starts to saturate).
+Going even beyond that frontier, future AI systems might be able to formulate conjectures that go
+beyond current domains of mathematics. Some expect that a major milestone for future AI systems
+will be to both conjecture and prove a high-level, interesting mathematical result. While that goes far
+beyond current systems, such an achievement would mark an era where AIs work side-by-side with
+human mathematicians in expanding our collective knowledge of mathematics.
+5.5
+
+Formal Verification and Verified Generation
+
+Table 5: Formal verification and verified generation: capability levels and benchmarks for evaluation.
+Level
+
+Capability
+
+Evaluation and benchmarks
+
+0
+
+Code generation without verification
+
+HumanEval [164], MBPP [276], VerilogEval [277]
+
+1
+
+Verifying simple properties of small programs
+and designs
+
+miniCodeProps [278];
+HumanEval/MBPPVerus [236]; new benchmarks for generating
+formal specifications and verifiable code
+
+2
+
+Verifying and synthesizing entire projects with
+complex functional and security properties
+
+Selene [279]
+
+3
+
+Proof and system maintenance
+
+Benchmarks constructed from the change history
+(GitHub metadata) of verified systems
+
+4
+
+Helping users generate, explain, and debug
+formal specifications
+
+As mentioned previously, the challenges in applying AI to formal verification and verified system
+generation are subtly different from those in the research mathematics setting. It is natural to define a
+ladder of capabilities for this context based on the sophistication of the generation and verification
+tasks (Table 5). In capability Level 1, AI can handle small-scale verification tasks, which involve
+verifying small blocks of code, or small designs, against relatively simple properties, and synthesize small pieces of verified code. This stage is critical as it sets the foundation for understanding
+25
+
+how AI can be scaled up to real-world system verification efforts. Several existing benchmarks
+have targeted verification at this capability level [160, 236, 278]. For instance, miniCodeProps [278]
+considers code properties that are viewed as a “minimum level of competency" for automated neural
+theorem provers. However, GPT-4o can only prove around 35% of the properties. Therefore, there is
+significant room for improvement in AI’s ability to handle even these fundamental tasks. To the best
+of our knowledge, there is no existing high-quality benchmark for generating verifiable code together
+with the formal specification even at Level 0.
+As we move to larger-scale systems, the complexity of both the code and the specifications increases
+significantly. In Level 2, AI should provide assistance in verifying and synthesizing entire
+projects and addressing complex properties. Examples of such properties include preventing memory safety issues [280], enforcing access control [46], and proving the equivalence of programs [281].
+These efforts can improve the automation of various security-related tasks, such as C-to-Rust translation [282] and reverse engineering [283]. Achieving this level of verification involves decomposing
+large systems into smaller, verifiable components, a task that is currently performed by humans [148].
+Advanced AI techniques are required to tackle this challenge, such as agentic approaches [36, 192]
+that involve planning and problem-solving to navigate the intricate dependencies and interactions
+within large codebases and designs. Benchmarks for this level should incorporate project-level
+context, similar to repository-level code generation [284]. This can be achieved by repurposing
+existing verified systems [47, 148] to create tasks for AI. A recent benchmark called Selene explores
+this direction using the extensive codebases of seL4 [279].
+System designs and implementations constantly evolve, and so must their proofs to ensure that the
+desired properties remain verified. At Level 3, AI systems are expected to go beyond generation
+to proof and system maintenance. When developers update the system or proof engineers decide
+to refactor proofs [285], AI at this capability level should provide assistance, reducing the manual
+efforts needed for verification even further. To effectively evaluate AI tools at this capability level,
+benchmarks can be constructed by leveraging the change history of verified systems [286]. These
+benchmarks should capture a variety of scenarios, including minor bug fixes, major feature additions,
+and comprehensive refactoring efforts. The AI must demonstrate proficiency not only in generating
+proofs at a repository-level context [287] but also in reasoning about code and proof changes [40].
+With Levels 1–3, AI systems possess the capabilities to generate and manage proofs, assuming
+the specifications expressing the properties that the generated artifacts must satisfy are provided.
+However, writing specifications is a significant challenge for formal verification, as it requires
+abstracting and converting user requirements into formal specification languages. In capability Level
+4, AI systems make another leap by aiding users in deriving formal specifications, including
+specification generation, explanation, and debugging. To benchmark specification assistance,
+we can again leverage verified codebases and designs, but instead of generating proofs and code
+given the specifications, we treat the code and proofs as ground truth and use them to evaluate
+specifications produced by the model. AI systems need strong natural language understanding to
+interpret user requirements and translate them into formal specifications. They should also have
+interactive capabilities to engage with users, offering suggestions and clarifications. Moreover, they
+should be able to validate specifications against known best practices and standards, ensuring they
+are robust and comprehensive.
+
+6
+
+Conclusion and Discussion
+
+In this position paper, we advocated for formal mathematical reasoning as a new frontier in AI. By
+grounding reasoning in formal systems like Lean, this approach enables the training and evaluation
+of AI models whose reasoning can be rigorously verified, which holds the potential to significantly
+advance fields such as mathematics and software verification, as well as applications that require
+complex and rigorous reasoning. The advent of large language models has created opportunities
+for formal mathematical reasoning in AI, marking an inflection point for the field. For key tasks
+such as theorem proving and autoformalization, we discussed recent advancements, future directions,
+and milestones for measuring progress. AI for formal mathematical reasoning is a nascent area that
+integrates insights from formal mathematics, programming languages, and machine learning. We
+hope this position paper can present coherent perspectives that unite previously fragmented efforts
+across these fields, fostering discussion, community building, and a clear roadmap for the future.
+26
+
+The narrative in this paper is rooted in the approach of AI and machine learning researchers, emphasizing general-purpose learning algorithms applied to well-defined tasks that can be automatically
+evaluated using benchmarks. While this paradigm has dominated AI research in recent decades,
+it has limitations. Mathematicians have explored many ways of using AI in their work, including
+brainstorming ideas and inspirations, writing assistance, and organizing or searching mathematical
+literature. Many of these use cases, however, resist straightforward evaluation through benchmarks or
+automated metrics. Even in areas like theorem proving—where automated evaluation is feasible—
+performance on benchmarks may not fully capture what human users find meaningful or helpful
+(Sec. 4.3). For example, benchmarks such as LeanDojo [35] and PutnamBench [209] often fail to
+measure how the prover performs on new and evolving formalization projects, such as formalizing the
+proof of Fermat’s Last Theorem [288]. This gap underscores the need for human-centered evaluation
+approaches that draw on insights from human-computer interaction and cognitive science [289, 290].
+
+Acknowledgements
+We gratefully acknowledge Jeremy Avigad, Albert Q. Jiang, Zhaoyu Li, Peter O’Hearn, Daniel
+Selsam, Armando Solar-Lezama, and Terence Tao for providing valuable feedback on an initial
+version of this paper.
+
+27
+
+References
+[1] Allen Newell and Herbert Simon. The logic theory machine–a complex information processing system.
+IRE Transactions on information theory, 1956. 1
+[2] Alfred North Whitehead and Bertrand Russell. Principia Mathematica. 1927. 1
+[3] OpenAI. GPT-4 technical report. arXiv preprint arXiv:2303.08774, 2023. 1, 4, 9
+[4] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix,
+Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard
+Grave, and Guillaume Lample. LLaMa: Open and efficient foundation language models. arXiv preprint
+arXiv:2302.13971, 2023. 1
+[5] Trieu H Trinh, Yuhuai Wu, Quoc V Le, He He, and Thang Luong. Solving olympiad geometry without
+human demonstrations. Nature, 2024. 1, 2, 12, 15, 17, 22
+[6] XTX Markets. AIMO Prize. https://aimoprize.com/, 2024. 1, 22
+[7] AlphaProof and AlphaGeometry teams.
+AI achieves silver-medal standard solving international mathematical olympiad problems.
+https://deepmind.google/discover/blog/
+ai-solves-imo-problems-at-silver-medal-level/, 2024. 1, 2, 3, 10, 13, 15, 22
+[8] Longhui Yu, Weisen Jiang, Han Shi, YU Jincheng, Zhengying Liu, Yu Zhang, James Kwok, Zhenguo
+Li, Adrian Weller, and Weiyang Liu. MetaMath: Bootstrap your own mathematical questions for large
+language models. In International Conference on Learning Representations (ICLR), 2024. 1, 3, 12
+[9] Xiang Yue, Xingwei Qu, Ge Zhang, Yao Fu, Wenhao Huang, Huan Sun, Yu Su, and Wenhu Chen.
+MAmmoTH: Building math generalist models through hybrid instruction tuning. In International
+Conference on Learning Representations (ICLR), 2024. 3
+[10] Zhangir Azerbayev, Hailey Schoelkopf, Keiran Paster, Marco Dos Santos, Stephen Marcus McAleer,
+Albert Q Jiang, Jia Deng, Stella Biderman, and Sean Welleck. Llemma: An open language model for
+mathematics. In International Conference on Learning Representations (ICLR), 2024. 3, 12
+[11] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Mingchuan Zhang, YK Li, Yu Wu,
+and Daya Guo. DeepSeekMath: Pushing the limits of mathematical reasoning in open language models.
+arXiv preprint arXiv:2402.03300, 2024. 1, 3
+[12] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed Chi, Quoc V Le,
+and Denny Zhou. Chain-of-thought prompting elicits reasoning in large language models. In Neural
+Information Processing Systems (NeurIPS), 2022. 1, 4, 14, 21
+[13] Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc V Le, Ed H Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. Self-consistency improves chain of thought reasoning in language models. In
+International Conference on Learning Representations (ICLR), 2023. 1
+[14] Zhibin Gou, Zhihong Shao, Yeyun Gong, Yelong Shen, Yujiu Yang, Minlie Huang, Nan Duan, and Weizhu
+Chen. ToRA: A tool-integrated reasoning agent for mathematical problem solving. In International
+Conference on Learning Representations (ICLR), 2024. 1, 3, 4, 22
+[15] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias
+Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. Training
+verifiers to solve math word problems. arXiv preprint arXiv:2110.14168, 2021. 1, 2, 3, 11, 21, 22
+[16] Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song,
+and Jacob Steinhardt. Measuring mathematical problem solving with the MATH dataset. In Neural
+Information Processing Systems (NeurIPS), Datasets and Benchmarks Track, 2021. 1, 3, 14, 21, 22
+[17] OpenAI.
+Learning to reason with LLMs.
+learning-to-reason-with-llms/, 2024. 2, 3, 15
+
+https://openai.com/index/
+
+[18] Jordan Hoffmann, Sebastian Borgeaud, Arthur Mensch, Elena Buchatskaya, Trevor Cai, Eliza Rutherford,
+Diego de Las Casas, Lisa Anne Hendricks, Johannes Welbl, Aidan Clark, et al. Training compute-optimal
+large language models. In Neural Information Processing Systems (NeurIPS), 2022. 2, 12, 14
+[19] Biao Zhang, Zhongtao Liu, Colin Cherry, and Orhan Firat. When scaling meets LLM finetuning: The
+effect of data, model and finetuning method. In International Conference on Learning Representations
+(ICLR), 2024. 2, 12, 14
+
+28
+
+[20] Tobias Nipkow, Markus Wenzel, and Lawrence C Paulson. Isabelle/HOL: a proof assistant for higherorder logic. 2002. 2, 5, 20
+[21] Bruno Barras, Samuel Boutin, Cristina Cornes, Judicaël Courant, Jean-Christophe Filliatre, Eduardo
+Gimenez, Hugo Herbelin, Gerard Huet, Cesar Munoz, Chetan Murthy, et al. The Coq proof assistant
+reference manual: Version 6.1. PhD thesis, Inria, 1997. 2, 5, 20
+[22] K Rustan M Leino. Dafny: An automatic program verifier for functional correctness. In International
+Conference on Logic for Programming Artificial Intelligence and Reasoning (LPAR), 2010. 2
+[23] Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke
+Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves
+to use tools. In Neural Information Processing Systems (NeurIPS), 2024. 2
+[24] Leonardo de Moura, Soonho Kong, Jeremy Avigad, Floris Van Doorn, and Jakob von Raumer. The Lean
+theorem prover (system description). In International Conference on Automated Deduction (CADE),
+2015. 2, 5, 6, 20
+[25] Leonardo de Moura and Sebastian Ullrich. The Lean 4 theorem prover and programming language. In
+International Conference on Automated Deduction (CADE), 2021. 2, 5, 6, 20
+[26] Josef Urban, Jiří Vyskočil, and Petr Štěpánek. MaLeCoP machine learning connection prover. In
+International Conference on Automated Reasoning with Analytic Tableaux and Related Methods, 2011. 2
+[27] Cezary Kaliszyk, Josef Urban, Henryk Michalewski, and Miroslav Olšák. Reinforcement learning of
+theorem proving. In Neural Information Processing Systems (NeurIPS), 2018.
+[28] Thibault Gauthier, Cezary Kaliszyk, Josef Urban, Ramana Kumar, and Michael Norrish. TacticToe:
+learning to prove with tactics. Journal of Automated Reasoning, 2021.
+[29] Geoffrey Irving, Christian Szegedy, Alexander A Alemi, Niklas Eén, François Chollet, and Josef Urban.
+DeepMath - deep sequence models for premise selection. In Neural Information Processing Systems
+(NeurIPS), 2016. 10
+[30] Cezary Kaliszyk, François Chollet, and Christian Szegedy. HolStep: A machine learning dataset for
+higher-order logic theorem proving. In International Conference on Learning Representations (ICLR),
+2017.
+[31] Sarah Loos, Geoffrey Irving, Christian Szegedy, and Cezary Kaliszyk. Deep Network Guided Proof
+Search. In International Conference on Logic for Programming, Artificial Intelligence and Reasoning
+(LPAR), 2017.
+[32] Daniel Huang, Prafulla Dhariwal, Dawn Song, and Ilya Sutskever. GamePad: A learning environment for
+theorem proving. In International Conference on Learning Representations (ICLR), 2019. 13
+[33] Kaiyu Yang and Jia Deng. Learning to prove theorems via interacting with proof assistants. In International Conference on Machine Learning (ICML), 2019. 2, 19, 20
+[34] Stanislas Polu and Ilya Sutskever. Generative language modeling for automated theorem proving. arXiv
+preprint arXiv:2009.03393, 2020. 2, 9, 14
+[35] Kaiyu Yang, Aidan Swope, Alex Gu, Rahul Chalamala, Peiyang Song, Shixing Yu, Saad Godil, Ryan
+Prenger, and Anima Anandkumar. LeanDojo: Theorem proving with retrieval-augmented language
+models. In Neural Information Processing Systems (NeurIPS), 2023. 2, 9, 10, 13, 14, 15, 17, 19, 20, 27
+[36] Amitayush Thakur, George Tsoukalas, Yeming Wen, Jimmy Xin, and Swarat Chaudhuri. An in-context
+learning agent for formal theorem-proving. In Conference on Language Modeling (COLM), 2024. 2, 9,
+10, 11, 13, 17, 26
+[37] Yuhuai Wu, Albert Jiang, Wenda Li, Markus Rabe, Charles Staats, Mateja Jamnik, and Christian Szegedy.
+Autoformalization with large language models. In Neural Information Processing Systems (NeurIPS),
+2022. 2, 9, 13, 14, 19
+[38] Albert Q. Jiang, Wenda Li, and Mateja Jamnik. Multi-language diversity benefits autoformalization, 2024.
+2, 9, 13
+[39] Huajian Xin, Daya Guo, Zhihong Shao, Zhizhou Ren, Qihao Zhu, Bo Liu, Chong Ruan, Wenda Li, and
+Xiaodan Liang. DeepSeek-Prover: Advancing theorem proving in LLMs through large-scale synthetic
+data. arXiv preprint arXiv:2405.14333, 2024. 2, 7, 9, 13, 15
+
+29
+
+[40] Emily First, Markus N Rabe, Talia Ringer, and Yuriy Brun. Baldur: Whole-proof generation and repair
+with large language models. In ACM Joint European Software Engineering Conference and Symposium
+on the Foundations of Software Engineering (ESEC/FSE), 2023. 2, 7, 9, 11, 15, 26
+[41] Mathlib Community. Completion of the liquid tensor experiment. https://leanprover-community.
+github.io/blog/posts/lte-final/, 2022. 2, 23
+[42] The mathlib community. The Lean mathematical library. In Certified Programs and Proofs (CPP), 2020.
+2, 6, 24
+[43] Peiyang Song, Kaiyu Yang, and Anima Anandkumar. Towards large language models as copilots for
+theorem proving in Lean. arXiv preprint arXiv: Arxiv-2404.12534, 2024. 3, 20
+[44] Zhaoyu Li, Jialiang Sun, Logan Murphy, Qidong Su, Zenan Li, Xian Zhang, Kaiyu Yang, and Xujie Si. A
+survey on deep learning for theorem proving. In Conference on Language Modeling (COLM), 2024. 3
+[45] Andrew W Appel. Verified software toolchain: (invited talk). In European Symposium on Programming,
+2011. 3
+[46] Gerwin Klein, Kevin Elphinstone, Gernot Heiser, June Andronick, David Cock, Philip Derrin, Dhammika
+Elkaduwe, Kai Engelhardt, Rafal Kolanski, Michael Norrish, Thomas Sewell, Harvey Tuch, and Simon
+Winwood. seL4: Formal verification of an OS kernel. In Symposium on Operating systems principles
+(SOSP), 2009. 11, 19, 26
+[47] Xavier Leroy, Sandrine Blazy, Daniel Kästner, Bernhard Schommer, Markus Pister, and Christian
+Ferdinand. CompCert-a formally verified optimizing compiler. In Embedded Real Time Software and
+Systems (ERTS), 2016. 11, 26
+[48] Chris Hawblitzel, Jon Howell, Jacob R Lorch, Arjun Narayan, Bryan Parno, Danfeng Zhang, and Brian
+Zill. Ironclad Apps: End-to-end security via automated full-system verification. In Symposium on
+Operating Systems Design and Implementation (OSDI), 2014. 3
+[49] Yann Fleureau, Jia Li, Edward Beeching, Lewis Tunstall, Ben Lipkin, Roman Soletskyi, Shengyi Costa
+Huang, and Kashif Rasul. How NuminaMath won the 1st AIMO Progress Prize. https://huggingface.
+co/blog/winning-aimo-progress-prize, 2024. 3, 4
+[50] Aitor Lewkowycz, Anders Andreassen, David Dohan, Ethan Dyer, Henryk Michalewski, Vinay Ramasesh,
+Ambrose Slone, Cem Anil, Imanol Schlag, Theo Gutman-Solo, et al. Solving quantitative reasoning
+problems with language models. In Neural Information Processing Systems (NeurIPS), 2022. 3, 14
+[51] Huaiyuan Ying, Shuo Zhang, Linyang Li, Zhejian Zhou, Yunfan Shao, Zhaoye Fei, Yichuan Ma, Jiawei
+Hong, Kuikun Liu, Ziyi Wang, et al. InternLM-Math: Open math large language models toward verifiable
+reasoning. arXiv preprint arXiv:2402.06332, 2024.
+[52] Keiran Paster, Marco Dos Santos, Zhangir Azerbayev, and Jimmy Ba. OpenWebMath: An open dataset
+of high-quality mathematical web text. In International Conference on Learning Representations (ICLR),
+2024. 3
+[53] Shuo Yin, Weihao You, Zhilong Ji, Guoqiang Zhong, and Jinfeng Bai. MuMath-Code: Combining
+tool-use large language models with multi-perspective data augmentation for mathematical reasoning.
+arXiv preprint arXiv:2405.07551, 2024. 3, 4
+[54] Baptiste Roziere, Jonas Gehring, Fabian Gloeckle, Sten Sootla, Itai Gat, Xiaoqing Ellen Tan, Yossi Adi,
+Jingyu Liu, Tal Remez, Jérémy Rapin, et al. Code Llama: Open foundation models for code. arXiv
+preprint arXiv:2308.12950, 2023. 3
+[55] Jia Li, Edward Beeching, Lewis Tunstall, Ben Lipkin, Roman Soletskyi, Shengyi Huang, Kashif Rasul,
+Longhui Yu, Albert Q Jiang, Ziju Shen, Zihan Qin, Bin Dong, Li Zhou, Yann Fleureau, Guillaume Lample,
+and Stanislas Polu. NuminaMath: The largest public dataset in AI4Maths with 860k pairs of competition
+math problems and solutions. https://github.com/project-numina/aimo-progress-prize/
+blob/main/report/numina_dataset.pdf, 2024. 4
+[56] Aaron Meurer, Christopher P Smith, Mateusz Paprocki, Ondřej Čertík, Sergey B Kirpichev, Matthew
+Rocklin, AMiT Kumar, Sergiu Ivanov, Jason K Moore, Sartaj Singh, et al. SymPy: symbolic computing
+in Python. PeerJ Computer Science, 2017. 4, 22
+[57] Elliot Glazer, Ege Erdil, Tamay Besiroglu, Diego Chicharro, Evan Chen, Alex Gunning, Caroline Falkman
+Olsson, Jean-Stanislas Denain, Anson Ho, Emily de Oliveira Santos, et al. FrontierMath: A benchmark
+for evaluating advanced mathematical reasoning in AI. arXiv preprint arXiv:2411.04872, 2024. 4, 22
+
+30
+
+[58] Erica Klarreich. Titans of mathematics clash over epic proof of ABC conjecture. https://www.
+quantamagazine.org/titans-of-mathematics-clash-over-epic-proof-of-abc-conjecture-20180920/,
+2018. 5
+[59] Gladys Tyen, Hassan Mansoor, Peter Chen, Tony Mak, and Victor Cărbune. LLMs cannot find reasoning
+errors, but can correct them! In Findings of the Association for Computational Linguistics: ACL, 2024. 5
+[60] Ning Miao, Yee Whye Teh, and Tom Rainforth. SelfCheck: Using LLMs to zero-shot check their own
+step-by-step reasoning. In International Conference on Learning Representations (ICLR), 2024.
+[61] Zhan Ling, Yunhao Fang, Xuanlin Li, Zhiao Huang, Mingu Lee, Roland Memisevic, and Hao Su. Deductive verification of chain-of-thought reasoning. In Neural Information Processing Systems (NeurIPS),
+2024. 5, 11, 21
+[62] Jie Huang, Xinyun Chen, Swaroop Mishra, Huaixiu Steven Zheng, Adams Wei Yu, Xinying Song, and
+Denny Zhou. Large language models cannot self-correct reasoning yet. In International Conference on
+Learning Representations (ICLR), 2024. 5
+[63] Kaya Stechly, Karthik Valmeekam, and Subbarao Kambhampati. On the self-verification limitations of
+large language models on reasoning and planning tasks. arXiv preprint arXiv:2402.08115, 2024.
+[64] Zhibin Gou, Zhihong Shao, Yeyun Gong, Yelong Shen, Yujiu Yang, Nan Duan, and Weizhu Chen. CRITIC:
+Large language models can self-correct with tool-interactive critiquing. In International Conference on
+Learning Representations (ICLR), 2024.
+[65] Chujie Zheng, Zhenru Zhang, Beichen Zhang, Runji Lin, Keming Lu, Bowen Yu, Dayiheng Liu, Jingren
+Zhou, and Junyang Lin. ProcessBench: Identifying process errors in mathematical reasoning. arXiv
+preprint arXiv:2412.06559, 2024. 21, 22
+[66] Alex Gu, Wen-Ding Li, Naman Jain, Theo X Olausson, Celine Lee, Koushik Sen, and Armando SolarLezama. The counterfeit conundrum: Can code language models grasp the nuances of their incorrect
+generations? In Findings of the Association for Computational Linguistics: ACL, 2024. 5
+[67] Andrzej Trybulec. Tarski Grothendieck set theory. Journal of Formalized Mathematics, 1989. 5
+[68] Norman Megill and David A Wheeler. Metamath: a computer language for mathematical proofs. 2019.
+5, 9
+[69] Mike Gordon. From LCF to HOL: a short history. 2000. 5
+[70] John Harrison. Metatheory and reflection in theorem proving: A survey and critique. Technical report,
+1995.
+[71] Lawrence C Paulson. A formulation of the simple theory of types (for Isabelle). In International
+Conference on Computer Logic, 1988. 5
+[72] Per Martin-Löf and Giovanni Sambin. Intuitionistic type theory. Bibliopolis Naples, 1984. 5
+[73] T. Coquand and Gérard Huet. The calculus of constructions. Technical Report RR-0530, Inria, May 1986.
+URL https://inria.hal.science/inria-00076024.
+[74] Mario Carneiro. Lean4Lean: Towards a formalized metatheory for the Lean theorem prover. arXiv
+preprint arXiv:2403.14064, 2024. 5
+[75] William A Howard. The formulae-as-types notion of construction. To HB Curry: Essays on Combinatory
+Logic, Lambda Calculus and Formalism, 1980. 5
+[76] Abraham Adolf Fraenkel, Yehoshua Bar-Hillel, and Azriel Levy. Foundations of set theory. 1973. 5
+[77] Feng-Hsiung Hsu. Behind Deep Blue: Building the computer that defeated the world chess champion.
+Princeton University Press, 2002. 5
+[78] David Silver, Aja Huang, Chris J Maddison, Arthur Guez, Laurent Sifre, George Van Den Driessche,
+Julian Schrittwieser, Ioannis Antonoglou, Veda Panneershelvam, Marc Lanctot, et al. Mastering the game
+of Go with deep neural networks and tree search. Nature, 2016. 5, 9
+[79] David Thrane Christiansen. Functional programming in Lean, 2023. 5
+[80] W. T. Gowers, Ben Green, Freddie Manners, and Terence Tao. On a conjecture of Marton. arXiv preprint
+arXiv:2311.05762, 2023. 6
+
+31
+
+[81] Albert Qiaochu Jiang, Sean Welleck, Jin Peng Zhou, Timothee Lacroix, Jiacheng Liu, Wenda Li, Mateja
+Jamnik, Guillaume Lample, and Yuhuai Wu. Draft, sketch, and prove: Guiding formal theorem provers
+with informal proofs. In International Conference on Learning Representations (ICLR), 2023. 7, 9, 10, 16
+[82] Logan Murphy, Kaiyu Yang, Jialiang Sun, Zhaoyu Li, Anima Anandkumar, and Xujie Si. Autoformalizing
+Euclidean geometry. In International Conference on Machine Learning (ICML), 2024. 7, 9, 13, 17, 24
+[83] Jin Peng Zhou, Charles E Staats, Wenda Li, Christian Szegedy, Kilian Q Weinberger, and Yuhuai Wu.
+Don’t trust: Verify–grounding LLM quantitative reasoning with autoformalization. In International
+Conference on Learning Representations (ICLR), 2024. 7, 9, 22
+[84] Francois Charton. Learning the greatest common divisor: explaining Transformer predictions. In
+International Conference on Learning Representations (ICLR), 2024. 8
+[85] François Charton. Linear algebra with Transformers. arXiv preprint arXiv:2112.01898, 2021. 8
+[86] Kristin Lauter, Cathy Yuanchen Li, Krystal Maughan, Rachel Newton, and Megha Srivastava. Machine
+learning for modular multiplication. arXiv preprint arXiv:2402.19254, 2024. 8
+[87] Emily Wenger, Mingjie Chen, Francois Charton, and Kristin E Lauter. Salsa: Attacking lattice cryptography with Transformers. In Neural Information Processing Systems (NeurIPS), 2022. 8
+[88] Tianji Cai, Garrett W Merz, François Charton, Niklas Nolte, Matthias Wilhelm, Kyle Cranmer, and
+Lance J Dixon. Transforming the bootstrap: Using Transformers to compute scattering amplitudes in
+planar N = 4 super Yang-Mills theory. Machine Learning: Science and Technology, 2024. 8
+[89] Alberto Alfarano, François Charton, and Amaury Hayat. Global Lyapunov functions: a long-standing
+open problem in mathematics, with symbolic Transformers. In Neural Information Processing Systems
+(NeurIPS), 2024. 8
+[90] Maziar Raissi, Paris Perdikaris, and George Em Karniadakis. Physics informed deep learning (part I):
+Data-driven solutions of nonlinear partial differential equations. arXiv preprint arXiv:1711.10561, 2017.
+8
+[91] Bernardino Romera-Paredes, Mohammadamin Barekatain, Alexander Novikov, Matej Balog, M Pawan
+Kumar, Emilien Dupont, Francisco JR Ruiz, Jordan S Ellenberg, Pengming Wang, Omar Fawzi, et al.
+Mathematical discoveries from program search with large language models. Nature, 2024. 8
+[92] Terence Tao and Van H Vu. Additive combinatorics. Cambridge University Press, 2006. 8
+[93] Sergei Gukov, James Halverson, Fabian Ruehle, and Piotr Sułkowski. Learning to unknot. Machine
+Learning: Science and Technology, 2021. 8
+[94] Adam Zsolt Wagner.
+Constructions in combinatorics via neural networks.
+arXiv:2104.14516, 2021. 8, 17
+
+arXiv preprint
+
+[95] François Charton, Jordan S Ellenberg, Adam Zsolt Wagner, and Geordie Williamson. PatternBoost:
+Constructions in mathematics with a little help from AI. arXiv preprint arXiv:2411.00566, 2024. 8
+[96] Gergely Bérczi and Adam Zsolt Wagner. A note on small percolating sets on hypercubes via generative
+AI. arXiv preprint arXiv:2411.19734, 2024. 8
+[97] Hao Wang. Toward mechanical mathematics. IBM Journal of Research and Development, 1960. 8
+[98] Nicolaas Govert de Bruijn. Automath, a language for mathematics. 1983. 8
+[99] Anonymous. The QED manifesto. In International Conference on Automated Deduction (CADE), 1994.
+8
+[100] Mohan Ganesalingam. The language of mathematics. Springer, 2013. 8
+[101] Adam Grabowski, Artur Kornilowicz, and Adam Naumowicz. Mizar in a nutshell. Journal of Formalized
+Reasoning, 3(2):153–245, 2010. 8
+[102] Daniel Kühlwein, Marcos Cramer, Peter Koepke, and Bernhard Schröder. The Naproche system. In
+International Conference on Intelligent Computer Mathematics (CICM), 2009. 8
+[103] Konstantin Vershinin and Andrey Paskevich. ForTheL—the language of formal theories. International
+Journal of Information Theories and Applications, 2000. 8
+
+32
+
+[104] Muhammad Humayoun and Christophe Raffalli. MathNat-mathematical text in a controlled natural
+language. Special issue: Natural Language Processing and its Applications, 2010. 8
+[105] Patrick Massot. Teaching mathematics using lean and controlled natural language. In 15th International Conference on Interactive Theorem Proving (ITP 2024). Schloss Dagstuhl–Leibniz-Zentrum für
+Informatik, 2024. 8
+[106] Aarne Ranta. Grammatical framework. Journal of Functional Programming, 2004. 8
+[107] Jan Frederik Schaefer and Michael Kohlhase. GLIF: A declarative framework for symbolic natural
+language understanding. In Workshop on Formal and Cognitive Reasoning, 2020. 8
+[108] Shashank Pathak. GFLean: An autoformalisation framework for lean via GF.
+arXiv:2404.01234, 2024. 8
+
+arXiv preprint
+
+[109] Cezary Kaliszyk, Josef Urban, and Jiří Vyskočil. Learning to parse on aligned corpora (rough diamond).
+In International Conference on Interactive Theorem Proving (ITP), 2015. 9
+[110] Cezary Kaliszyk, Josef Urban, and Jirí Vyskocil. System description: statistical parsing of informalized Mizar formulas. In International Symposium on Symbolic and Numeric Algorithms for Scientific
+Computing (SYNASC), 2017. 9
+[111] Qingxiang Wang, Cezary Kaliszyk, and Josef Urban. First experiments with neural translation of informal
+to formal mathematics. In International Conference on Intelligent Computer Mathematics (CICM), 2018.
+9
+[112] Qingxiang Wang, Chad Brown, Cezary Kaliszyk, and Josef Urban. Exploration of neural machine
+translation in autoformalization of mathematics in Mizar. In Certified Programs and Proofs (CPP), 2020.
+9
+[113] Guillaume Lample, Alexis Conneau, Ludovic Denoyer, and Marc’Aurelio Ranzato. Unsupervised machine
+translation using monolingual corpora only. In International Conference on Learning Representations
+(ICLR), 2018. 9
+[114] Zhangir Azerbayev, Bartosz Piotrowski, Hailey Schoelkopf, Edward W Ayers, Dragomir Radev, and
+Jeremy Avigad. ProofNet: Autoformalizing and formally proving undergraduate-level mathematics. arXiv
+preprint arXiv:2302.12433, 2023. 9, 23, 24
+[115] Jianqiao Lu, Yingjia Wan, Zhengying Liu, Yinya Huang, Jing Xiong, Chengwu Liu, Jianhao Shen,
+Hui Jin, Jipeng Zhang, Haiming Wang, Zhicheng Yang, Jing Tang, and Zhijiang Guo. Process-driven
+autoformalization in Lean 4. arXiv preprint arXiv:2406.01940, 2024. 9, 14
+[116] Boyan Li, Yuyu Luo, Chengliang Chai, Guoliang Li, and Nan Tang. The dawn of natural language to
+SQL: Are we fully ready? arXiv preprint arXiv:2406.01265, 2024. 9
+[117] Jiayi Pan, Glen Chou, and Dmitry Berenson. Data-efficient learning of natural language to linear temporal
+logic translators for robot task specification. In International Conference on Robotics and Automation
+(ICRA), 2023. 9
+[118] Angelos Mavrogiannis, Christoforos Mavrogiannis, and Yiannis Aloimonos. Cook2LTL: Translating
+cooking recipes to LTL formulae using large language models. In International Conference on Robotics
+and Automation (ICRA), 2024. 9
+[119] Theo Olausson, Alex Gu, Ben Lipkin, Cedegao Zhang, Armando Solar-Lezama, Joshua Tenenbaum, and
+Roger Levy. LINC: A neurosymbolic approach for logical reasoning by combining language models
+with first-order logic provers. In Conference on Empirical Methods in Natural Language Processing
+(EMNLP), 2023. 9, 11, 22
+[120] Kurt Gödel. Über formal unentscheidbare sätze der Principia Mathematica und verwandter systeme I.
+Monatshefte für Mathematik und Physik, 1931. 9
+[121] Daniel Whalen. Holophrasm: a neural automated theorem prover for higher-order logic. arXiv preprint
+arXiv:1608.02644, 2016. 9
+[122] Junyoung Chung, Caglar Gulcehre, KyungHyun Cho, and Yoshua Bengio. Empirical evaluation of gated
+recurrent neural networks on sequence modeling. arXiv preprint arXiv:1412.3555, 2014. 9
+[123] Stanislas Polu, Jesse Michael Han, Kunhao Zheng, Mantas Baksys, Igor Babuschkin, and Ilya Sutskever.
+Formal mathematics statement curriculum learning. In International Conference on Learning Representations (ICLR), 2023. 10
+
+33
+
+[124] Guillaume Lample, Timothee Lacroix, Marie-Anne Lachaux, Aurelien Rodriguez, Amaury Hayat, Thibaut
+Lavril, Gabriel Ebner, and Xavier Martinet. HyperTree proof search for neural theorem proving. In
+Neural Information Processing Systems (NeurIPS), 2022. 10, 14, 15
+[125] Haohan Lin, Zhiqing Sun, Yiming Yang, and Sean Welleck. Lean-STaR: Learning to interleave thinking
+and proving. arXiv preprint arXiv:2407.10040, 2024. 10, 14
+[126] Kevin Ellis, Lionel Wong, Maxwell Nye, Mathias Sable-Meyer, Luc Cary, Lore Anaya Pozo, Luke Hewitt,
+Armando Solar-Lezama, and Joshua B Tenenbaum. DreamCoder: growing generalizable, interpretable
+knowledge with wake–sleep bayesian program learning. Philosophical Transactions of the Royal Society
+A, 2023. 10
+[127] Huajian Xin, Haiming Wang, Chuanyang Zheng, Lin Li, Zhengying Liu, Qingxing Cao, Yinya Huang,
+Jing Xiong, Han Shi, Enze Xie, et al. LEGO-Prover: Neural theorem proving with growing libraries. In
+International Conference on Learning Representations (ICLR), 2023. 10, 16, 25
+[128] Gabriel Poesia and Noah D Goodman. Peano: learning formal mathematical reasoning. Philosophical
+Transactions of the Royal Society A, 2023. 10, 16
+[129] SA Schulz. Learning search control knowledge for equational deduction, volume 230. IOS Press, 2000.
+10
+[130] Daniel Kühlwein, Twan van Laarhoven, Evgeni Tsivtsivadze, Josef Urban, and Tom Heskes. Overview
+and evaluation of premise selection techniques for large theory mathematics. In Automated Reasoning:
+6th International Joint Conference, IJCAR 2012, Manchester, UK, June 26-29, 2012. Proceedings 6,
+pages 378–392. Springer, 2012. 10
+[131] Jesse Alama, Tom Heskes, Daniel Kühlwein, Evgeni Tsivtsivadze, and Josef Urban. Premise selection for
+mathematics by corpus analysis and kernel methods. Journal of automated reasoning, 52:191–213, 2014.
+10
+[132] Bartosz Piotrowski and Josef Urban. Stateful premise selection by recurrent neural networks. arXiv
+preprint arXiv:2004.08212, 2020. 10
+[133] Daniel Kühlwein, Jasmin Christian Blanchette, Cezary Kaliszyk, and Josef Urban. MaSh: machine
+learning for Sledgehammer. In International Conference on Interactive Theorem Proving (ITP), 2013. 10
+[134] Jia Meng and Lawrence C Paulson. Lightweight relevance filtering for machine-generated resolution
+problems. Journal of Applied Logic, 2009.
+[135] Albert Qiaochu Jiang, Wenda Li, Szymon Tworkowski, Konrad Czechowski, Tomasz Odrzygóźdź, Piotr
+Miłoś, Yuhuai Wu, and Mateja Jamnik. Thor: Wielding hammers to integrate language models and
+automated theorem provers. In Neural Information Processing Systems (NeurIPS), 2022. 10
+[136] Hunter Lightman, Vineet Kosaraju, Yuri Burda, Harrison Edwards, Bowen Baker, Teddy Lee, Jan Leike,
+John Schulman, Ilya Sutskever, and Karl Cobbe. Let’s verify step by step. In International Conference on
+Learning Representations (ICLR), 2024. 11, 14, 15, 22
+[137] Kaiyu Yang, Jia Deng, and Danqi Chen. Generating natural language proofs with verifier-guided search.
+In Conference on Empirical Methods in Natural Language Processing (EMNLP), 2022. 11, 15, 22
+[138] Xi Ye, Qiaochu Chen, Isil Dillig, and Greg Durrett. SatLM: Satisfiability-aided language models using
+declarative prompting. In Neural Information Processing Systems (NeurIPS), 2023. 11, 22
+[139] Gabriel Poesia, Kanishk Gandhi, Eric Zelikman, and Noah D Goodman. Certified deductive reasoning
+with language models. Transactions on Machine Learning Research (TMLR), 2024. 11
+[140] Charles Antony Richard Hoare. An axiomatic basis for computer programming. Communications of the
+ACM, 1969. 11
+[141] Xavier Leroy. Formal verification of a realistic compiler. Communications of the ACM, 2009.
+[142] Talia Ringer, Karl Palmskog, Ilya Sergey, Milos Gligoric, and Zachary Tatlock. QED at large: A survey
+of engineering of formally verified software. Foundations and Trends® in Programming Languages,
+2019. 11, 19
+[143] Erik Seligman, Tom Schubert, and MV Achutha Kiran Kumar. Formal verification: an essential toolkit
+for modern VLSI design. 2023. 11
+
+34
+
+[144] Shilpi Goel and Sandip Ray. Microprocessor assurance and the role of theorem proving. In Handbook of
+Computer Architecture, pages 1–43. 2022. 11
+[145] Bishop Brock, Matt Kaufmann, and J Strother Moore. ACL2 theorems about commercial microprocessors.
+In International Conference on Formal Methods in Computer-Aided Design (FMCAD), 1996. 11
+[146] Haogang Chen, Daniel Ziegler, Tej Chajed, Adam Chlipala, M Frans Kaashoek, and Nickolai Zeldovich.
+Using crash Hoare logic for certifying the FSCQ file system. In Symposium on Operating Systems
+Principles (SOSP), 2015. 11
+[147] Tej Chajed, Joseph Tassarotti, Mark Theng, M Frans Kaashoek, and Nickolai Zeldovich. Verifying the
+DaisyNFS concurrent and crash-safe file system with sequential reasoning. In Symposium on Operating
+Systems Design and Implementation (OSDI), 2022. 11
+[148] Ronghui Gu, Zhong Shao, Hao Chen, Xiongnan Newman Wu, Jieung Kim, Vilhelm Sjöberg, and
+David Costanzo. CertiKOS: An extensible architecture for building certified concurrent OS kernels. In
+Symposium on Operating Systems Design and Implementation (OSDI), 2016. 11, 26
+[149] Karthikeyan Bhargavan, Cédric Fournet, Markulf Kohlweiss, Alfredo Pironti, and Pierre-Yves Strub.
+Implementing TLS with verified cryptographic security. In Symposium on Security and Privacy, 2013. 11
+[150] Gilles Barthe, Benjamin Grégoire, Sylvain Heraud, and Santiago Zanella Béguelin. Computer-aided
+security proofs for the working cryptographer. In Advances in Cryptology (CRYPTO), 2011. 11
+[151] Upamanyu Sharma, Ralf Jung, Joseph Tassarotti, Frans Kaashoek, and Nickolai Zeldovich. Grove: a
+separation-logic library for verifying distributed systems. In Symposium on Operating Systems Principles
+(SOSP), 2023. 11
+[152] Karthikeyan Bhargavan, Barry Bond, Antoine Delignat-Lavaud, Cédric Fournet, Chris Hawblitzel, Catalin
+Hritcu, Samin Ishtiaq, Markulf Kohlweiss, Rustan Leino, Jay R Lorch, et al. Everest: Towards a verified,
+drop-in replacement of HTTPS. In Summit on Advances in Programming Languages (SNAPL), 2017. 11
+[153] Naiqian Zheng, Mengqi Liu, Yuxing Xiang, Linjian Song, Dong Li, Feng Han, Nan Wang, Yong Ma,
+Zhuo Liang, Dennis Cai, et al. Automated verification of an in-production DNS authoritative engine. In
+Symposium on Operating Systems Principles (SOSP), 2023. 11
+[154] Gerwin Klein. Proof engineering considered essential. In International Symposium on Formal Methods,
+2014. 11
+[155] Alex Sanchez-Stern, Yousef Alhessi, Lawrence Saul, and Sorin Lerner. Generating correctness proofs
+with neural networks. In SIGPLAN International Workshop on Machine Learning and Programming
+Languages, 2020. 11
+[156] Alex Sanchez-Stern, Abhishek Varghese, Zhanna Kaufman, Dylan Zhang, Talia Ringer, and Yuriy
+Brun. QEDCartographer: Automating formal verification using reward-free reinforcement learning. In
+International Conference on Software Engineering (ICSE), 2025. 11
+[157] Minghai Lu, Benjamin Delaware, and Tianyi Zhang. Proof automation with large language models. In
+International Conference on Automated Software Engineering (ASE), 2024. 11
+[158] Kexin Pei, David Bieber, Kensen Shi, Charles Sutton, and Pengcheng Yin. Can large language models
+reason about program invariants? In International Conference on Machine Learning (ICML), 2023. 11
+[159] Haoze Wu, Clark Barrett, and Nina Narodytska. Lemur: Integrating large language models in automated
+program verification. In International Conference on Learning Representations (ICLR), 2024.
+[160] Chloe Loughridge, Qinyi Sun, Seth Ahrenbach, Federico Cassano, Chuyue Sun, Ying Sheng, Anish
+Mudide, Md Rakib Hossain Misu, Nada Amin, and Max Tegmark. DafnyBench: A benchmark for formal
+software verification. arXiv preprint arXiv:2406.08467, 2024. 26
+[161] Xujie Si, Aaditya Naik, Hanjun Dai, Mayur Naik, and Le Song. Code2Inv: A deep learning framework
+for program verification. In International Conference on Computer Aided Verification (CAV), 2020. 11
+[162] Eric Mugnier, Emmanuel Anaya Gonzalez, Ranjit Jhala, Nadia Polikarpova, and Yuanyuan Zhou. Laurel:
+Generating Dafny assertions using large language models. arXiv preprint arXiv:2405.16792, 2024. 11
+[163] Matthias Cosler, Christopher Hahn, Daniel Mendoza, Frederik Schmitt, and Caroline Trippel. nl2spec:
+interactively translating unstructured natural language to temporal logics with large language models. In
+International Conference on Computer Aided Verification (CAV), 2023. 11
+
+35
+
+[164] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde De Oliveira Pinto, Jared Kaplan,
+Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, et al. Evaluating large language models
+trained on code. arXiv preprint arXiv:2107.03374, 2021. 11, 25
+[165] Hammond Pearce, Baleegh Ahmad, Benjamin Tan, Brendan Dolan-Gavitt, and Ramesh Karri. Asleep at
+the keyboard? assessing the security of Github Copilot’s code contributions. In Symposium on Security
+and Privacy, 2022. 11
+[166] Rangeet Pan, Ali Reza Ibrahimzada, Rahul Krishna, Divya Sankar, Lambert Pouguem Wassi, Michele
+Merler, Boris Sobolev, Raju Pavuluri, Saurabh Sinha, and Reyhaneh Jabbarvand. Lost in translation: A
+study of bugs introduced by large language models while translating code. In International Conference
+on Software Engineering (ICSE), 2024. 11
+[167] Neil Perry, Megha Srivastava, Deepak Kumar, and Dan Boneh. Do users write more insecure code with
+AI assistants? In Conference on Computer and Communications Security (CCS), 2023. 11
+[168] Md Rakib Hossain Misu, Cristina V Lopes, Iris Ma, and James Noble. Towards AI-assisted synthesis of
+verified Dafny methods. In ACM Joint European Software Engineering Conference and Symposium on
+the Foundations of Software Engineering (ESEC/FSE), 2024. 12, 19
+[169] Andrea Lattuada, Travis Hance, Chanhee Cho, Matthias Brun, Isitha Subasinghe, Yi Zhou, Jon Howell,
+Bryan Parno, and Chris Hawblitzel. Verus: Verifying rust programs using linear ghost types. Proceedings
+of the ACM on Programming Languages, 2023. 12
+[170] Sahil Bhatia, Jie Qiu, Niranjan Hasabnis, Sanjit A Seshia, and Alvin Cheung. Verified code transpilation
+with LLMs. arXiv preprint arXiv:2406.03003, 2024. 12
+[171] Jan Jakubuv, Karel Chvalovskỳ, Zarathustra Goertzel, Cezary Kaliszyk, Mirek Olšák, Bartosz Piotrowski,
+Stephan Schulz, Martin Suda, and Josef Urban. MizAR 60 for Mizar 50. In International Conference on
+Interactive Theorem Proving (ITP), 2023. 12
+[172] Gabriel Poesia, David Broman, Nick Haber, and Noah D Goodman. Learning formal mathematics from
+intrinsic motivation. In Neural Information Processing Systems (NeurIPS), 2024. 13, 25
+[173] Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang, Jamie Callan, and Graham
+Neubig. PAL: Program-aided language models. In International Conference on Machine Learning
+(ICML), 2023. 13
+[174] Daya Guo, Qihao Zhu, Dejian Yang, Zhenda Xie, Kai Dong, Wentao Zhang, Guanting Chen, Xiao Bi,
+Y. Wu, Y. K. Li, Fuli Luo, Yingfei Xiong, and Wenfeng Liang. DeepSeek-Coder: When the large language
+model meets programming–the rise of code intelligence. arXiv preprint arXiv:2401.14196, 2024. 13
+[175] Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha
+Letman, Akhil Mathur, Alan Schelten, Amy Yang, Angela Fan, et al. The Llama 3 herd of models. arXiv
+preprint arXiv:2407.21783, 2024. 13
+[176] Ben Athiwaratkun, Sanjay Krishna Gouda, Zijian Wang, Xiaopeng Li, Yuchen Tian, Ming Tan, Wasi Uddin Ahmad, Shiqi Wang, Qing Sun, Mingyue Shang, et al. Multi-lingual evaluation of code generation
+models. In International Conference on Learning Representations (ICLR), 2023. 13
+[177] Federico Cassano, John Gouwar, Francesca Lucchetti, Claire Schlesinger, Carolyn Jane Anderson,
+Michael Greenberg, Abhinav Jangda, and Arjun Guha. Knowledge transfer from high-resource to
+low-resource programming languages for code LLMs. arXiv preprint arXiv:2308.09895, 2023. 13
+[178] Xiaohan Lin, Qingxing Cao, Yinya Huang, Haiming Wang, Jianqiao Lu, Zhengying Liu, Linqi Song,
+and Xiaodan Liang. FVEL: Interactive formal verification environment with large language models via
+theorem proving. In Neural Information Processing Systems (NeurIPS), 2024. 13
+[179] Kishore Papineni, Salim Roukos, Todd Ward, and Wei-Jing Zhu. BLEU: a method for automatic
+evaluation of machine translation. In Annual Meeting of the Association for Computational Linguistics
+(ACL), 2002. 13
+[180] Huaiyuan Ying, Zijian Wu, Yihan Geng, Jiayu Wang, Dahua Lin, and Kai Chen. Lean Workbook: A largescale lean problem set formalized from natural language math problems. arXiv preprint arXiv:2406.03847,
+2024. 13
+[181] Zenan Li, Yifan Wu, Zhaoyu Li, Xinming Wei, Xian Zhang, Fan Yang, and Xiaoxing Ma. Autoformalize
+mathematical statements by symbolic equivalence and semantic consistency. In Neural Information
+Processing Systems (NeurIPS), 2024. 13, 24
+
+36
+
+[182] Christian Szegedy. A promising path towards autoformalization and general artificial intelligence. In
+International Conference on Intelligent Computer Mathematics (CICM), 2020. 14
+[183] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz
+Kaiser, and Illia Polosukhin. Attention is all you need. In Neural Information Processing Systems
+(NeurIPS), 2017. 14
+[184] Zeyuan Allen-Zhu and Yuanzhi Li. Physics of language models: Part 3.1, knowledge storage and
+extraction. In International Conference on Machine Learning (ICML), 2024. 14
+[185] Fabio Petroni, Tim Rocktäschel, Sebastian Riedel, Patrick Lewis, Anton Bakhtin, Yuxiang Wu, and
+Alexander Miller. Language models as knowledge bases? In Conference on Empirical Methods in
+Natural Language Processing (EMNLP), 2019. 14
+[186] Mirac Suzgun, Nathan Scales, Nathanael Schärli, Sebastian Gehrmann, Yi Tay, Hyung Won Chung,
+Aakanksha Chowdhery, Quoc Le, Ed Chi, Denny Zhou, et al. Challenging BIG-Bench tasks and whether
+chain-of-thought can solve them. In Findings of the Association for Computational Linguistics: ACL,
+2023. 14
+[187] Iman Mirzadeh, Keivan Alizadeh, Hooman Shahrokhi, Oncel Tuzel, Samy Bengio, and Mehrdad Farajtabar. GSM-Symbolic: Understanding the limitations of mathematical reasoning in large language
+models. arXiv preprint arXiv:2410.05229, 2024. 14, 22
+[188] Boshi Wang, Xiang Yue, Yu Su, and Huan Sun. Grokked Transformers are implicit reasoners: A
+mechanistic journey to the edge of generalization. In Neural Information Processing Systems (NeurIPS),
+2024. 14
+[189] Honghua Zhang, Liunian Harold Li, Tao Meng, Kai-Wei Chang, and Guy Van Den Broeck. On the
+paradox of learning to reason from data. In International Joint Conference on Artificial Intelligence
+(IJCAI), 2023. 14
+[190] Karthik Valmeekam, Matthew Marquez, Sarath Sreedharan, and Subbarao Kambhampati. On the planning
+abilities of large language models: a critical investigation. In Neural Information Processing Systems
+(NeurIPS), 2023. 14
+[191] Karthik Valmeekam, Matthew Marquez, Alberto Olmo, Sarath Sreedharan, and Subbarao Kambhampati.
+PlanBench: An extensible benchmark for evaluating large language models on planning and reasoning
+about change. In Neural Information Processing Systems (NeurIPS), 2024.
+[192] Jian Xie, Kai Zhang, Jiangjie Chen, Tinghui Zhu, Renze Lou, Yuandong Tian, Yanghua Xiao, and Yu Su.
+TravelPlanner: A benchmark for real-world planning with language agents. In International Conference
+on Machine Learning (ICML), 2024. 14, 23, 26
+[193] Bo Peng, Eric Alcaide, Quentin Gregory Anthony, Alon Albalak, Samuel Arcadinho, Stella Biderman,
+Huanqi Cao, Xin Cheng, Michael Nguyen Chung, Leon Derczynski, et al. RWKV: Reinventing RNNs
+for the Transformer era. In Findings of the Association for Computational Linguistics: EMNLP, 2023. 14
+[194] Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. In Conference
+on Language Modeling (COLM), 2023.
+[195] Jiacheng Ye, Shansan Gong, Liheng Chen, Lin Zheng, Jiahui Gao, Han Shi, Chuan Wu, Xin Jiang,
+Zhenguo Li, Wei Bi, and Lingpeng Kong. Diffusion of thoughts: Chain-of-thought reasoning in diffusion
+language models. arXiv preprint arXiv:2402.07754, 2024.
+[196] Yilun Du, Jiayuan Mao, and Joshua B. Tenenbaum. Learning iterative reasoning through energy diffusion,
+2024.
+[197] Matthew Ho, Vincent Zhu, Xiaoyin Chen, Moksh Jain, Nikolay Malkin, and Edwin Zhang. ProofFlow:
+Preliminary study on generative flow network language model tuning for formal reasoning. arXiv preprint
+arXiv:2410.13224, 2024. 14
+[198] Yuhuai Wu, Albert Jiang, Jimmy Ba, and Roger Baker Grosse. INT: An inequality benchmark for
+evaluating generalization in theorem proving. In International Conference on Learning Representations
+(ICLR), 2021. 14, 18
+[199] Cem Anil, Yuhuai Wu, Anders Andreassen, Aitor Lewkowycz, Vedant Misra, Vinay Ramasesh, Ambrose
+Slone, Guy Gur-Ari, Ethan Dyer, and Behnam Neyshabur. Exploring length generalization in large
+language models. In Neural Information Processing Systems (NeurIPS), 2022. 14
+
+37
+
+[200] Richard Sutton. The bitter lesson. Incomplete Ideas (blog), 2019. 15, 18
+[201] Kshitij Bansal, Sarah Loos, Markus Rabe, Christian Szegedy, and Stewart Wilcox. HOList: An environment for machine learning of higher order logic theorem proving. In International Conference on
+Machine Learning (ICML), 2019. 15
+[202] Allen Newel and Herbert A Simon. Computer science as empirical inquiry: symbols and search.
+Communications of the ACM, 1976. 15
+[203] Dan Zhang, Sining Zhoubian, Yisong Yue, Yuxiao Dong, and Jie Tang. ReST-MCTS*: LLM self-training
+via process reward guided tree search. In Neural Information Processing Systems (NeurIPS), 2024. 15, 22
+[204] Yuxi Xie, Anirudh Goyal, Wenyue Zheng, Min-Yen Kan, Timothy P Lillicrap, Kenji Kawaguchi, and
+Michael Shieh. Monte Carlo tree search boosts reasoning via iterative preference learning. arXiv preprint
+arXiv:2405.00451, 2024. 15
+[205] Charlie Snell, Jaehoon Lee, Kelvin Xu, and Aviral Kumar. Scaling LLM test-time compute optimally can
+be more effective than scaling model parameters. arXiv preprint arXiv:2408.03314, 2024. 15
+[206] Yangzhen Wu, Zhiqing Sun, Shanda Li, Sean Welleck, and Yiming Yang. An empirical analysis of
+compute-optimal inference for problem-solving with language models. arXiv preprint arXiv:2408.00724,
+2024. 15
+[207] Lasse Blaauwbroek, Mirek Olšák, Jason Rute, Fidel Ivan Schaposnik Massolo, Jelle Piepenbrock, and
+Vasily Pestun. Graph2Tac: Online representation learning of formal math concepts. In International
+Conference on Machine Learning (ICML), 2024. 15
+[208] Kunhao Zheng, Jesse Michael Han, and Stanislas Polu. MiniF2F: a cross-system benchmark for formal
+olympiad-level mathematics. In International Conference on Learning Representations (ICLR), 2022. 15,
+19, 20
+[209] George Tsoukalas, Jasper Lee, John Jennings, Jimmy Xin, Michelle Ding, Michael Jennings, Amitayush
+Thakur, and Swarat Chaudhuri. PutnamBench: Evaluating neural theorem-provers on the Putnam mathematical competition. In Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks
+Track, 2024. 15, 19, 20, 27
+[210] Zijian Wu, Suozhi Huang, Zhejian Zhou, Huaiyuan Ying, Jiayu Wang, Dahua Lin, and Kai Chen.
+InternLM2.5-StepProver: Advancing automated theorem proving via expert iteration on large-scale Lean
+problems. arXiv preprint arXiv:2410.15700, 2024. 15
+[211] Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Tom Griffiths, Yuan Cao, and Karthik Narasimhan.
+Tree of thoughts: Deliberate problem solving with large language models. In Neural Information
+Processing Systems (NeurIPS), 2023. 15
+[212] Timothy Gowers. How can it be feasible to find proofs? https://drive.google.com/file/d/
+1-FFa6nMVg18m1zPtoAQrFalwpx2YaGK4/view, 2022. 16
+[213] Haiming Wang, Huajian Xin, Zhengying Liu, Wenda Li, Yinya Huang, Jianqiao Lu, Zhicheng Yang, Jing
+Tang, Jian Yin, Zhenguo Li, and Xiaodan Liang. Proving theorems recursively. In Neural Information
+Processing Systems (NeurIPS), 2024. 16, 20
+[214] Weikun Yang, Grigory Fedyukovich, and Aarti Gupta. Lemma synthesis for automating induction over
+algebraic data types. In International Conference on Principles and Practice of Constraint Programming
+(CP), 2019. 16
+[215] Aishwarya Sivaraman, Alex Sanchez-Stern, Bretton Chen, Sorin Lerner, and Todd Millstein. Data-driven
+lemma synthesis for interactive proofs. Proceedings of the ACM on Programming Languages, 2022. 16
+[216] Cezary Kaliszyk and Josef Urban. Lemma mining over HOL Light. In International Conference on Logic
+for Programming Artificial Intelligence and Reasoning (LPAR), 2013. 16
+[217] Jin Peng Zhou, Yuhuai Wu, Qiyang Li, and Roger Baker Grosse. REFACTOR: Learning to extract
+theorems from proofs. In International Conference on Learning Representations (ICLR), 2024. 16
+[218] Zhening Li, Gabriel Poesia, Omar Costilla-Reyes, Noah Goodman, and Armando Solar-Lezama. Lemma:
+Bootstrapping high-level mathematical reasoning with learned symbolic abstractions. arXiv preprint
+arXiv:2211.08671, 2022. 16
+
+38
+
+[219] Stephen Robertson, Hugo Zaragoza, et al. The probabilistic relevance framework: BM25 and beyond.
+Foundations and Trends® in Information Retrieval, 2009. 17
+[220] Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen,
+and Wen-tau Yih. Dense passage retrieval for open-domain question answering. In Conference on
+Empirical Methods in Natural Language Processing (EMNLP), 2020. 17
+[221] Andrew Wiles. Modular elliptic curves and Fermat’s Last Theorem. Annals of mathematics, 1995. 17
+[222] Chenrui Wei, Mengzhou Sun, and Wei Wang. Proving olympiad algebraic inequalities without human
+demonstrations. In Neural Information Processing Systems (NeurIPS), 2024. 17, 20
+[223] Anonymous. Proving olympiad inequalities by synergizing LLMs and symbolic reasoning. In International Conference on Learning Representations (ICLR), 2025. URL https://openreview.net/
+forum?id=FiyS0ecSm0. under review. 17
+[224] Christoph Drösser.
+AI will become mathematicians’ ’co-pilot’.
+Scientific American,
+June
+2024.
+URL
+https://www.scientificamerican.com/article/
+ai-will-become-mathematicians-co-pilot/. 18
+[225] Renaissance Philanthropy. AI for Math Fund.
+initiatives/ai-for-math-fund/, 2024. 18
+
+https://renaissancephilanthropy.org/
+
+[226] Will Crichton, Maneesh Agrawala, and Pat Hanrahan. The role of working memory in program tracing.
+In Conference on Human Factors in Computing Systems (CHI), 2021. 18
+[227] Will Crichton, Gavin Gray, and Shriram Krishnamurthi. A grounded conceptual model for ownership
+types in Rust. Proceedings of the ACM on Programming Languages, 2023. 18
+[228] Talia Ringer.
+Proofs and conversations.
+conversations.pdf. 18
+
+2024.
+
+URL https://dependenttyp.es/pdf/
+
+[229] Patrick Massot. Lean blueprint. https://github.com/PatrickMassot/leanblueprint. 18, 21, 23
+[230] Vincent A Voelz, Vijay S Pande, and Gregory R Bowman. Folding@home: Achievements from over 20
+years of citizen science herald the exascale era. Biophysical journal, 2023. 18
+[231] Luca Beurer-Kellner, Marc Fischer, and Martin Vechev. Guiding LLMs the right way: Fast, non-invasive
+constrained generation. In International Conference on Machine Learning (ICML), 2024. 19
+[232] Shubham Ugare, Tarun Suresh, Hangoo Kang, Sasa Misailovic, and Gagandeep Singh. Improving LLM
+code generation with grammar augmentation. arXiv preprint arXiv:2403.01632, 2024. 19
+[233] Kasra Ferdowsi, Ruanqianqian Huang, Michael B James, Nadia Polikarpova, and Sorin Lerner. Validating
+AI-generated code with live programming. In Conference on Human Factors in Computing Systems
+(CHI), 2024. 19
+[234] Chuyue Sun, Ying Sheng, Oded Padon, and Clark Barrett. Clover: Closed-loop verifiable code generation.
+In International Symposium on AI Verification, 2024. 19
+[235] Chenyuan Yang, Xuheng Li, Md Rakib Hossain Misu, Jianan Yao, Weidong Cui, Yeyun Gong, Chris
+Hawblitzel, Shuvendu Lahiri, Jacob R Lorch, Shuai Lu, et al. AutoVerus: Automated proof generation
+for Rust code. arXiv preprint arXiv:2409.13082, 2024.
+[236] Pranjal Aggarwal, Bryan Parno, and Sean Welleck. AlphaVerus: Bootstrapping formally verified code
+generation through self-improving translation and treefinement. arXiv preprint arXiv:2412.06176, 2024.
+19, 25, 26
+[237] The Society of Automotive Engineers (SAE). Taxonomy and definitions for terms related to driving automation systems for on-road motor vehicles. https://www.sae.org/standards/content/j3016_
+202104/, 2024. 19
+[238] Geoff Sutcliffe and Christian Suttner. The TPTP problem library. Journal of Automated Reasoning, 1998.
+19, 20
+[239] Chengwu Liu, Jianhao Shen, Huajian Xin, Zhengying Liu, Ye Yuan, Haiming Wang, Wei Ju, Chuanyang
+Zheng, Yichun Yin, Lin Li, Ming Zhang, and Qun Liu. FIMO: A challenge formal dataset for automated
+theorem proving. arXiv preprint arXiv:2309.04295, 2023. 19, 20
+
+39
+
+[240] Carlos E Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik R
+Narasimhan. SWE-bench: Can language models resolve real-world GitTub issues? In International
+Conference on Learning Representations (ICLR), 2024. 19, 21
+[241] Ana Bove, Peter Dybjer, and Ulf Norell. A brief overview of Agda–a functional language with dependent
+types. In International Conference on Theorem Proving in Higher Order Logics (TPHOLs), 2009. 20
+[242] Freek Wiedijk. Formalizing 100 theorems. https://www.cs.ru.nl/~freek/100/. 20
+[243] Morph Labs. Moogle: Semantic search over mathlib4. https://www.moogle.ai/, 2023. 20
+[244] Joachim Breitner. Loogle!, 2024. URL https://loogle.lean-lang.org/. 20
+[245] Guoxiong Gao, Haocheng Ju, Jiedong Jiang, Zihan Qin, and Bin Dong. A semantic search engine for
+Mathlib4. arXiv preprint arXiv:2403.13310, 2024. 20
+Dohmke.
+GitHub
+Copilot
+X:
+The
+AI-powered
+developer
+[246] Thomas
+experience.
+https://github.blog/news-insights/product-news/
+github-copilot-x-the-ai-powered-developer-experience, 2023. 20
+[247] Sascha Böhme and Tobias Nipkow. Sledgehammer: Judgement day. In International Joint Conference on
+Automated Reasoning (IJCAR), 2010. 20
+[248] Wang Ling, Dani Yogatama, Chris Dyer, and Phil Blunsom. Program induction by rationale generation:
+Learning to solve and explain algebraic word problems. In Annual Meeting of the Association for
+Computational Linguistics (ACL), 2017. 21, 22
+[249] Ruixin Hong, Hongming Zhang, Xinyu Pang, Dong Yu, and Changshui Zhang. A closer look at the
+self-verification abilities of large language models in logical reasoning. In Annual Conference of the
+North American Chapter of the Association for Computational Linguistics (NAACL), 2024. 21, 22
+[250] XTX Markets. AIMO Progress Prize: July 2024 results. https://aimoprize.com/updates/
+2024-07-20-progress-prize-results, 2024. 21
+[251] Freda Shi, Xinyun Chen, Kanishka Misra, Nathan Scales, David Dohan, Ed H Chi, Nathanael Schärli,
+and Denny Zhou. Large language models can be easily distracted by irrelevant context. In International
+Conference on Machine Learning (ICML), 2023. 21
+[252] Tamera Lanham, Anna Chen, Ansh Radhakrishnan, Benoit Steiner, Carson Denison, Danny Hernandez,
+Dustin Li, Esin Durmus, Evan Hubinger, Jackson Kernion, et al. Measuring faithfulness in chain-ofthought reasoning. arXiv preprint arXiv:2307.13702, 2023. 21
+[253] Yixuan Weng, Minjun Zhu, Fei Xia, Bin Li, Shizhu He, Shengping Liu, Bin Sun, Kang Liu, and Jun
+Zhao. Large language models are better reasoners with self-verification. In Findings of the Association
+for Computational Linguistics: EMNLP, 2023. 22
+[254] Liangming Pan, Michael Saxon, Wenda Xu, Deepak Nathani, Xinyi Wang, and William Yang Wang.
+Automatically correcting large language models: Surveying the landscape of diverse self-correction
+strategies. arXiv preprint arXiv:2308.03188, 2023. 22
+[255] Alon Talmor, Jonathan Herzig, Nicholas Lourie, and Jonathan Berant. CommonsenseQA: A question
+answering challenge targeting commonsense knowledge. In Annual Conference of the North American
+Chapter of the Association for Computational Linguistics (NAACL), 2019. 22
+[256] Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William Cohen, Ruslan Salakhutdinov, and
+Christopher D Manning. HotpotQA: A dataset for diverse, explainable multi-hop question answering. In
+Conference on Empirical Methods in Natural Language Processing (EMNLP), 2018. 22
+[257] Yihong Dong, Xue Jiang, Huanyu Liu, Zhi Jin, and Ge Li. Generalization or memorization: Data
+contamination and trustworthy evaluation for large language models. In Findings of the Association for
+Computational Linguistics: ACL, 2024. 22
+[258] Charles R Harris, K Jarrod Millman, Stéfan J Van Der Walt, Ralf Gommers, Pauli Virtanen, David
+Cournapeau, Eric Wieser, Julian Taylor, Sebastian Berg, Nathaniel J Smith, et al. Array programming
+with NumPy. Nature, 2020. 22
+[259] Liangming Pan, Alon Albalak, Xinyi Wang, and William Wang. Logic-LM: Empowering large language models with symbolic solvers for faithful logical reasoning. In Findings of the Association for
+Computational Linguistics: EMNLP, 2023. 22
+
+40
+
+[260] Huaixiu Steven Zheng, Swaroop Mishra, Hugh Zhang, Xinyun Chen, Minmin Chen, Azade Nova, Le Hou,
+Heng-Tze Cheng, Quoc V. Le, Ed H. Chi, and Denny Zhou. NATURAL PLAN: Benchmarking LLMs on
+natural language planning. arXiv preprint arXiv:2406.04520, 2024. 23
+[261] Guoxiong Gao, Yutong Wang, Jiedong Jiang, Qi Gao, Zihan Qin, Tianyi Xu, and Bin Dong. Herald: A
+natural language annotated Lean 4 dataset. arXiv preprint arXiv:2410.10878, 2024. 23, 24
+[262] Peter Aczel, Benedikt Ahrens, Thorsten Altenkirch, Steve Awodey, Bruno Barras, Andrej Bauer, Yves
+Bertot, Marc Bezem, Thierry Coquand, Eric Finster, et al. Homotopy Type Theory: Univalent Foundations
+of Mathematics. 2013. 23
+[263] Anthony Bordg, Yiannos Stathopoulos, and Lawrence Paulson. A parallel corpus for natural language
+machine translation to Isabelle. In Work-in-progress papers presented at the Conference on Intelligent
+Computer Mathematics (CICM) Informal Proceedings, 2022. 23
+[264] Thomas Hales. Formal abstracts. https://formalabstracts.github.io/, 2017. 23
+[265] Anonymous. Rethinking and improving autoformalization: towards a faithful metric and a dependency
+retrieval-based approach. In International Conference on Learning Representations (ICLR), 2024. URL
+https://openreview.net/forum?id=hUb2At2DsQ. under review. 24
+[266] ICML 2024 Challenges on Automated Math Reasoning.
+ai4mathworkshopicml2024/challenges, 2024. 24
+
+https://sites.google.com/view/
+
+[267] Yinya Huang, Xiaohan Lin, Zhengying Liu, Qingxing Cao, Huajian Xin, Haiming Wang, Zhenguo Li,
+Linqi Song, and Xiaodan Liang. Mustard: Mastering uniform synthesis of theorem and proof data. In
+International Conference on Learning Representations (ICLR), 2024. 24
+[268] Alan Bundy, Mateja Jamnik, and Andrew Fugard. What is a proof? Philosophical Transactions of the
+Royal Society A: Mathematical, Physical and Engineering Sciences, 2005. 24
+[269] Jasmin Christian Blanchette and Tobias Nipkow. Nitpick: A counterexample generator for higher-order
+logic based on a relational model finder. In International Conference on Interactive Theorem Proving
+(ITP), 2010. 24
+[270] Yoshua Bengio and Nikolay Malkin. Machine learning and information theory concepts towards an AI
+mathematician. Bulletin of the American Mathematical Society, 2024. 24
+[271] Johannes Hölzl, Fabian Immler, and Brian Huffman. Type classes and filters for mathematical analysis in
+isabelle/hol. In Interactive Theorem Proving: 4th International Conference, ITP 2013, Rennes, France,
+July 22-26, 2013. Proceedings 4, pages 279–294. Springer, 2013. 24
+[272] John Harrison. The HOL Light theory of euclidean space. Journal of Automated Reasoning, 50:173–190,
+2013. 24
+[273] Sylvie Boldo, Catherine Lelay, and Guillaume Melquiond. Coquelicot: A user-friendly library of real
+analysis for coq. Mathematics in Computer Science, 9:41–62, 2015. 24
+[274] Thomas C Hales. Formal proof. Notices of the AMS, 2008. 25
+[275] Josef Urban and Jan Jakubuv. First neural conjecturing datasets and experiments. In International
+Conference on Intelligent Computer Mathematics (CICM), 2020. 25
+[276] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan,
+Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, et al. Program synthesis with large language models.
+arXiv preprint arXiv:2108.07732, 2021. 25
+[277] Mingjie Liu, Nathaniel Pinckney, Brucek Khailany, and Haoxing Ren. Verilogeval: Evaluating large
+language models for Verilog code generation. In International Conference on Computer Aided Design
+(ICCAD), 2023. 25
+[278] Evan Lohn and Sean Welleck. miniCodeProps: a minimal benchmark for proving code properties. arXiv
+preprint arXiv:2406.11915, 2024. 25, 26
+[279] Lichen Zhang, Shuai Lu, and Nan Duan. Selene: Pioneering automated proof in software verification. In
+Annual Meeting of the Association for Computational Linguistics (ACL), 2024. 25, 26
+[280] Cristiano Calcagno and Dino Distefano. Infer: An automatic program verifier for memory safety of C
+programs. In NASA Formal Methods Symposium, 2011. 26
+
+41
+
+[281] Berkeley Churchill, Oded Padon, Rahul Sharma, and Alex Aiken. Semantic program alignment for
+equivalence checking. In Programming Language Design and Implementation (PLDI), 2019. 26
+[282] Aidan ZH Yang, Yoshiki Takashima, Brandon Paulsen, Josiah Dodds, and Daniel Kroening. VERT:
+Verified equivalent Rust transpilation with few-shot learning. arXiv preprint arXiv:2404.18852, 2024. 26
+[283] Sandeep Dasgupta, Sushant Dinesh, Deepan Venkatesh, Vikram S Adve, and Christopher W Fletcher.
+Scalable validation of binary lifters. In Programming Language Design and Implementation (PLDI),
+2020. 26
+[284] Fengji Zhang, Bei Chen, Yue Zhang, Jacky Keung, Jin Liu, Daoguang Zan, Yi Mao, Jian-Guang Lou, and
+Weizhu Chen. RepoCoder: Repository-level code completion through iterative retrieval and generation.
+In Conference on Empirical Methods in Natural Language Processing (EMNLP), 2023. 26
+[285] Talia Ringer. Proof Repair. University of Washington, 2021. 26
+[286] Tom Reichel, R Henderson, Andrew Touchet, Andrew Gardner, and Talia Ringer. Proof repair infrastructure for supervised models: Building a large proof repair dataset. In International Conference on
+Interactive Theorem Proving (ITP), 2023. 26
+[287] Jiewen Hu, Thomas Zhu, and Sean Welleck. miniCTX: Neural theorem proving with (long-) contexts.
+arXiv preprint arXiv:2408.03350, 2024. 26
+[288] Kevin Buzzard et al. Fermat’s Last Theorem. https://github.com/ImperialCollegeLondon/FLT,
+2024. 27
+[289] Simon Frieder, Luca Pinchetti, Ryan-Rhys Griffiths, Tommaso Salvatori, Thomas Lukasiewicz, Philipp
+Petersen, and Julius Berner. Mathematical capabilities of ChatGPT. In Neural Information Processing
+Systems (NeurIPS), Datasets and Benchmarks Track, 2024. 27
+[290] Katherine M Collins, Albert Q Jiang, Simon Frieder, Lionel Wong, Miri Zilka, Umang Bhatt, Thomas
+Lukasiewicz, Yuhuai Wu, Joshua B Tenenbaum, William Hart, et al. Evaluating language models for
+mathematics through interactions. Proceedings of the National Academy of Sciences (PNAS), 2024. 27
+
+42
+
+

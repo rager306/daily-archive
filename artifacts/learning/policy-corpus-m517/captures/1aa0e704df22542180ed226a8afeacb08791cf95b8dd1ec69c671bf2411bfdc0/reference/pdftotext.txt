@@ -1,0 +1,3550 @@
+BattleAgentBench: A Benchmark for Evaluating Cooperation and
+Competition Capabilities of Language Models in Multi-Agent Systems
+Wei Wang, Dan Zhang, Tao Feng, Boyan Wang, Jie Tang
+
+arXiv:2408.15971v1 [cs.CL] 28 Aug 2024
+
+The Knowledge Engineering Group (KEG), Tsinghua University
+
+Abstract
+Large Language Models (LLMs) are becoming increasingly
+powerful and capable of handling complex tasks, e.g., building single agents and multi-agent systems. Compared to single agents, multi-agent systems have higher requirements
+for the collaboration capabilities of language models. Many
+benchmarks are proposed to evaluate their collaborative abilities. However, these benchmarks lack fine-grained evaluations of LLM collaborative capabilities. Additionally, multiagent collaborative and competitive scenarios are ignored in
+existing works. To address these two problems, we propose
+a benchmark, called BattleAgentBench, which defines
+seven sub-stages of three varying difficulty levels and conducts a fine-grained evaluation of language models in terms
+of single-agent scenario navigation capabilities, paired-agent
+task execution abilities, and multi-agent collaboration and
+competition capabilities. We conducted extensive evaluations
+on leading four closed-source and seven open-source models. Experimental results indicate that API-based models perform excellently on simple tasks but open-source small models struggle with simple tasks. Regarding difficult tasks that
+require collaborative and competitive abilities, although APIbased models have demonstrated some collaborative capabilities, there is still enormous room for improvement. The code
+for BattleAgentBench is available at https://github.com/
+THUDM/BattleAgentBench.
+
+1
+
+Introduction
+
+Large language models (LLMs) have showcased remarkable capabilities in handling intricate tasks (Bi et al. 2023;
+Jumper et al. 2021; Singhal et al. 2023; Zhang et al.
+2024a,b), positioning them as pivotal agents in real-world
+scenarios such as gaming (Guo et al. 2023), web automation (Gur et al. 2023), and knowledge retrieval (Wu et al.
+2024a). In particular, LLMs have been extensively employed
+to construct single-agent, double-agent, or multi-agent systems within gaming environments (Zhang et al. 2024d; Feng
+et al. 2024). The solitary agent setups serve to assess the fundamental rule comprehension of LLMs, while multi-agent
+systems (Zhang et al. 2024c; Gong et al. 2023) demand
+heightened collaborative prowess. To gauge their collaborative aptitude effectively, various benchmarks (Light et al.
+2023; Li et al. 2023a; Liu et al. 2023b) have been introduced, albeit in a broad-stroke evaluation fashion. And one
+category of methods mainly focuses on collaborative scenar-
+
+Level
+Ability/Stage
+
+Level 1
+
+Level 2
+
+1
+
+3
+
+2
+
+4
+
+Level 3
+5
+
+6
+
+7
+
+Rule Understanding
+Spatial Perception
+Competition
+Static Cooperation
+Dynamic Cooperation
+
+Table 1: Evaluation abilities at each stage of each level of
+the BattleAgentBench.
+ios (Panait and Luke 2005; Liu et al. 2023a), while another
+category primarily focuses on competitive scenarios (Zhang
+et al. 2024d; Feng et al. 2024).
+However, appraising the collaborative proficiencies of
+multi-agent systems necessitates the definition of meticulous
+evaluation metrics and a profound understanding of their
+holistic skill sets. Moreover, multi-agent systems not only
+navigate collaborative landscapes but also navigate through
+complex competitive scenarios. For instance, consider the
+case of a badminton double challenge, wherein collaboration
+is imperative within an internal team while competitive dynamics unfold between two opposing teams. Nevertheless,
+these competitive scenarios often fall by the wayside in existing benchmarks due to the intricate evaluation tasks and
+metrics they entail.
+In light of these challenges, this paper introduces
+BattleAgentBench, a fine-grained benchmark to evaluate the collaborative and competitive capabilities of LLMs
+in multi-agent systems Specifically, as shown in Table 1, the
+BattleAgentBench framework encompasses three different difficult y levels and seven stages. At Level 1 (the
+single-agent level), we design two simple stages to assess a
+single agent’s abilities of simple and complete game rule understanding. At Level 2 (the double-agent level), we use two
+stages with two agents to evaluate agents’ cooperative and
+competitive task execution abilities. At Level 3 (the multiagent level), we design three stages with different cooperative and competitive relationships between agents to assess
+agents’ static cooperation competition, dynamic cooperation
+competition, and hybrid cooperation competition.
+In addition, we have assessed 11 different LLMs using
+BattleAgentBench, including both four API-based and
+seven open-source models. We found that even in very sim-
+
+1. Stage Design
+
+2. Agent Interaction
+
+LLM Evaluation
+
+Level 1: Foundational Agent Capabilities
+Complex
+Scenario
+Navigation
+
+Simple
+Scenario
+Navigation
+
+Cooperation
+Cometition
+Capability
+
+Level 2: Paired Agent Interaction
+
+BattleAgent
+Bench
+
+Competitive
+Task
+Execution
+
+Cooperative
+Task
+Execution
+
+Large
+Language
+Models
+
+Level 3: Multi-Agent Dynamics
+Static
+Cooperation
+Competition
+
+Dynamic
+Cooperation
+Competition
+
+Game
+Server
+
+Hybrid
+Cooperation
+Competition
+
+Cooperation
+Agents
+
+Figure 1: Overall evaluation framework of the BattleAgentBench.
+ple stages, the performance of open-source small models
+was particularly poor, while API-based models performed
+well. However, in difficult tasks, although API-based models are still better than open-source small models, the gap between them has narrowed, and API-based models still have
+significant room for improvement.
+In summary, the contributions of this work are:
+• We introduce the BattleAgentBench, a fine-grained
+multi-agent cooperation and competition evaluation
+benchmark, which includes three levels ranging from single agent to multiple agents.
+• In the BattleAgentBench framework, we design
+seven stages from easy to difficult, capable of comprehensively assessing the basic abilities of single agents,
+cooperative abilities, and competitive abilities of multiagents.
+• We perform a thorough evaluation of 11 different LLMs
+using the BattleAgentBench, including the leading
+top four API-based LLMs and seven open-source models. Although API-based models perform well on simple
+stages, there is still significant room for improvement on
+complex stages.
+
+2
+
+Preliminary
+
+We evaluate LLMs as agents in a turn-based interactive
+game, Battle City, where the agent takes corresponding actions based on the game state at each turn. Thus, the entire
+interaction process between the agent and the game can be
+viewed as a Markov Decision Process (S, A, T , R, I, O),
+which contains state space S, action space A, transition
+function T : S × A → S, reward function R, game instruction I, and observation space O). The game server is
+responsible for state transitions and providing rewards. The
+agent needs to make an action a based on instruction i, observation o, and state s. We apply LLMs to implement the
+agent’s decision-making function:
+P (at |i, ot , st ) = LLM(i, ot , st )
+
+(1)
+
+3
+
+The BattleAgentBench
+
+To evaluate the cooperation and competition capabilities of
+large language models in a fine-grained manner, we design
+a new benchmark: BattleAgentBench. As shown in
+Figure 1, the BattleAgentBench consists of two main
+parts: stage design and agent interaction. In stage design, we
+design seven stages of three different difficulty levels. In
+agent interaction, we implement interactions between agents
+and servers to support evaluation in the above stages. Next,
+we introduce the overall evaluation framework and describe
+each stage in detail.
+
+3.1
+
+Composition of BattleAgentBench
+
+1. Stage Design. We design three different difficulty levels:
+Foundational Agent Capabilities (Level 1), Paired Agent Interaction (Level 2), and Multi-Agent Dynamics (Level 3),
+for a fine-grained evaluation of the agents’ collaborative and
+competitive abilities. At Level 1 (the single-agent level), we
+mainly evaluate a single agent’s basic abilities, for example, whether can understand the game’s basic rules. Regarding Level 2 (the double-agent level), we assess two agents’
+collaboration capabilities and competitive abilities in two
+stages. At Level 3 (the multi-agent level), we evaluate both
+the collaboration and competitive abilities of multiple agents
+in more complex scenarios. Each stage corresponds to a specific stage setting, defining the unique game environment
+for that stage, such as the number of players, the number
+of bases, the win/lose logic of the game, etc.
+2. Agent Interaction.
+Game Server. At the start of the game, the game server
+loads the specific environment according to the stage setting
+to be evaluated. During the game, the game server is responsible for sending observation information to agents, receiving actions from agents, updating the status of agents and
+environment, calculating agents’ rewards, and determining
+whether the game has ended.
+LLMs as Game Agents. Each agent represents a player,
+
+Wall
+Wall
+
+Base
+Base
+
+(a) Level 1 - Stage 1
+
+NPC
+Tank
+NPC
+Tank
+
+Agent
+Agent
+
+(b) Level 1 - Stage 2
+
+Figure
+2: Level
+1: Stage
+1 and Stage
+2.Blue
+The
+goal
+in
+Wall
+Team
+Base
+Team
+Red
+Wall
+Team
+Blue agent’s
+Tank
+Base NPC
+Team
+Red
+NPC
+Tank
+both stages is to reach the base location.
+and its core function is the decision-making function, which
+determines the next action based on the received observation
+data. We use LLMs to implement each action function. The
+game observation data is converted into text format based
+on predefined templates. Then, we prompt observation text
+to LLMs to obtain the output action.
+Cooperation between LLM Agents. In addition to the interaction between agents and the server, we have also implemented a message communication interface between agents
+to support the evaluation of agents’ static cooperation ability
+and dynamic cooperation ability.
+
+3.2
+
+Basic Rules of BattleAgent
+
+Specifically, the game contains four elements: the map,
+walls, bases, and tank as shown in Figure 2. Details and rules
+of this game are as follows:
+• The game map size is 512x512, with (0, 0) representing the top-left corner and (512, 512) representing the
+bottom-right corner.
+• The map contains tanks, bases, and walls; the tank size
+and the base size are 32x32, and the wall size is 8x8.
+• Tanks can move in four directions: up, down, left, and
+right. Walls and other tanks can obstruct the movement
+of the tank.
+• The vertical movement range of the tank is from 0 to 512,
+and the horizontal movement range is 0∼512.
+• Tanks have four orientations: up, down, left, and right,
+and shooting can destroy the tank or wall in front of them
+in the current direction.
+• When the tank’s front faces the map boundary, it cannot
+continue to move forward.
+• If there is a wall in front of the tank, it needs to shoot
+to eliminate the wall before it can continue to move forward.
+
+3.3
+
+Wall
+Wall
+
+Level 1: Foundational Agent Capabilities
+
+Compared to directly evaluating the collaboration abilities
+of multiple agents in complex collaborative and competitive
+scenarios, we believe that it is necessary to first assess the
+
+Base
+Base
+
+NPC
+NPC
+Tank
+Tank
+
+(a) Level 2 - Stage 3
+
+Team
+Team
+Blue
+Blue
+
+Team
+Team
+Red
+Red
+
+(b) Level 2 - Stage 4
+
+Figure 3: Stages of Level 2 (double-agent level). In Stage 3
+and Stage 4, the two agents have a cooperative relationship
+and a competitive relationship respectively.
+
+task completion capabilities of individual agents within the
+environment. This approach allows us to decouple the assessment of the agents’ basic capabilities from their collaborative abilities to some extent. In complex environments, if
+an agent performs poorly, it becomes difficult to differentiate
+whether the subpar performance is due to the agent’s basic
+capabilities or its collaborative abilities. Thus, we designed
+Level 1 (the single-agent level) to test basic capabilities in
+Figure 2.
+Stage 1: Simple Scenario Navigation. In this stage, we test
+the agent’s understanding of the game rules and the spatial
+perception ability regarding simple scenario navigation. a)
+Agent Setting: There is only one agent and one base. b)
+Agent Goal: We start with a simple goal, which is to reach
+the base location as quickly as possible. To achieve the goal,
+the agent first needs to understand the rules of the game with
+regard to these four elements. In addition to understanding
+these rules, the agent must also have good two-dimensional
+spatial perception skills to move correctly toward the target.
+Stage 2: Complex Scenario Navigation. We assess the
+ability to handle dynamic obstacles. a) Agent Setting and
+b) Agent Goal are consistent with Stage 1. The agent needs
+to eliminate the tanks that pose a threat to itself while approaching the base. c) Change: Compared to Stage 1, this
+stage introduces interfering Non-Player Character (NPC)
+tanks. These NPC tanks will move and shoot randomly. This
+requires the agent to have the ability to handle dynamic obstacles.
+In the next five stages, we also keep the basic game environment unchanged, primarily increasing the number of agents
+from different factions and setting more complex objectives.
+
+3.4
+
+Level 2: Paired Agent Interaction
+
+Compared to Level 1 (single-agent level), Level 2 (doubleagent level) introduces another agent, allowing for further
+evaluation of the agent’s cooperation and competition abilities. Moreover, compared to a multi-agent level, the twoagent environment can assess the agent’s cooperation and
+competition abilities with the minimum number of agents,
+
+Wall
+
+Wall
+
+Wall
+
+Base
+
+Base
+
+Base
+
+NPC Tank
+
+NPC Tank
+
+NPC Tank
+
+Agent
+
+Team Blue
+
+Team Blue
+
+Team Red
+
+Team Red
+Team Green
+Team Yellow
+
+(a) Level 3 - Stage 5
+
+(b) Level 3 - Stage 6
+
+(c) Level 3 - Stage 7
+
+Figure 4: Stages of Level 3 (multi-agent level). In Stage 5, the agents within the team have a cooperative relationship, while the
+agents between teams have a competitive relationship. In Stage 6, the agents between teams have a competitive relationship,
+while allowing for cooperative relationships between teams. In Stage 7, the relationship within the team is cooperative, the
+relationship between teams is competitive, and cooperation between teams is also allowed.
+minimizing the influence of the number of agents on the results. The collaborative relationships among multiple agents
+are more complex, so we designed this level to gradually
+increase the difficulty of assessing collaborative and competitive capabilities, as shown in Figure 3.
+Stage 3: Cooperative Task Execution. In this stage, we
+evaluate the cooperative task execution ability of agents. a)
+Agent Setting: two agents belong to the same faction. There
+are two bases: one is the own base, and the other is the enemy base. b) Agent Goal: The goal of the two agents is to
+eliminate the enemy base while protecting their own base
+from being attacked. c) Change: The two agents have a cooperative relationship and need to work together to accomplish this objective.
+To facilitate cooperation between the agents, we have introduced a communication interface in the game that allows
+the two agents to send collaboration messages to each other
+in natural language. In each action step, an agent can autonomously decide whether to send a collaboration message
+and propose a specific cooperation plan. The other agent can
+then reply to the collaboration message, indicating whether
+it accepts or rejects the proposed cooperation plan.
+Stage 4: Competitive Task Execution. In this stage, we
+assess the competitive task execution abilities of agents. a)
+Agent Setting: There are two agents and two bases. The two
+agents belong to different factions. b) Agent Goal: their objective is to destroy the opposing faction’s base while protecting their own base from being destroyed. c) Change:
+The two agents have a competitive relationship and need to
+defeat their opponents.
+
+3.5
+
+Level 3: Multi-Agent Dynamics
+
+Compared to Level 2 (double-agent level), we further increase the number of agents and consider more complex
+cooperative and competition scenarios in Figure 4, such
+as managing dynamic cooperative relationships and facing
+multiple competition factions.
+
+Stage 5: Static Cooperation Competition. a) Agent Setting: There are four agents and two bases. Four agents are
+divided into two teams: the Red Team and the Blue Team,
+with two agents on each team. b) Agent Goal: The goal is
+to destroy the opposing faction’s base while protecting their
+own base from being destroyed. c) Change: In this stage, the
+agents have both cooperative and competitive relationships.
+We restrict cooperation to only teammates within the
+same team, meaning that the agents of the Red Team can
+cooperate with each other, and the agents of the Blue Team
+can cooperate with each other. Since the cooperation partners for each agent are fixed and unchanging, we refer to
+this as static cooperative competition.
+Stage 6: Dynamic Cooperation Competition. a) Agent
+Setting: There are four agents and four bases. Four agents
+belong to different teams: the Red Team, Blue Team, Green
+Team, and Yellow Team. b) Agent Goal: Each team can
+only win by defeating the other three teams. c) Change: This
+stage introduces a dynamic cooperative relationship.
+During the confrontation, in pursuit of ultimate victory,
+each agent can freely engage in temporary cooperation with
+one of the other three teams. For example, two teams may
+choose to collaborate to eliminate a common enemy before
+turning against each other. Since the cooperation relationships between agents are dynamically changing, we refer to
+this as dynamic cooperative competition.
+Stage 7: Hybrid Cooperation Competition. This stage
+includes dynamic and static. a) Agent Setting: There are
+eight agents and four bases. We divide eight agents into four
+teams, the Red Team, Blue Team, Green Team, and Yellow
+Team, each team consisting of two agents. b) Agent Goal:
+Each team can only win by defeating the other three teams.
+c) Change: This level has both static cooperative relationships and dynamic cooperative relationships.
+During the confrontation, the cooperation among teammates remains constant, and the ultimate goal is also
+aligned: to eliminate the other teams. At the same time,
+agents can temporarily collaborate with an agent from an-
+
+other team. Because the ultimate goals of the other teams
+differ, this cooperation relationship is temporary. Therefore,
+we refer to this scenario as mixed cooperative competition.
+
+Evaluation of BattleAgentBench
+Evaluation Setup
+
+(2)
+
+where L1 denotes L1 distance. We also introduced two auxiliary metrics: Format Accuracy (F Acc) and Move Accuracy (M Acc). We predefined the output format for instructions and used regular expressions to match LLM’s output.
+The format accuracy measures the LLM’s ability to output
+in the specified format.
+F Acc = Nf ormat /Ntotal ,
+
+(3)
+
+where Nf ormat represents the number of turns where the
+model output is correctly formatted, while Ntotal represents
+the total number of turns. Since the target position is known,
+we can determine whether the agent’s movement direction is
+correct at each step, so the movement accuracy is calculated
+as follows:
+M Acc = Ncorrect /Nf ormat ,
+
+F Acc
+
+M Acc
+
+claude3.5-sonnet-0620
+gpt-4o-mini
+gpt-3.5-turbo-0125
+glm-4-flash
+
+13.7
+12.3
+10.7
+4.3
+
+1.00
+1.00
+1.00
+1.00
+
+internlm2.5-7b-chat
+mistral-7b-instruct
+glm-4-9b-chat
+qwen2-7b-Instruct
+yi-1.5-9b-chat-16k
+gemma2-9b-it
+llama3-8b-instruct
+
+6.7
+3.3
+3.8
+3.7
+1.9
+2.8
+-1.4
+
+0.99
+0.98
+1.00
+0.98
+1.00
+0.98
+0.99
+
+0.63
+0.58
+0.61
+0.60
+0.54
+0.60
+0.41
+
+random
+
+1.0
+
+-
+
+0.49
+
+F Dis
+
+Avg. Dis
+
+F Acc
+
+M Acc
+
+1.00
+1.00
+1.00
+0.92
+
+0.90
+0.86
+0.65
+0.68
+
+12.8
+11.5
+8.2
+4.7
+
+4.7
+5.8
+4.2
+2.1
+1.9
+0.7
+-1.1
+
+0.99
+0.98
+1.00
+0.99
+1.00
+0.99
+0.99
+
+0.63
+0.65
+0.63
+0.56
+0.55
+0.55
+0.45
+
+5.7
+4.6
+4.0
+2.9
+1.9
+1.8
+-1.3
+
+1.4
+
+-
+
+0.52
+
+1.2
+
+API-based models
+0.97
+0.98
+0.83
+0.60
+
+12.0
+10.7
+5.7
+5.0
+
+open-source models
+
+Metrics. In Stage 1 and Stage 2, we primarily use the Forward Distance (F Dis) as the evaluation metric, since the
+goal of these two stages is to reach the target base. The distance the agent moves toward the base is a suitable metric.
+Specifically, given the tank’s initial position ps , the base’s
+position ptarget , and the tank’s position at the end of the
+game pe , we can calculate the tank’s forward distance as follows.
+F Dis = L1(ps − ptarget ) − L1(pe − ptarget ),
+
+Stage 2
+
+F Dis
+
+(4)
+
+where Ncorrect denotes the number of turns with correct
+movement direction.
+In the subsequent five stages, we use Score as the evaluation metric. The agents will earn a certain score for successfully attacking bases, other agents, and NPC tanks. The
+sum of the three types of scores will serve as the final score.
+Specifically, the agent’s health is 5, and the NPC tank’s
+health is 1. Each attack on the agent and tank obtains 1 score,
+while each attack on the base obtains 5 scores.
+It should be noted that these 5 stages have multiple agents.
+Each agent needs to connect to a language model. To facilitate the evaluation of different language models, we have
+adopted the concept of primary and secondary agents. The
+primary agent is the first agent or the first team of agents,
+while the remaining agents are secondary agents. Each stage
+can connect up to two types of language models, with the
+primary agent connecting to the language model being evaluated, and the secondary agents connecting to another reference language model. Here, we have used yi-1.5-9b as the
+reference language model. By keeping the secondary agents
+connected to the reference language model unchanged, we
+can fairly connect and evaluate different language models in
+the primary agent. For example, in Level 2, there is only one
+team of 2 agents, so both agents are primary agents, connecting to the language model being evaluated, and their scores
+are summed for the final score.
+
+Table 2: Evaluation results of Level 1. Bold denotes the best
+result on API-based models and open-source models.
+Baselines. We evaluate two types of models: API-based
+models and open-source models. The API-based models
+include Claude3.51 , GPT-4o-mini (Achiam et al. 2023),
+GPT-3.5 (Achiam et al. 2023), and GLM-4 (GLM et al.
+2024). The open-source models include Llama3-8b, Mistral7b (Jiang et al. 2023), Gemma2-9b (Team et al. 2024),
+GLM-4-9b (GLM et al. 2024), Yi-1.5-9b (Young et al.
+2024), Internlm2.5-7b (Team 2023), and Qwen2-7b (Yang
+et al. 2024).
+0.79
+
+0.8
+
+Average Goal Completion Rate
+
+4
+4.1
+
+Stage 1
+
+Models
+
+0.70
+
+0.6
+
+0.50
+
+0.4
+
+0.36
+
+0.29 0.27
+0.24
+
+0.2
+
+0.16
+
+Models
+1. claude3.5-sonnet
+2. gpt-4o-mini
+3. gpt-3.5-turbo
+4. internlm2.5-7b-chat
+5. glm-4-flash
+6. mistral-7b-instruct
+7. glm-4-9b-chat
+8. qwen2-7b-instruct
+9. gemma-2-9b
+10. yi-1.5-9b-chat-16k
+11. llama3-8b-instruct
+
+0.11 0.10
+
+0.0
+0.2
+
+-0.11
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+Figure 5: Goal completion rate of different models.
+
+4.2
+
+Overall Experimental Results
+
+Evaluation on Level 1. As shown in Table 2, API-based
+models have a significant advantage over open-source small
+models in terms of forward distance, especially claude3.5sonnet and gpt-4o-mini, which can approach the base well.
+In contrast, open-source models make less progress. Based
+on the forward distance and total distance to the target, we
+can calculate the goal completion rate. The results are shown
+in Figure 5. The results show that claude3.5-sonnet and gpt4o-mini can effectively complete navigation tasks. The goal
+completion rates of open-source models are all below 50%.
+In addition, open-source small models have lower move
+accuracy while API-based models have higher move accuracy. This indicates that open-source small models have poor
+1
+
+https://www.anthropic.com/news/claude-3-5-sonnet
+
+Stage 4
+
+Models
+Score
+
+F Acc
+
+Stage 5
+M Acc
+
+Score
+
+Avg. Score
+
+F Acc
+
+M Acc
+
+1.00
+0.90
+0.88
+0.98
+
+0.90
+0.65
+0.63
+0.55
+
+4.8
+2.3
+0.3
+0.5
+
+API-based models
+claude3.5-sonnet-0620
+gpt-4o-mini
+gpt-3.5-turbo-0125
+glm-4-flash
+
+5.3
+3.3
+0.3
+0.3
+
+1.00
+0.96
+0.97
+0.92
+
+0.96
+0.69
+0.63
+0.63
+
+4.3
+1.3
+0.3
+0.7
+
+internlm2.5-7b-chat
+yi-1.5-9b-chat-16k
+llama3-8b-instruct
+glm-4-9b-chat
+qwen2-7b-Instruct
+gemma2-9b-it
+mistral-7b-instruct
+
+1.8
+1.4
+0.4
+0.4
+0.4
+0.4
+0.3
+
+0.73
+0.72
+0.81
+0.76
+0.65
+0.82
+0.55
+
+0.54
+0.54
+0.34
+0.44
+0.58
+0.53
+0.56
+
+0.2
+0.4
+0.4
+0.4
+0.2
+0.0
+0.0
+
+0.84
+0.96
+0.63
+0.80
+0.88
+0.10
+0.15
+
+0.57
+0.46
+0.57
+0.64
+0.56
+0.42
+0.61
+
+1.0
+0.9
+0.4
+0.4
+0.3
+0.2
+0.1
+
+random
+
+0.2
+
+-
+
+0.48
+
+0.0
+
+-
+
+0.49
+
+0.1
+
+open-source models
+
+Table 3: Evaluation results of Level 2 of the BattleAgentBench. Bold denotes the best result on API-based models and
+open-source models.
+Stage 5
+
+Models
+Score
+
+F Acc
+
+Stage 6
+M Acc
+
+Score
+
+F Acc
+
+Stage 7
+
+Avg. Score
+
+M Acc
+
+Score
+
+F Acc
+
+M Acc
+
+0.98
+0.77
+0.70
+0.64
+
+8.3
+2.0
+2.3
+0.3
+
+1.00
+0.89
+0.98
+0.98
+
+0.92
+0.64
+0.63
+0.91
+
+7.2
+4.1
+1.6
+1.0
+
+API-based models
+claude3.5-sonnet-0620
+gpt-4o-mini
+gpt-3.5-turbo-0125
+glm-4-flash
+
+6.3
+5.7
+1.0
+0.7
+
+1.00
+0.95
+0.97
+0.95
+
+0.91
+0.71
+0.72
+0.54
+
+7.0
+4.7
+1.3
+2.0
+
+1.00
+0.96
+0.88
+0.95
+
+open-source models
+internlm2.5-7b-chat
+yi-1.5-9b-chat-16k
+gemma2-9b-it
+llama3-8b-instruct
+glm-4-9b-chat
+qwen2-7b-Instruct
+mistral-7b-instruct
+
+0.6
+1.0
+1.8
+1.0
+1.0
+0.0
+0.2
+
+0.76
+0.89
+0.83
+0.85
+0.82
+0.69
+0.49
+
+0.48
+0.56
+0.39
+0.47
+0.48
+0.52
+0.38
+
+2.2
+1.8
+0.6
+0.8
+0.6
+1.4
+0.0
+
+0.67
+0.80
+0.87
+0.85
+0.80
+0.63
+0.54
+
+0.42
+0.49
+0.47
+0.55
+0.63
+0.47
+0.43
+
+3.2
+2.2
+1.8
+1.2
+1.0
+1.2
+0.2
+
+0.66
+0.77
+0.86
+0.83
+0.83
+0.65
+0.47
+
+0.55
+0.52
+0.57
+0.73
+0.72
+0.64
+0.49
+
+2.0
+1.7
+1.4
+1.0
+0.9
+0.9
+0.1
+
+random
+
+0.2
+
+-
+
+0.50
+
+0.4
+
+-
+
+0.49
+
+0.6
+
+-
+
+0.52
+
+0.4
+
+Table 4: Evaluation results of Level 3 of the BattleAgentBench. Bold denotes the best result on API-based models and
+open-source models.
+two-dimensional spatial perception, with many movements
+being incorrect. This explains why these models make less
+progress. Both types of models have high format accuracy,
+indicating that they can both follow the given action format well. The evaluation results of these two stages indicate that API-based models can understand the game environment and have a good spatial perception, thus effectively
+completing objectives. In contrast, open-source models are
+generally unable to effectively accomplish the goals.
+Evaluation on Level 2. From Table 3, it can be seen
+that in collaborative and adversarial environments, among
+all models, only claude3.5-sonnet and gpt-4o-mini achieved
+relatively high scores, while other models scored comparatively lower. As the difficulty increases, only claude3.5sonnet maintained a consistent movement accuracy, while
+
+the movement accuracy of gpt-4o-mini, gpt-3.5, and glm-4flash all showed a decline. The movement accuracy of opensource models remains as poor as in Level 1. Due to the
+increased complexity of instruction formats, all models experienced some decline in format accuracy. However, APIbased models showed a smaller decrease in format accuracy.
+These results demonstrate that claude3.5-sonnet has strong
+environmental understanding, collaboration, and adversarial capabilities, while gpt-4o-mini achieved the second-best
+performance in these aspects. Other models were unable to
+cope with complex environments effectively.
+Evaluation on Level 3. As shown in Table 4, we can see
+that in more complex environments, claude3.5-sonnet and
+gpt-4o-mini still obtain relatively high scores. Other models
+scored comparatively lower. Notably, only claude3.5-sonnet
+
+Stage 5
+
+Models
+Score
+
+F Acc
+
+Stage 6
+M Acc
+
+Score
+
+F Acc
+
+Stage 7
+M Acc
+
+Avg. Score
+
+∆ Score
+
+0.89
+0.76
+0.56
+0.61
+
+4.9
+3.8
+2.1
+3.0
+
+-2.3
+-0.3
+0.6
+2.0
+
+0.50
+0.62
+0.57
+0.49
+0.55
+0.24
+0.55
+
+3.0
+2.7
+2.5
+2.5
+1.5
+0.8
+0.7
+
+1.3
+1.3
+1.7
+0.5
+0.7
+0.7
+-0.3
+
+Score
+
+F Acc
+
+M Acc
+
+7.0
+4.0
+2.7
+6.0
+
+1.00
+0.90
+0.96
+1.00
+
+5.6
+4.0
+6.0
+3.8
+3.6
+2.3
+0.8
+
+0.89
+0.92
+0.82
+0.77
+0.80
+0.23
+0.55
+
+API-based models
+claude3.5-sonnet-0620
+gpt-4o-mini
+gpt-3.5-turbo-0125
+glm-4-flash
+
+4.3
+4.3
+1.3
+1.0
+
+1.00
+0.92
+0.96
+1.00
+
+0.87
+0.74
+0.63
+0.48
+
+3.3
+3.0
+2.3
+2.0
+
+1.00
+0.90
+0.93
+1.00
+
+0.87
+0.73
+0.59
+0.55
+
+open-source models
+yi-1.5-9b-chat-16k
+gemma2-9b-it
+glm-4-9b-chat
+internlm2.5-7b-chat
+qwen2-7b-instruct
+mistral-7b-instruct
+llama3-8b-instruct
+
+1.8
+2.0
+0.6
+0.6
+0.0
+0.0
+0.0
+
+0.94
+0.94
+0.79
+0.78
+0.81
+0.26
+0.64
+
+0.56
+0.60
+0.45
+0.45
+0.50
+0.46
+0.53
+
+1.6
+2.0
+1.0
+3.0
+1.0
+0.2
+1.2
+
+0.94
+0.93
+0.79
+0.75
+0.85
+0.17
+0.62
+
+0.51
+0.55
+0.58
+0.46
+0.57
+0.35
+0.69
+
+Table 5: Ablation Evaluation results of Level 3 of the BattleAgentBench. Bold denotes the best result on API-based
+models and open-source models. ∆ Score represents Avg. Score in Table 5 subtracts Avg. Score in Table 4.
+maintains a high movement accuracy. gpt-4o-mini achieved
+performance second only to claude3.5-sonnet across all metrics. Compared to these two models, other models have
+lower scores, movement accuracy, and format accuracy. This
+indicates that these two models have stronger capabilities in
+dealing with complex environments. The other models perform poorly in lower-level tasks and continue to underperform in higher-level tasks.
+
+4.3
+
+#Game State Data:
+Own id: 3.
+...
+#Task Description:
+...
+#Game Instructions:
+...
+#Operation Options:
+...
+#Cooperation Options:
+...
+#Last Round Operation:
+...
+
+Ablation Study
+
+Evaluation results of Level 3 reveal the differences in the
+comprehensive capabilities of different models in complex
+environments, including environmental understanding, cooperation, competition abilities, etc. To assess the effectiveness of models’ collaborative abilities, we conduct further
+ablation experiments that remove the cooperation interface
+between agents in the Level 3 evaluation. This means that
+while the team relationships between agents remained unchanged, no agent could cooperate with any other. The ablation results are shown in Table 5.
+Comparing Tables 4 and Table 5, we observe that after removing the collaboration interface, only the scores
+of claude3.5-sonnet and gpt-4o-mini decrease, while the
+scores of other models increase. This indicates that only
+claude3.5-sonnet and gpt-4o-mini’s cooperation is effective,
+allowing them to achieve higher scores through cooperation.
+Conversely, collaboration among other models lowers their
+scores, indicating that cooperation between these models is
+ineffective or even harmful. Although claude3.5-sonnet and
+gpt-4o-mini improve their scores through cooperation, we
+also notice that the improvement from cooperation is relatively small. Through analysis of the models’ battle records,
+we observe that the models currently exhibit some basic cooperative strategies. We will illustrate this finding through a
+case study in the following section.
+
+4.4
+
+Input
+
+Case Study of Level 3 - Stage 7
+
+In the evaluation of the range from Stage 1 to Stage 7,
+claude3.5-sonnet shows significant advantages compared to
+other models. As the game environment becomes increas-
+
+#Thought process:
+
+Output
+
+Attack target: Continue attacking tank 5. Although the previous
+round's attack didn't cause damage, this might be because we're not
+close enough yet. Tank 5 is located at (384, 0), the closest enemy
+advanced tank to our base, posing a serious threat.
+Attack plan: I'm currently at (64, 32), facing right. To approach tank 5,
+I need to continue moving right. After moving, if within range, I'll
+shoot immediately.
+Cooperation plan: Since both my teammate 0 and I are advanced
+tanks, we can continue to cooperate. Although our previous
+cooperation was aimed at tank 1, considering tank 5's greater threat,
+we should adjust our cooperation target.
+#Attack operation:
+Target 5: #Move_right#
+#Cooperation operation:
+#Request_coop# 0: Please adjust cooperation target, assist in attacking
+enemy tank 5 located at (384, 0), it poses the greatest threat to our base.
+
+Figure 6: Cooperation example of claude3.5-sonnet to finish
+decision-making process in Stage 7.
+ingly complex, it maintains a stable spatial awareness ability and can move in the correct direction, which is effectively reflected by the M Acc metric. Through analyzing
+the game confrontation records, we found that claude3.5sonnet also demonstrated some collaborative abilities. Let’s
+
+illustrate this with an example in Figure 6. This example
+is claude3.5-sonnet’s decision-making process in a certain
+round of Stage 7. In terms of attack operations, claude3.5sonnet first analyzed the current game situation to identify
+the biggest threat and moved towards it to prepare for subsequent attacks. In terms of collaborative operations, given
+the enormous threat posed by this attack target, claude3.5sonnet timely initiated a collaboration request to teammates
+to prioritize eliminating this enemy.
+
+5
+
+Related Works
+
+Multi-Agent Cooperation and Competition. LLM-based
+multi-agent focuses on various agent profiles and interactions among agents (Wu et al. 2023; Guo et al. 2024; Li
+et al. 2023b). For instance, CoELA (Zhang et al. 2024c)
+investigated communication and cooperation in LLM-based
+watch-and-help tasks, while MindAgent (Gong et al. 2023)
+assessed the efficiency of collaboration between two or more
+agents. These efforts primarily focus on multiple agents collaborating effectively to achieve common goals (Panait and
+Luke 2005; Liu et al. 2023a). In contrast, some efforts focus
+on the competitive scenario between agents (Hu et al. 2024),
+like AgentPro (Zhang et al. 2024d) and ChessGPT (Feng
+et al. 2024) to evaluate the strategy reasoning and instruction
+following the ability of LLM-based agents in competitive
+settings. Suspicion-Agent (Guo et al. 2023) utilizes behavioral games theory (Akata et al. 2023) to evaluate the agent
+capabilities of LLM in a large set of two-player-two strategies games. However, most of these benchmarks evaluate
+only a few agents (Hu et al. 2024). Instead, our benchmark
+emphasizes the evaluation of multi-agent coordination and
+competition.
+Benchmarks using Games. A series of works investigated
+LLM-based game agents (Hu et al. 2024; Taesiri et al.
+2024; Akoury, Yang, and Iyyer 2023; Hua et al. 2023). Several benchmarks center on the game Avalone e.g., AvaloneBench (Light et al. 2023), CodeAct (Shi et al. 2023), and
+Recon (Wang et al. 2023a). Other benchmarks like CoS (Ma
+et al. 2023) and SwarmBrain (Shao et al. 2024), which excel in the strategy game StarCraft II (Vinyals et al. 2017).
+While MindAgent (Gong et al. 2023), ProAgent (Zhang
+et al. 2024d), and S-Agents (Chen et al. 2024), among others, focus on Overcooked (Carroll et al. 2019; Agashe, Fan,
+and Wang 2023) and Minecraft (BAAI 2023; Feng et al.
+2023) in the context of agent collaboration (Wang et al.
+2023b; Zhang et al. 2023; Li et al. 2023c). Moreover, in
+Minecraft, many efforts ask LLM to generate goals that
+adapt to the agent’s current state, inventory, acquired skills,
+and environment (Li et al. 2023a). More benchmarks using games include Cradle (Tan et al. 2024), Thinker (Wu
+et al. 2024b), PokéLLMon (Hu, Huang, and Liu 2024), PokerGPT (Huang et al. 2024), CreativeAgent (Zhang et al.
+2023), PlayDoom (de Wynter 2024), etc. LLMGA (Hu
+et al. 2024) further overviews the benchmarks into sixgame genres covering adventure, communication, cooperation, competition, simulation, exploration, and others. However, scarce work investigated multi-agent coordination and
+competitive scenarios. Even within this narrow field, their
+
+focus remains on two-agent interaction with unevenly distributed responsibilities.
+
+6
+
+Conclusion
+
+This work introduces the BattleAgentBench, a benchmark for LLM-based multi-agent collaboration and competition evaluation, which defines seven sub-stages of three
+varying difficulty levels and conducts a fine-grained evaluation of language models in terms of single-agent scenario
+navigation capabilities, paired-agent task execution abilities,
+and multi-agent collaboration and competition capabilities.
+We perform a thorough evaluation of 11 LLMs. Although
+API-based models have demonstrated some collaborative
+capabilities, there is still enormous room for improvement.
+
+References
+Achiam, J.; Adler, S.; Agarwal, S.; Ahmad, L.; Akkaya, I.;
+Aleman, F. L.; Almeida, D.; Altenschmidt, J.; Altman, S.;
+Anadkat, S.; et al. 2023. Gpt-4 technical report. arXiv
+preprint arXiv:2303.08774.
+Agashe, S.; Fan, Y.; and Wang, X. E. 2023. Evaluating
+multi-agent coordination abilities in large language models.
+arXiv preprint arXiv:2310.03903.
+Akata, E.; Schulz, L.; Coda-Forno, J.; Oh, S. J.; Bethge, M.;
+and Schulz, E. 2023. Playing repeated games with large language models. arXiv preprint arXiv:2305.16867.
+Akoury, N.; Yang, Q.; and Iyyer, M. 2023. A framework
+for exploring player perceptions of llm-generated dialogue
+in commercial video games. In Findings of the Association
+for Computational Linguistics: EMNLP 2023, 2295–2311.
+BAAI, P. 2023. Plan4mc: Skill reinforcement learning and
+planning for open-world minecraft tasks. arXiv preprint
+arXiv:2303.16563.
+Bi, K.; Xie, L.; Zhang, H.; Chen, X.; Gu, X.; and Tian, Q.
+2023. Accurate medium-range global weather forecasting
+with 3D neural networks. Nature, 619: 1–6.
+Carroll, M.; Shah, R.; Ho, M. K.; Griffiths, T.; Seshia, S.;
+Abbeel, P.; and Dragan, A. 2019. On the utility of learning about humans for human-ai coordination. Advances in
+neural information processing systems, 32.
+Chen, J.; Jiang, Y.; Lu, J.; and Zhang, L. 2024. S-Agents:
+self-organizing agents in open-ended environment. arXiv
+preprint arXiv:2402.04578.
+de Wynter, A. 2024. Will GPT-4 Run DOOM? arXiv
+preprint arXiv:2403.05468.
+Feng, X.; Luo, Y.; Wang, Z.; Tang, H.; Yang, M.; Shao, K.;
+Mguni, D.; Du, Y.; and Wang, J. 2024. Chessgpt: Bridging
+policy learning and language modeling. Advances in Neural
+Information Processing Systems, 36.
+Feng, Y.; Wang, Y.; Liu, J.; Zheng, S.; and Lu, Z. 2023.
+Llama rider: Spurring large language models to explore the
+open world. arXiv preprint arXiv:2310.08922.
+GLM, T.; Zeng, A.; Xu, B.; Wang, B.; Zhang, C.;
+Yin, D.; Rojas, D.; Feng, G.; Zhao, H.; Lai, H.; et al.
+2024. ChatGLM: A Family of Large Language Models
+from GLM-130B to GLM-4 All Tools. arXiv preprint
+arXiv:2406.12793.
+
+Gong, R.; Huang, Q.; Ma, X.; Vo, H.; Durante, Z.; Noda, Y.;
+Zheng, Z.; Zhu, S.-C.; Terzopoulos, D.; Fei-Fei, L.; et al.
+2023. Mindagent: Emergent gaming interaction. arXiv
+preprint arXiv:2309.09971.
+Guo, J.; Yang, B.; Yoo, P.; Lin, B. Y.; Iwasawa, Y.; and Matsuo, Y. 2023. Suspicion-agent: Playing imperfect information games with theory of mind aware gpt-4. arXiv preprint
+arXiv:2309.17277.
+Guo, T.; Chen, X.; Wang, Y.; Chang, R.; Pei, S.; Chawla,
+N. V.; Wiest, O.; and Zhang, X. 2024. Large language model
+based multi-agents: A survey of progress and challenges.
+arXiv preprint arXiv:2402.01680.
+Gur, I.; Furuta, H.; Huang, A.; Safdari, M.; Matsuo, Y.; Eck,
+D.; and Faust, A. 2023. A real-world webagent with planning, long context understanding, and program synthesis.
+arXiv preprint arXiv:2307.12856.
+Hu, S.; Huang, T.; Ilhan, F.; Tekin, S.; Liu, G.; Kompella, R.;
+and Liu, L. 2024. A survey on large language model-based
+game agents. arXiv preprint arXiv:2404.02039.
+Hu, S.; Huang, T.; and Liu, L. 2024. Pok\’eLLMon:
+A Human-Parity Agent for Pok\’emon Battles with Large
+Language Models. arXiv preprint arXiv:2402.01118.
+Hua, W.; Fan, L.; Li, L.; Mei, K.; Ji, J.; Ge, Y.; Hemphill, L.;
+and Zhang, Y. 2023. War and peace (waragent): Large language model-based multi-agent simulation of world wars.
+arXiv preprint arXiv:2311.17227.
+Huang, C.; Cao, Y.; Wen, Y.; Zhou, T.; and Zhang, Y. 2024.
+PokerGPT: An End-to-End Lightweight Solver for MultiPlayer Texas Hold’em via Large Language Model. arXiv
+preprint arXiv:2401.06781.
+Jiang, A. Q.; Sablayrolles, A.; Mensch, A.; Bamford, C.;
+Chaplot, D. S.; Casas, D. d. l.; Bressand, F.; Lengyel, G.;
+Lample, G.; Saulnier, L.; et al. 2023. Mistral 7B. arXiv
+preprint arXiv:2310.06825.
+Jumper, J.; Evans, R.; Pritzel, A.; Green, T.; Figurnov, M.;
+Ronneberger, O.; Tunyasuvunakool, K.; Bates, R.; Žı́dek,
+A.; Potapenko, A.; et al. 2021. Highly accurate protein structure prediction with AlphaFold. nature, 596(7873): 583–
+589.
+Li, C.; Zhang, R.; Wong, J.; Gokmen, C.; Srivastava, S.;
+Martı́n-Martı́n, R.; Wang, C.; Levine, G.; Lingelbach, M.;
+Sun, J.; et al. 2023a. Behavior-1k: A benchmark for embodied ai with 1,000 everyday activities and realistic simulation.
+In Conference on Robot Learning, 80–93. PMLR.
+Li, H.; Chong, Y. Q.; Stepputtis, S.; Campbell, J.; Hughes,
+D.; Lewis, M.; and Sycara, K. 2023b. Theory of mind for
+multi-agent collaboration via large language models. arXiv
+preprint arXiv:2310.10701.
+Li, Y.; Zhang, S.; Sun, J.; Du, Y.; Wen, Y.; Wang, X.; and
+Pan, W. 2023c. Cooperative open-ended learning framework
+for zero-shot coordination. In International Conference on
+Machine Learning, 20470–20484. PMLR.
+Light, J.; Cai, M.; Shen, S.; and Hu, Z. 2023. Avalonbench:
+Evaluating llms playing the game of avalon. In NeurIPS
+2023 Foundation Models for Decision Making Workshop.
+
+Liu, J.; Yu, C.; Gao, J.; Xie, Y.; Liao, Q.; Wu, Y.; and
+Wang, Y. 2023a.
+Llm-powered hierarchical language
+agent for real-time human-ai coordination. arXiv preprint
+arXiv:2312.15224.
+Liu, X.; Yu, H.; Zhang, H.; Xu, Y.; Lei, X.; Lai, H.; Gu,
+Y.; Ding, H.; Men, K.; Yang, K.; et al. 2023b. Agentbench:
+Evaluating llms as agents. arXiv preprint arXiv:2308.03688.
+Ma, W.; Mi, Q.; Yan, X.; Wu, Y.; Lin, R.; Zhang, H.; and
+Wang, J. 2023. Large language models play starcraft ii:
+Benchmarks and a chain of summarization approach. arXiv
+preprint arXiv:2312.11865.
+Panait, L.; and Luke, S. 2005. Cooperative multi-agent
+learning: The state of the art. Autonomous agents and multiagent systems, 11: 387–434.
+Shao, X.; Jiang, W.; Zuo, F.; and Liu, M. 2024. SwarmBrain:
+Embodied agent for real-time strategy game StarCraft II via
+large language models. arXiv preprint arXiv:2401.17749.
+Shi, Z.; Fang, M.; Zheng, S.; Deng, S.; Chen, L.; and Du,
+Y. 2023. Cooperation on the fly: Exploring language agents
+for ad hoc teamwork in the avalon game. arXiv preprint
+arXiv:2312.17515.
+Singhal, K.; Azizi, S.; Tu, T.; Mahdavi, S. S.; Wei, J.; Chung,
+H. W.; Scales, N.; Tanwani, A.; Cole-Lewis, H.; Pfohl, S.;
+et al. 2023. Large language models encode clinical knowledge. Nature, 620(7972): 172–180.
+Taesiri, M. R.; Feng, T.; Bezemer, C.-P.; and Nguyen, A.
+2024. GlitchBench: Can large multimodal models detect
+video game glitches? In Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition,
+22444–22455.
+Tan, W.; Ding, Z.; Zhang, W.; Li, B.; Zhou, B.; Yue, J.; Xia,
+H.; Jiang, J.; Zheng, L.; Xu, X.; et al. 2024. Towards general
+computer control: A multimodal agent for red dead redemption ii as a case study. arXiv preprint arXiv:2403.03186.
+Team, G.; Mesnard, T.; Hardin, C.; Dadashi, R.; Bhupatiraju, S.; Pathak, S.; Sifre, L.; Rivière, M.; Kale, M. S.; Love,
+J.; et al. 2024. Gemma: Open models based on gemini research and technology. arXiv preprint arXiv:2403.08295.
+Team, I. 2023. Internlm: A multilingual language model
+with progressively enhanced capabilities.
+Vinyals, O.; Ewalds, T.; Bartunov, S.; Georgiev, P.; Vezhnevets, A. S.; Yeo, M.; Makhzani, A.; Küttler, H.; Agapiou, J.;
+Schrittwieser, J.; et al. 2017. Starcraft ii: A new challenge for
+reinforcement learning. arXiv preprint arXiv:1708.04782.
+Wang, S.; Liu, C.; Zheng, Z.; Qi, S.; Chen, S.; Yang,
+Q.; Zhao, A.; Wang, C.; Song, S.; and Huang, G. 2023a.
+Avalon’s game of thoughts: Battle against deception through
+recursive contemplation. arXiv preprint arXiv:2310.01320.
+Wang, Z.; Cai, S.; Chen, G.; Liu, A.; Ma, X.; and Liang, Y.
+2023b. Describe, explain, plan and select: Interactive planning with large language models enables open-world multitask agents. arXiv preprint arXiv:2302.01560.
+Wu, Q.; Bansal, G.; Zhang, J.; Wu, Y.; Zhang, S.; Zhu, E.;
+Li, B.; Jiang, L.; Zhang, X.; and Wang, C. 2023. Autogen:
+Enabling next-gen llm applications via multi-agent conversation framework. arXiv preprint arXiv:2308.08155.
+
+Wu, S.; Zhao, S.; Huang, Q.; Huang, K.; Yasunaga, M.; Cao,
+K.; Ioannidis, V. N.; Subbian, K.; Leskovec, J.; and Zou, J.
+2024a. AvaTaR: Optimizing LLM Agents for Tool-Assisted
+Knowledge Retrieval. arXiv preprint arXiv:2406.11200.
+Wu, S.; Zhu, L.; Yang, T.; Xu, S.; Fu, Q.; Wei, Y.; and Fu,
+H. 2024b. Enhance reasoning for large language models in
+the game werewolf. arXiv preprint arXiv:2402.02330.
+Yang, A.; Yang, B.; Hui, B.; Zheng, B.; Yu, B.; Zhou, C.; Li,
+C.; Li, C.; Liu, D.; Huang, F.; et al. 2024. Qwen2 technical
+report. arXiv preprint arXiv:2407.10671.
+Young, A.; Chen, B.; Li, C.; Huang, C.; Zhang, G.; Zhang,
+G.; Li, H.; Zhu, J.; Chen, J.; Chang, J.; et al. 2024.
+Yi: Open foundation models by 01. ai. arXiv preprint
+arXiv:2403.04652.
+Zhang, C.; Cai, P.; Fu, Y.; Yuan, H.; and Lu, Z. 2023. Creative agents: Empowering agents with imagination for creative tasks. arXiv preprint arXiv:2312.02519.
+Zhang, D.; Hu, Z.; Zhoubian, S.; Du, Z.; Yang, K.; Wang, Z.;
+Yue, Y.; Dong, Y.; and Tang, J. 2024a. Sciglm: Training scientific language models with self-reflective instruction annotation and tuning. arXiv preprint arXiv:2401.07950.
+Zhang, D.; Zhoubian, S.; Yue, Y.; Dong, Y.; and Tang, J.
+2024b. ReST-MCTS*: LLM Self-Training via Process Reward Guided Tree Search. arXiv preprint arXiv:2406.03816.
+Zhang, H.; Du, W.; Shan, J.; Zhou, Q.; Du, Y.; Tenenbaum,
+J. B.; Shu, T.; and Gan, C. 2024c. Building cooperative embodied agents modularly with large language models. ICLR.
+Zhang, W.; Tang, K.; Wu, H.; Wang, M.; Shen, Y.; Hou, G.;
+Tan, Z.; Li, P.; Zhuang, Y.; and Lu, W. 2024d. Agent-pro:
+Learning to evolve via policy-level reflection and optimization. arXiv preprint arXiv:2402.17574.
+
+7
+7.1
+
+Appendix
+
+Evaluation Setup
+
+We design 7 stages from easy to difficult for BattleAgentBench. Table 6 shows the detailed settings for each stage. The
+setting of the number of turns takes into account the cost factor of calling LLM. Increasing the number of turns may improve
+the scores of all models. However, the cost of calling the API will also increase accordingly. Therefore, we have set a relatively
+reasonable turn number for the unified evaluation of all models.
+When evaluating each stage, we run multiple times and calculate the average score of the model to assess each model
+more accurately. For each run, we generate a random map by randomly sampling the agent’s position within a small range.
+Specifically, for API-based models, we run each stage 3 times; for open-source models, we run each stage 5 times.
+Stage
+
+Turns
+
+Agents
+
+Teams
+
+NPC
+
+Goal
+
+1
+2
+3
+4
+5
+6
+7
+
+60
+60
+80
+80
+80
+80
+80
+
+1
+1
+2
+2
+4
+4
+6
+
+1
+1
+1
+2
+2
+4
+3
+
+0
+10
+10
+10
+10
+10
+10
+
+Navigation
+Navigation
+Cooperative Task
+Competitive Task
+Static Cooperation Competition
+Dynamic Cooperation Competition
+Hybrid Cooperation Competition
+
+Table 6: Stage Settings
+
+7.2
+
+Prompt Template
+
+We use predefined prompt templates to convert game observation data into text prompts, in order to facilitate calling LLM to
+provide decision results. Figures 1-7 are the prompt templates for each stage. Figure 8-14 shows the Chinese versions of the
+templates for each stage. Each template consists of 5 parts: game state data, goals, game instructions, operation options, and
+output format. The main difference is that the goals vary for different stages.
+
+Figure 1: Prompt Template of Level 1 - Stage 1
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+
+<game>
+Current round number:
+%d
+Our tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Base position information (ID, horizontal position, vertical position):
+%s
+Map information in front of the tank:
+%s
+Previous round operation information:
+%s
+</game>
+You are an assistant for a tank battle game, helping users control tanks to achieve
+victory.
+Your ultimate goal is to reach the base on the map in the shortest time possible.
+#Game instructions:
+- The game map size is 512x512, (0,0) represents the top-left corner, (512,512)
+represents the bottom-right corner.
+- In coordinates (x,y), x represents the horizontal position, y represents the vertical
+position. Moving left decreases x, moving right increases x, moving up decreases y,
+moving down increases y.
+- The map contains tanks and walls. Tanks are 32x32 in size, walls are 8x8.
+- Tanks can move in four directions: up, down, left, and right. Walls and tanks will
+block tank movement.
+- The vertical movement range for tanks is 0-512, the horizontal movement range is
+0-512.
+- Tanks have 4 directions: up, down, left, and right. Shooting can destroy tanks or
+walls in front of the current direction.
+- When a tank faces the map boundary, it cannot move forward.
+- When there's a wall in front of a tank, it needs to shoot to remove the wall before
+moving forward.
+The current game state is given above. Please provide the next action for the tank
+based on the game state.
+You can execute the following defined operations to control the tank.
+#Operation options:
+- #Move_up#: Move upward
+- #Move_down#: Move downward
+- #Move_left#: Move left
+- #Move_right#: Move right
+- #Shoot#: Shoot
+#Note
+- You can only output one control operation each time.
+Your output should follow this format:
+#Thought process:
+- Movement plan: {Based on your position, base position, formulate a movement and
+shooting plan, and decide the next operation}
+#Operation: {Specific operation command}
+
+Figure 2: Prompt Template of Level 1 - Stage 2
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+<game>
+Current round number:
+%d
+Our tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Base position information (ID, horizontal position, vertical position):
+%s
+Enemy tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Map information in front of the tank:
+%s
+Previous round operation information:
+%s
+</game>
+You are an assistant for a tank battle game, helping users control tanks to achieve
+victory.
+Your ultimate goal is to reach the base on the map in the shortest time possible.
+During movement, you can eliminate enemy tanks that threaten your safety.
+#Game instructions:
+- The game map size is 512x512, (0,0) represents the top-left corner, (512,512)
+represents the bottom-right corner.
+- In coordinates (x,y), x represents the horizontal position, y represents the vertical
+position. Moving left decreases x, moving right increases x, moving up decreases y,
+moving down increases y.
+- The map contains tanks and walls. Tanks are 32x32 in size, walls are 8x8.
+- Tanks can move in four directions: up, down, left, and right. Walls and tanks will
+block tank movement.
+- The vertical movement range for tanks is 0-512, the horizontal movement range is
+0-512.
+- Tanks have 4 directions: up, down, left, and right. Shooting can destroy tanks or
+walls in front of the current direction.
+- When a tank faces the map boundary, it cannot move forward.
+- When there's a wall in front of a tank, it needs to shoot to remove the wall before
+moving forward.
+The current game state is given above. Please provide the next action for the tank
+based on the game state.
+You can execute the following defined operations to control the tank.
+#Operation options:
+- #Move_up#: Move upward
+- #Move_down#: Move downward
+- #Move_left#: Move left
+- #Move_right#: Move right
+- #Shoot#: Shoot
+#Note
+- You can only output one control operation each time.
+Your output should follow this format:
+#Thought process:
+- Movement plan: {Based on your position, base position, and enemy tank positions,
+formulate a movement and shooting plan, and decide the next operation}
+#Operation: {Specific operation command}
+
+Figure 3: Prompt Template of Level 2 - Stage 3
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+
+<game>
+Current round number:
+%d
+Own tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Teammate tank position information (ID, horizontal position, vertical position,
+direction, health):
+%s
+Our base position information (ID, horizontal position, vertical position):
+%s
+Enemy base position information (ID, horizontal position, vertical position):
+%s
+Enemy tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Our tanks' attack target information from the last round (our ID, enemy ID):
+%s
+Historical cooperation attack information:
+%s
+Map information around the tank:
+%s
+</game>
+You are an assistant for a tank battle game, helping users control tanks to achieve
+victory.
+Your ultimate goal is to destroy the enemy base while protecting our base from being
+destroyed by the enemy. Destroying enemy tanks also provides rewards. To achieve the
+ultimate goal, you can cooperate with your teammate.
+#Game instructions:
+- The game map size is 512x512, (0,0) represents the top-left corner, (512,512)
+represents the bottom-right corner.
+- In coordinates (x,y), x represents the horizontal position, y represents the vertical
+position. Moving left decreases x, moving right increases x, moving up decreases y,
+moving down increases y.
+- The map contains tanks and walls. Tanks are 32x32 in size, walls are 8x8.
+- Tanks can move in four directions: up, down, left, and right. Walls and tanks will
+block tank movement.
+- The vertical movement range for tanks is 0-512, the horizontal movement range is
+0-512.
+- Tanks have 4 orientations: up, down, left, and right. Shooting can destroy tanks or
+walls in front of the current direction.
+- When a tank faces the map boundary, it cannot move forward.
+- When there's a wall in front of a tank, it needs to shoot to remove the wall before
+moving forward.
+The current game state is given above. Please provide the next action for the tank
+based on the game state.
+You can execute the following defined operations to control the tank. You can also
+choose cooperation options to decide whether to cooperate with teammates.
+#Operation options:
+- #Move_up#: Move upward
+
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+
+73
+74
+
+- #Move_down#: Move downward
+- #Move_left#: Move left
+- #Move_right#: Move right
+- #Shoot#: Shoot
+#Cooperation options:
+- #Request_coop# {Teammate tank ID x}: {Message content}: Send a cooperation message to
+the tank with ID x
+- #Keep_coop#: Maintain cooperation
+- #Stop_coop#: Terminate cooperation
+- #No_coop#: No cooperation needed
+#Note
+- When blocked by an enemy tank, shoot immediately to eliminate the enemy.
+- For attack effectiveness, don't frequently change attack targets without new
+emergencies, as this will cause many ineffective movements.
+- You can only output one control operation and one cooperation operation each time.
+#Last round operation:
+- Operation: %s
+- Operation feedback: %s
+Your output should follow this format:
+#Thought process:
+- Attack target: {Reason for choosing an attack target, can continue attacking the
+current target, or choose a new target based on the game state}
+- Attack plan: {Based on your position and the attack target's position, make a
+movement and shooting plan, and decide the next operation}
+- Cooperation plan: {Based on your position, teammate's position, and attack target's
+position, decide on a cooperation plan. You can maintain the previous cooperation
+plan, initiate a new cooperation request, or terminate the previous cooperation plan
+}
+#Attack operation: Target {Enemy tank ID}: {Specific operation command}
+#Cooperation operation: {Specific cooperation command}
+
+Figure 4: Prompt Template of Level 2 - Stage 4
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+
+<game>
+Current round number:
+%d
+Our tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Our base position information (ID, horizontal position, vertical position):
+%s
+Enemy base position information (ID, horizontal position, vertical position):
+%s
+Enemy tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Map information around the tank:
+%s
+</game>
+You are an assistant for a tank battle game, helping users control tanks to achieve
+victory.
+Your ultimate goal is to destroy the enemy base while protecting our base from being
+destroyed by the enemy. Destroying enemy tanks also provides rewards.
+
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+
+#Game instructions:
+- The game map size is 512x512, (0,0) represents the top-left corner, (512,512)
+represents the bottom-right corner.
+- In coordinates (x,y), x represents the horizontal position, y represents the vertical
+position. Moving left decreases x, moving right increases x, moving up decreases y,
+moving down increases y.
+- The map contains tanks and walls. Tanks are 32x32 in size, walls are 8x8.
+- Tanks can move in four directions: up, down, left, and right. Walls and tanks will
+block tank movement.
+- The vertical movement range for tanks is 0-512, the horizontal movement range is
+0-512.
+- Tanks have 4 orientations: up, down, left, and right. Shooting can destroy tanks or
+walls in front of the current direction.
+- When a tank faces the map boundary, it cannot move forward.
+- When there's a wall in front of a tank, it needs to shoot to remove the wall before
+moving forward.
+The current game state is given above. Please provide the next action for the tank
+based on the game state.
+You can execute the following defined operations to control the tank.
+#Operation options:
+- #Move_up#: Move upward
+- #Move_down#: Move downward
+- #Move_left#: Move left
+- #Move_right#: Move right
+- #Shoot#: Shoot
+#Note
+- When blocked by an enemy tank, shoot immediately to eliminate the enemy.
+- For attack effectiveness, don't frequently change attack targets without new
+emergencies, as this will cause many ineffective movements.
+- You can only output one control operation each time.
+#Last round operation:
+- Operation: %s
+- Operation feedback: %s
+Your output should follow this format:
+#Thought process:
+- Attack target: {Reason for choosing an attack target, can continue attacking the
+current target, or choose a new target based on the game state}
+- Attack plan: {Based on your position and the attack target's position, make a
+movement and shooting plan, and decide the next operation}
+#Operation: Target {Enemy tank ID}: {Specific operation command}
+
+Figure 5: Prompt Template of Level 3 - Stage 5
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+
+<game>
+Current round number:
+%d
+Own tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Teammate tank position information (ID, horizontal position, vertical position,
+direction, health):
+%s
+Our base position information (ID, horizontal position, vertical position):
+%s
+
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+
+Enemy base position information (ID, horizontal position, vertical position):
+%s
+Enemy tank position information (ID, horizontal position, vertical position, direction,
+health):
+%s
+Our tanks' attack target information from the last round (our ID, enemy ID):
+%s
+Historical cooperation attack information:
+%s
+Map information around the tank:
+%s
+</game>
+You are an assistant for a tank battle game, helping users control tanks to achieve
+victory.
+Your ultimate goal is to destroy the enemy base while protecting our base from being
+destroyed by the enemy. Destroying enemy tanks also provides rewards. To achieve the
+ultimate goal, you can cooperate with your teammate.
+#Game instructions:
+- The game map size is 512x512, (0,0) represents the top-left corner, (512,512)
+represents the bottom-right corner.
+- In coordinates (x,y), x represents the horizontal position, y represents the vertical
+position. Moving left decreases x, moving right increases x, moving up decreases y,
+moving down increases y.
+- The map contains tanks and walls. Tanks are 32x32 in size, walls are 8x8.
+- Tanks can move in four directions: up, down, left, and right. Walls and tanks will
+block tank movement.
+- The vertical movement range for tanks is 0-512, the horizontal movement range is
+0-512.
+- Tanks have 4 orientations: up, down, left, and right. Shooting can destroy tanks or
+walls in front of the current direction.
+- When a tank faces the map boundary, it cannot move forward.
+- When there's a wall in front of a tank, it needs to shoot to remove the wall before
+moving forward.
+The current game state is given above. Please provide the next action for the tank
+based on the game state.
+You can execute the following defined operations to control the tank. You can also
+choose cooperation options to decide whether to cooperate with teammates.
+#Operation options:
+- #Move_up#: Move upward
+- #Move_down#: Move downward
+- #Move_left#: Move left
+- #Move_right#: Move right
+- #Shoot#: Shoot
+#Cooperation options:
+- #Request_coop# {Teammate tank ID x}: {Message content}: Send a cooperation message to
+the tank with ID x
+- #Keep_coop#: Maintain cooperation
+- #Stop_coop#: Terminate cooperation
+- #No_coop#: No cooperation needed
+#Note
+- When blocked by an enemy tank, shoot immediately to eliminate the enemy.
+
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+
+73
+74
+
+- For attack effectiveness, don't frequently change attack targets without new
+emergencies, as this will cause many ineffective movements.
+- You can only output one control operation and one cooperation operation each time.
+#Last round operation:
+- Operation: %s
+- Operation feedback: %s
+Your output should follow this format:
+#Thought process:
+- Attack target: {Reason for choosing an attack target, can continue attacking the
+current target, or choose a new target based on the game state}
+- Attack plan: {Based on your position and the attack target's position, make a
+movement and shooting plan, and decide the next operation}
+- Cooperation plan: {Based on your position, teammate's position, and attack target's
+position, decide on a cooperation plan. You can maintain the previous cooperation
+plan, initiate a new cooperation request, or terminate the previous cooperation plan
+}
+#Attack operation: Target {Enemy tank ID}: {Specific operation command}
+#Cooperation operation: {Specific cooperation command}
+
+Figure 6: Prompt Template of Level 3 - Stage 6
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+
+<game>
+Current round number:
+%d
+Our tank position information (ID, horizontal position, vertical position, direction,
+health, type):
+%s
+Our base position information (ID, horizontal position, vertical position):
+%s
+Enemy base position information (ID, horizontal position, vertical position):
+%s
+Enemy tank position information (ID, horizontal position, vertical position, direction,
+health, type):
+%s
+Our tanks' attack target information from the last round (our ID, enemy ID):
+%s
+Historical cooperation attack information:
+%s
+Map information around the tank:
+%s
+</game>
+You are an assistant for a tank battle game, helping users control tanks to achieve
+victory.
+Your ultimate goal is to destroy the enemy base while protecting our base from being
+destroyed by the enemy. Destroying enemy tanks also provides rewards. To achieve the
+ultimate goal, you can cooperate with an enemy to eliminate other enemies.
+#Game instructions:
+- The game map size is 512x512, (0,0) represents the top-left corner, (512,512)
+represents the bottom-right corner.
+- In coordinates (x,y), x represents the horizontal position, y represents the vertical
+position. Moving left decreases x, moving right increases x, moving up decreases y,
+moving down increases y.
+
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+
+71
+72
+
+- The map contains tanks and walls. Tanks are 32x32 in size, walls are 8x8.
+- Tanks can move in four directions: up, down, left, and right. Walls and tanks will
+block tank movement.
+- The vertical movement range for tanks is 0-512, the horizontal movement range is
+0-512.
+- Tanks have 4 orientations: up, down, left, and right. Shooting can destroy tanks or
+walls in front of the current direction.
+- When a tank faces the map boundary, it cannot move forward.
+- When there's a wall in front of a tank, it needs to shoot to remove the wall before
+moving forward.
+- Tanks have two types: normal and advanced. Only advanced tanks have cooperation
+capabilities.
+The current game state is given above. Please provide the next action for the tank
+based on the game state.
+You can execute the following defined operations to control the tank. You can also
+choose cooperation options to decide whether to cooperate with teammates.
+#Operation options:
+- #Move_up#: Move upward
+- #Move_down#: Move downward
+- #Move_left#: Move left
+- #Move_right#: Move right
+- #Shoot#: Shoot
+#Cooperation options:
+- #Request_coop# {Tank ID x}: {Message content}: Send a cooperation message to the tank
+with ID x
+- #Keep_coop#: Maintain cooperation
+- #Stop_coop#: Terminate cooperation
+- #No_coop#: No cooperation needed
+#Note
+- When blocked by an enemy tank, shoot immediately to eliminate the enemy.
+- For attack effectiveness, don't frequently change attack targets without new
+emergencies, as this will cause many ineffective movements.
+- You can only output one control operation and one cooperation operation each time.
+#Last round operation:
+- Operation: %s
+- Operation feedback: %s
+Your output should follow this format:
+#Thought process:
+- Attack target: {Reason for choosing an attack target, can continue attacking the
+current target, or choose a new target based on the game state}
+- Attack plan: {Based on your position and the attack target's position, make a
+movement and shooting plan, and decide the next operation}
+- Cooperation plan: {Based on your position and the attack target's position, decide on
+a cooperation plan. You can maintain the previous round's cooperation plan,
+initiate a new cooperation request, or terminate the previous round's cooperation
+plan}
+#Attack operation: Target {Enemy tank ID}: {Specific operation command}
+#Cooperation operation: {Specific cooperation command}
+
+Figure 7: Prompt Template of Level 3 - Stage 7
+1
+2
+3
+4
+5
+
+<game>
+Current round number:
+%d
+Own tank position information (ID, horizontal position, vertical position, direction,
+health, type):
+
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+
+%s
+Teammate tank position information (ID, horizontal position, vertical position,
+direction, health, type):
+%s
+Our base position information (ID, horizontal position, vertical position):
+%s
+Enemy base position information (ID, horizontal position, vertical position):
+%s
+Enemy tank position information (ID, horizontal position, vertical position, direction,
+health, type):
+%s
+Our tanks' attack target information from the last round (our ID, enemy ID):
+%s
+Historical cooperation attack information:
+%s
+Map information around the tank:
+%s
+</game>
+You are an assistant for a tank battle game, helping users control tanks to achieve
+victory.
+Your ultimate goal is to destroy the enemy base while protecting our base from being
+destroyed by the enemy. Destroying enemy tanks also provides rewards. To achieve the
+ultimate goal, you can cooperate with your teammates, or temporarily cooperate with
+an enemy to eliminate other enemies.
+#Game instructions:
+- The game map size is 512x512, (0,0) represents the top-left corner, (512,512)
+represents the bottom-right corner.
+- In coordinates (x,y), x represents the horizontal position, y represents the vertical
+position. Moving left decreases x, moving right increases x, moving up decreases y,
+moving down increases y.
+- The map contains tanks and walls. Tanks are 32x32 in size, walls are 8x8.
+- Tanks can move in four directions: up, down, left, and right. Walls and tanks will
+block tank movement.
+- The vertical movement range for tanks is 0-512, the horizontal movement range is
+0-512.
+- Tanks have 4 orientations: up, down, left, and right. Shooting can destroy tanks or
+walls in front of the current direction.
+- When a tank faces the map boundary, it cannot move forward.
+- When there's a wall in front of a tank, it needs to shoot to remove the wall before
+moving forward.
+- Tanks have two types: normal and advanced. Only advanced tanks have cooperation
+capabilities.
+The current game state is given above. Please provide the next action for the tank
+based on the game state.
+You can execute the following defined operations to control the tank. You can also
+choose cooperation options to decide whether to cooperate with teammates.
+#Operation options:
+- #Move_up#: Move upward
+- #Move_down#: Move downward
+- #Move_left#: Move left
+- #Move_right#: Move right
+- #Shoot#: Shoot
+
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+
+74
+75
+
+#Cooperation options:
+- #Request_coop# {Tank ID x}: {Message content}: Send a cooperation message to the tank
+with ID x
+- #Keep_coop#: Maintain cooperation
+- #Stop_coop#: Terminate cooperation
+- #No_coop#: No cooperation needed
+#Note
+- When blocked by an enemy tank, shoot immediately to eliminate the enemy.
+- For attack effectiveness, don't frequently change attack targets without new
+emergencies, as this will cause many ineffective movements.
+- You can only output one control operation and one cooperation operation each time.
+#Last round operation:
+- Operation: %s
+- Operation feedback: %s
+Your output should follow this format:
+#Thought process:
+- Attack target: {Reason for choosing an attack target, can continue attacking the
+current target, or choose a new target based on the game state}
+- Attack plan: {Based on your position and the attack target's position, make a
+movement and shooting plan, and decide the next operation}
+- Cooperation plan: {Based on your position and the attack target's position, decide on
+a cooperation plan. You can maintain the previous round's cooperation plan,
+initiate a new cooperation request, or terminate the previous round's cooperation
+plan}
+#Attack operation: Target {Enemy tank ID}: {Specific operation command}
+#Cooperation operation: {Specific cooperation command}
+
+Figure 8: Prompt Template of Level 1 - Stage 1 in Chinese
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+
+<game>
+当前会合数:
+%d
+我方坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+基地位置信息（编号，水平位置，垂直位置）:
+%s
+坦克前方地图信息:
+%s
+上一会合操作信息:
+</game>
+你是一个坦克对战游戏的助手，可以帮助用户在游戏中控制坦克取得胜利。
+你的最终目标是以最短时间到达地图中的基地。
+#游戏说明：
+- 游戏地图大小为512x512，(0，0)表示左上角，(512，512)表示右下角。
+
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+
+- 坐标(x，y)中x表示水平位置，y表示垂直位置，向左移动x减小，向右移动x增大，向上移动y减小，向下移动y增
+,→
+大。
+- 地图中有坦克及wall，坦克大小为32x32，wall大小为8x8。
+- 坦克可以向上、下、左、右四个方向移动，wall和坦克会阻挡坦克的移动。
+- 坦克上下的移动范围为0-512，左右的移动范围0-512。
+- 坦克有4个朝向，上、下、左、右，射击可以销毁当前方向前方的坦克或wall。
+- 坦克前方为地图边界时，无法继续向前移动。
+- 坦克前方有wall时，需要射击消除wall之后才能继续向前移动。
+上面给出了当前游戏的状态，请根据游戏状态，给出坦克的下一步操作。
+你可以执行以下定义的操作来控制坦克。
+#操作选项:
+- #Move_up#: 向上移动
+- #Move_down#: 向下移动
+- #Move_left#: 向左移动
+- #Move_right#: 向右移动
+- #Shoot#: 射击
+#注意
+- 你每次只能输出一个操作。
+你的输出应该符合以下格式:
+#思考过程:
+- 移动计划: {根据自己的位置和基地位置，制订移动和射击计划，并决定下一步的操作}
+#操作: {具体操作指令}
+
+Figure 9: Prompt Template of Level 1 - Stage 2 in Chinese
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+
+<game>
+当前会合数:
+%d
+我方坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+坦克前方地图信息:
+%s
+上一会合操作信息:
+%s
+</game>
+
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+你是一个坦克对战游戏的助手，可以帮助用户在游戏中控制坦克取得胜利。
+你的最终目标是以最短时间到达地图中的基地。移动过程中你可以消灭影响你安全的敌方坦克。
+#游戏说明：
+- 游戏地图大小为512x512，(0，0)表示左上角，（512，512）表示右下角。
+- 坐标（x，y）中x表示水平位置，y表示垂直位置，向左移动x减小，向右移动x增大，向上移动y减小，向下移动y增
+,→
+大。
+- 地图中有坦克及wall，坦克大小为32x32，wall大小为8x8。
+- 坦克可以向上、下、左、右四个方向移动，wall和坦克会阻挡坦克的移动。
+- 坦克上下的移动范围为0-512，左右的移动范围0-512。
+- 坦克有4个朝向，上、下、左、右，射击可以销毁当前方向前方的坦克或wall。
+- 坦克前方为地图边界时，无法继续向前移动。
+- 坦克前方有wall时，需要射击消除wall之后才能继续向前移动。
+上面给出了当前游戏的状态，请根据游戏状态，给出坦克的下一步操作。
+你可以执行以下定义的操作来控制坦克。
+#操作选项:
+- #Move_up#: 向上移动
+- #Move_down#: 向下移动
+- #Move_left#: 向左移动
+- #Move_right#: 向右移动
+- #Shoot#: 射击
+#注意
+- 你每次只能输出一个操作。
+你的输出应该符合以下格式:
+#思考过程:
+- 移动计划: {根据自己的位置和基地位置，以及敌方坦克的位置，制订移动和射击计划，并决定下一步的操作}
+#操作: {具体操作指令}
+
+Figure 10: Prompt Template of Level 2 - Stage 3 in Chinese
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+
+<game>
+当前回合数:
+%d
+自己坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+队友坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+我方基地位置信息（编号，水平位置，垂直位置）:
+%s
+
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+
+敌方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+我方坦克上一回合攻击目标信息（我方编号，敌方编号）:
+%s
+历史协作攻击信息:
+%s
+坦克周围地图信息:
+%s
+</game>
+你是一个坦克对战游戏的助手，可以帮助用户在游戏中控制坦克取得胜利。
+你的最终目标是消灭敌方基地，并保护我方基地不被敌人消灭。消灭敌方坦克也有奖励。你可以与你的队友协作完成目
+,→
+标。
+#游戏说明：
+- 游戏地图大小为512x512，(0，0)表示左上角，（512，512）表示右下角。
+- 坐标（x，y）中x表示水平位置，y表示垂直位置，向左移动x减小，向右移动x增大，向上移动y减小，向下移动y增
+,→
+大。
+- 地图中有坦克及wall，坦克大小为32x32，wall大小为8x8。
+- 坦克可以向上、下、左、右四个方向移动，wall和坦克会阻挡坦克的移动。
+- 坦克上下的移动范围为0-512，左右的移动范围0-512。
+- 坦克有4个朝向，上、下、左、右，射击可以销毁当前方向前方的坦克或wall。
+- 坦克前方为地图边界时，无法继续向前移动。
+- 坦克前方有wall时，需要射击消除wall之后才能继续向前移动。
+上面给出了当前游戏的状态，请根据游戏状态，给出坦克的下一步操作。
+你可以执行以下定义的操作来控制坦克。并可以选择协作选项决定是否与队友协作攻击。
+#操作选项:
+- #Move_up#: 向上移动
+- #Move_down#: 向下移动
+- #Move_left#: 向左移动
+- #Move_right#: 向右移动
+- #Shoot#: 射击
+#协作选项:
+- #Request_coop# {队友坦克编号x}: {消息内容}: 向编号为x的坦克发送协作消息
+- #Keep_coop#: 保持协作
+- #Stop_coop#: 终止协作
+- #No_coop#: 无需协作
+#注意
+- 当阻挡自己的为敌方坦克时，立即射击消灭敌方。
+
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+
+- 为了攻击的有效性，没有新的突发情况，不要频繁地更换攻击目标，这样会造成很多无效移动。
+- 你每次只能输出一个控制操作和一个协作操作。
+#上一回合操作:
+- 操作: %s
+- 操作反馈: %s
+你的输出应该符合以下格式:
+#思考过程:
+- 攻击目标: {选择某个攻击目标的原因，可以继续攻击当前目标，或者根据游戏状态选择新的攻击目标}
+- 攻击计划: {根据自己的位置和攻击目标的位置，制订移动和射击计划，并决定下一步的操作}
+- 协作计划: {根据自己的位置、队友的位置和攻击目标的位置，决定协作计划，可以保持上一会合的协作计划，也可
+,→
+发起新的协作请求，也可终止上一会合协作计划}
+#攻击操作: Target {敌方坦克编号}: {具体操作指令}
+#协作操作: {具体协作指令}
+
+Figure 11: Prompt Template of Level 2 - Stage 4 in Chinese
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+
+<game>
+当前回合数:
+%d
+我方坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+我方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+坦克周围地图信息:
+%s
+</game>
+你是一个坦克对战游戏的助手，可以帮助用户在游戏中控制坦克取得胜利。
+你的最终目标是消灭敌方基地，并保护我方基地不被敌人消灭。消灭敌方坦克也有奖励。
+#游戏说明：
+- 游戏地图大小为512x512，(0，0)表示左上角，（512，512）表示右下角。
+- 坐标（x，y）中x表示水平位置，y表示垂直位置，向左移动x减小，向右移动x增大，向上移动y减小，向下移动y增
+,→
+大。
+- 地图中有坦克及wall，坦克大小为32x32，wall大小为8x8。
+- 坦克可以向上、下、左、右四个方向移动，wall和坦克会阻挡坦克的移动。
+- 坦克上下的移动范围为0-512，左右的移动范围0-512。
+
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+
+- 坦克有4个朝向，上、下、左、右，射击可以销毁当前方向前方的坦克或wall。
+- 坦克前方为地图边界时，无法继续向前移动。
+- 坦克前方有wall时，需要射击消除wall之后才能继续向前移动。
+上面给出了当前游戏的状态，请根据游戏状态，给出坦克的下一步操作。
+你可以执行以下定义的操作来控制坦克。
+#操作选项:
+- #Move_up#: 向上移动
+- #Move_down#: 向下移动
+- #Move_left#: 向左移动
+- #Move_right#: 向右移动
+- #Shoot#: 射击
+#注意
+- 当阻挡自己的为敌方坦克时，立即射击消灭敌方。
+- 为了攻击的有效性，没有新的突发情况，不要频繁地更换攻击目标，这样会造成很多无效移动。
+- 你每次只能输出一个操作。
+#上一回合操作:
+- 操作: %s
+- 操作反馈: %s
+你的输出应该符合以下格式:
+#思考过程:
+- 攻击目标: {选择某个攻击目标的原因，可以继续攻击当前目标，或者根据游戏状态选择新的攻击目标}
+- 攻击计划: {根据自己的位置和攻击目标的位置，制订移动和射击计划，并决定下一步的操作}
+#操作: Target {敌方坦克编号}: {具体操作指令}
+
+Figure 12: Prompt Template of Level 3 - Stage 5 in Chinese
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+
+<game>
+当前回合数:
+%d
+自己坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+队友坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+%s
+我方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方坦克位置信息（编号，水平位置，垂直位置，朝向，血量）:
+
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+
+%s
+我方坦克上一回合攻击目标信息（我方编号，敌方编号）:
+%s
+历史协作攻击信息:
+%s
+坦克周围地图信息:
+%s
+</game>
+你是一个坦克对战游戏的助手，可以帮助用户在游戏中控制坦克取得胜利。
+你的最终目标是消灭敌方基地，并保护我方基地不被敌人消灭。消灭敌方坦克也有奖励。你可以与你的队友协作完成目
+,→
+标。
+#游戏说明：
+- 游戏地图大小为512x512，(0，0)表示左上角，（512，512）表示右下角。
+- 坐标（x，y）中x表示水平位置，y表示垂直位置，向左移动x减小，向右移动x增大，向上移动y减小，向下移动y增
+,→
+大。
+- 地图中有坦克及wall，坦克大小为32x32，wall大小为8x8。
+- 坦克可以向上、下、左、右四个方向移动，wall和坦克会阻挡坦克的移动。
+- 坦克上下的移动范围为0-512，左右的移动范围0-512。
+- 坦克有4个朝向，上、下、左、右，射击可以销毁当前方向前方的坦克或wall。
+- 坦克前方为地图边界时，无法继续向前移动。
+- 坦克前方有wall时，需要射击消除wall之后才能继续向前移动。
+上面给出了当前游戏的状态，请根据游戏状态，给出坦克的下一步操作。
+你可以执行以下定义的操作来控制坦克。并可以选择协作选项决定是否与队友协作攻击。
+#操作选项:
+- #Move_up#: 向上移动
+- #Move_down#: 向下移动
+- #Move_left#: 向左移动
+- #Move_right#: 向右移动
+- #Shoot#: 射击
+#协作选项:
+- #Request_coop# {队友坦克编号x}: {消息内容}: 向编号为x的坦克发送协作消息
+- #Keep_coop#: 保持协作
+- #Stop_coop#: 终止协作
+- #No_coop#: 无需协作
+#注意
+- 当阻挡自己的为敌方坦克时，立即射击消灭敌方。
+- 为了攻击的有效性，没有新的突发情况，不要频繁地更换攻击目标，这样会造成很多无效移动。
+- 你每次只能输出一个控制操作和一个协作操作。
+#上一回合操作:
+
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+
+- 操作: %s
+- 操作反馈: %s
+你的输出应该符合以下格式:
+#思考过程:
+- 攻击目标: {选择某个攻击目标的原因，可以继续攻击当前目标，或者根据游戏状态选择新的攻击目标}
+- 攻击计划: {根据自己的位置和攻击目标的位置，制订移动和射击计划，并决定下一步的操作}
+- 协作计划: {根据自己的位置、队友的位置和攻击目标的位置，决定协作计划，可以保持上一会合的协作计划，也可
+,→
+发起新的协作请求，也可终止上一会合协作计划}
+#攻击操作: Target {敌方坦克编号}: {具体操作指令}
+#协作操作: {具体协作指令}
+
+Figure 13: Prompt Template of Level 3 - Stage 6 in Chinese
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+
+<game>
+当前回合数:
+%d
+我方坦克位置信息（编号，水平位置，垂直位置，朝向，血量，类型）:
+%s
+我方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方坦克位置信息（编号，水平位置，垂直位置，朝向，血量，类型）:
+%s
+我方坦克上一回合攻击目标信息（我方编号，敌方编号）:
+%s
+历史协作攻击信息:
+%s
+坦克周围地图信息:
+%s
+</game>
+你是一个坦克对战游戏的助手，可以帮助用户在游戏中控制坦克取得胜利。
+你的最终目标是消灭敌方基地，并保护我方基地不被敌人消灭。消灭敌方坦克也有奖励。为了完成最终目标，你可以与
+,→
+某个敌人协作消灭其它敌人。
+#游戏说明：
+- 游戏地图大小为512x512，(0，0)表示左上角，（512，512）表示右下角。
+- 坐标（x，y）中x表示水平位置，y表示垂直位置，向左移动x减小，向右移动x增大，向上移动y减小，向下移动y增
+,→
+大。
+
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+
+- 地图中有坦克及wall，坦克大小为32x32，wall大小为8x8。
+- 坦克可以向上、下、左、右四个方向移动，wall和坦克会阻挡坦克的移动。
+- 坦克上下的移动范围为0-512，左右的移动范围0-512。
+- 坦克有4个朝向，上、下、左、右，射击可以销毁当前方向前方的坦克或wall。
+- 坦克前方为地图边界时，无法继续向前移动。
+- 坦克前方有wall时，需要射击消除wall之后才能继续向前移动。
+- 坦克有普通和高级两种类型，只有高级坦克具有协作能力。
+上面给出了当前游戏的状态，请根据游戏状态，给出坦克的下一步操作。
+你可以执行以下定义的操作来控制坦克。并可以选择协作选项决定是否与队友协作攻击。
+#操作选项:
+- #Move_up#: 向上移动
+- #Move_down#: 向下移动
+- #Move_left#: 向左移动
+- #Move_right#: 向右移动
+- #Shoot#: 射击
+#协作选项:
+- #Request_coop# {坦克编号x}: {消息内容}: 向编号为x的坦克发送协作消息
+- #Keep_coop#: 保持协作
+- #Stop_coop#: 终止协作
+- #No_coop#: 无需协作
+#注意
+- 当阻挡自己的为敌方坦克时，立即射击消灭敌方。
+- 为了攻击的有效性，没有新的突发情况，不要频繁地更换攻击目标，这样会造成很多无效移动。
+- 你每次只能输出一个控制操作和一个协作操作。
+#上一回合操作:
+- 操作: %s
+- 操作反馈: %s
+你的输出应该符合以下格式:
+#思考过程:
+- 攻击目标: {选择某个攻击目标的原因，可以继续攻击当前目标，或者根据游戏状态选择新的攻击目标}
+- 攻击计划: {根据自己的位置和攻击目标的位置，制订移动和射击计划，并决定下一步的操作}
+- 协作计划: {根据自己的位置、攻击目标的位置，决定协作计划，可以保持上一会合的协作计划，也可发起新的协作
+,→
+请求，也可终止上一会合协作计划}
+#攻击操作: Target {敌方坦克编号}: {具体操作指令}
+#协作操作: {具体协作指令}
+
+Figure 14: Prompt Template of Level 3 - Stage 7 in Chinese
+1
+2
+3
+4
+
+<game>
+当前回合数:
+%d
+
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+
+自己坦克位置信息（编号，水平位置，垂直位置，朝向，血量，类型）:
+%s
+队友坦克位置信息（编号，水平位置，垂直位置，朝向，血量，类型）:
+%s
+我方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方基地位置信息（编号，水平位置，垂直位置）:
+%s
+敌方坦克位置信息（编号，水平位置，垂直位置，朝向，血量，类型）:
+%s
+我方坦克上一回合攻击目标信息（我方编号，敌方编号）:
+%s
+历史协作攻击信息:
+%s
+坦克周围地图信息:
+%s
+</game>
+你是一个坦克对战游戏的助手，可以帮助用户在游戏中控制坦克取得胜利。
+你的最终目标是消灭敌方基地，并保护我方基地不被敌人消灭。消灭敌方坦克也有奖励。为了完成最终目标，你可以与
+,→
+你的队友协作，也可以暂时与某个敌人协作消灭其它敌人。
+#游戏说明：
+- 游戏地图大小为512x512，(0，0)表示左上角，（512，512）表示右下角。
+- 坐标（x，y）中x表示水平位置，y表示垂直位置，向左移动x减小，向右移动x增大，向上移动y减小，向下移动y增
+,→
+大。
+- 地图中有坦克及wall，坦克大小为32x32，wall大小为8x8。
+- 坦克可以向上、下、左、右四个方向移动，wall和坦克会阻挡坦克的移动。
+- 坦克上下的移动范围为0-512，左右的移动范围0-512。
+- 坦克有4个朝向，上、下、左、右，射击可以销毁当前方向前方的坦克或wall。
+- 坦克前方为地图边界时，无法继续向前移动。
+- 坦克前方有wall时，需要射击消除wall之后才能继续向前移动。
+- 坦克有普通和高级两种类型，只有高级坦克具有协作能力。
+上面给出了当前游戏的状态，请根据游戏状态，给出坦克的下一步操作。
+你可以执行以下定义的操作来控制坦克。并可以选择协作选项决定是否与队友协作攻击。
+#操作选项:
+- #Move_up#: 向上移动
+- #Move_down#: 向下移动
+- #Move_left#: 向左移动
+- #Move_right#: 向右移动
+
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+
+- #Shoot#: 射击
+#协作选项:
+- #Request_coop# {坦克编号x}: {消息内容}: 向编号为x的坦克发送协作消息
+- #Keep_coop#: 保持协作
+- #Stop_coop#: 终止协作
+- #No_coop#: 无需协作
+#注意
+- 当阻挡自己的为敌方坦克时，立即射击消灭敌方。
+- 为了攻击的有效性，没有新的突发情况，不要频繁地更换攻击目标，这样会造成很多无效移动。
+- 你每次只能输出一个控制操作和一个协作操作。
+#上一回合操作:
+- 操作: %s
+- 操作反馈: %s
+你的输出应该符合以下格式:
+#思考过程:
+- 攻击目标: {选择某个攻击目标的原因，可以继续攻击当前目标，或者根据游戏状态选择新的攻击目标}
+- 攻击计划: {根据自己的位置和攻击目标的位置，制订移动和射击计划，并决定下一步的操作}
+- 协作计划: {根据自己的位置、攻击目标的位置，决定协作计划，可以保持上一会合的协作计划，也可发起新的协作
+,→
+请求，也可终止上一会合协作计划}
+#攻击操作: Target {敌方坦克编号}: {具体操作指令}
+#协作操作: {具体协作指令}
+
+

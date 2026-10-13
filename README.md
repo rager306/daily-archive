@@ -488,14 +488,20 @@ scripts/                # verify_rust_architecture.sh
 
 ## Next gate (trajectory enforcement)
 
-**Active milestone: M516-th0oby** — installs the numeric three-axis scorecard
-(measurability, declaration synchronisation, feature-gated coverage) and the
-governor improvements (git-aware momentum, README gate reference, dead-code scan,
-test coverage delta). The scorecard prints as the first lines of
-`python3 -m governor --phase preflight`, so progress and regression are read as
-numbers rather than inferred from prose. The governor rule
-`scorecard_readme_gate_missing` fails when this section stops naming the active
-milestone.
+**M517-1tplxa delivery** — corrected paired-policy evaluation and completed
+candidate-only training cycles of 60, 120 and 240 PDFs on the same 80 validation
+PDFs. Decisions did not change between cycles. Token F1 rose from 0.799 to 0.871,
+but mean local 5gram F1 fell from 0.713 to 0.688 with 31 document regressions.
+This is not an overall parse-quality gain. Validation is diagnostic, not an
+untouched final test; no table was promoted. Earlier arm-label agreement is
+not evidence of policy gain. See `doc/review/policy-corpus-cycles.md` for the
+results, frozen hashes and limitations. Final verification and GSD execution
+disposition are recorded with the milestone; product delivery is not inferred
+from a terminal workflow state.
+
+The three-axis scorecard from M516 prints at the start of
+`python3 -m governor --phase preflight`. The governor rule
+`scorecard_readme_gate_missing` requires this section to name the active milestone.
 
 Architecture is crystallized on the Rust onion (ADR-040 Samyama +
 ADR-050 kg-* universal crates). Hexagonal guardrail

@@ -5098,7 +5098,9 @@ fn s10_decision_point_scanner_fails_visible_on_synthetic_violations() {
 /// `with_profile` construction after a ProfileRoute consult
 /// (load.rs `parse_primary`, source_cli.rs `run_parse_pdf`); the parse-plane
 /// helper definition and its unit tests are the remaining sanctioned sites.
-/// Every real corpus PDF constructor must go through
+/// ADR-080 also permits the isolated paired-arm capture to fix structural
+/// explicitly, without consulting the policy under evaluation.
+/// Every production corpus PDF constructor must go through
 /// `corpus_grobid_parser()` — the helper itself is CRITICAL blast radius
 /// (19 symbols, 7 flows) and is NOT reworked here, only its call sites.
 const S11_CORPUS_HELPER_USES: [&str; 2] = [
@@ -5106,12 +5108,16 @@ const S11_CORPUS_HELPER_USES: [&str; 2] = [
     "crates/da-cli/examples/gepa_hub_research.rs",
 ];
 
-const S11_SANCTIONED_BARE_FROM_ENV: [(&str, &str); 4] = [
+const S11_SANCTIONED_BARE_FROM_ENV: [(&str, &str); 5] = [
     // (file, required nearby role marker proving the classification)
     ("crates/da-cli/src/main.rs", "is_alive"),
     ("crates/da-cli/src/load.rs", ".with_profile"),
     ("crates/da-cli/src/source_cli.rs", ".with_profile"),
     ("crates/da-cli/src/parse_profile.rs", "with_profile"),
+    (
+        "crates/da-cli/examples/policy_corpus_capture.rs",
+        ".with_profile(da_parse::GrobidProfile::structural())",
+    ),
 ];
 
 fn s11_bare_from_env_lines(text: &str) -> Vec<(usize, String)> {

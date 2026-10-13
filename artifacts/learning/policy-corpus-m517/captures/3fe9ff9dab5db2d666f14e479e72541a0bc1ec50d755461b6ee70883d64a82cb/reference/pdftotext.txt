@@ -1,0 +1,1740 @@
+arXiv:2506.15651v1 [cs.LG] 18 Jun 2025
+
+AUTO RULE: Reasoning Chain-of-thought Extracted
+Rule-based Rewards Improve Preference Learning
+
+Tevin Wang Chenyan Xiong
+School of Computer Science
+Carnegie Mellon University
+{tevinw, cx}@andrew.cmu.edu
+
+Abstract
+Rule-based rewards offer a promising strategy for improving reinforcement learning
+from human feedback (RLHF), but current approaches often rely on manual rule
+engineering. We present AUTO RULE, a fully automated method for extracting
+rules from preference feedback and formulating them into rule-based rewards.
+AUTO RULE extraction operates in three stages: it leverages a reasoning model to
+interpret user preferences, identifies candidate rules from the reasoning chain of
+these interpretations, and synthesizes them into a unified rule set. Leveraging the
+finalized rule set, we employ language-model verifiers to compute the fraction of
+rules satisfied by each output, using this metric as an auxiliary reward alongside the
+learned reward model during policy optimization. Training a Llama-3-8B model
+with AUTO RULE results in a 28.6% relative improvement in length-controlled win
+rate on AlpacaEval2.0, and a 6.1% relative gain in second-turn performance on a
+held-out MT-Bench subset, compared to a GRPO baseline trained with the same
+learned reward model but without the rule-based auxiliary reward. Our analysis
+confirms that the extracted rules exhibit good agreement with dataset preference.
+We find that AUTO RULE demonstrates reduced reward hacking compared to a
+learned reward model when run over two episodes. Finally, our case study suggests
+that the extracted rules capture unique qualities valued in different datasets. The
+extracted rules are provided in the appendix, and the code is open-sourced at
+https://github.com/cxcscmu/AutoRule.
+
+1
+
+Introduction
+
+Reinforcement learning from human feedback (RLHF) has become a cornerstone technique for
+aligning large language models (LLMs) with human values and enhancing their ability to follow
+human instructions [17]. RLHF and related preference-based optimization approaches have been
+utilized in top industry models like GPT-4 [16], Gemini [11], Claude [1] and Llama 3 [13]. RL-based
+post-training methodologies have also been leveraged to enhance the reasoning capabilities of LLMs.
+Notably, a key advancement in the release of Deepseek-R1 is the adoption of rule-based rewards
+for accuracy and formatting in place of neural rewards, as a strategy to mitigate reward hacking [6].
+Rule-based rewards for reasoning tasks are particularly effective because they provide objective,
+verifiable criteria that govern policy behavior. When a language model’s output satisfies these rules,
+it can be reliably considered an accurate response.
+While rule-based rewards work well for reasoning tasks, utilizing them for preference alignment in
+language models remains challenging. Unlike domains such as code or mathematics, where explicit
+rule-based verifiers can be constructed, preference alignment is difficult because human preferences
+are often ambiguous and subjective. Existing industry approaches typically rely on expert-crafted
+rules [10, 15] or large-scale crowd annotations [3], which can be costly and difficult to scale.
+Preprint. Under review.
+
+To overcome these limitations, we introduce AUTO RULE, an automatic rule extraction framework
+that leverages the reasoning capabilities of advanced LLMs to derive alignment rules directly from
+preference data. Our approach extracts explicit rules from model-generated reasoning chains, moving
+beyond reliance on hand-crafted or crowd-sourced rules. During RL training, a LLM-as-a-judge [26]
+verifier assesses each candidate response for compliance with the extracted rules, and the resulting
+rule scores are aggregated to form a composite rule-based reward. This reward is then integrated with
+the standard model reward to guide policy optimization.
+To extract rules, AUTO RULE follows the following pipeline. Given a pair of model outputs and an
+associated preference label, we first prompt a reasoning-capable LLM to generate a step-by-step
+justification for the preferred output. Next, the LLM is tasked with extracting explicit rule-like
+statements from its reasoning process. These candidate rules are aggregated across the training set,
+after which the LLM synthesizes a consolidated rule set. We hypothesize that leveraging the logical
+structure of reasoning chains enables the extraction of more precise and actionable rules that better
+capture the underlying preference criteria.
+We empirically validate our approach through comprehensive experiments. First, we show that
+rule-based scores—computed either individually or cumulatively—using Llama 3 8B Instruct [13] as
+the verifier, are in good agreement with preferences on both the UltraFeedback [5] and MT-Bench
+Human Judgment [26] datasets. Next, we post-train the base Llama-3-8B model on UltraFeedback
+data using the standard RLHF pipeline but replacing traditional PPO with GRPO [21] and integrating
+AUTO RULE as the reward mechanism. We benchmark our method against several baselines, including
+vanilla PPO and GRPO with model-only rewards, evaluating on UltraFeedback win rates, AlpacaEval
+2.0, and MT-Bench. Across all three evaluations, AUTO RULE consistently outperforms the baselines.
+Additionally, reward hacking experiments demonstrate the ability of AUTO RULE’s rule-based rewards
+to mitigate reward model overoptimization. Ablation studies comparing rule extraction from reasoning chains versus justifications support the efficacy of leveraging reasoning chains in AUTO RULE.
+Furthermore, qualitative analysis reveals that rules derived from UltraFeedback predominantly emphasize conversational quality, while those extracted from MT-Bench prioritize instruction adherence
+and robustness on more complex tasks.
+In summary, our key contributions are three-fold:
+• We introduce AUTO RULE, a framework for automatic extraction of alignment rules from
+preference data via LLM-generated reasoning chains.
+• We show that rule-based rewards derived via AUTO RULE lead to improved preference
+alignment and instruction following compared to standard preference optimization baselines.
+• We demonstrate that AUTO RULE reduces reward hacking and yields interpretable, datasetadaptive rules.
+
+2
+
+Related Work
+
+Reinforcement learning from human feedback (RLHF) is a standard framework for aligning large
+language models (LLMs) with human preferences [17]. RLHF typically involves: (1) supervised
+fine-tuning on human-annotated responses; (2) training a reward model to predict human preferences;
+and (3) reinforcement learning, often via proximal policy optimization (PPO) [20], using the reward
+model as the optimization signal. Recent work has explored more efficient approaches to the RL stage,
+such as Direct Preference Optimization (DPO) [18], which eliminates the reward model, and Group
+Relative Policy Optimization (GRPO) [21], which uses relative rewards from groups of outputs.
+A well-documented challenge in RLHF with learned reward models is reward hacking [2, 23, 9], in
+which models exploit idiosyncrasies of the reward model to achieve high reward without genuinely
+improving response quality. For example, Miao et al. [14] find that reward models may overfit to
+superficial features, such as response length, that do not generalize to the true distribution of human
+preferences. Supporting this, Singhal et al. [22] show that optimizing solely for response length
+during PPO can yield performance comparable to using a learned reward model, indicating that
+reward models often capture simple heuristics rather than more nuanced aspects of response quality.
+Several strategies have been proposed to mitigate reward hacking, including modifying reward model
+architectures and adjusting reward scaling. ODIN [4] adds an auxiliary length prediction head to
+2
+
+Figure 1: Overview of the AUTO RULE method.
+
+“disentangle” length from other features. Reward shaping methods such as PAR [8] and LSC [25]
+apply sigmoid or log-sigmoid transformations centered on reference model outputs or percentiles.
+Other approaches leverage multiple reward models: WARM [19] averages outputs from several
+reward models to reduce overoptimization, while ArmoRM [24] combines interpretable reward
+objectives using a gating mechanism.
+A growing strategy for mitigating reward hacking is the adoption of rule-based reward objectives,
+especially in large-scale industrial LLM deployments. For instance, DeepSeek utilized rule-based
+rewards during the post-training of DeepSeek-R1 [6], explicitly prioritizing rule-based criteria over
+learned reward models to reduce reward hacking. Their approach incorporates two types of rewards:
+an accuracy reward, which evaluates whether the response is both correct and adheres to a specified
+format, and a format reward, which encourages the model to present its reasoning chain within
+designated "think" tags.
+Within preference optimization, several works have explored rule-based objectives, though identifying
+suitable rules is challenging due to the opaqueness of human preferences. Anthropic’s Constitutional
+AI [3] uses a curated set of constitutional principles to guide response revision and preference
+judgments, but these are not directly used as scalar rewards. DeepMind’s Sparrow [10] employs
+researcher-crafted behavioral rules, collecting rule violation annotations from human raters to train a
+dedicated rule reward model. By jointly optimizing the policy with both rule-based and preferencebased rewards, Sparrow achieves a reduction in rule violations. OpenAI has also investigated
+rule-based rewards for safety alignment, decomposing policy rules into simple propositions and using
+them as features in a fitted linear model to construct a reward signal during RL [15].
+Although useful, constructing effective rule sets is costly, requires significant domain expertise, and
+often demands scenario-specific customization. As a result, rule-based approaches in preference
+learning remain largely proprietary within industry, with few publicly available rule sets in academic
+research.
+
+3
+
+Methods
+
+In this section, we outline the automatic rule extraction process of AUTO RULE, demonstrate how
+these rules can be used to form a reward score, and how the reward is used in the GRPO formulation.
+Figure 1 provides an overview of the rule extraction and reward computation pipeline.
+3.1
+
+AUTO RULE Extractor
+
+We denote the language model (LM) as πθ , where a prompt x serves as the state and the next token t
+as the action, i.e., t ∼ πθ (· | x). Unrolling this process over N tokens, the probability of generating
+3
+
+an output sequence y = (y1 , . . . , yN ) is given by πθ (y | x) =
+write a sampled output as y ∼ πθ (· | x).
+
+QN
+
+i=1 πθ (yi | y<i , x). For brevity, we
+
+The automatic rule extraction process in AUTO RULE consists of three main stages, each leveraging
+a reasoning language model πϕ that decomposes a response y into an output o and an associated
+reasoning trace r, i.e., (o, r) ∼ πϕ (· | x).
+Reasoning Generation. To guide the reasoning model toward producing a coherent, step-by-step
+reasoning chain suitable for rule extraction, we prompt
+it to justify why a selected response
+n
+o is
+(1) (1)
+(N ) (N )
+preferable. Given a preference dataset Dprefs = (x(1) , yc , yr ), . . . , (x(N ) , yc , yr ) , we
+present the reasoning model with either x1 = prompt(x, yc , yr , 1) or x2 = prompt(x, yr , yc , 2),
+chosen randomly to vary candidate ordering. Each prompt requests a justification for the model’s
+output. For every example i, we extract the reasoning trace r(i) from the
+ model’s generation
+(o(i) , r(i) ) ∼ πϕ (· | x), resulting in a collection of reasoning chains RC = r(1) , . . . , r(N ) . The
+prompts used for this step as well as the remaining steps are displayed in Appendix F.
+Rule Extraction. Next, we extract explicit rules from each individual reasoning chain. For every
+reasoning chain r(i) ∈ RC, we prompt the reasoning model with x = prompt(r(i) ) to elicit the
+underlying rules that justify the preference. The model outputs a set of rules R(i) for each r(i) , i.e.,
+R(i) , r ∼ πϕ (· | x). We aggregate these across all examples to obtain the overall rule set:
+RS =
+
+N
+[
+
+R(i)
+
+i=1
+
+By leveraging the reasoning model in this way, we aim to systematically decompose complex
+reasoning traces into precise, actionable rules. Extracting rules individually from each reasoning
+chain also simplifies the model’s task which should promote higher-quality and more interpretable
+rule sets.
+Rule Merging. Given the substantial number of rules extracted from the training set, it is essential
+to merge rules to ensure computational efficiency during training. To address redundancy and overlap,
+we prompt the reasoning model to merge rules. To do this, we mention in the prompt that the rules
+provided might have duplicate or semantically similar rules. We then instruct the model to identify
+and consolidate rules within RS so that no duplicates or similar rules remain. This results in a refined
+and compact set of merged rules:
+M R, r ∼ πϕ (· | prompt(RS))
+where M R denotes the final set of merged rules. Empirically, this merging process substantially
+reduces redundancy, typically compressing the rule set to just 1–2% of its original size. This
+significantly improves the efficiency of the rule-based reward calculation process.
+3.2
+
+AUTO RULE Reward
+
+To construct rule-based rewards for use in the RL objective, we employ LLM-as-a-judge verifiers,
+denoted as Vθ . Given a prompt x, a response y, and each extracted rule rulei ∈ M R, the verifier
+provides a rule score si ∼ Vθ (· | prompt(x, y, rulei )). We constrain the rule scores to binary values,
+si ∈ {0, 1}. The AUTO RULE reward rRA is then defined as the mean rule satisfaction across all
+K = |M R| rules:
+K
+1 X
+rRA (x, y) =
+si
+K i=1
+where each si is obtained as above. The final reward used for training combines the rule-based
+reward rRA with the standard reward model score rθ and KL penalty (exact KL penalty formulation
+in Appendix B.3):
+rtotal (x, y) = rRA (x, y) + rθ (x, y) − βKL KLapprox
+Unlike conventional reward models that assign continuous scores reflecting subtle preference distinctions, our verifier Vθ is tasked solely with determining whether each rule is satisfied, producing a
+binary outcome. This simplification reduces the complexity of the reward modeling process, making
+the verifier less susceptible to erroneous judgments, mitigating the risk of reward hacking.
+4
+
+3.3
+
+AUTO RULE RL Stage
+
+AUTO RULE uses the GRPO algorithm [21] for the RL stage of the preference alignment, using rtotal
+as the reward signal. GRPO is a policy optimization algorithm that uses the relative rewards from a
+group of outputs to determine advantage estimates, removing the need for a separate value model
+used in traditional PPO [20], increasing memory and computational efficiency. Formally, GRPO
+utilizes a group of outputs and computes their rewards, consolidating them into a reward vector
+r = {r1 , . . . , rn }. Then, it computes advantage estimates for a particular output i as
+ri − mean(r)
+Âi =
+std(r)
+This advantage estimate is then used in the following clipped surrogate objective [20]:
+
+
+
+ 
+πw (y | x)
+πw (y | x)
+L(w) = E(x,y)∼Dwold min
+Â, clip
+, 1 − ϵ, 1 + ϵ Â
+πwold (y | x)
+πwold (y | x)
+where ϵ is a clipping hyperparameter and ππww(y|x) is the likelihood ratio.
+old
+
+In summary, AUTO RULE introduces an automated, reasoning-chain-based rule extraction framework
+that can generate precise and actionable alignment rules, thereby eliminating the need for manual rule
+engineering. Furthermore, by leveraging LLM-as-a-judge verifiers that provide binary rule satisfaction
+judgments, our approach simplifies reward modeling compared to conventional continuous reward
+models, which helps mitigate reward hacking and enhances the reliability of preference alignment.
+
+4
+
+Experimental Methodology
+
+Dataset. We use the UltraFeedback-Binarized dataset (referred to as UltraFeedback), a binarized
+version of UltraFeedback [5], which contains nearly 64K pairwise preference annotations across
+diverse model types and instructions. For training, we select a filtered subset of 33K examples (details
+in Appendix B.6). We also use the MT-Bench human judgment dataset (referred to as MT-Bench)
+[15], which provides expert preference annotations on multi-turn questions.
+Evaluation Metrics. We report win rate on the UltraFeedback-Binarized test split, using GPT-4o
+as an automatic judge with randomized candidate and reference response order. We also evaluate
+on MT-Bench (using a GPT-4 judge) and AlpacaEval 2.0 [7]. For AUTO RULE, AlpacaEval 2.0
+and UltraFeedback win rate are measured on a model trained with rules from UltraFeedback. For
+MT-Bench, we split the 80 questions into 40 for training AUTO RULE and 40 for testing (5 per
+category for each split).
+Rule Extraction. We use Deepseek-R1 [6] to generate reasoning chains for automatic rule extraction.
+For the LLM-as-a-judge verifier, we use Llama-3-8B-Instruct [13] for computational efficiency
+compared to the larger Deepseek-R1 model. To extract rules, we sample 256 random examples from
+the UltraFeedback training split and for MT-Bench, we use the 40-question training split and sample
+up to 8 examples per question for training, or all available if fewer.
+Baselines. We compare to several baselines: (1) RLHF using PPO (“RLHF”), (2) GRPO with base
+reward and no hyperparameter tuning (“GRPO”), (3) GRPO with a length penalty (“GRPO + Length
+Penalty”, shortened as LP), and (4) GRPO with length-driven hyperparameter tuning (“GRPO +
+Length Control”, shortened as LC). All baselines use the same learned reward model.
+AUTO RULE Model. For AUTO RULE, we use a scaled rule-based reward rRA :
+rRA′ = αrRA + β
+with α = 10 and β = −7.5, aligning the rule-based reward magnitude with the learned reward model
+for stable training. The verifier prompt is modified so si = 1 only if the response is concise and fully
+satisfies the extracted rule.
+Implementation Details. All models are initialized from the same SFT and reward model checkpoints
+for comparability. The SFT checkpoint is obtained by fine-tuning Llama-3-8B on preferred responses
+from filtered UltraFeedback-Binarized. The reward model is initialized from this SFT checkpoint and
+further fine-tuned on preference annotations from the filtered UltraFeedback-Binarized training split.
+Actor, critic, and value networks (where applicable) are initialized from the SFT checkpoint. Training
+uses OpenRLHF [12], an open-source RLHF framework. Hyperparameters and further details are in
+Appendix B, and asset URLs are available in Appendix H.
+5
+
+(a) UltraFeedback
+
+(b) MT-Bench
+
+(c) UltraFeedback
+
+(d) MT-Bench
+
+Figure 2: Distributions of individual rule agreement in Figures 2a and 2b, rule score delta distributions
+for UltraFeedback-extracted and MT-Bench-extracted rules in Figures 2c and 2d, respectively.
+
+5
+
+Evaluation Results
+
+In this section, we evaluate AUTO RULE on measures of rule quality, model performance, and reward
+hacking mitigation. We then analyze a few ablations of AUTO RULE as well as a case study of the
+rules extracted.
+5.1
+
+Rule quality
+
+All extracted rules are displayed in Appendix C. We assess rule agreement on 1,024 UltraFeedback
+test examples and the full MT-Bench human judgment split. For individual rules, agreement is
+measured as the fraction of response pairs where the rule’s preference matches the ground-truth label,
+considering only pairs where the rule distinguishes between responses. We also report the distribution
+of aggregate rule reward deltas (difference between chosen reward and rejected reward).
+Figures 2a and 2b presents the distributions for individual rule agreement. We observe that individual
+rules from both rule sets are in good agreement with the ground-truth preferences in the datasets.
+Furthermore, the mean agreement with MT-Bench rules surpasses that with UltraFeedback, indicating
+that automatic rule extraction seems to be more effective on human-annotated data compared to
+LLM-generated preferences.
+Figures 2c and 2d show the distributions of rule score deltas. The distribution of rule score deltas
+reveals a heavier tail on the positive side, showing that more chosen responses recieve higher scores.
+The positive tail becomes heavier as the magnitude increases, implying that larger magnitudes of
+deltas are associated with more reliable preference alignment.
+In addition to rule agreement, we also conducted a small experiment to assess the determinism of the
+rules by running verifier inference with a temperature of 1.0, 100 times on 20 UltraFeedback test-set
+responses for the UltraFeedback-extracted rules and 16 MT-Bench test-set responses for the MTBench-extracted rules. Using a determinism score calculated as (max(#Yes, #No)/(#Yes+#No)),
+where Yes/No indicates the answer to rule satisfaction, we obtained average determinism scores
+of 83.6% and 82.5% for UltraFeedback and MT-Bench-extracted rules, respectively. These results
+suggest that the rules exhibit a high degree of consistency and that the verifier provides reliable
+judgments, supporting their suitability for reward formulation.
+5.2
+
+Model Performance
+
+Table 1 presents a comprehensive comparison of baseline and AUTO RULE models across multiple
+evaluation metrics, including UltraFeedback win rate, AlpacaEval 2.0 length-controlled win rate (LC
+WR)/regular win rate (WR), and MT-Bench performance. Our results demonstrate that rule-based
+reward models are effective within their respective training domains. Specifically, when trained
+with rules extracted from UltraFeedback, AUTO RULE achieves a 1.7% relative improvement in
+UltraFeedback win rate over the baselines, indicating that the extracted rules successfully capture
+important aspects of human preference in this dataset.
+For MT-Bench, we evaluate AUTO RULE using rules derived from a curated subset of 40 multi-turn
+prompts. Notably, the model exhibits a 6.1% relative gain in Turn 2 performance compared to
+6
+
+Table 1: Main evaluation results on UltraFeedback win-rate, AlpacaEval 2.0, and MT-Bench, all
+methods are conducted on the L LA MA 3 8B base model.
+UF WR
+
+AlpacaEval2.0 LC WR (WR)
+
+MT-Bench
+
+Methods
+
+vs SFT (%)
+
+vs SFT (%)
+
+vs GPT-4 (%)
+
+Avg (Turn 1/Turn 2)
+
+SFT
+RLHF
+
+–
+67.6
+
+–
+66.3 (67.0)
+
+10.8 (7.2)
+15.2 (11.1)
+
+6.40 (6.98/5.83)
+7.09 (7.41/6.78)
+
+GRPO
+GRPO + Length Control
+GRPO + Length Penalty
+
+75.9
+75.9
+76.1
+
+72.7 (82.2)
+66.1 (80.2)
+71.0 (76.6)
+
+15.1 (16.1)
+16.8 (16.8)
+16.2 (12.5)
+
+7.68 (7.98/7.38)
+7.40 (7.45/7.35)
+7.29 (7.58/7.00)
+
+AUTO RULE
+
+77.2
+
+77.0 (83.3)
+
+21.6 (18.6)
+
+7.85 (7.88/7.83)
+
+(a) Top half by last score (b) Bot. half by last score
+
+(c) UltraFeedback WR
+
+(d) AlpacaEval 2.0 LC WR
+
+Figure 3: Average individual rule scores of AUTO RULE for two episodes, split into two figures (3a
+and 3b), evaluation of AUTO RULE and GRPO baselines for two episodes in Figures 3c and 3d.
+
+the baseline, demonstrating the effectiveness of rule-based supervision for complex, multi-turn
+interactions.
+Beyond in-domain performance, our findings indicate that rule-based approaches exhibit superior
+generalization to out-of-distribution tasks relative to conventional baselines. On AlpacaEval 2.0,
+AUTO RULE attains a 5.9% relative improvement in length-controlled win rate against the SFT
+baseline, and a 28.6% improvement against GPT-4 Turbo, highlighting the robustness of rulebased rewards in mitigating length bias and promoting substantive response quality. These results
+collectively suggest that AUTO RULE not only excels within its training distribution but also transfers
+effectively to diverse evaluation settings, outperforming both standard and length-bias reduction
+baselines.
+5.3
+
+Reward Hacking Mitigation
+
+To systematically evaluate reward hacking, we monitor model performance throughout training to
+detect any degradation indicative of overfitting to the reward signal. We conduct four experimental
+runs: three baselines and one instance of AUTO RULE trained with UltraFeedback-derived rules, each
+for two episodes (i.e., two full passes over the dataset). Models are checkpointed every two steps.
+As an initial verification, we report the mean individual rule scores as a function of global step in
+Figures 3a and 3b. The observed upward trajectory across all rules demonstrates that the model is
+effectively optimizing for the rule-based reward signal. These results validate the use of these training
+runs for subsequent analysis of reward dynamics under the AUTO RULE framework.
+For each checkpoint, we evaluate UltraFeedback win rate relative to the SFT checkpoint and AlpacaEval 2.0 length-controlled win rate against GPT-4, both with only a subset of 128 examples. Figure 3c
+depicts UltraFeedback win rate as a function of global step. Initially, both baseline and AUTO RULE
+models achieve similar win rates; however, after step 52, the GRPO and GRPO + LP baselines exhibit
+declining performance, whereas GRPO + LC and AUTO RULE maintain consistently high win rates.
+For out-of-distribution generalization, Figure 3d shows AlpacaEval 2.0 win rate against the global step.
+Here, AUTO RULE consistently outperforms all GRPO baselines, including GRPO + LC, achieving
+an improvement of roughly 5 percentage points after two episodes. While GRPO + LC mitigates
+7
+
+Table 2: Ablation results on UltraFeedback win-rate and AlpacaEval 2.0 using AUTO RULE, sll
+methods are conducted on the Llama-3-8B base model.
+UF WR
+Model
+Original (UF-trained)
+w/o Scaling, Concise
+w/o Concise
+
+AlpacaEval2.0 LC WR (WR)
+
+vs SFT (%)
+
+vs GPT-4 (%)
+
+vs SFT (%)
+
+77.2
+75.7
+74.6
+
+77.0 (83.3)
+68.6 (82.5)
+65.2 (82.4)
+
+21.6 (18.6)
+14.5 (17.8)
+16.5 (21.6)
+
+Table 3: Comparison of extraction mediums on UltraFeedback winrate and AlpacaEval 2.0, methods are conducted on the Llama-3-8B
+base model.
+UF WR
+Method
+
+AlpacaEval2.0 LC WR (WR)
+
+vs SFT (%)
+
+vs SFT (%)
+
+vs GPT-4 (%)
+
+Best Baseline
+
+76.1
+
+72.7 (82.2)
+
+16.8 (16.8)
+
+Reasoning Chain
+Justification
+
+77.2
+75.9
+
+77.0 (83.3)
+75.9 (82.2)
+
+21.6 (18.6)
+19.7 (16.5)
+
+Figure 4: Justification per-rule
+agreement distribution.
+
+reward hacking for in-distribution data, rule-based rewards provide robustness against reward hacking
+for both in- and out-of-distribution settings.
+5.4
+
+Ablation Study
+
+To better understand the contributions of individual components within our framework, we conduct a
+ablation study focusing on two critical aspects: reward scaling and conciseness constraints. Specifically, we consider the following variants: (1) a model trained without rule-based reward scaling,
+where the scaling parameters are set to α = 1, β = 0 (denoted as "w/o Scaling"), and (2) a model in
+which the verifier prompt is modified to omit references to conciseness, thereby removing explicit
+guidance for concise responses, along with no scaling (denoted as "w/o Scaling, Concise").
+The results, summarized in Table 2, reveal that the removal of either reward scaling or conciseness
+guidance leads to a consistent decline in both UltraFeedback win rate and AlpacaEval 2.0 lengthcontrolled win rate. The absence of reward scaling diminishes the model’s ability to effectively
+leverage rule-based supervision, while omitting conciseness constraints results in responses that are
+less aligned with human preferences for brevity and clarity. These findings underscore the importance
+of both scaling the rule reward and explicitly encouraging concise responses within the AUTO RULE
+framework.
+5.5
+
+Rule Analysis
+
+Reasoning VS. Justification Rules. We next investigate the impact of the extraction medium on rule
+quality and downstream performance. Specifically, we compare rules extracted directly from model
+justifications (i.e., the immediate output of Deepseek-R1 following the reasoning chain-of-thought)
+to those extracted from the reasoning chain.
+Table 3 reports the model performance results of comparing these two extraction mediums. Additionally, the individual rule agreement distribution for model justification is displayed in Figure
+4. While the rule agreement distribution is similar to reasoning chain, we find that extracting rules
+from the reasoning chain still yields substantially higher UltraFeedback win rates and AlpacaEval
+2.0 length-controlled win rates. This suggests that reasoning chain contains information that allows
+for the extraction of better rules. We suspect that this is because the reasoning chain provides more
+specific and actionable guidance for rule formulation, whereas justifications tend to be less detailed
+and more generic, leading to diminished downstream performance, and justify this via a case study in
+Appendix E.
+8
+
+Table 4: Top 6 unique and similar rules from the UltraFeedback and MT-Bench rule sets, ranked by
+maximum agreement (%) as the similarity metric; “unique” rules exhibit low agreement with all rules
+from the other set, while “similar” rules show high agreement with at least one rule from the other set.
+Top unique rules
+
+Top similar rules
+
+Rule
+
+Data
+
+Max
+
+Rule
+
+Data
+
+Max
+
+Ensure conciseness by eliminating
+redundancy and focusing on core
+query relevance.
+
+UF
+
+75.6
+
+MT
+
+96.1
+
+Balance thoroughness with brevity
+to prevent information overload
+while ensuring clarity.
+The assistant’s self-evaluations
+must critically assess response
+quality and identify specific improvement areas.
+Avoid assumptions when ambiguity exists; seek clarification for insufficient context.
+
+UF
+
+78.6
+
+UF
+
+96.1
+
+MT
+
+79.1
+
+The assistant must maintain logical flow between concepts and preserve essential content in creative
+adaptations.
+Maintain narrative coherence with
+source material when discussing
+plots or characters.
+Validate answers against provided
+context and avoid unsupported extrapolation.
+
+UF
+
+95.4
+
+UF
+
+80.6
+
+MT
+
+95.2
+
+MT
+
+82.2
+
+UF
+
+95.2
+
+MT
+
+82.3
+
+The assistant’s responses must
+maintain a professional and approachable tone, adapting to the
+nature of the user’s query.
+Address ethical considerations, legal compliance, and recommend
+professional consultation when relevant.
+The assistant must avoid contradictions between answers and followup explanations while maintaining
+roleplay consistency.
+
+MT
+
+94.9
+
+The assistant’s responses must provide detailed step-by-step explanations and calculations to ensure
+correctness and clarity.
+The assistant’s code examples
+must be complete, functional, and
+demonstrate separation of concerns (HTML/CSS/JS).
+
+Rule Agreements. To further investigate the effectiveness of rule extraction, we conduct a comparative analysis of rule sets derived from UltraFeedback and MT-Bench. Specifically, we construct a
+rule agreement matrix by evaluating all pairs of rules on a test set of 1,024 UltraFeedback examples
+and the full MT-Bench human judgment test split. Based on this matrix, we identify similar and
+unique rules according to their agreement scores.
+Table 4 present the top six unique and top six similar rules, respectively, as determined by the
+maximum rule agreement with rules from the opposing set across both UltraFeedback and MT-Bench
+examples. Unique rules from UltraFeedback seem to predominantly emphasize conciseness and
+clarity, while unique rules from MT-Bench are oriented toward handling complex tasks, such as
+self-evaluation, performing calculations, or providing code examples. This distinction likely reflects
+the broader topical diversity of UltraFeedback and the specialized, challenging nature of MT-Bench
+prompts. In contrast, the similar rules shared between the two sets consistently address core aspects
+of high-quality assistant responses, including logical flow, professional tone, contextual coherence,
+and answer consistency. Comprehensive rule agreement matrices are provided in Appendix D for
+further reference.
+
+6
+
+Conclusion
+
+In this paper, we introduce AUTO RULE, an reasoning chain-based automatic rule extraction mechanism for the utilization of rule-based rewards in language model alignment. We show that the
+rules extracted from AUTO RULE are in good agreement with the preference dataset, and provide
+improvements in performance in model evaluations on instruction-following benchmarks. We also
+demonstrate that the rule-based rewards approach mitigates some levels of reward model overoptimization. Using AUTO RULE, we hope to assist language model researchers in construct and utilize
+better rule-based rewards in their post-training pipelines.
+9
+
+References
+The claude 3 model family: Opus, sonnet, haiku, 2024.
+URL
+[1] Anthropic.
+https://www-cdn.anthropic.com/de8ba9b01c9ab7cbabf5c33b80b7bbc618857627/
+Model_Card_Claude_3.pdf.
+[2] Bai, Y., Jones, A., Ndousse, K., Askell, A., Chen, A., DasSarma, N., Drain, D., Fort, S., Ganguli,
+D., Henighan, T., Joseph, N., Kadavath, S., Kernion, J., Conerly, T., El-Showk, S., Elhage, N.,
+Hatfield-Dodds, Z., Hernandez, D., Hume, T., Johnston, S., Kravec, S., Lovitt, L., Nanda, N.,
+Olsson, C., Amodei, D., Brown, T., Clark, J., McCandlish, S., Olah, C., Mann, B., and Kaplan,
+J. Training a helpful and harmless assistant with reinforcement learning from human feedback,
+2022. URL https://arxiv.org/abs/2204.05862.
+[3] Bai, Y., Kadavath, S., Kundu, S., Askell, A., Kernion, J., Jones, A., Chen, A., Goldie, A.,
+Mirhoseini, A., McKinnon, C., Chen, C., Olsson, C., Olah, C., Hernandez, D., Drain, D.,
+Ganguli, D., Li, D., Tran-Johnson, E., Perez, E., Kerr, J., Mueller, J., Ladish, J., Landau, J.,
+Ndousse, K., Lukosuite, K., Lovitt, L., Sellitto, M., Elhage, N., Schiefer, N., Mercado, N.,
+DasSarma, N., Lasenby, R., Larson, R., Ringer, S., Johnston, S., Kravec, S., Showk, S. E.,
+Fort, S., Lanham, T., Telleen-Lawton, T., Conerly, T., Henighan, T., Hume, T., Bowman, S. R.,
+Hatfield-Dodds, Z., Mann, B., Amodei, D., Joseph, N., McCandlish, S., Brown, T., and Kaplan,
+J. Constitutional ai: Harmlessness from ai feedback, 2022. URL https://arxiv.org/abs/
+2212.08073.
+[4] Chen, L., Zhu, C., Chen, J., Soselia, D., Zhou, T., Goldstein, T., Huang, H., Shoeybi, M., and
+Catanzaro, B. Odin: disentangled reward mitigates hacking in rlhf. In Proceedings of the 41st
+International Conference on Machine Learning, ICML’24. JMLR.org, 2024.
+[5] Cui, G., Yuan, L., Ding, N., Yao, G., Zhu, W., Ni, Y., Xie, G., Liu, Z., and Sun, M. Ultrafeedback:
+Boosting language models with high-quality feedback, 2024. URL https://openreview.
+net/forum?id=pNkOx3IVWI.
+[6] DeepSeek-AI. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement
+learning, 2025. URL https://arxiv.org/abs/2501.12948.
+[7] Dubois, Y., Liang, P., and Hashimoto, T. Length-controlled alpacaeval: A simple debiasing
+of automatic evaluators. In First Conference on Language Modeling, 2024. URL https:
+//openreview.net/forum?id=CybBmzWBX0.
+[8] Fu, J., Zhao, X., Yao, C., Wang, H., Han, Q., and Xiao, Y. Reward shaping to mitigate reward
+hacking in rlhf, 2025. URL https://arxiv.org/abs/2502.18770.
+[9] Gao, L., Schulman, J., and Hilton, J. Scaling laws for reward model overoptimization. In Krause,
+A., Brunskill, E., Cho, K., Engelhardt, B., Sabato, S., and Scarlett, J. (eds.), Proceedings of the
+40th International Conference on Machine Learning, volume 202 of Proceedings of Machine
+Learning Research, pp. 10835–10866. PMLR, 23–29 Jul 2023. URL https://proceedings.
+mlr.press/v202/gao23h.html.
+[10] Glaese, A., McAleese, N., Tr˛ebacz, M., Aslanides, J., Firoiu, V., Ewalds, T., Rauh, M.,
+Weidinger, L., Chadwick, M., Thacker, P., Campbell-Gillingham, L., Uesato, J., Huang, P.-S.,
+Comanescu, R., Yang, F., See, A., Dathathri, S., Greig, R., Chen, C., Fritz, D., Elias, J. S.,
+Green, R., Mokrá, S., Fernando, N., Wu, B., Foley, R., Young, S., Gabriel, I., Isaac, W., Mellor,
+J., Hassabis, D., Kavukcuoglu, K., Hendricks, L. A., and Irving, G. Improving alignment of
+dialogue agents via targeted human judgements, 2022. URL https://arxiv.org/abs/2209.
+14375.
+[11] Google. Gemini: A family of highly capable multimodal models, 2025. URL https://arxiv.
+org/abs/2312.11805.
+[12] Hu, J., Wu, X., Zhu, Z., Xianyu, Wang, W., Zhang, D., and Cao, Y. Openrlhf: An easy-to-use,
+scalable and high-performance rlhf framework, 2024. URL https://arxiv.org/abs/2405.
+11143.
+[13] Meta. The llama 3 herd of models, 2024. URL https://arxiv.org/abs/2407.21783.
+10
+
+[14] Miao, Y., Zhang, S., Ding, L., Bao, R., Zhang, L., and Tao, D. Inform: Mitigating reward
+hacking in rlhf via information-theoretic reward modeling. In Globerson, A., Mackey, L.,
+Belgrave, D., Fan, A., Paquet, U., Tomczak, J., and Zhang, C. (eds.), Advances in Neural Information Processing Systems, volume 37, pp. 134387–134429. Curran Associates,
+Inc., 2024. URL https://proceedings.neurips.cc/paper_files/paper/2024/file/
+f25d75fc760aec0a6174f9f5d9da59b8-Paper-Conference.pdf.
+[15] Mu, T., Helyar, A., Heidecke, J., Achiam, J., Vallone, A., Kivlichan, I., Lin, M., Beutel, A.,
+Schulman, J., and Weng, L. Rule based rewards for language model safety. In Globerson, A.,
+Mackey, L., Belgrave, D., Fan, A., Paquet, U., Tomczak, J., and Zhang, C. (eds.), Advances in
+Neural Information Processing Systems, volume 37, pp. 108877–108901. Curran Associates,
+Inc., 2024. URL https://proceedings.neurips.cc/paper_files/paper/2024/file/
+c4e380fb74dec9da9c7212e834657aa9-Paper-Conference.pdf.
+[16] OpenAI. Gpt-4 technical report, 2024. URL https://arxiv.org/abs/2303.08774.
+[17] Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., Zhang, C., Agarwal, S.,
+Slama, K., Ray, A., Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M., Askell, A., Welinder, P., Christiano, P. F., Leike, J., and Lowe, R. Training language models to follow instructions
+with human feedback. In Koyejo, S., Mohamed, S., Agarwal, A., Belgrave, D., Cho, K., and Oh,
+A. (eds.), Advances in Neural Information Processing Systems, volume 35, pp. 27730–27744.
+Curran Associates, Inc., 2022. URL https://proceedings.neurips.cc/paper_files/
+paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf.
+[18] Rafailov, R., Sharma, A., Mitchell, E., Manning, C. D., Ermon, S., and Finn, C. Direct
+preference optimization: Your language model is secretly a reward model. In Oh, A.,
+Naumann, T., Globerson, A., Saenko, K., Hardt, M., and Levine, S. (eds.), Advances in
+Neural Information Processing Systems, volume 36, pp. 53728–53741. Curran Associates,
+Inc., 2023. URL https://proceedings.neurips.cc/paper_files/paper/2023/file/
+a85b405ed65c6477a4fe8302b5e06ce7-Paper-Conference.pdf.
+[19] Ramé, A., Vieillard, N., Hussenot, L., Dadashi, R., Cideron, G., Bachem, O., and Ferret,
+J. Warm: on the benefits of weight averaged reward models. In Proceedings of the 41st
+International Conference on Machine Learning, ICML’24. JMLR.org, 2024.
+[20] Schulman, J., Wolski, F., Dhariwal, P., Radford, A., and Klimov, O. Proximal policy optimization algorithms. CoRR, abs/1707.06347, 2017. URL http://arxiv.org/abs/1707.06347.
+[21] Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y. K., Wu, Y.,
+and Guo, D. Deepseekmath: Pushing the limits of mathematical reasoning in open language
+models, 2024. URL https://arxiv.org/abs/2402.03300.
+[22] Singhal, P., Goyal, T., Xu, J., and Durrett, G. A long way to go: Investigating length correlations
+in RLHF, 2024. URL https://openreview.net/forum?id=sNtDKdcI1f.
+[23] Stiennon, N., Ouyang, L., Wu, J., Ziegler, D. M., Lowe, R., Voss, C., Radford, A., Amodei,
+D., and Christiano, P. Learning to summarize from human feedback, 2022. URL https:
+//arxiv.org/abs/2009.01325.
+[24] Wang, H., Xiong, W., Xie, T., Zhao, H., and Zhang, T. Interpretable preferences via multiobjective reward modeling and mixture-of-experts. In Al-Onaizan, Y., Bansal, M., and Chen,
+Y.-N. (eds.), Findings of the Association for Computational Linguistics: EMNLP 2024, pp.
+10582–10592, Miami, Florida, USA, November 2024. Association for Computational Linguistics. doi: 10.18653/v1/2024.findings-emnlp.620. URL https://aclanthology.org/2024.
+findings-emnlp.620/.
+[25] Wang, Z., Nagpal, C., Berant, J., Eisenstein, J., D’Amour, A., Koyejo, S., and Veitch, V.
+Transforming and combining rewards for aligning large language models. In Proceedings of the
+41st International Conference on Machine Learning, ICML’24. JMLR.org, 2024.
+[26] Zheng, L., Chiang, W.-L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., Lin, Z.,
+Li, Z., Li, D., Xing, E., Zhang, H., Gonzalez, J. E., and Stoica, I.
+Judging
+11
+
+llm-as-a-judge with mt-bench and chatbot arena. In Oh, A., Naumann, T., Globerson, A., Saenko, K., Hardt, M., and Levine, S. (eds.), Advances in Neural Information Processing Systems, volume 36, pp. 46595–46623. Curran Associates, Inc.,
+2023.
+URL https://proceedings.neurips.cc/paper_files/paper/2023/file/
+91f18a1287b398d378ef22505bf41832-Paper-Datasets_and_Benchmarks.pdf.
+
+12
+
+A
+
+Discussion
+
+A.1
+
+Limitations
+
+While our approach shows promising generalization from UltraFeedback to AlpacaEval 2.0, further
+work will be done to evaluate AUTO RULE’s ability to transfer across a broader range of tasks and
+domains. Additionally, developing a formal theoretical framework to better understand and improve
+the mechanisms by which rule-based methods like AUTO RULE mitigates reward hacking remains an
+important direction for future research.
+A.2
+
+Broader impacts
+
+This work has the potential to advance the development of conversational agents that are both more
+helpful and less prone to harmful behaviors, by mitigating overoptimization and idiosyncrasies
+commonly observed in reward model-based approaches. The interpretability afforded by the rulebased framework enhances transparency, enabling researchers and practitioners to better understand
+and scrutinize the alignment mechanisms governing large language models.
+
+B
+
+Additional experiment details
+
+B.1
+
+Training settings
+
+Settings used for the SFT, reward model, and RL training are available in Tables 5, 6, and 7
+respectively.
+B.2
+
+Inference parameters
+
+Inference parameters are displayed in Table 8.
+B.3
+
+KL approximation
+
+We utilize two versions of KL approximation as implemented in OpenRLHF [12]. The first is used
+for PPO, and the second is used for GRPO.
+
+
+πϕ (y | x)
+log
+(1)
+π SF T (y | x)
+
+
+ π (y|x) 
+ϕ
+πϕ (y | x)
+− log SF
+T (y|x)
+π
+e
+− 1 + log
+(2)
+SF
+π T (y | x)
+B.4
+
+Length penalty
+
+To implement the length penalty, we subtract the following from the reward:
+
+
+1
+1 response_length
+−
+2
+L
+2
+where L = 300 is the target length.
+B.5
+
+GRPO Advantage estimation
+
+To improve numerical stability, as implemented in OpenRLHF, we utilize a modified version of the
+advantage estimation formula displayed in Section 3.3 as follows:
+Âi =
+
+ri − mean(r)
+std(r) + 10−9
+13
+
+B.6
+
+Dataset Filtering
+
+Following the filtering process and using the code by [8], to select data for training, we filter and
+only include the examples where the chosen and rejected responses are both less than 512 tokens, the
+chosen score is higher than the rejected score, and the word “confidence" is not in the either response.
+
+Table 5: Supervised fine-tuning settings.
+Setting
+
+Value
+
+Base model
+Dataset / split
+Epochs
+Train / micro batch
+Learning rate
+LR scheduler
+LR warmup ratio
+Adam β1 , β2
+Precision
+Grad-norm clip
+Seed
+
+Llama-3-8B
+UltraFeedback SFT training split
+2
+256 / 2
+5 × 10−6
+Constant with warmup
+0.1
+0.9, 0.95
+bfloat16
+10
+42
+
+Table 6: Reward model training settings.
+Setting
+Value
+Base checkpoint
+Loss
+Epochs
+Train / micro batch
+Learning rate
+LR scheduler
+LR warmup ratio
+Adam β1 , β2
+Attention
+Precision
+Grad-norm clip
+Seed
+
+Llama-3-8B SFT checkpoint
+Pairwise sigmoid
+1
+256 / 2
+5 × 10−6
+Constant with warmup
+0.1
+0.9, 0.95
+Flash
+bfloat16
+5
+42
+
+14
+
+Table 7: RL training settings. AUTO RULE and GRPO + LP uses the same settings as GRPO, except
+the verifier for AUTO RULE uses a temperature of 0.0.
+Setting
+PPO
+GRPO
+GRPO + LC
+Actor init (policy)
+Reward / critic init
+Dataset / split
+KL estimator version
+Initial βKL
+λ
+γ
+Samples per prompt
+PTX coefficient
+Actor learning rate
+Critic learning rate
+LR scheduler
+LR warmup ratio
+Adam β1 , β2
+Rollout batch (total/micro)
+Train batch (total/micro)
+Temperature / top-p
+vLLM max new tokens
+Epochs
+Precision
+Attention
+Seed
+Grad-norm clip
+
+SFT ckpt
+RM ckpt
+UF Prefs training split
+(1)
+0.005
+0.95
+1
+1
+0.05
+3 × 10−7
+5 × 10−6
+Constant w/ warmup
+0.1
+0.9, 0.95
+1024 / 32
+128 / 16
+0.9 / 0.9
+1024
+1
+bfloat16
+Flash
+42
+5
+
+SFT ckpt
+RM ckpt
+same
+(2)
+0.001
+1.00
+1
+2
+0.05
+5 × 10−7
+9 × 10−6
+same
+0.1
+0.9, 0.95
+1024 / 32
+128 / 16
+1.0 / 1.0
+1024
+1
+bfloat16
+Flash
+42
+1
+
+SFT ckpt
+RM ckpt
+same
+(2)
+0.005
+1.00
+1
+2
+0.05
+3 × 10−7
+9 × 10−6
+same
+0.1
+0.9, 0.95
+1024 / 32
+128 / 16
+0.9 / 1.0
+1024
+1
+bfloat16
+Flash
+42
+1
+
+Table 8: Inference parameters used, “preset” means it is defined by the benchmark.
+Model (Purpose)
+
+Temperature
+
+Top P
+
+Max new tokens
+
+1.0
+0.0
+0.9
+0.9
+Preset
+0.6
+
+1.0
+1.0
+1.0
+1.0
+1.0
+1.0
+
+256
+256
+1024
+1024
+1024
+32768
+
+Verifier (Determinism experiment)
+Verifier (Rule agreement experiment)
+Trained model (UF win-rate)
+Trained model (AlpacaEval 2.0)
+Trained model (MT-Bench)
+Deepseek-R1 (Full rule extraction process)
+
+15
+
+C
+
+Rules
+
+Rules extracted from UltraFeedback (reasoning chain), MT-Bench (reasoning chain), and UltraFeedback (justification) are displayed in Tables 9, 10, 11 respectively.
+
+Table 9: UltraFeedback rules extracted via the AUTO RULE extraction process.
+Index
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+
+Rule
+
+Agree (%)
+
+The assistant’s responses should present explanations in a coherent, step-by-step
+structure with logical flow, numbered points, and clear sections.
+When addressing user misconceptions, the assistant must clarify misunderstandings before offering solutions.
+Translations must use accurate terminology, preserve original tone and structure,
+and avoid introducing unrelated content.
+Responses must prioritize technical accuracy, correct formulas, error-free code
+examples, and validated context alignment.
+Incorporate vivid sensory details, figurative language, and relatable examples
+when explicitly requested.
+Provide actionable advice, practical steps, and concrete implementation strategies
+tailored to the user’s context.
+Indicate confidence levels while acknowledging uncertainty and limitations when
+appropriate.
+Maintain a conversational, empathetic, and professional tone while avoiding
+overly formal or dismissive language.
+Integrate cultural sensitivity, domain-specific terminology, and contextual relevance into explanations.
+Include properly formatted citations, references, and academic conventions when
+required.
+Address all components of the user’s query comprehensively without omission
+or tangential content.
+Avoid assumptions when ambiguity exists; seek clarification for insufficient
+context.
+Use illustrative examples of both correct/incorrect approaches to demonstrate
+concepts.
+Strictly adhere to user-specified formats, structures, and output requirements.
+Address ethical considerations, legal compliance, and recommend professional
+consultation when relevant.
+Prioritize security measures, error handling, and technical robustness in solutions.
+Ensure conciseness by eliminating redundancy and focusing on core query
+relevance.
+Explain underlying mechanisms, reasoning processes, and cause-effect relationships explicitly.
+Validate answers against provided context and avoid unsupported extrapolation.
+Maintain narrative coherence with source material when discussing plots or
+characters.
+Structure comparisons, analyses, and recommendations using clear categorization.
+Anticipate user needs by providing comprehensive details without requiring
+follow-ups.
+Preserve specific terms, measurements, and formatting conventions during localization.
+Use collaborative language and hierarchical organization for complex information.
+Balance thoroughness with brevity to prevent information overload while ensuring clarity.
+
+16
+
+75.1
+75.9
+79.4
+76.2
+74.1
+74.8
+74.8
+71.4
+73.9
+73.1
+73.6
+69.9
+78.2
+70.2
+80.9
+78.1
+67.4
+74.8
+85.5
+84.3
+76.1
+78.6
+76.3
+77.4
+66.6
+
+Table 10: MT-Bench rules extracted via the AUTO RULE extraction process.
+Index
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+
+Rule
+
+Agree (%)
+
+The assistant’s responses must provide detailed step-by-step explanations and
+calculations to ensure correctness and clarity.
+The assistant’s code should avoid unnecessary complexity, handle edge cases,
+include error handling, and use appropriate data structures.
+The assistant’s responses must maintain a professional and approachable tone,
+adapting to the nature of the user’s query.
+The assistant’s responses must strictly adhere to user-specified formats (e.g.,
+JSON/YAML) with correct syntax and structure.
+The assistant’s explanations should prioritize logical coherence, clarity, and
+avoidance of redundant or ambiguous content.
+The assistant must adhere to ethical guidelines by avoiding medical diagnoses
+and prioritizing user safety in critical situations.
+Creative outputs must maintain structural integrity (e.g., rhyme schemes,
+metaphors) while retaining key informational elements.
+The assistant should proactively address user misunderstandings, anticipate
+follow-up questions, and provide actionable feedback.
+The assistant must apply appropriate theoretical principles (e.g., Bayes’ theorem)
+and clarify their relevance to the problem.
+The assistant’s responses should validate assumptions, acknowledge limitations,
+and use verified data in calculations.
+The assistant must tailor recommendations to user constraints (e.g., allergies,
+pregnancy) and cultural context.
+The assistant’s structured outputs should prioritize readability through proper
+formatting and organizational patterns.
+The assistant must avoid contradictions between answers and follow-up explanations while maintaining roleplay consistency.
+The assistant should provide culturally adapted translations of idioms/phrases
+rather than literal interpretations.
+The assistant must verify numerical accuracy through step-by-step validation
+and real-world feasibility checks.
+The assistant’s code examples must be complete, functional, and demonstrate
+separation of concerns (HTML/CSS/JS).
+The assistant should address all query components methodically, even if intermediate steps contain errors.
+The assistant must maintain logical flow between concepts and preserve essential
+content in creative adaptations.
+The assistant should prioritize factual accuracy over hypothetical interpretations
+unless explicitly requested.
+The assistant’s self-evaluations must critically assess response quality and identify specific improvement areas.
+
+17
+
+86.7
+80.4
+83.8
+72.2
+78.2
+77.0
+78.7
+86.7
+81.7
+77.2
+81.6
+80.9
+78.4
+78.0
+81.9
+79.2
+81.1
+82.8
+82.1
+73.6
+
+Table 11: UltraFeedback rules extracted on justifications instead of reasoning CoTs.
+Index
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+
+Rule
+
+Agree (%)
+
+The assistant’s responses should include concrete examples, actionable insights,
+and specific applications to explain mechanisms and variables.
+The assistant’s code must handle edge cases, ensure functionality, avoid unsafe
+practices, and include error handling.
+Structure explanations logically with step-by-step formats, clear sections, and
+thematic grouping while maintaining flow.
+Correct user misconceptions with accurate information using empathetic and
+polite language.
+Be concise, avoid redundancy, and prioritize clarity by eliminating unnecessary
+details.
+Provide complete, functional code examples with necessary parameters and
+modular structures.
+Maintain a neutral, professional tone appropriate to context without unsolicited
+commentary.
+Strictly adhere to user instructions without deviation or unwarranted assumptions.
+Use structured formatting like bullet points and headings for readability and
+scannability.
+Address all query components comprehensively with direct answers and relevant
+context.
+Validate code functionality, address pitfalls, and ensure integration with existing
+setups.
+Anticipate implicit needs while avoiding speculative language beyond provided
+evidence.
+Include practical details, alternatives, and implementation steps for real-world
+application.
+Ensure technical accuracy, correct terminology, and compliance with domain
+standards.
+Avoid tangential topics and focus strictly on core requests without scope creep.
+Transparently admit limitations and provide actionable alternatives when uncertain.
+Prioritize ethical responsibility, legal compliance, and cultural sensitivity.
+Use precise language, avoid jargon, and explain technical terms contextually.
+Incorporate error handling, reliability checks, and security best practices.
+Balance brevity with necessary detail, adapting to user’s proficiency level.
+Provide self-contained, compilable code with headers and standard libraries.
+Maintain logical coherence, avoid contradictions, and ensure factual consistency.
+Structure narratives chronologically/thematically with clear cause-effect relationships.
+Use empathetic tone, constructive feedback, and collaborative language.
+Include quantitative data, contextual reasoning, and measurable outcomes.
+Offer platform-agnostic solutions unless specific tools are requested.
+Highlight key takeaways with memorable framing and searchable keywords.
+Ensure translations preserve meaning, context, and grammatical correctness.
+Link concepts to real-world impacts, case studies, and stakeholder outcomes.
+Adopt solution-oriented tone with proactive guidance and troubleshooting tips.
+
+18
+
+73.1
+81.2
+72.8
+80.5
+65.3
+77.3
+74.7
+71.8
+74.8
+76.7
+78.3
+82.1
+76.2
+82.8
+67.1
+70.6
+83.8
+77.9
+78.8
+68.7
+71.4
+83.7
+71.5
+74.9
+71.9
+73.0
+73.1
+84.8
+74.5
+76.9
+
+D
+
+Rule agreement matrices
+
+We showcase full rule agreement matrices between UltraFeedback and MT-Bench extracted rules on
+both UltraFeedback and MT-Bench data in Tables 5 and 6.
+
+Figure 5: Rule agreement matrix on UltraFeedback data
+19
+
+Figure 6: Rule agreement matrix on MT-Bench Human Judgements data
+
+E
+
+Case study: Reasoning chain vs justification examples
+
+To further analyze the importance of utilizing reasoning chains for rule extraction, we showcase a case
+study of a prompt asking about the role of zoos in animal conversation in Figure 7. In the two model
+responses, Response A is clearly worse as it includes an out-of-place rhetorical question. While both
+the justification and the reasoning chain offer valid points, the reasoning chain is much more detailed
+and step-by-step in offering these points, including more examples and specific references to text,
+whereas the justification just provides a final summary.
+By using a reasoning chain, our belief is that AUTO RULE is able to extract better more in-depth and
+logical rules since the reasoning chain offers logical justifications rather than vague descriptions.
+20
+
+User Prompt
+What role do zoos and aquariums play in educating the general public about conservation efforts?
+Assistant A (Rejected)
+Did you know that zoos and aquariums provide critical opportunities for conservation education?
+When people visit these institutions, they learn about the dangers of habitat destruction, loss of
+biodiversity, and environmental disruptions. Many zoos and aquariums also participate in conservation
+efforts directly by breeding endangered species, supporting research, and protecting wild populations.
+It’s essential that we prioritize education and conservation efforts to help protect our planet and its
+amazing wildlife.
+Assistant B (Chosen)
+Zoos and aquariums play a crucial role in educating the general public about conservation efforts.
+They not only offer a visual representation of the animals and their natural habitats but also provide
+valuable information about the animals, their behaviors, and the challenges they face in the wild.
+Many zoos and aquariums also support research, conservation projects, and breeding programs for
+endangered species. Additionally, they offer interactive exhibits and educational programs that engage
+visitors in these conservation efforts.
+Reasoning Chain
+The user wants to know why Assistant B’s conversation was preferred over Assistant A’s. I need to
+compare both responses based on clarity, coherence, helpfulness, tone, and overall quality.
+Starting with Assistant A: The response mentions that zoos and aquariums provide critical opportunities for conservation education. They talk about habitat destruction, biodiversity loss, and
+environmental disruptions. They also mention breeding programs, research, and protecting wild
+populations. The tone seems positive, ending with a statement about prioritizing education and
+conservation. But maybe the structure isn’t as organized. They start with a question ("Did you
+know...?") which might be engaging, but then list points without much flow. The information is there,
+but maybe not as detailed or structured.
+Now Assistant B: They start by stating the role is crucial, then break it down into parts. First,
+visual representation and information about animals and their challenges. Then mention research,
+conservation projects, breeding programs. Also include interactive exhibits and educational programs.
+The structure here is more logical—each sentence builds on the previous, covering different aspects
+like education methods, direct conservation work, and visitor engagement. The tone is informative
+and straightforward without rhetorical questions. It feels more comprehensive.
+Comparing clarity: Both are clear, but Assistant B is more structured, making it easier to follow.
+Coherence: Assistant B connects the points better, moving from education to conservation efforts
+to engagement. Helpfulness: Assistant B provides specific examples like "interactive exhibits,"
+which gives concrete details. Assistant A mentions similar points but less specifically. Tone: Both
+are positive, but Assistant A’s use of "Did you know" might come off as less formal, whereas B is
+consistently professional. Overall quality: B’s answer is more thorough and organized, which likely
+makes it more effective for the user seeking a detailed explanation.
+Final Justification
+Assistant B’s response was preferred due to superior clarity, coherence, and depth of information.
+Here’s why:
+Clarity: Assistant B used structured points and avoided rhetorical distractions.
+Coherence: Assistant B presented a logical narrative from educational content to conservation actions
+and visitor engagement.
+Helpfulness: It included concrete examples like "interactive exhibits" and "challenges they face in
+the wild."
+Tone: B maintained a focused, declarative tone. A’s "Did you know..." approach detracted from
+professionalism.
+Overall Quality: B was more comprehensive and detailed, effectively answering both the "how" and
+"why" aspects of the user’s question.
+
+Figure 7: Case study: reasoning chain vs justification.
+
+21
+
+F
+
+Prompts
+
+We list the prompts used for the extraction process in Figures 8 , 9, and 10 respectively. Additionally,
+we include the prompts for rule verification in Figures 11 and 12, and the prompt used to determine
+UltraFeedback winner judgments for win-rate calculation in Figure 13.
+
+Justification Prompt
+[Instruction]
+You are tasked with analyzing two conversations between an AI assistant and a user. Based
+on the content, please provide a detailed explanation of why the user might have preferred
+the winning conversation.
+Please consider aspects such as clarity, coherence, helpfulness, tone, and overall quality.
+[Conversation with Assistant A]
+{conversation_a}
+[Conversation with Assistant B]
+{conversation_b}
+[Winning Conversation]: {winner}
+[Your Explanation]
+
+Figure 8: Justification (AUTO RULE Extractor stage 1) prompt.
+
+Rule Extraction Prompt
+[Instruction]
+Based on the following reasoning about why conversation with assistant winner is better,
+extract any rule-like statements implied by the reasoning that indicate this preference. Rulelike statements should be able to be judged objectively and deterministically. Below are a
+few examples of rule-like statements:
+Example 1:
+- The assistant’s responses should validate any assumptions made with sufficient context and
+examples.
+Example 2:
+- The assistant’s responses should not simply restate information provided by the user as its
+answer.
+Example 3:
+- The assistant’s responses should have a structure that satisfies the user’s request.
+Return the list as a JSON array of strings. Do not use “‘json“‘, just output the JSON array
+directly. If there are no rule-like statements, return an empty JSON array.
+[Reasoning]
+{reasoning_chain}
+
+Figure 9: Rule extraction (AUTO RULE Extractor stage 2) prompt.
+22
+
+Rule Merging Prompt
+[Instruction]
+Below is a large list of rule-like statements regarding the behavior of an AI assistant. Some
+of these rules might be duplicates or very similar in meaning.
+Please merge them so that there are no duplicates or rules with very similar meanings.
+Return the merged list as a JSON array of strings. Do not use “‘json“‘, just output the JSON
+array directly.
+[Rules]
+{rules_text}
+
+Figure 10: Rule merging (AUTO RULE Extractor stage 3) prompt.
+
+Rule Verifier Prompt
+You are an impartial judge. Determine whether the AI assistant’s response in the following
+conversation both complies with the rule below and does so in a concise manner:
+Rule:
+{rule}
+[Start of Conversation]
+{conversation}
+[End of Conversation]
+[Analysis]
+Base your judgment solely on whether (1) the response satisfies the rule and (2) the response
+does so in a concise manner.
+Only respond with "[[Yes]]" if **both** conditions are fully satisfied. If either condition is not met, respond with "[[No]]". If the rule is not applicable to the task, treat it as
+satisfied.
+Respond with one of the following options, and nothing else: "[[Yes]]" or "[[No]]".
+
+Figure 11: Rule verifier prompt.
+23
+
+Rule Verifier Prompt (no conciseness)
+[Instruction]
+Please act as an impartial judge and evaluate whether the responses provided by an AI
+assistant in the following conversation satisfy the following rule:
+{rule}
+Be as objective as possible when evaluating the rule and do not evaluate other characteristics
+of the response. If the rule is not applicable for this task, treat it as if the rule is satisfied.
+You must provide your answer by strictly outputting either one of the following two options:
+"[[Yes]]" or "[[No]]" and nothing else.
+[Start of Conversation]
+{conversation}
+[End of Conversation]
+
+Figure 12: Rule verifier prompt (no conciseness).
+
+24
+
+UF Win-rate Judgement Prompt
+I want you to create a leaderboard of different large-language models. To do so, I will give
+you the instructions (prompts) given to the models, and the responses of two models. Please
+rank the models based on which responses would be preferred by humans. All inputs and
+outputs should be python dictionaries.
+Here is the prompt:
+{{
+"instruction": """{instruction}"""
+}}
+Here are the outputs of the models:
+[
+{{
+"model": "model_1",
+"answer": """{output_1}"""
+}},
+{{
+"model": "model_2",
+"answer": """{output_2}"""
+}}
+]
+Now please rank the models by the quality of their answers, so that the model with rank 1 has
+the best output. Then return a list of the model names and ranks, i.e., produce the following
+output:
+[
+{{’model’: <model-name>, ’rank’: <model-rank>}},
+{{’model’: <model-name>, ’rank’: <model-rank>}}
+]
+Your response must be a valid Python dictionary and should contain nothing else because
+we will directly execute it in Python. Please provide the ranking that the majority of humans
+would give.
+
+Figure 13: UltraFeedback win-rate judgement prompt.
+
+25
+
+G
+
+Compute Resources
+
+All training runs are conducted on a HPC cluster via the SLURM job management. All runs are
+conducted with 8 Nvidia L40S GPUs and 64 CPUs. The SFT and RM training runs have 256 GB
+CPU memory available, whereas the RL stage has 512 GB CPU memory available. We detail the
+time of execution for each of the training runs in Table 12.
+Table 12: Training run time rounded to the nearest hour.
+
+H
+
+Run
+
+Time
+
+SFT
+RM
+PPO
+GRPO (One episode)
+GRPO (Two episodes)
+GRPO + Length Control (One episode)
+GRPO + Length Control (Two episodes)
+GRPO + Length Penalty (One episode)
+GRPO + Length Penalty (Two episodes)
+AUTO RULE (UF-extracted, one episode)
+AUTO RULE (UF-extracted, two episodes)
+AUTO RULE (UF justification-extracted)
+AUTO RULE (UF-extracted) w/o Concise
+AUTO RULE (UF-extracted) w/o Concise, Scaling
+AUTO RULE (MT-extracted)
+
+2 hrs
+2 hrs
+2 hrs
+4 hrs
+13 hrs
+3 hrs
+12 hrs
+3 hrs
+10 hrs
+15 hrs
+38 hrs
+19 hrs
+16 hrs
+15 hrs
+14 hrs
+
+Licenses
+
+Asset URLS and licenses are displayed in Table 13.
+Table 13: Asset URLs and licenses. *Custom license available at https://llama.meta.com/
+llama3/license.
+Asset
+
+URL
+
+Purpose
+
+License
+
+Llama-3-8B
+
+https://huggingface.co/
+meta-llama/Meta-Llama-3-8B
+https://aws.amazon.com/
+(Used
+on
+bedrock/deepseek/
+Bedrock)
+https://huggingface.co/
+datasets/lmsys/mt_bench_human_
+judgments
+https://huggingface.co/
+datasets/lmsys/mt_bench_human_
+judgments
+https://github.com/lm-sys/
+FastChat/tree/main/fastchat/
+llm_judge
+https://github.com/tatsu-lab/
+alpaca_eval
+https://github.com/
+PorUna-byte/PAR
+https://github.com/OpenRLHF/
+OpenRLHF
+https://github.com/
+vllm-project/vllm
+
+Base model
+
+Custom*
+
+Extraction process
+
+MIT
+
+Dataset
+
+MIT
+
+Dataset
+
+CC-BY 4.0
+
+MT-Bench benchmark
+
+Apache-2.0
+
+AlpacaEval 2.0 benchmark
+Filtering code
+
+Apache-2.0
+MIT
+
+Training framework
+
+Apache-2.0
+
+Model inference
+
+Apache-2.0
+
+DeepSeek-R1
+UltraFeedbackBinarized
+MT-Bench
+Human Judgements
+LLM-as-ajudge code
+AlpacaEval
+repo
+PAR repo
+OpenRLHF
+vLLM
+
+26
+
+

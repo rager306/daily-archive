@@ -24,12 +24,6 @@ struct EnvGuard {
     previous: Option<String>,
 }
 impl EnvGuard {
-    fn set(key: &'static str, value: &str) -> Self {
-        let previous = std::env::var(key).ok();
-        // SAFETY: ENV_LOCK serializes every env-mutating test in this binary.
-        unsafe { std::env::set_var(key, value) };
-        Self { key, previous }
-    }
     fn clear(key: &'static str) -> Self {
         let previous = std::env::var(key).ok();
         unsafe { std::env::remove_var(key) };

@@ -1,0 +1,1716 @@
+{
+  "paper_id": "2506.18403",
+  "title": "The Debugging Decay Index: Rethinking Debugging Strategies for Code LLMs",
+  "abstract_text": "The effectiveness of AI debugging follows a predictable exponential decay pattern; most models lose 60-80% of their debugging capability within just 2-3 attempts, despite iterative debugging being a critical capability for practical code generation systems. We introduce the Debugging Decay Index (DDI), a mathematical framework that quantifies when debugging becomes ineffective and predicts intervention points. Our strategic fresh start approach shifts from exploitation to exploration at strategic points in the debugging process, demonstrating that well-timed interventions can rescue the effectiveness of debugging. DDI reveals a fundamental limitation in current AI debugging and provides the first quantitative framework for optimising iterative code generation strategies.",
+  "body_text": "IntroductionThe advent of large language models (LLMs) has transformed automated code generation, enabling developers to produce functional code with remarkable speed and scale 1 . Recent efforts have shifted toward debugging-based code generation, where LLMs iteratively refine their output based on compiler feedback or error messages, mirroring traditional software development practices [2][3][4][5] . This iterative approach represents a fundamental departure from single-pass generation, yet the underlying dynamics of debugging-based LLM-guided code generation remain critically underexplored. Existing studies often apply an arbitrary number of debugging attempts without examining their optimal extent or effectiveness over continuous iterations [2][3][4] . This approach incurs significant computational costs and lacks methodological rigour in determining when additional iterations cease to yield meaningful improvements. Preliminary research and our analysis suggest that LLM-guided debugging typically follows an exponential decay pattern, where debugging effectiveness diminishes rapidly with successive attempts 4 . However, no systematic work has been conducted to characterise this decay phenomenon or explore strategies to break these patterns for improved performance. This pattern of diminishing returns in iterative LLM approaches extends beyond code generation, with recent research on reasoning models demonstrating similar complexity-dependent limitations where self-correction capabilities plateau and models either overthink simple problems or fail entirely on complex ones 6 , suggesting a natural ceiling that warrants systematic investigation.Furthermore, as debugging-based LLM-guided code generation becomes increasingly prevalent, evaluation metrics must evolve beyond traditional single-pass assessments 7,8 to account for the iterative nature of the process. Current evaluation approaches treat code as static artefacts rather than as the product of a dynamic development process, overlooking the significant quality enhancements that often emerge through systematic debugging and refinement 9 . This limitation becomes increasingly problematic as the field moves toward debugging-based approaches that more closely align with human software development practices 10 . Single-pass metrics such as pass@k 7 measure the probability that at least one correct solution exists among k independently generated candidates. However, this approach does not guarantee diversity among the generated candidates. It fails to account for the iterative debugging process that is central to practical software development workflows 10 , and relies solely on manually written test cases 11 .This study examines the effectiveness of repeated debugging attempts in LLM-based code generation and investigates strategic interventions to enhance the debugging process. To address the limitations of existing evaluation metrics, we propose a novel evaluation framework: the Debugging Decay Index (DDI). The DDI metric provides a unified assessment of LLM coding proficiency by modelling the exponential effectiveness decay observed in iterative debugging processes. Our framework computes strategic intervention timing t θ based on configurable effectiveness decay thresholds θ , returning a comprehensive evaluation tuple (E 0 , λ ,t θ , R 2 ) that captures initial performance, decay sustainability, strategic stopping points, and model fit quality. This multi-dimensional approach enables nuanced evaluation across different aspects of the code generation and debugging pipeline. Our investigation addresses the following research questions:• RQ1 (Debugging Window): How many debugging attempts maximise the effectiveness of LLM-generated code before further iterations yield diminishing returns, and how do these attempt windows vary across different model architectures?• RQ2 (DDI): How can we develop a unified evaluation metric that comprehensively assesses LLM code generation and debugging capabilities, quantifying initial performance, sustained effectiveness, and iterative refinement capability encompassing both reasoning proficiency and instruction-following competency across diverse model architectures?• RQ3 (Strategic Fresh Starts): Based on the optimal debugging windows identified in RQ1 and the decay characteristics quantified in RQ2, to what extent can implementing fresh start strategies (reinitiating the code generation process) after reaching effectiveness thresholds improve overall accuracy compared to continued iterative refinement within the same generation context?\nLiterature ReviewEvaluation Metric Code-generating LLMs are typically evaluated based on functional correctness or whether the generated code effectively solves the given task. In this paradigm, the pass@k metric 7 has become a standard measure. Pass@k is the probability that at least one of k independently generated solutions to a problem passes all unit tests. Pass@k can be written as -pass@k = 1 -P(all incorrect)The unbiased 7,8 estimation formula is -pass@k = 1 - ( n-c k ) ( n k )Where n is the total number of samples generated, n ≥ k and c of them pass. One can draw n ≥ k samples and count the number of solutions c that pass 8 . Numerous subsequent works on LLM-guided code generation have used pass@k. For example, CodeT 12 and Top Pass 13 evaluated various models on standard benchmarks using the pass@k metric. In MBR-EXEC 14 , authors measured pass@k for HumanEval 7 , Mostly Basic Python Programming(MBPP) 15 to compare instruction tuning. Code generation benchmark leaderboards and evaluations of programming-focused large language models consistently report pass@k metrics (typically k=1, 5, 10, and occasionally up to k=100) as a standard method for model comparison [16][17][18][19][20] . The elegance of this metric lies in its simplicity and direct correlation with functionality; a model that can generate at least one correct solution within k attempts demonstrates meaningful capability in code generation tasks. Importantly, pass@k is a binary, functional metric; it only cares whether any generated solution is entirely correct.Building upon this foundation, researchers have conducted thorough investigations into the pass@k metric's characteristics, examining its sensitivity to both the sample size (k) and the inherent difficulty of programming problems 16,[20][21][22] . A critical limitation identified is the metric's sole reliance on provided test suites, which may not comprehensively verify all aspects of code correctness or efficiency 21 . This concern was empirically validated when researchers augmented the standard HumanEval benchmark with more rigorous test cases (creating HumanEval+ 20 ), resulting in a significant performance drop of approximately 20-30% across various models. A more fundamental concern relates to how optimising for pass@k can distort model behaviour and evaluation priorities. Top Pass 13 introduced a ranking model that directly optimises for this metric, revealing a key limitation: pass@k rewards getting one solution correct over producing multiple near-correct solutions. This approach fails to reward quick convergence and may allow models to game the metric by generating variants of the same algorithm rather than exploring diverse approaches. Complementary findings revealed that 42% of code generations failing unit tests were still rated valuable by programmers and proposed a hybrid metric 23 combining functional correctness with syntactic similarity, which achieved a 14% stronger correlation with programmer-perceived value. These findings suggest that evaluation metrics should consider not only binary correctness but also how effectively code can be refined through debugging. In response to these limitations, several research works have proposed several variations of pass@k. The count@k metric 24 counts how many of k attempts are correct, while AlphaCode introduced n@k 16 that generalises pass@k to measure exactly n correct solutions out of k attempts. Addressing the need to recognise partially correct solutions, the pass-ratio@n metric 25 averages the squared test-pass ratio across n generated code samples. This approach gives partial credit to nearly-correct solutions, addressing the granularity that pass@k lacks.While these functionality-based metrics dominate code generation evaluation, many researchers still report non-functional metrics such as BLEU 26 , CodeBLEU 27 , or ROUGE 28 to measure syntactic similarity. These metrics are not replacements for pass@k but often accompany it to gauge quality aspects beyond functional correctness. While a few orthogonal approaches exist, they all fail to capture the iterative nature of code development and the debugging capabilities of LLMs.Our proposed Debugging Decay Index (DDI) addresses this gap by focusing on the iterative path to functional correctness rather than arbitrary sampling. Unlike traditional metrics, DDI measures how effectively models leverage debugging feedback to improve a solution until it achieves functional correctness iteratively. This approach acknowledges that real-world programming rarely involves generating multiple independent attempts; instead, developers iteratively refine their code through debugging cycles. By quantifying the efficiency of this debugging process, DDI provides a reliable evaluation of how models would perform in practical software development contexts, where strategic iteration, rather than random sampling, is the path to successful code.\nDebuggingResearchers have explored dynamic approaches to incorporate execution feedback and debugging capabilities in LLM-guided code generation. Recent work 29 investigated debugging in two distinct contexts: in-context debugging, which involves inspecting intermediate execution states, and post-context debugging, which focuses on analysing error results after complete execution. Building on this foundation, the SELF-DEBUGGING framework 5 demonstrated how LLMs can analyse execution results and explain their own generated code line by line, mirroring approaches developed initially for human developers 30 . The framework allowed for a maximum of 10 debugging attempts, but the researchers observed that successful debugging typically concluded within just three iterations. By comparison, MapCoder 3 implemented a more extensive debugging protocol, allowing up to 25 attempts, but limiting them to a maximum of 5 attempts per individual plan. The authors reported that while increased debugging iterations generally improved performance, this relationship was not strictly linear across all datasets. Notably, their results for HumanEval-ET did not follow the expected proportional improvement trend, indicating potential dataset-specific considerations in debugging efficacy. Similarly, the Large Language Model Debugger (LDB) 2 employed 10 debugging attempts in their standard configuration, with additional experiments using up to 20 attempts on the HumanEval dataset. Their findings revealed a continuous but diminishing improvement trend, with gains becoming increasingly marginal after the fifth attempt. The subsequent 15 attempts collectively yielded only 2.4% additional improvement. PyCapsule 4 implemented a more streamlined approach compared to MapCoder while still achieving state-of-the-art (SOTA) performance across several benchmark datasets. The framework employed just five debugging attempts beyond the initial solution and fitted the normalised debugging effectiveness to an exponential decay function, revealing that effectiveness usually diminishes dramatically after the third attempt and follows an exponential decay pattern. Their analysis further demonstrated that debugging effectiveness varies significantly across model architectures: OpenAI's GPT-4 17 exhibited complete loss of debugging effectiveness (relative to the first attempt) by the third iteration, while GPT-3.5 17 showed similar exhaustion by the fourth attempt. In contrast, Qwen2.5-coder-instruct 18 maintained some debugging capability until the fifth attempt, suggesting model-specific patterns in debugging performance decay. These findings highlight a critical research gap: the need for a standardised approach to quantify and optimise debugging iterations for LLM code generation.Empirical evidence across debugging frameworks reveals consistent diminishing returns, though the specific decay characteristics vary systematically across model architectures, suggesting model-specific debugging signatures that remain unexplored as evaluation criteria. Existing approaches treat these decay patterns as inevitable limitations rather than quantifiable characteristics of the model. This systematic variation in debugging persistence presents an opportunity to develop methodologies that both measure debugging capability through decay modelling (RQ2) and identify possible optimal intervention strategies when effectiveness diminishes (RQ3).\nMethodology RQ1: Debugging WindowWe introduce the concept of a \"debugging window\" in the context of LLMs for code generation, which refers to the threshold for debugging attempts. While diminishing effectiveness will always occur with continued debugging efforts, establishing this window allows us to determine a practical cutoff point that balances debugging effectiveness with computational efficiency. To model the effectiveness of each debugging attempt over time, this study employs the exponential decay function (Equation 1). The exponential decay function is defined as follows:E(t) = E 0 e -λt(1)In this study, E(t) represents the effectiveness of debugging at attempt t, while E 0 denotes the initial effectiveness corresponding to the very first attempt. The decay constant λ represents the rate of effectiveness loss over successive attempts and serves as our primary metric for benchmarking model performance. Models with lower λ values maintain their effectiveness longer across debugging iterations, and t represents the discrete number of debugging attempts, allowing us to model the temporal progression of debugging effectiveness. To further analyse the decay process, we examine the half-life t 1/2 , which represents the number of debugging attempts after which the effectiveness reduces to half its initial value E 0 . By definition and from Equation 1, we get:E(t 1/2 ) = 1 2 E 0 =⇒ t 1/2 = ln(2) λ(2)We can generalise Equation 2 to determine the number of debugging attempts required for any given decay percentage. For a decay threshold where effectiveness can lose up to θ % of its initial value (meaning (100θ )% effectiveness remains), the number of debugging attempts t θ is given by:t θ = ln 100 100-θ λ(3)This generalised formula enables us to calculate the debugging window for any threshold θ , providing the flexibility to determine when diminishing effectiveness justifies terminating the debugging process based on specific computational constraints.\nRQ2: The Debugging Decay Index (DDI)Our proposed DDI integrates our exponential decay analysis from RQ1 to create a comprehensive evaluation framework for LLM debugging capabilities. Unlike traditional metrics that focus solely on final outcomes, DDI captures the efficiency and capability of the debugging process and the final accuracy.\nMathematical FormulationThe DDI is formulated as a functionDDI(data, θ ) → (E 0 , λ ,t θ , R 2 )that accepts data, the normalised debugging effectiveness measurements across multiple iterative attempts; and θ , the effectiveness decay threshold(s) representing the maximum acceptable performance degradation. Following the PyCapsule 4 framework, the normalised debugging effectiveness data represents the independent influence of each debugging attempt. The DDI framework identifies strategic intervention points t θ where debugging effectiveness would degrade by θ % from the initial value. In RQ3, we leverage these DDI-calculated intervention points to evaluate whether implementing fresh start strategies at the predicted timing can improve overall accuracy compared to continued iterative refinement within the same generation context. Fresh starts involve reinitiating the debugging process with the original problem statement only. DDI returns a four-element tuple:• E 0 (Initial Effectiveness): E 0 represents the initial effectiveness, calculated as E 0 = N solved_at_attempt_0 /N total . This metric is directly comparable to pass@1 and represents the model's inherent code generation capability before any debugging.• λ (Decay Rate): The decay constant extracted from fitting the exponential decay function (Equation 1) to normalised debugging effectiveness data. A lower λ indicates slower decay in effectiveness and more persistent debugging behaviour, reflecting sustained instruction following and reasoning consistency across iterations.• t θ (Optimal Intervention Points): t θ represents the maximum number of debugging attempts before effectiveness drops by θ % from the initial value. This represents the strategic intervention threshold corresponding to the θ value, calculated using Equation 3. Since debugging attempts must be discrete integers, we apply the ceiling function to convert the continuous mathematical solutions into practical stopping points. This ensures that the debugging window provides sufficient attempts to reach at least the specified effectiveness threshold.• R 2 (Fit Quality): The coefficient of determination measuring how well the exponential decay model explains the observed debugging effectiveness patterns. We interpret the results using the following categories: Excellent (R 2 ≥ 0.9), Good (0.7 ≤ R 2 &lt; 0.9), or Poor (R 2 &lt; 0.7). High R 2 values indicate predictable exponential decay behaviour, while low values suggest erratic or non-exponential debugging patterns that may require alternative evaluation approaches.\nEvaluation Process and InterpretationThe DDI evaluation proceeds through four core steps: initial assessment records E 0 = N solved_at_0 /N total ; iterative debugging tracks effectiveness at each attempt; decay analysis fits Equation 1 using nonlinear least squares regression to extract λ , setting λ = None when insufficient data points (n &lt; 3) exist; and threshold calculation determines strategic intervention timing t θ using Equation 3. The DDI outputs provide comprehensive model characterisation of code generation and debugging capabilities, requiring interpretation of both effectiveness metrics and fit quality. For models with high R 2 values (≥ 0.7), the combination of E 0 and λ reveals distinct model archetypes: high E 0 + low λ indicates both strong reasoning and persistent debugging (ideal), low E 0 + low λ suggests consistent but ineffective approaches, high E 0 + high λ indicates strong initial reasoning but poor debugging persistence, while low E 0 + high λ represents both weak reasoning and rapid debugging degradation. However, for models with poor fit quality (R 2 &lt; 0.7), the exponential decay assumption may not apply, indicating that a different mathematical function may be required to fully characterise the model behaviour. In such cases, evaluation should rely primarily on E 0 when using DDI. Pseudocode for DDI is provided in Appendix: DDI Pseudocode.\nModelE 0 λ A 0 t θ R 2 claude-3-7-sonnet-20250219 93.902 None 100.00 [] None codegemma:7b 51.219 0.9309 66.463 [1, 2, 3, 4, 5] Excellent codellama:7b 21.341 0.2467 45.122 [3, 7, 10, 13, 19] Poor codestral:22b 58.537 0.3388 89.024 [3, 5, 7, 9, 14] Good deepseek-coder-v2:16b 71.951 0.9692 84.146 [1, 2, 3, 4, 5] Excellent deepseek-coder:6.7b 45.732 0.4737 74.390 [2, 4, 5, 7, 10] Excellent devstral:24b 84.146 0.6438 94.512 [2, 3, 4, 5, 8] Excellent gemma2:9b 59.146 0.7632 76.219 [1, 3, 4, 4, 7] Excellent gpt-3.5-turbo 73.781 1.3297 82.317 [1, 2, 2, 3, 4] Excellent gpt-3.5-turbo-1106 70.732 0.7553 85.976 [1, 3, 4, 4, 7] Excellent gpt-4-1106-preview 90.244 0.7619 96.951 [1, 3, 4, 4, 7] Poor granite3.3:8b 68.902 0.9482 82.317 [1, 2, 3, 4, 5] Excellent llama2:7b 3.659 0.1185 10.976 [6, 14, 20, 26, 39] Poor llama3.1:8b 56.707 1.1142 72.561 [1, 2, 3, 3, 5] Excellent mistral:instruct 29.878 0.5291 54.268 [2, 4, 5, 6, 9] Excellent phi4-reasoning:14b 59.146 0.6052 81.098 [2, 3, 4, 5, 8] Excellent phi4:14b 83.537 0.7680 93.293 [1, 3, 3, 4, 6] Excellent qwen2.5-coder 76.219 0.4624 94.159 [2, 4, 5, 7, 10] Excellent Table 1. DDI Results for Different Models for θ ∈ {50, 80, 90, 95, 99} on the HumanEval dataset. R 2 indicates exponential fit quality: Excellent (R 2 ≥ 0.9), Good (0.7 ≤ R 2 &lt; 0.9), Poor (R 2 &lt; 0.7). Models with λ = None had insufficient data points for exponential fitting after filtering zero effectiveness values.\nRQ3: Strategic Fresh StartsTo investigate whether strategic interventions can mitigate the debugging decay phenomenon identified in RQ2, we implement fresh start strategies at DDI calculated strategic intervention points. A fresh start completely clears conversation history and begins anew with only the original problem statement. This mechanism addresses the rapid degradation of effectiveness observed in the exponential decay pattern, particularly when models become trapped in the low-effectiveness tail, where continued debugging attempts yield negligible improvement. The fresh start strategy operates on the hypothesis that reinitialising the generation process shifts the model from exploiting failing solution approaches back to exploring alternative solution spaces. Based on empirical evidence from RQ2, we observe varied suitable intervention points t θ across different models, as demonstrated in Table 1. Given the variance in decay patterns, we strategically implement fresh starts at DDI-calculated intervention thresholds, enabling each model to benefit from reinitialisation at its optimal timing. To ensure a fair comparison with existing approaches, we maintain the same total attempt budget as previous works 3,4 , consisting of six attempts (initial generation plus five debugging iterations). Our approach strategically allocates these attempts while triggering fresh starts at DDI-calculated intervention points, testing whether strategic reinitialisation can overcome debugging decay while maintaining strict comparability with baseline methods.\nEvaluation and Experimental SetupTo address our research questions regarding debugging windows (RQ1) and the DDI framework (RQ2), we applied our calculation methodology to eighteen SOTA language models using the HumanEval 7 dataset. Our experimental design systematically evaluates the decay patterns of debugging effectiveness across diverse model architectures, ranging from smaller, specialised models like DeepSeek-Coder 6.7b 31 to larger, general-purpose models such as Claude-3-7-sonnet-20250219 32 , GPT-4 17 , and GPT-3.5 17 . Using normalised debugging effectiveness data from HumanEval 7 , we extracted model-specific decay constants λ . For each model, we calculated E 0 , λ ,t θ where θ ∈ 50, 80, 90, 95, 99 and R 2 . Additionally, we report A 0 values representing the final accuracy achieved after six attempts without any fresh start interventions (same as PyCapule 4 ), providing a baseline performance metric for comparison with our strategic restart approaches in RQ3, see Table 2. Table 1 and Figure 1 present our comprehensive analysis of debugging decay characteristics across these LLMs. The debugging window calculations reveal distinct performance characteristics across model architectures.Claude-3.7-Sonnet demonstrated remarkable performance, achieving 100% effectiveness (A 0 = 100%) essentially within two attempts, which prevented fitting to the exponential decay model, resulting λ = None. This exceptional performance represents a unique case where conventional debugging window calculations may not apply.Conversely, the Phi-4 33 model comparison provides particularly revealing insights into the relationship between reasoning capabilities and debugging sustainability. While phi4:14b 33 (E 0 = 83.537%, λ = 0.76) significantly outperformed phi4reasoning:14b 33 (E 0 = 59.146%, λ = 0.60) in initial effectiveness by approximately 24%, likely due to phi4-reasoning not being instruction fine-tuned and thus more challenging to parse, the reasoning model demonstrated remarkable debugging improvement capacity. Despite starting from a substantially lower baseline, phi4-reasoning achieved a final accuracy of 81.098% compared to phi4:14b's 93.293%, representing an improvement of 21.95% versus only 9.75%, respectively. The reasoning model improved more than twice as much as the standard model through iterative debugging. These findings suggest that the decay constant λ captures not only debugging efficiency but also underlying reasoning capabilities and instruction adaptability. The reasoning model's lower λ value (0.591 vs 0.711) indicates superior debugging sustainability, enabling it to extract more value from iterative refinement processes. This reveals that reasoning-capable models, although potentially harder to prompt initially, possess an enhanced capacity for systematic error correction and solution refinement -a crucial characteristic for extended debugging sessions where sustained improvement matters more than initial performance.GPT variants exhibit relatively fast effectiveness decay, with gpt-3.5-turbo 17 showing the highest decay rate, reaching the 80% threshold by attempts 2-3. In contrast, models like codestral:22b 34 and deepseek-coder:6.7b 31 demonstrate more sustained debugging capabilities with lower decay rates (λ = 0.375 and λ = 0.330 respectively), extending debugging windows to 5-7 attempts for the same threshold. DDI reveals nuanced debugging characteristics that would be missed by simple effectiveness metrics alone. The case of phi4-reasoning:14b 33 exemplifies this.To evaluate the effectiveness of strategic fresh starts proposed in RQ3, we implemented restart interventions at the calculated strategic thresholds for θ ∈ {50, 80} effectiveness degradation. Table 2 presents the comparative performance results, demonstrating the impact of strategic reinitialisation versus continued iterative debugging. The results reveal that strategic fresh starts can significantly improve debugging performance across most models without requiring any additional computational resources. Since fresh starts only involve clearing conversation history at predetermined intervention points while maintaining the same attempt budget, the computational overhead remains equivalent with similar or reduced token usage on average compared to continuous debugging sessions. For example, DeepSeek-Coder-V2-16B reduced token consumption from 108,289 to approximately 89,000 tokens on average, while Codestral-22B maintained usage around 94,000 tokens compared to 97,000 in the continuous sessions.Of the six models evaluated, all showed performance improvements when fresh starts were applied at DDI-calculated intervention points. Significantly, llama3.1:8b 35 showed the most significant improvement, enhancing its baseline accuracy from 72.56% to 82.82%. In contrast, deepseek-coder-v2:16b 31 experienced the second largest enhancement, with its baseline accuracy increasing from 84.1% to 92.1%. Similarly, Mistral:Instruct 36 demonstrated consistent gains across both thresholds, improving from 54.3% to 62.8% and 57.3%. This demonstrates that strategic timing of fresh starts, rather than simply increasing attempt counts, can overcome debugging decay patterns and improve overall effectiveness. Analysis of the normalised debugging effectiveness patterns (Figure 2) reveals that fresh start interventions successfully break the exponential decay curve observed in RQ1. Rather than following the predicted decay trajectory, models implementing fresh starts at strategic intervention points demonstrate renewed effectiveness spikes, essentially resetting the decay pattern and enabling continued productive debugging. This empirical evidence supports our hypothesis that strategic reinitialisation shifts models from exploitation of failing solution approaches back to exploration of alternative solution spaces.\nLimitations and Future Work\nGeneralisation LimitationsThe primary limitation of DDI lies in its dataset-specific nature. While exponential decay patterns appear robust across multiple debugging contexts 2,4  \nResearch DirectionsThe DDI framework opens several promising research directions. Cross-dataset validation across diverse programming benchmarks would establish parameter ranges and calibration requirements for broader applicability. A critical immediate direction involves developing principled methods for optimal threshold selection, potentially through adaptive strategies that learn from model-specific decay characteristics or problem complexity indicators. Perhaps most significantly, comparative analysis of human versus AI debugging decay patterns could validate the theoretical foundations of exponential effectiveness degradation, potentially revealing fundamental principles of iterative problem-solving that extend beyond code generation to broader cognitive tasks. The mathematical framework's simplicity and interpretability make it well-suited for such interdisciplinary investigation, offering a quantitative foundation for understanding debugging effectiveness across both artificial and biological intelligence systems. Importantly, the flexibility of the framework extends beyond modelling exponential decay. By applying the same underlying concept, we can incorporate various functions that represent the decay patterns observed in the input data, allowing us to extract the decay rate specific to the model in question. While we employed exponential functions, as they provided the best fit for the majority of evaluated models, the DDI methodology can readily incorporate linear decay, polynomial regression, or other mathematical functions, depending on the observed model behaviour. This adaptability ensures the framework remains robust across different model architectures and debugging contexts, where alternative decay patterns may emerge as the field evolves.\nConclusionThis work introduces the Debugging Decay Index (DDI), a novel evaluation framework that characterises the exponential effectiveness decay patterns inherent in LLM-guided iterative debugging processes. Through a systematic analysis of eighteen state-of-the-art (SOTA) language models on HumanEval, we demonstrate that debugging effectiveness typically follows predictable exponential decay trajectories, enabling a principled determination of optimal intervention timing rather than relying on arbitrary attempt limits. Our key contributions include the mathematical characterisation of debugging decay patterns across diverse model architectures; the DDI framework, which provides a unified assessment of the coding and debugging abilities of LLMs; and the demonstration that strategic fresh start interventions at DDI-calculated thresholds can break exponential decay patterns and improve final accuracy without incurring additional computational costs. The fresh start strategy proves particularly effective, requiring zero additional computational resources, and demonstrates that strategic intervention, rather than increased attempt budgets, drives performance improvements. The DDI framework provides immediate practical value for researchers seeking to optimise debugging workflows, while also opening up promising research directions in adaptive intervention strategies and cross-dataset validation.Figure 1 .1Figure 1. Exponential decay curves fitted to debugging effectiveness data for four language models. The grey dashed lines indicate effectiveness thresholds at different θ values. The λ (decay rate) and R 2 (goodness-of-fit) values are displayed for each model.\nFigure 2 .2Figure 2. Normalised debugging effectiveness trajectories compared to baseline continuous debugging (A 0 ) with fresh start strategies implemented at θ ∈ {50, 80}. The distinctive spikes in A 50 and A 80 demonstrate successful intervention effects, where fresh starts reset the debugging process and break the monotonic decay pattern observed in baseline approaches. These spikes represent moments where strategic reinitialisation successfully shifts models from failed solution exploitation back to productive exploration, enabling recovery from debugging decay within the same computational budget.\nTable 2 .2, specific λ and t θ values depend on problem set characteristics, including complexity distribution and Performance comparison showing baseline accuracy A 0 achieved within six attempts without intervention, versus fresh start strategies implemented at DDI-calculated intervention points where θ ∈ {50, 80}. A 50 and A 80 represent final accuracy when fresh starts are triggered at t 50 and t 80 thresholds respectively. The corresponding intervention timing (t θ values) for each model can be found in Table1. Bold values indicate performance improvements over the baseline A 0 , demonstrating cases where strategic reinitialisation outperforms continued iterative debugging within the same debugging context at no extra token usage at all debugging challenge types. Like all evaluation metrics, DDI parameters require dataset-specific calibration and cannot be directly compared across different problem sets without statistical validation. Effective generalisation requires either statistically sufficient numbers of diverse datasets to establish robust parameter ranges or standardised benchmarks with comprehensive complexity coverage that can serve as universal debugging evaluation foundations. Due to computational constraints, our current validation focuses on HumanEval variants, though the underlying exponential decay phenomenon has been observed across broader programming contexts including other benchmark datasets4 . Additionally, while our fresh start interventions demonstrate performance improvements across almost all evaluated models, the magnitude of these improvements critically depends on the selected effectiveness threshold θ . Although we observe consistent benefits regardless of threshold selection, selecting θ values for maximum performance gains represents a crucial but unexplored aspect of our framework. The systematic selection of strategic intervention thresholds falls outside the scope of this study and represents an important direction for future investigation.ModelA 0A 50A 80codegemma:7b66.463471.951270.1220codestral:22b89.024488.414691.4634deepseek-coder-84.146392.073290.2439v2:16bdevstral:24b94.512293.902495.1220granite3.3:8b82.317186.585485.3659llama3.1:8b72.561082.317181.7073mistral:instruct54.268362.804957.3171phi4:14b93.292793.902496.3415qwen2.5-coder94.158895.122094.5122",
+  "sections": [
+    {
+      "title": "Introduction",
+      "text": "The advent of large language models (LLMs) has transformed automated code generation, enabling developers to produce functional code with remarkable speed and scale 1 . Recent efforts have shifted toward debugging-based code generation, where LLMs iteratively refine their output based on compiler feedback or error messages, mirroring traditional software development practices [2][3][4][5] . This iterative approach represents a fundamental departure from single-pass generation, yet the underlying dynamics of debugging-based LLM-guided code generation remain critically underexplored. Existing studies often apply an arbitrary number of debugging attempts without examining their optimal extent or effectiveness over continuous iterations [2][3][4] . This approach incurs significant computational costs and lacks methodological rigour in determining when additional iterations cease to yield meaningful improvements. Preliminary research and our analysis suggest that LLM-guided debugging typically follows an exponential decay pattern, where debugging effectiveness diminishes rapidly with successive attempts 4 . However, no systematic work has been conducted to characterise this decay phenomenon or explore strategies to break these patterns for improved performance. This pattern of diminishing returns in iterative LLM approaches extends beyond code generation, with recent research on reasoning models demonstrating similar complexity-dependent limitations where self-correction capabilities plateau and models either overthink simple problems or fail entirely on complex ones 6 , suggesting a natural ceiling that warrants systematic investigation.Furthermore, as debugging-based LLM-guided code generation becomes increasingly prevalent, evaluation metrics must evolve beyond traditional single-pass assessments 7,8 to account for the iterative nature of the process. Current evaluation approaches treat code as static artefacts rather than as the product of a dynamic development process, overlooking the significant quality enhancements that often emerge through systematic debugging and refinement 9 . This limitation becomes increasingly problematic as the field moves toward debugging-based approaches that more closely align with human software development practices 10 . Single-pass metrics such as pass@k 7 measure the probability that at least one correct solution exists among k independently generated candidates. However, this approach does not guarantee diversity among the generated candidates. It fails to account for the iterative debugging process that is central to practical software development workflows 10 , and relies solely on manually written test cases 11 .This study examines the effectiveness of repeated debugging attempts in LLM-based code generation and investigates strategic interventions to enhance the debugging process. To address the limitations of existing evaluation metrics, we propose a novel evaluation framework: the Debugging Decay Index (DDI). The DDI metric provides a unified assessment of LLM coding proficiency by modelling the exponential effectiveness decay observed in iterative debugging processes. Our framework computes strategic intervention timing t θ based on configurable effectiveness decay thresholds θ , returning a comprehensive evaluation tuple (E 0 , λ ,t θ , R 2 ) that captures initial performance, decay sustainability, strategic stopping points, and model fit quality. This multi-dimensional approach enables nuanced evaluation across different aspects of the code generation and debugging pipeline. Our investigation addresses the following research questions:• RQ1 (Debugging Window): How many debugging attempts maximise the effectiveness of LLM-generated code before further iterations yield diminishing returns, and how do these attempt windows vary across different model architectures?• RQ2 (DDI): How can we develop a unified evaluation metric that comprehensively assesses LLM code generation and debugging capabilities, quantifying initial performance, sustained effectiveness, and iterative refinement capability encompassing both reasoning proficiency and instruction-following competency across diverse model architectures?• RQ3 (Strategic Fresh Starts): Based on the optimal debugging windows identified in RQ1 and the decay characteristics quantified in RQ2, to what extent can implementing fresh start strategies (reinitiating the code generation process) after reaching effectiveness thresholds improve overall accuracy compared to continued iterative refinement within the same generation context?",
+      "level": 1,
+      "path_id": "1",
+      "parent_section_id": null,
+      "order_in_parent": 0,
+      "section_id": "sec-1"
+    },
+    {
+      "title": "Literature Review",
+      "text": "Evaluation Metric Code-generating LLMs are typically evaluated based on functional correctness or whether the generated code effectively solves the given task. In this paradigm, the pass@k metric 7 has become a standard measure. Pass@k is the probability that at least one of k independently generated solutions to a problem passes all unit tests. Pass@k can be written as -pass@k = 1 -P(all incorrect)The unbiased 7,8 estimation formula is -pass@k = 1 - ( n-c k ) ( n k )Where n is the total number of samples generated, n ≥ k and c of them pass. One can draw n ≥ k samples and count the number of solutions c that pass 8 . Numerous subsequent works on LLM-guided code generation have used pass@k. For example, CodeT 12 and Top Pass 13 evaluated various models on standard benchmarks using the pass@k metric. In MBR-EXEC 14 , authors measured pass@k for HumanEval 7 , Mostly Basic Python Programming(MBPP) 15 to compare instruction tuning. Code generation benchmark leaderboards and evaluations of programming-focused large language models consistently report pass@k metrics (typically k=1, 5, 10, and occasionally up to k=100) as a standard method for model comparison [16][17][18][19][20] . The elegance of this metric lies in its simplicity and direct correlation with functionality; a model that can generate at least one correct solution within k attempts demonstrates meaningful capability in code generation tasks. Importantly, pass@k is a binary, functional metric; it only cares whether any generated solution is entirely correct.Building upon this foundation, researchers have conducted thorough investigations into the pass@k metric's characteristics, examining its sensitivity to both the sample size (k) and the inherent difficulty of programming problems 16,[20][21][22] . A critical limitation identified is the metric's sole reliance on provided test suites, which may not comprehensively verify all aspects of code correctness or efficiency 21 . This concern was empirically validated when researchers augmented the standard HumanEval benchmark with more rigorous test cases (creating HumanEval+ 20 ), resulting in a significant performance drop of approximately 20-30% across various models. A more fundamental concern relates to how optimising for pass@k can distort model behaviour and evaluation priorities. Top Pass 13 introduced a ranking model that directly optimises for this metric, revealing a key limitation: pass@k rewards getting one solution correct over producing multiple near-correct solutions. This approach fails to reward quick convergence and may allow models to game the metric by generating variants of the same algorithm rather than exploring diverse approaches. Complementary findings revealed that 42% of code generations failing unit tests were still rated valuable by programmers and proposed a hybrid metric 23 combining functional correctness with syntactic similarity, which achieved a 14% stronger correlation with programmer-perceived value. These findings suggest that evaluation metrics should consider not only binary correctness but also how effectively code can be refined through debugging. In response to these limitations, several research works have proposed several variations of pass@k. The count@k metric 24 counts how many of k attempts are correct, while AlphaCode introduced n@k 16 that generalises pass@k to measure exactly n correct solutions out of k attempts. Addressing the need to recognise partially correct solutions, the pass-ratio@n metric 25 averages the squared test-pass ratio across n generated code samples. This approach gives partial credit to nearly-correct solutions, addressing the granularity that pass@k lacks.While these functionality-based metrics dominate code generation evaluation, many researchers still report non-functional metrics such as BLEU 26 , CodeBLEU 27 , or ROUGE 28 to measure syntactic similarity. These metrics are not replacements for pass@k but often accompany it to gauge quality aspects beyond functional correctness. While a few orthogonal approaches exist, they all fail to capture the iterative nature of code development and the debugging capabilities of LLMs.Our proposed Debugging Decay Index (DDI) addresses this gap by focusing on the iterative path to functional correctness rather than arbitrary sampling. Unlike traditional metrics, DDI measures how effectively models leverage debugging feedback to improve a solution until it achieves functional correctness iteratively. This approach acknowledges that real-world programming rarely involves generating multiple independent attempts; instead, developers iteratively refine their code through debugging cycles. By quantifying the efficiency of this debugging process, DDI provides a reliable evaluation of how models would perform in practical software development contexts, where strategic iteration, rather than random sampling, is the path to successful code.",
+      "level": 1,
+      "path_id": "1~2",
+      "parent_section_id": null,
+      "order_in_parent": 1,
+      "section_id": "sec-1~2"
+    },
+    {
+      "title": "Debugging",
+      "text": "Researchers have explored dynamic approaches to incorporate execution feedback and debugging capabilities in LLM-guided code generation. Recent work 29 investigated debugging in two distinct contexts: in-context debugging, which involves inspecting intermediate execution states, and post-context debugging, which focuses on analysing error results after complete execution. Building on this foundation, the SELF-DEBUGGING framework 5 demonstrated how LLMs can analyse execution results and explain their own generated code line by line, mirroring approaches developed initially for human developers 30 . The framework allowed for a maximum of 10 debugging attempts, but the researchers observed that successful debugging typically concluded within just three iterations. By comparison, MapCoder 3 implemented a more extensive debugging protocol, allowing up to 25 attempts, but limiting them to a maximum of 5 attempts per individual plan. The authors reported that while increased debugging iterations generally improved performance, this relationship was not strictly linear across all datasets. Notably, their results for HumanEval-ET did not follow the expected proportional improvement trend, indicating potential dataset-specific considerations in debugging efficacy. Similarly, the Large Language Model Debugger (LDB) 2 employed 10 debugging attempts in their standard configuration, with additional experiments using up to 20 attempts on the HumanEval dataset. Their findings revealed a continuous but diminishing improvement trend, with gains becoming increasingly marginal after the fifth attempt. The subsequent 15 attempts collectively yielded only 2.4% additional improvement. PyCapsule 4 implemented a more streamlined approach compared to MapCoder while still achieving state-of-the-art (SOTA) performance across several benchmark datasets. The framework employed just five debugging attempts beyond the initial solution and fitted the normalised debugging effectiveness to an exponential decay function, revealing that effectiveness usually diminishes dramatically after the third attempt and follows an exponential decay pattern. Their analysis further demonstrated that debugging effectiveness varies significantly across model architectures: OpenAI's GPT-4 17 exhibited complete loss of debugging effectiveness (relative to the first attempt) by the third iteration, while GPT-3.5 17 showed similar exhaustion by the fourth attempt. In contrast, Qwen2.5-coder-instruct 18 maintained some debugging capability until the fifth attempt, suggesting model-specific patterns in debugging performance decay. These findings highlight a critical research gap: the need for a standardised approach to quantify and optimise debugging iterations for LLM code generation.Empirical evidence across debugging frameworks reveals consistent diminishing returns, though the specific decay characteristics vary systematically across model architectures, suggesting model-specific debugging signatures that remain unexplored as evaluation criteria. Existing approaches treat these decay patterns as inevitable limitations rather than quantifiable characteristics of the model. This systematic variation in debugging persistence presents an opportunity to develop methodologies that both measure debugging capability through decay modelling (RQ2) and identify possible optimal intervention strategies when effectiveness diminishes (RQ3).",
+      "level": 1,
+      "path_id": "1~3",
+      "parent_section_id": null,
+      "order_in_parent": 2,
+      "section_id": "sec-1~3"
+    },
+    {
+      "title": "Methodology RQ1: Debugging Window",
+      "text": "We introduce the concept of a \"debugging window\" in the context of LLMs for code generation, which refers to the threshold for debugging attempts. While diminishing effectiveness will always occur with continued debugging efforts, establishing this window allows us to determine a practical cutoff point that balances debugging effectiveness with computational efficiency. To model the effectiveness of each debugging attempt over time, this study employs the exponential decay function (Equation 1). The exponential decay function is defined as follows:E(t) = E 0 e -λt(1)In this study, E(t) represents the effectiveness of debugging at attempt t, while E 0 denotes the initial effectiveness corresponding to the very first attempt. The decay constant λ represents the rate of effectiveness loss over successive attempts and serves as our primary metric for benchmarking model performance. Models with lower λ values maintain their effectiveness longer across debugging iterations, and t represents the discrete number of debugging attempts, allowing us to model the temporal progression of debugging effectiveness. To further analyse the decay process, we examine the half-life t 1/2 , which represents the number of debugging attempts after which the effectiveness reduces to half its initial value E 0 . By definition and from Equation 1, we get:E(t 1/2 ) = 1 2 E 0 =⇒ t 1/2 = ln(2) λ(2)We can generalise Equation 2 to determine the number of debugging attempts required for any given decay percentage. For a decay threshold where effectiveness can lose up to θ % of its initial value (meaning (100θ )% effectiveness remains), the number of debugging attempts t θ is given by:t θ = ln 100 100-θ λ(3)This generalised formula enables us to calculate the debugging window for any threshold θ , providing the flexibility to determine when diminishing effectiveness justifies terminating the debugging process based on specific computational constraints.",
+      "level": 1,
+      "path_id": "1~4",
+      "parent_section_id": null,
+      "order_in_parent": 3,
+      "section_id": "sec-1~4"
+    },
+    {
+      "title": "RQ2: The Debugging Decay Index (DDI)",
+      "text": "Our proposed DDI integrates our exponential decay analysis from RQ1 to create a comprehensive evaluation framework for LLM debugging capabilities. Unlike traditional metrics that focus solely on final outcomes, DDI captures the efficiency and capability of the debugging process and the final accuracy.",
+      "level": 1,
+      "path_id": "1~5",
+      "parent_section_id": null,
+      "order_in_parent": 4,
+      "section_id": "sec-1~5"
+    },
+    {
+      "title": "Mathematical Formulation",
+      "text": "The DDI is formulated as a functionDDI(data, θ ) → (E 0 , λ ,t θ , R 2 )that accepts data, the normalised debugging effectiveness measurements across multiple iterative attempts; and θ , the effectiveness decay threshold(s) representing the maximum acceptable performance degradation. Following the PyCapsule 4 framework, the normalised debugging effectiveness data represents the independent influence of each debugging attempt. The DDI framework identifies strategic intervention points t θ where debugging effectiveness would degrade by θ % from the initial value. In RQ3, we leverage these DDI-calculated intervention points to evaluate whether implementing fresh start strategies at the predicted timing can improve overall accuracy compared to continued iterative refinement within the same generation context. Fresh starts involve reinitiating the debugging process with the original problem statement only. DDI returns a four-element tuple:• E 0 (Initial Effectiveness): E 0 represents the initial effectiveness, calculated as E 0 = N solved_at_attempt_0 /N total . This metric is directly comparable to pass@1 and represents the model's inherent code generation capability before any debugging.• λ (Decay Rate): The decay constant extracted from fitting the exponential decay function (Equation 1) to normalised debugging effectiveness data. A lower λ indicates slower decay in effectiveness and more persistent debugging behaviour, reflecting sustained instruction following and reasoning consistency across iterations.• t θ (Optimal Intervention Points): t θ represents the maximum number of debugging attempts before effectiveness drops by θ % from the initial value. This represents the strategic intervention threshold corresponding to the θ value, calculated using Equation 3. Since debugging attempts must be discrete integers, we apply the ceiling function to convert the continuous mathematical solutions into practical stopping points. This ensures that the debugging window provides sufficient attempts to reach at least the specified effectiveness threshold.• R 2 (Fit Quality): The coefficient of determination measuring how well the exponential decay model explains the observed debugging effectiveness patterns. We interpret the results using the following categories: Excellent (R 2 ≥ 0.9), Good (0.7 ≤ R 2 &lt; 0.9), or Poor (R 2 &lt; 0.7). High R 2 values indicate predictable exponential decay behaviour, while low values suggest erratic or non-exponential debugging patterns that may require alternative evaluation approaches.",
+      "level": 1,
+      "path_id": "1~6",
+      "parent_section_id": null,
+      "order_in_parent": 5,
+      "section_id": "sec-1~6"
+    },
+    {
+      "title": "Evaluation Process and Interpretation",
+      "text": "The DDI evaluation proceeds through four core steps: initial assessment records E 0 = N solved_at_0 /N total ; iterative debugging tracks effectiveness at each attempt; decay analysis fits Equation 1 using nonlinear least squares regression to extract λ , setting λ = None when insufficient data points (n &lt; 3) exist; and threshold calculation determines strategic intervention timing t θ using Equation 3. The DDI outputs provide comprehensive model characterisation of code generation and debugging capabilities, requiring interpretation of both effectiveness metrics and fit quality. For models with high R 2 values (≥ 0.7), the combination of E 0 and λ reveals distinct model archetypes: high E 0 + low λ indicates both strong reasoning and persistent debugging (ideal), low E 0 + low λ suggests consistent but ineffective approaches, high E 0 + high λ indicates strong initial reasoning but poor debugging persistence, while low E 0 + high λ represents both weak reasoning and rapid debugging degradation. However, for models with poor fit quality (R 2 &lt; 0.7), the exponential decay assumption may not apply, indicating that a different mathematical function may be required to fully characterise the model behaviour. In such cases, evaluation should rely primarily on E 0 when using DDI. Pseudocode for DDI is provided in Appendix: DDI Pseudocode.",
+      "level": 1,
+      "path_id": "1~7",
+      "parent_section_id": null,
+      "order_in_parent": 6,
+      "section_id": "sec-1~7"
+    },
+    {
+      "title": "Model",
+      "text": "E 0 λ A 0 t θ R 2 claude-3-7-sonnet-20250219 93.902 None 100.00 [] None codegemma:7b 51.219 0.9309 66.463 [1, 2, 3, 4, 5] Excellent codellama:7b 21.341 0.2467 45.122 [3, 7, 10, 13, 19] Poor codestral:22b 58.537 0.3388 89.024 [3, 5, 7, 9, 14] Good deepseek-coder-v2:16b 71.951 0.9692 84.146 [1, 2, 3, 4, 5] Excellent deepseek-coder:6.7b 45.732 0.4737 74.390 [2, 4, 5, 7, 10] Excellent devstral:24b 84.146 0.6438 94.512 [2, 3, 4, 5, 8] Excellent gemma2:9b 59.146 0.7632 76.219 [1, 3, 4, 4, 7] Excellent gpt-3.5-turbo 73.781 1.3297 82.317 [1, 2, 2, 3, 4] Excellent gpt-3.5-turbo-1106 70.732 0.7553 85.976 [1, 3, 4, 4, 7] Excellent gpt-4-1106-preview 90.244 0.7619 96.951 [1, 3, 4, 4, 7] Poor granite3.3:8b 68.902 0.9482 82.317 [1, 2, 3, 4, 5] Excellent llama2:7b 3.659 0.1185 10.976 [6, 14, 20, 26, 39] Poor llama3.1:8b 56.707 1.1142 72.561 [1, 2, 3, 3, 5] Excellent mistral:instruct 29.878 0.5291 54.268 [2, 4, 5, 6, 9] Excellent phi4-reasoning:14b 59.146 0.6052 81.098 [2, 3, 4, 5, 8] Excellent phi4:14b 83.537 0.7680 93.293 [1, 3, 3, 4, 6] Excellent qwen2.5-coder 76.219 0.4624 94.159 [2, 4, 5, 7, 10] Excellent Table 1. DDI Results for Different Models for θ ∈ {50, 80, 90, 95, 99} on the HumanEval dataset. R 2 indicates exponential fit quality: Excellent (R 2 ≥ 0.9), Good (0.7 ≤ R 2 &lt; 0.9), Poor (R 2 &lt; 0.7). Models with λ = None had insufficient data points for exponential fitting after filtering zero effectiveness values.",
+      "level": 1,
+      "path_id": "1~8",
+      "parent_section_id": null,
+      "order_in_parent": 7,
+      "section_id": "sec-1~8"
+    },
+    {
+      "title": "RQ3: Strategic Fresh Starts",
+      "text": "To investigate whether strategic interventions can mitigate the debugging decay phenomenon identified in RQ2, we implement fresh start strategies at DDI calculated strategic intervention points. A fresh start completely clears conversation history and begins anew with only the original problem statement. This mechanism addresses the rapid degradation of effectiveness observed in the exponential decay pattern, particularly when models become trapped in the low-effectiveness tail, where continued debugging attempts yield negligible improvement. The fresh start strategy operates on the hypothesis that reinitialising the generation process shifts the model from exploiting failing solution approaches back to exploring alternative solution spaces. Based on empirical evidence from RQ2, we observe varied suitable intervention points t θ across different models, as demonstrated in Table 1. Given the variance in decay patterns, we strategically implement fresh starts at DDI-calculated intervention thresholds, enabling each model to benefit from reinitialisation at its optimal timing. To ensure a fair comparison with existing approaches, we maintain the same total attempt budget as previous works 3,4 , consisting of six attempts (initial generation plus five debugging iterations). Our approach strategically allocates these attempts while triggering fresh starts at DDI-calculated intervention points, testing whether strategic reinitialisation can overcome debugging decay while maintaining strict comparability with baseline methods.",
+      "level": 1,
+      "path_id": "1~9",
+      "parent_section_id": null,
+      "order_in_parent": 8,
+      "section_id": "sec-1~9"
+    },
+    {
+      "title": "Evaluation and Experimental Setup",
+      "text": "To address our research questions regarding debugging windows (RQ1) and the DDI framework (RQ2), we applied our calculation methodology to eighteen SOTA language models using the HumanEval 7 dataset. Our experimental design systematically evaluates the decay patterns of debugging effectiveness across diverse model architectures, ranging from smaller, specialised models like DeepSeek-Coder 6.7b 31 to larger, general-purpose models such as Claude-3-7-sonnet-20250219 32 , GPT-4 17 , and GPT-3.5 17 . Using normalised debugging effectiveness data from HumanEval 7 , we extracted model-specific decay constants λ . For each model, we calculated E 0 , λ ,t θ where θ ∈ 50, 80, 90, 95, 99 and R 2 . Additionally, we report A 0 values representing the final accuracy achieved after six attempts without any fresh start interventions (same as PyCapule 4 ), providing a baseline performance metric for comparison with our strategic restart approaches in RQ3, see Table 2. Table 1 and Figure 1 present our comprehensive analysis of debugging decay characteristics across these LLMs. The debugging window calculations reveal distinct performance characteristics across model architectures.Claude-3.7-Sonnet demonstrated remarkable performance, achieving 100% effectiveness (A 0 = 100%) essentially within two attempts, which prevented fitting to the exponential decay model, resulting λ = None. This exceptional performance represents a unique case where conventional debugging window calculations may not apply.Conversely, the Phi-4 33 model comparison provides particularly revealing insights into the relationship between reasoning capabilities and debugging sustainability. While phi4:14b 33 (E 0 = 83.537%, λ = 0.76) significantly outperformed phi4reasoning:14b 33 (E 0 = 59.146%, λ = 0.60) in initial effectiveness by approximately 24%, likely due to phi4-reasoning not being instruction fine-tuned and thus more challenging to parse, the reasoning model demonstrated remarkable debugging improvement capacity. Despite starting from a substantially lower baseline, phi4-reasoning achieved a final accuracy of 81.098% compared to phi4:14b's 93.293%, representing an improvement of 21.95% versus only 9.75%, respectively. The reasoning model improved more than twice as much as the standard model through iterative debugging. These findings suggest that the decay constant λ captures not only debugging efficiency but also underlying reasoning capabilities and instruction adaptability. The reasoning model's lower λ value (0.591 vs 0.711) indicates superior debugging sustainability, enabling it to extract more value from iterative refinement processes. This reveals that reasoning-capable models, although potentially harder to prompt initially, possess an enhanced capacity for systematic error correction and solution refinement -a crucial characteristic for extended debugging sessions where sustained improvement matters more than initial performance.GPT variants exhibit relatively fast effectiveness decay, with gpt-3.5-turbo 17 showing the highest decay rate, reaching the 80% threshold by attempts 2-3. In contrast, models like codestral:22b 34 and deepseek-coder:6.7b 31 demonstrate more sustained debugging capabilities with lower decay rates (λ = 0.375 and λ = 0.330 respectively), extending debugging windows to 5-7 attempts for the same threshold. DDI reveals nuanced debugging characteristics that would be missed by simple effectiveness metrics alone. The case of phi4-reasoning:14b 33 exemplifies this.To evaluate the effectiveness of strategic fresh starts proposed in RQ3, we implemented restart interventions at the calculated strategic thresholds for θ ∈ {50, 80} effectiveness degradation. Table 2 presents the comparative performance results, demonstrating the impact of strategic reinitialisation versus continued iterative debugging. The results reveal that strategic fresh starts can significantly improve debugging performance across most models without requiring any additional computational resources. Since fresh starts only involve clearing conversation history at predetermined intervention points while maintaining the same attempt budget, the computational overhead remains equivalent with similar or reduced token usage on average compared to continuous debugging sessions. For example, DeepSeek-Coder-V2-16B reduced token consumption from 108,289 to approximately 89,000 tokens on average, while Codestral-22B maintained usage around 94,000 tokens compared to 97,000 in the continuous sessions.Of the six models evaluated, all showed performance improvements when fresh starts were applied at DDI-calculated intervention points. Significantly, llama3.1:8b 35 showed the most significant improvement, enhancing its baseline accuracy from 72.56% to 82.82%. In contrast, deepseek-coder-v2:16b 31 experienced the second largest enhancement, with its baseline accuracy increasing from 84.1% to 92.1%. Similarly, Mistral:Instruct 36 demonstrated consistent gains across both thresholds, improving from 54.3% to 62.8% and 57.3%. This demonstrates that strategic timing of fresh starts, rather than simply increasing attempt counts, can overcome debugging decay patterns and improve overall effectiveness. Analysis of the normalised debugging effectiveness patterns (Figure 2) reveals that fresh start interventions successfully break the exponential decay curve observed in RQ1. Rather than following the predicted decay trajectory, models implementing fresh starts at strategic intervention points demonstrate renewed effectiveness spikes, essentially resetting the decay pattern and enabling continued productive debugging. This empirical evidence supports our hypothesis that strategic reinitialisation shifts models from exploitation of failing solution approaches back to exploration of alternative solution spaces.",
+      "level": 1,
+      "path_id": "1~10",
+      "parent_section_id": null,
+      "order_in_parent": 9,
+      "section_id": "sec-1~10"
+    },
+    {
+      "title": "Limitations and Future Work",
+      "text": "",
+      "level": 1,
+      "path_id": "1~11",
+      "parent_section_id": null,
+      "order_in_parent": 10,
+      "section_id": "sec-1~11"
+    },
+    {
+      "title": "Generalisation Limitations",
+      "text": "The primary limitation of DDI lies in its dataset-specific nature. While exponential decay patterns appear robust across multiple debugging contexts 2,4",
+      "level": 1,
+      "path_id": "1~12",
+      "parent_section_id": null,
+      "order_in_parent": 11,
+      "section_id": "sec-1~12"
+    },
+    {
+      "title": "Research Directions",
+      "text": "The DDI framework opens several promising research directions. Cross-dataset validation across diverse programming benchmarks would establish parameter ranges and calibration requirements for broader applicability. A critical immediate direction involves developing principled methods for optimal threshold selection, potentially through adaptive strategies that learn from model-specific decay characteristics or problem complexity indicators. Perhaps most significantly, comparative analysis of human versus AI debugging decay patterns could validate the theoretical foundations of exponential effectiveness degradation, potentially revealing fundamental principles of iterative problem-solving that extend beyond code generation to broader cognitive tasks. The mathematical framework's simplicity and interpretability make it well-suited for such interdisciplinary investigation, offering a quantitative foundation for understanding debugging effectiveness across both artificial and biological intelligence systems. Importantly, the flexibility of the framework extends beyond modelling exponential decay. By applying the same underlying concept, we can incorporate various functions that represent the decay patterns observed in the input data, allowing us to extract the decay rate specific to the model in question. While we employed exponential functions, as they provided the best fit for the majority of evaluated models, the DDI methodology can readily incorporate linear decay, polynomial regression, or other mathematical functions, depending on the observed model behaviour. This adaptability ensures the framework remains robust across different model architectures and debugging contexts, where alternative decay patterns may emerge as the field evolves.",
+      "level": 1,
+      "path_id": "1~13",
+      "parent_section_id": null,
+      "order_in_parent": 12,
+      "section_id": "sec-1~13"
+    },
+    {
+      "title": "Conclusion",
+      "text": "This work introduces the Debugging Decay Index (DDI), a novel evaluation framework that characterises the exponential effectiveness decay patterns inherent in LLM-guided iterative debugging processes. Through a systematic analysis of eighteen state-of-the-art (SOTA) language models on HumanEval, we demonstrate that debugging effectiveness typically follows predictable exponential decay trajectories, enabling a principled determination of optimal intervention timing rather than relying on arbitrary attempt limits. Our key contributions include the mathematical characterisation of debugging decay patterns across diverse model architectures; the DDI framework, which provides a unified assessment of the coding and debugging abilities of LLMs; and the demonstration that strategic fresh start interventions at DDI-calculated thresholds can break exponential decay patterns and improve final accuracy without incurring additional computational costs. The fresh start strategy proves particularly effective, requiring zero additional computational resources, and demonstrates that strategic intervention, rather than increased attempt budgets, drives performance improvements. The DDI framework provides immediate practical value for researchers seeking to optimise debugging workflows, while also opening up promising research directions in adaptive intervention strategies and cross-dataset validation.Figure 1 .1Figure 1. Exponential decay curves fitted to debugging effectiveness data for four language models. The grey dashed lines indicate effectiveness thresholds at different θ values. The λ (decay rate) and R 2 (goodness-of-fit) values are displayed for each model.\nFigure 2 .2Figure 2. Normalised debugging effectiveness trajectories compared to baseline continuous debugging (A 0 ) with fresh start strategies implemented at θ ∈ {50, 80}. The distinctive spikes in A 50 and A 80 demonstrate successful intervention effects, where fresh starts reset the debugging process and break the monotonic decay pattern observed in baseline approaches. These spikes represent moments where strategic reinitialisation successfully shifts models from failed solution exploitation back to productive exploration, enabling recovery from debugging decay within the same computational budget.\nTable 2 .2, specific λ and t θ values depend on problem set characteristics, including complexity distribution and Performance comparison showing baseline accuracy A 0 achieved within six attempts without intervention, versus fresh start strategies implemented at DDI-calculated intervention points where θ ∈ {50, 80}. A 50 and A 80 represent final accuracy when fresh starts are triggered at t 50 and t 80 thresholds respectively. The corresponding intervention timing (t θ values) for each model can be found in Table1. Bold values indicate performance improvements over the baseline A 0 , demonstrating cases where strategic reinitialisation outperforms continued iterative debugging within the same debugging context at no extra token usage at all debugging challenge types. Like all evaluation metrics, DDI parameters require dataset-specific calibration and cannot be directly compared across different problem sets without statistical validation. Effective generalisation requires either statistically sufficient numbers of diverse datasets to establish robust parameter ranges or standardised benchmarks with comprehensive complexity coverage that can serve as universal debugging evaluation foundations. Due to computational constraints, our current validation focuses on HumanEval variants, though the underlying exponential decay phenomenon has been observed across broader programming contexts including other benchmark datasets4 . Additionally, while our fresh start interventions demonstrate performance improvements across almost all evaluated models, the magnitude of these improvements critically depends on the selected effectiveness threshold θ . Although we observe consistent benefits regardless of threshold selection, selecting θ values for maximum performance gains represents a crucial but unexplored aspect of our framework. The systematic selection of strategic intervention thresholds falls outside the scope of this study and represents an important direction for future investigation.ModelA 0A 50A 80codegemma:7b66.463471.951270.1220codestral:22b89.024488.414691.4634deepseek-coder-84.146392.073290.2439v2:16bdevstral:24b94.512293.902495.1220granite3.3:8b82.317186.585485.3659llama3.1:8b72.561082.317181.7073mistral:instruct54.268362.804957.3171phi4:14b93.292793.902496.3415qwen2.5-coder94.158895.122094.5122",
+      "level": 1,
+      "path_id": "1~14",
+      "parent_section_id": null,
+      "order_in_parent": 13,
+      "section_id": "sec-1~14"
+    }
+  ],
+  "citations": [
+    {
+      "raw_text": "A survey on large language models for code generation\n\t\t\n\t\t\tJJiang\n\t\t\n\t\t\n\t\t\tFWang\n\t\t\n\t\t\n\t\t\tJShen\n\t\t\n\t\t\n\t\t\tSKim\n\t\t\n\t\t\n\t\t\tSKim\n\t\t\n\t\t2406.00515\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b0",
+          "section_path_id": "1",
+          "quote": "1",
+          "offset": 165
+        }
+      ]
+    },
+    {
+      "raw_text": "Debug like a human: A large language model debugger via verifying runtime execution step by step\n\t\t\n\t\t\tLZhong\n\t\t\n\t\t\n\t\t\tZWang\n\t\t\n\t\t\n\t\t\tJShang\n\t\t\n\t\n\t\n\t\tFindings of the Association for Computational Linguistics: ACL 2024\n\t\t\n\t\t\tL.-WKu\n\t\t\n\t\t\n\t\t\tAMartins\n\t\t\n\t\t\n\t\t\tVSrikumar\n\t\t\n\t\tBangkok, Thailand\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Debug like a human: A large language model debugger via verifying runtime execution step by step",
+      "anchors": [
+        {
+          "ref_id": "b1",
+          "section_path_id": "1",
+          "quote": "[2]",
+          "offset": 379
+        },
+        {
+          "ref_id": "b1",
+          "section_path_id": "1",
+          "quote": "[2]",
+          "offset": 743
+        },
+        {
+          "ref_id": "b1",
+          "section_path_id": "1~12",
+          "quote": "2,",
+          "offset": 149
+        }
+      ]
+    },
+    {
+      "raw_text": "Multi-agent code generation for competitive problem solving\n\t\t\n\t\t\tMAIslam\n\t\t\n\t\t\n\t\t\tMEAli\n\t\t\n\t\t\n\t\t\tMRParvez\n\t\t\n\t\t\n\t\t\tMapcoder\n\t\t\n\t\n\t\n\t\tProceedings of the 62nd Annual Meeting of the Association for Computational Linguistics\n\t\tthe 62nd Annual Meeting of the Association for Computational LinguisticsBangkok, Thailand\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2024\n\t\t\t1",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Multi-agent code generation for competitive problem solving",
+      "anchors": [
+        {
+          "ref_id": "b2",
+          "section_path_id": "1",
+          "quote": "[3]",
+          "offset": 382
+        },
+        {
+          "ref_id": "b2",
+          "section_path_id": "1",
+          "quote": "[3]",
+          "offset": 746
+        },
+        {
+          "ref_id": "b2",
+          "section_path_id": "1~9",
+          "quote": "3,",
+          "offset": 1205
+        }
+      ]
+    },
+    {
+      "raw_text": "Large language model guided self-debugging code generation\n\t\t\n\t\t\tMAdnan\n\t\t\n\t\t\n\t\t\tZXu\n\t\t\n\t\t\n\t\t\tCC NKuhn\n\t\t\n\t\t2502.02928\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b3",
+          "section_path_id": "1",
+          "quote": "[4]",
+          "offset": 385
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1",
+          "quote": "[4]",
+          "offset": 749
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1",
+          "quote": "4",
+          "offset": 1116
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1~9",
+          "quote": "4",
+          "offset": 1207
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1~10",
+          "quote": "4",
+          "offset": 848
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1~12",
+          "quote": "4",
+          "offset": 151
+        },
+        {
+          "ref_id": "b3",
+          "section_path_id": "1~14",
+          "quote": "4",
+          "offset": 3731
+        }
+      ]
+    },
+    {
+      "raw_text": "Teaching large language models to self-debug\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tMLin\n\t\t\n\t\t\n\t\t\tNSchärli\n\t\t\n\t\t\n\t\t\tDZhou\n\t\t\n\t\n\t\n\t\tThe 12th International Conference on Learning Representations\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Teaching large language models to self-debug",
+      "anchors": [
+        {
+          "ref_id": "b4",
+          "section_path_id": "1",
+          "quote": "[5]",
+          "offset": 388
+        },
+        {
+          "ref_id": "b4",
+          "section_path_id": "1~3",
+          "quote": "5",
+          "offset": 433
+        }
+      ]
+    },
+    {
+      "raw_text": "The illusion of thinking: Understanding the strengths and limitations of reasoning models via the lens of problem complexity\n\t\t\n\t\t\tPShojaee\n\t\t\n\t\tarXiv:2506.06941\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2506.06941",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b5",
+          "section_path_id": "1",
+          "quote": "6",
+          "offset": 1589
+        }
+      ]
+    },
+    {
+      "raw_text": "Evaluating large language models trained on code\n\t\t\n\t\t\tMChen\n\t\t\n\t\t2107.03374\n\t\t\n\t\t\t2021",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b6",
+          "section_path_id": "1",
+          "quote": "7,",
+          "offset": 1826
+        },
+        {
+          "ref_id": "b6",
+          "section_path_id": "1~2",
+          "quote": "7",
+          "offset": 196
+        },
+        {
+          "ref_id": "b6",
+          "section_path_id": "1~2",
+          "quote": "7,",
+          "offset": 415
+        },
+        {
+          "ref_id": "b6",
+          "section_path_id": "1~2",
+          "quote": "7",
+          "offset": 865
+        },
+        {
+          "ref_id": "b6",
+          "section_path_id": "1~10",
+          "quote": "7",
+          "offset": 563
+        }
+      ]
+    },
+    {
+      "raw_text": "Benchmarks and metrics for evaluations of code generation: A critical review\n\t\t\n\t\t\tDGPaul\n\t\t\n\t\t\n\t\t\tHZhu\n\t\t\n\t\t\n\t\t\tIBayley\n\t\t\n\t\n\t\n\t\tIEEE AITest\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Benchmarks and metrics for evaluations of code generation: A critical review",
+      "anchors": [
+        {
+          "ref_id": "b7",
+          "section_path_id": "1",
+          "quote": "8",
+          "offset": 1828
+        },
+        {
+          "ref_id": "b7",
+          "section_path_id": "1~2",
+          "quote": "8",
+          "offset": 417
+        },
+        {
+          "ref_id": "b7",
+          "section_path_id": "1~2",
+          "quote": "8",
+          "offset": 621
+        }
+      ]
+    },
+    {
+      "raw_text": "Debugging techniques in professional programming\n\t\t\n\t\t\tALiu\n\t\t\n\t\t\n\t\t\tMCoblenz\n\t\t\n\t\n\t\n\t\t13th Annual Workshop at the Intersection of PL and HCI\n\t\t\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Debugging techniques in professional programming",
+      "anchors": [
+        {
+          "ref_id": "b8",
+          "section_path_id": "1",
+          "quote": "9",
+          "offset": 2115
+        }
+      ]
+    },
+    {
+      "raw_text": "DSpinellis\n\t\t\n\t\tEffective Debugging: 66 Specific Ways to Debug Software and System\n\t\tBoston, MA\n\t\t\n\t\t\tAddison-Wesley Professional\n\t\t\t2016",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b9",
+          "section_path_id": "1",
+          "quote": "10",
+          "offset": 2287
+        },
+        {
+          "ref_id": "b9",
+          "section_path_id": "1",
+          "quote": "10",
+          "offset": 2639
+        }
+      ]
+    },
+    {
+      "raw_text": "Codejudge: Evaluating code generation with large language models\n\t\t\n\t\t\tWTong\n\t\t\n\t\t\n\t\t\tTZhang\n\t\t\n\t\n\t\n\t\tProceedings of the 2024 Conference on Empirical Methods in Natural Language Processing\n\t\tthe 2024 Conference on Empirical Methods in Natural Language Processing\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Codejudge: Evaluating code generation with large language models",
+      "anchors": [
+        {
+          "ref_id": "b10",
+          "section_path_id": "1",
+          "quote": "11",
+          "offset": 2693
+        }
+      ]
+    },
+    {
+      "raw_text": "Codet: Code generation with generated tests\n\t\t\n\t\t\tBChen\n\t\t\n\t\tarXiv:2207.10397\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2207.10397",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b11",
+          "section_path_id": "1~2",
+          "quote": "12",
+          "offset": 718
+        }
+      ]
+    },
+    {
+      "raw_text": "Top pass: Improve code generation by pass@k-maximized code ranking\n\t\t\n\t\t\tZ.-CLyu\n\t\t\n\t\t\n\t\t\tX.-YLi\n\t\t\n\t\t\n\t\t\tZXie\n\t\t\n\t\t\n\t\t\tMLi\n\t\t\n\t\n\t\n\t\tFront. Comput. Sci\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Top pass: Improve code generation by pass@k-maximized code ranking",
+      "anchors": [
+        {
+          "ref_id": "b12",
+          "section_path_id": "1~2",
+          "quote": "13",
+          "offset": 734
+        },
+        {
+          "ref_id": "b12",
+          "section_path_id": "1~2",
+          "quote": "13",
+          "offset": 2339
+        }
+      ]
+    },
+    {
+      "raw_text": "Natural language to code translation with execution\n\t\t\n\t\t\tFShi\n\t\t\n\t\t\n\t\t\tDFried\n\t\t\n\t\t\n\t\t\tMGhazvininejad\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\t\n\t\t\tSIWang\n\t\t\n\t\n\t\n\t\tProceedings of the 2022 Conference on Empirical Methods in Natural Language Processing\n\t\tthe 2022 Conference on Empirical Methods in Natural Language Processing\n\t\t\n\t\t\t2022",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Natural language to code translation with execution",
+      "anchors": [
+        {
+          "ref_id": "b13",
+          "section_path_id": "1~2",
+          "quote": "14",
+          "offset": 822
+        }
+      ]
+    },
+    {
+      "raw_text": "Program synthesis with large language models\n\t\t\n\t\t\tJAustin\n\t\t\n\t\tarXiv:2108.07732\n\t\t\n\t\t\t2021\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2108.07732",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b14",
+          "section_path_id": "1~2",
+          "quote": "15",
+          "offset": 907
+        }
+      ]
+    },
+    {
+      "raw_text": "Competition-level code generation with alphacode\n\t\t\n\t\t\tYLi\n\t\t\n\t\n\t\n\t\tScience\n\t\t\n\t\t\t378\n\t\t\t\n\t\t\t2022",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Competition-level code generation with alphacode",
+      "anchors": [
+        {
+          "ref_id": "b15",
+          "section_path_id": "1~2",
+          "quote": "[16]",
+          "offset": 1171
+        },
+        {
+          "ref_id": "b15",
+          "section_path_id": "1~2",
+          "quote": "16,",
+          "offset": 1770
+        },
+        {
+          "ref_id": "b15",
+          "section_path_id": "1~2",
+          "quote": "16",
+          "offset": 3345
+        }
+      ]
+    },
+    {
+      "raw_text": "Openai\n\t\t\n\t\t2303.08774\n\t\n\t\n\t\tGpt-4 technical report\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~2",
+          "quote": "[17]",
+          "offset": 1175
+        },
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~3",
+          "quote": "17",
+          "offset": 2277
+        },
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~3",
+          "quote": "17",
+          "offset": 2401
+        },
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~10",
+          "quote": "17",
+          "offset": 480
+        },
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~10",
+          "quote": "17",
+          "offset": 497
+        },
+        {
+          "ref_id": "b16",
+          "section_path_id": "1~10",
+          "quote": "17",
+          "offset": 3032
+        }
+      ]
+    },
+    {
+      "raw_text": "BHui\n\t\t\n\t\t2409.12186\n\t\tQwen2.5-coder technical report\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b17",
+          "section_path_id": "1~2",
+          "quote": "[18]",
+          "offset": 1179
+        },
+        {
+          "ref_id": "b17",
+          "section_path_id": "1~3",
+          "quote": "18",
+          "offset": 2489
+        }
+      ]
+    },
+    {
+      "raw_text": "Evaluating language models for efficient code generation\n\t\t\n\t\t\tJLiu\n\t\t\n\t\n\t\n\t\tFirst Conference on Language Modeling\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Evaluating language models for efficient code generation",
+      "anchors": [
+        {
+          "ref_id": "b18",
+          "section_path_id": "1~2",
+          "quote": "[19]",
+          "offset": 1183
+        }
+      ]
+    },
+    {
+      "raw_text": "Is your code generated by chatGPT really correct? rigorous evaluation of large language models for code generation\n\t\t\n\t\t\tJLiu\n\t\t\n\t\t\n\t\t\tCSXia\n\t\t\n\t\t\n\t\t\tYWang\n\t\t\n\t\t\n\t\t\tLZhang\n\t\t\n\t\n\t\n\t\tThirty-seventh Conference on Neural Information Processing Systems\n\t\t\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Is your code generated by chatGPT really correct? rigorous evaluation of large language models for code generation",
+      "anchors": [
+        {
+          "ref_id": "b19",
+          "section_path_id": "1~2",
+          "quote": "[20]",
+          "offset": 1187
+        },
+        {
+          "ref_id": "b19",
+          "section_path_id": "1~2",
+          "quote": "[20]",
+          "offset": 1773
+        },
+        {
+          "ref_id": "b19",
+          "section_path_id": "1~2",
+          "quote": "20",
+          "offset": 2114
+        }
+      ]
+    },
+    {
+      "raw_text": "A survey on evaluating large language models in code generation tasks\n\t\t\n\t\t\tLChen\n\t\t\n\t\tarXiv:2408.16498\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2408.16498",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b20",
+          "section_path_id": "1~2",
+          "quote": "[21]",
+          "offset": 1777
+        },
+        {
+          "ref_id": "b20",
+          "section_path_id": "1~2",
+          "quote": "21",
+          "offset": 1959
+        }
+      ]
+    },
+    {
+      "raw_text": "Can llms replace human evaluators? an empirical study of llm-as-a-judge in software engineering\n\t\t\n\t\t\tRWang\n\t\t\n\t\t10.1145/3728963\n\t\t2502.06193\n\t\t\n\t\t\t2025",
+      "doi": "10.1145/3728963",
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b21",
+          "section_path_id": "1~2",
+          "quote": "[22]",
+          "offset": 1781
+        }
+      ]
+    },
+    {
+      "raw_text": "Aligning offline metrics and human judgments of value for code generation models\n\t\t\n\t\t\tVDibia\n\t\t\n\t\t10.18653/v1/2023.findings-acl.540\n\t\n\t\n\t\tFindings of the Association for Computational Linguistics: ACL 2023\n\t\t\n\t\t\tARogers\n\t\t\n\t\t\n\t\t\tJBoyd-Graber\n\t\t\n\t\t\n\t\t\tNOkazaki\n\t\t\n\t\tToronto, Canada\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2023",
+      "doi": "10.18653/v1/2023.findings-acl.540",
+      "arxiv_id": null,
+      "title": "Aligning offline metrics and human judgments of value for code generation models",
+      "anchors": [
+        {
+          "ref_id": "b22",
+          "section_path_id": "1~2",
+          "quote": "23",
+          "offset": 2855
+        }
+      ]
+    },
+    {
+      "raw_text": "Coderujb: An executable and unified java benchmark for practical programming scenarios\n\t\t\n\t\t\tZZeng\n\t\t\n\t\t\n\t\t\tYWang\n\t\t\n\t\t\n\t\t\tRXie\n\t\t\n\t\t\n\t\t\tWYe\n\t\t\n\t\t\n\t\t\tSZhang\n\t\t\n\t\n\t\n\t\tProceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis\n\t\tthe 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Coderujb: An executable and unified java benchmark for practical programming scenarios",
+      "anchors": [
+        {
+          "ref_id": "b23",
+          "section_path_id": "1~2",
+          "quote": "24",
+          "offset": 3268
+        }
+      ]
+    },
+    {
+      "raw_text": "Framework for evaluating code generation ability of large language models\n\t\t\n\t\t\tSYeo\n\t\t\n\t\t\n\t\t\tY.-SMa\n\t\t\n\t\t\n\t\t\tSCKim\n\t\t\n\t\t\n\t\t\tHJun\n\t\t\n\t\t\n\t\t\tTKim\n\t\t\n\t\t10.4218/etrij.2023-0357\n\t\n\t\n\t\tETRI J\n\t\t\n\t\t\t46\n\t\t\t\n\t\t\t2024",
+      "doi": "10.4218/etrij.2023-0357",
+      "arxiv_id": null,
+      "title": "Framework for evaluating code generation ability of large language models",
+      "anchors": [
+        {
+          "ref_id": "b24",
+          "section_path_id": "1~2",
+          "quote": "25",
+          "offset": 3516
+        }
+      ]
+    },
+    {
+      "raw_text": "Bleu: a method for automatic evaluation of machine translation\n\t\t\n\t\t\tKPapineni\n\t\t\n\t\t\n\t\t\tSRoukos\n\t\t\n\t\t\n\t\t\tTWard\n\t\t\n\t\t\n\t\t\tWZhu\n\t\t\n\t\n\t\n\t\tProceedings of the 40th Annual Meeting of the Association for Computational Linguistics\n\t\tthe 40th Annual Meeting of the Association for Computational LinguisticsPhiladelphia, Pennsylvania, USA\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2002",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Bleu: a method for automatic evaluation of machine translation",
+      "anchors": [
+        {
+          "ref_id": "b25",
+          "section_path_id": "1~2",
+          "quote": "26",
+          "offset": 3841
+        }
+      ]
+    },
+    {
+      "raw_text": "Codebleu: a method for automatic evaluation of code synthesis\n\t\t\n\t\t\tSRen\n\t\t\n\t\t\n\t\t\t2020. 2009.10297",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b26",
+          "section_path_id": "1~2",
+          "quote": "27",
+          "offset": 3855
+        }
+      ]
+    },
+    {
+      "raw_text": "Rouge: A package for automatic evaluation of summaries\n\t\t\n\t\t\tC.-YLin\n\t\t\n\t\n\t\n\t\tText Summarization Branches Out\n\t\tBarcelona, Spain\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2004",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Rouge: A package for automatic evaluation of summaries",
+      "anchors": [
+        {
+          "ref_id": "b27",
+          "section_path_id": "1~2",
+          "quote": "28",
+          "offset": 3869
+        }
+      ]
+    },
+    {
+      "raw_text": "Revisit self-debugging with self-generated tests for code generation\n\t\t\n\t\t\tXChen\n\t\t\n\t\t2501.12793\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b28",
+          "section_path_id": "1~3",
+          "quote": "29",
+          "offset": 149
+        }
+      ]
+    },
+    {
+      "raw_text": "DThomas\n\t\t\n\t\t\n\t\t\tAHunt\n\t\t\n\t\tThe Pragmatic Programmer: Your Journey to Mastery, 20th Anniversary Edition\n\t\tBoston, MA\n\t\t\n\t\t\tPearson Education\n\t\t\t2019\n\t\t\n\t\n\t20th anniversary edition edn",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b29",
+          "section_path_id": "1~3",
+          "quote": "30",
+          "offset": 600
+        }
+      ]
+    },
+    {
+      "raw_text": "Deepseek-coder: When the large language model meets programming-the rise of code intelligence\n\t\t\n\t\t\tDGuo\n\t\t\n\t\tarXiv:2401.14196\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2401.14196",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b30",
+          "section_path_id": "1~10",
+          "quote": "31",
+          "offset": 397
+        },
+        {
+          "ref_id": "b30",
+          "section_path_id": "1~10",
+          "quote": "31",
+          "offset": 3177
+        },
+        {
+          "ref_id": "b30",
+          "section_path_id": "1~10",
+          "quote": "31",
+          "offset": 4825
+        }
+      ]
+    },
+    {
+      "raw_text": "Claude 3.7 sonnet and claude code\n\t\t\n\t\t\tAnthropic\n\t\t\n\t\t\n\t\n\t\n\t\tOnline\n\t\t\n\t\t\t2025",
+      "doi": null,
+      "arxiv_id": null,
+      "title": "Claude 3.7 sonnet and claude code",
+      "anchors": []
+    },
+    {
+      "raw_text": "MAbdin\n\t\t\n\t\tarXiv:2412.08905\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tPhi-4 technical report. arXiv preprint",
+      "doi": null,
+      "arxiv_id": "2412.08905",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b32",
+          "section_path_id": "1~10",
+          "quote": "33",
+          "offset": 1527
+        },
+        {
+          "ref_id": "b32",
+          "section_path_id": "1~10",
+          "quote": "33",
+          "offset": 1686
+        },
+        {
+          "ref_id": "b32",
+          "section_path_id": "1~10",
+          "quote": "33",
+          "offset": 1760
+        },
+        {
+          "ref_id": "b32",
+          "section_path_id": "1~10",
+          "quote": "33",
+          "offset": 3498
+        }
+      ]
+    },
+    {
+      "raw_text": "Mistralai\n\t\t\n\t\t\n\t\t\tCodestral\n\t\t\n\t\t\n\t\t\tOnline\n\t\t\n\t\t\n\t\t\n\t\t\t2024",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b33",
+          "section_path_id": "1~10",
+          "quote": "34",
+          "offset": 3150
+        }
+      ]
+    },
+    {
+      "raw_text": "Llama: Open and efficient foundation language models\n\t\t\n\t\t\tHTouvron\n\t\t\n\t\tarXiv:2302.13971\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+      "doi": null,
+      "arxiv_id": "2302.13971",
+      "title": null,
+      "anchors": [
+        {
+          "ref_id": "b34",
+          "section_path_id": "1~10",
+          "quote": "35",
+          "offset": 4691
+        }
+      ]
+    },
+    {
+      "raw_text": "AQJiang\n\t\t\n\t\t2310.06825\n\t\n\t\n\t\tMistral\n\t\t\n\t\t\t7\n\t\t\t2023",
+      "doi": null,
+      "arxiv_id": null,
+      "title": null,
+      "anchors": []
+    }
+  ],
+  "layout_json": null,
+  "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">The Debugging Decay Index: Rethinking Debugging Strategies for Code LLMs</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2025-07-13\">13 Jul 2025</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Adnan</forename><surname>Muntasir</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Open Source Institute</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Canberra</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<settlement>Bruce Canberra</settlement>\n\t\t\t\t\t\t\t\t\t<country key=\"AU\">Australia</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Carlos</forename><forename type=\"middle\">C N</forename><surname>Kuhn</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Open Source Institute</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Canberra</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<settlement>Bruce Canberra</settlement>\n\t\t\t\t\t\t\t\t\t<country key=\"AU\">Australia</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">The Debugging Decay Index: Rethinking Debugging Strategies for Code LLMs</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2025-07-13\">13 Jul 2025</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">D35AFDDDD30D7F361F0D960385BBAD62</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2506.18403v2[cs.SE]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.1\" ident=\"GROBID\" when=\"2026-10-13T11:34+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.1</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null, debugLabelingCollector=disabled</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>The effectiveness of AI debugging follows a predictable exponential decay pattern; most models lose 60-80% of their debugging capability within just 2-3 attempts, despite iterative debugging being a critical capability for practical code generation systems. We introduce the Debugging Decay Index (DDI), a mathematical framework that quantifies when debugging becomes ineffective and predicts intervention points. Our strategic fresh start approach shifts from exploitation to exploration at strategic points in the debugging process, demonstrating that well-timed interventions can rescue the effectiveness of debugging. DDI reveals a fundamental limitation in current AI debugging and provides the first quantitative framework for optimising iterative code generation strategies.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Introduction</head><p>The advent of large language models (LLMs) has transformed automated code generation, enabling developers to produce functional code with remarkable speed and scale <ref type=\"bibr\" target=\"#b0\">1</ref> . Recent efforts have shifted toward debugging-based code generation, where LLMs iteratively refine their output based on compiler feedback or error messages, mirroring traditional software development practices <ref type=\"bibr\" target=\"#b1\">[2]</ref><ref type=\"bibr\" target=\"#b2\">[3]</ref><ref type=\"bibr\" target=\"#b3\">[4]</ref><ref type=\"bibr\" target=\"#b4\">[5]</ref> . This iterative approach represents a fundamental departure from single-pass generation, yet the underlying dynamics of debugging-based LLM-guided code generation remain critically underexplored. Existing studies often apply an arbitrary number of debugging attempts without examining their optimal extent or effectiveness over continuous iterations <ref type=\"bibr\" target=\"#b1\">[2]</ref><ref type=\"bibr\" target=\"#b2\">[3]</ref><ref type=\"bibr\" target=\"#b3\">[4]</ref> . This approach incurs significant computational costs and lacks methodological rigour in determining when additional iterations cease to yield meaningful improvements. Preliminary research and our analysis suggest that LLM-guided debugging typically follows an exponential decay pattern, where debugging effectiveness diminishes rapidly with successive attempts <ref type=\"bibr\" target=\"#b3\">4</ref> . However, no systematic work has been conducted to characterise this decay phenomenon or explore strategies to break these patterns for improved performance. This pattern of diminishing returns in iterative LLM approaches extends beyond code generation, with recent research on reasoning models demonstrating similar complexity-dependent limitations where self-correction capabilities plateau and models either overthink simple problems or fail entirely on complex ones <ref type=\"bibr\" target=\"#b5\">6</ref> , suggesting a natural ceiling that warrants systematic investigation.</p><p>Furthermore, as debugging-based LLM-guided code generation becomes increasingly prevalent, evaluation metrics must evolve beyond traditional single-pass assessments <ref type=\"bibr\" target=\"#b6\">7,</ref><ref type=\"bibr\" target=\"#b7\">8</ref> to account for the iterative nature of the process. Current evaluation approaches treat code as static artefacts rather than as the product of a dynamic development process, overlooking the significant quality enhancements that often emerge through systematic debugging and refinement <ref type=\"bibr\" target=\"#b8\">9</ref> . This limitation becomes increasingly problematic as the field moves toward debugging-based approaches that more closely align with human software development practices <ref type=\"bibr\" target=\"#b9\">10</ref> . Single-pass metrics such as pass@k 7 measure the probability that at least one correct solution exists among k independently generated candidates. However, this approach does not guarantee diversity among the generated candidates. It fails to account for the iterative debugging process that is central to practical software development workflows <ref type=\"bibr\" target=\"#b9\">10</ref> , and relies solely on manually written test cases <ref type=\"bibr\" target=\"#b10\">11</ref> .</p><p>This study examines the effectiveness of repeated debugging attempts in LLM-based code generation and investigates strategic interventions to enhance the debugging process. To address the limitations of existing evaluation metrics, we propose a novel evaluation framework: the Debugging Decay Index (DDI). The DDI metric provides a unified assessment of LLM coding proficiency by modelling the exponential effectiveness decay observed in iterative debugging processes. Our framework computes strategic intervention timing t θ based on configurable effectiveness decay thresholds θ , returning a comprehensive evaluation tuple (E 0 , λ ,t θ , R 2 ) that captures initial performance, decay sustainability, strategic stopping points, and model fit quality. This multi-dimensional approach enables nuanced evaluation across different aspects of the code generation and debugging pipeline. Our investigation addresses the following research questions:</p><p>• RQ1 (Debugging Window): How many debugging attempts maximise the effectiveness of LLM-generated code before further iterations yield diminishing returns, and how do these attempt windows vary across different model architectures?</p><p>• RQ2 (DDI): How can we develop a unified evaluation metric that comprehensively assesses LLM code generation and debugging capabilities, quantifying initial performance, sustained effectiveness, and iterative refinement capability encompassing both reasoning proficiency and instruction-following competency across diverse model architectures?</p><p>• RQ3 (Strategic Fresh Starts): Based on the optimal debugging windows identified in RQ1 and the decay characteristics quantified in RQ2, to what extent can implementing fresh start strategies (reinitiating the code generation process) after reaching effectiveness thresholds improve overall accuracy compared to continued iterative refinement within the same generation context?</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Literature Review</head><p>Evaluation Metric Code-generating LLMs are typically evaluated based on functional correctness or whether the generated code effectively solves the given task. In this paradigm, the pass@k metric <ref type=\"bibr\" target=\"#b6\">7</ref> has become a standard measure. Pass@k is the probability that at least one of k independently generated solutions to a problem passes all unit tests. Pass@k can be written as -</p><formula xml:id=\"formula_0\">pass@k = 1 -P(all incorrect)</formula><p>The unbiased <ref type=\"bibr\" target=\"#b6\">7,</ref><ref type=\"bibr\" target=\"#b7\">8</ref> estimation formula is -</p><formula xml:id=\"formula_1\">pass@k = 1 - ( n-c k ) ( n k )</formula><p>Where n is the total number of samples generated, n ≥ k and c of them pass. One can draw n ≥ k samples and count the number of solutions c that pass <ref type=\"bibr\" target=\"#b7\">8</ref> . Numerous subsequent works on LLM-guided code generation have used pass@k. For example, CodeT <ref type=\"bibr\" target=\"#b11\">12</ref> and Top Pass <ref type=\"bibr\" target=\"#b12\">13</ref> evaluated various models on standard benchmarks using the pass@k metric. In MBR-EXEC <ref type=\"bibr\" target=\"#b13\">14</ref> , authors measured pass@k for HumanEval <ref type=\"bibr\" target=\"#b6\">7</ref> , Mostly Basic Python Programming(MBPP) <ref type=\"bibr\" target=\"#b14\">15</ref> to compare instruction tuning. Code generation benchmark leaderboards and evaluations of programming-focused large language models consistently report pass@k metrics (typically k=1, 5, 10, and occasionally up to k=100) as a standard method for model comparison <ref type=\"bibr\" target=\"#b15\">[16]</ref><ref type=\"bibr\" target=\"#b16\">[17]</ref><ref type=\"bibr\" target=\"#b17\">[18]</ref><ref type=\"bibr\" target=\"#b18\">[19]</ref><ref type=\"bibr\" target=\"#b19\">[20]</ref> . The elegance of this metric lies in its simplicity and direct correlation with functionality; a model that can generate at least one correct solution within k attempts demonstrates meaningful capability in code generation tasks. Importantly, pass@k is a binary, functional metric; it only cares whether any generated solution is entirely correct.</p><p>Building upon this foundation, researchers have conducted thorough investigations into the pass@k metric's characteristics, examining its sensitivity to both the sample size (k) and the inherent difficulty of programming problems <ref type=\"bibr\" target=\"#b15\">16,</ref><ref type=\"bibr\" target=\"#b19\">[20]</ref><ref type=\"bibr\" target=\"#b20\">[21]</ref><ref type=\"bibr\" target=\"#b21\">[22]</ref> . A critical limitation identified is the metric's sole reliance on provided test suites, which may not comprehensively verify all aspects of code correctness or efficiency <ref type=\"bibr\" target=\"#b20\">21</ref> . This concern was empirically validated when researchers augmented the standard HumanEval benchmark with more rigorous test cases (creating HumanEval+ <ref type=\"bibr\" target=\"#b19\">20</ref> ), resulting in a significant performance drop of approximately 20-30% across various models. A more fundamental concern relates to how optimising for pass@k can distort model behaviour and evaluation priorities. Top Pass <ref type=\"bibr\" target=\"#b12\">13</ref> introduced a ranking model that directly optimises for this metric, revealing a key limitation: pass@k rewards getting one solution correct over producing multiple near-correct solutions. This approach fails to reward quick convergence and may allow models to game the metric by generating variants of the same algorithm rather than exploring diverse approaches. Complementary findings revealed that 42% of code generations failing unit tests were still rated valuable by programmers and proposed a hybrid metric <ref type=\"bibr\" target=\"#b22\">23</ref> combining functional correctness with syntactic similarity, which achieved a 14% stronger correlation with programmer-perceived value. These findings suggest that evaluation metrics should consider not only binary correctness but also how effectively code can be refined through debugging. In response to these limitations, several research works have proposed several variations of pass@k. The count@k metric <ref type=\"bibr\" target=\"#b23\">24</ref> counts how many of k attempts are correct, while AlphaCode introduced n@k <ref type=\"bibr\" target=\"#b15\">16</ref> that generalises pass@k to measure exactly n correct solutions out of k attempts. Addressing the need to recognise partially correct solutions, the pass-ratio@n metric <ref type=\"bibr\" target=\"#b24\">25</ref> averages the squared test-pass ratio across n generated code samples. This approach gives partial credit to nearly-correct solutions, addressing the granularity that pass@k lacks.</p><p>While these functionality-based metrics dominate code generation evaluation, many researchers still report non-functional metrics such as BLEU <ref type=\"bibr\" target=\"#b25\">26</ref> , CodeBLEU <ref type=\"bibr\" target=\"#b26\">27</ref> , or ROUGE <ref type=\"bibr\" target=\"#b27\">28</ref> to measure syntactic similarity. These metrics are not replacements for pass@k but often accompany it to gauge quality aspects beyond functional correctness. While a few orthogonal approaches exist, they all fail to capture the iterative nature of code development and the debugging capabilities of LLMs.</p><p>Our proposed Debugging Decay Index (DDI) addresses this gap by focusing on the iterative path to functional correctness rather than arbitrary sampling. Unlike traditional metrics, DDI measures how effectively models leverage debugging feedback to improve a solution until it achieves functional correctness iteratively. This approach acknowledges that real-world programming rarely involves generating multiple independent attempts; instead, developers iteratively refine their code through debugging cycles. By quantifying the efficiency of this debugging process, DDI provides a reliable evaluation of how models would perform in practical software development contexts, where strategic iteration, rather than random sampling, is the path to successful code.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Debugging</head><p>Researchers have explored dynamic approaches to incorporate execution feedback and debugging capabilities in LLM-guided code generation. Recent work <ref type=\"bibr\" target=\"#b28\">29</ref> investigated debugging in two distinct contexts: in-context debugging, which involves inspecting intermediate execution states, and post-context debugging, which focuses on analysing error results after complete execution. Building on this foundation, the SELF-DEBUGGING framework <ref type=\"bibr\" target=\"#b4\">5</ref> demonstrated how LLMs can analyse execution results and explain their own generated code line by line, mirroring approaches developed initially for human developers <ref type=\"bibr\" target=\"#b29\">30</ref> . The framework allowed for a maximum of 10 debugging attempts, but the researchers observed that successful debugging typically concluded within just three iterations. By comparison, MapCoder 3 implemented a more extensive debugging protocol, allowing up to 25 attempts, but limiting them to a maximum of 5 attempts per individual plan. The authors reported that while increased debugging iterations generally improved performance, this relationship was not strictly linear across all datasets. Notably, their results for HumanEval-ET did not follow the expected proportional improvement trend, indicating potential dataset-specific considerations in debugging efficacy. Similarly, the Large Language Model Debugger (LDB) 2 employed 10 debugging attempts in their standard configuration, with additional experiments using up to 20 attempts on the HumanEval dataset. Their findings revealed a continuous but diminishing improvement trend, with gains becoming increasingly marginal after the fifth attempt. The subsequent 15 attempts collectively yielded only 2.4% additional improvement. PyCapsule 4 implemented a more streamlined approach compared to MapCoder while still achieving state-of-the-art (SOTA) performance across several benchmark datasets. The framework employed just five debugging attempts beyond the initial solution and fitted the normalised debugging effectiveness to an exponential decay function, revealing that effectiveness usually diminishes dramatically after the third attempt and follows an exponential decay pattern. Their analysis further demonstrated that debugging effectiveness varies significantly across model architectures: OpenAI's GPT-4 <ref type=\"bibr\" target=\"#b16\">17</ref> exhibited complete loss of debugging effectiveness (relative to the first attempt) by the third iteration, while GPT-3.5 <ref type=\"bibr\" target=\"#b16\">17</ref> showed similar exhaustion by the fourth attempt. In contrast, Qwen2.5-coder-instruct <ref type=\"bibr\" target=\"#b17\">18</ref> maintained some debugging capability until the fifth attempt, suggesting model-specific patterns in debugging performance decay. These findings highlight a critical research gap: the need for a standardised approach to quantify and optimise debugging iterations for LLM code generation.</p><p>Empirical evidence across debugging frameworks reveals consistent diminishing returns, though the specific decay characteristics vary systematically across model architectures, suggesting model-specific debugging signatures that remain unexplored as evaluation criteria. Existing approaches treat these decay patterns as inevitable limitations rather than quantifiable characteristics of the model. This systematic variation in debugging persistence presents an opportunity to develop methodologies that both measure debugging capability through decay modelling (RQ2) and identify possible optimal intervention strategies when effectiveness diminishes (RQ3).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Methodology RQ1: Debugging Window</head><p>We introduce the concept of a \"debugging window\" in the context of LLMs for code generation, which refers to the threshold for debugging attempts. While diminishing effectiveness will always occur with continued debugging efforts, establishing this window allows us to determine a practical cutoff point that balances debugging effectiveness with computational efficiency. To model the effectiveness of each debugging attempt over time, this study employs the exponential decay function (Equation <ref type=\"formula\" target=\"#formula_2\">1</ref>). The exponential decay function is defined as follows:</p><formula xml:id=\"formula_2\">E(t) = E 0 e -λt<label>(1)</label></formula><p>In this study, E(t) represents the effectiveness of debugging at attempt t, while E 0 denotes the initial effectiveness corresponding to the very first attempt. The decay constant λ represents the rate of effectiveness loss over successive attempts and serves as our primary metric for benchmarking model performance. Models with lower λ values maintain their effectiveness longer across debugging iterations, and t represents the discrete number of debugging attempts, allowing us to model the temporal progression of debugging effectiveness. To further analyse the decay process, we examine the half-life t 1/2 , which represents the number of debugging attempts after which the effectiveness reduces to half its initial value E 0 . By definition and from Equation 1, we get:</p><formula xml:id=\"formula_3\">E(t 1/2 ) = 1 2 E 0 =⇒ t 1/2 = ln(2) λ<label>(2)</label></formula><p>We can generalise Equation 2 to determine the number of debugging attempts required for any given decay percentage. For a decay threshold where effectiveness can lose up to θ % of its initial value (meaning (100θ )% effectiveness remains), the number of debugging attempts t θ is given by:</p><formula xml:id=\"formula_4\">t θ = ln 100 100-θ λ<label>(3)</label></formula><p>This generalised formula enables us to calculate the debugging window for any threshold θ , providing the flexibility to determine when diminishing effectiveness justifies terminating the debugging process based on specific computational constraints.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>RQ2: The Debugging Decay Index (DDI)</head><p>Our proposed DDI integrates our exponential decay analysis from RQ1 to create a comprehensive evaluation framework for LLM debugging capabilities. Unlike traditional metrics that focus solely on final outcomes, DDI captures the efficiency and capability of the debugging process and the final accuracy.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Mathematical Formulation</head><p>The DDI is formulated as a function</p><formula xml:id=\"formula_5\">DDI(data, θ ) → (E 0 , λ ,t θ , R 2 )</formula><p>that accepts data, the normalised debugging effectiveness measurements across multiple iterative attempts; and θ , the effectiveness decay threshold(s) representing the maximum acceptable performance degradation. Following the PyCapsule 4 framework, the normalised debugging effectiveness data represents the independent influence of each debugging attempt. The DDI framework identifies strategic intervention points t θ where debugging effectiveness would degrade by θ % from the initial value. In RQ3, we leverage these DDI-calculated intervention points to evaluate whether implementing fresh start strategies at the predicted timing can improve overall accuracy compared to continued iterative refinement within the same generation context. Fresh starts involve reinitiating the debugging process with the original problem statement only. DDI returns a four-element tuple:</p><p>• E 0 (Initial Effectiveness): E 0 represents the initial effectiveness, calculated as E 0 = N solved_at_attempt_0 /N total . This metric is directly comparable to pass@1 and represents the model's inherent code generation capability before any debugging.</p><p>• λ (Decay Rate): The decay constant extracted from fitting the exponential decay function (Equation <ref type=\"formula\" target=\"#formula_2\">1</ref>) to normalised debugging effectiveness data. A lower λ indicates slower decay in effectiveness and more persistent debugging behaviour, reflecting sustained instruction following and reasoning consistency across iterations.</p><p>• t θ (Optimal Intervention Points): t θ represents the maximum number of debugging attempts before effectiveness drops by θ % from the initial value. This represents the strategic intervention threshold corresponding to the θ value, calculated using Equation <ref type=\"formula\" target=\"#formula_4\">3</ref>. Since debugging attempts must be discrete integers, we apply the ceiling function to convert the continuous mathematical solutions into practical stopping points. This ensures that the debugging window provides sufficient attempts to reach at least the specified effectiveness threshold.</p><p>• R 2 (Fit Quality): The coefficient of determination measuring how well the exponential decay model explains the observed debugging effectiveness patterns. We interpret the results using the following categories: Excellent (R 2 ≥ 0.9), Good (0.7 ≤ R 2 &lt; 0.9), or Poor (R 2 &lt; 0.7). High R 2 values indicate predictable exponential decay behaviour, while low values suggest erratic or non-exponential debugging patterns that may require alternative evaluation approaches.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Evaluation Process and Interpretation</head><p>The DDI evaluation proceeds through four core steps: initial assessment records E 0 = N solved_at_0 /N total ; iterative debugging tracks effectiveness at each attempt; decay analysis fits Equation 1 using nonlinear least squares regression to extract λ , setting λ = None when insufficient data points (n &lt; 3) exist; and threshold calculation determines strategic intervention timing t θ using Equation 3. The DDI outputs provide comprehensive model characterisation of code generation and debugging capabilities, requiring interpretation of both effectiveness metrics and fit quality. For models with high R 2 values (≥ 0.7), the combination of E 0 and λ reveals distinct model archetypes: high E 0 + low λ indicates both strong reasoning and persistent debugging (ideal), low E 0 + low λ suggests consistent but ineffective approaches, high E 0 + high λ indicates strong initial reasoning but poor debugging persistence, while low E 0 + high λ represents both weak reasoning and rapid debugging degradation. However, for models with poor fit quality (R 2 &lt; 0.7), the exponential decay assumption may not apply, indicating that a different mathematical function may be required to fully characterise the model behaviour. In such cases, evaluation should rely primarily on E 0 when using DDI. Pseudocode for DDI is provided in Appendix: DDI Pseudocode.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Model</head><p>E 0 λ A 0 t θ R 2 claude-3-7-sonnet-20250219 93.902 None 100.00 [] None codegemma:7b 51.219 0.9309 66.463 [1, 2, 3, 4, 5] Excellent codellama:7b 21.341 0.2467 45.122 [3, 7, 10, 13, 19] Poor codestral:22b 58.537 0.3388 89.024 [3, 5, 7, 9, 14] Good deepseek-coder-v2:16b 71.951 0.9692 84.146 [1, 2, 3, 4, 5] Excellent deepseek-coder:6.7b 45.732 0.4737 74.390 [2, 4, 5, 7, 10] Excellent devstral:24b 84.146 0.6438 94.512 [2, 3, 4, 5, 8] Excellent gemma2:9b 59.146 0.7632 76.219 [1, 3, 4, 4, 7] Excellent gpt-3.5-turbo 73.781 1.3297 82.317 [1, 2, 2, 3, 4] Excellent gpt-3.5-turbo-1106 70.732 0.7553 85.976 [1, 3, 4, 4, 7] Excellent gpt-4-1106-preview 90.244 0.7619 96.951 [1, 3, 4, 4, 7] Poor granite3.3:8b 68.902 0.9482 82.317 [1, 2, 3, 4, 5] Excellent llama2:7b 3.659 0.1185 10.976 [6, 14, 20, 26, 39] Poor llama3.1:8b 56.707 1.1142 72.561 [1, 2, 3, 3, 5] Excellent mistral:instruct 29.878 0.5291 54.268 [2, 4, 5, 6, 9] Excellent phi4-reasoning:14b 59.146 0.6052 81.098 [2, 3, 4, 5, 8] Excellent phi4:14b 83.537 0.7680 93.293 [1, 3, 3, 4, 6] Excellent qwen2.5-coder 76.219 0.4624 94.159 [2, 4, 5, 7, 10] Excellent Table <ref type=\"table\">1</ref>. DDI Results for Different Models for θ ∈ {50, 80, 90, 95, 99} on the HumanEval dataset. R 2 indicates exponential fit quality: Excellent (R 2 ≥ 0.9), Good (0.7 ≤ R 2 &lt; 0.9), Poor (R 2 &lt; 0.7). Models with λ = None had insufficient data points for exponential fitting after filtering zero effectiveness values.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>RQ3: Strategic Fresh Starts</head><p>To investigate whether strategic interventions can mitigate the debugging decay phenomenon identified in RQ2, we implement fresh start strategies at DDI calculated strategic intervention points. A fresh start completely clears conversation history and begins anew with only the original problem statement. This mechanism addresses the rapid degradation of effectiveness observed in the exponential decay pattern, particularly when models become trapped in the low-effectiveness tail, where continued debugging attempts yield negligible improvement. The fresh start strategy operates on the hypothesis that reinitialising the generation process shifts the model from exploiting failing solution approaches back to exploring alternative solution spaces. Based on empirical evidence from RQ2, we observe varied suitable intervention points t θ across different models, as demonstrated in Table <ref type=\"table\">1</ref>. Given the variance in decay patterns, we strategically implement fresh starts at DDI-calculated intervention thresholds, enabling each model to benefit from reinitialisation at its optimal timing. To ensure a fair comparison with existing approaches, we maintain the same total attempt budget as previous works <ref type=\"bibr\" target=\"#b2\">3,</ref><ref type=\"bibr\" target=\"#b3\">4</ref> , consisting of six attempts (initial generation plus five debugging iterations). Our approach strategically allocates these attempts while triggering fresh starts at DDI-calculated intervention points, testing whether strategic reinitialisation can overcome debugging decay while maintaining strict comparability with baseline methods.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Evaluation and Experimental Setup</head><p>To address our research questions regarding debugging windows (RQ1) and the DDI framework (RQ2), we applied our calculation methodology to eighteen SOTA language models using the HumanEval 7 dataset. Our experimental design systematically evaluates the decay patterns of debugging effectiveness across diverse model architectures, ranging from smaller, specialised models like DeepSeek-Coder 6.7b <ref type=\"bibr\" target=\"#b30\">31</ref> to larger, general-purpose models such as Claude-3-7-sonnet-20250219 32 , GPT-4 <ref type=\"bibr\" target=\"#b16\">17</ref> , and GPT-3.5 <ref type=\"bibr\" target=\"#b16\">17</ref> . Using normalised debugging effectiveness data from HumanEval <ref type=\"bibr\" target=\"#b6\">7</ref> , we extracted model-specific decay constants λ . For each model, we calculated E 0 , λ ,t θ where θ ∈ 50, 80, 90, 95, 99 and R 2 . Additionally, we report A 0 values representing the final accuracy achieved after six attempts without any fresh start interventions (same as PyCapule <ref type=\"bibr\" target=\"#b3\">4</ref> ), providing a baseline performance metric for comparison with our strategic restart approaches in RQ3, see Table <ref type=\"table\" target=\"#tab_0\">2</ref>. Table <ref type=\"table\">1</ref> and Figure <ref type=\"figure\" target=\"#fig_0\">1</ref> present our comprehensive analysis of debugging decay characteristics across these LLMs. The debugging window calculations reveal distinct performance characteristics across model architectures.</p><p>Claude-3.7-Sonnet demonstrated remarkable performance, achieving 100% effectiveness (A 0 = 100%) essentially within two attempts, which prevented fitting to the exponential decay model, resulting λ = None. This exceptional performance represents a unique case where conventional debugging window calculations may not apply.</p><p>Conversely, the Phi-4 <ref type=\"bibr\" target=\"#b32\">33</ref> model comparison provides particularly revealing insights into the relationship between reasoning capabilities and debugging sustainability. While phi4:14b <ref type=\"bibr\" target=\"#b32\">33</ref> (E 0 = 83.537%, λ = 0.76) significantly outperformed phi4reasoning:14b <ref type=\"bibr\" target=\"#b32\">33</ref> (E 0 = 59.146%, λ = 0.60) in initial effectiveness by approximately 24%, likely due to phi4-reasoning not being instruction fine-tuned and thus more challenging to parse, the reasoning model demonstrated remarkable debugging improvement capacity. Despite starting from a substantially lower baseline, phi4-reasoning achieved a final accuracy of 81.098% compared to phi4:14b's 93.293%, representing an improvement of 21.95% versus only 9.75%, respectively. The reasoning model improved more than twice as much as the standard model through iterative debugging. These findings suggest that the decay constant λ captures not only debugging efficiency but also underlying reasoning capabilities and instruction adaptability. The reasoning model's lower λ value (0.591 vs 0.711) indicates superior debugging sustainability, enabling it to extract more value from iterative refinement processes. This reveals that reasoning-capable models, although potentially harder to prompt initially, possess an enhanced capacity for systematic error correction and solution refinement -a crucial characteristic for extended debugging sessions where sustained improvement matters more than initial performance.</p><p>GPT variants exhibit relatively fast effectiveness decay, with gpt-3.5-turbo <ref type=\"bibr\" target=\"#b16\">17</ref> showing the highest decay rate, reaching the 80% threshold by attempts 2-3. In contrast, models like codestral:22b <ref type=\"bibr\" target=\"#b33\">34</ref> and deepseek-coder:6.7b <ref type=\"bibr\" target=\"#b30\">31</ref> demonstrate more sustained debugging capabilities with lower decay rates (λ = 0.375 and λ = 0.330 respectively), extending debugging windows to 5-7 attempts for the same threshold. DDI reveals nuanced debugging characteristics that would be missed by simple effectiveness metrics alone. The case of phi4-reasoning:14b <ref type=\"bibr\" target=\"#b32\">33</ref> exemplifies this.</p><p>To evaluate the effectiveness of strategic fresh starts proposed in RQ3, we implemented restart interventions at the calculated strategic thresholds for θ ∈ {50, 80} effectiveness degradation. Table <ref type=\"table\" target=\"#tab_0\">2</ref> presents the comparative performance results, demonstrating the impact of strategic reinitialisation versus continued iterative debugging. The results reveal that strategic fresh starts can significantly improve debugging performance across most models without requiring any additional computational resources. Since fresh starts only involve clearing conversation history at predetermined intervention points while maintaining the same attempt budget, the computational overhead remains equivalent with similar or reduced token usage on average compared to continuous debugging sessions. For example, DeepSeek-Coder-V2-16B reduced token consumption from 108,289 to approximately 89,000 tokens on average, while Codestral-22B maintained usage around 94,000 tokens compared to 97,000 in the continuous sessions.</p><p>Of the six models evaluated, all showed performance improvements when fresh starts were applied at DDI-calculated intervention points. Significantly, llama3.1:8b <ref type=\"bibr\" target=\"#b34\">35</ref> showed the most significant improvement, enhancing its baseline accuracy from 72.56% to 82.82%. In contrast, deepseek-coder-v2:16b <ref type=\"bibr\" target=\"#b30\">31</ref> experienced the second largest enhancement, with its baseline accuracy increasing from 84.1% to 92.1%. Similarly, Mistral:Instruct 36 demonstrated consistent gains across both thresholds, improving from 54.3% to 62.8% and 57.3%. This demonstrates that strategic timing of fresh starts, rather than simply increasing attempt counts, can overcome debugging decay patterns and improve overall effectiveness. Analysis of the normalised debugging effectiveness patterns (Figure <ref type=\"figure\" target=\"#fig_1\">2</ref>) reveals that fresh start interventions successfully break the exponential decay curve observed in RQ1. Rather than following the predicted decay trajectory, models implementing fresh starts at strategic intervention points demonstrate renewed effectiveness spikes, essentially resetting the decay pattern and enabling continued productive debugging. This empirical evidence supports our hypothesis that strategic reinitialisation shifts models from exploitation of failing solution approaches back to exploration of alternative solution spaces.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Limitations and Future Work</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Generalisation Limitations</head><p>The primary limitation of DDI lies in its dataset-specific nature. While exponential decay patterns appear robust across multiple debugging contexts <ref type=\"bibr\" target=\"#b1\">2,</ref><ref type=\"bibr\" target=\"#b3\">4</ref>  </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Research Directions</head><p>The DDI framework opens several promising research directions. Cross-dataset validation across diverse programming benchmarks would establish parameter ranges and calibration requirements for broader applicability. A critical immediate direction involves developing principled methods for optimal threshold selection, potentially through adaptive strategies that learn from model-specific decay characteristics or problem complexity indicators. Perhaps most significantly, comparative analysis of human versus AI debugging decay patterns could validate the theoretical foundations of exponential effectiveness degradation, potentially revealing fundamental principles of iterative problem-solving that extend beyond code generation to broader cognitive tasks. The mathematical framework's simplicity and interpretability make it well-suited for such interdisciplinary investigation, offering a quantitative foundation for understanding debugging effectiveness across both artificial and biological intelligence systems. Importantly, the flexibility of the framework extends beyond modelling exponential decay. By applying the same underlying concept, we can incorporate various functions that represent the decay patterns observed in the input data, allowing us to extract the decay rate specific to the model in question. While we employed exponential functions, as they provided the best fit for the majority of evaluated models, the DDI methodology can readily incorporate linear decay, polynomial regression, or other mathematical functions, depending on the observed model behaviour. This adaptability ensures the framework remains robust across different model architectures and debugging contexts, where alternative decay patterns may emerge as the field evolves.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Conclusion</head><p>This work introduces the Debugging Decay Index (DDI), a novel evaluation framework that characterises the exponential effectiveness decay patterns inherent in LLM-guided iterative debugging processes. Through a systematic analysis of eighteen state-of-the-art (SOTA) language models on HumanEval, we demonstrate that debugging effectiveness typically follows predictable exponential decay trajectories, enabling a principled determination of optimal intervention timing rather than relying on arbitrary attempt limits. Our key contributions include the mathematical characterisation of debugging decay patterns across diverse model architectures; the DDI framework, which provides a unified assessment of the coding and debugging abilities of LLMs; and the demonstration that strategic fresh start interventions at DDI-calculated thresholds can break exponential decay patterns and improve final accuracy without incurring additional computational costs. The fresh start strategy proves particularly effective, requiring zero additional computational resources, and demonstrates that strategic intervention, rather than increased attempt budgets, drives performance improvements. The DDI framework provides immediate practical value for researchers seeking to optimise debugging workflows, while also opening up promising research directions in adaptive intervention strategies and cross-dataset validation.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Exponential decay curves fitted to debugging effectiveness data for four language models. The grey dashed lines indicate effectiveness thresholds at different θ values. The λ (decay rate) and R 2 (goodness-of-fit) values are displayed for each model.</figDesc><graphic coords=\"6,56.69,63.78,498.60,311.26\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Normalised debugging effectiveness trajectories compared to baseline continuous debugging (A 0 ) with fresh start strategies implemented at θ ∈ {50, 80}. The distinctive spikes in A 50 and A 80 demonstrate successful intervention effects, where fresh starts reset the debugging process and break the monotonic decay pattern observed in baseline approaches. These spikes represent moments where strategic reinitialisation successfully shifts models from failed solution exploitation back to productive exploration, enabling recovery from debugging decay within the same computational budget.</figDesc><graphic coords=\"7,56.69,63.78,498.61,332.41\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 2 .</head><label>2</label><figDesc>, specific λ and t θ values depend on problem set characteristics, including complexity distribution and Performance comparison showing baseline accuracy A 0 achieved within six attempts without intervention, versus fresh start strategies implemented at DDI-calculated intervention points where θ ∈ {50, 80}. A 50 and A 80 represent final accuracy when fresh starts are triggered at t 50 and t 80 thresholds respectively. The corresponding intervention timing (t θ values) for each model can be found in Table1. Bold values indicate performance improvements over the baseline A 0 , demonstrating cases where strategic reinitialisation outperforms continued iterative debugging within the same debugging context at no extra token usage at all debugging challenge types. Like all evaluation metrics, DDI parameters require dataset-specific calibration and cannot be directly compared across different problem sets without statistical validation. Effective generalisation requires either statistically sufficient numbers of diverse datasets to establish robust parameter ranges or standardised benchmarks with comprehensive complexity coverage that can serve as universal debugging evaluation foundations. Due to computational constraints, our current validation focuses on HumanEval variants, though the underlying exponential decay phenomenon has been observed across broader programming contexts including other benchmark datasets<ref type=\"bibr\" target=\"#b3\">4</ref> . Additionally, while our fresh start interventions demonstrate performance improvements across almost all evaluated models, the magnitude of these improvements critically depends on the selected effectiveness threshold θ . Although we observe consistent benefits regardless of threshold selection, selecting θ values for maximum performance gains represents a crucial but unexplored aspect of our framework. The systematic selection of strategic intervention thresholds falls outside the scope of this study and represents an important direction for future investigation.</figDesc><table><row><cell>Model</cell><cell>A 0</cell><cell>A 50</cell><cell>A 80</cell></row><row><cell>codegemma:7b</cell><cell>66.4634</cell><cell>71.9512</cell><cell>70.1220</cell></row><row><cell>codestral:22b</cell><cell>89.0244</cell><cell>88.4146</cell><cell>91.4634</cell></row><row><cell>deepseek-coder-</cell><cell>84.1463</cell><cell>92.0732</cell><cell>90.2439</cell></row><row><cell>v2:16b</cell><cell></cell><cell></cell><cell></cell></row><row><cell>devstral:24b</cell><cell>94.5122</cell><cell>93.9024</cell><cell>95.1220</cell></row><row><cell>granite3.3:8b</cell><cell>82.3171</cell><cell>86.5854</cell><cell>85.3659</cell></row><row><cell>llama3.1:8b</cell><cell>72.5610</cell><cell>82.3171</cell><cell>81.7073</cell></row><row><cell>mistral:instruct</cell><cell>54.2683</cell><cell>62.8049</cell><cell>57.3171</cell></row><row><cell>phi4:14b</cell><cell>93.2927</cell><cell>93.9024</cell><cell>96.3415</cell></row><row><cell>qwen2.5-coder</cell><cell>94.1588</cell><cell>95.1220</cell><cell>94.5122</cell></row></table></figure>\n\t\t</body>\n\t\t<back>\n\n\t\t\t<div type=\"availability\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Data Availability</head><p>All benchmark datasets utilised in this study are openly available from their respective public repositories. The code and analysis scripts will be made publicly available upon publication.</p></div>\n\t\t\t</div>\n\n\n\t\t\t<div type=\"contribution\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Author contributions</head><p>Muntasir Adnan and Carlos C. N. Kuhn collaborated on exploring the idea, writing, designing the experiments and reviewing the manuscript.</p></div>\n\t\t\t</div>\n\n\t\t\t<div type=\"annex\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Additional Information</head><p>The authors declare no competing interests.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Legends</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Title</head><p>Reference Description Table <ref type=\"table\">1</ref> Table <ref type=\"table\">1</ref> DDI Results Figure <ref type=\"figure\">1</ref> Figure <ref type=\"figure\">1</ref> Fitted Exponential Decay Curve Figure <ref type=\"figure\">2</ref> Figure <ref type=\"figure\">2</ref> Fresh Start Effect Table <ref type=\"table\">2</ref> Table <ref type=\"table\">2</ref> Fresh Start Results</p></div>\t\t\t</div>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">A survey on large language models for code generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kim</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kim</surname></persName>\n\t\t</author>\n\t\t<idno>2406.00515</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Debug like a human: A large language model debugger via verifying runtime execution step by step</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zhong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Shang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Findings of the Association for Computational Linguistics: ACL 2024</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">L.-W</forename><surname>Ku</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Martins</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Srikumar</surname></persName>\n\t\t</editor>\n\t\t<meeting><address><addrLine>Bangkok, Thailand</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"page\" from=\"851\" to=\"870\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Multi-agent code generation for competitive problem solving</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">A</forename><surname>Islam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">E</forename><surname>Ali</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">R</forename><surname>Parvez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Mapcoder</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>\n\t\t<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Bangkok, Thailand</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"volume\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"4912\" to=\"4944\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Large language model guided self-debugging code generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Adnan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">C N</forename><surname>Kuhn</surname></persName>\n\t\t</author>\n\t\t<idno>2502.02928</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Teaching large language models to self-debug</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Schärli</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">The 12th International Conference on Learning Representations</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">The illusion of thinking: Understanding the strengths and limitations of reasoning models via the lens of problem complexity</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Shojaee</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2506.06941</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Evaluating large language models trained on code</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno>2107.03374</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Benchmarks and metrics for evaluations of code generation: A critical review</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><forename type=\"middle\">G</forename><surname>Paul</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Bayley</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE AITest</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Debugging techniques in professional programming</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Coblenz</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">13th Annual Workshop at the Intersection of PL and HCI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Spinellis</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Effective Debugging: 66 Specific Ways to Debug Software and System</title>\n\t\t<meeting><address><addrLine>Boston, MA</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Addison-Wesley Professional</publisher>\n\t\t\t<date type=\"published\" when=\"2016\">2016</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Codejudge: Evaluating code generation with large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Tong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>\n\t\t<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Codet: Code generation with generated tests</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2207.10397</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Top pass: Improve code generation by pass@k-maximized code ranking</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z.-C</forename><surname>Lyu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X.-Y</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Li</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Front. Comput. Sci</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Natural language to code translation with execution</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Fried</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Ghazvininejad</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">I</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>\n\t\t<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Program synthesis with large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Austin</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2108.07732</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Competition-level code generation with alphacode</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Li</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Science</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">378</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1092\" to=\"1097\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<analytic>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><surname>Openai</surname></persName>\n\t\t</author>\n\t\t<idno>2303.08774</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Gpt-4 technical report</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Hui</surname></persName>\n\t\t</author>\n\t\t<idno>2409.12186</idno>\n\t\t<title level=\"m\">Qwen2.5-coder technical report</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Evaluating language models for efficient code generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">First Conference on Language Modeling</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Is your code generated by chatGPT really correct? rigorous evaluation of large language models for code generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">S</forename><surname>Xia</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Thirty-seventh Conference on Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">A survey on evaluating large language models in code generation tasks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.16498</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Can llms replace human evaluators? an empirical study of llm-as-a-judge in software engineering</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1145/3728963</idno>\n\t\t<idno>2502.06193</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Aligning offline metrics and human judgments of value for code generation models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Dibia</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.18653/v1/2023.findings-acl.540</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Findings of the Association for Computational Linguistics: ACL 2023</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Rogers</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Boyd-Graber</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Okazaki</surname></persName>\n\t\t</editor>\n\t\t<meeting><address><addrLine>Toronto, Canada</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"8516\" to=\"8528\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Coderujb: An executable and unified java benchmark for practical programming scenarios</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Ye</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</title>\n\t\t<meeting>the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Framework for evaluating code generation ability of large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yeo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y.-S</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">C</forename><surname>Kim</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Jun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Kim</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.4218/etrij.2023-0357</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">ETRI J</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">46</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"106\" to=\"117\" />\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Bleu: a method for automatic evaluation of machine translation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Papineni</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Roukos</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Ward</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 40th Annual Meeting of the Association for Computational Linguistics</title>\n\t\t<meeting>the 40th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Philadelphia, Pennsylvania, USA</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2002\">2002</date>\n\t\t\t<biblScope unit=\"page\" from=\"311\" to=\"318\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Codebleu: a method for automatic evaluation of code synthesis</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Ren</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2009\">2020. 2009.10297</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Rouge: A package for automatic evaluation of summaries</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C.-Y</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Text Summarization Branches Out</title>\n\t\t<meeting><address><addrLine>Barcelona, Spain</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2004\">2004</date>\n\t\t\t<biblScope unit=\"page\" from=\"74\" to=\"81\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Revisit self-debugging with self-generated tests for code generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno>2501.12793</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Thomas</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Hunt</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">The Pragmatic Programmer: Your Journey to Mastery, 20th Anniversary Edition</title>\n\t\t<meeting><address><addrLine>Boston, MA</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Pearson Education</publisher>\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t</imprint>\n\t</monogr>\n\t<note>20th anniversary edition edn</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Deepseek-coder: When the large language model meets programming-the rise of code intelligence</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2401.14196</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Claude 3.7 sonnet and claude code</title>\n\t\t<author>\n\t\t\t<persName><surname>Anthropic</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"Https://www.anthropic.com/news/claude-3-7-sonnet\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Online</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Abdin</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2412.08905</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">Phi-4 technical report. arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><surname>Mistralai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Codestral</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Online</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"Https://mistral.ai/news/codestral\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b34\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Llama: Open and efficient foundation language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Touvron</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2302.13971</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b35\">\n\t<analytic>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">Q</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<idno>2310.06825</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Mistral</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">7</biblScope>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+  "pdf_hash": "a2d66c3f224c4340156610fb95fa117ccf5cf09002f3d4ed856b85e7c4fa9ab7",
+  "tables": [
+    {
+      "table_id": "tab_0",
+      "section_path_id": "1~14",
+      "section_ordinal": 13,
+      "caption": "Table 2 .",
+      "coordinates": null,
+      "cells": [
+        {
+          "row": 0,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "Model",
+          "coordinates": null,
+          "span": {
+            "start": 4305,
+            "end": 4310
+          },
+          "digest": "74afbc17928f31a6022088a15e51a1f6418a187392f08d3a5c83b9d581947aa9"
+        },
+        {
+          "row": 0,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "A 0",
+          "coordinates": null,
+          "span": {
+            "start": 4310,
+            "end": 4313
+          },
+          "digest": "adc1be1c174063f772acb6d23d7c96cefe83af2267db8cb483ef42e1dc0aee73"
+        },
+        {
+          "row": 0,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "A 50",
+          "coordinates": null,
+          "span": {
+            "start": 4313,
+            "end": 4317
+          },
+          "digest": "8300fe262ba28f3a9476a9433f959fb0515f4dd69ac2c95e265693965e7c1fbb"
+        },
+        {
+          "row": 0,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "A 80",
+          "coordinates": null,
+          "span": {
+            "start": 4317,
+            "end": 4321
+          },
+          "digest": "cf40138fe3162389eb25e48e806e88be50539be7a8fbb55ec1d6c1ba13566844"
+        },
+        {
+          "row": 1,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "codegemma:7b",
+          "coordinates": null,
+          "span": {
+            "start": 4321,
+            "end": 4333
+          },
+          "digest": "3fd319cabfd65704f82497bdfec1d507d187178208ca232cb18876111c001b9d"
+        },
+        {
+          "row": 1,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "66.4634",
+          "coordinates": null,
+          "span": {
+            "start": 4333,
+            "end": 4340
+          },
+          "digest": "c436df1cb2e34292066d7b2076e0954d430ab2f9c7680c7235ddad92ef884c3d"
+        },
+        {
+          "row": 1,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "71.9512",
+          "coordinates": null,
+          "span": {
+            "start": 4340,
+            "end": 4347
+          },
+          "digest": "53b31af45c8f25e30618a643deec73bec96df1a04037131e079e51ac3ede6957"
+        },
+        {
+          "row": 1,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "70.1220",
+          "coordinates": null,
+          "span": {
+            "start": 4347,
+            "end": 4354
+          },
+          "digest": "f00b21f91c4591b5c29b351ec8b94fd1089af61537ce21f220df02649f389d48"
+        },
+        {
+          "row": 2,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "codestral:22b",
+          "coordinates": null,
+          "span": {
+            "start": 4354,
+            "end": 4367
+          },
+          "digest": "a534860c439b444617a6150710bbfac7264218b7501a05bc7b91e52b75fd2944"
+        },
+        {
+          "row": 2,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "89.0244",
+          "coordinates": null,
+          "span": {
+            "start": 4367,
+            "end": 4374
+          },
+          "digest": "e24185a643dbbe1513511ada8ff821f8ed1d9ebabdf4ee8261b2253af30507fa"
+        },
+        {
+          "row": 2,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "88.4146",
+          "coordinates": null,
+          "span": {
+            "start": 4374,
+            "end": 4381
+          },
+          "digest": "a385528541ffb2386fcd539383c3aaf8f1cd17db1be9f8def678b479cdf3c0bd"
+        },
+        {
+          "row": 2,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "91.4634",
+          "coordinates": null,
+          "span": {
+            "start": 4381,
+            "end": 4388
+          },
+          "digest": "2bece18f997ab8cedfafa46d63993af648cbe9fda3e245bb9fbde601506aeca4"
+        },
+        {
+          "row": 3,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "deepseek-coder-",
+          "coordinates": null,
+          "span": {
+            "start": 4388,
+            "end": 4403
+          },
+          "digest": "018dc3c04bd74e1d479321f95957e864c7027d7cc8e0d938bb008a07832a04fb"
+        },
+        {
+          "row": 3,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "84.1463",
+          "coordinates": null,
+          "span": {
+            "start": 4403,
+            "end": 4410
+          },
+          "digest": "e1dceb2431171af53d499d45b6399d2395fd45b694dbb318f0a48161d9bff8ad"
+        },
+        {
+          "row": 3,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "92.0732",
+          "coordinates": null,
+          "span": {
+            "start": 4410,
+            "end": 4417
+          },
+          "digest": "9a842ddeb2313013c722c8de557d818e47f8fc29ef76af672bf963116cad8d63"
+        },
+        {
+          "row": 3,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "90.2439",
+          "coordinates": null,
+          "span": {
+            "start": 4417,
+            "end": 4424
+          },
+          "digest": "4e54f4acdd2b60e23e985bb9d915d30a7140465ca473fb1ecd308e7b83a47570"
+        },
+        {
+          "row": 4,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "v2:16b",
+          "coordinates": null,
+          "span": {
+            "start": 4424,
+            "end": 4430
+          },
+          "digest": "9353c1e7e2632d06c2f036b18062a16b7e57bd35b4f27e3072691b26694fd819"
+        },
+        {
+          "row": 4,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 4430,
+            "end": 4430
+          },
+          "digest": "80fa1190b71ea53a5cffa357febf442eab13f583eda160d97e8492f37438d1f9"
+        },
+        {
+          "row": 4,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 4430,
+            "end": 4430
+          },
+          "digest": "fcdc3769f68354b4b9700f7442b93570016fb17bf684bbad9ee8914c2c3908b6"
+        },
+        {
+          "row": 4,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "",
+          "coordinates": null,
+          "span": {
+            "start": 4430,
+            "end": 4430
+          },
+          "digest": "bc7ac9db244a55207b4e8f166fa95eb4dfdc52963e6949c9036810c8affbe14c"
+        },
+        {
+          "row": 5,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "devstral:24b",
+          "coordinates": null,
+          "span": {
+            "start": 4430,
+            "end": 4442
+          },
+          "digest": "e9837f1406c689d7b8518d1acc960bccabed59a3389f7a4bc8cf74f33339b38d"
+        },
+        {
+          "row": 5,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "94.5122",
+          "coordinates": null,
+          "span": {
+            "start": 4442,
+            "end": 4449
+          },
+          "digest": "983e4dac3f79e9925a9f2ca4aa7fc7d35359ddee4217642ce271a8ecdff6134d"
+        },
+        {
+          "row": 5,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "93.9024",
+          "coordinates": null,
+          "span": {
+            "start": 4449,
+            "end": 4456
+          },
+          "digest": "0fd636ad70dd226a457f2a5aa06c38bf662262ad244f8933737feeae745c8aac"
+        },
+        {
+          "row": 5,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "95.1220",
+          "coordinates": null,
+          "span": {
+            "start": 4456,
+            "end": 4463
+          },
+          "digest": "13a4cff9935a9bfe530f4b9081377d44471a622a91e670e2c1974528ccb52ac7"
+        },
+        {
+          "row": 6,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "granite3.3:8b",
+          "coordinates": null,
+          "span": {
+            "start": 4463,
+            "end": 4476
+          },
+          "digest": "f3d17001564b9a943e29568595fabeab800e413edd65ba7e5bb3b8c6ebbbe3f2"
+        },
+        {
+          "row": 6,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "82.3171",
+          "coordinates": null,
+          "span": {
+            "start": 4476,
+            "end": 4483
+          },
+          "digest": "59a6726468ebd4d6a23607635c877b81205dd91588393686bc6342cc38b07a85"
+        },
+        {
+          "row": 6,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "86.5854",
+          "coordinates": null,
+          "span": {
+            "start": 4483,
+            "end": 4490
+          },
+          "digest": "9acae5b1461d00b9478de19c2f50f2d9da42da1edf616390f8218ef1df37a73d"
+        },
+        {
+          "row": 6,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "85.3659",
+          "coordinates": null,
+          "span": {
+            "start": 4490,
+            "end": 4497
+          },
+          "digest": "09c067c3ec937ebaf3d856e3b4851fd35f12521408b9cdb6c1d537b04f653000"
+        },
+        {
+          "row": 7,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "llama3.1:8b",
+          "coordinates": null,
+          "span": {
+            "start": 4497,
+            "end": 4508
+          },
+          "digest": "1527c39c8aba5725d28282bb58a93e7c0b97dd038821ca9e5807167624184362"
+        },
+        {
+          "row": 7,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "72.5610",
+          "coordinates": null,
+          "span": {
+            "start": 4508,
+            "end": 4515
+          },
+          "digest": "79d8463648c8da7f167045092ae3ae46714d0af58745825537efc6e067eafcdf"
+        },
+        {
+          "row": 7,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "82.3171",
+          "coordinates": null,
+          "span": {
+            "start": 4515,
+            "end": 4522
+          },
+          "digest": "05f7fc5ceae9373aa60594652487a8afcee9438307aae83d3dd3e6a16e7916a5"
+        },
+        {
+          "row": 7,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "81.7073",
+          "coordinates": null,
+          "span": {
+            "start": 4522,
+            "end": 4529
+          },
+          "digest": "801e5da26bbd768b4305f0999301e58a04eab1fba24c1bb0ebeed4aeac234e07"
+        },
+        {
+          "row": 8,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "mistral:instruct",
+          "coordinates": null,
+          "span": {
+            "start": 4529,
+            "end": 4545
+          },
+          "digest": "e83e9a60ce5dfb04518ca321e1eb11513bce3f7b3a64d4e5546f78b367d1f7e7"
+        },
+        {
+          "row": 8,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "54.2683",
+          "coordinates": null,
+          "span": {
+            "start": 4545,
+            "end": 4552
+          },
+          "digest": "2a332c0bdd0b112df74a860a8b309d70ef5ac2dd8fedd803e457280deb7b3c69"
+        },
+        {
+          "row": 8,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "62.8049",
+          "coordinates": null,
+          "span": {
+            "start": 4552,
+            "end": 4559
+          },
+          "digest": "cc980c09f2279f681afaa1d9de07954253ff514a0e4bc4cfc68fe2c69e6cc291"
+        },
+        {
+          "row": 8,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "57.3171",
+          "coordinates": null,
+          "span": {
+            "start": 4559,
+            "end": 4566
+          },
+          "digest": "eb5b58f578f6701c7db1dcaec2264e6784d66539acf0fb782392cb608717feb7"
+        },
+        {
+          "row": 9,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "phi4:14b",
+          "coordinates": null,
+          "span": {
+            "start": 4566,
+            "end": 4574
+          },
+          "digest": "acf870c6c13ea94863e25853f4892da7cf3705baefb47f1cc037f4af065c3acb"
+        },
+        {
+          "row": 9,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "93.2927",
+          "coordinates": null,
+          "span": {
+            "start": 4574,
+            "end": 4581
+          },
+          "digest": "c91fcc0451bdf2735025c9775f4d9b3d274d315835a8176b36482b3aa9b92b1f"
+        },
+        {
+          "row": 9,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "93.9024",
+          "coordinates": null,
+          "span": {
+            "start": 4581,
+            "end": 4588
+          },
+          "digest": "89c9d50b89efa5e0c81804d8b17c99070e2938026fb54695531261115300aded"
+        },
+        {
+          "row": 9,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "96.3415",
+          "coordinates": null,
+          "span": {
+            "start": 4588,
+            "end": 4595
+          },
+          "digest": "d486f115b56af361af1216e1a9acef8c057fa672686db010e8276c3637cbf88b"
+        },
+        {
+          "row": 10,
+          "column": 0,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "qwen2.5-coder",
+          "coordinates": null,
+          "span": {
+            "start": 4595,
+            "end": 4608
+          },
+          "digest": "5716e5aeb8e496146d83e01d0a911faff85c562caf62ba9958348ae8bde4d135"
+        },
+        {
+          "row": 10,
+          "column": 1,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "94.1588",
+          "coordinates": null,
+          "span": {
+            "start": 4608,
+            "end": 4615
+          },
+          "digest": "393a21bfef15b00ebac76aab333525fb9a0968f8145111ca5bdd348a0f5c202e"
+        },
+        {
+          "row": 10,
+          "column": 2,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "95.1220",
+          "coordinates": null,
+          "span": {
+            "start": 4615,
+            "end": 4622
+          },
+          "digest": "e975e4f84beed034555416797e5675b00275f93c70af2d59f9c97728fd7cfef7"
+        },
+        {
+          "row": 10,
+          "column": 3,
+          "colspan": 1,
+          "rowspan": 1,
+          "text": "94.5122",
+          "coordinates": null,
+          "span": {
+            "start": 4622,
+            "end": 4629
+          },
+          "digest": "33010536c91b38f6bff875bad0913d95a5d6378600c32f511a43e80487b58a43"
+        }
+      ],
+      "source_digest": "49fdf08ed66518146bcf90ae367e4c7c6006d643d074ebecfd12c47ff9174e40",
+      "missingness": null
+    }
+  ],
+  "table_missingness": null,
+  "formulas": [
+    {
+      "formula_id": "formula_0",
+      "section_path_id": "1~2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "pass@k = 1 -P(all incorrect)"
+      },
+      "span": {
+        "start": 374,
+        "end": 402
+      },
+      "source_digest": "cb3ee4bf16c867f7a7c277561f0be1af02dc2ade8f669452b249b025309a994f",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_1",
+      "section_path_id": "1~2",
+      "section_ordinal": 1,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "pass@k = 1 - ( n-c k ) ( n k )"
+      },
+      "span": {
+        "start": 442,
+        "end": 472
+      },
+      "source_digest": "be094fcc05ac51e04134915515273a353f16f8e27f2ecee27e871d7ccfb71621",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_2",
+      "section_path_id": "1~4",
+      "section_ordinal": 3,
+      "label": "(1)",
+      "coordinates": null,
+      "representation": {
+        "plain_text": "E(t) = E 0 e -λt(1)"
+      },
+      "span": {
+        "start": 554,
+        "end": 573
+      },
+      "source_digest": "a209c12483659e4d232bddd0ffdaacb3fe007fa80c4435183d9d7d461a4273d0",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_3",
+      "section_path_id": "1~4",
+      "section_ordinal": 3,
+      "label": "(2)",
+      "coordinates": null,
+      "representation": {
+        "plain_text": "E(t 1/2 ) = 1 2 E 0 =⇒ t 1/2 = ln(2) λ(2)"
+      },
+      "span": {
+        "start": 1350,
+        "end": 1391
+      },
+      "source_digest": "52ee323e64d924543165aec27a28db0a5c0e8fb1242a700698a0710eefd41eac",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_4",
+      "section_path_id": "1~4",
+      "section_ordinal": 3,
+      "label": "(3)",
+      "coordinates": null,
+      "representation": {
+        "plain_text": "t θ = ln 100 100-θ λ(3)"
+      },
+      "span": {
+        "start": 1680,
+        "end": 1703
+      },
+      "source_digest": "eb16a98d41a817a4c1a9ea75913be3e34d268c08378b2cbdbbbba8246f97a7c1",
+      "missingness": null
+    },
+    {
+      "formula_id": "formula_5",
+      "section_path_id": "1~6",
+      "section_ordinal": 5,
+      "label": null,
+      "coordinates": null,
+      "representation": {
+        "plain_text": "DDI(data, θ ) → (E 0 , λ ,t θ , R 2 )"
+      },
+      "span": {
+        "start": 35,
+        "end": 72
+      },
+      "source_digest": "676eb72ec5424cf287857a65ddc32f5c2fe938b93f356e4189d501369ae8bf46",
+      "missingness": null
+    }
+  ],
+  "formula_missingness": null,
+  "page_text_missingness": null,
+  "declared_arxiv_id": {
+    "raw": "arXiv:2506.18403v2[cs.SE]",
+    "bare_id": "2506.18403",
+    "revision": "v2",
+    "source_digest": "916bc5aa6fc39b11afb1cffb5baaa46f6fc4bc26a2ee1565d22c47a99944e8fd"
+  },
+  "declared_id_missingness": null,
+  "header_authors": [
+    {
+      "name": "Adnan Muntasir",
+      "forename": "Adnan",
+      "surname": "Muntasir",
+      "source_digest": "347f4438198f577be33497c3b17d8ba6a445c093f0deacf640d251df0287a249"
+    },
+    {
+      "name": "Carlos C N Kuhn",
+      "forename": "Carlos C N",
+      "surname": "Kuhn",
+      "source_digest": "b41f2d0e9beacefa672a8e30dc9c835a400f29c4aa3a984937e8895ec176d769"
+    }
+  ],
+  "figures": [
+    {
+      "figure_id": "fig_0",
+      "label": "1",
+      "caption": "Figure 1 .",
+      "coordinates": "6,56.69,63.78,498.60,311.26",
+      "graphic_missingness": null,
+      "source_digest": "e9d143d90e783d041504425be2f89087f85b78f091a098bd51e4e3b0a4c8d187"
+    },
+    {
+      "figure_id": "fig_1",
+      "label": "2",
+      "caption": "Figure 2 .",
+      "coordinates": "7,56.69,63.78,498.61,332.41",
+      "graphic_missingness": null,
+      "source_digest": "c8da5d6d0bf8357913dcdfb88b52a24f47d23eb54ca5e2e75d0f7a1b758a9976"
+    }
+  ],
+  "visual_callouts": [
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 1118,
+      "section_path_id": "1~8",
+      "section_ordinal": 7,
+      "source_digest": "7028c78f0e5c35e97a337caafd0587bef6f8f176c3a8670277395e0baf081f01"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 891,
+      "section_path_id": "1~9",
+      "section_ordinal": 8,
+      "source_digest": "91829861e6aee4a59fe2986327a51a5e8290bf40210defd0f77c792f9fe76532"
+    },
+    {
+      "kind": "table",
+      "target": "tab_0",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 964,
+      "section_path_id": "1~10",
+      "section_ordinal": 9,
+      "source_digest": "f7a56802fd951116a2c8dbac74cbd24b365ca0f5e43f021d071da6c21635ca1a"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": 973,
+      "section_path_id": "1~10",
+      "section_ordinal": 9,
+      "source_digest": "75eb4c38a74ab396a10f40236f937b45d54b451e7d123418820904992b8da0e8"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_0",
+      "unresolved": null,
+      "quote": "1",
+      "offset": 986,
+      "section_path_id": "1~10",
+      "section_ordinal": 9,
+      "source_digest": "fd79efc7a7afb979f3a794993aee4665ddd84757622db79c2f2d3c577f6d21de"
+    },
+    {
+      "kind": "table",
+      "target": "tab_0",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 3717,
+      "section_path_id": "1~10",
+      "section_ordinal": 9,
+      "source_digest": "3ca35726992abfc00851e69aefc90ae1fa3dd74bf948166ab55a946e5088698e"
+    },
+    {
+      "kind": "figure",
+      "target": "fig_1",
+      "unresolved": null,
+      "quote": "2",
+      "offset": 5301,
+      "section_path_id": "1~10",
+      "section_ordinal": 9,
+      "source_digest": "e9b90ed8d4c506907dfbd92fa410e289fb56fe7187db3d029583287f5792b220"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "69d40d0e797b3c623cb134ff9f9e638acae149e4c2d01fb802059e21b803f7de"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "69d40d0e797b3c623cb134ff9f9e638acae149e4c2d01fb802059e21b803f7de"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "622f84588c0ad69b7448d563b1e8d8bd7e17c0eab7802f16ad4a0674865f00f3"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "1",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "622f84588c0ad69b7448d563b1e8d8bd7e17c0eab7802f16ad4a0674865f00f3"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "2",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "dcaeaab19464b569b88ca511c7a1837dde7e7a79c923ee61b7171e4db2161ff2"
+    },
+    {
+      "kind": "figure",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "2",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "dcaeaab19464b569b88ca511c7a1837dde7e7a79c923ee61b7171e4db2161ff2"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "2",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "3d0b2b578bc6c98dbf3545f2d272addd2606a1ad18f615eaff2d68ffc4aeaed3"
+    },
+    {
+      "kind": "table",
+      "target": null,
+      "unresolved": "no_target",
+      "quote": "2",
+      "offset": null,
+      "section_path_id": null,
+      "section_ordinal": null,
+      "source_digest": "3d0b2b578bc6c98dbf3545f2d272addd2606a1ad18f615eaff2d68ffc4aeaed3"
+    }
+  ]
+}

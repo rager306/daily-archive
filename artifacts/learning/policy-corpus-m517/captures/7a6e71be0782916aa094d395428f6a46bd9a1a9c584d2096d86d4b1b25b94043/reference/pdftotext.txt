@@ -1,0 +1,999 @@
+MARCO: Multi-Agent Code Optimization with
+Real-Time Knowledge Integration for
+High-Performance Computing
+Asif Rahman, Veljko Cvetkovic, Kathleen Reece, Aidan Walters,
+Yasir Hassan, Aneesh Tummeti, Bryan Torres, Denise Cooney, Margaret Ellis, and Dimitrios S. Nikolopoulos
+Department of Computer Science, Virginia Tech
+
+arXiv:2505.03906v3 [cs.DC] 25 Jun 2025
+
+Emails: {asifr, veljko, katkreece501, aidanw, yasirh, artummeti, bryantorres, denise05, maellis1, dsn}@vt.edu
+
+Abstract—Large language models (LLMs) have transformed
+software development through code generation capabilities, yet
+their effectiveness for high-performance computing (HPC) remains limited. HPC code requires specialized optimizations
+for parallelism, memory efficiency, and architecture-specific
+considerations that general-purpose LLMs often overlook. We
+present MARCO (Multi-Agent Reactive Code Optimizer), a
+novel framework that enhances LLM-generated code for HPC
+through a specialized multi-agent architecture. MARCO employs
+separate agents for code generation and performance evaluation,
+connected by a feedback loop that progressively refines optimizations. A key innovation is MARCO’s web-search component
+that retrieves real-time optimization techniques from recent
+conference proceedings and research publications, bridging the
+knowledge gap in pre-trained LLMs. Our extensive evaluation
+on the LeetCode 75 problem set demonstrates that MARCO
+achieves a 14.6% average runtime reduction compared to Claude
+3.5 Sonnet alone, while the integration of the web-search component yields a 30.9% performance improvement over the base
+MARCO system. These results highlight the potential of multiagent systems to address the specialized requirements of highperformance code generation, offering a cost-effective alternative
+to domain-specific model fine-tuning.
+
+I. I NTRODUCTION
+High-performance computing (HPC) represents the pinnacle of computational power, utilizing clusters of computing
+resources to overcome the limitations of individual machines.
+HPC’s fundamental advantage lies in implementing parallel
+processing techniques that maximize processor cluster performance, enabling complex data processing and mathematical
+calculations that would otherwise be infeasible [33]. HPC
+has been instrumental in driving innovation across diverse
+domains including climate modeling, astrophysics simulations,
+pharmaceutical research, energy optimization, financial risk
+analysis, and training state-of-the-art machine learning models,
+particularly Large Language Models [7, 11, 15, 20, 30, 47].
+Large Language Models (LLMs) have revolutionized technology across multiple domains, democratizing access to sophisticated programming through natural language interfaces.
+These models have evolved from conversational assistants to
+autonomous systems capable of executing traditionally manual
+tasks, such as code generation [19, 43, 28, 36, 25]. The ability
+of LLMs to generate, test, and evaluate code has significantly
+
+enhanced software engineering capabilities, reducing development cycles and increasing productivity.
+However, despite their general utility, LLMs face significant challenges when applied to domain-specific knowledge
+requirements. According to the ParEval benchmark, both
+open-source and commercial LLMs demonstrate substantially
+lower accuracy in generating correct and efficient parallel
+code compared to serial code [33]. This limitation stems
+from LLMs’ training methodology, which typically involves
+diverse internet-sourced data rather than specialized domain
+knowledge. The relative scarcity of HPC code examples
+available online further exacerbates this knowledge gap [33,
+7]. While LLMs have also been successfully deployed in
+parallel program verification [18, 38], the unique demands
+of high-performance computing—requiring rigorously tested
+and optimized code for parallelism, memory efficiency, and
+execution speed—raise a critical research question: How can
+we effectively leverage LLMs to address HPC-specific programming challenges comprehensively?
+A promising approach to addressing LLM limitations is the implementation of Artificial Intelligence (AI)
+Agents—autonomous LLM-based systems capable of performing complex tasks through customized workflows and
+specialized tools [46, 1, 26, 14, 39]. AI agents extend beyond
+natural language processing to encompass decision-making,
+problem-solving, and execution capabilities. By utilizing external tools, these agents can access up-to-date information
+and effectively complete domain-specific tasks. Multi-agent
+systems further enhance these capabilities by distributing
+complex tasks across specialized agents, enabling the handling
+of work that exceeds the capabilities of any single agent.
+A. Research Contributions
+This paper presents MARCO (Multi-Agent Reactive Code
+Optimizer), a novel framework that fundamentally reimagines
+code optimization for high-performance computing. Unlike
+traditional approaches that rely on monolithic LLMs or extensive fine-tuning, MARCO implements a specialized multiagent architecture with several key innovations:
+
+Specialized Agent Architecture: MARCO introduces a
+clear separation between code generation, performance
+evaluation, and testing agents, allowing each to develop distinct expertise. The code generation agent specializes in implementing advanced optimization techniques including cache locality optimization, parallelization through OpenMP or CUDA, and vectorization strategies. Meanwhile, the evaluation agent focuses on rigorously assessing execution time, memory usage, and algorithmic complexity, while the testing agent continuously
+evaluates output correctness.
+• Adaptive Feedback Mechanism: Unlike traditional
+single-pass LLM code generation, MARCO implements
+an iterative feedback loop between its specialized agents.
+The evaluation agent collects comprehensive performance
+metrics that inform subsequent optimization attempts,
+creating a progressive refinement process that consistently improves code quality beyond what conventional
+approaches can achieve.
+• Real-time Knowledge Integration: MARCO incorporates a novel web-search component that actively retrieves
+the latest optimization techniques from research publications and conference proceedings, effectively bridging
+the knowledge gap between pre-trained LLM cutoff dates
+and current state-of-the-art HPC practices. This dynamic
+knowledge acquisition represents a significant advancement over static fine-tuning approaches.
+• Cost-Effective Implementation: By strategically separating optimization and evaluation processes, MARCO
+minimizes token usage and API call volume, offering
+a more economical alternative to expensive model finetuning or training specialized HPC models from scratch.
+To assess the effectiveness of our approach, we first assembled a comprehensive evaluation dataset, which included
+the LeetCode 75 problem set along with an additional 10
+challenging problems. Next, we implemented MARCO and
+compared its performance to leading language models such
+as GPT-4o, Claude 3.5 Sonnet, DeepSeek Coder-V2, and
+Llama 3.1. Additionally, we conducted detailed ablation studies to measure the contribution of each component within the
+MARCO architecture.
+Our extensive experimental evaluation demonstrates that
+MARCO achieves a significant 14.6% reduction in average
+runtime on the LeetCode 75 problem set compared to Claude
+3.5 Sonnet alone, while the integration of the web-search
+component yields a 30.9% performance improvement over
+the base MARCO system. These results establish MARCO
+as a transformative approach to HPC code optimization that
+outperforms current state-of-the-art models without requiring
+specialized training or fine-tuning.
+The remainder of this paper is organized as follows: Section II discusses background and related work, Section III
+details our methodology, Section IV presents experimental results, Section V provides an in-depth analysis of the MARCO
+system, Section VI discusses our findings, and Section VII
+concludes with future research directions.
+•
+
+II. BACKGROUND & R ELATED W ORK
+A. LLMs for Code Generation
+LLMs can perform a wide range of tasks, such as code
+generation and understanding, through their parameters and
+transformer architecture [43, 28, 36, 26]. LLMs contain billions of parameters that enable them to identify patterns in
+the data encountered during training. Research demonstrates
+a strong correlation between parameter size and model effectiveness; as the number of parameters increases, the model’s
+ability to solve higher-complexity or data-intensive problems
+generally improves [22, 15, 13]. The transformer architecture,
+a specialized type of neural network, is designed to process sequential data and predict intended outcomes through attention
+mechanisms.
+Chatbots like ChatGPT were among the first to provide
+general-purpose assistance across numerous domains. LLMs
+acquire domain knowledge through training on large datasets
+spanning diverse fields. OpenAI, for example, trained ChatGPT using techniques like Reinforcement Learning from Human Feedback [35, 8, 29], which utilizes a reward system to
+reinforce positive responses based on human trainer feedback.
+Given the adaptability of LLMs, specialization has emerged
+through the development of domain-specific models designed
+for particular applications. Code generation represents one
+popular specialization domain, where models are pre-trained
+primarily on code repositories to enhance their programming
+capabilities. Advanced code-focused LLMs like Qwen2.5Coder employ techniques such as synthetic data generation to
+address the scarcity of high-quality code examples [17, 43].
+While LLMs have demonstrated impressive performance in
+code generation tasks, their effectiveness is primarily limited to
+small-scale problems, such as individual functions and singlefile programs [24]. As coding problems increase in complexity
+and scale, these models experience significant performance
+degradation, largely due to limitations in their context processing capabilities [44]. This degradation relates directly to the
+LLM’s context window—the maximum amount of information
+the model can consider when generating responses, measured
+in tokens. LLMs process natural language by segmenting
+it into tokens, which can range from individual characters
+to complete words, enabling them to interpret and generate
+human-like text [5]. Research has demonstrated that context
+window size critically determines an LLM’s effectiveness for
+complex tasks like code generation, as larger windows enable
+models to process more documentation and maintain awareness of broader code structures [4]. This capability has evolved
+significantly, progressing from earlier models like GPT-3.5
+with a context window of 16,385 tokens to more advanced
+models such as GPT-4 Turbo, which supports substantially
+expanded context windows [24].
+B. Challenges in LLM-Generated HPC Code
+LLM-generated code often exhibits significant deficiencies
+in performance optimization, including inefficient cache utilization and suboptimal parallelization strategies [31]. The
+
+ParEval benchmark has revealed a substantial gap between
+LLMs’ ability to generate serial versus parallel code, with
+all evaluated models demonstrating markedly lower accuracy
+when generating parallel implementations [31, 9]. While opensource repositories provide vast amounts of training data for
+general coding tasks, this breadth comes at the expense of the
+specialized domain knowledge required for high-performance
+computing applications [11]. The primary challenge stems
+from how LLMs process information through Natural Language Processing (NLP) techniques, which excel with textual
+inputs but struggle with the computationally intensive scientific data prevalent in HPC contexts [6].
+Modern HPC infrastructure leverages parallel execution
+on multi-core systems through threading and synchronization mechanisms to optimize performance. However, due to
+the relatively recent emergence of these architectures, LLMs
+have limited understanding of modern parallel programming
+paradigms [21]. This knowledge gap results in parallel code
+generation that performs substantially worse than sequential
+implementations [31]. Furthermore, the advanced algorithms
+and optimization techniques typical in HPC environments
+create additional complexity that makes error diagnosis and
+correction particularly challenging for current LLM implementations [11].
+These contextually demanding factors cause generalpurpose LLMs to struggle with comprehensive HPC optimization. Recent research has begun addressing this problem with
+the introduction of HPC-Coder, which fine-tunes pre-existing
+models on HPC-specific data to improve parallel code generation capabilities [32]. This specialized model outperforms
+general-purpose LLMs on HPC-specific tasks and OpenMP
+pragma generation, demonstrating the potential for targeted
+HPC optimization in LLM applications.
+LLM-generated code also struggles with complex problems on initial attempts, often requiring multiple iterations
+to achieve correctness [16]. LLMs are inherently limited by
+single-pass generation approaches, which may be insufficient
+for challenging programming tasks. An agent-based approach
+offers a promising alternative for complex code generation,
+allowing multiple attempts at problem-solving and iterative
+code improvement [12]. This mirrors human problem-solving
+behavior, where programmers identify errors, learn from mistakes, and refine their solutions [48]. Given the limitations
+of LLMs in HPC code generation, simple single-model approaches may be inadequate for addressing these specialized
+requirements [37].
+III. M ETHODOLOGY
+A. Problem Statement and Approach
+Current approaches to code generation using Large Language Models (LLMs) exhibit significant limitations when
+applied to high-performance computing (HPC) workloads.
+Most existing models generate code in a single-pass manner,
+focusing primarily on syntactic correctness rather than optimizing for parallelism, memory hierarchy, or target machine
+
+characteristics. As a result, generated code often underperforms in memory efficiency, execution speed, and scalability,
+especially compared to hand-optimized or domain-specific
+implementations. This performance gap requires substantial
+manual tuning and expert intervention, highlighting the inadequacy of current LLM-driven workflows for HPC applications.
+Recent studies, including HPC-GPT [11] and the ParEval
+benchmark [31], have empirically demonstrated that LLMs
+struggle to deliver performant parallel code, revealing a clear
+need for more sophisticated, architecture-aware generation
+techniques. Furthermore, work by Nichols et al. [32] shows
+that even fine-tuned models on HPC-specific data require
+additional optimization layers to approach expert-written code
+performance.
+To address these challenges, we introduce MARCO (MultiAgent Reactive Code Optimizer), a multi-agent system that
+fundamentally reimagines the code optimization process by
+combining automated code generation with systematic performance testing through API integrations for dynamic adaptation. This modular separation between generation and evaluation enables improvements beyond conventional monolithic
+approaches. MARCO’s architecture centers on four key innovations:
+Specialized Agent Separation: MARCO implements
+a clear division of responsibilities between the code
+optimizer and testing agent. The optimizer focuses on
+applying advanced strategies such as cache locality improvements, parallelization through OpenMP or CUDA,
+and vectorization techniques, drawing upon insights from
+recent high-performance computing literature [11, 32].
+Meanwhile, the testing agent rigorously evaluates execution time, memory consumption, algorithmic complexity,
+output correctness, and incremental improvements over
+the original unoptimized code.
+• Adaptive Feedback Loop: Unlike traditional single-pass
+LLM systems that seek immediate solutions, MARCO
+employs an iterative feedback mechanism. Performance
+metrics gathered by the testing agent are fed back to the
+optimizer, creating a refinement loop that progressively
+drives the system toward more efficient implementations,
+aligning with multi-step agentic workflows recently explored in AI systems research [16].
+• Cost-Efficient Design: By decoupling optimization and
+evaluation tasks, MARCO reduces unnecessary API calls
+and minimizes token consumption at each iteration. This
+architectural design ensures controlled system costs, offering a scalable, resource-aware alternative to computationally expensive fine-tuning approaches.
+• Broad Applicability: While many existing frameworks
+rely on specialized fine-tuning for narrow HPC tasks,
+MARCO dynamically adapts to live performance data and
+integrates real-time insights from web-sourced research.
+This generalizable design reduces the time and resources
+required for model retraining, maintaining efficiency
+across diverse applications.
+•
+
+B. Selected LLMs
+We evaluated a range of leading proprietary and open-source
+LLMs for their capacity to generate high-performance computing code, including GPT-4o, Claude 3.5 Sonnet, DeepSeek
+Coder-V2, and Llama 3.1 8b. GPT-4o [34] and Claude [3] are
+proprietary models renowned for their robust infrastructure,
+offering high-throughput performance and accessible APIs for
+integration into external systems. In contrast, DeepSeek CoderV2 [10] and Llama 3.1 8b [2] are prominent open-source
+models that enable local deployment, extensive customization,
+and fine-grained control over parameters, memory allocation,
+and inference settings.
+For MARCO’s implementation, we selected the ChatGPT
+(OpenAI) and Claude (Anthropic) APIs as primary LLM
+providers due to their mature developer ecosystems, comprehensive performance telemetry available through developer
+consoles, and seamless integration with auxiliary technologies
+required in multi-agent workflows.
+C. Benchmark Design
+To rigorously assess MARCO’s optimization capabilities,
+we designed a benchmark suite comprising tasks that reflect
+core challenges in high-performance computing. These tasks
+span three primary categories:
+• Parallelization: We tested MARCO’s ability to generate
+and optimize code using OpenMP, CUDA, MPI, and
+Python’s asyncio, enabling concurrency within singlethreaded contexts and across multi-threaded or multiGPU environments. Our evaluation framework carefully
+manages thread creation to avoid performance degradation in scenarios with small workloads, a common pitfall
+in parallel code generation [11, 31].
+• Memory Optimization: We evaluated MARCO’s implementation of vectorization and cache utilization strategies
+to improve data locality and reduce memory access
+bottlenecks. The system leverages its integrated websearch component to retrieve cutting-edge optimization
+techniques from research publications indexed in IEEE,
+ACM, and arXiv, addressing the knowledge gap in pretrained LLMs [32].
+• Algorithmic Efficiency: We examined classical algorithmic problems, including sorting and matrix multiplication, using MARCO’s testing agent to provide detailed runtime and space complexity comparisons for
+each improvement over baseline implementations. This
+enables users to make informed, data-driven decisions
+about optimization strategy adoption.
+D. Evaluation Metrics
+To comprehensively assess MARCO’s performance and
+utility, we adopted a multi-dimensional evaluation framework spanning execution performance, code quality, and costefficiency:
+• Performance Metrics: We measured three key performance indicators:
+
+– Execution time was measured using system-level
+profiling tools, such as time.h in C and highresolution timers in Python, following best practices
+established in LLM benchmarking literature [24].
+– Computational throughput was assessed using
+FLOPS measurements to enable direct comparisons
+across different optimization strategies.
+– Memory usage was evaluated using Python packages including tracemalloc for tracking highmemory objects and psutil for monitoring systemlevel resource utilization, consistent with techniques
+reported in recent HPC optimization studies [11, 47].
+• Code Quality Assessment: We evaluated two primary
+aspects:
+– Correctness was validated by submitting generated
+solutions to the LeetCode problem framework, which
+provides automated feedback on test case performance. While certain limitations existed due to library import restrictions, this approach aligned with
+established methods in prior code-generation evaluations [24].
+– Readability and maintainability were preserved
+through MARCO’s approach of making localized
+improvements rather than complete rewrites. All
+modifications were accompanied by inline comments
+and high-level explanations to maintain developer
+transparency.
+• Cost Analysis: We measured API cost per query and token consumption. During March and April, the Anthropic
+(Claude) models processed approximately 562,703 input
+tokens and 213,227 output tokens, incurring a cost of
+$4.22 as recorded in the Anthropic developer console.
+For OpenAI (ChatGPT) models over February to April,
+1,145,708 input tokens and 898,465 output tokens were
+consumed, at a total cost of $10.50, yielding an average
+API cost per query of approximately $0.00369. These
+cost assessments are critical for evaluating the practicality of multi-agent frameworks like MARCO, especially
+relative to large-scale fine-tuning or dedicated model
+retraining [32].
+IV. E XPERIMENTAL R ESULTS
+A. Experimental Setup
+To ensure reproducibility and provide a fair evaluation of
+MARCO’s performance, all experiments were conducted under controlled hardware and software conditions. Specifically,
+we ran benchmarks on a machine equipped with an AMD
+EPYC 7502 32-Core Processor, NVIDIA A100 GPUs, and 256
+GB of system memory, operating under Ubuntu 22.04 LTS.
+The software environment included Python 3.10, CUDA 12.2
+for GPU-accelerated tasks, and relevant dependencies including Python’s built-in tracemalloc module and psutil
+version 5.9.8.
+Each experiment was repeated 5 times to account for random variability, and reported metrics (execution time, memory
+
+usage) reflect the average over these runs, with standard
+deviations provided where applicable. Random seeds were set
+to 42 for all stochastic operations to maintain consistency.
+All code was executed within a venv virtual environment to
+ensure consistent dependency resolution across experiments.
+Additionally, Docker containers (python:3.10-slim with CUDA
+12.2 support) were used in select experiments to support dynamic library installation and compatibility, particularly when
+testing code requiring packages beyond the default system
+installation.
+B. Performance Analysis
+
+51.9%. Notably, MARCO’s solutions ranked in the top 20%
+of all LeetCode submissions for 7 out of 10 hard problems,
+demonstrating competitive performance against the broader
+programming community.
+Table I summarizes average runtime performance across
+problem difficulties for the two best-performing approaches.
+TABLE I: Average Runtime (ms) Across Problem Difficulties
+Model
+Claude-3.5 Sonnet
+MARCO (ours)
+Improvement
+
+Easy
+11.8
+9.3
+21.2%
+
+Medium
+78.1
+65.9
+15.6%
+
+Hard
+288.1
+138.5
+51.9%
+
+The results demonstrate that MARCO’s multi-agent approach becomes increasingly effective as problem complexity
+increases, with the most significant improvements observed
+on hard problems where sophisticated optimization strategies
+provide the greatest benefit.
+C. Memory Usage Analysis
+
+Fig. 1: Runtime distribution comparison between
+Easy/Medium difficulty problems from the LeetCode 75
+dataset and 10 selected Hard difficulty problems, showing
+MARCO’s performance improvements across difficulty
+levels.
+We systematically evaluated MARCO-optimized code
+against baseline LLM-generated code, including Claude-3.5
+Sonnet, GPT-4o, DeepSeek Coder-V2, and Llama 3.1 8b,
+on a diverse set of programming tasks from the LeetCode
+75 problem set and 10 additional randomly selected hard
+problems. Our analysis focused on runtime performance, consistency, and relative improvements. We report detailed results
+from comparisons with Claude-3.5 Sonnet, which consistently
+exhibited the highest code performance among the tested
+LLMs.
+On the LeetCode 75 (easy and medium) problems, MARCO
+matched or outperformed Claude-3.5 Sonnet in 44 out of 75
+cases, achieving an average runtime reduction of 14.6% (mean
+runtime 49.1 ms vs. 57.5 ms). For hard problems, MARCO
+demonstrated stronger gains, outperforming Claude-3.5 Sonnet
+in all 10 cases, with an average runtime improvement of
+
+We compared memory usage between MARCO-optimized
+and baseline LLM-generated code using peak memory consumption metrics recorded with Python’s tracemalloc
+module and psutil. Among the 85 evaluated problems (75
+easy/medium, 10 hard), MARCO showed measurable memory
+usage improvements in 15 cases, while baseline LLMs showed
+advantages in 10 cases, with the remaining 60 cases showing
+comparable performance within measurement variance.
+On average, MARCO reduced peak memory consumption
+by 1.2%, with maximum observed savings of 8 MB on hard
+problems. Importantly, in some cases, MARCO’s optimizations slightly increased memory usage (by up to 1.9%) to
+achieve runtime speedups, highlighting the deliberate tradeoffs between time and space optimizations that characterize
+effective HPC code.
+Table II presents memory usage comparisons across problem difficulties.
+TABLE II: Average Peak Memory Usage (MB) Across
+Problem Difficulties
+Model
+Claude-3.5 Sonnet
+MARCO (ours)
+Change
+
+Easy
+18.9
+18.9
+0.0%
+
+Medium
+25.3
+25.2
+-0.4%
+
+Hard
+32.3
+28.8
+-10.8%
+
+The memory analysis reveals that MARCO’s primary
+strength lies in runtime optimization rather than memory
+reduction, with the most significant memory improvements
+occurring on hard problems where algorithmic optimizations
+can substantially reduce space complexity.
+D. Summary
+Overall, MARCO demonstrated consistent and substantial
+runtime improvements on hard problems (51.9% average improvement), competitive performance on medium problems
+(15.6% improvement), and modest gains on easy problems
+(21.2% improvement). While memory optimization showed
+
+less dramatic improvements, MARCO maintained comparable
+or better memory efficiency across all problem categories.
+These findings establish MARCO as a promising framework
+for scalable, architecture-aware code optimization in HPC
+workloads, with particular effectiveness on complex algorithmic challenges. The results warrant further exploration into
+cross-model comparisons, reinforcement-based optimization
+loops, and domain-specific extensions to fully realize the
+potential of multi-agent code optimization approaches.
+V. M ULTI -AGENT S YSTEM FOR O PTIMIZING LLM C ODE
+(MARCO)
+A. Motivation
+The rapid growth of computational demands across industries has driven unprecedented interest in high-performance
+computing (HPC) applications. With the emergence of large
+language models (LLMs), there has been a parallel surge in
+attempts to leverage LLMs for HPC-related code generation
+and optimization. However, our findings reveal that state-ofthe-art LLMs exhibit notable inefficiencies when generating
+HPC code, motivating the design of a multi-agent system
+(MAS).
+Three key limitations drive our approach. First, a significant constraint arises from the pretraining knowledge cutoff
+of current LLMs, which restricts their access to the latest
+advances in HPC architectures, optimization strategies, and
+software libraries. To address this gap, we integrate a websearch component into our agent system, enabling dynamic
+retrieval of up-to-date optimization techniques from scholarly
+resources such as IEEE, ACM, arXiv, and ResearchGate. This
+allows MARCO to explore and incorporate emerging methods,
+language updates, and cutting-edge toolchains, surpassing the
+static knowledge of the underlying LLM.
+Second, cost-efficiency presents a major concern. Prior work
+on fine-tuning monolithic LLMs for HPC code generation
+demands extensive GPU resources and substantial training
+overhead [11]. MARCO leverages pretrained LLMs without
+requiring fine-tuning, instead enriching them with system-level
+context and externally sourced insights, making the solution
+both scalable and accessible.
+Third, accessibility barriers limit HPC adoption. Manual optimization, while often effective, requires deep expert knowledge and is labor-intensive, raising the barrier to entry for scientific software developers. By combining up-to-date research
+knowledge with automated code transformation and iterative
+feedback, MARCO aims to significantly reduce the need for
+manual optimization and deliver diverse, performant solutions
+for large-scale HPC projects, ultimately lowering the barrier
+to innovation in high-performance software engineering.
+B. MARCO Framework
+The MARCO framework operates through three core components working in a coordinated iterative loop:
+• Code Optimizer Agent: This agent interprets the input
+code snippet, generates structured queries for the websearch engine, and applies retrieved optimization strate-
+
+Fig. 2: MARCO Pipeline Overview. The iterative optimization process showing the interaction between the
+code optimizer agent, web search engine, and performance evaluator agent. The system begins with input
+code, searches for relevant optimization techniques, applies
+improvements, evaluates performance, and iterates until
+optimal results are achieved.
+
+gies to improve memory efficiency, execution performance, and scalability. It performs multiple refinement
+iterations, progressively integrating feedback from the
+Performance Evaluator Agent. This iterative design aligns
+with foundational principles in multi-agent systems [45]
+and mimics multi-step reasoning patterns seen in modern
+agentic workflows [16].
+• Web-Search Engine: We integrate the Tavily search
+tool [42] to retrieve relevant optimization techniques from
+scholarly sources, including acm.org, ieee.org, arxiv.org,
+and researchgate.net. The search engine is configured
+with adjustable parameters including search_depth
+(which controls the thoroughness of each search),
+include_answer (which determines whether to include direct answers or just source links), and the number
+of sources retrieved per query. This ensures that the optimizer agent has access to diverse and current references
+for each optimization iteration.
+
+Fig. 3: Web-Search Integration Architecture. Schematic
+demonstrating how external scholarly sources (IEEE,
+ACM, arXiv, ResearchGate) feed current optimization
+strategies and techniques into MARCO’s iterative optimization loop, bridging the knowledge gap between LLM
+training cutoffs and current HPC research.
+•
+
+Performance Evaluator Agent: This agent benchmarks
+the generated code across multiple metrics, including
+execution time, memory usage, algorithmic complexity,
+and computational cost. It provides structured feedback
+
+to the optimizer agent, enabling the system to iteratively
+refine solutions based on quantitative performance data.
+Performance results are presented to users in a tabular
+interface, summarizing performance trends across iterations, correctness evaluations, and complexity assessments.
+The three components operate in a closed feedback loop:
+the optimizer generates improved code based on web-sourced
+techniques, the evaluator measures performance improvements, and this feedback guides subsequent optimization iterations until convergence or user-defined stopping criteria are
+met.
+C. Evaluation of MARCO
+We evaluated MARCO-optimized code against baseline
+LLM-generated solutions using the LeetCode 75 dataset [23]
+and an additional set of 10 randomly selected hard problems.
+Critically, we compared the performance of MARCO with
+and without the web-search component, benchmarking results
+against Claude-3.5 Sonnet and GPT-4o to isolate the contribution of dynamic knowledge retrieval.
+Across all evaluated problems, MARCO with the Tavily
+web-search integration consistently outperformed both Claude3.5 Sonnet and MARCO without web-search enhancement.
+This demonstrates the substantial value of incorporating realtime, externally sourced optimization strategies, especially in
+the rapidly evolving HPC landscape where new architectures,
+libraries, and techniques frequently emerge. The web-search
+component enables MARCO to access optimization techniques
+published after the base LLM’s training cutoff, providing a
+significant competitive advantage.
+The iterative refinement process contributed significantly to
+performance gains. On harder LeetCode problems, subsequent
+iterations generally achieved better results than initial attempts,
+with the final iteration showing an average improvement of
+30.9% over the base MARCO system without web search.
+This improvement aligns with our hypothesis that complex
+optimization problems benefit from multiple rounds of technique application and performance-based refinement.
+Figure 4 illustrates the runtime performance differences
+between MARCO with and without the Tavily web-search tool
+across the evaluated problem set, clearly demonstrating the
+value of dynamic knowledge integration in automated code
+optimization.
+VI. D ISCUSSION
+A. Key Findings and Analysis
+Our experiments demonstrate that MARCO substantially
+enhances execution speed, memory efficiency, and algorithmic
+optimization compared to baseline LLM-generated code. The
+most significant finding is that performance improvements
+scale with problem complexity: while MARCO shows modest
+gains on simple problems (21.2% improvement on easy problems), it achieves substantial improvements on complex tasks
+(51.9% improvement on hard problems). This scaling behavior aligns with our hypothesis that multi-agent optimization
+
+Fig. 4: Web-Search Component Performance Impact. Runtime comparison showing performance differences between
+MARCO with and without the Tavily web-search tool on
+the LeetCode 75 problem set. The results demonstrate
+consistent improvements when current optimization techniques are dynamically integrated into the optimization
+process.
+
+provides the greatest value for computationally demanding
+scenarios where sophisticated optimization techniques offer
+substantial benefits.
+The integration of the web-search component consistently
+yields superior optimizations across all problem categories,
+enabling the system to overcome the inherent knowledge
+limitations of static pretrained models. By dynamically retrieving cutting-edge techniques from recent research publications,
+MARCO bridges the critical gap between model training cutoffs and the rapidly evolving landscape of HPC optimization.
+Our results show a 30.9% improvement when web search
+is enabled, demonstrating the substantial value of real-time
+knowledge integration in automated code optimization.
+The iterative refinement process proves particularly effective
+for complex algorithmic problems, where multiple optimization strategies can be layered and refined based on performance feedback. This multi-step approach mirrors human
+expert behavior, where initial solutions are progressively improved through systematic analysis and technique application.
+B. System Limitations and Trade-offs
+Despite its advantages, MARCO introduces several important trade-offs that must be considered for practical deployment. First, the multi-agent architecture incurs computational
+overhead through iterative communication between agents and
+the transmission of intermediate results. This results in slower
+code generation compared to traditional single-pass LLM
+workflows, with generation time increasing approximately
+linearly with the number of optimization iterations.
+Second, while the web-search component enables access to
+recent research, the system’s performance remains constrained
+
+by the underlying LLM’s ability to correctly interpret and
+implement advanced HPC techniques retrieved from scholarly
+sources. Complex optimization strategies may be misapplied
+or inadequately integrated, particularly when they require deep
+domain expertise or specialized implementation knowledge.
+Third, MARCO’s current implementation faces several technical constraints. The Performance Evaluator Agent lacks
+native support for key HPC libraries, including Numba,
+Torch, and CUDA, significantly limiting optimization potential
+for GPU-accelerated workloads. Additionally, the system is
+currently restricted to Python, which, while offering a rich
+ecosystem of optimization tools, excludes important HPC
+languages such as C++, Fortran, and specialized domainspecific languages.
+Finally, cost considerations present practical limitations.
+While MARCO’s approach avoids expensive fine-tuning, the
+iterative nature of the optimization process increases API
+usage costs. Our analysis shows higher per-query costs for
+more sophisticated models like GPT-4o, despite occasionally
+inferior performance compared to Claude 3.5 Sonnet, suggesting the need for careful model selection and cost-performance
+optimization.
+
+Future work should address the identified limitations
+through several key directions: expanding language support
+beyond Python to include C++ and Fortran, integrating support
+for GPU acceleration libraries, developing more sophisticated
+problem complexity assessment mechanisms, and optimizing
+the cost-performance trade-offs in multi-agent architectures.
+Additionally, evaluation on real-world HPC applications beyond algorithmic benchmarks would provide valuable insights
+into MARCO’s practical effectiveness for scientific computing
+workloads. The development of domain-specific evaluation
+metrics for HPC code quality, including parallelization efficiency and hardware utilization, represents another important
+research direction.
+The demonstrated effectiveness of MARCO’s approach suggests promising applications to other specialized programming
+domains where current LLMs show limitations, including
+systems programming, embedded software development, and
+domain-specific scientific computing applications.
+
+C. Unexpected Findings and Implications
+
+In this work, we addressed the significant limitations of current LLMs in generating optimized HPC code by introducing
+MARCO, a novel multi-agent system designed to iteratively
+refine code for improved performance, memory efficiency, and
+scalability. Our comprehensive evaluation demonstrates that
+MARCO effectively leverages external knowledge sources and
+iterative optimization loops to substantially outperform standalone LLMs, achieving a 14.6% average runtime reduction
+on the LeetCode 75 problem set and a remarkable 51.9%
+improvement on complex problems compared to Claude 3.5
+Sonnet.
+The integration of real-time web search capabilities proves
+particularly valuable, yielding a 30.9% performance improvement over the base MARCO system and enabling access to
+cutting-edge optimization techniques beyond the knowledge
+cutoff of pretrained models. These results establish MARCO
+as an effective approach to automated HPC code optimization
+that bridges the gap between static LLM capabilities and the
+rapidly evolving landscape of high-performance computing.
+Our key contributions include: (1) a specialized multi-agent
+architecture that separates code generation, evaluation, and
+testing responsibilities; (2) an adaptive feedback mechanism
+that enables iterative code refinement; (3) real-time knowledge
+integration through web search of scholarly sources; and (4)
+a cost-effective implementation that avoids expensive finetuning while delivering superior performance.
+
+Our evaluation revealed several counterintuitive results that
+provide important insights for multi-agent system design.
+Most notably, standalone LLMs occasionally outperformed
+MARCO on simple problems, particularly those in the ”easy”
+category of the LeetCode 75 dataset. This occurs because
+simple problems inherently require minimal optimization, and
+MARCO’s multi-agent orchestration introduces unnecessary
+computational overhead for tasks that are already well-solved
+by basic implementations.
+This finding has important implications for system design:
+effective automated optimization systems must include problem complexity assessment to determine when sophisticated
+optimization is warranted. Simple problems may be better
+served by direct LLM generation, while complex problems
+benefit from MARCO’s iterative refinement approach.
+The scaling relationship between problem complexity and
+optimization benefit suggests that MARCO’s architecture is
+well-suited for its intended domain of high-performance computing, where problems are typically computationally demanding and benefit from sophisticated optimization techniques.
+This validates our design hypothesis that multi-agent systems
+provide the greatest value for complex, domain-specific tasks
+rather than general-purpose code generation.
+D. Broader Implications and Future Directions
+These findings have significant implications for the development of AI-assisted programming tools in specialized domains.
+The success of dynamic knowledge integration through web
+search suggests that hybrid approaches combining pretrained
+models with real-time information retrieval may be more
+effective than purely static or purely fine-tuned approaches
+for rapidly evolving technical domains.
+
+VII. C ONCLUSIONS AND F UTURE W ORK
+A. Summary of Contributions
+
+B. Future Research Directions
+Building upon these promising results, several important
+directions emerge for future development and research. We
+organize these opportunities into three primary categories:
+system enhancements, evaluation expansion, and broader applications.
+
+1) System Enhancements: The most immediate improvements focus on enhancing inter-agent communication and
+expanding system capabilities. Currently, the Performance
+Evaluator Agent provides feedback solely through final performance metrics. Implementing richer bidirectional communication—including intermediate diagnostic information, specific bottleneck identification, and targeted optimization suggestions—could significantly improve the refinement process
+efficiency and effectiveness.
+Technical infrastructure improvements represent another
+crucial development area. Integrating Docker-based execution
+environments would support a wider range of external libraries
+(including Numba, Torch, and CUDA) and enable more robust, cross-platform testing capabilities. Additionally, extending language support beyond Python to include C++, Fortran,
+and domain-specific languages would significantly broaden
+MARCO’s applicability to real-world HPC applications.
+The optimization workflow itself offers substantial improvement potential. Rather than generating complete code variants
+for each iteration, MARCO could maintain and incrementally
+edit persistent code artifacts, enabling finer-grained improvements and reducing redundant computations. Incorporating
+reinforcement learning techniques, as demonstrated in systems
+like AlphaCode [27], could enable MARCO to learn from
+iterative feedback and improve optimization strategies over
+time [41, 40].
+2) Evaluation and Validation: Future evaluation efforts
+should expand beyond algorithmic benchmarks to include realworld HPC applications across diverse scientific domains. Developing domain-specific evaluation metrics that capture HPCrelevant qualities—such as parallelization efficiency, hardware utilization, and scalability characteristics—would provide
+more comprehensive assessment of optimization effectiveness.
+Long-term studies examining MARCO’s performance consistency across different hardware architectures and workload
+types would validate the generalizability of our findings.
+Additionally, comparative studies with other automated optimization approaches, including compiler optimizations and
+specialized fine-tuned models, would better position MARCO
+within the broader optimization landscape.
+3) Broader Applications and Impact: The success of
+MARCO’s multi-agent approach suggests promising applications to other specialized programming domains where current
+LLMs show limitations, including systems programming, embedded software development, and domain-specific scientific
+computing. The demonstrated effectiveness of dynamic knowledge integration through web search may prove valuable for
+rapidly evolving technical domains beyond HPC.
+Furthermore, integrating persistent communication history
+across optimization sessions could reduce token usage costs
+and enable more sophisticated multi-session optimization
+pipelines, making the approach more practical for large-scale
+deployment in research and industrial settings.
+
+C. Concluding Remarks
+MARCO represents a significant advancement in automated HPC code optimization, demonstrating that multiagent orchestration combined with real-time knowledge retrieval can substantially improve upon traditional single-model
+approaches. By effectively bridging the gap between static
+pretrained LLMs and the rapidly evolving landscape of highperformance computing, MARCO establishes a foundation for
+scalable, cost-efficient, and accessible optimization pipelines.
+The demonstrated performance improvements, particularly
+on complex problems where sophisticated optimization provides the greatest benefit, suggest that MARCO’s approach
+addresses a genuine need in the HPC community. As computational demands continue to grow across scientific and
+industrial domains, automated optimization tools like MARCO
+have the potential to significantly lower barriers to highperformance programming and accelerate innovation in computationally intensive applications.
+The path forward involves continued development of the
+technical capabilities outlined above, broader evaluation across
+real-world applications, and exploration of the approach’s
+applicability to other specialized programming domains.
+Through these efforts, MARCO’s multi-agent optimization
+paradigm may contribute to making high-performance computing more accessible and effective for the broader scientific
+and engineering communities.
+R EFERENCES
+[1]
+
+[2]
+[3]
+[4]
+
+[5]
+
+[6]
+
+[7]
+
+[8]
+
+D. Behera Acharya, Keerthana Kuppan, and B. Divya.
+“Agentic AI: Autonomous Intelligence for Complex
+Goals—A Comprehensive Survey”. In: IEEE Access
+(2024). DOI: 10.1109/ACCESS.2024.3420551.
+Meta AI. Llama 3.1: Open Foundation and Instruction
+Models. https://ai.meta.com/llama. 2024.
+Anthropic. Claude 3.5 Sonnet Model Card. https://www.
+anthropic.com/index/claude-3-5. 2024.
+Anthropic. “Introducing 100K Context Windows”. In:
+Anthropic Blog (2023). URL: https : / / www. anthropic .
+com/index/100k-context-windows.
+Martin Balfroid, Benoı̂t Vanderose, and Xavier Devroey.
+“Towards LLM-Generated Code Tours for Onboarding”. In: Proceedings of the Third ACM/IEEE International Workshop on NL-based Software Engineering.
+IEEE/ACM. 2024, pp. 41–45. DOI: 10.1145/3643787.
+3648033.
+Le Chen et al. “LM4HPC: Towards Effective Language
+Model Application in High-Performance Computing”.
+In: International Workshop on OpenMP. Springer.
+2023, pp. 18–33.
+Le Chen et al. The Landscape and Challenges of
+HPC Research and LLMs. 2024. arXiv: 2402 . 02018
+[cs.LG]. URL: https://arxiv.org/abs/2402.02018.
+Paul F Christiano et al. “Deep reinforcement learning
+from human preferences”. In: Advances in neural information processing systems 30 (2017).
+
+[9]
+
+[10]
+[11]
+
+[12]
+
+[13]
+
+[14]
+
+[15]
+
+[16]
+
+[17]
+[18]
+
+[19]
+
+[20]
+
+[21]
+
+[22]
+[23]
+[24]
+
+Joshua H. Davis et al. ParEval Leaderboard: Evaluating
+the Ability of Large Language Models to Generate
+Parallel Code. 2024. URL: https : / / pssg . cs . umd . edu /
+blog/2024/pareval/ (visited on 05/06/2024).
+DeepSeek. DeepSeek Coder V2 Technical Report. https:
+//github.com/deepseek-ai/DeepSeek-Coder. 2024.
+Xianzhong Ding et al. “HPC-GPT: Integrating Large
+Language Model for High-Performance Computing”.
+In: Workshops of The International Conference on High
+Performance Computing, Network, Storage, and Analysis (2023). DOI: 10.1145/3624062.3624172.
+Yihong Dong et al. “Self-Collaboration Code Generation via ChatGPT”. In: ACM Transactions on Software
+Engineering and Methodology 33.4 (2024), pp. 1–28.
+Sam Earle et al. “Level Generation Through Large
+Language Models”. In: Proceedings of the 18th International Conference on the Foundations of Digital Games.
+ACM. 2023, pp. 1–10. DOI: 10.1145/3582437.3587211.
+Samrat Gupta et al. “Survey on Evaluation of LLMbased Agents”. In: arXiv preprint arXiv:2503.16416
+(2024).
+Jordan Hoffmann et al. “Training compute-optimal large
+language models”. In: Proceedings of the 36th International Conference on Neural Information Processing
+Systems (2022).
+Dong Huang et al. “AgentCoder: Multi-Agent-based
+Code Generation with Iterative Testing and Optimisation”. In: arXiv preprint arXiv:2312.13010 (2023).
+Binyuan Hui et al. “Qwen2.5-Coder Technical Report”.
+In: arXiv preprint arXiv:2409.12186 (2024).
+Aaron Jarmusch et al. “CI/CD Efforts for Validation,
+Verification and Benchmarking OpenMP Implementations”. In: Advancing OpenMP for Future Accelerators. Ed. by Alexis Espinosa et al. Cham: Springer
+Nature Switzerland, 2024, pp. 111–125. ISBN: 978-3031-72567-8.
+Juyong Jiang et al. “A Survey on Large Language
+Models for Code Generation”. In: arXiv preprint
+arXiv:2406.00515 (2024).
+Junqi Jin et al. “Evaluation of pre-training large language models on leadership-class supercomputers”. In:
+The Journal of Supercomputing (2023), pp. 1–23. DOI:
+10.1007/s11227-023-05479-7.
+Tal Kadosh et al. “Scope is all you need: Transforming LLMs for HPC Code”. In: arXiv preprint
+arXiv:2312.08117 (2023).
+Jared Kaplan et al. “Scaling Laws for Neural Language
+Models”. In: arXiv preprint arXiv:2001.08361 (2020).
+LeetCode. LeetCode 75 Study Plan. https : / / leetcode .
+com/studyplan/leetcode-75. Accessed: May 2025. 2024.
+Samuel Li et al. “A Performance Study of LLMGenerated Code on Leetcode”. In: Proceedings of the
+28th International Conference on Evaluation and Assessment in Software Engineering. ACM. 2024, pp. 1–
+12. DOI: 10.1145/3661167.3661221.
+
+[25]
+
+[26]
+
+[27]
+
+[28]
+
+[29]
+
+[30]
+
+[31]
+
+[32]
+
+[33]
+
+[34]
+[35]
+
+[36]
+
+[37]
+
+Xin Li et al. “Using an LLM to Help With Code Understanding”. In: Proceedings of the IEEE/ACM 46th International Conference on Software Engineering. ACM.
+2024, pp. 1–12. DOI: 10.1145/3597503.3639187.
+Xinzhe Li. “A Survey on LLM-Based Agentic Workflows and LLM-Profiled Components”. In: arXiv
+preprint arXiv:2406.05804 (2024).
+Yujia Li, Daniel Tarlow, Marc Brockschmidt, et al.
+“Competition-level code generation with AlphaCode”.
+In: Science 378.6624 (2022), pp. 1092–1097. DOI: 10.
+1126/science.abq1158.
+Long Liu et al. “Evaluating Large Language Models in
+Class-Level Code Generation”. In: Proceedings of the
+IEEE/ACM 46th International Conference on Software
+Engineering. ACM. 2024, pp. 387–399. DOI: 10.1145/
+3597503.3639219.
+Ruibo Liu et al. “Best Practices and Lessons Learned
+on Synthetic Data for Language Models”. In: arXiv
+preprint arXiv:2404.07503 (2024).
+Deepak Narayanan et al. “Efficient large-scale language
+model training on GPU clusters using megatron-LM”.
+In: Proceedings of the International Conference for
+High Performance Computing, Networking, Storage and
+Analysis. ACM. 2021, pp. 1–15.
+Daniel Nichols et al. “Can Large Language Models
+Write Parallel Code?” In: Proceedings of the 33rd
+International Symposium on High-Performance Parallel
+and Distributed Computing. HPDC ’24. New York,
+NY, USA: Association for Computing Machinery, 2024.
+DOI : 10.1145/3625549.3658689.
+Daniel Nichols et al. “HPC-Coder: Modeling Parallel
+Programs using Large Language Models”. In: 2023
+IEEE International Conference on Cluster Computing
+(CLUSTER). IEEE. 2023, pp. 1–12.
+Daniel Nichols et al. “HPC-Coder: Modeling Parallel
+Programs using Large Language Models”. In: ISC High
+Performance 2024 Research Paper Proceedings (39th
+International Conference). IEEE, May 2024, pp. 1–12.
+DOI : 10.23919/isc.2024.10528929. URL : http://dx.doi.
+org/10.23919/ISC.2024.10528929.
+OpenAI. GPT-4o Technical Report. https://openai.com/
+research/gpt-4o. 2024.
+Long Ouyang et al. “Training language models to follow
+instructions with human feedback”. In: arXiv preprint
+arXiv:2203.02155 (2022).
+Phan Phuong, Sepideh Siami, and Nariman Mirzaei.
+“Test-Driven Development and LLM-based Code Generation”. In: 2024 IEEE 20th International Conference
+on Automation Science and Engineering (CASE). IEEE.
+2024, pp. 1–6. DOI: 10 . 1109 / CASE59829 . 2024 .
+10764936.
+Ishika Singh et al. “Self-Planning Code Generation with
+Large Language Models”. In: ACM Transactions on
+Software Engineering and Methodology 33.2 (2024),
+pp. 1–28.
+
+[38]
+
+[39]
+
+[40]
+
+[41]
+
+[42]
+[43]
+
+[44]
+
+[45]
+
+[46]
+
+[47]
+
+[48]
+
+Zachariah Sollenberger et al. LLM4VV: Exploring LLMas-a-Judge for Validation and Verification Testsuites.
+2024. arXiv: 2408.11729 [cs.SE]. URL: https://arxiv.
+org/abs/2408.11729.
+Shanmugam Sudalaimuthu, Komahan Ponnambalam,
+and Sreekumar Pillai. “Enhancing AI Systems with
+Agentic Workflows Patterns in Large Language Model”.
+In: 2024 IEEE 24th International Conference on Software Quality, Reliability and Security Companion
+(QRS-C). IEEE. 2024, pp. 765–772. DOI: 10.1109/QRSC60360.2024.00138.
+Chuanneng Sun, Songjun Huang, and Dario Pompili. “LLM-based Multi-Agent Reinforcement Learning: Current and Future Directions”. In: arXiv preprint
+arXiv:2405.11106 (2024).
+Hao Sun. “Reinforcement Learning in the Era of LLMs:
+What is Essential? What is needed? An RL Perspective
+on RLHF, Prompting, and Beyond”. In: arXiv preprint
+arXiv:2310.06147 (2023).
+Tavily. Tavily AI Search API. https://www.tavily.com.
+Accessed: May 2025. 2024.
+Xiang Wang et al. “A Review on Code Generation with
+LLMs: Application and Evaluation”. In: 2024 IEEE International Conference on Software Analysis, Evolution
+and Reengineering (SANER). IEEE. 2024, pp. 823–833.
+DOI : 10.1109/SANER58265.2024.10403378.
+Yuchao Wang et al. “Large Language Model-Aware
+In-Context Learning for Code Generation”. In: ACM
+Transactions on Software Engineering and Methodology
+33.2 (2024), pp. 1–31. DOI: 10.1145/3715908.
+Michael Wooldridge and Nicholas R. Jennings. “Intelligent agents: Theory and practice”. In: The Knowledge
+Engineering Review 10.2 (1995), pp. 115–152.
+Zhiheng Xi et al. “A survey on large language model
+based autonomous agents”. In: Frontiers of Computer
+Science 18.6 (2024), pp. 1–26. DOI: 10.1007/s11704024-40231-1.
+Jinyang Yin, Tania Ghosh, and Feiyi Wang. “ION:
+Navigating the HPC I/O Optimization Journey using
+Large Language Models”. In: Proceedings of the 16th
+ACM Workshop on Hot Topics in Storage and File
+Systems. ACM. 2023, pp. 1–7. DOI: 10.1145/3655038.
+3665950.
+Yuqian et al. “Co-Learning: Code Learning for
+Multi-Agent Reinforcement Collaborative Framework
+with Conversational Natural Language Interfaces”. In:
+IEEE/ACM International Conference on Software Engineering. IEEE. 2024, pp. 1–12.
+
+

@@ -1,0 +1,3966 @@
+Web-Bench: A LLM Code Benchmark Based on Web
+Standards and Frameworks
+Kai Xu1 , YiWei Mao1 , XinYi Guan1 , and ZiLong Feng1
+1
+
+ByteDance
+
+arXiv:2505.07473v1 [cs.AI] 12 May 2025
+
+Abstract
+The application of large language models (LLMs) in the field of coding is evolving rapidly: from code assistants,
+to autonomous coding agents, and then to generating complete projects through natural language. Early LLM
+code benchmarks primarily focused on code generation accuracy, but these benchmarks have gradually become
+saturated. Benchmark saturation weakens their guiding role for LLMs. For example, HumanEval Pass@1 has
+reached 99.4% and MBPP 94.2%. Among various attempts to address benchmark saturation, approaches based
+on software engineering have stood out, but the saturation of existing software engineering benchmarks is rapidly
+increasing. To address this, we propose a new benchmark, Web-Bench 12 , which contains 50 projects, each
+consisting of 20 tasks with sequential dependencies. The tasks implement project features in sequence, simulating
+real-world human development workflows. When designing Web-Bench, we aim to cover the foundational elements
+of Web development: Web Standards and Web Frameworks. Given the scale and complexity of these projects,
+which were designed by engineers with 5 to 10 years of experience, each presents a significant challenge. On
+average, a single project takes 4 to 8 hours for a senior engineer to complete. On our given benchmark agent
+(Web-Agent), SOTA (Claude 3.7 Sonnet) achieves only 25.1% Pass@1, significantly lower (better) than SWEBench’s Verified (65.4%) and Full (33.8%) scores. Finally, we discuss that in any development field, Standards and
+Frameworks represent foundational knowledge and efficiency tools, respectively, and LLMs require optimization
+tailored to them.
+terms of logical complexity. Among many ideas, software engineering is undoubtedly the closest to this goal.
+
+1. Introduction
+The application scope of large language models (LLMs)
+is constantly expanding and already includes fields such
+as chatbots, search, and scientific research. Applications in the field of coding are also evolving rapidly,
+from basic code assistants [1, 2], to autonomous coding
+agents [3], and then to attempts to generate complete
+projects through natural language [4, 5]. Although it is
+still in the early stages of exploration, the potential of
+LLM coding is already evident despite limited practical
+results.
+
+Existing software engineering benchmarks, such as
+SWE-Bench [22] and RepoBench [20], both use independent tasks to organize datasets. Although the data
+in these benchmarks may come from real projects, the
+tasks themselves lack coherence and differ significantly
+from real-world development workflows. This paper
+proposes a new benchmark, Web-Bench, which contains 50 projects, each consisting of 20 tasks with sequential dependencies. The tasks implement project
+features in sequence, simulating real-world human development workflows. When designing Web-Bench, we
+aim to cover the foundational elements of Web development: Web Standards and Web Frameworks. Web
+Standards are basic knowledge of Web development and
+cover CSS Selector, CSS Layout, DOM, SVG, WebGL,
+ECMAScript [23], TypeScript [24], etc. Web Frameworks provide higher-level abstraction capability and
+improve development efficiency, covering key aspects of
+Web development such as UI Framework [25], State
+Management [26], CSS Framework, Fullstack Framework, ORM, Build, etc.
+
+Early LLM code benchmarks focused on the accuracy
+of code generation, but these benchmarks have gradually become saturated: HumanEval [6] SOTA 99.4%
+[7] and MBPP [8] SOTA 94.2% [9]. Benchmark saturation weakens their guiding role for LLMs. To solve
+this problem, many new ideas have emerged, such as
+increasing programming languages [10, 11, 12], increasing test coverage [13, 14], increasing dataset complexity
+[15, 16, 17, 18], and improving software engineering reproducibility [19, 20, 21, 22]. We prefer to find a method
+that can measure the actual complexity of codes. This
+means that the benchmark should cover the coding process as much as possible and be close to real projects in
+
+Given the scale and complexity of these projects,
+which were designed by engineers with 5-10 years of
+experience, each presents a significant challenge. On
+average, a single project takes 4–8 hours for a senior
+
+1 https://github.com/bytedance/web-bench
+2 https://huggingface.co/datasets/bytedance-research/WebBench
+
+1
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+engineer to complete. On our given benchmark agent Table 1: Average and maximum attributes of across 50
+(Web-Agent), SOTA (Claude 3.7 Sonnet) achieves only projects
+25.1% Pass@1, significantly lower than SWE-Bench’s
+Project
+Attribute Average Maximum
+65.4% (Verified) [27] and 33.8% (Full). A year ago
+(2024.4), SWE-Bench (Verified) SOTA was only 25.6%
+Files
+23.4
+76
+Solution
+which has increased rapidly. Table 3 below compares
+Lines
+1947.9
+6180
+the SOTA of more benchmarks.
+PerTask
+3.6
+5
+Testcases
+Total
+72.4
+99
+
+2. Benchmark Design
+2.1 Benchmark Construction
+The Web-Bench dataset contains 50 projects, each consisting of 20 tasks with sequential dependencies. See
+Figure 1.
+1. Dataset: a collection of projects. Due to the evaluation cost, we plan to provide a Lite version in the
+future.
+2. Project: a single item in the dataset.
+3. Task: including a description and several end-toend (E2E) testcases. On average, there are 3.6
+cases per task and 72.4 cases per project, as shown
+in Table 1.
+
+Figure 2: Distribution of projects across scenarios
+Web-Bench covers the core Web standards and mainstream development frameworks 3 4 that Web application development relies on. see Appendix A for more
+details.
+
+Figure 3: Distribution of projects across domains
+
+2.2 Standard and Framework
+2.2.1 Standard
+Web Standards are the basic knowledge of Web development, especially those that are frequently used, offer exFigure 1: Task-2 depends on the execution result tensive functionality, and enable more complex features.
+(’main’ element) of Task-1
+We have selected the core standards that Web applications rely on, covering HTML, CSS and JavaScript.
+During the design process of the project, different
+business scenarios 2 were selected: Games, Utilities,
+Charts, Drawing Boards, Surveys, Data Tables, Blog
+Sites, Document Sites, etc., so that the final Benchmark
+is closer to real-world software engineering.
+
+Partial core standards:
+• ECMAScript: the JavaScript language standard
+that ensures the interoperability of web pages
+across different web browsers.
+2
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+is derived from OpenGL® ES 3.0, and provides
+similar rendering functionality, but in an HTML
+context.
+2.2.2 Framework
+In the early stages of Web development, there were
+not many development frameworks, and various Web
+applications could be developed using native technologies. However, with the rise of Web 2.0, both the technical complexity and application scale of Web applications have increased dramatically, and the development efficiency based solely on native Web technology has been challenged. Development frameworks
+have brought greater abstraction capabilities, improved
+development efficiency, and enhanced collaboration to
+Web development, covering its main aspects:
+• UI Framework: Usually provides a componentbased development model and supporting development tools to improve the efficiency of singleunit development and collaboration, such as React,
+Vue, Angular, Threejs, etc.
+
+Figure 4: All Standards and Frameworks in Web-Bench
+• TypeScript: A strongly typed programming language that builds on JavaScript.
+TypeScript
+code converts to JavaScript, which runs anywhere
+JavaScript runs. Most modern web applications
+are now built with TypeScript.
+
+• State Management: UI state management is one
+of the core tasks in Web application development.
+Excellent frameworks will simplify the state model
+and improve development and maintenance efficiency, such as Redux, Zustand, Jotai, Mobx, etc.
+
+• CSS Selector: Patterns that match against elements in a tree and are one of the core technologies
+used to select nodes in a document.
+
+• CSS Framework: Improves CSS maintainability
+and development efficiency by enhancing basic capabilities such as variables, modules, functions, or
+providing CSS utilities. Examples include SASS,
+LESS, Stylus, Tailwind, etc.
+
+• Flexbox: A layout model that arranges items in
+one dimension. The children of a flex container
+can be laid out in any direction, and can "flex"
+their sizes, either growing to fill unused space or
+shrinking to avoid overflowing the parent. It is
+widely used in most web applications.
+
+• Build:
+Web applications eventually run in
+browsers, and during the development phase, JS
+code and various resources (CSS, images, icons
+etc.) are usually split into many modules (or files),
+which require modular packaging using build tools,
+as well as optimization such as merging and compression. At the same time, build tools are also
+required to unify the development experience —
+handling JS syntax conversion, CSS preprocessing,
+and integration of various tools (including linting,
+formatting, testing frameworks, etc.) — such as
+Webpack, Vite, Parcel, etc.
+
+• Grid: A two-dimensional grid-based layout system.
+The children of a grid container can be positioned
+into arbitrary slots in a predefined flexible or fixedsize layout grid. It is more powerful than flexbox
+and also widely used in web applications.
+• DOM (Document Object Model): defines a platform neutral model for events and node trees. It is
+the main technology used to manipulate web page
+elements.
+• SVG (Scalable Vector Graphics): An XML-based
+language for describing two-dimensional graphics.
+SVG drawings can be interactive and dynamic.
+Animations can be defined and triggered declaratively.
+
+• Fullstack Framework: Fullstack usually refers to
+the ability of developers to handle both front-end
+(such as UI) and back-end (such as data and logic
+processing) development. In this context, it refers
+to frameworks that support both front-end and
+back-end development, such as Next.js, Nuxt, Express.js, etc.
+
+• Canvas: Used for drawing graphics via JavaScript
+and the HTML <canvas> element. It can be used
+for animation, game graphics, data visualization,
+photo manipulation, and real-time video processing.
+
+• Database Framework Data management is a relatively independent and core part of back-end logic.
+Data can be managed directly via SQL using tools
+like SQLite, or through object-relational mapping
+frameworks such as Prisma and Sequelize.
+
+• WebGL (Web Graphic Language): An immediate
+mode 3D rendering API designed for the web. It
+3
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+8. Retry: with error context from Build or Test.
+
+2.2.3 Calibrate Project
+Use Web-Bench evaluation tool to Calibrate a project.
+More details can be found in Appendix D. That is, check
+for design issues in the project:
+
+(a) First attempt, if failed, implement task-n with
+task description and error context, goto step3.
+
+1. Task issues, such as ambiguous descriptions, vulnerabilities, or obvious conflicts with testcases.
+
+(b) Second attempt, if failed, evaluation is done.
+9. Report.
+
+2. Testcase issues, such as not rigorous enough or too
+More details can be found in Appendix C.
+strict.
+3.3 Web-Agent Workflow
+
+3. Benchmark Evaluation
+
+Web-Agent is an instance of the agent described in Section 3.2, Step 3. Web-Agent is the interaction module
+between Web-Bench and LLM. Its main responsibilities
+are to build prompts, request LLM API, and extract
+files from LLM response.
+
+3.1 Project Structure
+src /
+index . html
+src - init /
+codes
+index . html
+test /
+init . spec . js
+codes
+task -1. spec . js
+...
+task -20. spec . js
+tasks . jsonl
+
+# final solution codes
+# initial solution
+
+# cases for initial
+# cases for task -1
+# cases for task -20
+# support json and yaml
+
+3.2 Evaluator Workflow
+
+Figure 6: Web-Agent Workflow
+1. Build Prompts: Using system prompt (SP), task
+description, files, and error messages. If the combined input exceeds the context length, it will be
+truncated.
+2. Request LLM: As shown in Table 2. Requests the
+LLM’s OpenAPI based on the selected model and
+returns the response. In this step, parameters such
+as temperature, maxToken, contextLength are obtained from the model provider.
+3. Extract Files: Parses the LLM’s response to extract the generated files.
+
+Figure 5: Evaluator Workflow
+
+More details can be found in Appendix B.
+
+1. Get Initial Codes: optional step, get initial codes
+from agent.
+
+3.4 Metrics
+
+
+2. Iterate Tasks: from task-1 to task-20.
+
+pass@1 =
+
+3. Call Agent: more details about agent can be found
+in Section Web-Agent Workflow.
+
+pass_tasks@1
+tasks
+
+
+× 100%
+
+(1)
+
+• Percentage of tasks passing all E2E tests on the
+first attempt.
+
+4. Rewrite files: update files or create new files.
+
+• pass_tasks@1: number of tasks passed on first attempt before any failure.
+
+5. Init Env: optional step,init files running environment.
+
+• tasks: total number of tasks in ’tasks.jsonl’.
+
+6. Build Files: optional step, check files errors, such
+as reference errors.
+
+
+pass@2 =
+
+7. Test: end-to-end (E2E) test with Playwright.
+4
+
+pass_tasks@2
+tasks
+
+
+× 100%
+
+(2)
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+Table 2: Model Parameters
+Model Vendor
+
+contextLength
+
+maxToken
+
+temperature
+
+50,000
+10,000
+10,000
+10,000
+10,000
+10,000
+
+8,192
+4,096
+8,192
+8,192
+4,096
+8,192
+
+1
+default
+0
+0.4
+default
+0.4
+
+anthropic
+qwen
+deepseek
+openai
+doubao
+openrouter
+
+• Percentage of tasks passing all E2E tests on the
+second attempt. pass@2 (retry with error context)
+is closer to the behavior of human engineers.
+• pass_tasks@2: total number of passed tasks including retries.
+Example:
+• tasks: 20
+• pass_tasks@1: 5, the first failed evaluation happened at task-6
+• pass_tasks@2: 15, total passed tasks is 15 (task16’s second attempt failed)
+• pass@1: 5/20 × 100% = 25%
+• pass@2: 15/20 × 100% = 75%
+
+4. Results
+Figure 7: Pass@1 across all models.
+
+4.1 Evaluation Results
+As shown in Figure 7, ’claude-3-7-sonnet-20250219thinking’ achieves the highest Pass@1 and Pass@2 (using Best-of-5 sampling, as used throughout). From
+the Pass@1 distribution, Claude-series models exhibit
+the highest performance, followed by GPT, Doubao,
+DeepSeek, LLAMA, Gemini, Qwen, and others. From
+the Pass@2 distribution, Claude-series models exhibit the highest performance, followed by Doubao,
+DeepSeek, GPT, Gemini, LLAMA, Mistral, and others.
+As shown in Figure 7 and 8, regardless of Pass@1
+or Pass@2, closed-source models (shown in red) also
+appear to have an advantage. As shown in Figure 9,
+the average Pass@2 of closed models is 20.79%, while
+that of open models is 14.84%. The average Pass@1 of
+closed models is 15.08%, while that of open models is
+10.73%.
+More details can be found in Appendix E.
+As shown in Figure 10 and 11, the Pass@2 distribution across LLM series indicates that newer or largerparameter models generally perform better in WebBench, which aligns with the commonly observed scaling law.
+
+Figure 8: Pass@2 across all models.
+
+5
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+As shown in Figure 12, LLMs of the same specification perform better on Pass@2 when the thinking mode
+is enabled.
+
+Figure 9: Average Pass@1 and Pass@2 by model type
+(Open vs. Closed)
+Figure 12: Pass@2 across LLMs with and without
+thinking
+
+4.2 Compare SOTAs
+As shown in Table 3 and Figure 13, HumanEval
+and MBPP have approached saturation. APPS and
+EvalPlus are approaching saturation. The SOTA for
+Web-Bench is 25.1%, which is lower (better) than that
+of the SWE-bench Full and Verified sets.
+
+Figure 13: Benchmark SOTA Pass@1 as of April 2025
+Figure 10: Pass@2 across LLMs within the same model
+series - Part 1
+
+5. Related Work
+Early LLM code benchmarks focused on the accuracy
+of single-function code generation. We review several
+widely cited benchmarks:
+• HumanEval [6]: 164 handwritten Python coding
+questions are used to evaluate functional correctness. Each question contains a function signature,
+docstring, and function body, and has an average
+of 7.7 test cases.
+• MBPP [8]: About 1,000 entry-level crowd-sourced
+Python coding questions covering coding basics
+and standard library functions, with each question
+having an average of 3 test cases.
+• APPS [29]: 10,000 Python coding questions—5,000
+for training and 5,000 for testing—sourced from
+multiple coding competition websites, covering
+simple problems, technical interview questions,
+and algorithm competition-level challenges. Each
+question has an average of 13 test cases.
+
+Figure 11: Pass@2 across LLMs within the same model
+series - Part 2
+
+3 Paper / Agent / LLM Publication Date
+
+6
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+Table 3: Benchmark SOTA Pass@1 as of April 2025
+Benchmark
+
+Pass@1
+
+Date 3
+
+SOTA
+
+MLE-bench
+Web-Bench∗
+SWE-bench Full
+CodeContests
+BigCodeBench
+SWE-bench Verified
+HumanEvalPack
+APPS
+EvalPlus
+MBPP
+HumanEval
+
+16.9%
+25.1%
+33.8%
+34.7%
+56.1%
+65.4%
+78.3%
+87.2%
+89.0%
+94.2%
+99.4%
+
+2024.10
+2025.4
+2025.2
+2024
+2025.2
+2025.3
+2024.2
+2025.1
+2024.9
+2025.3
+2024.6
+
+AIDE o1-preview [18]
+Web-Agent (Claude 3.7 Sonnet)
+SWE-agent (Claude 3.7 Sonnet) [27]
+LPW (GPT-4o) [13]
+DeepSeek-V3
+Augment Agent v0
+GPT-4
+LPW (GPT-4o) [28]
+O1 Preview
+QualityFlow (Claude 3.5 Sonnet) [9]
+LLMDebugger (OpenAI o1) [7]
+
+From Table 3, we can see that HumanEval is saturated, and MBPP is close to saturation. APPS performs slightly better due to its larger dataset size, but it
+is also approaching saturation. To address code benchmark saturation, many new ideas have emerged.
+
+5.3 Increasing dataset complexity
+The problems in the early code benchmarks contain
+many basic algorithms, which are no longer challenging
+for LLMs; increasing the complexity of a single problem
+is also an idea.
+• DS-1000 [15] is a code generation benchmark containing 1,000 data science problems, covering seven
+Python libraries such as NumPy and Pandas. The
+problems come from Stackoverflow and have been
+lightly edited.
+
+5.1 Increase programming languages
+Most of the problems in early code benchmarks used
+Python as the programming language. In addition to
+Python, mainstream languages in real-world development include C++, JavaScript, Java, Go, etc., making
+it natural to consider expanding language coverage.
+
+• HumanEval-X [11] extends the HumanEval benchmark to Python, C++, Java, JavaScript, and Go
+via human translations
+
+• CoderEval [16] contains 230 Python and 230 Java
+code generation problems carefully selected from
+popular open source projects. It supports code
+generation problems with six different levels of context dependency. It supports problems with six
+levels of context dependency, and performance is
+significantly better when generating independent
+functions compared to non-independent ones.
+
+• HumanEvalPack [12] extends the HumanEval
+benchmark to cover three coding tasks—code
+repair, code interpretation, and code generation—and six languages (Python, JavaScript, Java,
+Go, C++, Rust) via human translations. As shown
+in Table 3, the SOTA in 2024 has reached 78%.
+
+• BigCodeBench [17] combines tools from 139 libraries across 7 domains to support 1,140 finegrained tasks.
+It integrates multiple existing
+benchmarks and enables the implementation of
+functions such as data analysis and web development by calling multiple tools.
+
+• MultiPL-E [10] translates HumanEval and MBPP
+to 18 other programming languages.
+
+• MLE-bench [18] is a benchmark for measuring the
+performance of AI agents in machine learning engineering tasks. 75 ML engineering competitions
+were selected from Kaggle to evaluate real-world
+skills such as model training, dataset preparation, and running experiments for machine learning workflows. As shown in Table 3, the current
+SOTA is only 16.9%. As the coding capabilities
+of LLMs continue to improve, such professionally
+oriented benchmarks are expected to become more
+prevalent.
+
+5.2 Increase test coverage
+This stems from a simple idea: improving test coverage
+and increasing the presence of edge cases is expected to
+reduce the pass rate.
+
+• CodeContests [13] is a competitive coding dataset
+for machine learning. It automatically generates
+additional test cases (mutations), such as bit flipping of input strings or integer addition and subtraction. It uses multiple correct solutions to verify
+the new tests and ensure consistent output, and filters out problems with insufficient or overly simple 5.4 Improving software engineering reproducibility
+test cases.
+Some benchmarks simulate the software engineering
+• EvalPlus [14] detects the robustness of generated process from different perspectives:
+code by strengthening the scope and number of
+HumanEval and MBPP tests. For the same LLM,
+• CodeXGLUE [19] includes 14 datasets for 10 diPass@1 can generally be reduced by 5–10%. Howverse programming language tasks including codeever, as shown in Table 3, the latest SOTA has
+code, text-code, code-text and text-text scenarreached 89%, gradually approaching saturation.
+ios. Provides three baseline models to support
+7
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+these tasks, including a BERT-style pre-trained
+model for understanding tasks, a GPT-style pretrained model for code completion and generation,
+and an encoder-decoder framework that supports
+sequence-to-sequence generation.
+
+Increasing the complexity of the dataset—whether
+by increasing the complexity of individual problems
+[16, 18] or by expanding the scale of the benchmark
+[17]—appears effective based on SOTA results. However, the upper limit of this approach often consists of
+uncommon and complex algorithmic problems, which
+• RepoBench [20] is a new benchmark con- gradually deviate from real-world coding. This may
+taining three subtasks (RepoBench-R retrieval, lead LLM coding to evolve in a less practical direction.
+RepoBench-C completion, RepoBench-P pipeline),
+supporting Python and Java, and covering the evalSimulating the software engineering process has been
+uation of automatic code completion systems at the theoretically demonstrated as feasible by CodeXGLUE,
+code repository level.
+RepoBench, and DevBench. These benchmarks have
+also been preliminarily validated on earlier LLMs,
+• DevBench [21] is based on the waterfall model. It paving the way for larger-scale software engineerexplores the performance of the evaluated model ing benchmarks such as SWE-bench and Web-Bench.
+across five stages: software design, environment Benchmarks in the software engineering direction are
+configuration, implementation, acceptance testing, grounded in real-world coding behaviors.
+and unit testing.
+Web-Bench is a new software engineering benchmark
+and fills the gap: Sequential task evaluation for fullstack web development based on Web standards and
+frameworks. 4
+
+• SWE-bench [22] focuses on solving real and complex software engineering problems. 2,294 tasks
+come from 12 popular Python libraries on GitHub.
+The filtering rules are as follows: approximately
+90,000 Pull Requests were collected, each associated with a code base. A GitHub issue was resolved, the test files in the repository were modified, at least one test case was included, and the
+test status changed from failed to passed. SWEbench offers substantial scale and real-world software engineering complexity. In the past two years,
+it has gradually become a highly cited code benchmark. As shown in Table 3, after two years,
+the SOTA—especially on the Full set—remains far
+from saturation.
+
+6.2 LLMs require optimization tailored to Standards and Frameworks
+
+Referring to the previous section, we note that software
+engineering provides a promising solution to benchmark
+saturation. Furthermore, if the problems contained in
+the benchmark (or in the projects presented in this
+work) accurately reflect real-world code, they can help
+guide LLMs to evolve in a practical direction. A fundamental question arises: what is the basis of real-world
+coding? Although this article primarily discusses web
+application development, the development process in
+any field [30] is fundamentally built upon standards
+6. Discussion
+(also referred to as protocols, specifications, or recommendations) and frameworks (which may include li6.1 Why Software Engineering?
+braries or third-party packages). Standards and FrameBased on the discussion in Chapter 5 and the SOTA works represent the basic knowledge and efficiency tools
+in a coding field, respectively. From this perspective,
+data presented in Table 3:
+they are universally applicable. So we have an intuition: LLM needs optimization tailored to Standards
+Increasing the types of programming languages can- and Frameworks.
+not solve the benchmark saturation problem. This is intuitive. Real-world programming languages have their
+We are also conducting further in-depth research in
+own characteristics and strengths, but are similar in this direction, which may serve as a potential breakexpressiveness. In fact, LLM pass rates across different through in the next stage:
+language versions of the same benchmark do not vary
+1. Standards-aware Training:
+significantly [12].
+• Inject W3C/WHATWG documentation into
+pretraining data.
+
+Increasing test coverage seems to have some effect,
+but EvalPlus [14] also approached saturation within two
+years of its publication. Although CodeContests [13]
+performs better, its unsaturated SOTA is likely due
+to the high difficulty of its competition-level question
+set. Similarly, in real-world scenarios, project complexity arises from factors such as lines of code, code logic
+complexity, and the structure of the module/component dependency tree. Even 100% test coverage cannot
+change the complexity of the project itself.
+
+• Finetune with AST based syntax constraint
+checks.
+2. Framework-specific Adaptation:
+• Add framework rule checkers to decoding
+loops.
+• Develop plugin architectures for framework
+updates (avoiding retraining).
+8
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+Table 4: Benchmarks Evolution
+Benchmark
+
+Task Type
+
+Dependency
+
+Tech Stack
+
+Evaluation Type
+
+HumanEval
+SWE-bench
+Web-Bench
+
+Single Function
+Issue Fixing / Feature
+Project
+
+No
+Low
+Strong
+
+Python
+Python
+Web Fullstack
+
+Function Test
+Unit Test
+E2E Test
+
+Yueqi Song, Bowen Li, Jaskirat Singh, et al. Openhands: An open platform for ai software developers as generalist agents, 2024b. URL https://arxiv.
+org/abs/2407.16741, 2(4):9, 2024.
+
+7. Limitation
+Web 2.0 has brought about the rapid development of
+the Web development ecosystem. Dating back to 2005,
+nearly two decades have passed. Although the current version of Web-Bench covers the core Standards
+and Frameworks, many others remain uncovered due
+to workload constraints. In the future, we will strive
+to cover more standards and frameworks by innovating
+project design and development tools.
+
+[4] Tommaso Calò and Luigi De Russis. Leveraging
+large language models for end-user website generation. In International Symposium on End User
+Development, pages 52–61. Springer, 2023.
+[5] Marcus Tantakoun, Xiaodan Zhu, and Christian
+Muise.
+Llms as planning modelers: A survey for leveraging large language models to construct automated planning models. arXiv preprint
+arXiv:2503.18971, 2025.
+
+This paper mainly studies the accuracy of code generation for LLMs. We have also received feedback from
+users on multiple occasions expressing interest in evaluating the aesthetics and code quality of the generated
+pages. Since the evaluation of aesthetics and code quality can largely reuse the existing benchmark infrastructure, Web-Bench already includes a built-in screenshot
+function. In the future, it can be easily extended to
+support additional metrics.
+
+[6] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming
+Yuan, Henrique Ponde De Oliveira Pinto, Jared
+Kaplan, Harri Edwards, Yuri Burda, Nicholas
+Joseph, Greg Brockman, et al. Evaluating large
+language models trained on code. arXiv preprint
+arXiv:2107.03374, 2021.
+[7] Li Zhong, Zilong Wang, and Jingbo Shang. Debug
+like a human: A large language model debugger
+via verifying runtime execution step-by-step. arXiv
+preprint arXiv:2402.16906, 2024.
+
+Acknowledgements
+We thank YuBei Li, Quan Ding, Feng Gu, YuKun
+Wang, ChaoMo Li, Kai Shen, ShuLin Xin, LinJian Cao,
+and KaiGe Yu for helpful discussions and feedback on
+drafts of this work. We are also grateful to Seed Team
+for their work on software and hardware infrastructure used by this benchmark. We thank the Continue
+project for inspiring our web-agent, as well as all the
+open-source projects used in this work, including Node,
+VSCode, RushStack, Vite, Playwright, React, Next.js,
+and more. Finally, we would like to thank all the organizations and individuals who contribute to web standards. Their work forms the foundation of the entire
+web development ecosystem, including but not limited
+to W3C, WHATWG, and TC39.
+
+[8] Jacob Austin, Augustus Odena, Maxwell Nye,
+Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc
+Le, et al. Program synthesis with large language
+models. arXiv preprint arXiv:2108.07732, 2021.
+[9] Yaojie Hu, Qiang Zhou, Qihong Chen, Xiaopeng
+Li, Linbo Liu, Dejiao Zhang, Amit Kachroo, Talha
+Oz, and Omer Tripp. Qualityflow: An agentic
+workflow for program synthesis controlled by llm
+quality checks. arXiv preprint arXiv:2501.17167,
+2025.
+
+[10] Federico Cassano, John Gouwar, Daniel Nguyen,
+Sydney Nguyen, Luna Phipps-Costin, Donald
+References
+Pinckney, Ming-Ho Yee, Yangtian Zi, Carolyn Jane
+Anderson, Molly Q Feldman, et al. Multipl-e: a
+[1] Arghavan Moradi Dakhel, Vahid Majdinasab,
+scalable and polyglot approach to benchmarking
+Amin Nikanjam, Foutse Khomh, Michel C Desneural code generation. IEEE Transactions on
+marais, and Zhen Ming Jack Jiang. Github copilot
+Software Engineering, 49(7):3675–3691, 2023.
+ai pair programmer: Asset or liability? Journal of
+Systems and Software, 203:111734, 2023.
+[11] Qinkai Zheng, Xiao Xia, Xu Zou, Yuxiao Dong,
+Shan Wang, Yufei Xue, Lei Shen, Zihan Wang,
+[2] Michel Wermelinger. Using github copilot to solve
+Andi Wang, Yang Li, et al. Codegeex: A presimple programming problems. In Proceedings of
+trained model for code generation with multilinthe 54th ACM Technical Symposium on Computer
+gual benchmarking on humaneval-x. In Proceedings
+Science Education V. 1, pages 172–178, 2023.
+of the 29th ACM SIGKDD Conference on Knowl[3] Xingyao Wang, Boxuan Li, Yufan Song, Frank F
+edge Discovery and Data Mining, pages 5673–5684,
+Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan,
+2023.
+9
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+[12] Niklas Muennighoff, Qian Liu, Armel Zebaze, [21] Bowen Li, Wenhan Wu, Ziwei Tang, Lin Shi,
+Qinkai Zheng, Binyuan Hui, Terry Yue Zhuo,
+John Yang, Jinyang Li, Shunyu Yao, Chen Qian,
+Swayam Singh, Xiangru Tang, Leandro Von Werra,
+Binyuan Hui, Qicheng Zhang, et al. Devbench:
+and Shayne Longpre. Octopack: Instruction tunA comprehensive benchmark for software developing code large language models. In NeurIPS 2023
+ment. CoRR, 2024.
+Workshop on Instruction Tuning and Instruction
+[22] Carlos E Jimenez, John Yang, Alexander Wettig,
+Following, 2023.
+Shunyu Yao, Kexin Pei, Ofir Press, and Karthik
+Narasimhan. Swe-bench: Can language models
+[13] Yujia Li, David Choi, Junyoung Chung, Nate
+resolve real-world github issues? arXiv preprint
+Kushman, Julian Schrittwieser, Rémi Leblond,
+arXiv:2310.06770, 2023.
+Tom Eccles, James Keeling, Felix Gimeno, Agustin
+Dal Lago, et al. Competition-level code generation with alphacode. Science, 378(6624):1092– [23] Allen Wirfs-Brock and Brendan Eich. Javascript:
+the first 20 years. Proceedings of the ACM on Pro1097, 2022.
+gramming Languages, 4(HOPL):1–189, 2020.
+[14] Jiawei Liu, Chunqiu Steven Xia, Yuyao Wang, and
+Lingming Zhang. Is your code generated by chat- [24] Gavin Bierman, Martín Abadi, and Mads Torgersen. Understanding typescript. In ECOOP
+gpt really correct? rigorous evaluation of large lan2014–Object-Oriented Programming: 28th Euroguage models for code generation. Advances in
+pean Conference, Uppsala, Sweden, July 28–
+Neural Information Processing Systems, 36:21558–
+August 1, 2014. Proceedings 28, pages 257–281.
+21572, 2023.
+Springer, 2014.
+[15] Yuhang Lai, Chengxi Li, Yiming Wang, Tianyi
+Zhang, Ruiqi Zhong, Luke Zettlemoyer, Wen-tau [25] Sanchit Aggarwal et al. Modern web-development
+using reactjs. International Journal of Recent ReYih, Daniel Fried, Sida Wang, and Tao Yu. Dssearch Aspects, 5(1):133–137, 2018.
+1000: A natural and reliable benchmark for data
+science code generation. In International Con- [26] Kacper Szymanek and Beata Pańczyk. Comparference on Machine Learning, pages 18319–18345.
+ison of web application state management tools.
+PMLR, 2023.
+Journal of Computer Sciences Institute, 20:183–
+188, 2021.
+[16] Hao Yu, Bo Shen, Dezhi Ran, Jiaxin Zhang,
+Qi Zhang, Yuchi Ma, Guangtai Liang, Ying Li, [27] John Yang, Carlos Jimenez, Alexander Wettig,
+Qianxiang Wang, and Tao Xie. Codereval: A
+Kilian Lieret, Shunyu Yao, Karthik Narasimhan,
+benchmark of pragmatic code generation with genand Ofir Press. Swe-agent: Agent-computer intererative pre-trained models. In Proceedings of
+faces enable automated software engineering. Adthe 46th IEEE/ACM International Conference on
+vances in Neural Information Processing Systems,
+Software Engineering, pages 1–12, 2024.
+37:50528–50652, 2024.
+
+[17] Terry Yue Zhuo, Minh Chien Vu, Jenny Chim, [28] Chao Lei, Yanchuan Chang, Nir Lipovetzky, and
+Han Hu, Wenhao Yu, Ratnadira Widyasari, Imam
+Krista A Ehinger. Planning-driven programming:
+Nur Bani Yusuf, Haolan Zhan, Junda He, Indraneil
+A large language model programming workflow.
+Paul, et al. Bigcodebench: Benchmarking code
+arXiv preprint arXiv:2411.14503, 2024.
+generation with diverse function calls and complex
+instructions. arXiv preprint arXiv:2406.15877, [29] Dan Hendrycks, Steven Basart, Saurav Kadavath,
+Mantas Mazeika, Akul Arora, Ethan Guo, Collin
+2024.
+Burns, Samir Puranik, Horace He, Dawn Song,
+[18] Jun Shern Chan, Neil Chowdhury, Oliver Jaffe,
+et al. Measuring coding challenge competence with
+James Aung, Dane Sherburn, Evan Mays, Giulio
+apps. arXiv preprint arXiv:2105.09938, 2021.
+Starace, Kevin Liu, Leon Maksin, Tejal Patwardhan, et al. Mle-bench: Evaluating machine learn- [30] Nenad Medvidovic and Richard N Taylor. Software architecture: foundations, theory, and pracing agents on machine learning engineering. arXiv
+tice. In Proceedings of the 32nd ACM/IEEE Inpreprint arXiv:2410.07095, 2024.
+ternational Conference on Software Engineering[19] Shuai Lu, Daya Guo, Shuo Ren, Junjie Huang,
+Volume 2, pages 471–472, 2010.
+Alexey Svyatkovskiy, Ambrosio Blanco, Colin
+Clement, Dawn Drain, Daxin Jiang, Duyu Tang,
+et al. Codexglue: A machine learning benchmark
+dataset for code understanding and generation.
+arXiv preprint arXiv:2102.04664, 2021.
+[20] Tianyang Liu, Canwen Xu, and Julian McAuley.
+Repobench:
+Benchmarking repository-level
+code auto-completion systems. arXiv preprint
+arXiv:2306.03091, 2023.
+10
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Table 5: Projects for Web Standards
+Project
+
+Domain
+
+Description
+
+Scenario
+
+Table
+
+CSS
+
+Sheet
+
+Flex
+
+CSS
+
+Grid
+
+CSS
+
+Float
+
+CSS
+
+Color
+
+CSS
+
+Selector
+
+CSS
+
+BOM
+
+Javascript
+
+DOM
+
+Javascript
+
+DOM1
+
+Javascript
+
+Form
+
+Javascript
+
+ESModule
+
+Javascript
+
+Canvas
+
+Javascript
+
+SVG
+
+Javascript
+
+SVG-Solar
+
+Javascript
+
+SVG-Chart
+
+Javascript
+
+Typescript
+
+Javascript
+
+Survey
+
+Javascript
+
+Draw
+
+Javascript
+
+ChartBuilder
+
+Javascript
+
+The element represents tabular data that is information presented in a
+two-dimensional table comprised of rows and columns of cells containing
+data. It was used for layout in the early days of the Web, but now it is
+only recommended for displaying data.
+The layout of items in one dimension. The children of a flex container
+can be laid out in any direction, and can "flex" their sizes, either growing to fill unused space or shrinking to avoid overflowing the parent. It
+is widely used in almost all web applications.
+A two-dimensional grid-based layout system. The children of a grid
+container can be positioned into arbitrary slots in a predefined flexible
+or fixed-size layout grid. It’s more powerful than flexbox and also widely
+used in web applications.
+It was originally designed for mixed text and image layout scenarios (text wrapped around images), and was used to implement multicolumn layouts in the early days. Its layout function can be replaced
+by Flexbox or Grid.
+CSS Color, the basis of page design, involves color definition, functions,
+etc.
+Patterns that match against elements in a tree, and as such form one
+of several technologies that can be used to select nodes in a document.
+BOM (Browser Object Model) is the core part of JavaScript on the web.
+BOM contains many modern browser features, like Window, Location,
+History, Navigator, Timer, Dialog and more.
+DOM (Document Object Model) defines a platform-neutral model for
+events, aborting activities, and node trees. The main technology to
+manipulate web page elements.
+Single-file version of DOM project. The impact of the number of usercompared files and reference relationships on code generation for large
+models.
+A form is a component of a web page that has form controls, such as
+text, buttons, checkboxes, range, or color picker controls. A user can
+interact with such a form, providing data that can then be sent to the
+server for further processing (e.g. returning the results of a search or
+calculation).
+ECMAScript Module System. ECMAScript is Javascript Language
+Standard, ensures the interoperability of web pages across different web
+browsers.
+Drawing graphics via JavaScript and the HTML <canvas> element.
+It can be used for animation, game graphics, data visualization, photo
+manipulation, and real-time video processing.
+Scalable Vector Graphics. A XML-based language for describing twodimensional graphics. SVG drawings can be interactive and dynamic.
+Animations can be defined and triggered either declaratively. Widely
+used in data visualization (including chart library) and graphics processing.
+A two-dimensional solar system simulation system created based on
+SVG technology.
+A chart library based on SVG technology, including common charts:
+LineChart, ScatterChart, StepChart, AreaChart, BarChart, PieChart.
+A strongly typed programming language that builds on JavaScript.
+TypeScript code converts to JavaScript, which runs anywhere
+JavaScript runs. Most modern web applications are now built with
+TypeScript.
+A minimal survey system including a survey designer and preview
+page. including types of questions: Single-Selection Question, MultipleSelection Question, Open-Ended Question, NPS Question, Likert Question and more.
+A minimal draw application with typical basic shapes (Line, Ellipse,
+Rectangle) and actions (Move, Rotate, Zoom, Delete, Copy, Fill).
+A Chart Builder based on SVG-Chart Project, to generate a chart with
+user’s config.
+
+11
+
+Homepage
+
+Homepage
+
+Homepage
+
+Utility
+Utility
+Doc
+IDE
+IDE
+Survey
+
+Utility
+Game
+Graph
+
+Game
+Chart
+Utility
+
+Survey
+
+Graph
+Chart
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Table 6: Projects for Web Frameworks Part 1 with GitHub Stars collected in March 2025
+Project
+
+Domain
+
+React
+
+UI
+
+229
+
+Vue
+
+UI
+
+208
+
+Angular
+
+UI
+
+96
+
+Svelte
+
+UI
+
+79
+
+Threejs
+
+UI
+
+103
+
+React-nots
+Tailwind
+CSS
+
+UI
+
+229
+
+CSS
+
+86
+
+Unocss
+
+CSS
+CSS
+
+17
+40
+
+Less
+
+CSS
+
+17
+
+Sass
+
+CSS
+
+15
+
+Stylus
+
+CSS
+
+11
+
+Next.js
+
+Fullstack
+
+127
+
+Nuxt
+
+Fullstack
+
+56.7
+
+Express.js
+
+Fullstack
+
+65
+
+Fastify
+
+Fullstack
+
+33.4
+
+FastifyReact
+
+Fullstack
+
+33
+
+Styled
+Components
+
+Stars/K
+
+Description
+
+Scenario
+
+Developers can build user interfaces with components. A component is a piece of the user interface that has its own logic and
+appearance. A component can be as small as a button, or as
+large as an entire page. Vue, Angular are the similar frameworks. React has also become one of the preferred UI frameworks in software engineering practice.
+Developers create reusable components with a template syntax
+that combines HTML with component logic, and features a reactivity system that automatically keeps the DOM in sync with
+the application state.
+Developers create powerful components with dependency injection, and then organize them into modules to build enterpriselevel applications.With its change detection mechanism and Ivy
+rendering engine, it efficiently updates and renders components
+when data changes, resulting in high-performance applications.
+Svelte takes a unique approach by compiling components into efficient vanilla JavaScript at build time, rather than interpreting
+code at runtime like other frameworks.With its reactive system,
+it automatically updates the DOM without a virtual DOM, resulting in smaller bundle sizes and better runtime performance.
+Developers can harness the powerful capabilities of WebGL
+without needing to delve into its underlying complexities. It
+offers a rich set of tools and features, including geometries, materials, lighting, shadows, and animations, making the creation
+of realistic 3D scenes and interactive experiences more intuitive
+and convenient.
+A vanilla javascript version of react project based on React
+project.
+A utility-first CSS framework packed with classes like flex, pt4, text-center and rotate-90 that can be composed to build any
+design, directly in the markup. After the rise of LLM applications in the programming field, Tailwind has continued to attract attention for its simplicity and strong expressiveness, and
+the community activity has continued to increase.
+The instant on-demand atomic CSS engine.
+Visual primitives for the component age. Use the best bits of
+ES6 and CSS to style your apps without stress
+Less (which stands for Leaner Style Sheets) is a backwardscompatible language extension for CSS.
+Provide programming language features to extend CSS, like
+variables, mixins, nesting, operations, functions and modules.
+LESS and Stylus are two other similar libraries. SASS (along
+with LESS and Stylus) is frequently used in large web projects,
+mainly because it can bring better collaboration efficiency (such
+as encapsulation into modules and flexible variables).
+An expressive, robust, feature-rich CSS language built for
+Node.js
+A React framework for building fullstack web applications. Use
+React Components to build user interfaces with a bunch of features out of the box, like Server-side rendering, Static site generation, Routing system and more. Use its API Routes (serverless
+functions) to handle database queries, authentication, form submissions and any backend logic.
+A powerful Vue framework that enables features like server-side
+rendering and static site generation for modern web applications.
+A minimal and flexible Node.js web application framework that
+provides a robust set of features for web and mobile applications.
+A high-performance, low overhead web framework for Node.js.
+It’s designed with performance in mind and is one of the fastest
+web frameworks available for Node.js.
+Fastify implements the backend interface and React implements
+pure frontend logic.
+
+Blog
+
+12
+
+Blog
+
+Blog
+
+Blog
+
+Game
+
+Blog
+Homepage
+
+Homepage
+Blog
+Survey
+Survey
+
+Survey
+Shopping
+
+Shopping
+Shopping
+Shopping
+Shopping
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Table 7: Projects for Web Frameworks Part 2 with GitHub Stars collected in March 2025
+Project
+
+Domain
+
+Stars/K
+
+Sequelize
+
+Database
+
+29.8
+
+Nosql
+
+Database
+
+26.8
+
+Lowdb
+Prisma
+
+Database
+Database
+
+22
+41.8
+
+Vite
+
+BuildTool
+
+68
+
+Webpack
+
+BuildTool
+
+64
+
+Parcel
+
+BuildTool
+
+43
+
+Redux
+
+State
+
+61.1
+
+Jotai
+
+State
+
+19.6
+
+Mobx
+
+State
+
+27.7
+
+Zustand
+
+State
+
+50.5
+
+Calculator
+
+Other
+
+-
+
+Other
+Other
+
+-
+
+Calculator-files
+Expression Editor
+
+Description
+
+Scenario
+
+A powerful Object-Relational Mapping (ORM) library for
+Node.js that provides a high-level abstraction for interacting
+with relational databases like PostgreSQL, MySQL, SQLite, and
+MSSQL.
+A popular NoSQL database that provides high performance,
+high availability, and easy scalability for modern applications.
+A minimalist database based on JSON.
+Developers can work with databases with intuitive data model,
+automated migrations, type-safety & auto-completion.
+It provides: A dev server that provides rich feature enhancements to native ES modules, for example Hot Module Replacement (HMR). A build command that bundles your code with
+Rollup, pre-configured to output optimized static assets for production. An efficient build tool widely used by the community.
+A static module bundler for modern JavaScript applications. It
+internally builds a dependency graph from one or more entry
+points and then combines every module your project needs into
+one or more bundles, which are static assets to serve your content
+from. For a long time, Webpack has been the most widely used
+build tool in the open source community. In recent years, it
+has also been challenged by Configless build tools represented
+by Parcel and Vite, and it is also constantly evolving.
+The zero configuration build tool for the web. Parcel combines
+a great out-of-the-box development experience with a scalable
+architecture that can take your project from just getting started
+to massive production application.
+Provide a centralized store for state that needs to be used across
+your entire application, with rules ensuring that state can only
+be updated in a predictable fashion. With its unidirectional
+data flow, it makes it easier to understand how data changes in
+your application, leading to more maintainable code and easier
+debugging.
+Jotai is a primitive and flexible state management library for
+React applications. Its significance stems from its atom-based
+approach, minimal API, and ability to provide granular reactivity without the boilerplate.
+MobX is a battle-tested state management library that makes it
+simple to connect the reactive data of your application with the
+UI.Its significance stems from its reactive programming model,
+observable-based approach, and ability to provide automatic
+tracking of state dependencies.
+It offers a simple yet powerful store that is unopinionated and
+can be used with any UI framework, with a focus on simplicity and ease of use. With its subscriber pattern and hooksfirst approach, it makes state management straightforward while
+still offering advanced capabilities like middleware and transient
+updates. Compared with Redux, Zustand manages the same
+amount of state with less code and is more concise, and seems
+to be more suitable for LLM code generation. The test data of
+this benchmark also supports this view.
+The first project in web-bench. A calculator with basic and
+science computing features.
+Multiple-files version of Calculator project.
+A basic expression editor with features like: parenthesis auto
+closing, syntax highlighting, lint, autocompletion and more.
+
+Shopping
+
+13
+
+Shopping
+Shopping
+Shopping
+Utility
+
+Utility
+
+Utility
+
+Blog
+
+Blog
+
+Blog
+
+Blog
+
+Utility
+Utility
+Sheet
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Analysis The following presents an analysis of these
+evaluation results:
+1. Zustand demonstrates superior performance compared to other state-management frameworks, which
+can be attributed to its popularity and simple API
+design.
+2. Mobx is easy to use, but also easy to make mistakes.
+For example, Mobx users may forget to add the
+observer higher-order component (HOC).
+3. Zustand, Jotai, Mobx features a clean and straightforward API design.
+
+A. Appendix: Projects
+A.1 Overview
+See details in Table 5 6 7.
+A.1.1 UI Framework
+UI frameworks offer component-based development,
+which can improve the efficiency of developing complicated web frontend application.
+
+We have four projects: React, Vue, Angular,
+and Svelte, which represent four popular UI frameworks. These projects share the same tasks, and A.1.3 Fullstack Framework
+here is the pass@2 (Best of Five) for these projects:
+Fullstack Framework empowers developers to construct
+Model
+React Vue Angular Svelte
+both the front-end and back-end components of a web
+Claude-3.7-T 4
+60
+40
+50
+55
+application.
+Claude-3.7 5
+65
+30
+40
+25
+Doubao-1.5-T 6
+50
+40
+25
+40
+There are five projects available to demonstrate the
+Doubao-1.5 7
+35
+35
+5
+10
+large language model’s (LLM) ability to implement
+GPT-4o
+35
+30
+5
+20
+fullstack applications. These projects encompass NexDeepSeek-R1
+40
+30
+30
+40
+tjs, Nuxt, Expressjs, Fastify, and FastifyReact. These
+projects share the same tasks, and here is the pass@2
+Analysis The following presents an analysis of these (Best of Five) for these projects:
+evaluation results:
+Model
+Next Nuxt Express Fastify F∗ 128
+1. When compared to Vue (208k stars), Angular (96k
+Claude-3.7-T
+35
+25
+40
+40
+35
+stars), and Svelte (79k stars), React (235k stars) is the
+Claude-3.7
+40
+25
+45
+40
+35
+most widely-used UI framework in the web domain
+Doubao-1.5-T
+20
+20
+35
+45
+35
+and provides the largest dataset for LLM training.
+Doubao-1.5
+15
+20
+50
+15
+5
+2. React supports the JSX language feature, which
+GPT-4o
+10
+25
+40
+20
+5
+combines JavaScript and HTML, thereby enhancing
+DeepSeek-R1
+20
+25
+25
+20
+25
+data density.
+3. Vue/Svelte exhibits similarities to HTML grammar
+and demonstrates superior performance in certain
+Analysis The following presents an analysis of these
+models.
+4. Angular features the most complex grammar, evaluation results:
+1. Expressjs has the longest history (since 2010) in the
+making it difficult for LLMs to learn and utilize.
+fullstack domain, and its API is clean and stable across
+versions.
+2. Although Nextjs has the highest number of stars,
+A.1.2 State Management
+its API is not stable across different versions, and large
+State management framework provides a structured language models (LLMs) may be confused by the difand efficient approach for managing state changes.
+ferences between Server Components and Client Components.
+We have four projects: Redux, Mobx, Zustand, and 3. When comparing Next and Nuxt: React-based Next
+Jotai, which represent four popular state management is better than Vue-based Nuxt.
+frameworks. These projects share the same tasks, and 4. Fastify-React exhibits poor performance in simple
+tasks: React Router v7 in Fastify-React is a breaking
+here is the pass@2 (Best of Five) for these projects:
+change version update compared with v6, and in this
+Model
+Redux Mobx Zustand Jotai
+case, react-router-dom is not required, yet LLMs often
+Claude-3.7-T
+45
+50
+55
+45
+overlook this fact.
+Claude-3.7
+45
+50
+45
+40
+Doubao-1.5-T
+50
+50
+50
+20
+A.1.4 Database
+Doubao-1.5
+35
+15
+35
+20
+GPT-4o
+30
+30
+35
+20
+The database is crucial for the backend logic in a fullDeepSeek-R1
+45
+40
+55
+40
+stack application. Developers can access the database
+through various Object-Relational Mapping (ORM)
+4 Claude3.7-T is claude-3-7-sonnet-20250219-thinking
+5 Claude3.7 is claude-3-7-sonnet-20250219
+tools or Database APIs.
+6 Doubao1.5-T is doubao-pro-1.5-thinking
+
+8 F∗ 12 is FastifyReact.
+
+7 Doubao1.5 is doubao-pro-1.5-32k
+
+14
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+We present four projects (Sequelize, NoSQL, Prisma,
+and Lowdb) to showcase the Large Language Model’s
+(LLM) capability to utilize ORM/Database APIs.
+These projects share the same tasks, and here is the
+pass@2 (Best of Five) for these projects:
+Model
+Claude-3.7-T
+Claude-3.7
+Doubao-1.5-T
+Doubao-1.5
+GPT-4o
+DeepSeek-R1
+
+Sequelize NoSQL Prisma Lowdb
+
+40
+40
+20
+25
+20
+40
+
+35
+40
+35
+20
+25
+35
+
+10
+45
+25
+25
+5
+20
+
+35
+50
+30
+30
+25
+30
+
+Feature
+display:flex
+flex-direction
+flex-wrap
+flex-flow
+justify-content
+align-items
+align-content
+row-gap
+
+Feature
+column-gap
+gap
+order
+flex-grow
+flex-shrink
+flex-basis
+flex
+align-self
+
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+
+A.3 Grid
+Definition from W3C:
+
+Analysis The following presents an analysis of these
+evaluation results:
+1. Nosql exhibits good performance. The Document
+Model of MongoDB is significantly easier to use than
+that of relation-based databases, and it is also suitable
+for Node.js.
+2. Lowdb is an extremely simple JSON database. With
+lowdb, database APIs are the same as JavaScript Array
+APIs, which is simple enough for LLM to understand.
+
+A.2 Flex
+
+This CSS module defines a two-dimensional
+grid-based layout system, optimized for user
+interface design. In the grid layout model, the
+children of a grid container can be positioned
+into arbitrary slots in a predefined flexible or
+fixed-size layout grid.
+from MDN:
+CSS grid layout is a two-dimensional layout
+system for the web. It lets you organize content into rows and columns and offers many
+features to simplify the creation of complex
+layouts.
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+
+Definition from W3C:
+The specification describes a CSS box model
+optimized for user interface design. In the flex
+layout model, the children of a flex container
+can be laid out in any direction, and can "flex"
+their sizes, either growing to fill unused space
+or shrinking to avoid overflowing the parent.
+Both horizontal and vertical alignment of the
+children can be easily manipulated. Nesting
+of these boxes (horizontal inside vertical, or
+vertical inside horizontal) can be used to build
+layouts in two dimensions.
+
+Feature
+display:grid
+grid-template-columns
+
+grid-template-rows
+grid-template-areas
+grid-template
+column-gap
+row-gap
+gap
+justify-items
+align-items
+place-items
+justify-content
+align-content
+place-content
+grid-auto-columns
+grid-auto-flow
+grid
+grid-column-start
+
+from MDN:
+The CSS flexible box layout module defines
+a CSS box model optimized for user interface
+design, and the layout of items in one dimension. In the flex layout model, the children of
+a flex container can be laid out in any direction, and can "flex" their sizes, either growing
+to fill unused space or shrinking to avoid overflowing the parent. Both horizontal and vertical alignment of the children can be easily
+manipulated.
+
+Feature
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+×
+✓
+×
+✓
+✓
+✓
+
+grid-auto-rows
+grid-column-end
+
+grid-row-start
+grid-row-end
+grid-column
+grid-row
+grid-area
+justify-self
+align-self
+place-self
+order
+min-content
+max-content
+fit-content()
+minmax()
+min()
+max()
+subgrid
+
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+×
+×
+×
+✓
+✓
+✓
+×
+×
+✓
+✓
+×
+
+A.4 CSS Selector
+Definition from W3C:
+Selectors are patterns that match against elements in a tree, and as such form one of several
+technologies that can be used to select nodes
+in a document. They are a core component
+of CSS (Cascading Style Sheets), which uses
+Selectors to bind style properties to elements
+in the document.
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project. This is
+roughly the feature set that LLM will cover. Appendix
+A unless otherwise specified, the subsequent chapters
+have the same meaning.
+15
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Project Design We a page with complex DOM
+structure to test different types of selectors and specificities. Tasks keywords:
+Task
+
+Task
+
+1. Type/Class/ID Selector
+2. Compound Selector
+3. Selector list
+4. Combinator
+5. Combinator
+6. Pseudo Class
+7. Nesting Selector
+8. Pseudo Class
+9. Pseudo Class
+10. Pseudo Element
+
+11. Specificity
+12. Specificity
+13. Specificity
+14. Pseudo Class, Form
+15. Pseudo Class, Link
+16. Nested Structure
+17. :is()
+18. :is() Deep Levels
+19. :is() Deep Levels
+20. :is() Deep Levels
+
+Figure 14: DOM Tree & HTML
+
+Project Design We have developed a minimal File
+Explorer. In the project, there are 2 entry types including text file and directory. Typical File Explorer features are: Display Hierarchy Tree, Create, Delete, Rename, Modify (file only), Move, Copy and more. Tasks
+keywords:
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+Feature
+*
+E
+#id
+.class
+E.class1.class2
+sel1, sel2
+EF
+E>F
+E+F
+E F
+E[foo]
+E[foo="bar"]
+E[foo˜
+="bar"]
+E[fooˆ
+="bar"]
+E[foo$="bar"]
+E[foo*="bar"]
+E[foo|="bar"]
+:link
+:visited
+:target
+:active
+:hover
+
+Feature
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+
+:focus
+:focus-within
+:enabled
+:disabled
+:default
+:checked
+:valid
+:invalid
+:required
+:optional
+:root
+:empty
+:nth-child(n)
+
+:nth-last-child(n)
+
+:only-child
+::before
+::after
+:is()
+:where()
+:has()
+:not()
+
+1.
+2.
+3.
+4.
+5.
+6.
+7.
+
+Tools
+Add File
+Add Dir
+SelectedEntry
+Delete Entry
+Drag and move
+Context Menu , add / delete Entry , for .
+entry
+8. Context Menu , add / delete Entry , for .
+entries
+9. Context Menu , copy and paste
+10. Context Menu , rename
+11. Import
+12. Export
+13. Modify file content
+14. Shortcuts , copy / paste / add
+15. Shortcuts , delete
+16. Generate large entry list
+17. Resizer
+18. Drag resizer
+19. Filter
+20. Context Menu , cut
+
+✓
+✓
+✓
+✓
+×
+×
+✓
+✓
+✓
+✓
+×
+✓
+✓
+✓
+×
+✓
+✓
+✓
+×
+✓
+✓
+
+A.5 DOM
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+
+Definition from W3C:
+In its original sense, "The DOM" is an API
+for accessing and manipulating documents
+(in particular, HTML and XML documents).
+Each such document is represented as a node
+tree. Some of the nodes in a tree can have
+children, while others are always leaves.
+from MDN:
+The Document Object Model ( DOM ) connects web pages to scripts or programming
+languages by representing the structure of a
+document—such as the HTML representing a
+web page—in memory.
+
+Figure 15: DOM Class Hierarchy (Partially)
+16
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Project Design We have developed a minimal draw
+application. Typical draw features are:
+1. Shapes: Line, Rectangle, Ellipse, Circle, Polyline,
+Polygon, Path, Text
+2. Common Property: LineWidth, Color
+3. Operations: Move, Rotate, Zoom, Delete, Copy, Fill
+
+Feature
+Document.getElementById()
+Document.createElement()
+Document.createEvent()
+ParentNode.querySelector()
+ParentNode.querySelectorAll()
+ParentNode.children
+EventTarget.addEventListener()
+EventTarget.removeEventListener()
+Node.appendChild()
+Node.insertBefore()
+Node.removeChild()
+Node.replaceChild()
+Node.hasChildNodes()
+Node.textContent
+Node.firstChild
+Node.lastChild
+Node.childNodes
+Node.parentNode
+Node.nextSibling
+Node.previousSibling
+Element.id
+Element.innerHTML
+Element.className
+Element.classList
+Element.clientHeight
+Element.clientWidth
+Element.scrollHeight
+Element.scrollWidth
+Element.getAttribute()
+Element.setAttribute()
+Element.hasAttribute()
+Element.removeAttribute()
+Element.getElementsByClassName()
+Element.getElementsByTagName()
+Element.after()
+Element.before()
+Element.remove()
+Element.closest()
+
+✓
+✓
+×
+✓
+✓
+✓
+✓
+×
+✓
+✓
+✓
+✓
+×
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+×
+×
+×
+×
+✓
+✓
+✓
+×
+×
+×
+✓
+×
+✓
+✓
+
+Task keywords:
+1. Draw Line
+2. Draw Rect
+3. Draw Circle
+4. Draw Ellipse
+5. Delete Shape
+6. Fill Shape
+7. Copy Shape
+8. Minimal Line and Rect
+9. Minimal Circle and Ellipse
+10. Draw Triangle
+11. Draw Trapezoid
+12. Draw Hexagon
+13. Draw Curve ( Path )
+14. Draw Polyline
+15. Draw Text
+16. Move Shape
+17. Shortcuts
+18. Rotate Shape
+19. Zoom Shape
+20. Combined Action
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+Feature
+Shapes & Path
+<rect>
+<circle>
+<ellipse>
+<line>
+<polyline>
+<polygon>
+<path>
+Text
+<text>
+<tspan>
+<textPath>
+
+A.6 SVG
+Definition from W3C:
+SVG is a language for describing twodimensional graphics. SVG drawings can be
+interactive and dynamic. Animations can be
+defined and triggered either declaratively (i.e.,
+by embedding SVG animation elements in
+SVG content) or via scripting.
+
+Document Structure
+
+<svg>
+<g>
+<defs>
+<symbol>
+<use>
+<title>
+<desc>
+<switch>
+<a>
+<view>
+
+from MDN:
+Scalable Vector Graphics (SVG) is an XMLbased markup language for describing twodimensional based vector graphics. As such,
+it’s a text-based, open Web standard for describing images that can be rendered cleanly
+at any size and are designed specifically to
+work well with other web standards including CSS, DOM, JavaScript, and SMIL. SVG
+is, essentially, to graphics what HTML is to
+text.
+
+Embedded Content
+
+<image>
+<foreignObject>
+Animation (SMIL)
+
+Feature
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+×
+×
+✓
+✓
+✓
+✓
+✓
+✓
+×
+×
+×
+×
+✓
+✓
+-
+
+A.7 React
+Definition from React:
+17
+
+<animate>
+<animateMotion>
+<mpath>
+<animateTransform>
+
+<set>
+Styles
+<linearGradient>
+<radialGradient>
+<pattern>
+<marker>
+<filter>
+<clipPath>
+<mask>
+color
+transform
+transform-origin
+fill
+fill-rule
+fill-opacity
+stroke
+stroke-width
+stroke-linecap
+stroke-linejoin
+stroke-miterlimit
+stroke-dasharray
+stroke-dashoffset
+stroke-opacity
+
+×
+✓
+✓
+✓
+×
+✓
+✓
+×
+✓
+×
+✓
+✓
+✓
+✓
+✓
+✓
+×
+✓
+✓
+✓
+✓
+✓
+×
+✓
+✓
+✓
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+React is a JavaScript library for building user
+interfaces.
+- Declarative: React makes it painless to create interactive UIs. Design simple views for
+each state in your application, and React will
+efficiently update and render just the right
+components when your data changes. Declarative views make your code more predictable,
+simpler to understand, and easier to debug.
+- Component-Based: Build encapsulated components that manage their own state, then
+compose them to make complex UIs. Since
+component logic is written in JavaScript instead of templates, you can easily pass rich
+data through your app and keep the state out
+of the DOM.
+- Learn Once, Write Anywhere: We don’t
+make assumptions about the rest of your technology stack, so you can develop new features
+in React without rewriting existing code. React can also render on the server using Node
+and power mobile apps using React Native.
+
+Feature
+Component
+Props
+State
+Event
+List
+Form
+Custom Hook
+Context API
+useEffect
+useRef
+useCallback
+useMemo
+
+Feature
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+
+useSyncExternalStore
+createPortal
+dangerouslySetInnerHTML
+
+XSS Prevention
+React DOM API
+startTransition
+useDeferredValue
+forwardRef
+useImperativeHandle
+lazy
+memo
+
+✓
+✓
+✓
+✓
+✓
+×
+×
+✓
+✓
+×
+×
+
+A.8 Threejs
+Definition from Threejs GitHub:
+The aim of the project is to create an easyto-use, lightweight, cross-browser, generalpurpose 3D library. The current builds only
+include WebGL and WebGPU renderers but
+SVG and CSS3D renderers are also available
+as addons.
+from Threejs Manual:
+Three.js is a 3D library that tries to make it as
+easy as possible to get 3D content on a webpage.
+
+Project Design This Project create a blog system
+to test the ability of LLM to use React.js. Tasks is
+designed to verify Agent’s knowledge of Reactj̇s:
+
+Project Design We have developed a 3D version of
+the Snake game by threejs. We have added a portal
+mechanism to this game. Typical Snake game tasks
+are:
+
+1.
+2.
+3.
+4.
+5.
+6.
+7.
+8.
+9.
+
+Create components and use props
+List Rendering
+State & Event
+Visible - Control ( Modal )
+useEffect
+Form Handling
+React Context API
+Custom Hook & Delete in List State
+Edit in List State & Reuse of
+CreateForm
+10. Filter List & useMemo
+11. Virtual List
+12. u s e S y n c E x ternalStore
+13. ReactPortal & useRef ( Tooltip )
+14. XSS prevention
+15. ReactDOM API ( showToast )
+16. TextOverflow
+17. use forwardRef and useImperativeHandle
+18. write a simple React Router
+19. write a complete game
+20. Communication between pages .
+
+Feature Coverage This table shows the features used in solution codes (’src/’) of the project.
+18
+
+1. Generate scene , Create a renderer and
+enable auto - refresh
+2. Generate an 8 * 8 floor
+3. Create a camera , Place a point light
+source
+4. Generate a snake group and snakeHead
+5. Generate snakeBody
+6. Support movement control in forward ,
+backward , left , and right directions
+7. Generate a surrounding fence and add
+collision detection
+8. Generate candy
+9. Grow by one unit when the snake eats
+candy
+10. Candy Animation
+11. Generate portal
+12. Portal animation
+13. Candy cannot be generated in the
+portal
+14. Mouse view rotation
+15. Click ’h ’ to center the view
+16. View automatically follows the snake ’s
+head movement
+17. Snake resets to initial state when
+entering a dead - end
+18. Snake auto movement
+19. The snake changes color after passing
+through the portal
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+A small, fast, and scalable bearbones state
+management solution. Zustand has a comfy
+API based on hooks. It isn’t boilerplated or
+opinionated, but has enough convention to be
+explicit and flux-like.
+
+20. Game success when the snake ’s length
+reaches 20
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+Feature
+Scenes
+Cameras
+- Camera
+- CubeCamera
+- OrthographicCamera
+- PerspectiveCamera
+
+- StereoCamera
+Materials
+Geometry
+- BoxGeometry
+- CircleGeometry
+- ConeGeometry
+- CylinderGeometry
+- PlaneGeometry
+- PolyhedronGeometry
+
+- RingGeometry
+- ShapeGeometry
+- SphereGeometry
+Textures
+Renderers
+
+Feature
+Objects
+- BatchedMesh
+- Bone
+- Group
+- Line
+- Mesh
+- Skeleton
+- Sprite
+Light & Shadow
+Loader
+Math
+Audio
+Helper
+Animation
+- AnimationAction
+- AnimationClip
+- AnimationMixer
+- AnimationObjectGroup
+- AnimationUtils
+
+✓
+✓
+✓
+×
+×
+✓
+×
+✓
+✓
+✓
+×
+✓
+×
+✓
+×
+✓
+×
+✓
+×
+✓
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+
+✓
+×
+×
+✓
+×
+✓
+×
+×
+✓
+×
+✓
+×
+×
+✓
+✓
+✓
+✓
+×
+×
+
+Feature
+Store
+State Getters
+State Setters
+Combine Stores
+Async Actions
+Selectors
+Computed Values
+Persistence
+
+Question
+Design Page , CRUD , Save Data
+Preview Page , Render Form
+Single - Selection Question in Design and
+Preview page
+5. Multiple - Selection Question
+6. Open - Ended Question ( Text )
+7. Rating Question ( Stars )
+8. Ranking Question
+9. NPS Question (0 -10)
+10. Likert Question ( Matrix )
+11. Question Contents and DnD
+12. Validation
+13. Validation in Design and Preview
+14. OpenQuestion Validation
+15. M ul tiS ele ct ion Qu est io n Validation
+16. DataQuestion and Validation
+17. Preview ProgressBar
+18. Shuffle Options
+19. Branch
+20. Branch
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+Feature
+createEntityAdapter
+
+Redux DevTools
+Immutability
+React-Redux
+connect
+useSelector
+useDispatch
+Provider
+Redux Thunk
+Redux Saga
+Redux Observable
+
+✓
+✓
+✓
+✓
+✓
+×
+×
+×
+
+1.
+2.
+3.
+4.
+
+Redux is a JS library for predictable and
+maintainable global state management. It
+helps you write applications that behave consistently, run in different environments (client,
+server, and native), and are easy to test. On
+top of that, it provides a great developer experience, such as live code editing combined
+with a time traveling debugger.
+
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+×
+
+Immer Integration
+Immutability
+React Hooks
+useStore
+useShallow
+DevTools
+Transient Updates
+Optics
+
+Project Design We have developed a minimal survey system including a survey designer and preview
+page. Task keywords are:
+
+Definition from Redux:
+
+Store
+Actions
+Reducers
+Middleware
+Combine Reducers
+Async Actions
+Redux Toolkit
+createSlice
+configureStore
+createAsyncThunk
+createSelector
+
+✓
+✓
+✓
+×
+✓
+×
+✓
+×
+
+A.11 Survey
+
+A.9 Redux
+
+Feature
+
+Feature
+
+×
+×
+✓
+✓
+×
+✓
+✓
+✓
+✓
+×
+×
+
+A.12 SASS
+Definition from SASS:
+Sass is the most mature, stable, and powerful
+professional grade CSS extension language in
+the world.
+Project Design Based on project A.11. This project
+use SASS syntax to rewrite all the styles.
+
+A.10 Zustand
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+
+Definition from Zustand:
+19
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Feature
+Variables
+–Map
+–List
+Mixins
+Nesting
+
+Feature
+✓
+✓
+×
+✓
+✓
+
+Operations
+Functions
+Inheritance
+Comments
+Modules
+
+Feature
+root
+base
+mode
+define
+plugins
+publicDir
+cacheDir
+resolve.alias
+resolve.dedupe
+resolve.conditions
+resolve.mainFields
+resolve.extensions
+resolve.preserveSymlinks
+html.cspNonce
+css.modules
+css.postcss
+css.preprocessorOptions
+css.pre....additionalData
+css.preprocessorMaxWorkers
+css.devSourcemap
+css.transformer
+css.lightningcss
+json.namedExports
+json.stringify
+esbuild
+assetsInclude
+logLevel
+customLogger
+clearScreen
+envDir
+envPrefix
+appType
+future
+
+✓
+✓
+×
+✓
+✓
+
+A.13 Vite
+Definition from Vite:
+Vite (French word for "quick", pronounced
+/vit/, like "veet") is a build tool that aims
+to provide a faster and leaner development
+experience for modern web projects.
+It
+consists of two major parts:
+- A dev server that provides rich feature
+enhancements over native ES modules, for
+example extremely fast Hot Module Replacement (HMR).
+- A build command that bundles your code
+with Rollup, pre-configured to output highly
+optimized static assets for production.
+
+Project Design
+
+Task Keywords:
+
+1. Initialize project
+2. Add path alias
+3. Global variable replacement
+4. SPA history fallback
+5. Browser compatibility
+6. Proxy
+7. Using images
+8. Using CSS / Less / CSS Modules
+9. Using TypeScript
+10. Using React / Vue
+11. Hide sourcemap files
+12. Remove all console . log call
+expressions
+13. Extract licenses into standalone file
+14. In - memory virtual module
+15. Support mock in dev server
+16. Compress images
+17. Support importing compiled HTML from
+markdown files
+18. Support importing frontmatter from
+markdown files
+19. Handle assets resolving inside
+markdown files
+20. Add i18n feature for markdown file
+
+Feature
+server.host
+server.allowedHosts
+
+server.port
+server.strictPort
+server.https
+server.open
+server.proxy
+server.cors
+server.headers
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+20
+
+×
+✓
+×
+✓
+✓
+×
+×
+✓
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+
+Feature
+✓
+×
+✓
+×
+×
+×
+✓
+×
+×
+
+server.hmr
+server.warmup
+server.watch
+server.middlewareMode
+
+server.fs.strict
+server.fs.allow
+server.fs.deny
+server.origin
+server.sourcemapIgnoreList
+
+×
+×
+×
+×
+×
+×
+×
+×
+×
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Feature
+build.target
+build.modulePreload
+build.polyfillModulePreload
+build.outDir
+build.assetsDir
+build.assetsInlineLimit
+build.cssCodeSplit
+build.cssTarget
+build.cssMinify
+build.sourcemap
+build.rollupOptions
+build.commonjsOptions
+build.dynamicImportVarsOptions
+build.lib
+build.manifest
+build.ssrManifest
+build.ssr
+build.emitAssets
+build.ssrEmitAssets
+build.minify
+build.terserOptions
+build.write
+build.emptyOutDir
+build.copyPublicDir
+build.reportCompressedSize
+build.chunkSizeWarningLimit
+build.watch
+
+8. Login Form with Client Component
+9. Register Form with Server Actions
+10. Static User Profile with Redirect
+11. User Widget with REALTIME STATUS (
+Agent might forget it ) . Combine React
+Context Provider & Server Actions .
+12. ACCURATE Number Increment with Client
+Component & Server Actions , update
+coin displayed STATIC User Profile
+13. Add Admin Portals , add middleware to
+check privileges
+14. Wish List
+15. Cart Functionality
+16. Place Order
+17. Pay Order
+18. Refunds Order
+19. Comment System
+20. Invitation System ( Bonus when new User
+Registered or Pay a New Order )
+
+✓
+×
+×
+✓
+×
+×
+×
+×
+×
+✓
+✓
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+×
+
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+Feature
+App Router
+Page Router
+Pages Router
+Layout
+Route Handler
+Redirect
+NotFoundPage
+API Routes
+Dynamic Routes
+Route Groups
+Parallel Routes
+
+A.14 Nextjs
+Definition from Nextjs:
+Next.js is a React framework for building
+full-stack web applications. You use React
+Components to build user interfaces, and
+Next.js for additional features and optimizations.
+Under the hood, Next.js also abstracts and
+automatically configures tooling needed for
+React, like bundling, compiling, and more.
+This allows you to focus on building your
+application instead of spending time with
+configuration.
+Whether you’re an individual developer or
+part of a larger team, Next.js can help you
+build interactive, dynamic, and fast React
+applications.
+
+Intercepting Routes
+
+Static Generation
+SSR
+
+Feature
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+×
+×
+×
+×
+✓
+
+ISR
+Server Components
+Client Components
+Server Actions
+getStaticProps
+Cookie
+getServerSideProps
+Image Optimization
+Dynamic Imports
+Middleware
+Loading UI
+Error Boundaries
+generateMetadata
+Edge Runtime
+
+×
+✓
+✓
+✓
+×
+✓
+×
+×
+✓
+✓
+×
+×
+×
+×
+
+A.15 Prisma
+Definition from Prisma:
+Prisma ORM’s main goal is to make application developers more productive when
+working with databases. Here are a few
+examples of how Prisma ORM achieves this:
+- Thinking in objects instead of mapping
+relational data
+- Queries not classes to avoid complex model
+objects
+- Single source of truth for database and
+application models
+- Healthy constraints that prevent common
+pitfalls and anti-patterns
+- An abstraction that makes the right thing
+easy ("pit of success")
+- Type-safe database queries that can be
+validated at compile time
+- Less boilerplate so developers can focus on
+the important parts of their app
+- Auto-completion in code editors instead of
+
+Project Design Tasks are designed to verify Agent’s
+knowledge of Next.js:
+1. Basic Router ( App Router or Page Router
+)
+2. Layout
+3. NotFound + Link
+4. Route Handler
+5. List Page with Data Fetching from
+Sqlite
+6. Add Dynamic Routes For Detail Page
+7. Simple JWT Authentication & Cookie
+
+21
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+needing to look up documentation
+Feature Coverage This table shows the features
+used in solution codes (’src/’) of the project.
+
+Task Description
+
+Feature
+Schema Definition
+Model Creation (Prisma Client)
+Document Creation (create)
+Document Creation (createMany)
+Document Query (findMany)
+Document Query (findUnique)
+Document Update (update)
+Document Update (updateMany)
+Document Deletion (delete)
+Document Deletion (deleteMany)
+Relations (include)
+Middlewares
+Computed Fields
+Indexes
+Validation
+Aggregation
+Transactions ($transaction)
+Extensions
+Raw Database Access
+Connection Management
+Fluent API
+Nested Writes
+Query Filters
+Instance Methods
+
+add divs ( class ’ header ’ , ’ footer ’ , ’
+content ’) with arbitrary text in ’.
+root ’ element . ’. root ’ occupies total
+viewport and children elements
+together occupy total ’. root ’ space .
+header ( border - box ) is always fixed at
+the top of ’. root ’; footer ( border box ) is always fixed at the bottom of
+’. root ’; content ( border - box ) occupies
+the remaining ’. root ’ space . USE
+tailwind grid only , NO flex , float and
+position , NO js .
+
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+×
+×
+×
+×
+×
+✓
+×
+×
+×
+×
+×
+×
+×
+
+Files
+
+‘‘‘
+index . html
+<! DOCTYPE html >
+< html lang = " en " >
+< head >
+< meta charset = " UTF -8 " / >
+< meta name = " viewport " content = " width =
+device - width , initial - scale =1.0 " /
+>
+< title >Web - Bench Grid </ title >
+< link href = " ./ assets / tailwind . css " rel
+= " stylesheet " / >
+</ head >
+< body class = "m -0 " >
+< div class = " root grid grid - cols -[
+auto_1fr_auto ] grid - rows -[
+auto_1fr_auto ] h - screen " >
+< div class = " leftbar border - box bg blue -200 p -4 col - start -1 row start -1 row - span -3 w -64 " > Left
+Sidebar </ div >
+< div class = " header border - box bg gray -200 p -4 border - b border gray -400 col - start -2 row - start -1
+" > Header Content </ div >
+< div class = " content border - box bg gray -100 p -4 overflow - auto col start -2 row - start -2 " > Main
+Content Area </ div >
+< div class = " footer border - box bg gray -200 p -4 border - t border gray -400 col - start -2 row - start -3
+" > Footer Content </ div >
+< div class = " rightbar border - box bg green -200 p -4 col - start -3 row start -1 row - span -3 w -64 " > Right
+Sidebar </ div >
+</ div >
+</ body >
+</ html >
+‘‘‘
+
+B. Appendix: Web-Agent
+Web-Agent Workflow is shown in Figure 6.
+1. Build Prompts Using system prompt (SP), task
+description, files, and error messages. If the combined
+input exceeds the context length, it will be truncated.
+
+System Prompt
+When generating new code :
+1. Always produce a single code block .
+2. Never separate the code into multiple
+code blocks .
+3. Only include the code that is being
+added .
+4. No explanation , no issue , only code .
+5. Never omit any code . ,
+6. If the user submits a code block that
+contains a filename in the language
+specifier , always include the filename
+in any code block you generate based
+on that file . The filename should be
+on the next line as the language
+specifier in your code block .
+7. Don ’t repeat filename in code block .
+Always follow these guidelines when
+generating code responses .
+
+22
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Error
+
+name =\" viewport \" content =\" width =
+device - width , initial - scale =1.0\" / >\ n
+< title > Web - Bench Grid </ title >\ n
+< link href =\"./ assets / tailwind . css
+\" rel =\" stylesheet \"/ >\ n </ head >\ n
+< body class =\" m -0\" >\ n
+< div class
+=\" root grid grid - rows -[ auto_1fr_auto ]
+h - screen \" >\ n
+< div class =\"
+header border - box bg - gray -200 p -4
+border - b border - gray -400\" > Header
+Content </ div >\ n
+< div class =\"
+content border - box bg - gray -100 p -4
+overflow - auto \" > Main Content Area </ div
+>\ n
+< div class =\" footer border box bg - gray -200 p -4 border - t border gray -400\" > Footer Content </ div >\ n
+</ div >\ n </ body >\ n </ html >\ n ‘ ‘ ‘\ nadd
+divs ( class ’ leftbar ’ , ’ rightbar ’) with
+arbitrary text in ’. root ’ element .
+leftbar ( border - box ) is fixed at the
+left of ’. root ’; rightbar ( border - box )
+is fixed at the right of ’. root ’;
+content occupies the remaining ’. root ’
+space . USE tailwind grid only . \ n Do
+not compress the original code in file
+and return full file .\ nI only want
+the returned results to contain code ,
+without any explanations . "
+
+Prompt
+Get the prompt that will be sent to LLM.
+[
+{
+" role " : " system " ,
+" content " : " \ n # Rules \ nWhen generating new
+code :\ n1 . Always produce a single
+code block . ,2. Never separate the code
+into multiple code blocks . ,3. Only
+include the code that is being added
+. ,4. No explanation , no issue , only
+code . ,5. Never omit any code . ,6. If
+the user submits a code block that
+contains a filename in the language
+specifier , always include the filename
+in any code block you generate based
+on that file . The filename should be
+on the next line as the language
+specifier in your code block . ,7. Don ’ t
+repeat filename in code block \ n \
+nAlways follow these guidelines when
+generating code responses .\ n \ n #
+Example \ n \ nHere is an example of
+response :\ n \n < example >\ n ‘‘‘ html \
+nfile_a . html \n < div > file_a </ div >\ n ‘ ‘ ‘\
+n ‘ ‘ ‘ typescript \ nsub_dir / file_b . ts \
+nconsole . log (\" file_b \") \n ‘ ‘ ‘\n </
+example >\ n \ nHere are some error
+examples of response :\ n \ n1 . repeated
+filenames \n < example >\ n ‘ ‘ ‘ javascript \ n
+index . js \ nindex . js \ n window .
+addEventListener ( ’ DOMContentLoaded ’ ,
+() = > {\ n
+console . log ( ’ Dark mode
+page loaded ’) ;\ n }) ;\ n ‘ ‘ ‘\n </ example >\ n
+\ n2 . without filename \n < example >\ n ‘ ‘ ‘
+javascript \ n window . addEventListener ( ’
+DOMContentLoaded ’ , () = > {\ n
+console . log ( ’ Dark mode page loaded ’) ;\
+n }) ;\ n ‘ ‘ ‘\n </ example >\ n "
+},
+{
+" role " : " user " ,
+" content " : " ‘‘‘ index . html \n <! DOCTYPE html
+>\ n < html lang =\" en \" >\ n < head >\ n
+<
+meta charset =\" UTF -8\" / >\ n
+< meta
+
+}
+]
+
+2. Request LLM As shown in Figure 2. Requests
+the LLM’s OpenAPI based on the selected model and
+returns the response. In this step, parameters such as
+temperature, maxToken, contextLength are obtained
+from the model provider.
+3. Extract Files Parses the LLM’s response to extract the generated files.
+LLM response text is:
+‘‘‘ html
+index . html
+<! DOCTYPE html >
+< html lang = " en " >
+< head >
+< meta charset = " UTF -8 " / >
+< meta name = " viewport " content = " width =
+device - width , initial - scale =1.0 " /
+>
+< title >Web - Bench Grid </ title >
+< link href = " ./ assets / tailwind . css " rel
+= " stylesheet " / >
+</ head >
+< body class = "m -0 " >
+< div class = " root grid grid - rows -[
+auto_1fr_auto ] grid - cols -[
+auto_1fr_auto ] h - screen " >
+< div class = " leftbar border - box bg gray -300 p -4 col - span -1 row - span
+-2 " > This is the leftbar </ div >
+< div class = " header border - box bg gray -200 p -4 col - span -2 row - span
+-1 sticky top -0 left -0 " > This is
+the header </ div >
+
+23
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+2. Config config files ’apps/eval/src/config.json5’
+must be created locally. Configuration details can be
+found in Table 8.
+
+< div class = " rightbar border - box bg gray -300 p -4 col - span -1 row - span
+-2 " > This is the rightbar </ div >
+< div class = " content border - box bg gray -100 p -4 col - span -1 row - span
+-1 " > This is the content </ div >
+< div class = " footer border - box bg gray -200 p -4 col - span -3 row - span
+-1 sticky bottom -0 left -0 " > This
+is the footer </ div >
+</ div >
+</ body >
+</ html >
+‘‘‘
+
+Use HTTP-Agent
+{
+" agentMode " : " http " ,
+" agentEndPoint " : " http :// example . com /
+path / to / agent "
+}
+
+The generated result is:
+
+Use Local-Agent It is actually the Web-Agent introduced by this paper B.
+
+{
+" files " : {
+" index . html " : " <! DOCTYPE html >\ n < html lang
+=\" en \" >\ n < head >\ n
+< meta charset
+=\" UTF -8\" / >\ n
+< meta name =\"
+viewport \" content =\" width = device width , initial - scale =1.0\" / >\ n
+<
+title > Web - Bench Grid </ title >\ n
+<
+link href =\"./ assets / tailwind . css \"
+rel =\" stylesheet \"/ >\ n </ head >\ n <
+body class =\" m -0\" >\ n
+< div class =\"
+root grid grid - rows -[ auto_1fr_auto ]
+grid - cols -[ auto_1fr_auto ] h - screen \" >\
+n
+< div class =\" leftbar border - box
+bg - gray -300 p -4 col - span -1 row - span
+-2\" > This is the leftbar </ div >\ n
+< div class =\" header border - box bg - gray
+-200 p -4 col - span -2 row - span -1 sticky
+top -0 left -0\" > This is the header </ div
+>\ n
+< div class =\" rightbar border box bg - gray -300 p -4 col - span -1 row span -2\" > This is the rightbar </ div >\ n
+< div class =\" content border - box
+bg - gray -100 p -4 col - span -1 row - span
+-1\" > This is the content </ div >\ n
+< div class =\" footer border - box bg - gray
+-200 p -4 col - span -3 row - span -1 sticky
+bottom -0 left -0\" > This is the footer </
+div >\ n
+</ div >\ n </ body >\ n </ html > "
+}
+}
+
+{
+" agentMode " : " local " ,
+" models " : [ " claude -3 -5 - sonnet -20241022
+" , " openai / gpt -4 o " ]
+}
+
+and the file ’apps/eval/.env’ must be created locally
+ANTHROPIC_API_KEY = xxx
+OPENROUTER_API_KEY = xxx
+# Comment
+# OPENAI_API_KEY = xxx
+
+’XXX_API_KEY’ is used by ’apps/eval/src/model.json’
+{
+" models " : [
+{
+" model " : " claude -3 -5 - sonnet
+-20241022 " ,
+" apiKey " : " {{ ANTHROPIC_API_KEY }} "
+},
+{
+" model " : " openai / gpt -4 o " ,
+" apiKey " : " {{ OPENROUTER_API_KEY }} "
+}
+]
+}
+
+C. Appendix: Evaluator Tools
+
+3. Build
+
+C.1 Evaluator
+Set Up Web-Bench uses Docker for reproducible evaluations. Refer to the Docker setup guide for instructions on installing Docker on your machine. To run
+Web-Bench from source, follow these steps:
+
+docker build -f ./ start . dockerfile -t web bench .
+
+Usage
+
+1. Init
+docker run web - bench
+git clone https :// github . com / bytedance / Web
+- Bench . git
+cd Web - Bench
+
+The results will be saved in ’apps/eval/report’.
+Q&A
+24
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+Table 8: Evaluator Configuration
+Parameter
+
+Type
+
+Default
+
+projects
+
+string[]
+
+[]
+
+agentMode
+agentEndPoint
+
+"local" | "http"
+string
+
+"local"
+""
+
+models
+maxdop
+logLevel
+
+[]
+30
+"info"
+
+httpLimit
+
+string[]
+number
+"info" | "warn" |
+"debug" | "error"
+number
+
+projects
+
+string[]
+
+agentMode
+agentEndPoint
+
+"local" | "http"
+string
+
+10
+[]
+"local"
+""
+
+Description
+If empty, all projects will pass. Value is like "webbench/calculator".
+When agentMode is set to "http", set http API for
+network requests.
+’models’ field in apps/eval/src/model.json
+max degree of parallelism
+When agentMode is set to "http", maximum concurrent requests
+If empty, all projects will pass. Value is like "webbench/calculator".
+When agentMode is set to "http", set http API for
+network requests.
+
+Difference between Local-Agent and HTTP-Aexport interface LLMOption {
+gent
+contextLength : number
+- Local-Agent: Local-Agent has the basic capability to
+maxTokens : number
+interact with LLM. It can specify the corresponding
+temperature ?: number
+model in the ’apps/eval/src/model.json’. Local-Agent
+apiBase : string
+is actually the Web-Agent introduced by this paper B.
+}
+- HTTP-Agent: Through HTTP-Agent, it calls the con2.
+info – model metadata in apps/eval/src/figured agentEndPoint to send a request to the custom
+model.json.
+Agent.
+3. chat – custom request method that returns the
+generated text from the LLM.
+Add new model for evaluation
+1. For models deployed on OpenRouter, use the native
+OpenRouter provider with the following configuration: Use custom agent for evaluation Web-Bench supports custom agent by built-in HTTP-Agent. During
+the "Call Agent" step 3.2, the HTTP-Agent will:
+{
+" title " : " anthropic / claude -3 - opus " ,
+1. Pass the Evaluator’s context to your CustomA" provider " : " openrouter " ,
+gent.
+" model " : " anthropic / claude -3 - opus " ,
+2. Return the CustomAgent’s response to the Eval" apiBase " : " https :// openrouter . ai / api / v1 uator without modifications.
+",
+The request and response formats can be found in
+" apiKey " : " {{ OPENROUTER_API_KEY }} "
+the next section. C.2
+}
+
+2. If existing providers do not meet your requirements, C.2 Agent Data Format
+you can evaluate specific models by creating a new HTTP Request
+Provider. This is achieved by extending the BaseLLM:
+HTTP Request Method
+POST
+
+export abstract class BaseLLM {
+abstract provider : string
+abstract option : LLMOption
+info : Model
+abstract chat (
+compiledMessages : ChatMessage [] ,
+originOptions : CompletionOptions
+) : Promise <{
+request : string
+error ?: string
+response : string
+}>
+}
+
+HTTP Request Body
+export interface AgentRequest {
+type : " normal " | " init "
+task : string
+// Code files , key is filePath , value is
+fileContent
+files ?: Record < string , string >
+// Error context
+error ?: string
+}
+
+1. option – define parameters for LLM requests:
+25
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+- Note: All file contents of the project will be transferred. Benchmark projects are relatively simple at
+present (mostly single files, a few single-digit files), and
+in the future, when the project structure becomes more
+complex, it will support shared folders to reduce the
+amount of data transferred.
+
+HTTP Response
+HTTP Response Status
+- 200, Successful
+- 500, Failed
+HTTP Response Body
+
+{
+" type " : " normal " ,
+" task " : " add button sqrt with text ’ sqrt ’
+at the right of button clear ; click it
+to calculate result using display
+content directly " ,
+" files " : {
+" index . html " : " <! DOCTYPE html >\ n < html
+lang =\" en \" >\ n < head >\ n
+< meta
+charset =\" UTF -8\" >\ n
+< meta name
+=\" viewport \" content =\" width = device
+- width , initial - scale =1.0\" >\ n
+<
+title > Calculator </ title >\ n
+< style
+> </ style >\ n </ head >\ n < body > </ body >\ n
+</ html >\ n \ n " ,
+" index . css " : " body { }\ n \ n . calculator {
+}",
+" index . js " : " let displayValue = ’’ //
+more "
+},
+" error " : " \ t \ t \ t \ t \ tAn error occurred
+during the execution of the unit test .
+"
+}
+
+export interface AgentResponse {
+// Code files , key is filePath , value is
+fileContent
+files : Record < string , string >
+}
+
+Example - Init Task
+Request
+- Method: POST
+- Body:
+{
+" type " : " init " ,
+" task " : " generate a calculator in a
+single HTML file . the first row should
+be an input element with id ’ display
+’; the next 4 rows should contain
+buttons with digits from ’0 ’ to ’9 ’
+and operators including ’+ -*/=. ’; the
+last row should have a ’ Clear ’ button .
+display ’ Error ’ when catching
+exception or getting undefined value
+during calculating . And add the html
+file filename after code block . The
+filename should be on the next line as
+the language specifier in your code
+block . the filename is \" index . html \" "
+}
+
+Response
+- Status: 200
+- Body:
+{
+" files " : {
+" index . html " : " <! DOCTYPE html >\ n < html
+lang =\" en \" >\ n < head >\ n
+< meta
+charset =\" UTF -8\" >\ n
+< meta name
+=\" viewport \" content =\" width = device
+- width , initial - scale =1.0\" >\ n
+<
+title > Calculator </ title >\ n
+< style
+> </ style >\ n </ head >\ n < body > </ body >\ n
+</ html >\ n \ n " ,
+" index . css " : " body {} " ,
+" index . js " : " let displayValue = ’’ //
+more " ,
+}
+}
+
+Response
+- Status: 200
+- Body:
+{
+" files " : {
+" index . html " : " <! DOCTYPE html >\ n < html
+lang =\" en \" >\ n < head >\ n
+< meta
+charset =\" UTF -8\" >\ n
+< meta name
+=\" viewport \" content =\" width = device
+- width , initial - scale =1.0\" >\ n
+<
+title > Calculator </ title >\ n
+< style
+> body {}\ n . calculator {} </ style
+>\ n </ head >\ n < body > </ body >\ n </ html > "
+}
+}
+
+D. Appendix: Calibrate Project
+D.1 Workflow
+Use rush eval to Calibrate a project. That is, check for
+design issues in the project:
+1. tasks.jsonl issues, such as ambiguous descriptions,
+vulnerabilities, or obvious conflicts with test cases.
+2. test/ cases issues, such as not rigorous enough or
+too strict.
+The current path is ’/path/to/projects/dom’.
+
+Example - Normal Task with Error
+Request
+- Method: POST
+- Body:
+26
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+1. rush eval with ’config.json5’.
+{
+projects : [ ’ @web - bench / selector ’] ,
+models : [ ’ claude -3 -5 - sonnet -20241022 ’] ,
+}
+
+2. IF: task-20 passed, end
+3. ELSE: use eval project files to replace ’src/’:
+mv src src -20 # your manual codes
+cp -r eval / eval -2024 xx / claude -3 -5 - xx / task
+-5 -2 src
+
+4. IF: Modify ’src/’ or test/ codes
+1. IF: All tests passed in ’src/’ and src-20/
+2. THEN: rush eval with new config.json5
+{
+projects : [ ’ @web - bench / selector ’] ,
+models : [ ’ claude -3 -5 - sonnet -20241022 ’
+],
+startTask : ’ task -6 ’ ,
+}
+
+3. goto Step-2 5. IF: Modify tasks.jsonl, task-n is the
+smallest index of modified tasks
+1. THEN: use successful task-n-1 eval project files
+to replace ’src/’:
+rm - rf src
+cp -r eval / eval -2024 xx / claude -3 -5 - xx /
+task -{ n -1} src
+
+2. THEN:rush eval with new config.json5
+{
+packageNames : [ ’ @web - bench / selector ’] ,
+models : [ ’ claude -3 -5 - sonnet -20241022 ’
+],
+startTask : ’ task - n ’ ,
+}
+
+3. goto Step 2
+6. Create a doc from template D.2.
+D.2 Template
+Calibrate with ’claude-3-5-sonnet-20241022’:
+
+E. Appendix: Evaluation Models
+See Table 9.
+
+27
+
+Web-Bench: A LLM Code Benchmark Based on Web Standards and Frameworks
+
+Table 9: Evaluation Models
+Model
+
+Provider
+
+Pass@1
+
+Pass@2
+
+Error@1
+
+Type
+
+gpt-4.1
+gpt-4.1-mini
+gpt-4o
+o4-mini
+o1
+o3-mini
+gpt-4o-mini
+gpt-4.1-nano
+claude-3-7-sonnet-20250219-thinking
+claude-3-5-sonnet-20241022
+claude-3-7-sonnet-20250219
+claude-3-5-sonnet-20240620
+claude-3-5-haiku-20241022
+deepseek-v3-0324
+deepseek-coder-v2
+deepseek-r1
+gemini-2.5-pro
+gemini-2.0-flash
+gemini-2.0-flash-thinking
+gemini-pro-1.5
+gemini-flash-1.5
+gemma-3-27b
+llama-4 Maverick
+llama-3.3
+llama-4 Scout
+qwen-max-2025-01-25
+qwen-plus-2025-01-25
+qwen-2.5-72b-instruct
+qwen-turbo-2024-11-01
+mistral-large-2411
+grok-2-1212
+doubao-pro-1.5-thinking
+doubao-pro-1.5-32k
+doubao-pro-1.5-32k-lite
+GLM-4-0414
+step-fun-2-16k
+sense-chat-5
+360-gpt2-o1
+minimax-text
+moonshot-kimi-latest
+
+OpenAI
+OpenAI
+OpenAI
+OpenAI
+OpenAI
+OpenAI
+OpenAI
+OpenAI
+Anthropic
+Anthropic
+Anthropic
+Anthropic
+Anthropic
+DeepSeek
+DeepSeek
+DeepSeek
+Google
+Google
+Google
+Google
+Google
+Google
+Meta
+Meta
+Meta
+QWen
+QWen
+QWen
+QWen
+MistralAI
+X-AI
+Doubao
+Doubao
+Doubao
+Thudm
+StepFun
+SenseTime
+360
+MiniMax
+MoonshotAI
+
+21.09%
+20.76%
+17.17%
+13.26%
+10.43%
+9.13%
+8.48%
+7.07%
+25.11%
+23.04%
+22.50%
+21.96%
+15.43%
+17.07%
+16.74%
+14.46%
+15.67%
+15.33%
+14.89%
+14.78%
+12.83%
+9.89%
+15.98%
+6.63%
+5.00%
+15.87%
+11.85%
+10.54%
+2.61%
+13.04%
+11.30%
+20.11%
+16.63%
+3.48%
+7.50%
+13.70%
+8.48%
+8.26%
+8.48%
+5.22%
+
+25.11%
+23.70%
+23.80%
+22.93%
+12.39%
+14.24%
+13.04%
+12.28%
+35.33%
+32.39%
+30.98%
+30.33%
+21.74%
+23.59%
+23.15%
+26.20%
+24.02%
+20.87%
+19.24%
+20.87%
+17.07%
+11.85%
+20.87%
+9.57%
+7.72%
+19.02%
+15.11%
+13.70%
+5.11%
+18.70%
+17.17%
+30.22%
+22.93%
+5.98%
+9.02%
+15.87%
+12.72%
+14.46%
+10.76%
+11.85%
+
+6.52%
+6.85%
+8.15%
+9.89%
+9.89%
+7.93%
+7.28%
+6.96%
+9.02%
+9.46%
+8.26%
+8.80%
+7.61%
+7.93%
+7.83%
+9.89%
+8.04%
+7.07%
+6.96%
+7.28%
+7.07%
+6.20%
+7.07%
+6.20%
+6.63%
+6.30%
+6.20%
+6.63%
+6.85%
+7.28%
+7.93%
+10.56%
+7.28%
+6.41%
+6.30%
+6.09%
+6.85%
+7.39%
+6.20%
+10.22%
+
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Closed
+Open
+Open
+Open
+Closed
+Closed
+Closed
+Closed
+Closed
+Open
+Open
+Open
+Open
+Open
+Open
+Open
+Open
+Open
+Closed
+Closed
+Closed
+Closed
+Open
+Closed
+Closed
+Closed
+Open
+Open
+
+28
+
+

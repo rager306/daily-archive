@@ -1,0 +1,1120 @@
+Beyond Direct Diagnosis: LLM-based Multi-Specialist Agent Consultation for
+Automatic Diagnosis
+
+arXiv:2401.16107v1 [cs.CL] 29 Jan 2024
+
+Haochun Wang , Sendong Zhao∗ , Zewen Qiang , Nuwa Xi , Bing Qin , Ting Liu
+Research Center for Social Computing and Information Retrieval,
+Harbin Institute of Technology, China
+{hcwang, sdzhao}@ir.hit.edu.cn
+Abstract
+Automatic diagnosis is a significant application of
+AI in healthcare, where diagnoses are generated
+based on the symptom description of patients. Previous works have approached this task directly by
+modeling the relationship between the normalized
+symptoms and all possible diseases. However, in
+the clinical diagnostic process, patients are initially
+consulted by a general practitioner and, if necessary, referred to specialists in specific domains for
+a more comprehensive evaluation. The final diagnosis often emerges from a collaborative consultation among medical specialist groups. Recently, large language models have shown impressive capabilities in natural language understanding. In this study, we adopt tuning-free LLMbased agents as medical practitioners and propose
+the Agent-derived Multi-Specialist Consultation
+(AMSC) framework to model the diagnosis process in the real world by adaptively fusing probability distributions of agents over potential diseases.
+Experimental results demonstrate the superiority of
+our approach compared with baselines. Notably,
+our approach requires significantly less parameter
+updating and training time, enhancing efficiency
+and practical utility. Furthermore, we delve into a
+novel perspective on the role of implicit symptoms
+within the context of automatic diagnosis.
+
+1
+
+Introduction
+
+The utilization of artificial intelligence in healthcare, specifically in the realm of automatic diagnosis, has represented a
+pivotal advancement. Healthcare agents towards automatic
+diagnosis are designed to interact with patients, eliciting information about symptom presence and formulating diagnoses based on these patient-reported discomforts, termed as
+complaints. Such AI-driven automatic diagnostic systems are
+poised to assume a critical role in primary healthcare, offering the potential to mitigate the challenges posed by medical
+resource scarcity, particularly in economically disadvantaged
+regions [Wang et al., 2023c; Organization, 2016].
+∗
+
+Corresponding author
+
+The task of automatic diagnosis is derived from the process in real-world online consultation platforms, which is depicted in Figure 1. It involves the annotation of dialogue
+data between the patients and practitioners including three
+distinct components: (1) Explicit Symptoms - those symptoms presented in the initial patient complaint; (2) Implicit
+Symptoms - additional symptoms ascertained through subsequent practitioner inquiries; (3) Target Disease - the diagnosis predicted by the practitioner, based on a comprehensive
+assessment of symptoms. Previous research predominantly
+addresses the automatic diagnosis task by initially predicting
+implicit symptoms using explicit symptoms. Subsequently,
+a diagnosis is formulated leveraging all symptoms, employing methodologies such as reinforcement learning [Tang et
+al., 2016; Wei et al., 2018; Hou et al., 2021] or sequence
+generation [Chen et al., 2022; Wang et al., 2023c]. Existing
+approaches tend to model the dynamics of symptom-disease
+relationships but ignore the diagnosis process in real-life clinical settings.
+I have fever, fatigue, ……
+Do you have cough?
+
+Yes.
+
+Do you have headache?
+No.
+Do you have running nose?
+Yes.
+
+Target disease:
+
+You may get a flu, ……
+flu
+
+Explicit symptoms: fever: True, fatigue: True
+Implicit symptoms: cough: True, headache: False,
+running nose: True
+
+Figure 1: An example of data for automatic diagnosis from online
+consulting platforms.
+
+Patient: I have fever, diarrhea, fatigue, ……
+General Practitioner: You may just catch a
+cold, but you can consult specialists for
+further suggestion.
+Respiratory Doctor: You may get the
+Covid-19 ……
+General Surgeon: You may get the
+appendicitis …….
+Endocrinologist: You may get the
+hyperthyroidism ……
+A. Individual Practitioner Consultation
+
+Doctor A
+
+Agent with Knowledge for Disease A:
+……
+
+Agent with Knowledge for Disease B:
+Doctor B
+
+Doctor D
+
+……
+
+……
+
+Agent with Knowledge for Disease C:
+Agent with Knowledge for Disease D:
+
+Doctor C
+
+……
+
+Distribution fusion
+
+B. Practitioner Group Consultation
+
+C. Agent-based Group Consultation
+
+Figure 2: Scenarios of three medical diagnostic processes. A. Individual Practitioner Consultation: a singular general practitioner or specialist
+formulates the diagnosis; B. Practitioner Group Consultation: a group of professionals collaboratively arriving at a diagnostic conclusion; C.
+Agent-based Group Consultation: the diagnosis is derived from the decision fusion from multiple agent-based specialists.
+
+In clinical practice, when a patient presents with symptoms
+necessitating medical intervention, the customary procedure
+commences with an initial evaluation by a general practitioner. This primary assessment aims to establish a preliminary diagnosis. Subsequently, the general practitioner typically refers the patient to a specialist with expertise in the
+relevant medical domain for advanced consultation and management if necessary, as depicted in Scenario A of Figure
+2. Furthermore, for instances involving multifaceted medical conditions, it is standard to convene a multidisciplinary
+team of practitioners, each contributing diverse expertise and
+experience. This collaborative approach facilitates a holistic
+assessment and culminates in a consensus diagnosis, as illustrated in Scenario B of Figure 2.
+In recent advancements, Large Language Models (LLMs)
+have demonstrated exceptional capabilities in both comprehending and generating natural language across diverse tasks
+[Brown et al., 2020; Touvron et al., 2023; Chowdhery et al.,
+2023; OpenAI, 2023]. Moreover, their application within
+the medical field has garnered significant research interest
+[Wang et al., 2023a; Bao et al., 2023]. Building upon this
+foundation, this study introduces the Agent-derived MultiSpecialist Consultation (AMSC) model, conceptualized from
+real-world clinical scenarios. In this model, we envision
+open-source LLMs as primary care physicians, while specialized LLM-based agents, each equipped with distinct medical knowledge, function akin to medical specialists. These
+agents, each possessing expertise in different medical domains, generate predictive distributions for possible diseases
+or medical categories without parameter updating of LLMs.
+Subsequently, we propose an adaptive probability distribution
+fusion method that integrates the agent predictions, offering
+a refined decision-making process for disease diagnosis. Additionally, we scrutinize the influence of implicit symptoms
+on automated diagnosis, investigating the impact of various
+symptoms on the diagnostic outcomes.
+In summary, our contributions are outlined as follows:
+• We introduce an agent-based multi-specialist consul-
+
+tation model employing open-source LLMs following
+real-world clinical scenarios, coupled with an adaptive
+predictive distribution fusion method for disease diagnosis.
+• Experimental results demonstrate that our approach surpasses existing baselines in performance. Notably, as the
+model only requires parameter training on the distribution fusion, it is also more efficient in terms of training
+costs.
+• We also conduct a comprehensive analysis of symptomatology in automated diagnosis, exploring the differential impacts of various symptoms on diagnostic results.
+
+2
+
+Related Work
+
+2.1
+
+Automatic Diagnosis
+
+Automatic diagnosis using reinforcement learning (RL) has
+evolved significantly. Initial work by [Tang et al., 2016] used
+RL for neural symptom checking, followed by hierarchical
+RL approaches for joint diagnostics and symptom inquiry
+[Kao et al., 2018; Liao et al., 2020]. [Wei et al., 2018] introduced a Deep Q-Network for symptom collection, while
+[Xu et al., 2019] emphasized integrating prior medical knowledge into policy learning. Further advancements include decoupling symptoms and diseases using dense representations
+[Chen et al., 2023], policy gradient frameworks [Xia et al.,
+2020], multi-level reward models [Hou et al., 2021], and dialog data customization [Teixeira et al., 2021]. Beyond RL,
+[Chen et al., 2022] and [Hou et al., 2023] explored sequence
+generation and multi-task frameworks for diagnosis, respectively. [Wang et al., 2023c] proposed a joint symptom-disease
+generation model. However, existing research lacks focus on
+cross-specialist knowledge integration in automatic diagnosis. Our study addresses this gap by exploring the fusion of
+diagnoses with agent specialists.
+
+Agent-derived URTI Specialist
+Agent-derived Bronchitis Specialist
+Agent-derived Dyspepsia Specialist
+
+Disease knowledge
+for profile of specialist
+agent
+Diagnosis question
+with symptoms
+Options for diagnosis
+Normalized candidate
+option probabilitybased diagnosis
+
+Agent-derived Diarrhea Specialist
+Disease Knowledge for diarrhea:
+Symptoms of diarrhea includes abdominal pain, watery stool,
+vomiting, poor appetite, loss of appetite, fever, …..
+Question:
+The complaints of patients include fever, fatigue, cough and
+running nose. Then, the patient may have
+A. Diarrhea
+
+B. Dyspepsia
+
+C. Bronchitis
+
+D. URTI
+
+0.56
+
+Answer:
+
+0.28
+
+A
+
+0.12
+
+B
+
+0.23
+
+Dyspepsia Specialist
+
+0.08
+
+Bronchitis Specialist
+
+0.28
+
+0.12
+
+URTI Specialist
+
+0.09
+
+0.1
+
+0.1
+
+0.23
+
+0.36
+
+0.31
+
+0.45
+
+0.24
+
+0.56
+0.04
+
+0.3
+
+0.51
+
+Adaptive Probability Distribution Fusion
+
+.23
+
+.10
+
+.36
+
+.31
+
+.08
+
+.23
+
+.45
+
+.24
+
+.28
+
+.12
+
+.56
+
+.04
+
+.09
+
+.10
+
+.60
+
+.51
+
+0.11
+
+0.12
+
+A
+
+B
+
+0.6
+
+0.17
+
+C
+
+D
+
+C. Bronchitis
+
+C. Bronchitis
+
+0.04
+
+C
+
+Diarrhea Specialist
+
+Agent-derived Multiple Specialist Consultation
+
+D
+
+LLM-derived General Practitioner
+
+Figure 3: Illustration of LLM-derived General Practitioner, Agent-derived Specialist and Agent-derived Multiple Specialist Consultation.
+
+2.2
+
+Medical Large Language Models
+
+Recent study has underscored the efficacy of Large Language
+Models (LLMs) within the medical field [Thirunavukarasu et
+al., 2023; Bao et al., 2023], manifesting in diverse applications, including diagnostic processes [Singhal et al., 2023],
+medical reasoning [Liévin et al., 2022], and the summarization of medical evidence [Tang et al., 2023]. In the context of knowledge-augmented methodologies, [Wang et al.,
+2023b] demonstrated the generation of informed responses
+via queries to knowledge bases. Furthermore, [Kang et al.,
+2023] fine-tuned smaller LLMs with rationales derived from
+retrieved knowledge. Another notable advancement is [Jin
+et al., 2023] GeneGPT, which instructs LLMs to integrate
+Web APIs, thereby enhancing performance. Despite these
+advancements, the medical application faces inherent privacy
+challenges, particularly concerning the uploading of personal
+health information to online LLMs. To address this, we introduce the AMSC framework, tailored for open-source LLMs
+and deployed locally and privately without privacy concern.
+
+3
+
+Agent-derived Multi-specialist Consultation
+Framework
+
+In this section, we delve into an Agent-derived MultiSpecialist Consultation (AMSC) framework, including refining the task of automatic diagnosis, implementing an agentderived specialist, and finally describing the fusion of multispecialist decisions derived from these agents in medical diagnostics mimicking the procedure in the real-life diagnosis
+by multiple specialists.
+
+3.1
+
+Refinement of Automatic Diagnosis
+
+The task of automatic diagnosis involves processing patientspecific data, denoted as pi . This data encompasses the
+target disease di , an array of explicit symptoms sexp
+=
+i
+{exp1 , exp2 , ......}, and a collection of implicit symptoms
+
+simp
+= {imp1 , imp2 , ......}. Explicit symptoms are direct
+i
+manifestations reported by patients, while implicit symptoms
+are deduced from interactive dialogues between patients and
+practitioners. Both categories of symptoms undergo standardization to medical terminologies from their original natural language descriptions.
+Recent advancements in LLMs have demonstrated remarkable efficacy in natural language processing within medical
+contexts [Bao et al., 2023; Wang et al., 2023a]. In our approach, we leverage these LLMs as virtual medical practitioners. Given the finite nature of disease possibilities in automatic diagnosis tasks, we restructure the task into a MultipleChoice Question-Answering (MCQA) framework, as illustrated in Figure 3, which involves constructing symptombased question templates and selecting the results from answer options, formulated as
+LLM (q, opts; i)
+pdiseasei = P
+j LLM (q, opts; j)
+where q represents the symptom-inclusive query question for
+the LLM, opts denotes the array of possible disease diagnoses, LLM refers to the process that large language model
+generates the probability of each token within its vocabulary
+and i, j are indices corresponding to the specific token options for disease diagnosis.
+For tasks involving a broader array of choices, we employ
+a hierarchical MCQA structure based on ICD-10-CM codes
+[Organization, 2004]. Meanwhile, recent research demonstrates that the effectiveness of MCQAs in leveraging the
+capability of LLMs is subject to the Multiple-Choice Symbol Binding (MCSB) proficiency of the model (the capability
+of LLMs to associate the answer options with the alphabetic
+symbols), which significantly varies across different models
+[Robinson and Wingate, 2023; Zheng et al., 2023]. Therefore, we selectively utilize models with superior multiplechoice symbol binding capabilities and empirically evaluate
+
+their Proportion of Plurality Agreement (PPA) value [Robinson and Wingate, 2023] (further details are provided in the
+experimental section).
+
+90
+
+3.2
+
+70
+
+80
+
+While LLM-based practitioners possess a foundational understanding of medical knowledge akin to general practitioners, they lack the depth of expertise characteristic of specialists in particular diseases. To address this, we enhance the
+LLMs with specialized disease knowledge profiles from the
+National Institutes of Health1 , thereby transforming them into
+distinct specialist agents as depicted in Figure 3. Each agentspecialist is endowed with expertise in a singular disease domain. For a question for diagnosis, an agent-specialist outputs a distribution on all the possible answer options, and the
+corresponding disease for the option with the highest probability is the diagnostic result, denoted as
+kn = dn , (symn1 , symn2 , ...)
+
+Recall
+
+Agent-derived Specialist for Diagnosis
+
+60
+50
+40
+Diarrhea
+Dyspepsia
+Bronchitis
+URTI
+
+30
+20
+Diarrhea
+
+Dyspepsia
+
+Bronchitis
+
+URTI
+
+None
+
+Agent-derived Specialist with Specific Knowledge
+
+Figure 4: Recall for the four agent-derived specialists on the diseases of the MuZhi-4 dataset with corresponding knowledge for a
+specific disease and for an LLM-derived general practitioner without knowledge (“None” in the figure).
+
+Agentn = Agent-specialist(LLM, kn )
+Agentn (q, opts; i)
+pndiseasei = P
+j Agentn (q, opts; j)
+where a disease knowledge kn includes a disease dn and a
+series of symptoms (symn1 , symn2 , ...) of the disease dn .
+Agentn represents an agent-derived specialist with a LLM
+and specific disease knowledge kn .
+To assess whether an agent specialist exhibits enhanced
+knowledge in its respective disease area as a human specialist, we conduct experiments on the most widely used automatic diagnosis dataset MuZhi-4 [Wei et al., 2018], which includes four target diseases. Figure 4 presents the recall value
+achieved by these agent specialists for each disease, using distinct symbols. The results indicate that an agent with specialized knowledge in a particular disease significantly outperforms those with knowledge of other diseases and the LLMbased general practitioner without such specialization, affirming the capability of agent-derived specialists to effectively
+assimilate and apply specialized knowledge.
+
+3.3
+
+Multi-Specialist Decision Fusion
+
+Like in the real world where multiple specialists may yield
+different diagnoses for the same patient, in the realm of the
+Agent-derived Multi-Specialist Consultation (AMSC) framework, each agent conceptualized as a specialist, yields a probabilistic distribution over a range of potential diagnoses. This
+process results in the formation of a diagnosis distribution
+matrix when multiple agents are involved. Analogous to the
+consensus-building process among human medical specialists through extensive deliberation, we introduce an innovative approach for reaching a conclusive diagnostic decision
+from this fusion of agent-specialist inputs. Our methodology
+employs a self-attention-based Adaptive Probability Distribution Fusion (APDF) technique.
+1
+
+https://www.nhlbi.nih.gov/health
+
+We consider a diagnosis distribution matrix denoted as
+M = {m1 , m2 , ...}, where mn represents the diagnostic probability distribution contributed by the nth agentspecialist. The following equations delineate our method:
+Q, K, V = Linearq,k,v (M )
+QK T
+pdiseasei = Linear(sof tmax( √ )V ; i)
+dk
+Here, Q, K, V represent the linear projections of the distribution matrix M corresponding to the query, key, and
+value components respectively, utilizing the transformation
+Linearq,k,v . The final diagnostic outcome is derived from
+an adaptively weighted fusion of the diagnostic distributions
+sourced from multiple agent specialists, capitalizing on the
+self-attention mechanism’s capacity to discern and emphasize
+relevant features within the distribution matrix.
+
+4
+
+Experiment
+
+4.1
+
+Datasets
+
+We evaluate our approach on three datasets derived from reallife contexts:
+• MuZhi-4 [Wei et al., 2018], a meticulously annotated
+dataset collected from an online platform Baidu MuZhi
+Doctor 2 which focuses on four diseases in the pediatric
+domain;
+• MuZhi-10 is an augmented iteration of the MuZhi-4
+dataset, extending to ten diseases, spanning respiratory,
+digestive and endocrine systems;
+• Dxy [Xu et al., 2019] is a medical dialogue dataset curated from Dingxiang Doctor platform. 3
+2
+3
+
+https://muzhi.baidu.com/
+https://dxy.com
+
+A thorough statistical analysis of the datasets is presented
+in Table 1. Additionally, prior research has engaged in experimental analysis utilizing synthetic datasets [Liao et al., 2020;
+Chen et al., 2022] fabricated by symptom-disease database
+Symcat 4 . Notably, as depicted in Table 1, the datasets derived from real-life contexts exhibit an average of 2.36 explicit symptoms per patient complaint. In stark contrast, the
+synthetic dataset only contains 1 explicit symptom per case.
+This indicates that during medical consultations, patients tend
+to articulate their ailments with greater specificity in reallife scenarios, as opposed to the limited expressiveness observed in synthetic datasets. Such a discrepancy underscores
+a significant divergence in the distribution of data between
+synthetic and real-life datasets. Consequently, our study focuses exclusively on datasets derived from real-life scenarios,
+thereby ensuring a more realistic and applicable analysis.
+
+# Disease
+# Symptom
+# Training
+# Tr avg exp
+# Tr avg imp
+# Test
+# T avg exp
+# T avg imp
+
+MZ-4
+4
+66
+568
+2.39
+3.28
+142
+2.20
+3.20
+
+MZ-10
+10
+331
+3704
+1.72
+5.29
+412
+1.77
+5.18
+
+Dxy
+5
+41
+423
+3.09
+1.65
+104
+3.00
+1.76
+
+Synthetic
+90
+266
+24000
+1.00
+2.61
+6000
+1.00
+2.59
+
+Table 1: Statistics of the datasets, including three real-life datasets
+and one synthetic dataset. #Tr avg exp: the average number of explicit symptoms in the training set; #Tr avg imp: the average number of implicit symptoms in the training set; #T avg exp: the average number of explicit symptoms in the test set; #T avg imp: the
+average number of implicit symptoms in the test set.
+
+4.2
+
+Baselines
+
+In this research, we present an analytical comparison of our
+experimental results with a spectrum of established baseline
+models in the domain of automatic medical diagnosis. These
+benchmarks include:
+• DQN model [Wei et al., 2018], which employs a Deep
+Q-Network framework for symptom validation and diagnostic processes.
+• HRL approach [Liao et al., 2020], which implements
+a DQN-based hierarchical policy to separately predict
+symptoms and diagnose diseases.
+• PPO model [Schulman et al., 2017], which utilizes proximal policy optimization techniques for the development
+of a diagnostic model.
+• DxFormer [Chen et al., 2023], a novel model that decouples the processes of symptom inquiry and disease
+diagnosis through dense symptom representation.
+• Diaformer [Chen et al., 2022], which conceptualizes the
+task through sequence generation methodology.
+4
+
+https://www.symcat.com
+
+• CoAD [Wang et al., 2023c], which integrates symptom
+and disease generation with label alignment for a comprehensive diagnostic model.
+
+4.3
+
+Selection of Backbone Model
+
+Considering the language of automatic diagnosis datasets utilized, our selection for the backbone model is the Baichuan2chat, a large language model with 13 billion parameters [Yang
+et al., 2023]. This model demonstrates robust performance in
+both languages. We also evaluate the multiple-choice symbol
+binding ability of the model using the metric of mean Proportion of Plurality Agreement (PPA) values [Robinson and
+Wingate, 2023], with n answer options across the automatic
+diagnosis datasets. The results ranged from 0.78 to 0.94, indicating a notable consistency in the model performance regardless of the order of answer options, thereby affirming its
+reliability in MCQA tasks.
+
+4.4
+
+Implementation of Diagnostic Framework
+
+For the agent-specialist of our AMSC framework, we employ
+the corresponding output logits of the answer option index of
+the last token in the last layer of Baichuan2 to formulate a
+diagnostic distribution for potential diseases. In our adaptive
+probability distribution fusion mechanism, the input dimension, denoted as dinput , is calculated as the product of the
+number of potential diseases and the number of agent specialists. The dimensions of the query, key, and value matrices
+(q, k, v) are set to dinput × dinput . The learning rate for this
+implementation ranges between 1e-1 and 1e-3.
+
+4.5
+
+Main Results
+
+We present an empirical evaluation of the AMSC framework, comparing its performance against established baselines across three real-world datasets. This evaluation encompasses several key metrics: diagnostic accuracy, training duration (denoted as Ttime), and the average number of
+turns required for implicit symptom inquiry (referred to as
+Turn). Additionally, we introduce a novel metric, the number
+of training parameters (#Params), to further assess the efficiency of the automatic diagnosis system.
+Table 2 delineates the comparative performance of the
+AMSC framework and the baseline methodologies. In terms
+of diagnostic accuracy, the AMSC framework demonstrates
+superior efficacy, outperforming existing systems on all three
+datasets, with an enhancement in performance of up to 3.2%.
+Regarding training time, since the LLM is frozen and only
+the APDF module requires training, the AMSC framework
+exhibits a significant reduction, saving up to 95.5% training
+time compared with the baseline models, equating to a mere
+0.09 minutes on the DXY dataset. Furthermore, the demand
+for AMSC for training parameters is notably efficient, scaling proportionally with the number of diseases. For a dataset
+encompassing n diseases, the AMSC requires 3n4 + n3 training parameters, which signifies a reduction of up to 99.99%
+in parameter training. Concerning the mean turn of symptom
+inquiry, the AMSC relies solely on explicit symptoms, obviating the need for implicit symptom inquiries. This approach
+is substantiated by experimental findings, affirming the feasi-
+
+MuZhi-4
+
+Model
+DQN
+HRL
+PPO
+Diaformer
+CoAD
+DxFormer
+AMSC †
+-Single agent †‡
+-LLM †
+
+Acc
+0.690
+0.694
+0.732
+0.742
+0.75
+0.743
+0.773
+0.676
+0.632
+
+Ttime
+82m
+162m
+2m
+32m
+39m
+0.15m
+0m
+0m
+
+#Params
+62M
+43M
+9.8M
+832
+0
+0
+
+Dxy
+Turn
+2.0
+3.5
+6.3
+15.3
+13.4
+8.7
+0
+0
+0
+
+Acc
+0.720
+0.695
+0.746
+0.829
+0.85
+0.817
+0.861
+0.776
+0.724
+
+Ttime
+141m
+35m
+2m
+23m
+14m
+0.09m
+0m
+0m
+
+#Params
+62M
+43M
+9.8M
+2000
+0
+0
+
+MuZhi-10
+Turn
+1.3
+2.4
+3.3
+13.1
+10.5
+6.3
+0
+0
+0
+
+Acc
+0.408
+0.556
+0.628
+0.633
+0.652
+0.506
+0.427
+
+Ttime
+156m
+55m
+9m
+0m
+0m
+
+#Params
+43M
+9.8M
+0.031M
+0
+0
+
+Turn
+9.7
+7.0
+20.0
+7.6
+0
+0
+0
+
+Table 2: Experimental results on three real-life datasets. Acc is the accuracy of diagnosis; Ttime denotes the training time, m for minute;
+#Params indicates the number of updated parameters, M for million; Turn represents the mean turn of symptom inquiry. The results of
+accuracy are reported by baselines. Single agent: the performance of agent-derived specialist without distribution fusion (†: with no implicit
+symptom. ‡: best performance of multiple agents). LLM: the performance of original LLM.
+
+bility of an automatic diagnosis framework operating without
+the integration of implicit symptoms.
+By now, the AMSC framework has not incorporated implicit symptoms in its diagnostic process. However, prior
+work [Chen et al., 2022; Chen et al., 2023; Wang et al.,
+2023c] suggests that implicit symptoms could enhance the
+performance of automatic diagnosis systems, which is also
+intuitive. Therefore, we will explore how the implicit symptoms will affect the performance of our AMSC framework in
+the following section.
+
+5
+
+Discussion
+
+5.1
+
+Impact of Implicit Symptoms
+
+Model
+AMSC†
+implicit symptoms
+-all
+-pos
+medical knowledge
+-reordered†
+-all
+-irrelevant†
+-all
+
+LLM
+0.632
+
+Single agent
+0.676
+
+AMSC
+0.773
+
+0.631
+0.638
+
+0.669
+0.647
+
+0.752
+0.760
+
+N/A
+N/A
+N/A
+N/A
+
+0.641
+0.662
+0.585
+0.627
+
+0.718
+0.724
+0.702
+0.693
+
+Table 3: Accuracy of LLM, Single agent, and AMSC with specific
+settings for the implicit symptoms and medical knowledge on the
+MuZhi-4 dataset. †: with no implicit symptom. -all: with both explicit and implicit symptoms. -pos: only with the positive symptoms
+in the explicit and implicit symptoms. N/A: not applicable.
+
+Experimental results have demonstrated that our AMSC
+framework can work well on the automatic diagnosis task
+even without the implicit symptoms. In this subsection, we
+will scrutinize how the implicit symptoms affect the performance of our AMSC with two settings on the MuZhi-4
+dataset:
+• all symptoms, denoted as “-all”, includes entire explicit
+and implicit symptoms;
+
+• positive symptoms, denoted as “-pos”, only involves the
+positive symptoms inside the explicit and implicit symptoms.
+Interestingly, our results, as outlined in Table 3 reveal that
+the inclusion of a full spectrum of symptoms does not necessarily enhance the performance of AMSC framework. Also,
+configurations relying solely on positive symptoms yielded
+similar outcomes. The p-values of results of the paired t-test
+between the (AMSC†, AMSC -all) and (AMSC†, AMSC pos) are 0.244 and 0.357 respectively, which means that there
+is no statistically significant difference between the result
+with and without implicit symptom.
+These findings have profound implications for the use of
+Large Language Models (LLMs) in medical diagnostics. In
+clinical practice, a comprehensive collection of symptoms is
+vital for accurate diagnosis. However, for LLMs, the abundance of symptoms, especially without differentiated weighting, poses interpretative challenges. Our analysis reveals that
+59.1% of symptoms are common across all four studied diseases in MuZhi-4, with decreasing proportions for three, two,
+and one disease of 25.8%, 10.6%, and 4.5% respectively. This
+significant overlap complicates the task of accurate diagnosis
+with LLMs. For example, the symptom “cough” is present
+in 95.8% of bronchitis cases and 53.1% of Upper Respiratory Tract Infections (URTI). Furthermore, explicit symptoms, which are primarily patient-reported and considered
+dominant, can effectively reflect a condition of the patient to
+a specialist agent, demonstrating a notable aspect for LLMbased diagnostic systems.
+
+5.2
+
+Impact of Medical Knowledge
+
+The medical knowledge has been proven to be helpful for the
+agent specialist with the experiment in Table 2 and Figure 4.
+Here we investigate the influence of medical knowledge on
+the performance of LLM-based automatic diagnosis systems
+from another angle. Utilizing the MuZhi-4 dataset, we explore two distinct strategies for medical knowledge:
+• Reordered Knowledge: We assign medical knowledge
+of one disease to another, creating mismatched knowl-
+
+edge for the LLMs. This is formulated as:
+
+80
+
+Accuracy
+
+where (symm1 , symm2 , . . .) are symptoms of disease
+dm different from the target disease dn .
+• Irrelevant Knowledge: Here, the automatic diagnosis
+system is provided with accurate medical knowledge of
+diseases not included in the automatic diagnosis task. It
+simulates a scenario where specialists unrelated to the
+specific diseases are consulted. This is represented as:
+
+Decision Fusion Techniques
+
+We introduce and evaluate the Adaptive Probability Distribution Fusion (APDF) method, which is designed to amalgamate probability distributions of potential diseases, derived
+from a group of agent specialists. In parallel, we also conduct
+empirical evaluations with alternative fusion methodologies:
+(1) Majority Decision Fusion, wherein predominant decisions
+override minority opinions, (2) Mean Decision Fusion, which
+determines disease diagnoses based on the average distribution across multiple specialists, and (3) Linear Classifier Fusion.
+Figure 5 represents the comparative accuracy achieved
+by these diverse decision fusion methods. It is observed
+that our proposed APDF method consistently surpasses the
+three baselines mentioned above approaches in terms of performance efficiency. Notably, the Linear Classifier Fusion
+demonstrates superior efficacy compared to both Majority
+and Mean Decision Fusions. The results above underscore
+the significant contribution of our APDF method to enhance
+the AMSC framework’s effectiveness.
+
+5.4
+
+Generalization on the Real-world Scenario
+
+Automated diagnosis datasets have converted patientpractitioner dialogues, which are inherently natural languagebased, into normalized symptom labels to align with the
+methodologies established in prior work. However, a significant challenge arises in annotating the symptoms in the
+dialogues: it necessitates the involvement of highly skilled
+human experts, which renders the process cost-intensive and
+less feasible for real-world application. Our proposed framework AMSC, which utilizes a question template for symptom labels, can seamlessly integrate with natural language
+descriptions of symptoms. Notably, only the DXY dataset
+includes original self-reported symptom descriptions in natural language. Thus, we apply the AMSC to this dataset and
+
+70
+
+60
+
+where (symo1 , symo2 , . . .) are symptoms of a nontarget disease do .
+
+5.3
+
+75
+
+65
+
+koother = do , (symo1 , symo2 , . . .)
+
+As shown in Table 3, the use of reordered or irrelevant
+medical knowledge adversely affects the diagnostic accuracy of both single-agent systems and AMSC configurations.
+While agents with reordered knowledge exhibit slightly better
+performance than those with entirely irrelevant knowledge,
+their effectiveness is significantly compromised due to the deliberate misalignment of disease-knowledge pairings.
+
+Major decision
+Mean decision
+Linear classifier
+APDF
+
+85
+
+knreordered = dn , (symm1 , symm2 , . . .)
+
+MuZhi-4
+
+DXY
+
+Datasets
+
+MuZhi-10
+
+Figure 5: Accuracy for automatic diagnosis with various decision
+fusion techniques.
+
+compare the efficacy of the AMSC framework on normalized symptom labels and symptoms in natural language along
+with those of “Single agent” and “LLM”. The results are detailed in Table 4, which underscores the capability of AMSC
+to perform comparably with natural language symptom descriptions and demonstrates its potential for generalization in
+real-world scenarios.
+
+Normalized
+Natural language
+
+LLM
+0.724
+0.726
+
+Single agent
+0.776
+0.781
+
+AMSC
+0.861
+0.857
+
+Table 4: Accuracy of automatic diagnosis with inputs of normalized
+symptom label and natural language for the LLM, Single agent and
+the AMSC on DXY dataset.
+
+6
+
+Conclusion
+
+In this paper, we employ agent-derived specialists for the automatic diagnosis tasks with open-source LLMs and medical knowledge for possible diseases. We introduce an agentderived multi-specialist consultation framework, designed to
+assimilate and adaptively merge the probability distributions
+generated by these agent specialists in the diagnostic process,
+mimicking the real-life medical scene of a patient with multiple specialists. Experimental results demonstrate that our
+approach not only surpasses existing benchmarks in diagnostic accuracy but also significantly reduces the requisite training duration. Additionally, our in-depth analysis sheds light
+on an intriguing facet: the contribution of implicit symptom
+prediction toward diagnostic efficacy may be less substantial
+than previously anticipated. This revelation opens new avenues for exploration in the realm of automated diagnostic
+tasks.
+
+Ethics Statement
+This study is fundamentally an academic inquiry and is not
+designed for practical clinical diagnostic applications. The
+medical information employed herein is derived from publicly available medical knowledge repositories and reputable
+medical advisories. It must be underscored that diagnoses
+generated by LLMs should not be misconstrued as definitive.
+Should individuals encounter any form of discomfort or ailment, it is imperative to consult a certified healthcare practitioner.
+
+References
+[Bao et al., 2023] Zhijie Bao, Wei Chen, Shengze Xiao,
+Kuang Ren, Jiaao Wu, Cheng Zhong, Jiajie Peng, Xuanjing Huang, and Zhongyu Wei. Disc-medllm: Bridging general large language models and real-world medical
+consultation. arXiv preprint arXiv:2308.14346, 2023.
+[Brown et al., 2020] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry,
+Amanda Askell, et al. Language models are few-shot
+learners. Advances in neural information processing systems, 33:1877–1901, 2020.
+[Chen et al., 2022] Junying Chen, Dongfang Li, Qingcai
+Chen, Wenxiu Zhou, and Xin Liu. Diaformer: Automatic
+diagnosis via symptoms sequence generation. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 36, pages 4432–4440, 2022.
+[Chen et al., 2023] Wei Chen, Cheng Zhong, Jiajie Peng,
+and Zhongyu Wei. Dxformer: a decoupled automatic
+diagnostic system based on decoder–encoder transformer
+with dense symptom representations. Bioinformatics,
+39(1):btac744, 2023.
+[Chowdhery et al., 2023] Aakanksha Chowdhery, Sharan
+Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra,
+Adam Roberts, Paul Barham, Hyung Won Chung, Charles
+Sutton, Sebastian Gehrmann, et al. Palm: Scaling language modeling with pathways. Journal of Machine
+Learning Research, 24(240):1–113, 2023.
+[Hou et al., 2021] Zhengxu Hou, Bang Liu, Ruihui Zhao, Zijing Ou, Yafei Liu, Xi Chen, and Yefeng Zheng. Imperfect
+also deserves reward: Multi-level and sequential reward
+modeling for better dialog management. In Proceedings
+of the 2021 Conference of the North American Chapter
+of the Association for Computational Linguistics: Human
+Language Technologies, pages 2993–3001, 2021.
+[Hou et al., 2023] Zhenyu Hou, Yukuo Cen, Ziding Liu,
+Dongxue Wu, Baoyan Wang, Xuanhe Li, Lei Hong, and
+Jie Tang. Mtdiag: An effective multi-task framework for
+automatic diagnosis. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 37, pages 14241–
+14248, 2023.
+[Jin et al., 2023] Qiao Jin, Yifan Yang, Qingyu Chen, and
+Zhiyong Lu. Genegpt: Augmenting large language models with domain tools for improved access to biomedical
+information. ArXiv, 2023.
+
+[Kang et al., 2023] Minki Kang, Seanie Lee, Jinheon Baek,
+Kenji Kawaguchi, and Sung Ju Hwang. Knowledgeaugmented reasoning distillation for small language
+models in knowledge-intensive tasks. arXiv preprint
+arXiv:2305.18395, 2023.
+[Kao et al., 2018] Hao-Cheng Kao, Kai-Fu Tang, and Edward Chang. Context-aware symptom checking for disease diagnosis using hierarchical reinforcement learning.
+In Proceedings of the AAAI conference on artificial intelligence, volume 32, 2018.
+[Liao et al., 2020] Kangenbei Liao, Qianlong Liu, Zhongyu
+Wei, Baolin Peng, Qin Chen, Weijian Sun, and Xuanjing Huang. Task-oriented dialogue system for automatic
+disease diagnosis via hierarchical reinforcement learning.
+arXiv preprint arXiv:2004.14254, 2020.
+[Liévin et al., 2022] Valentin Liévin, Christoffer Egeberg
+Hother, and Ole Winther. Can large language models reason about medical questions?
+arXiv preprint
+arXiv:2207.08143, 2022.
+[OpenAI, 2023] OpenAI. Gpt-4 technical report, 2023.
+[Organization, 2004] World Health Organization. International Statistical Classification of Diseases and related
+health problems: Alphabetical index, volume 3. World
+Health Organization, 2004.
+[Organization, 2016] World Health Organization. Health
+workforce requirements for universal health coverage and
+the sustainable development goals.(human resources for
+health observer, 17). 2016.
+[Robinson and Wingate, 2023] Joshua Robinson and David
+Wingate. Leveraging large language models for multiple
+choice question answering. In The Eleventh International
+Conference on Learning Representations, 2023.
+[Schulman et al., 2017] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. arXiv preprint
+arXiv:1707.06347, 2017.
+[Singhal et al., 2023] Karan Singhal, Shekoofeh Azizi, Tao
+Tu, S Sara Mahdavi, Jason Wei, Hyung Won Chung,
+Nathan Scales, Ajay Tanwani, Heather Cole-Lewis,
+Stephen Pfohl, et al. Large language models encode clinical knowledge. Nature, 620(7972):172–180, 2023.
+[Tang et al., 2016] Kai-Fu Tang, Hao-Cheng Kao, ChunNan Chou, and Edward Y Chang. Inquire and diagnose:
+Neural symptom checking ensemble using deep reinforcement learning. In NIPS workshop on deep reinforcement
+learning, 2016.
+[Tang et al., 2023] Liyan Tang, Zhaoyi Sun, Betina Idnay,
+Jordan G Nestor, Ali Soroush, Pierre A Elias, Ziyang Xu,
+Ying Ding, Greg Durrett, Justin F Rousseau, et al. Evaluating large language models on medical evidence summarization. npj Digital Medicine, 6(1):158, 2023.
+[Teixeira et al., 2021] Milene Santos Teixeira, Vinı́cius
+Maran, and Mauro Dragoni. The interplay of a conversational ontology and ai planning for health dialogue
+
+management. In Proceedings of the 36th annual ACM
+symposium on applied computing, pages 611–619, 2021.
+[Thirunavukarasu et al., 2023] Arun
+James
+Thirunavukarasu, Darren Shu Jeng Ting, Kabilan
+Elangovan, Laura Gutierrez, Ting Fang Tan, and Daniel
+Shu Wei Ting. Large language models in medicine.
+Nature medicine, 29(8):1930–1940, 2023.
+[Touvron et al., 2023] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. Llama: Open and efficient foundation language models. arXiv preprint arXiv:2302.13971,
+2023.
+[Wang et al., 2023a] Haochun Wang, Chi Liu, Nuwa Xi,
+Zewen Qiang, Sendong Zhao, Bing Qin, and Ting Liu.
+Huatuo: Tuning llama model with chinese medical knowledge, 2023.
+[Wang et al., 2023b] Haochun Wang, Sendong Zhao, Zewen
+Qiang, Zijian Li, Nuwa Xi, Yanrui Du, MuZhen Cai, Haoqiang Guo, Yuhan Chen, Haoming Xu, et al. Knowledgetuning large language models with structured medical
+knowledge bases for reliable response generation in chinese. arXiv preprint arXiv:2309.04175, 2023.
+[Wang et al., 2023c] Huimin Wang, Wai Chung Kwan,
+Kam-Fai Wong, and Yefeng Zheng. Coad: Automatic diagnosis through symptom and disease collaborative generation. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long
+Papers), pages 6348–6361, 2023.
+[Wei et al., 2018] Zhongyu Wei, Qianlong Liu, Baolin Peng,
+Huaixiao Tou, Ting Chen, Xuan-Jing Huang, Kam-Fai
+Wong, and Xiang Dai. Task-oriented dialogue system for
+automatic diagnosis. In Proceedings of the 56th Annual
+Meeting of the Association for Computational Linguistics
+(Volume 2: Short Papers), pages 201–207, 2018.
+[Xia et al., 2020] Yuan Xia, Jingbo Zhou, Zhenhui Shi, Chao
+Lu, and Haifeng Huang. Generative adversarial regularized mutual information policy gradient framework for automatic diagnosis. In Proceedings of the AAAI conference
+on artificial intelligence, volume 34, pages 1062–1069,
+2020.
+[Xu et al., 2019] Lin Xu, Qixian Zhou, Ke Gong, Xiaodan Liang, Jianheng Tang, and Liang Lin. End-to-end
+knowledge-routed relational dialogue system for automatic diagnosis. In Proceedings of the AAAI conference on
+artificial intelligence, volume 33, pages 7346–7353, 2019.
+[Yang et al., 2023] Aiyuan Yang, Bin Xiao, Bingning Wang,
+Borong Zhang, Ce Bian, Chao Yin, Chenxu Lv, Da Pan,
+Dian Wang, Dong Yan, et al. Baichuan 2: Open largescale language models. arXiv preprint arXiv:2309.10305,
+2023.
+[Zheng et al., 2023] Chujie Zheng, Hao Zhou, Fandong
+Meng, Jie Zhou, and Minlie Huang. On large language
+models’ selection bias in multi-choice questions. arXiv
+preprint arXiv:2309.03882, 2023.
+
+

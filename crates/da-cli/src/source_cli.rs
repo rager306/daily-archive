@@ -2137,13 +2137,6 @@ fn append_policy_observations(
 ) {
     use da_application::parse_policy_table::{PolicyObservation, binary_reward};
 
-    // ADR-080: the two-arm pair harness scores both arms itself and appends the
-    // paired observations; single-arm journaling is suppressed for its run so
-    // the journal holds a real counterfactual, not a doubled echo.
-    if std::env::var("DA_POLICY_PAIR_SUPPRESS_JOURNAL").is_ok() {
-        return;
-    }
-
     let reward = binary_reward(outcome);
     let observations = [
         grammar.as_ref().map(|g| PolicyObservation {

@@ -1,0 +1,2153 @@
+DotaMath: Decomposition of Thought with Code Assistance and
+Self-correction for Mathematical Reasoning
+Chengpeng Li12 * , Guanting Dong2∗ , Mingfeng Xue2∗ , Ru Peng2∗ , Xiang Wang1
+Dayiheng Liu2†
+1
+University of Science and Technology of China
+2
+Alibaba Group.
+{lichengpeng.lcp,liudayiheng.ldyh}@alibaba-inc.com
+
+arXiv:2407.04078v3 [cs.CL] 17 Jul 2024
+
+"Divide each difficulty into as many parts
+as is feasible and necessary to resolve it."
+– René Descartes
+
+Abstract
+Large language models (LLMs) have made
+impressive progress in handling simple math
+problems, yet they still struggle with more
+challenging and complex mathematical tasks.
+In this paper, we introduce a series of LLMs
+that employs the Decomposition of thought
+with code assistance and self-correction for
+mathematical reasoning, dubbed as DotaMath.
+DotaMath models tackle complex mathematical tasks by decomposing them into simpler logical subtasks, leveraging code to solve
+these subtasks, obtaining fine-grained feedback from the code interpreter, and engaging in self-reflection and correction. By annotating diverse interactive tool-use trajectories and employing query evolution on GSM8K
+and MATH datasets, we generate an instruction fine-tuning dataset called DotaMathQA
+with 574K query-response pairs. We train
+a series of base LLMs using imitation learning on DotaMathQA, resulting in DotaMath
+models that achieve the remarkable performance compared to open-source LLMs across
+various in-domain and out-of-domain benchmarks. Notably, DotaMath-deepseek-7B showcases an outstanding performance of 64.8%
+on the competitive MATH dataset and 86.7%
+on GSM8K. Besides, DotaMath-deepseek-7B
+maintains strong competitiveness on a series
+of in-domain and out-of-domain benchmarks
+(Avg. 80.1%). Looking forward, we anticipate that the DotaMath paradigm will open new
+pathways for addressing intricate mathematical problems. Our code is publicly available
+at https://github.com/ChengpengLi1003/
+DotaMath.
+* Work done during internship at Alibaba Group
+†
+
+Corresponding author
+
+1
+
+Introduction
+
+The emergence of large language models (LLMs)
+(Ouyang et al., 2022; Anil et al., 2023b; OpenAI,
+2024; Anil et al., 2023a; Anthropic, 2024; Yang
+et al., 2024) has profoundly revolutionized a diverse range of natural language processing benchmarks (Chen et al., 2021; Longpre et al., 2023;
+Wei et al., 2023; Luo et al., 2023b; Qiao et al.,
+2024; Song et al., 2024). However, in the challenging field of mathematical reasoning, enabling
+open-source LLMs to possess reasoning abilities
+for complex mathematical tasks remains a significant challenge (Gou et al., 2023; Yue et al., 2023,
+2024a).
+Existing works have attempted to enhance the
+reasoning capabilities of LLMs through methods such as chain-of-thought (COT) (Wei et al.,
+2022), program-of-thought (POT) (Chen et al.,
+2022; Gao et al.), and tool-integrated reasoning
+approaches (Tool-based) (Gou et al., 2023; Wang
+et al., 2023a). The Tool-based approach effectively merges COT’s semantic and abstract reasoning with POT’s computational precision, demonstrating commendable performance. Meanwhile,
+several efforts utilize state-of-the-art proprietary
+models like GPT-4 to augment existing mathematical reasoning datasets (Yu et al., 2023; Luo
+et al., 2023a; Li et al., 2023a), thereby improving the reasoning capabilities of LLMs during the
+supervised fine-tuning (SFT) phase. Building on
+prior works, open-source LLMs have achieved
+commendable performance on simple math problems. For example, on GSM8K (Cobbe et al., 2021)
+which contains grade school math word problems,
+many math-specific LLMs exceeding 80% accuracy. However, they continue to struggle with complex mathematical reasoning tasks. For instance,
+on MATH (Hendrycks et al., 2021) dataset comprising challenging competition problems, almost
+all open-source LLMs cannot exceed 60% accu-
+
+racy. Through our investigation, we find that these
+open-source LLMs lack meticulous design for complex mathematical tasks. They do not consider the
+necessity of task decomposition for complex tasks,
+nor do they account for the need for LLMs to obtain more feedback signals from tools to facilitate
+comprehensive analysis.
+To improve the capabilities of open-source
+LLMs in complex mathematical reasoning tasks,
+this paper introduces DotaMath models, a series
+of LLMs which employ the Decomposition of
+thought with code assistance and self-correction
+for mathematical Reasoning. There are three special designs in DotaMath for complex mathematical tasks, as depicted in Figure 1. (1) Decomposition of thought: The principle of divide-andconquer often allows complex tasks to be decomposed into more easily solvable subtasks. Inspired
+by some relevant works (Khot et al.; Li et al.,
+2023b), DotaMath break down mathematical problems into logical subtasks and use code to solve
+them. (2) Intermediate process display: While
+previous tool-based math-specifical LLMs (Wang
+et al., 2023a; Gou et al., 2023; Shao et al., 2024)
+obtain only single mathematical expressions from
+code interpreters, we aim for DotaMATH to receive more fine-grained feedback from the code
+interpreter for subsequent comprehensive analysis. To achieve this goal, we facilitate the model
+to print the results of all subtasks in the form of
+chain of thought within the code. This design also
+contributes to enhancing the human readability of
+the model’s responses. (3) Self-correction: When
+solving complex tasks, the issue of not succeeding at once sometimes arises. Self-reflection and
+correction are appropriate for resolving this problem (Shinn et al., 2023; Zhang et al., 2024). We
+construct two types of instruction fine-tuning data
+to endow DotaMath with self-correction capabilities.
+For data construction, we introduce an
+instruction-following dataset named DotaMathQA, based on the human-curated mathematical datasets GSM8K and MATH. As shown in
+Figure 2, DotaMathQA contains two types of data:
+one involves data that requires a single invocation
+of Python code, referred to as Single-turn QA; the
+other includes data with a self-correction process,
+necessitating multiple invocations of Python code,
+referred to as Multi-turn QA. Inspired by previous
+works (Luo et al., 2023a; Yu et al., 2023; Li et al.,
+2023a), we adopt the query evolution to bootstrap
+
+mathematical questions in GSM8K and MATH
+with the augmentation prompt in Appendix D.
+With DotaMathQA, we fine-tune a series of
+backbone models, including Llama2-7B (Touvron
+et al., 2023), Llama3-8B (Meta, 2024), Llemma7B (Azerbayev et al., 2024) and DeepSeekMathBase-7B (Shao et al., 2024). As shown in Table 2, DotaMath outperforms open-source models across all scales on in-domain GSM8K and
+MATH datasets and four out-of-domain mathemathical benchmarks overall. Notably, DotaMathdeepseek-7B showcases an outstanding performance of 64.8% on the competitive MATH dataset.
+Besides, DotaMath-deepseek-7B maintains strong
+competitiveness on GSM8K (86.7%) and achieves
+an anverage of 80.1% on two in-domain benchmarks and four out-of-domain benchmarks. Looking ahead, we believe the DotaMath paradigm will
+pave a new avenue for solving complex mathematical tasks.
+
+2
+
+Related Work
+
+Mathematical Reasoning Techniques in LLMs.
+Early attempts to solve mathematical problems using large language models rely on basic computational expressions and results presented as fewshot examples (Brown et al., 2020). Moreover, Wei
+et al. (2022); Kojima et al. (2022) employ intermediate steps to enhance the capability of large
+language models in tackling complex mathematical reasoning tasks. Building on this approach,
+Chen et al. (2022); Gao et al. introduce the use
+of code tools in the problem-solving process. Subsequent researches explore various collaborative
+paradigms involving Chain-of-Thoughts and coding, which lead to significant improvements in the
+accuracy of solutions provided by large language
+models (Yue et al., 2023; Gou et al., 2023; Liao
+et al., 2024; Ying et al., 2024). Different from them,
+we introduces DotaMath, a novel math problemsolving paradigm which decomposes mathematical
+problems into logical subtasks and utilizes code to
+address these tasks. Our approach demonstrates
+superior performance across two in-domain and
+four out-of-domain math datasets.
+Data Augmentation for Improved Math Reasoning. Beyond the exploration of paradigms, recent researches have increasingly focused on utilizing high-quality data to enhance the mathematical capabilities of large language models. Some
+initiatives involve curating diverse collections of
+
+Problem 𝑞
+
+Find the radius of the circle with equation 𝑥 ! + 8𝑥 + 𝑦 ! − 6𝑦 = 0.
+
+1. Complete the square for both 𝑥 and 𝑦 terms to rewrite the equation in the standard form of a circle's equation, (𝑥 − ℎ)! +(𝑦 − 𝑘)! = 𝑟 ! .
+2. Extract the value of 𝑟 ! from the standard.
+Decomposition1
+𝑑! = 𝑑!! ⊕ 𝑑!" ⊕ 𝑑!# 3. Compute the radius.
+
+Code1 𝑐!
+
+Result1
+𝑟! = 𝑟!! ⊕ 𝑟!" ⊕ 𝑟!#
+Error Reason 𝑒!
+Decomposition2 𝑑"
+
+Code2 𝑐"
+
+Result2 𝑟"
+Answer 𝑎
+
+from sympy import symbols, Eq, solve, sqrt
+x, y = symbols('x y’)
+circle_eq = x**2 + 8*x + y**2 - 6*y
+x_term = (x + 4)**2 – 4**2, y_term = (y - 3)**2 – 3**2
+standard_form = x_term + y_term
+standard_form_eq = Eq(standard_form, 0)
+r_squared = simplify(-standard_form_eq.rhs)
+radius = simplify(r_squared**0.5)
+print(f"Standard form of the circle: (x + 4)^2 + (y - 3)^2 = {r_squared}.")
+print(f”Squared radius is {r_squared}.")
+print(f"Radius of the circle is {radius}.")
+Step 1: Standard form of the circle: (x + 4)^2 + (y - 3)^2 = 0.
+Step 2: Squared radius is 0.
+Step 3: Radius of the circle is 0.
+The error lies in the incorrect simplification of the equation after completing the square, leading to an incorrect radius calculation.
+1. Complete the square for both 𝑥 and 𝑦 terms to rewrite the equation in the standard form of a circle's equation, (𝑥 − ℎ)! +(𝑦 − 𝑘)! = 𝑟 !
+2. Extract the value of 𝑟 ! from the standard form and then compute the radius.
+3. Calculate the radius of the circle.
+…
+# Move constants to the right side
+r_squared = 4**2 + 3**2
+nprint(f"Extract the value of r^2 = {r_squared}\")
+r= sqrt(r_squared)
+Step 1: Complete the square for x and y terms, after completing the square: Eq((x + 4)**2 + (y - 3)**2 - 25, 0).
+Step 2: Extract the value of r^2 = 25.
+Step3: The radius of the circle is 5.
+The radius of the circle is directly obtained from the code as 5. Therefore, the final answer is \boxed{5}.
+
+Figure 1: An example shows how the DotaMath use decomposition and self-correction to solve a probem form
+MATH test set. For problem p, the model initially decomposes it into three subtasks and subsequently writes
+corresponding code. The Python interpreter then executes this code, producing three subresults. Upon identifying
+that the results are incorrect, the model elucidates the error’s cause and undertakes a revised decomposition.
+Following this, new code is crafted and executed by the Python interpreter, leading to the correct resolution of the
+problem and presentation of the final solution.
+
+mathematical data to train specialized base models
+tailored specifically for mathematical tasks (Azerbayev et al., 2024; Paster et al., 2023; Wang et al.,
+2023b; Ying et al., 2024; Shao et al., 2024). Other
+studies generate synthetic mathematical questionanswer pairs by querying advanced large language
+models, such as GPTs (Sun et al., 2023), Qwen (Alibaba, 2023), and Mixtral (Jiang et al., 2024), to
+create Supervised Fine-Tuning (SFT) datasets (Luo
+et al., 2023a; Yu et al., 2023; Li et al., 2023a;
+Yue et al., 2024b). In this paper, we presents
+a synthetic dataset aligned with the DotaMath
+paradigm, named DotaMathQA, which includes
+both single-turn-dialog form and multi-turn-dialog
+form that incorporate a self-correction process. We
+demonstrate the effectiveness and generalizability
+of DotaMathQA across various backbone models
+and benchmarks.
+
+3
+
+Method
+
+In this section, we first introduce how DotaMath
+performs mathematical reasoning through interaction with Python interpreter (§3.1 & Fig. 1).
+
+Next, we introduce the pipline of using GPT-4 for
+data annotation to synthesize the instruction-tuning
+dataset, DotaMathQA.1 (§3.2 & Fig. 2). Finally,
+we discuss the process of supervised fine-tuning a
+range of foundational LLMs on the DotaMathQA
+dataset (§3.3).
+3.1
+
+Inference Procedure
+
+Motivated by a series of efforts that integrate the
+Python interpreter’s output as supervision (Le et al.,
+2022; Chen et al., 2023; Qiao et al., 2023; Dong
+et al., 2024), DotaMath solves mathematical problems through several operations, including task
+decomposition, writing Python programs, invoking the Python interpreter and self-correction (Figure 1). For a given problem q and system prompt p
+in Appendix D, DotaMath(M) initially decompose
+it into some sub-tasks, yielding d1 = d11 ⊕ d21 ⊕ d31 ,
+where ⊕ means concatenation.
+d1 ∼ PM (· | p ⊕ q),
+1
+
+(1)
+
+In this paper, all data generated by GPT-4 are derived
+from the gpt-4-turbo-2024-04-09 api.
+
+i) Generating Seed Single-turn QA
+Generative Prompt
+
+Query
+
+Data Filter1
+GPT-4
+
+Incorrect
+Answer1
+Correct
+Answer1
+
+Seed
+Single-turn
+QA
+
+𝑫𝐬𝐞𝐞𝐝$𝐬𝐢𝐧𝐠𝐥𝐞
+
+ii) Generating Augmented Single-turn QA
+Generative
+Augmentation
+Prompt Augmented Prompt
+
+Query
+
+Query
+
+Data Filter2
+GPT-4
+
+GPT-4
+
+Answer with
+code bug
+Answer without
+code bug
+
+Augmented
+Single-turn
+QA
+
+𝑫𝐚𝐮𝐠$𝐬𝐢𝐧𝐠𝐥𝐞
+
+iii) Generating Automatic Multi-turn QA
+Query
+
+Corrective Prompt
+
+&
+
+Data Filter1
+GPT-4
+
+Incorrect Answer1
+
+Incorrect
+Answer2
+Correct
+Answer2
+
+Automatic
+Multi-turn
+QA
+
+𝑫𝐚𝐮𝐭𝐨$𝐦𝐮𝐥𝐭𝐢
+
+iv) Generating Rule-based Multi-turn QA
+Query
+&
+Incorrect and
+Correct Answer1,2
+
+Interpreted Prompt
+
+Error Rationale1,2
+GPT-4
+
+Rule-based
+Multi-turn
+QA
+
+𝑫𝐫𝐮𝐥𝐞$𝐦𝐮𝐥𝐭𝐢
+
+Figure 2: Dataset construction for DotaMathQA. The detailed desciption are in Section 3.2. All prompts used are
+listed in Appendix D. Data Filter1 means retaining correct instances by comparing the results of the generated code
+from the Python interpreter with the ground truth answers in the dataset. Data Filter2 means filtering out instances
+where the generated code results in execution errors.
+
+where PM means the probability distribution of
+a LLM M. Subsequently, DotaMath generates a
+Python code segment c1 to address these sub-tasks,
+presenting the reasoning process of each sub-task
+internally via substituting the intermediate results
+of sub-tasks with variables in the code. In line with
+with (Gou et al., 2023), the Python code utilizes a
+specific start token "```Python" and a distinct end
+token "```output" to determine when to cease
+generation for invoking the Python interpreter:
+c1 ∼ PM (· | p ⊕ q ⊕ d1 ).
+
+(2)
+
+The execution result r1 = r11 ⊕ r12 ⊕ r13 (including results of all subtasks) obtained via the Python
+interpreter is fed back to DotaMath for further analysis. If the problem is resolved, DotaMath will
+generate the final result a and place the answer
+within "\boxed{}" for evaluation:
+a ∼ PM (· | p ⊕ q ⊕ d1 ⊕ c1 ⊕ r1 ).
+
+(3)
+
+This type of data is referred to as single-turn QA.
+Otherwise, DotaMath reflects on the previous decomposition and code based on the results of all
+sub-tasks, providing an explanation for any errors
+e1 :
+e1 ∼ PM (· | p ⊕ q ⊕ d1 ⊕ c1 ⊕ r1 ).
+
+(4)
+
+Subsequently, the process of task decomposition,
+code generation, and invoking the Python interpreter is repeated until the problem is resolved or
+a predetermined maximum number of tool invocations is reached. This iterative process is referred
+to as self-correction, and the corresponding data
+is termed multi-turn QA. Overall, the interaction
+trajectory between the model and the Python interpreter can be summarized as follows:
+τ = d1 ⊕ c1 ⊕ r1 ⊕ e1 · · · dn ⊕ cn ⊕ rn ⊕ a. (5)
+3.2
+
+DotaMathQA Dataset Construction
+
+As illustrated in Figure 2, our DotaMathQA
+dataset can be divided into four parts:
+{Dseed-single , Daug-single , Dauto-multi , Drule-multi } ∈
+DDotaMathQA . As illustrated in Figure 2, queries
+for Dseed-single , Dauto-multi , and Drule-multi originate from two popular mathematical reasoning
+datasets, GSM8K and MATH. Additionally,
+queries for Daug-single come from the augmented
+queries of these datasets. The single-round
+data Dsingle = {Dseed-single , Daug-single } involves
+one-time tool usage (Python interpreter), excluding
+the self-correction process. In contrast, the multiround data Dmulti = {Dauto-multi , Drule-multi }
+encompasses multiple tool invocations, including
+the self-correction process.
+
+Datasets
+RFT (Yuan et al., 2023)
+Open-Platypus (Lee et al., 2023)
+WizardMath (Luo et al., 2023a)
+Lila (Mishra et al., 2022)
+MathInstruct (Yue et al., 2023)
+ToRA (Gou et al., 2023)
+MetaMath (Yu et al., 2023)
+MuggleMATH (Li et al., 2023a)
+DotaMathQA
+
+Size
+100K
+25K
+>50K
+134K
+260K
+69K
+395K
+600K
+574K
+
+LLM Used?
+LLaMA-2
+GPT-4
+ChatGPT
+GPT-4
+GPT-4
+GPT-4
+GPT-4
+GPT-4
+
+Use Tool?
+×
+×
+×
+✓
+✓
+✓
+×
+×
+✓
+
+Data Sources
+GSM8K
+11 datasets with MATH
+MATH & GSM8K
+20 datasets with MATH & GSM8K
+14 datasets with GPT-4
+MATH & GSM8K
+MATH & GSM8K
+MATH & GSM8K
+MATH & GSM8K
+
+Table 1: Dataset Statistics and Comparison.
+
+Dseed-single Construction. Leveraging the powerful instruction-following capability of GPT-4, we
+prompt it to generate solutions in the desired DotaMath format for queries from the GSM8K and
+MATH training datasets. This is achieved by manually writing a single query-response demonstration
+derived from the MATH training set to guide GPT4 in producing the corresponding data format, as
+outlined in the generative prompt in Appendix D.
+We conduct nucleus sampling with a temperature of
+0.5 and top-p of 1.0, generating four responses per
+query. Subsequently, we pass all the generated responses to the Python interpreter. We employ both
+rules and manual inspection to verify whether the
+answers match the reference answers in the original GSM8K and MATH datasets. If they match,
+we place them in Dseed-single . If the solutions generated by GPT-4 are incorrect, we revert to using
+the generative prompt with a temperature of 0.7
+and top-p of 1.0 to sample 10 more responses per
+query. This re-annotation process is repeated up to
+five times.
+Daug-single Construction. Utilizing GPT-4 to
+bootstrap queries in the training dataset for diversification significantly enhances the in-domain
+reasoning capabilities of large models (Luo et al.,
+2023a; Yu et al., 2023; Li et al., 2023a). Similar
+to Li et al., we modify mathematical problems in
+GSM8K and MATH for query augmentation using
+the augmentation prompt in Appendix D. Then, we
+annotate the augmented queries them using generative prompt with GPT-4. Given the absence of
+standard answers for augmented queries, we only
+filter out responses that contain python execution
+bugs.
+Dauto-multi Construction. For incorrect solutions
+generated by GPT-4, we use the corrective prompt
+in Appendix D to instruct GPT-4 to correct them.
+
+The new solution is then sent to the Python interpreter. If the self-correction is successful, we
+concatenate the incorrect and corrected solutions
+to create error-correcting data, adding this data to
+Dauto-multi . We fine-tune several DeepSeekMATHBase models using subsets of Dseed-single and then
+use them to annotate the training sets of GSM8K
+and MATH. This process aims to enrich the diversity of queries and responses in the error-correcting
+data, enabling the model to identify and correct a
+wider range of error patterns.
+Drule-multi Construction. The efficiency of obtaining error-correcting data through 3.2 has been
+observed to be relatively low due to GPT-4’s limited success rate in correcting incorrect responses.
+To address the issue of low efficiency in obtaining self-correction data, a new method for constructing self-correction data has been designed.
+For queries that possess both correct and incorrect responses, GPT-4 is directed to analyze the
+incorrect solution based on the correct one and
+explain the reasons for the error. The incorrect
+solution, the explanation of its error, a linking sentence "let's correct the solution", and the
+correct solution are then concatenated together to
+form new self-correction data.
+Table 1 compares DotaMathQA with several recently introduced mathematical datasets. Overall,
+Dseed-single , Dauto-multi and Drule-multi ensure that
+99.3% of GSM8K queries and 96% of MATH
+queries have at least one correct solution or a solution that has undergone correction. The sizes
+of Dseed-single , Dauto-multi ,Drule-multi and Daug-single
+are 80K, 2K, 10K, and 482K, respectively.
+3.3
+
+Supervised Fine-tuning
+
+We describe DDotaMathQA as DDotaMathQA =
+{(qi , τi )}i , where qi represents a math question
+
+and τi indicates an interaction trajectory of natural language and tools in Eq.5. We apply supervised fine-tuning on a series of base models, including Llama2-7B (Touvron et al., 2023), LLaMA38B (Meta, 2024), Llemma-7B (Azerbayev et al.,
+2024), and DeepSeekMath-Base-7B (Shao et al.,
+2024), resulting in a series of DotaMath-LLMs.
+For a LLM (parameterized by θ), the optimization
+objective is to maximize the log likelihood of the
+reasoning trajectory conditioned on the question,
+X
+L(θ) =
+log P(τi | qˆi ; θ), (6)
+(qi ,τi )∈DDotaMathQA
+
+where qˆi represents the content of qi equipped
+with a system prompt in Appendix D.
+
+4
+
+Experiments
+
+4.1
+
+Experimental Setup
+
+Datasets. The models are evaluated on two indomain datasets, GSM8K (Cobbe et al., 2021)
+and MATH (Hendrycks et al., 2021), as wel as
+four out-of-domain datasets: Mathematics (Saxton et al., 2019), SVAMP (Patel et al., 2021),
+TabMWP (Lu et al., 2023), and ASDiv (Miao et al.,
+2020). These six datasets encompass a wide range
+of difficulty levels, from grade school math word
+problems to challenging competition mathematics
+problems, covering multiple domains including Algebra, Number Theory, Counting and Probability,
+Geometry, and Precalculus. They include various
+types of questions, such as tabular-based, free-form,
+and multiple-choice, offering a comprehensive assessment of the model’s mathematical reasoning
+capabilities.
+Metrics. We use the accuracy of predicted answers to evaluate LLMs. Following (Lightman
+et al., 2023), we round numbers and parsed expressions using sympy2.
+4.2
+
+Baselines
+
+We benchmark our models with following proprietary Models and Open-Source Models:
+• Proprietary Models: Claude-3 (Anthropic,
+2024), GPT-3.5 (Brown et al., 2020), GPT4 (OpenAI, 2023), etc.
+• Open-Source Models: WizardMATH (Luo
+et al., 2023a), MetaMATH (Yu et al.,
+2023), MuggleMATH (Li et al., 2023a),
+RFT (Yuan et al., 2023), MATHCoder (Wang
+
+et al., 2023a), ToRA (Gou et al., 2023),
+MARIO (Liao et al., 2024), etc.
+For space saving, only part results are listed in
+Table 2. More results can be found in Table 10.
+4.3
+
+Main Results
+
+Table 2 compares DotaMath with a range of state
+of art mathematical methods across in-domain and
+out-of-domain benchmarks. We can draw several
+conclusions:
+(1) On the elementary mathematical task
+GSM8K, most state-of-the-art 70B open-source
+models achieve a performance of over 80, regardless of tool usage. This indicates that the tool-based
+paradigm does not offer a significant advantage
+over Chain-of-Thought (COT) methods in simple
+mathematical reasoning tasks. However, DotaMath,
+with a size of just 7B, surpasses most of the 70B
+open-source models, demonstrating strong competitiveness.
+(2) On the competition-level mathematical task
+MATH, models utilizing tools significantly outperform those that do not, emphasizing the necessity
+of the tool-based paradigm for complex mathematical tasks. DotaMath substantially outperforms all
+open-source models and even exceeds the strongest
+proprietary model, Claude-3 Opus.
+(3) The DotaMath series also demonstrates the
+best performance on untrained Out-of-Domain
+datasets, indicating our model’s strong generalization capabilities and comprehensive mathematical reasoning abilities. On average, DotaMathdeepseek outperforms the previous best opensource SFT model, DeepSeek-MATH-Instruct, by
+4.4 points..
+(4) On in-domain benchmarks, DotaMathLLaMA2-7B, DotaMath-llemma-7B, DotaMathLLaMA3-7B, and DotaMath-deepseek-7B exhibit
+incremental performance improvements. These
+differences are likely attributable to the quantity
+and quality of math-related data used in their pretraining or continual pre-training.
+4.4
+
+Ablation Study
+
+To verify whether our designs enhance the mathematical reasoning capabilities of models, we performed ablation studies on different parts of the
+data. All results are based on fine-tuning the
+DeepSeekMath-Base model. In summary, we conducted ablation studies on two components: data
+format and data augmentation. The data format
+
+Model
+
+Size
+
+Use Tool?
+
+In-domain
+GSM8K
+
+Out-of-domain
+
+MATH
+
+Mathematics
+
+SVAMP
+
+TabMWP
+
+ASDiv
+
+Average
+
+60.1
+42.5
+69.7
+51.8
+
+-
+
+93.1
+94.8
+
+67.1
+95.9
+
+91.3
+92.6
+
+-
+
+Proprietary Model
+✕
+✕
+✓
+✓
+
+Claude-3 Opus (Anthropic, 2024)
+GPT-4(original version) (OpenAI, 2023)
+GPT-4 Code Interpreter (Zhou et al., 2023)
+GPT-4 (PAL) (Gou et al., 2023)
+
+-
+
+95.0
+92.0
+97.0
+94.2
+
+MetaMATH (Yu et al., 2023)
+MuggleMATH (Li et al., 2023a)
+MAmmoTH (Yue et al., 2023)
+ToRA (Gou et al., 2023)
+MathGenieLM (Lu et al., 2024)
+
+70B
+70B
+70B
+70B
+70B
+
+✕
+✕
+✓
+✓
+✓
+
+82.3
+82.7
+76.9
+84.3
+88.4
+
+26.6
+36.3
+41.8
+49.7
+51.2
+
+34.6
+55.6
+72.6
+76.0
+
+85.8
+83.4
+82.4
+82.7
+87.7
+
+63.4
+59.7
+38.2
+74.0
+-
+
+84.0
+81.8
+70.2
+86.8
+-
+
+57.8
+48.0
+70.5
+-
+
+ToRA (Gou et al., 2023)
+MathGenieLM (Lu et al., 2024)
+DotaMath-LLaMA2-7B
+MAmmoTH2-8B
+DotaMath-LLaMA3-8B
+ToRA-llema (Gou et al., 2023)
+MARIO-llema-7B (Liao et al., 2024)
+DotaMath-llemma-7B
+DeepSeek-MATH-Instruct (Shao et al., 2024)
+KPMath-Plus-deepseek (Huang et al., 2024)
+MARIO-deepseek (Liao et al., 2024)
+DotaMath-deepseek-7B
+
+7B
+7B
+7B
+8B
+8B
+7B
+7B
+7B
+7B
+7B
+7B
+7B
+
+✓
+✓
+✓
+✕
+✓
+✓
+✓
+✓
+✓
+✕
+✓
+✓
+
+68.8
+71.7
+79.6
+70.4
+84.2
+74.8
+70.1
+81.2
+83.7
+83.9
+78.4
+86.7
+
+40.1
+33.0
+50.1
+35.8
+58.9
+49.5
+46.3
+57.7
+57.4
+48.8
+56.1
+64.8
+
+58.3
+65.0
+65.0
+74.2
+76.8
+82.8
+79.1
+
+68.2
+78.5
+84.2
+88.3
+76.0
+87.8
+85.7
+81.5
+89.5
+
+42.4
+64.1
+70.4
+63.5
+77.7
+79.7
+78.7
+84.2
+
+73.9
+82.3
+85.1
+82.3
+85.1
+86.6
+88.9
+88.5
+
+49.0
+64.7
+71.1
+74.3
+75.7
+80.1
+
+Open-Source Model
+
+Table 2: Comparison of DotaMath with open-source and proprietary source LLMs on in-domain and out-of-domain
+benchmarks. The base model of open-source LLMs above DotaMath-LLaMA2-7B are LLaMA2. The average score
+is derived from a weighted average of scores across benchmarks, with weights the proportion of questions in each
+benchmark. The best results are highlighted in bold, and the second-best results are underlined.
+
+DDotaMathQA-w/o-aug
+DDotaMathQA-w/o-aug-w/o-dot
+DDotaMathQA-w/o-aug-w/o-inter
+DDotaMathQA-w/o-aug-w/o-multi
+
+GSM8K
+
+MATH
+
+82.4
+80.0(↓ 3.0%)
+81.5(↓ 1.1%)
+81.3(↓ 1.3%)
+
+59.0
+55.5(↓ 6.0%)
+57.4(↓ 2.7%)
+56.7(↓ 3.9%)
+
+Table 3: The ablation study of decomposition of thought,
+display intermediate process and self-correction.
+
+90
+85
+
+Ablation on Data Format. Given that augmented data significantly increases in volume
+compared to the original dataset and cannot
+guarantee accuracy, our ablation studies of data
+format are conducted exclusively on the training
+sets of GSM8K and MATH and we name it
+DDotaMathQA-w/o-aug = {Dseed-single , Dmulti }. To
+verify the role of decomposition of thought,
+we eliminate the rationale that decomposes
+the question into sub-tasks from the responses
+in the DDotaMathQA-w/o-aug dataset and get
+
+DotaMathQA
+DotaMathQA-w/o-aug
+
+75
+70
+
+9.8%
+
+65
+60
+55
+50
+45
+
+ablation includes three aspects: decomposition of
+thought, intermediate process display, and selfcorrection.
+
+5.2%
+
+80
+
+Score (%)
+
+Traning Set
+
+GSM8K
+
+Dataset
+
+MATH
+
+Figure 3: The comparison of DeepSeekMath-Base
+fine-tuned with DDotaMathQA and DDotaMathQA-w/o-aug on
+GSM8K and MATH.
+
+DDotaMathQA-w/o-aug-w/o-dot . From Table 3, we
+observe a decrease in accuracy of 3.0% on
+GSM8K and 6.0% on MATH, underscoring
+the effectiveness of decomposition of thought,
+particularly for the more challenging MATH
+dataset. Similarly, we remove all print statements
+from the code in the dataset responses except
+those printing the final result, and using a Python
+interpreter, we execute the modified code to
+obtain new data DDotaMathQA-w/o-aug-w/o-inter . The
+
+Model
+DDotaMathQA
+DDotaMathQA-w/o-aug
+DDotaMathQA-w/o-aug-w/o-dot
+DDotaMathQA-w/o-aug-w/o-inter
+DDotaMathQA-w/o-aug-w/o-multi
+
+Level 1
+
+Level 2
+
+Level 3
+
+Level 4
+
+Level 5
+
+91.3 (↑ 4.5%)
+87.4
+85.1 (↓ 2.6%)
+85.8 (↓ 1.8%)
+86.7 (↓ 0.8%)
+
+80.5 (↑ 6.3%)
+75.7
+72.1 (↓ 4.8%)
+73.3 (↓ 3.2%)
+73.9 (↓ 2.4%)
+
+74.7 (↑ 11.8%)
+66.8
+65.4 (↓ 2.1%)
+66.6 (↓ 0.3%)
+64.3 (↓ 3.7%)
+
+59.3 (↑ 8.0%)
+54.9
+49.6 (↓ 9.7%)
+53.7 (↓ 2.2%)
+52.4 (↓ 4.6%)
+
+41.9 (↑ 18.7%)
+35.3
+31.6 (↓ 10.5%)
+33.3 (↓ 5.7%)
+32.8 (↓ 7.1%)
+
+Table 4: Sub-levels performance of different models on MATH. Level5 is hardest.The most significant change
+appears in green . The number of questions from Level 1 to Level 5 are 437, 894, 1131, 1214, and 1324, respectively.
+
+Training Set
+Dseed-single
+Dseed-single +Dauto-multi (2K)
+Dseed-single +Drule-multi (10K)
+Dseed-single +Drule-multi (2K)
+Dseed-single +Dmulti
+
+GSM8K
+
+MATH
+
+Training Set
+
+81.3
+81.8
+82.3
+81.6
+82.8
+
+56.7
+58.4
+58.6
+57.5
+59.0
+
+DDotaMathQA-w/o-aug
+DDotaMathQA
+DDotaMathQA-self
+
+GSM8K
+
+MATH
+
+82.8
+86.7
+81.5
+
+59.0
+64.8
+60.1
+
+Table 6: Self-annotation vs. GPT-4 annotation.
+Table 5: Effectiveness of different self-correction data.
+
+corresponding performance decrease is 1.1%
+on GSM8K and 2.7% on MATH, illustrating
+the effectiveness of displaying intermediate
+processes. To examine the role of error correction,
+we remove Dmulti from DDotaMathQA-w/o-aug to
+get DDotaMathQA-w/o-aug-w/o-multi . Following this
+removal, the model’s performance decrease by
+1.3% on GSM8K and 3.9% on MATH, indicating
+that self-correction enhances the model’s ability to
+solve complex tasks.
+Ablation on Data Augmentation. To analyze
+the impact of data augmentation, we separately fine-tune the DeepSeekMath-Base model
+on DDotaMathQA and DDotaMathQA-w/o-aug . On
+GSM8K, data augmentation increases the accuracy
+from 82.4 to 86.7, marking a 4.7% improvement.
+On MATH, data augmentation boost the performance from 59.0 to 64.8, achieving a 9.8% increase.
+These performance improvements further demonstrate the significant role of query augmentation
+in enhancing the model’s mathematical reasoning
+capabilities. The disparity in performance gains between GSM8K and MATH could be aligned to the
+finding (Li et al., 2023a) that the model fine-tuned
+without augmented data already achieves a high accuracy on GSM8K, making further enhancements
+more difficult.
+4.5
+
+Analysis
+
+The Effectiveness of Data Augmentation in
+MATH Sub-levels. For data augmentation, the
+
+performance gains at different levels are roughly
+positively correlated with question difficulty. This
+indicates that data augmentation is more effective
+for more difficult questions. At the most difficult
+Level 5, data augmentation increases the model’s
+performance from 35.5 to 41.9, achieving an impressive 18.7% improvement. For decomposition
+of thought, Intermediate Process Display, and selfcorrection, the most significant changes also occur
+with Level 5 questions. This indicates that such
+designs are effective in enhancing the model’s reasoning capabilities for complex problems.
+Analysis of Self-correction Data. Since we designed two types of self-correction data, we further analyze and compare them. Despite the 5
+times difference in dataset sizes, with automatic
+multi-turn QA comprising 1,934 instances and rulebased multi-turn QA containing 10,150, the gains
+from the former on GSM8K are 0.5 lower than
+the latter but 0.2 lower on MATH form table 5.
+We reduce the size of rule-based multi-turn QA to
+the same level of multi-turn QA, the performance
+of the former is worse than the latter. This suggests that self-correction data generated by GPT-4
+may be more efficient than that produced by rulebased methods. Two possible reasons are: (1) The
+correct components within the rule-generated selfcorrection data might have already been learned
+by the model, resulting in relatively lower benefits;
+(2) The explanations for errors and correct answers
+in the rule-generated data might not fully align,
+leading to lower efficiency in learning to correct
+
+mistakes. However, rule-based multi-turn data requires only minimal GPT-4 annotation and avoids
+annotation failures. Combining the two types of
+self-correction data yields better performance than
+using either type alone, demonstrating their complementary effect.
+Analysis of Data Augmentation Strategies. We
+compare the model fine-tuned on DDotaMathQA-self
+where augmented augmented queries are annotated
+using a model SFT on DDotaMathQA-w/o-aug against
+DotaMath models, to investigate the benefits of
+varying annotation strategies. We observe that after
+employing self-annotation, model performance decreases on GSM8K but increases on MATH. Given
+the high baseline accuracy of the current model
+on GSM8K, self-annotation yields a performace
+decrease. This suggests that the effectiveness of
+self-annotation is related to the current model’s
+performance on different datasets. Compared with
+self-annotation, as GPT-4 outperforms the current
+model, annotations derived from it continue to yield
+substantial performance improvements.
+In the Appendix B, We also analyze the program
+execution simulation capabilities comparison of
+DotaMATH and other tool-based LLMs, the effect
+of filtering out buggy responses during the data augmentation phase, the impact of data augmentation
+and data format on different subtopics of MATH.
+
+5
+
+Conclusion
+
+In this paper, we introduce DotaMath, a series
+of LLMs which adopt decomposition of thought,
+code assistance, intermediate process display and
+self-correction to solve complex math problems.
+To train DotaMath, we construct an instruction
+fine-tuning datset named DotaMathQA with 574K
+query-response pairs. In detail, we use query evolution to GSM8K and MATH to augment to the
+existing queries. Then we use gpt-4 to annotate
+interactive tool-use trajectories on solve the original and augmented math problems. Ultimately,
+we fine-tune LLaMA2, LLaMA3, LLeMA, and
+DeepSeekMath-Base models using DotaMathQA,
+resulting in the DotaMath series models. Across
+two in-domain and four out-of-domain mathematical benchmarks, DotaMATH achieves the best or
+near-best performance among all open-source models and significantly improves performance on the
+competition-level MATH dataset. Upon analysis,
+we find that our designed module provides greater
+assistance with difficult problems in the MATH
+
+dataset, validating the rationale of our components
+for complex tasks. Interestingly, our design significantly enhances the model’s ability to simulate
+program results, allowing DotaMATH to achieve
+strong performance even without invoking tools.
+Overall, DotaMATH has further enhanced the capabilities of open-source LLMs on complex mathematical tasks, offering insights for subsequent research in LLM for mathematics.
+
+References
+Alibaba. 2023. Qwen technical report. arXiv preprint
+arXiv:2309.16609.
+Rohan Anil, Sebastian Borgeaud, Yonghui Wu, JeanBaptiste Alayrac, Jiahui Yu, Radu Soricut, Johan
+Schalkwyk, Andrew M. Dai, Anja Hauth, Katie Millican, David Silver, Slav Petrov, Melvin Johnson,
+Ioannis Antonoglou, Julian Schrittwieser, Amelia
+Glaese, Jilin Chen, Emily Pitler, Timothy P. Lillicrap, Angeliki Lazaridou, Orhan Firat, James Molloy,
+Michael Isard, Paul Ronald Barham, Tom Hennigan, Benjamin Lee, Fabio Viola, Malcolm Reynolds,
+Yuanzhong Xu, Ryan Doherty, Eli Collins, Clemens
+Meyer, Eliza Rutherford, Erica Moreira, Kareem
+Ayoub, Megha Goel, George Tucker, Enrique Piqueras, Maxim Krikun, Iain Barr, Nikolay Savinov,
+Ivo Danihelka, Becca Roelofs, Anaïs White, Anders
+Andreassen, Tamara von Glehn, Lakshman Yagati,
+Mehran Kazemi, Lucas Gonzalez, Misha Khalman,
+Jakub Sygnowski, and et al. 2023a. Gemini: A family of highly capable multimodal models.
+Rohan Anil, Andrew M Dai, Orhan Firat, Melvin Johnson, Dmitry Lepikhin, Alexandre Passos, Siamak
+Shakeri, Emanuel Taropa, Paige Bailey, Zhifeng
+Chen, et al. 2023b. Palm 2 technical report. arXiv
+preprint arXiv:2305.10403.
+Anthropic. 2023. Model card and evaluations for claude
+models.
+Anthropic. 2024. The claude 3 model family: Opus,
+sonnet, haiku.
+Zhangir Azerbayev, Hailey Schoelkopf, Keiran Paster,
+Marco Dos Santos, Stephen McAleer, Albert Q.
+Jiang, Jia Deng, Stella Biderman, and Sean Welleck.
+2024. Llemma: An open language model for mathematics.
+Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie
+Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind
+Neelakantan, Pranav Shyam, Girish Sastry, Amanda
+Askell, Sandhini Agarwal, Ariel Herbert-Voss,
+Gretchen Krueger, T. J. Henighan, Rewon Child,
+Aditya Ramesh, Daniel M. Ziegler, Jeff Wu, Clemens
+Winter, Christopher Hesse, Mark Chen, Eric Sigler,
+Mateusz Litwin, Scott Gray, Benjamin Chess, Jack
+Clark, Christopher Berner, Sam McCandlish, Alec
+Radford, Ilya Sutskever, and Dario Amodei. 2020.
+
+Language models are few-shot learners.
+abs/2005.14165.
+
+ArXiv,
+
+Mark Chen, Jerry Tworek, Heewoo Jun, Qiming
+Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph,
+Greg Brockman, Alex Ray, Raul Puri, Gretchen
+Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray,
+Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz
+Kaiser, Mohammad Bavarian, Clemens Winter,
+Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen
+Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie
+Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain,
+William Saunders, Christopher Hesse, Andrew N.
+Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan
+Morikawa, Alec Radford, Matthew Knight, Miles
+Brundage, Mira Murati, Katie Mayer, Peter Welinder,
+Bob McGrew, Dario Amodei, Sam McCandlish, Ilya
+Sutskever, and Wojciech Zaremba. 2021. Evaluating
+large language models trained on code.
+Wenhu Chen, Xueguang Ma, Xinyi Wang, and
+William W. Cohen. 2022. Program of thoughts
+prompting: Disentangling computation from reasoning for numerical reasoning tasks. CoRR.
+Xinyun Chen, Maxwell Lin, Nathanael Schärli, and
+Denny Zhou. 2023. Teaching large language models
+to self-debug. arXiv preprint arXiv:2304.05128.
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian,
+Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias
+Plappert, Jerry Tworek, Jacob Hilton, Reiichiro
+Nakano, et al. 2021. Training verifiers to solve math
+word problems. arXiv preprint arXiv:2110.14168.
+Guanting Dong, Keming Lu, Chengpeng Li, Tingyu
+Xia, Bowen Yu, Chang Zhou, and Jingren Zhou.
+2024. Self-play with execution feedback: Improving
+instruction-following capabilities of large language
+models. arXiv preprint arXiv:2406.13542.
+Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon,
+Pengfei Liu, Yiming Yang, Jamie Callan, and Graham Neubig. PAL: program-aided language models.
+In ICML 2023.
+Zhibin Gou, Zhihong Shao, Yeyun Gong, Yelong Shen,
+Yujiu Yang, Minlie Huang, Nan Duan, and Weizhu
+Chen. 2023. Tora: A tool-integrated reasoning agent
+for mathematical problem solving.
+Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul
+Arora, Steven Basart, Eric Tang, Dawn Song, and
+Jacob Steinhardt. 2021. Measuring mathematical
+problem solving with the MATH dataset.
+Yiming Huang, Xiao Liu, Yeyun Gong, Zhibin Gou,
+Yelong Shen, Nan Duan, and Weizhu Chen. 2024.
+Key-point-driven data synthesis with its enhancement
+on mathematical reasoning.
+
+Albert Q Jiang, Alexandre Sablayrolles, Antoine
+Roux, Arthur Mensch, Blanche Savary, Chris Bamford, Devendra Singh Chaplot, Diego de las Casas,
+Emma Bou Hanna, Florian Bressand, et al. 2024.
+Mixtral of experts. arXiv preprint arXiv:2401.04088.
+Tushar Khot, Harsh Trivedi, Matthew Finlayson, Yao Fu,
+Kyle Richardson, Peter Clark, and Ashish Sabharwal.
+Decomposed prompting: A modular approach for
+solving complex tasks.
+Takeshi Kojima, Shixiang Shane Gu, Machel Reid, Yutaka Matsuo, and Yusuke Iwasawa. 2022. Large language models are zero-shot reasoners. In Advances
+in Neural Information Processing Systems.
+Hung Le, Yue Wang, Akhilesh Deepak Gotmare, Silvio
+Savarese, and Steven Chu Hong Hoi. 2022. Coderl:
+Mastering code generation through pretrained models
+and deep reinforcement learning. Advances in Neural
+Information Processing Systems, 35:21314–21328.
+Ariel N. Lee, Cole J. Hunter, and Nataniel Ruiz. 2023.
+Platypus: Quick, cheap, and powerful refinement of
+llms.
+Chengpeng Li, Zheng Yuan, Guanting Dong, Keming
+Lu, Jiancan Wu, Chuanqi Tan, Xiang Wang, and
+Chang Zhou. 2023a. Query and response augmentation cannot help out-of-domain math reasoning generalization. arXiv preprint arXiv:2310.05506.
+Jingyao Li, Pengguang Chen, and Jiaya Jia. 2023b. Motcoder: Elevating large language models with modular of thought for challenging programming tasks.
+CoRR.
+Minpeng Liao, Wei Luo, Chengxi Li, Jing Wu, and
+Kai Fan. 2024. MARIO: math reasoning with code
+interpreter output - A reproducible pipeline. CoRR.
+Hunter Lightman, Vineet Kosaraju, Yura Burda, Harri
+Edwards, Bowen Baker, Teddy Lee, Jan Leike, John
+Schulman, Ilya Sutskever, and Karl Cobbe. 2023.
+Let’s verify step by step.
+Shayne Longpre, Le Hou, Tu Vu, Albert Webson,
+Hyung Won Chung, Yi Tay, Denny Zhou, Quoc V
+Le, Barret Zoph, Jason Wei, et al. 2023. The flan
+collection: Designing data and methods for effective
+instruction tuning. arXiv preprint arXiv:2301.13688.
+Pan Lu, Liang Qiu, Kai-Wei Chang, Ying Nian Wu,
+Song-Chun Zhu, Tanmay Rajpurohit, Peter Clark,
+and Ashwin Kalyan. 2023. Dynamic prompt learning
+via policy gradient for semi-structured mathematical
+reasoning. In ICLR.
+Zimu Lu, Aojun Zhou, Houxing Ren, Ke Wang,
+Weikang Shi, Junting Pan, Mingjie Zhan, and Hongsheng Li. 2024. Mathgenie: Generating synthetic
+data with question back-translation for enhancing
+mathematical reasoning of llms.
+
+Haipeng Luo, Qingfeng Sun, Can Xu, Pu Zhao, Jianguang Lou, Chongyang Tao, Xiubo Geng, Qingwei
+Lin, Shifeng Chen, and Dongmei Zhang. 2023a. Wizardmath: Empowering mathematical reasoning for
+large language models via reinforced evol-instruct.
+Ziyang Luo, Can Xu, Pu Zhao, Qingfeng Sun, Xiubo
+Geng, Wenxiang Hu, Chongyang Tao, Jing Ma, Qingwei Lin, and Daxin Jiang. 2023b. Wizardcoder:
+Empowering code large language models with evolinstruct.
+Meta. 2024. Introducing meta llama 3: The most capable openly available llm to date.
+Shen-Yun Miao, Chao-Chun Liang, and Keh-Yih Su.
+2020. A diverse corpus for evaluating and developing
+english math word problem solvers. In ACL.
+Swaroop Mishra, Matthew Finlayson, Pan Lu, Leonard
+Tang, Sean Welleck, Chitta Baral, Tanmay Rajpurohit, Oyvind Tafjord, Ashish Sabharwal, Peter Clark,
+and Ashwin Kalyan. 2022. LILA: A unified benchmark for mathematical reasoning. In EMNLP 2022.
+OpenAI. 2023. Gpt-4 technical report.
+OpenAI. 2024. Gpt-4 technical report.
+Long Ouyang, Jeff Wu, Xu Jiang, Diogo Almeida, Carroll L. Wainwright, Pamela Mishkin, Chong Zhang,
+Sandhini Agarwal, Katarina Slama, Alex Ray, John
+Schulman, Jacob Hilton, Fraser Kelton, Luke Miller,
+Maddie Simens, Amanda Askell, Peter Welinder,
+Paul Christiano, Jan Leike, and Ryan Lowe. 2022.
+Training language models to follow instructions with
+human feedback.
+Keiran Paster, Marco Dos Santos, Zhangir Azerbayev, and Jimmy Ba. 2023. Openwebmath: An
+open dataset of high-quality mathematical web text.
+CoRR.
+Arkil Patel, Satwik Bhattamishra, and Navin Goyal.
+2021. Are NLP models really able to solve simple
+math word problems? In NAACL-HLT.
+Runqi Qiao, Qiuna Tan, Guanting Dong, Minhui Wu,
+Chong Sun, Xiaoshuai Song, Zhuoma GongQue,
+Shanglin Lei, Zhe Wei, Miaoxuan Zhang, et al. 2024.
+We-math: Does your large multimodal model achieve
+human-like mathematical reasoning? arXiv preprint
+arXiv:2407.01284.
+Shuofei Qiao, Honghao Gui, Chengfei Lv, Qianghuai
+Jia, Huajun Chen, and Ningyu Zhang. 2023. Making
+language models better tool learners with execution
+feedback. arXiv preprint arXiv:2305.13068.
+David Saxton, Edward Grefenstette, Felix Hill, and
+Pushmeet Kohli. 2019. Analysing mathematical reasoning abilities of neural models. In ICLR 2019,.
+Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu,
+Junxiao Song, Mingchuan Zhang, Y. K. Li, Y. Wu,
+and Daya Guo. 2024. Deepseekmath: Pushing the
+limits of mathematical reasoning in open language
+models. CoRR.
+
+Noah Shinn, Beck Labash, and Ashwin Gopinath. 2023.
+Reflexion: an autonomous agent with dynamic memory and self-reflection. CoRR.
+Xiaoshuai Song, Muxi Diao, Guanting Dong,
+Zhengyang Wang, Yujia Fu, Runqi Qiao, Zhexu
+Wang, Dayuan Fu, Huangxuan Wu, Bin Liang, et al.
+2024. Cs-bench: A comprehensive benchmark for
+large language models towards computer science
+mastery. arXiv preprint arXiv:2406.08587.
+Weiwei Sun, Lingyong Yan, Xinyu Ma, Shuaiqiang
+Wang, Pengjie Ren, Zhumin Chen, Dawei Yin, and
+Zhaochun Ren. 2023. Is chatgpt good at search?
+investigating large language models as re-ranking
+agents.
+Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay
+Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti
+Bhosale, Dan Bikel, Lukas Blecher, Cristian Canton
+Ferrer, Moya Chen, Guillem Cucurull, David Esiobu,
+Jude Fernandes, Jeremy Fu, Wenyin Fu, Brian Fuller,
+Cynthia Gao, Vedanuj Goswami, Naman Goyal, Anthony Hartshorn, Saghar Hosseini, Rui Hou, Hakan
+Inan, Marcin Kardas, Viktor Kerkez, Madian Khabsa,
+Isabel Kloumann, Artem Korenev, Punit Singh Koura,
+Marie-Anne Lachaux, Thibaut Lavril, Jenya Lee, Diana Liskovich, Yinghai Lu, Yuning Mao, Xavier Martinet, Todor Mihaylov, Pushkar Mishra, Igor Molybog, Yixin Nie, Andrew Poulton, Jeremy Reizenstein, Rashi Rungta, Kalyan Saladi, Alan Schelten,
+Ruan Silva, Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu,
+Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan,
+Melanie Kambadur, Sharan Narang, Aurelien Rodriguez, Robert Stojnic, Sergey Edunov, and Thomas
+Scialom. 2023. Llama 2: Open foundation and finetuned chat models.
+Ke Wang, Houxing Ren, Aojun Zhou, Zimu Lu, Sichun
+Luo, Weikang Shi, Renrui Zhang, Linqi Song,
+Mingjie Zhan, and Hongsheng Li. 2023a. Mathcoder:
+Seamless code integration in llms for enhanced mathematical reasoning. CoRR.
+Zengzhi Wang, Rui Xia, and Pengfei Liu. 2023b. Generative AI for math: Part I - mathpile: A billion-tokenscale pretraining corpus for math. CoRR.
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten
+Bosma, Brian Ichter, Fei Xia, Ed Chi, Quoc Le, and
+Denny Zhou. 2023. Chain-of-thought prompting elicits reasoning in large language models.
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten
+Bosma, Brian Ichter, Fei Xia, Ed H. Chi, Quoc V. Le,
+and Denny Zhou. 2022. Chain-of-thought prompting elicits reasoning in large language models. In
+NeurIPS 2022.
+An Yang, Baosong Yang, Binyuan Hui, Bo Zheng,
+Bowen Yu, Chang Zhou, Chengpeng Li, Chengyuan
+Li, Dayiheng Liu, Fei Huang, Guanting Dong, Haoran Wei, Huan Lin, Jialong Tang, Jialin Wang, Jian
+
+Yang, Jianhong Tu, Jianwei Zhang, Jianxin Ma, Jin
+Xu, Jingren Zhou, Jinze Bai, Jinzheng He, Junyang
+Lin, Kai Dang, Keming Lu, Keqin Chen, Kexin Yang,
+Mei Li, Mingfeng Xue, Na Ni, Pei Zhang, Peng
+Wang, Ru Peng, Rui Men, Ruize Gao, Runji Lin,
+Shijie Wang, Shuai Bai, Sinan Tan, Tianhang Zhu,
+Tianhao Li, Tianyu Liu, Wenbin Ge, Xiaodong Deng,
+Xiaohuan Zhou, Xingzhang Ren, Xinyu Zhang, Xipin
+Wei, Xuancheng Ren, Yang Fan, Yang Yao, Yichang
+Zhang, Yu Wan, Yunfei Chu, Yuqiong Liu, Zeyu
+Cui, Zhenru Zhang, and Zhihao Fan. 2024. Qwen2
+technical report. arXiv preprint arXiv:2407.10671.
+Huaiyuan Ying, Shuo Zhang, Linyang Li, Zhejian Zhou,
+Yunfan Shao, Zhaoye Fei, Yichuan Ma, Jiawei Hong,
+Kuikun Liu, Ziyi Wang, Yudong Wang, Zijian Wu,
+Shuaibin Li, Fengzhe Zhou, Hongwei Liu, Songyang
+Zhang, Wenwei Zhang, Hang Yan, Xipeng Qiu, Jiayu
+Wang, Kai Chen, and Dahua Lin. 2024. Internlmmath: Open math large language models toward verifiable reasoning.
+Longhui Yu, Weisen Jiang, Han Shi, Jincheng Yu,
+Zhengying Liu, Yu Zhang, James T. Kwok, Zhenguo
+Li, Adrian Weller, and Weiyang Liu. 2023. Metamath: Bootstrap your own mathematical questions
+for large language models.
+Zheng Yuan, Hongyi Yuan, Chengpeng Li, Guanting
+Dong, Chuanqi Tan, and Chang Zhou. 2023. Scaling relationship on learning mathematical reasoning with large language models. arXiv preprint
+arXiv:2308.01825.
+Xiang Yue, Xingwei Qu, Ge Zhang, Yao Fu, Wenhao Huang, Huan Sun, Yu Su, and Wenhu Chen.
+2023. MAmmoTH: Building math generalist models through hybrid instruction tuning. arXiv preprint
+arXiv:2309.05653.
+Xiang Yue, Tuney Zheng, Ge Zhang, and Wenhu Chen.
+2024a. Mammoth2: Scaling instructions from the
+web.
+Xiang Yue, Tuney Zheng, Ge Zhang, and Wenhu Chen.
+2024b. Mammoth2: Scaling instructions from the
+web. CoRR, abs/2405.03548.
+Dan Zhang, Ziniu Hu, Sining Zhoubian, Zhengxiao
+Du, Kaiyu Yang, Zihan Wang, Yisong Yue, Yuxiao
+Dong, and Jie Tang. 2024. Sciglm: Training scientific language models with self-reflective instruction
+annotation and tuning.
+Aojun Zhou, Ke Wang, Zimu Lu, Weikang Shi, Sichun
+Luo, Zipeng Qin, Shaoqing Lu, Anya Jia, Linqi Song,
+Mingjie Zhan, and Hongsheng Li. 2023. Solving
+challenging math word problems using GPT-4 code
+interpreter with code-based self-verification. CoRR.
+
+Appendix
+A
+
+utilizing tools when solving complex mathematical
+problems.
+
+Implementation Details
+
+We fine-tune LLaMA-2-7B, LLaMA-3-7B,
+llema-7B, and DeepSeekMATH-Base-7B with
+DDotaMathQA to get DotaMATH-LLMs. We train
+these base models with key settings including a
+5e-5 learning rate, 256 global batch size, a cosine
+scheduler with a 3% warm-up, a maximum context
+length of 4,096 (except for LLaMA2, which uses
+2,048) tokens and 3 training epochs. Responses are
+generated using greedy decoding with a maximum
+sequence length of 4,096 (except for LLaMA2,
+which applies 2,048) and a limit of 3 maximum
+tool uses. Checkpoints are not selected with early
+stops. The hardware setup involves 32 NVIDIA
+A100 GPUs.
+
+B
+
+Additional Analysis
+
+B.1
+
+Analysis on Simulating Code Execution
+
+To enhance the readability of the model’s output,
+we designed a unique mechanism that enables the
+model’s code to print sub-tasks of a problem in a
+chain-of-thought manner. Interestingly, this mechanism also endows the model with the capability
+to simulate program execution. Specifically, we
+enable the model to infer the results that would
+typically be produced by the Python interpreter,
+thereby deducing the answers to problems. From
+Table 7, we observe that even without relying on
+the Python interpreter, DotaMath was still able to
+achieve satisfactory results, demonstrating its accurate prediction of the Python interpreter’s execution outcomes. While the ToRA model and
+DeepseekMATH-Instruct model are also trained
+using the output of the Python interpreter, these
+models struggle to make correct inferences in its
+absence. On the GSM8K, DotaMath-deepseek experience only an 8.5% decrease in accuracy without
+the use of tools, while both ToRA and ToRA-code
+see performance drops of over 80%, and DeepSeekMATH-Instruct suffer a 52.3% loss. On the MATH
+dataset, DotaMATH experience a significant performance loss of 41.0%, while other models showe
+similar proportionate declines as observed on the
+GSM8K. The underlying reason may be attributed
+to models frequently invoking Python libraries such
+as sympy2 for complex calculations when solving
+intricate problems in MATH, resulting in a significantly increased difficulty in predicting code
+execution. This also highlights the necessity of
+
+B.2
+
+The Effectiveness of Data Augmentation
+and Format in MATH Sub-topics
+
+Regarding data augmentation, we observe significant improvements in three subjects: Counting
+& Prob., Geometry, and Int. Algebra, with increases over 16%, while the smallest enhancement
+is seen in Algebra at 3.4%. According to conclusions from Li et al., the stronger the base model’s
+capability, the higher the accuracy demand for augmented data, and the more challenging it is to
+enhance performance. In Algebra, the model already reaches 78.4 without utilizing augmented
+data, which explains the minimal improvement.
+Removing decomposition of thought, except Prealgebra, all other sub-topics are affected. In different subjects, removing display immediate process and self-correction has the most significant
+impact on Pre-calculus, indicating that the harder
+the problem, the more necessary it is to engage in
+self-correction (as they are more prone to errors).
+B.3
+
+The Effectiveness of Bug Filter
+
+From Table 9, we can know that without python
+bug filter, the accuracy of DotaMath-deepseek
+drops from 86.7 to 85.5 on GSM8K and from 64.8
+to 63.6 on MATH.
+
+C
+
+Additional results
+
+Our additional results are shown in Table 6 to 10.
+
+Model
+
+GSM8K
+
+ToRA-7B
+ToRA-code-7B
+DeepSeek-MATH-Instruct
+DotaMath-deepseek
+
+MATH
+
+with tool
+
+without tool
+
+with tool
+
+without tool
+
+68.8
+72.6
+83.7
+86.7
+
+9.6(↓ 86.0%)
+11.0(↓ 84.8%)
+39.9(↓ 52.3%)
+79.3 (↓ 8.5%)
+
+40.1
+44.6
+57.4
+64.8
+
+7.4(↓ 81.5%)
+8.4(↓ 81.2%)
+24.1(↓ 58.0%)
+38.2(↓ 41.0%)
+
+Table 7: The performance comparisons of DotaMath-deepseek and other models without access to Python interpreter.
+
+Model
+DDotaMathQA
+DDotaMathQA-w/o-aug
+DDotaMathQA-w/o-aug-w/o-dot
+DDotaMathQA-w/o-aug-w/o-inter
+DDotaMathQA-w/o-aug-w/o-multi
+
+Algebra
+
+Counting & Prob.
+
+Geometry
+
+Int. Algebra
+
+Number Theory
+
+Prealgebra
+
+Precalculus
+
+81.1 (↑ 3.4%)
+78.4
+71.5 (↓ 8.8%)
+74.4 (↓ 5.0%)
+73.8 (↓ 5.9%)
+
+63.5 (↑ 17.6%)
+54.0
+48.5 (↓ 10.2%)
+51.5 (↓ 4.6%)
+54.4 (↑ 0.7%)
+
+47.4 (↑ 16.5%)
+40.7
+38.8 (↓ 4.7%)
+40.9 (↑ 0.5%)
+41.1 (↑ 1.0%)
+
+44.0 (↑ 18.0%)
+37.3
+35.4 (↓ 5.1%)
+37.8 (↑ 1.3%)
+36.5 (↓ 2.1%)
+
+76.7 (↑ 13.8%)
+67.4
+61.1 (↓ 9.3%)
+62.6 (↓ 7.1%)
+63.7 (↓ 5.5%)
+
+78.3 (↑ 8.4%)
+72.2
+73.5 (↑ 1.8%)
+74.4 (↑ 3.0%)
+71.6 (↓ 0.8%)
+
+46.7 (↑ 7.1%)
+43.6
+40.7 (↓ 6.7%)
+40.3 (↓ 7.6%)
+38.1 (↓ 12.6%)
+
+Table 8: Sub-topics performance of different models on MATH.
+
+GSM8K
+
+MATH
+
+86.7
+85.5
+
+64.8
+63.6
+
+DotaMath-without-gpt4-anotation-with-filter
+DotaMath-with-anotation-without-filter
+
+Table 9: The effectiveness of data filtering.
+
+Model
+
+Size
+
+Use Tool?
+
+In-domain
+GSM8K
+
+Out-of-domain
+
+MATH
+
+Mathematics
+
+SVAMP
+
+TabMWP
+
+ASDiv
+
+Average
+
+32.5
+34.3
+
+-
+
+-
+
+-
+
+-
+
+-
+
+49.4
+43.6
+45.2
+50.8
+22.7
+47.0
+45.1
+15.0
+50.1
+58.9
+57.7
+64.8
+
+65.4
+75.9
+77.9
+74.4
+65.0
+74.2
+76.8
+79.1
+
+86.2
+85.3
+80.5
+80.0
+84.9
+74.3
+84.2
+88.3
+87.8
+89.5
+
+70.5
+49.8
+47.3
+64.1
+70.4
+77.7
+84.2
+
+85.1
+84.2
+76.2
+72.7
+82.3
+85.1
+85.1
+88.5
+
+68.7
+64.7
+71.1
+74.3
+80.1
+
+proprietary Model
+Claude-2 (Anthropic., 2023)
+PaLM-2 (Anil et al., 2023b)
+
+-
+
+✕
+✕
+
+85.2
+80.7
+
+Open-Source Model
+Qwen-1.5-110B (Alibaba, 2023)
+LLaMA-2 RFT (Yuan et al., 2023)
+MAmmoTH-Coder (Yue et al., 2023)
+MATHCoder-CL (Wang et al., 2023a)
+ToRA-CODE (Gou et al., 2023)
+WizardMATH (Luo et al., 2023a)
+MAmmoTH2-8x7B-Plus (Yue et al., 2024b)
+MATHCoder-L (Wang et al., 2023a)
+Platypus-2 (Lee et al., 2023)
+DotaMath-LLaMA2-7B
+DotaMath-LLaMA3-8B
+DotaMath-llemma-7B
+DotaMath-deepseek-7B
+
+110B
+7B
+34B
+34B
+34B
+70B
+56B
+70B
+70B
+7B
+8B
+7B
+7B
+
+✕
+✕
+✓
+✓
+✓
+✕
+✕
+✓
+✕
+✓
+✓
+✓
+✓
+
+85.4
+51.2
+72.7
+81.7
+80.7
+81.6
+86.4
+83.9
+45.9
+79.6
+84.2
+81.2
+86.7
+
+Table 10: Additional comparison of DotaMath with open-source and proprietary source LLMs on in-domain and
+out-of-domain benchmarks.
+
+D
+
+Prompt Templates
+
+Our prompt templates are shown below:
+Augmentation Prompt
+I want you to act as a math teacher. You should think of some ways to help students do variation
+training for challenging competition mathematics problems.
+Here are some ways you can refer: Introduce fractions or percentages, Combine multiple concepts,
+Include a conditional statement, Increase the complexity of the problem and so on. Response with
+specific format, like:
+Introduce fractions or percentages: ##1 new question1 ##1
+Combine multiple concepts: ##2 new question2 ##2
+...
+Increase the complexity of the problem: ##10: new question10 ##10
+The nth problem must be strictly limited to between ##n and ##n for our subsequent regular
+extraction.
+Now you are give a math problem, think for 10 different ways.
+Given new problem:
+{Query}
+System Prompt
+<|user|>:
+{Query}
+<|assistant|>:
+
+Generative Prompt
+You are an exceptionally strong competitor in both math and programming contests, proficient in a
+wide range of mathematical knowledge and skilled in Python programming. Your command of
+Pre-algebra, Algebra, Number Theory, Counting and Probability, Geometry, Intermediate Algebra,
+and Precalculus is unparalleled. Your thinking is meticulous and profound, and the code you write
+always runs flawlessly and without error.
+Integrate step-by-step reasoning and Python code to solve math problems using the following
+guidelines:
+1. Break the problem into subtasks.
+2. Write functions to solve the problem; the function should not take any arguments.
+3. Print the results of every subtask in the Python code, using the intermediate variables in
+Python programs to represent intermediate results, refer to the example below.
+4. When writing the python program, avoid using decimal. Utilize functions from sympy and
+other necessary Python library, and simplify all fractions and square roots without converting
+them to decimal values.
+5. Print the final answer on the last line.
+Here is an example you may refer to:
+
+Problem: Let
+
+
+ ax + 3, if x > 2,
+x − 5, if − 2 ≤ x ≤ 2,
+f (x) =
+
+2x − b, if x < −2.
+
+Find a + b if the piecewise function is continuous (which means that its graph can be drawn without
+lifting your pencil from the paper).
+Solution: We can decompose this problem into following sub-tasks:
+1. Solve for a by equating ax + 3 to x − 5 at x = 2.
+2. Solve for b by equating x − 5 to 2x − b at x = −2.
+3. Add the values of a and b together to find the sum.
+```python
+from sympy import symbols, Eq, solve
+def sum_a_and_b():
+a = symbols('a')
+b = symbols('b')
+equation1 = Eq(a * 2 + 3, 2 - 5)
+equation2 = Eq(-2 - 5, 2*(-2) - b)
+solution_a = solve(equation1, a)
+solution_b = solve(equation2, b)
+sum_ab = solution_a[0] + solution_b[0]
+# print the results of every subtask
+print(f"Equating the function at x = 2 gives us the equation {equation1}.")
+print(f"Solving this equation gives us the value of a: a = {solution_a[0]}.")
+print(f"Equating the function at x = -2 gives us the equation {equation2}.")
+print(f"Solving this equation gives us the value of b: b = {solution_b[0]}.")
+print(f"hence, a + b equals to {solution_a[0]}+{solution_b[0]} = {sum_ab}.")
+return sum_ab
+sum_ab = sum_a_and_b()
+# print the final answer
+print(sum_ab)
+``` ```output
+Output:
+Equating the function at x = 2 gives us the equation Eq(2*a + 3, -3).
+Solving this equation gives us the value of a: a = -3.
+Equating the function at x = -2 gives us the equation Eq(-7, -b - 4).
+Solving this equation gives us the value of b: b = 3.
+hence, a + b equals to -3+3 = 0.
+0
+We find that the sum of a and b is 0. This ensures the piecewise function is continuous across its
+entire domain. Therefore, the final answer is 0 .
+
+Correction Prompt
+You are an exceptionally strong competitor in both math and programming contests, proficient in a
+wide range of mathematical knowledge and skilled in Python programming. Your command of
+Pre-algebra, Algebra, Number Theory, Counting and Probability, Geometry, Intermediate Algebra,
+and Precalculus is unparalleled. Your thinking is meticulous and profound, and the code you write
+always runs flawlessly and without error. You solve the problem with PLAN-CODE format.
+Integrate step-by-step reasoning and Python code to solve math problems using the following
+guidelines:
+1. Break the problem into subtasks.
+2. Write functions to solve the problem; the function should not take any arguments.
+3. Print the results of every subtask in the Python code.
+4. When writing the python program, avoid using decimal. Utilize functions from sympy and
+other necessary python library, and simplify all fractions and square roots without converting
+them to decimal values.
+5. Print the numeric answer on the last line.
+Here is an example you may refer to:
+Problem: Let
+
+ ax + 3, if x > 2,
+x − 5, if − 2 ≤ x ≤ 2,
+f (x) =
+
+2x − b, if x < −2.
+Find a + b if the piecewise function is continuous (which means that its graph can be drawn without
+lifting your pencil from the paper).
+Solution: We can decompose this problem into the following sub-tasks:
+1. Solve for a by equating ax + 3 to x − 5 at x = 2.
+2. Solve for b by equating x − 5 to 2x − b at x = −2.
+3. Add the values of a and b together to find the sum.
+```python
+from sympy import symbols, Eq, solve
+def sum_a_and_b():
+a = symbols('a')
+b = symbols('b')
+equation1 = Eq(a * 2 + 3, 2 - 5)
+equation2 = Eq(-2 - 5, 2*(-2) - b)
+solution_a = solve(equation1, a)
+solution_b = solve(equation2, b)
+sum_ab = solution_a[0] + solution_b[0]
+# print the results of every subtask
+print(f"Equating the function at x = 2 gives us the equation {equation1}.")
+print(f"Solving this equation gives us the value of a: a = {solution_a[0]}.")
+print(f"Equating the function at x = -2 gives us the equation {equation2}.")
+print(f"Solving this equation gives us the value of b: b = {solution_b[0]}.")
+print(f"hence, a + b equals to {solution_a[0]}+{solution_b[0]} = {sum_ab}.")
+
+return sum_ab
+sum_ab = sum_a_and_b()
+# print the final answer
+print(sum_ab)
+```
+Given a math problem, an incorrect solution, and you need to correct the incorrect solution. The
+response format is like: (short error interpretations)+(new solution).
+Explanatory Prompt
+You are an exceptionally strong competitor in both math and programming contests, proficient in a
+wide range of mathematical knowledge and skilled in Python programming. Your command of
+Pre-algebra, Algebra, Number Theory, Counting and Probability, Geometry, Intermediate Algebra,
+and Precalculus is unparalleled. Your thinking is meticulous and profound, and the code you write
+always runs flawlessly and without error.
+Given a math problem, an incorrect solution and a correct solution, your task is to give the incorrect
+reason for the incorrect solution. Note that the reason is not allowed to be too long. You don’t need
+to give the correct answer. You need to start your answer with: ’The solution is wrong since...’
+
+E
+
+Case Study
+
+E.1
+
+Singl-turn Successful cases
+Single-trun successful case in GSM8K
+
+Problem: Janet’s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes
+muffins for her friends every day with four. She sells the remainder at the farmers’ market daily
+for 2 per fresh duck egg. How much in dollars does she make every day at the farmers’ market?
+Solution: To solve the problem of calculating Janet’s daily earnings from selling fresh duck eggs at
+the farmers’ market, we can follow these steps:
+1. Calculate the total number of eggs laid by the ducks each day.
+2. Subtract the number of eggs Janet eats for breakfast and the number used in baking muffins
+to find the number of eggs available for sale.
+3. Calculate the earnings from selling the remaining eggs at 2 per egg.
+```python
+from sympy import symbols, Eq, solve
+def calculate_daily_earnings():
+# Define the variables
+total_eggs_per_day = 16
+eggs_for_breakfast = 3
+eggs_for_muffins = 4
+price_per_egg = 2
+# Calculate the number of eggs available for sale
+eggs_for_sale = total_eggs_per_day - (eggs_for_breakfast + eggs_for_muffins)
+# Calculate the earnings from selling the eggs
+daily_earnings = eggs_for_sale * price_per_egg
+# Print the results of every subtask
+print(f"Total number of eggs laid per day: {total_eggs_per_day}")
+print(f"Number of eggs eaten for breakfast: {eggs_for_breakfast}")
+print(f"Number of eggs used in baking muffins: {eggs_for_muffins}")
+print(f"Number of eggs available for sale: {eggs_for_sale}")
+print(f"Daily earnings from selling eggs: ${daily_earnings}")
+return daily_earnings
+Calculate and print the daily earnings
+daily_earnings = calculate_daily_earnings()
+print(daily_earnings)
+output
+Output:
+Total number of eggs laid per day: 16
+Number of eggs eaten for breakfast: 3
+Number of eggs used in baking muffins: 4
+Number of eggs available for sale: 9
+Daily earnings from selling eggs: $18
+18
+
+Following these calculations, Janet makes 18 dollars every day at the farmers’ market by selling
+fresh duck eggs.
+
+Single-trun successful case in MATH
+Problem: Find all positive integer values of c such that the equation x2 − 7x + c = 0 only has
+roots that are real and rational. Express them in decreasing order, separated by commas.
+Solution: For the roots to be real and rational, the discriminant must be a perfect square. Therefore,
+(−7)2 − 4 · 1 · c = 49 − 4c must be a perfect square. The only positive perfect squares less than
+49 are 1, 4, 9, 16, 25, and 36. The perfect squares that give an integer value of c are 1, 9, and 25.
+Thus, we follow these steps:
+1. Solve the equation 49 − 4c = 1 to find a value of c.
+2. Solve the equation 49 − 4c = 9 to find another value of c.
+3. Solve the equation 49 − 4c = 25 to find the last value of c.
+```python
+from sympy import symbols, solve, sqrt
+def find_c_values():
+c = symbols('c')
+discriminant = (-7)**2 - 41c # Compute the discriminant
+# List to store valid c values
+valid_c_values = []
+# Check for each c if the discriminant is a perfect square
+for c_value in range(1, 100): # Assuming a reasonable upper limit for c
+disc_value = discriminant.subs(c, c_value)
+if sqrt(disc_value).is_integer():
+valid_c_values.append(c_value)
+print(f"For c = {c_value}, the discriminant is {disc_value}.")
+# Print the valid c values in decreasing order
+valid_c_values.sort(reverse=True)
+print("Valid c values in decreasing order:", ", ".join(map(str, valid_c_values)))
+return valid_c_values
+valid_c_values = find_c_values()
+Output:
+For c = 6, the discriminant is 25.
+For c = 10, the discriminant is 9
+For c = 12, the discriminant is 1.
+Valid c values in decreasing order: 12, 10, 6
+Following these steps, the positive integer values of c that ensure the equation x2 − 7x + c = 0 has
+real and rational roots by making the discriminant a perfect square, are 12, 10, and 6. Therefore,
+the final answer is 12, 10, 6 .
+
+E.2
+
+Multi-turn Successful cases
+Multi-turn successful case in GSM8K
+
+Problem:India has 4 more than half the number of states in the USA. What’s the total number of
+states in both countries together? Solution:To solve the problem, we can break it down into the
+following subtasks:
+1. Define the number of states in the USA.
+2. Calculate the number of states in India based on the given relationship.
+3. Sum the number of states in both countries.
+Let’s implement this in Python using the sympy library to handle symbolic computation and ensure
+that all operations are exact.
+```python
+from sympy import symbols, Eq, solve
+def total_states():
+# Define the number of states in the USA
+states_usa = symbols('states_usa')
+# Given that India has 4 more than half the number of states in the USA
+states_india = Eq(states_india, 4 + 1/2 * states_usa)
+# Solve for the number of states in the USA (assuming the number of states
+# in the USA is known) For the sake of example, let's assume the USA has
+# 50 states
+states_usa_value = 50
+states_india_value = solve(states_india.subs(states_usa, states_usa_value))[0]
+# Calculate the total number of states
+total = states_usa_value + states_india_value
+# Print the results of every subtask
+print(f"Number of states in the USA: {states_usa_value}")
+print(f"Number of states in India (4 more than half of the USA):
+{states_india_value}")
+print(f"Total number of states in both countries: {total}")
+return total
+Call the function and print the final answer
+total_number_of_states = total_states()
+print(total_number_of_states)
+output
+UnboundLocalError: local variable 'states_india' referenced before assignment
+The error occurs because the variable states india is referenced before it is assigned a value in the
+equation. This is a typical scenario where the variable should be defined before it is used in an
+equation. Let’s correct this by defining states india as a symbol and then using it in the equation.
+```python
+from sympy import symbols, Eq, solve
+
+def total_states():
+# Define the number of states in the USA
+states_usa = symbols('states_usa')
+# Define the number of states in India as a symbol
+states_india = symbols('states_india')
+# Given that India has 4 more than half the number of states in the USA
+equation = Eq(states_india, 4 + 1/2 * states_usa)
+# Solve for the number of states in the USA (assuming the number of states
+# in the USA is known) For the sake of example, let's assume the USA has 50 states
+states_usa_value = 50
+states_india_value = solve(equation.subs(states_usa, states_usa_value))[0]
+# Calculate the total number of states
+total = states_usa_value + states_india_value
+# Print the results of every subtask
+print(f"Number of states in the USA: {states_usa_value}")
+print(f"Number of states in India (4 more than half of the USA):
+{states_india_value}")
+print(f"Total number of states in both countries: {total}")
+return total
+Call the function and print the final answer
+total_number_of_states = total_states()
+print(total_number_of_states)
+output
+Number of states in the USA: 50
+Number of states in India (4 more than half of the USA): 29.0000000000000
+Total number of states in both countries: 79.0000000000000
+79.0000000000000
+The total number of states in both the USA and India, calculated by adding the number of states in
+the USA (50) to the number of states in India (29), is 79 .
+Multi-turn successful case in MATH
+Problem: A lattice point in the xy-plane is a point both of whose coordinates are integers (not
+necessarily positive). How many lattice points lie on the hyperbola x2 − y 2 = 17?
+Solution: To find the number of lattice points on the hyperbola x2 − y 2 = 17, we can follow these
+steps:
+1. Recognize that x2 − y 2 = (x + y)(x − y).
+2. Since x and y are integers, (x + y) and (x − y) must be factors of 17.
+3. The number 17 is a prime number, so its only factors are 1 and 17 or −1 and −17.
+4. We will set up equations for x + y = 17 and x − y = 1, and also for x + y = −17 and
+x − y = −1.
+5. Solve these equations to find the integer solutions for x and y.
+
+6. Count the number of solutions to determine the number of lattice points on the hyperbola.
+from sympy import symbols, Eq, solve
+# Define symbolic variables
+x, y = symbols('x y')
+# Define the equations based on the factors of 17
+equations = [
+(Eq(x + y, 17), Eq(x - y, 1)),
+(Eq(x + y, -17), Eq(x - y, -1))
+]
+# Function to solve the equations and count the lattice points
+def count_lattice_points():
+lattice_points = []
+for eq1, eq2 in equations:
+solutions = solve((eq1, eq2), (x, y))
+lattice_points.append(solutions)
+print(f"Solving the equations {eq1} and {eq2} result: {solutions}.")
+return len(lattice_points)
+# Count the lattice points on the hyperbola
+number_of_lattice_points = count_lattice_points()
+print(number_of_lattice_points)
+Output:
+Solving the equations Eq(x + y, 17) and Eq(x - y, 1) result: {x: 9, y: 8}.
+Solving the equations Eq(x + y, -17) and Eq(x - y, -1) result: {x: -9, y: -8}.
+2
+The solution is wrong since it fails to consider the negative factors of 17, which are also necessary
+to find all lattice points on the hyperbola. The correct approach should include both positive
+and negative factors of 17, leading to additional solutions. Let’s correct the solution. To find the
+number of lattice points on the hyperbola x2 − y 2 = 17, we can follow these steps:
+1. Recognize that x2 − y 2 = (x + y)(x − y).
+2. Since x and y are integers, (x + y) and (x − y) must be factors of 17.
+3. List all pairs of factors of 17, which are (1, 17) and (−1, −17), and their reverses.
+4. For each pair of factors, solve the system of equations (x + y = a) and (x − y = b) where
+(a, b) is a pair of factors.
+5. The solutions to the system of equations will give us the lattice points.
+6. Count the number of unique lattice points obtained from the solutions.
+from sympy import symbols, Eq, solve
+# Define symbolic variables
+x, y = symbols('x y')
+# Define the factors of 17
+
+factors = [(1, 17), (-1, -17), (17, 1), (-17, -1)]
+# Function to find lattice points
+def find_lattice_points(factors):
+lattice_points = []
+for a, b in factors:
+# System of equations based on the factors
+eq1 = Eq(x + y, a)
+eq2 = Eq(x - y, b)
+# Solve the system of equations
+solution = solve((eq1, eq2), (x, y))
+# Add the solution to the list of lattice points
+lattice_points.append(solution)
+return lattice_points
+# Find the lattice points
+lattice_points = find_lattice_points(factors)
+# Print the detailed reasoning process
+print(f"The factors of 17 are: {factors}")
+print(f"The lattice points on the hyperbola are: {lattice_points}")
+# Print the final answer
+print(len(lattice_points))
+Output:
+The factors of 17 are: [(1, 17), (-1, -17), (17, 1), (-17, -1)]
+The lattice points on the hyperbola are: [{x: 9, y: -8}, {x: -9, y: 8},
+{x: 9, y: 8}, {x: -9, y: -8}]
+4
+The code successfully finds all lattice points on the hyperbola x2 − y 2 = 17 by considering all pairs
+of factors of 17 and solving the system of equations for each pair. Since the hyperbola equation
+can be factored into (x + y)(x − y) = 17, and 17 is a prime number, it only has the positive factors
+(1, 17) and (17, 1), and their negative counterparts (−1, −17) and (−17, −1). Solving these pairs
+as systems of equations yields the lattice points (9, −8), (−9, 8), (9, 8), and (−9, −8). Therefore,
+there are 4 lattice points on the hyperbola.
+
+

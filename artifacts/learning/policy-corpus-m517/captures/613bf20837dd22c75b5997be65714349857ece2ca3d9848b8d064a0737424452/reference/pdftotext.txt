@@ -1,0 +1,1620 @@
+T2 Agent: A Tool-augmented Multimodal Misinformation Detection Agent with
+Monte Carlo Tree Search
+Xing Cui1 , Yueying Zou1 , Zekun Li2 , Peipei Li1 * , Xinyuan Xu1 , Xuannan Liu1 , Huaibo Huang3
+1
+
+arXiv:2505.19768v2 [cs.CL] 17 Nov 2025
+
+Beijing University of Posts and Telecommunications
+2
+University of California, Santa Barbara
+3
+MAIS & NLPR, Institute of Automation, Chinese Academy of Sciences
+{cuixing, zouyueying2001, lipeipei, xuxinyuan, liuxuannan}@bupt.edu.cn,
+zekunli@cs.ucsb.edu, huaibo.huang@cripac.ia.ac.cn
+Abstract
+Real-world multimodal misinformation often arises from
+mixed forgery sources, requiring dynamic reasoning and
+adaptive verification. However, existing methods mainly rely
+on static pipelines and limited tool usage, limiting their ability
+to handle such complexity and diversity. To address this challenge, we propose T2 Agent, a novel misinformation detection agent that incorporates an extensible toolkit with Monte
+Carlo Tree Search (MCTS). The toolkit consists of modular tools such as web search, forgery detection, and consistency analysis. Each tool is described using standardized templates, enabling seamless integration and future expansion.
+To avoid inefficiency from using all tools simultaneously, a
+greedy search-based selector is proposed to identify a taskrelevant subset. This subset then serves as the action space for
+MCTS to dynamically collect evidence and perform multisource verification. To better align MCTS with the multisource nature of misinformation detection, T2 Agent extends
+traditional MCTS with multi-source verification, which decomposes the task into coordinated subtasks targeting different forgery sources. A dual reward mechanism containing a
+reasoning trajectory score and a confidence score is further
+proposed to encourage a balance between exploration across
+mixed forgery sources and exploitation for more reliable evidence. We conduct ablation studies to confirm the effectiveness of the tree search mechanism and tool usage. Extensive
+experiments further show that T2 Agent consistently outperforms existing baselines on challenging mixed-source multimodal misinformation benchmarks, demonstrating its strong
+potential as a training-free detector.
+
+Code — https://github.com/cuixing100876/T2Agent
+
+Introduction
+The remarkable progress in Artificial Intelligence Generated Content (AIGC) technologies (Ouyang et al. 2022; Touvron et al. 2023; Dhariwal and Nichol 2021; Rombach et al.
+2022; Cui et al. 2024a,b) has lowered the barrier to generating sophisticated multimodal misinformation, posing severe threats to information integrity, public governance, economic stability, and societal well-being (Zannettou et al.
+* Corresponding Author
+Copyright © 2026, Association for the Advancement of Artificial
+Intelligence (www.aaai.org). All rights reserved.
+
+2019; Apuke and Omar 2021; Allcott and Gentzkow 2017).
+Addressing this issue is not only a technical imperative but
+also a societal necessity. Therefore, developing approaches
+for multimodal misinformation detection is critical to safeguard the integrity of digital information ecosystems.
+Automated multimodal misinformation detection is inherently complex, requiring capabilities in reasoning, information retrieval, and cross-modal verification. While recent automated approaches have made progress (Liu et al. 2024c;
+Braun et al. 2025; Beigi et al. 2025), they still fall short of
+emulating the dynamic strategies employed by human experts. This gap can be attributed to two key factors. First,
+the diversity of forgery sources (Guo et al. 2025) necessitates tailored tools for different scenarios. For instance, the
+AMG benchmark (Guo et al. 2025) considers temporal consistencies, whereas MMfakebench (Liu et al. 2024c) incorporates counterfactual misinformation. However, most existing LLM-based methods rely on fixed and limited toolsets,
+which lack the flexibility and scalability required to handle such a wide range of forgery types. Second, real-world
+multimodal misinformation often arises from mixed forgery
+sources, such as textual inaccuracies, image manipulations,
+or cross-modal inconsistencies (Liu et al. 2024c). Reliable
+detection requires not only the ability to perform in-depth
+exploitation to retrieve evidence for each forgery source but
+also to adaptively explore multiple potential forgery sources.
+However, existing LLM-based methods (Liu et al. 2024c;
+Braun et al. 2025; Beigi et al. 2025; Li, Zhang, and Malthouse 2024; Lakara et al. 2024b) typically rely on rigid designs that fail to strike this critical balance, limiting their
+effectiveness in complex scenarios.
+To address these challenges, we introduce T2 Agent, a
+novel misinformation detection agent that incorporates an
+extensible toolkit with Monte Carlo Tree Search (MCTS).
+As illustrated in Fig. 1, the extensible toolkit includes a
+range of functional tools such as web searching, time detection, forgery detection, counterfactual detection, image understanding, and entity recognition. Each tool is described
+using standardized templates, enabling seamless integration
+and future expansion for new tasks. Given that using all
+available tools simultaneously may overwhelm the agent and
+reduce efficiency (Lu et al. 2025), we introduce a tool selection mechanism based on greedy search. This mechanism
+
+Textual Check
+
+[Text Refute]
+
+[Image Refute]
+Visual Check
+
+Root
+
+Plan
+Text
+
+Action
+Evaluation
+
+Web
+Searching
+
+2
+
+Cross-modal
+Consistency
+
+[Mismatch]
+
+Tools
+
+…
+
+Visual
+
+1
+
+3
+
+Web
+Searching
+
+5
+
+Web
+Searching
+
+Consistency
+
+Web
+Searching
+
+4
+
+Image
+Understanding
+
+Entity
+Detection
+
+…
+[Original]
+
+(a) MMDAgent
+
+1
+
+Image
+Understanding
+
+…
+
+…
+Decison
+Making
+
+Event
+Detection
+
+Answer 1
+
+…
+
+Answer 2
+
+Search Order
+
+Backprogration
+
+(b) Ours
+
+Figure 1: (1) MMDAgent adopts a fixed verification process. (2) Our T2 Agent builds a multi-source verification framework
+inspired by MCTS, enabling dynamic verification through adaptive tool selection and evidence integration.
+identifies the most relevant subset of tools for each task type,
+forming a task-specific subset. Then, the optimized subset
+serves as an action space for MCTS to dynamically collect evidence and perform multi-source verification. Different from the previous MCTS, which is primarily designed
+for tasks with a single target, T2 Agent extends MCTS with
+multi-source verification. Specifically, T2 Agent first decomposes the misinformation detection task into multiple
+subtasks, each corresponding to a potential forgery source.
+Subsequently, it dynamically performs verification. To guide
+this process effectively, we propose a dual evaluation function that combines two components: the reasoning trajectory
+score, which evaluates the quality of the reasoning path, and
+the result confidence score, which measures the certainty of
+the final decision. By balancing exploration across mixed
+forgery sources with the exploitation of high-confidence evidence, T2 Agent enhances robustness and generalization in
+complex detection scenarios.
+Our experiments demonstrate that T2 Agent presents a
+promising performance in mixed-source multimodal misinformation detection. On the MMfakebench (Liu et al.
+2024c), T2 Agent improves accuracy of the baseline MMDagent (Liu et al. 2024c) by 28.7% with GPT4-o (OpenAI 2022), achieving a new state-of-the-art (SOTA). On
+AMG (Guo et al. 2025), T2 Agent is competitive with existing training-based approaches, offering a promising direction for enhancing misinformation detection without the
+need of additional training. Ablation studies further confirm
+that the performance gains stem from the use of MCTS and
+tool integration. The primary contributions of this paper can
+be summarized as follows:
+• We propose T2 Agent, a novel misinformation detection
+agent that integrates an extensible toolkit with Monte
+Carlo Tree Search (MCTS). By dynamically planning
+verification paths, leveraging tools for evidence collection, and performing structured multi-source validation, T2 Agent enables adaptive reasoning across diverse
+forgery sources.
+
+• We design an extensible toolkit based on modularized,
+standardized tool templates. This design facilitates rapid
+adaptation to various forgery patterns and allows seamless integration of new verification capabilities, improving system scalability and generalization.
+• We extend traditional MCTS with a multi-source verification framework by decomposing the detection task into
+subtasks, where each subtask targets a specific forgery
+source. A dual evaluation function further guides crosssubtask reasoning, balancing exploration across sources
+with exploitation of reliable evidence.
+
+Related work
+Misinformation Detection
+Early misinformation detection datasets primarily focus on
+a single source, such as textual veracity distortion (Wang
+2017; Thorne et al. 2018; Shu et al. 2020; Hanselowski
+et al. 2019; Yao et al. 2023a; Chen and Shu 2024), or crossmodal inconsistency (Luo, Darrell, and Rohrbach 2021;
+Aneja, Bregler, and Nießner 2023; Shao, Wu, and Liu 2023;
+Suryavardan et al. 2023; Nielsen and McConville 2022).
+Some methods focus on mining forgery features from given
+content with specifically designed networks (Hu et al. 2023;
+Papadopoulos et al. 2025; Shao, Wu, and Liu 2023). Some
+recent works (Cheung and Lam 2023; Zeng et al. 2024; Liu
+et al. 2024b; Qi et al. 2024; Yang and Rocha 2024) finetune LLMs to enhance their detection capabilities for specific tasks. Benefiting from the powerful reasoning ability
+of LLMs, some works (Kakizaki, Matsunaga, and Furukawa
+2025; Li, Zhang, and Malthouse 2024; Beigi et al. 2025; Lin
+et al. 2025; Liu et al. 2025) directly leverage LLM to build
+reasoning-driven misinformation detection pipelines. Some
+methods (Khaliq et al. 2024; Tahmasebi, Müller-Budack,
+and Ewerth 2024; Braun et al. 2025; Chen et al. 2024b) further retrieve evidence to better handle the evolving nature of
+news content.
+Despite being effective, these methods are unable to handle the situation where there are multiple sources of forged
+
+information in the real world. Several benchmarks (Liu
+et al. 2024c; Guo et al. 2025; Wang et al. 2024a) are designed to focus on the scenarios where misinformation stems
+from combined sources. Although some works (Lakara
+et al. 2024a; Dey et al. 2025) experiment on the multisource forgery detection benchmark MMfakebench (Liu
+et al. 2024c), they simply regarded the task as a binary classification of real or fake, ignoring the fine-grained identification for different sources of forged information. To solve the
+challenge of mixed-source multimodal misinformation detection, MMDAgent (Liu et al. 2024c) integrates the reasoning ability of LLMs and relies on a predefined static detection workflow. MGCA (Guo et al. 2025) extracts multi-view
+features and trains an end-to-end model to detect misinformation. A recent work LRQ-FACT (Beigi et al. 2024)retrieves evidence by generating questions, and can detect
+multi-source fabricated information. However, these methods are limited by the fixed workflows and a limited set of
+tools. Our T2 Agent , on the other hand, introduces a modified MCTS that adaptively searches across mixed forgery
+sources. This enables a principled trade-off between exploiting verified evidence and exploring diverse forgery sources,
+leading to improved performance in complex and heterogeneous misinformation settings.
+
+Monte Carlo Tree Search
+Monte Carlo Tree Search (MCTS) (Coulom 2006) is a powerful heuristic search algorithm that has demonstrated exceptional performance in solving complex decision-making
+problems. Its core mechanism involves iteratively building
+a search tree and selecting the optimal action based on the
+outcomes of numerous simulations. The operation of MCTS
+typically consists of four key steps. Selection: Starting from
+the root node, a child node is recursively selected according to a policy such as the Upper Confidence bound applied
+to Trees (UCT) (Kocsis and Szepesvári 2006) until a leaf
+node or a partially expanded node is reached. Expansion:
+If the selected node does not represent a terminal state, one
+or more new child nodes are created. Simulation: From the
+newly expanded node, a fast policy is executed to simulate
+a trajectory until a terminal state is reached. This simulation provides an estimate of the potential value of the node.
+Backpropagation: The outcome of the simulation is propagated back up the selection path to the root node, updating statistics such as visit counts and cumulative rewards for
+each node along the way.
+MCTS and its variants have demonstrated broad applicability across a wide range of domains, which have significantly improved decision-making performance in various areas (Anthony, Tian, and Barber 2017; Ontanón 2013). Monte
+Carlo tree search simulates the human decision-making process. Some MCTS-based systems like AlphaGo (Silver et al.
+2016) and AlphaZero (Silver et al. 2017) have even achieved
+superhuman performance. MCTS has been widely applied to
+domains such as robotic path planning (Eiffert et al. 2020)
+and combinatorial optimization (Cazenave 2009). In recent
+years, researchers integrate MCTS with large language models to enhance the exploration of solution spaces in complex
+tasks such as question answering (Yao et al. 2023b; Hao
+
+et al. 2023; Xie et al. 2024; Yu, Chen, and Yu 2023; Zhou
+et al. 2024), mathematics(Zhang et al. 2024; Chen et al.
+2024a), websearch (Yu et al. 2024; Koh et al. 2024), prompt
+optimization (Wang et al. 2024b), code generation (Antoniades et al. 2024), video understanding (Yang et al. 2024),
+etc. These MCTS applications focus on tasks with a single
+target and are not well-suited for multi-source misinformation detection. In contrast, we adapt MCTS to the mixedsource characteristics of multimodal misinformation detection by introducing a multi-source verification mechanism
+augmented with extensible tools.
+
+Method
+In this section, we first define the problem of multimodal
+misinformation detection (Sec. ). Then, we introduce our
+proposed framework, T2 Agent, which consists of two core
+components: a Multi-Source Verification Monte Carlo Tree
+Search (MCTS) and an extensible toolset for adaptive evidence reasoning. Specifically, we extend traditional MCTS
+with multi-source verification (Sec. ) to deal with potential mixed forgery sources in multimodal misinformation.
+Our approach introduces a dual evaluation function and
+a custom backpropagation strategy that together maintain
+a balance between exploration and exploitation
+during search. Additionally, we propose a collaborative
+decision-making strategy to aggregate evidence and reach a
+final authenticity judgment. Complementing the search process, our framework includes an extensible toolset (Section )
+that supports plug-and-play integration of specialized tools.
+This enables dynamic and task-aware tool selection across
+diverse types of multimodal misinformation.
+
+Problem formulation
+We address the task of mixed-source multimodal misinformation detection (Liu et al. 2024c), which aims to assess
+the authenticity of online news content by analyzing multiple mixed sources of information and classifying it into
+various types of misinformation. Unlike traditional singlesource multimodal misinformation detection tasks that focus on generating a single correct answer, this task involves
+verifying content across different modalities and potential
+forgery sources. It may require handling several sub-tasks,
+such as Textual Veracity Distortion, Visual Veracity Distortion, and Cross-modal Consistency Distortion (Liu et al.
+2024c). Only through a comprehensive analysis of these
+multiple, mixed sources of evidence can the authenticity of
+a piece of news be reliably determined.
+The verification process is a transition process among different states, where each state st contains the thought, action
+at , and observation ot . In our T2 Agent, the thought and action are determined by LLM. The observation is obtained by
+executing the action with the corresponding tool. A misinformation detection agent begins by receiving an input instance c that may contain text and visual content. Then, at
+each time step t, the agent generates an action at ∈ A based
+on the previous state st−1 . By executing at , the agent obtains a new observation ot and transitions to a new state st .
+This agent-environment interaction continues until either the
+
+Multi-source Verification MCTS
+
+“The bust of Queen Nefertiti of
+Egypt in Berlin Neues Museum.”
+
+Root
+Text
+
+Plan
+State
+
+LLM
+
+Action
+
+Evaluation
+
+Memory
+
+Action Observation
+
+Trajectory Answer
+
+Thought
+Action
+
+Environment
+with Tools
+
+LLM
+Trajectory
+Score ST
+
+Extensible Tools
+Image
+Understanding
+
+Forgery
+Detection
+
+Web
+Searching
+
+Entity
+Detection
+
+Counterfactual
+Detection
+
+Event
+Detection
+
+...
+
+Thought: I need to verify whether ...
+Action: Wikipedia[Bust of Queen
+Nefertiti]
+Observation: No entry. You can try
+similar “Nefertiti Bust”,”Nefertiti”...
+ST=0.5, SC=0
+
+...
+
+Thought: Adjust the keyword...
+Action: Wikipedia[Nefertiti Bust]
+Observation: ...displayed at Neues
+Museum ...
+ST=0.8, SC=0
+
+Thought: Google for more
+information ...
+Action: Google[Neues museum]
+(Depth limit & No answer)
+ST=0.3, SC=0
+Backprograte
+
+Consistency
+
+...
+
+Thought: I need to search about the
+Neues museum
+Action: Wikipedia[Neues museum]
+Observation: ... in the historic centre
+of Berlin, Germany....
+ST=0.6, SC=0
+
+Confidence
+Score SC
+
+Toolset optimization
+
+...
+
+Thought: It is in Neues Museum...
+Action: Finish[TEXT SUPPORT]
+ST=0.9, SC=0.9
+Finish the subtask
+
+...
+
+Thought: It shows
+a man instead of
+Queen Nefertiti...
+Action:
+Finish[MISMATCH]
+ST=0.7, SC=0.8
+Finish the subtask
+
+Decision Making
+
+Figure 2: Overview of T2 Agent. The toolkit acts as the action space, with a greedy search selecting relevant tools. T2 Agent extends MCTS via multi-source verification, breaking tasks into subtasks targeting different forgery sources. At each node of the
+tree search process, the agent plans verification paths, selects tools based on task requirements, and evaluates outcomes using a
+dual reward function that balances exploration across forgery sources with evidence exploitation.
+agent makes a final judgment on the authenticity of the input
+information, or the maximum number of steps T is reached.
+
+Multi-source Verification MCTS
+We propose Multi-source Verification MCTS, an extension
+of classical MCTS tailored for multi-source misinformation
+detection. During inference, similar to classic MCTS, it iteratively builds a search tree through the selection-expansionsimulation-backpropagation paradigm, predicting rewards at
+each step to guide the search. Unlike traditional MCTS, we
+introduce subtask nodes in the search tree, each representing a potential forgery source (e.g., textual inconsistency, visual manipulation, or cross-modal discrepancy). The LVLM
+serves as the reasoning controller. At each node, it first
+makes a plan to generate a thought and corresponding action based on the current state and previous trajectory. We
+also utilized the trajectories of failures as memory, enabling
+drawing on past experiences. Once an action is selected, it
+invokes the corresponding tool from its extensible toolkit to
+retrieve external evidence or perform specific analyses. To
+balance exploration across mixed forgery sources with the
+exploitation of reliable evidence, we introduce a dual reward mechanism, which evaluates both the quality of the
+reasoning trajectory and the confidence of the final decision.
+This reward signal is used to update the value of its parent
+nodes during backpropagation, enabling dynamic adaptation
+to complex multimodal misinformation scenarios.
+Initialization The root of the tree represents the overall task of determining whether a given piece of news is
+true or false. The first layer of the tree consists of multiple child nodes, each representing a specific sub-task corresponding to mixed forgery sources, which can be adaptively
+pre-defined by the user based on the requirements of the
+
+task. To facilitate the exploration of the first step, we assign
+a weight to each child node. We use LVLM to analyze the
+input content and estimate the probability distribution over
+these sub-task categories. This means that the model assigns
+a likelihood score to each sub-task, reflecting how relevant
+or necessary it is for verifying the claim. These probabilities
+guide the expansion of the tree by prioritizing which subtasks should be explored further.
+Evaluation To evaluate the nodes, we propose a dual
+scoring mechanism that combines a reasoning trajectory
+score with a result confidence score. Both scores are calculated by an LLM. We provide corresponding prompts in the
+appendix. The reasoning trajectory score quantifies the overall quality and coherence of the reasoning process along the
+path from the root node to the current node. It is utilized in
+two scenarios. One is to evaluate the quality of the reasoning
+path during the simulation process and serve as the value of
+each step node, and the other is to calculate the quality of
+the reasoning path of the answer node and serve as part of
+the reward of the node. The input to the reasoning trajectory
+score function includes all state-action pairs {si , ai } up to
+the current state.
+StT = LLM ({si , ai }i=0...t ).
+
+(1)
+
+Upon reaching a leaf node, we evaluate both the quality of
+the collected evidence and its internal consistency using the
+proposed confidence score. This score reflects the quality of
+the collected evidence and the degree to which the evidence
+supports the conclusion. The confidence score serves as the
+reward signal for the terminal node in the MCTS framework. The input to the confidence scoring function includes
+all evidence, i.e., observations {oi }i=0...t gathered along the
+current reasoning path, as well as the news c to be verified.
+
+By analyzing the alignment and coherence among different
+pieces of evidence, it estimates a confidence value that captures the overall consistency of the verification process:
+StC = LLM ({oi }i=0...t , c).
+
+(2)
+
+Search Algorithm During the search process, our method
+automatically selects the sub-tasks that need verification.
+Specifically, we employ the Upper Confidence Bound for
+Trees (UCT) criterion (Kocsis and Szepesvári 2006). At
+each iteration, the node with the highest UCT value is selected for expansion. In this work, we revise the UCT formulation to better balance the trade-off between exploring
+under-visited sub-task nodes and exploiting those with high
+confidence scores. Our modification focuses on sub-task
+nodes that have not been explored, i.e., N (si ) = 0. Traditional methods usually assign an arbitrarily large bonus to
+unvisited nodes, which could lead to inefficient exploration.
+Different from them, we introduce a bias term and redefine
+the UCT function as follows:
+V (st )
+U CT (st ) =
++C
+N (st ) + 1
+
+s
+
+ln(N (s) + 1)
+N (st ) + 1
+
+(3)
+
+where V (st ) = αStT + (1 − α)StC is the value of the terminal node. C is a hyperparameter. N (st ) and N (s) are the
+visit count for the child node and the parent node, respectively. By adding the bias term 1 to N (sq
+t ), UCT can still be
+
+(s)+1)
+calculated when N (st ) = 0. The term ln(N
+N (st )+1 allows
+the UCT values of unexplored nodes to be updated along
+with the overall situation. In the early stages of the search,
+in contrast to assigning an arbitrarily large bonus to unvisited
+nodes, calculating UCT with our function avoids overly prioritized newly expanded sub-task nodes, thereby avoiding
+unnecessary resource allocation. As the search progresses,
+the increasing visit count of the parent node gradually raises
+the UCT value of its unvisited children, thereby encouraging
+the exploration of unvisited sub-tasks.
+Another key component of the search process is backpropagation. Considering the property that a piece of news
+can only be classified as true if all relevant modalities
+and sub-tasks independently confirm its authenticity, we introduce a novel pruning strategy. If a sub-task node returns a high-confidence verification result indicating that
+the forgery source is likely true, we consider this sub-task
+completed and prune further expansion of its child nodes.
+By pruning already-confirmed branches, the search process
+avoids redundant exploration and allocates computational
+resources toward verifying remaining modalities. This strategy mimics how human experts operate: once a source or
+modality has been confirmed to be reliable, they tend to focus on validating other uncertain components.
+Decision Making After the MCTS search is completed,
+we perform a final decision-making step based on the verification results collected from all sub-task nodes. If MCTS
+completes with a sub-task node with a high-confidence score
+indicating that the content is fake, the system classifies the
+entire news item as false, without further aggregation. This
+early-stop mechanism ensures efficient and decisive misinformation detection when strong evidence against authenticity is found in any modality. In cases where no such highconfidence false signal is detected, we proceed to aggregate
+
+the results from all verified sub-task nodes using a heuristic
+probabilistic fusion strategy. For each sub-task (representing a potential forgery source), we calculate the probability
+that the model believes the input information belongs to each
+forgery source i, (i = visual, text...) by utilizing the confidence score S C,i . (
+p(fakei ) =
+
+S C,i ,
+if answer(i) = fake,
+1 − S C,i , if answer(i) = real.
+
+(4)
+
+We assume that different modalities (sub-tasks) provide independent evidence. Therefore, we define the overall likelihood that the news is true as:
+p(real) =
+
+n 
+Y
+
+
+(1/n)
+1 − p fakei
+,
+
+(5)
+
+i=1
+
+where n is the number of verified sub-tasks. We obtain the
+final result by comparing the probabilities:
+
+n
+on 
+answer = arg max p(real), p(f akei )
+.
+
+(6)
+
+i=1
+
+The proposed multi-source verification MCTS enables the
+system to explore multiple sub-tasks in a structured manner,
+assess the quality of evidence collected along different paths,
+prune verified branches to focus on remaining uncertainties,
+and integrate each sub-task to obtain the final decision. It
+emulates the iterative and dynamic reasoning process of a
+human expert, which dynamically shifts between exploring
+new sources, validating evidence across modalities, and consolidating findings into a final decision.
+
+Extensible Toolset
+Beyond the enhanced MCTS framework, T2 Agent incorporates a modular and extensible toolset designed to support diverse misinformation verification tasks across multiple forgery sources. This toolset serves as the action space
+within the tree search process, enabling the agent to invoke
+appropriate tools for evidence gathering. Each tool is encapsulated in a tool card, which abstracts its functionality, inputoutput format, and invocation method into a unified structure. This modular representation allows for seamless integration and easy extension of new tools. The toolset includes
+web searching tools, time detection tools, forgery detection
+tools, counterfactual detection tools, image understanding
+tools, and entity recognition tools. Details are presented in
+the appendix.
+While the full toolset provides comprehensive capabilities, not all tools are equally useful for every task (Lu et al.
+2025). To ensure both efficiency and effectiveness, we utilize an adaptive tool selection mechanism tailored to each
+benchmark. We employ greedy search to efficiently search
+for the optimal subset of tools. First, we predefine a minimal default toolset, denoted as Dbase . Then, each candidate
+tool di is evaluated by adding it to the base set. We compute
+the accuracy improvement as ∆di = Acc(Dbase ∪ {di }) −
+Acc(Dbase ). If ∆di > 0, the tool di is considered beneficial
+for the target task. The updated Dbase is:
+Dbase = Dbase ∪ {di }.
+This adaptive configuration ensures that the system maintains high performance while minimizing computational
+overhead. It also enables T2 Agent to generalize across diverse domains.
+
+Experiments
+Table 1: Comparison results on MMfakebench.
+Approach
+
+Backbone
+
+F1 ↑
+
+Accuracy ↑
+
+Standard Prompt
+
+BLIP-2
+LLaVA-1.6
+GPT-4o
+
+0.167
+0.257
+0.492
+
+0.328
+0.404
+0.609
+
+MMD-agent
+
+GPT-4.1-nano
+GPT-4o-mini
+GPT-4o
+
+0.398
+0.478
+0.614
+
+0.424
+0.485
+0.616
+
+LRQ-FACT
+
+GPT-4o
+
+0.716
+
+0.708
+
+Ours
+
+GPT-4.1-nano
+GPT-4o-mini
+GPT-4o
+
+0.568
+0.631
+0.759
+
+0.569
+0.629
+0.753
+
+Experiment Setting
+Datasets. We evaluate T2 Agent on two challenging misinformation detection benchmark: MMFakeBench (Liu et al.
+2024c) and AMG (Guo et al. 2025). Both of them contain mixed-source misinformation and categorize news into
+multiple forgery classes. MMFakeBench (Liu et al. 2024c)
+contains 11,000 image-text pairs, covering “Real”, “Textual Veracity Distortion (TVD)”, “Visual Veracity Distortion (VVD)”, and “Cross-modal Consistency Distortion
+(CCD)”, with both human- and machine-generated images.
+We sample 1,000 validation instances, balanced as 300
+Real, 300 TVD, 100 VVD, and 300 CMM. AMG (Guo
+et al. 2025) classifies news into five forgery categories: “Image Fabrication”, “Non-evidential Image”, “Entity Inconsistency”, “Event Inconsistency”, and “Time Inconsistency”.
+The dataset contains 4,922 samples in total, divided into
+3,532 for training, 517 for validation, and 973 for testing.
+The test set includes 575 Real samples, 74 Image Fabrication, 69 Non-evidential Image, 29 Entity Inconsistency, 136
+Event Inconsistency, and 90 Time Inconsistency.
+Evaluation Metrics. To ensure a comprehensive comparison, we adopt the accuracy and the macro-F1 score as evaluation metrics. The macro-F1 score equally weighs performance across all classes by computing the harmonic mean
+of per-class precision and recall.
+
+Main Results
+MMfakebench. On MMfakebench, we compare with Standard Prompt, MMD-Agent (Liu et al. 2024c), and LRQFACT (Beigi et al. 2024). For Standard Prompt, we utilize BLIP-2 (Li et al. 2023), LLaVA-1.6 (Liu et al. 2024a),
+and GPT-4o (OpenAI 2022) as LLM backbones. Since the
+code of LRQ-FACT is not open-source, the results in the
+table are those from their paper. As shown in Table 1, our
+T2 Agent consistently outperforms all comparison methods. The results of the standard prompt indicate that the
+LLM itself has a certain ability to detect false information.
+This might be due to the fact that the LLM contains knowledge. However, this detection capability is insufficient. Our
+
+T2 Agent outperforms the MMD-Agent under all three LLM
+models (GPT-4.1 Nano, GPT-4o Mini, and GPT-4o), achieving an average 28.7% relative improvement in accuracy. Under a lightweight setting (GPT-4.1 Nano), T2 Agent boosts
+F1 by over 42.7%, demonstrating strong generalization and
+robustness across model scales. Notably, with GPT-4o Mini,
+our method achieves an accuracy of 0.629 and F1 of 0.631,
+which even outperforms MMD-agent with GPT-4o (accuracy 0.616, F1 0.614). T2 Agent also outperforms LRQFACT, demonstrating the necessity of dynamic verification.
+A mismatch forgery case sampled from MM-FakeBench
+(Fig. 2) showcases the effectiveness of T2 Agent in performing multi-source verification through iterative exploration
+and adaptive pruning. In the first iteration, the agent selects
+the text subtask node for investigation based on the initialization score. It fails to obtain conclusive evidence. We evaluate the node and update the value of itself and its parent
+nodes via backpropagation to reflect this uncertainty. During
+the second iteration, the text node is reselected based on the
+evaluation score, and after tool invocation and simulation,
+the system confirms that the text is authentic, assigning it a
+high confidence score. Based on this reliable outcome, the
+corresponding branch is pruned to avoid redundant verification, demonstrating the method’s efficiency in identifying
+trustworthy sources. In the third iteration, the agent shifts focus to a consistency forgery source node. Through structured
+reasoning and evidence aggregation, T2 Agent reaches a final judgment with high confidence and terminates the verification process successfully. This example highlights several
+key advantages of the framework: (1) the ability to iteratively refine node values based on partial evidence, preventing premature decisions; (2) the dynamic expansion of the
+search tree toward informative forgery sources; and (3) the
+integration of pruning strategies to improve computational
+efficiency without sacrificing accuracy.
+Table 2: Comparison with MMD-agent on AMG (grouped
+by backbone for easy comparison).
+Backbone
+
+Approach
+
+F1 ↑
+
+Accuracy ↑
+
+GPT-4.1-nano
+
+MMD-agent
+Ours
+
+0.290
+0.402
+
+0.192
+0.503
+
+GPT-4o-mini
+
+MMD-agent
+Ours
+
+0.360
+0.499
+
+0.227
+0.538
+
+GPT-4o
+
+MMD-agent
+Ours
+
+0.365
+0.510
+
+0.306
+0.579
+
+AMG. We also conduct an evaluation of our method
+against the MMD-agent on the AMG dataset. As shown
+in Table 2, our approach consistently outperforms the
+MMD-agent across all model sizes. In terms of F1 score,
+our method achieves improvements of 38.6%, 38.6%, and
+39.7% over the MMD-agent when using GPT-4.1-nano,
+GPT-4o-mini, and GPT-4o, respectively. The superior performance of our method can be attributed to its ability to
+handle the complexity of the AMG dataset, which contains
+five forgery sources. The MMD-Agent adopts a sequential
+
+decision-making strategy, which tends to suffer from error
+propagation. This means that incorrect judgments made at
+earlier stages affect subsequent decisions, leading to a degradation in overall performance. In contrast, our approach explores a more balanced and holistic strategy by incorporating MCTS into the decision process. This allows our model
+to better assess the likelihood of each forgery type and avoid
+premature or biased decisions.
+The results on MMfakebench and AMG collectively
+highlight the feasibility of constructing general-purpose,
+training-free misinformation detection agents using large
+language models and structured reasoning frameworks,
+paving the way for more adaptable verification systems.
+
+Ablation Study
+We conduct an ablation study on MM-FakeBench using
+the GPT-4.1-nano backbone over 1,000 samples to evaluate
+the effectiveness of the multi-source verification MCTS and
+toolset in our framework. Results are summarized in Table 3.
+MCTS search enables flexible evidence verification.
+MMD-Agent follows a rigid, rule-based verification path
+with fixed state transitions, limiting its adaptability when
+handling incomplete or low-confidence evidence across
+diverse forgery sources. In contrast, introducing MCTSbased tree search allows our agent to dynamically explore
+and prioritize subtasks based on real-time confidence estimates. This flexibility leads to notable improvements across
+all metrics: the F1 score increases from 0.398 to 0.535
+(+34.4%) and accuracy from 0.424 to 0.534 (+25.9%).
+Table 3: Ablation Study on MMfakebench.
+Method
+
+F1 ↑
+
+Accuracy ↑
+
+MMD-agent (baseline)
+TOOLs
+MV MCTS
+MV MCTS+TOOLs (Ours)
+
+0.398
+0.413
+0.535
+0.568
+
+0.424
+0.459
+0.534
+0.569
+
+Extensible tools enhance performance through adaptive reasoning. We conduct an ablation study to evaluate the
+effectiveness of our extensible toolset. The base configuration includes fundamental tools such as image understanding and Wikipedia lookup. Building upon this, we employ
+our tool selection mechanism to automatically identify and
+integrate the most beneficial additional tools—specifically,
+Google Search for up-to-date external knowledge and entity
+detection via the Baidu API1 for object categories in complex images. As shown in Table 3, using the selected tools
+alone yields gains over the baseline (F1: 0.413 vs. 0.398),
+confirming their utility. More importantly, when integrated
+into the MCTS framework, they lead to significant performance improvements: our full method achieves an F1 score
+of 0.568 and accuracy of 0.569, corresponding to relative
+gains of +6.2% and +6.5% over the MCTS-only variant.
+This indicates that our tool selection mechanism picks useful tools that integrate well with MCTS.
+1
+
+https://ai.baidu.com/tech/imagerecognition/general
+
+Cost Analysis
+Table 4 compares the inference costs (in USD) between
+the MMD-Agent and our method on the MMFakeBench
+dataset, using three GPT-4 variants: GPT-4o, GPT-4o-mini
+and GPT-4.1-nano. While our method has higher computational costs with the same LLMs, it provides two key
+advantages: (1) Strong adaptivity: Our T2 Agent features
+task-adaptive reasoning without the need of additional training. This capability is especially important in real-world
+mixed-source forgery detection. Besides, it allows the system to adapt to novel forgeries without requiring retraining when a new source of forgery emerges. (2) Better costeffectiveness: As shown in Table 1, when using GPT-4omini, our T2 Agent achieves an F1 score of 0.631, surpassing MMDAgent (F1 = 0.614) that relies on the larger GPT4o model. Meanwhile, our method incurs significantly lower
+resource costs—only 129.4$ compared to MMDAgent’s
+344.4$. These results clearly indicate that our method offers
+both higher performance and greater cost-efficiency, showcasing a strong advantage in terms of cost-effectiveness.
+Table 4: Cost comparison (USD) between MMD-agent and
+our T2 Agent on MMfakebench.
+Model
+GPT-4o
+GPT-4o-mini
+GPT-4.1-nano
+
+MMD-agent
+
+Ours
+
+344.4
+14.3
+9.5
+
+1637.1
+129.4
+76.2
+
+Conclusion
+In this paper, we introduce T2 Agent, a novel misinformation detection agent designed to tackle the complexities and
+diversities of mixed-source multimodal misinformation. To
+achieve this goal, we design an extensible toolkit incorporating various modular tools such as web search, forgery
+detection, and consistency analysis, and propose the integration of Monte Carlo Tree Search (MCTS) with multisource verification capabilities. The incorporation of these
+elements achieves a balance between exploration across
+mixed forgery sources and exploitation for more reliable evidence, enhancing the adaptability and efficiency of the detection process. Extensive results show the efficiency of our
+approach, suggesting a strong potential for our method as a
+training-free approach for enhancing detection accuracy in
+real-world applications.
+Limitations and future directions. One notable limitation of our current implementation is the increased computational overhead introduced by the tree search mechanism.
+Further works may address this limitation by introducing
+efficient pruning strategies or designing hybrid approaches
+by combining the proposed method with lightweight expert
+models to guide the search more effectively. Besides, opensource toolchains introduce new security risks. In practice,
+these risks may be mitigated by implementing principles
+such as least privilege and whitelisting tool calls.
+Acknowledgement This research is sponsored by National
+Natural Science Foundation of China (Grant No. 62306041).
+
+References
+Allcott, H.; and Gentzkow, M. 2017. Social media and fake
+news in the 2016 election. JEP.
+Aneja, S.; Bregler, C.; and Nießner, M. 2023. Cosmos: Catching out-of-context misinformation with selfsupervised learning. In AAAI.
+Anthony, T.; Tian, Z.; and Barber, D. 2017. Thinking fast
+and slow with deep learning and tree search. In NeurIPS.
+Antoniades, A.; Örwall, A.; Zhang, K.; Xie, Y.; Goyal, A.;
+and Wang, W. 2024. SWE-Search: Enhancing Software
+Agents with Monte Carlo Tree Search and Iterative Refinement. arXiv preprint arXiv:2410.20285.
+Apuke, O. D.; and Omar, B. 2021. Fake news and COVID19: modelling the predictors of fake news sharing among
+social media users. TELEMAT INFORM.
+Beigi, A.; Jiang, B.; Li, D.; Kumarage, T.; Tan, Z.; Shaeri,
+P.; and Liu, H. 2025. Lrq-fact: Llm-generated relevant questions for multimodal fact-checking. In COLING.
+Beigi, A.; Jiang, B.; Li, D.; Tan, Z.; Shaeri, P.; Kumarage,
+T.; Bhattacharjee, A.; and Liu, H. 2024. Can LLMs Improve
+Multimodal Fact-Checking by Asking Relevant Questions?
+arXiv preprint arXiv:2410.04616.
+Braun, T.; Rothermel, M.; Rohrbach, M.; and Rohrbach, A.
+2025. DEFAME: Dynamic Evidence-based FAct-checking
+with Multimodal Experts. In ICML.
+Cazenave, T. 2009. Nested Monte-Carlo search. In IJCAI.
+Chen, C.; and Shu, K. 2024. Can llm-generated misinformation be detected? In ICLR.
+Chen, G.; Liao, M.; Li, C.; and Fan, K. 2024a. AlphaMath
+Almost Zero: Process Supervision without Process. In
+NeurIPS.
+Chen, J.; Kim, G.; Sriram, A.; Durrett, G.; and Choi, E.
+2024b. Complex Claim Verification with Evidence Retrieved in the Wild. In ACL.
+Cheung, T.-H.; and Lam, K.-M. 2023. Factllama: Optimizing instruction-following language models with external
+knowledge for automated fact-checking. In APSIPA ASC.
+Coulom, R. 2006. Efficient selectivity and backup operators
+in Monte-Carlo tree search. In ICCG.
+Cui, X.; Li, P.; Li, Z.; Liu, X.; Zou, Y.; and He, Z. 2024a.
+Localize, understand, collaborate: Semantic-aware dragging
+via intention reasoner. In NeurIPS.
+Cui, X.; Li, Z.; Li, P.; Huang, H.; Liu, X.; and He, Z. 2024b.
+Instastyle: Inversion noise of a stylized image is secretly a
+style adviser. In ECCV.
+Dey, A. U.; Awan, M. J.; Channing, G.; de Witt, C. S.; and
+Collomosse, J. 2025. Fact-checking with contextual narratives: Leveraging retrieval-augmented llms for social media
+analysis. arXiv preprint arXiv:2504.10166.
+Dhariwal, P.; and Nichol, A. 2021. Diffusion models beat
+gans on image synthesis. In NeurIPS.
+Eiffert, S.; Kong, H.; Pirmarzdashti, N.; and Sukkarieh, S.
+2020. Path planning in dynamic environments using generative rnns and monte carlo tree search. In ICRA.
+
+Guo, H.; Ma, Z.; Zeng, Z.; Luo, M.; Zeng, W.; Tang, J.;
+and Zhao, X. 2025. Each Fake News is Fake in its Own
+Way: An Attribution Multi-Granularity Benchmark for Multimodal Fake News Detection. In AAAI.
+Hanselowski, A.; Stab, C.; Schulz, C.; Li, Z.; and Gurevych,
+I. 2019. A richly annotated corpus for different tasks in automated fact-checking. In CoNLL.
+Hao, S.; Gu, Y.; Ma, H.; Hong, J.; Wang, Z.; Wang, D.; and
+Hu, Z. 2023. Reasoning with Language Model is Planning
+with World Model. In EMNLP.
+Hu, B.; Sheng, Q.; Cao, J.; Zhu, Y.; Wang, D.; Wang, Z.; and
+Jin, Z. 2023. Learn over Past, Evolve for Future: Forecasting
+Temporal Trends for Fake News Detection. In ACL.
+Kakizaki, K.; Matsunaga, Y.; and Furukawa, R. 2025.
+MAFT: Multimodal Automated Fact-Checking via Textualization. In AAAI.
+Khaliq, M. A.; Chang, P. Y.-C.; Ma, M.; Pflugfelder, B.;
+and Miletić, F. 2024. RAGAR, Your Falsehood Radar:
+RAG-Augmented Reasoning for Political Fact-Checking using Multimodal Large Language Models. In FEVER.
+Kocsis, L.; and Szepesvári, C. 2006. Bandit based montecarlo planning. In ECML.
+Koh, J. Y.; McAleer, S.; Fried, D.; and Salakhutdinov, R.
+2024. Tree search for language model agents. arXiv preprint
+arXiv:2407.01476.
+Lakara, K.; Channing, G.; Sock, J.; Rupprecht, C.; Torr, P.;
+Collomosse, J.; and de Witt, C. S. 2024a. LLM-Consensus:
+Multi-Agent Debate for Visual Misinformation Detection.
+arXiv preprint arXiv:2410.20140.
+Lakara, K.; Sock, J.; Rupprecht, C.; Torr, P.; Collomosse, J.;
+and de Witt, C. S. 2024b. MAD-Sherlock: Multi-Agent Debates for Out-of-Context Misinformation Detection. arXiv
+preprint arXiv:2410.20140.
+Li, J.; Li, D.; Savarese, S.; and Hoi, S. 2023. Blip-2: Bootstrapping language-image pre-training with frozen image
+encoders and large language models. In ICML.
+Li, X.; Zhang, Y.; and Malthouse, E. C. 2024. Large language model agent for fake news detection. arXiv preprint
+arXiv:2405.01593.
+Lin, H.; Deng, Y.; Gu, Y.; Zhang, W.; Ma, J.; Ng, S.-K.; and
+Chua, T.-S. 2025. FACT-AUDIT: An Adaptive Multi-Agent
+Framework for Dynamic Fact-Checking Evaluation of Large
+Language Models. arXiv preprint arXiv:2502.17924.
+Liu, H.; Li, C.; Li, Y.; Li, B.; Zhang, Y.; Shen, S.; and
+Lee, Y. J. 2024a. Llava-next: Improved reasoning, ocr, and
+world knowledge. https://llava-vl. github. io/blog/2024-0130-llava-next.
+Liu, X.; Li, P.; Huang, H.; Li, Z.; Cui, X.; Liang, J.; Qin,
+L.; Deng, W.; and He, Z. 2024b. Fka-owl: Advancing multimodal fake news detection through knowledge-augmented
+lvlms. In ACM MM.
+Liu, X.; Li, Z.; Li, P.; Huang, H.; Xia, S.; Cui, X.; Huang,
+L.; Deng, W.; and He, Z. 2024c. Mmfakebench: A mixedsource multimodal misinformation detection benchmark for
+lvlms. In ICLR.
+
+Liu, Y.; Sun, H.; Guo, W.; Xiao, X.; Mao, C.; Yu, Z.; and
+Yan, R. 2025. Bidev: Bilateral defusing verification for complex claim fact-checking. In AAAI.
+Lu, P.; Chen, B.; Liu, S.; Thapa, R.; Boen, J.; and Zou, J.
+2025. OctoTools: An Agentic Framework with Extensible
+Tools for Complex Reasoning. In ICLRW.
+Luo, G.; Darrell, T.; and Rohrbach, A. 2021. Newsclippings:
+Automatic generation of out-of-context multimodal media.
+In EMNLP.
+Nielsen, D. S.; and McConville, R. 2022. Mumin: A largescale multilingual multimodal fact-checked misinformation
+social network dataset. In SIGIR.
+Ontanón, S. 2013. The combinatorial multi-armed bandit
+problem and its application to real-time strategy games. In
+AAAI.
+OpenAI. 2022. Chatgpt. https://openai.com/blog/chatgpt.
+Ouyang, L.; Wu, J.; Jiang, X.; Almeida, D.; Wainwright, C.;
+Mishkin, P.; Zhang, C.; Agarwal, S.; Slama, K.; Ray, A.;
+et al. 2022. Training language models to follow instructions
+with human feedback. In NeurIPS.
+Papadopoulos, S.-I.; Koutlis, C.; Papadopoulos, S.; and Petrantonakis, P. C. 2025. Red-dot: Multimodal fact-checking
+via relevant evidence detection. IEEE TCSS.
+Qi, P.; Yan, Z.; Hsu, W.; and Lee, M. L. 2024. Sniffer: Multimodal large language model for explainable out-of-context
+misinformation detection. In CVPR.
+Rombach, R.; Blattmann, A.; Lorenz, D.; Esser, P.; and Ommer, B. 2022. High-resolution image synthesis with latent
+diffusion models. In CVPR.
+Shao, R.; Wu, T.; and Liu, Z. 2023. Detecting and grounding
+multi-modal media manipulation. In CVPR.
+Shu, K.; Mahudeswaran, D.; Wang, S.; Lee, D.; and Liu, H.
+2020. Fakenewsnet: A data repository with news content,
+social context, and spatiotemporal information for studying
+fake news on social media. Big Data.
+Silver, D.; Huang, A.; Maddison, C. J.; Guez, A.; Sifre, L.;
+Van Den Driessche, G.; Schrittwieser, J.; Antonoglou, I.;
+Panneershelvam, V.; Lanctot, M.; et al. 2016. Mastering the
+game of Go with deep neural networks and tree search. Nature.
+Silver, D.; Schrittwieser, J.; Simonyan, K.; Antonoglou, I.;
+Huang, A.; Guez, A.; Hubert, T.; Baker, L.; Lai, M.; Bolton,
+A.; et al. 2017. Mastering the game of go without human
+knowledge. nature.
+Suryavardan, S.; Mishra, S.; Patwa, P.; Chakraborty, M.;
+Rani, A.; Reganti, A. N.; Chadha, A.; Das, A.; Sheth, A. P.;
+Chinnakotla, M.; et al. 2023. Factify 2: A multimodal fake
+news and satire news dataset. In AAAIW.
+Tahmasebi, S.; Müller-Budack, E.; and Ewerth, R. 2024.
+Multimodal misinformation detection using large visionlanguage models. In CIKM.
+Thorne, J.; Vlachos, A.; Christodoulopoulos, C.; and Mittal,
+A. 2018. FEVER: a large-scale dataset for fact extraction
+and VERification. In NAACL.
+
+Touvron, H.; Lavril, T.; Izacard, G.; Martinet, X.; Lachaux,
+M.-A.; Lacroix, T.; Rozière, B.; Goyal, N.; Hambro, E.;
+Azhar, F.; et al. 2023. Llama: Open and efficient foundation language models. arXiv preprint arXiv:2302.13971.
+Wang, S.; Lin, H.; Luo, Z.; Ye, Z.; Chen, G.; and Ma,
+J. 2024a. Mfc-bench: Benchmarking multimodal factchecking with large vision-language models. arXiv preprint
+arXiv:2406.11288.
+Wang, W. Y. 2017. “Liar, Liar Pants on Fire”: A New Benchmark Dataset for Fake News Detection. In ACL.
+Wang, X.; Li, C.; Wang, Z.; Bai, F.; Luo, H.; Zhang, J.; Jojic, N.; Xing, E.; and Hu, Z. 2024b. PromptAgent: Strategic Planning with Language Models Enables Expert-level
+Prompt Optimization. In ICLR.
+Xie, Y.; Goyal, A.; Zheng, W.; Kan, M.-Y.; Lillicrap, T. P.;
+Kawaguchi, K.; and Shieh, M. 2024. Monte Carlo Tree
+Search Boosts Reasoning via Iterative Preference Learning.
+In NeurIPSW.
+Yang, J.; and Rocha, A. 2024. Take it easy: Label-adaptive
+self-rationalization for fact verification and explanation generation. In WIFS.
+Yang, Z.; Chen, G.; Li, X.; Wang, W.; and Yang, Y. 2024.
+DoraemonGPT: Toward Understanding Dynamic Scenes
+with Large Language Models (Exemplified as A Video
+Agent). In ICML.
+Yao, B. M.; Shah, A.; Sun, L.; Cho, J.-H.; and Huang, L.
+2023a. End-to-end multimodal fact-checking and explanation generation: A challenging dataset and models. In SIGIR.
+Yao, S.; Yu, D.; Zhao, J.; Shafran, I.; Griffiths, T.; Cao, Y.;
+and Narasimhan, K. 2023b. Tree of thoughts: Deliberate
+problem solving with large language models. In NeurIPS.
+Yu, X.; Chen, M.; and Yu, Z. 2023. Prompt-Based MonteCarlo Tree Search for Goal-oriented Dialogue Policy Planning. In EMNLP.
+Yu, X.; Peng, B.; Vajipey, V.; Cheng, H.; Galley, M.; Gao,
+J.; and Yu, Z. 2024. Improving Autonomous AI Agents with
+Reflective Tree Search and Self-Learning. In ICLR.
+Zannettou, S.; Sirivianos, M.; Blackburn, J.; and Kourtellis,
+N. 2019. The web of false information: Rumors, fake news,
+hoaxes, clickbait, and various other shenanigans. JDIQ.
+Zeng, F.; Li, W.; Gao, W.; and Pang, Y. 2024. Multimodal
+Misinformation Detection by Learning from Synthetic Data
+with Multimodal LLMs. In EMNLP.
+Zhang, D.; Huang, X.; Zhou, D.; Li, Y.; and Ouyang, W.
+2024. Accessing gpt-4 level mathematical olympiad solutions via monte carlo tree self-refine with llama-3 8b. arXiv
+preprint arXiv:2406.07394.
+Zhou, A.; Yan, K.; Shlapentokh-Rothman, M.; Wang, H.;
+and Wang, Y.-X. 2024. Language agent tree search unifies reasoning, acting, and planning in language models. In
+ICML.
+
+Appendix
+This appendix contains additional details for the submission
+entitled ”T2 Agent: A Tool-augmented Multimodal Misinformation Detection Agent with Monte Carlo Tree Search”.
+The appendix is organized as follows:
+• § Toolset Details.
+• § T2 Agent Pseudocode.
+• § Experiment Details.
+• § More Results.
+• § More Analysis.
+• § Case Study.
+• § Prompts.
+
+Toolset Details
+To effectively address complex verification tasks that require
+multi-modal misinformation detection, we design an extensible toolset for T2 Agent. We provide a detailed description
+of each tool in the toolset in this section.
+Web Searching This toolset is used to gather reliable
+knowledge from the web for information verification. We integrate the Google Search API 2 and Wikipedia API 3 , which
+are particularly effective in retrieving general web content
+and encyclopedic knowledge, respectively.
+Time Detection This module is responsible for identifying the earliest appearance time of an image. To achieve this,
+we utilize TinEye 4 , a reverse image search engine, to trace
+the earliest online publication date of a given visual content.
+Forgery Detection This toolset includes pre-trained
+forgery detection models designed to detect digital manipulations. The system supports the integration of new
+forgery detection models to meet the user’s needs. For the
+AMG (Guo et al. 2025) benchmark, we employ PSCCNET(Liu et al. 2022), a powerful manipulation detection
+network, to identify subtle image tampering.
+Counterfactual Detection Unlike forgery detection,
+which focuses on identifying whether media has been digitally altered or synthesized (e.g., deepfakes), this module detects inconsistencies between the depicted scene and
+real-world facts, i.e., counterfactual content. We use LLava34B (Liu et al. 2024a), a powerful vision-language model,
+to analyze images for logically or physically implausible elements.
+Image Understanding This component provides a detailed, question-driven interpretation of visual content. In
+our implementation, the image understanding model is
+aligned with the backbone model of the overall framework.
+Entity Recognition This tool enables precise identification of key entities within visual content, such as people, landmarks, and organizations. We use the Baidu Entity
+Recognition API 5 , which specializes in extracting entities
+from images.
+2
+
+https://developers.google.com/custom-search/v1/overview
+3
+https://www.wikipedia.org/
+4
+https://tineye.com/
+5
+https://ai.baidu.com/tech/imagerecognition/general
+
+T2 Agent Pseudocode
+Our method T2 Agent consists of a Multi-source Verification MCTS and a Tool Selection mechanism. Alg. 1 presents
+the pseudocode of Multi-source Verification MCTS. Our
+method begins by initializing a root node representing the
+task of verifying news authenticity, with child nodes corresponding to various forgery sources weighted by an LVLM
+analysis. During each iteration, promising nodes are selected
+using a modified UCT criterion to balance exploration and
+exploitation effectively. Upon selecting a specific node, the
+agent initiates a simulation process. During this simulation,
+the agent iteratively performs reasoning steps (thoughts), executes actions, and collects observations. This iterative reasoning continues until either a conclusive answer is found or
+the predefined maximum search depth d is reached. At the
+termination of the simulation, an evaluation phase assesses
+the entire simulation process using a dual scoring mechanism that integrates both reasoning trajectory scores and
+confidence scores. The results from this evaluation are then
+backpropagated to update the values of the relevant nodes.
+Finally, the decision-making component aggregates the verification results from the updated nodes to produce a final
+determination on the authenticity of the news.
+Although the full set of tools offers broad functionality,
+not all tools are equally valuable for every task (Lu et al.
+2025). To balance efficiency and performance, we leverage
+greedy search to systematically identify the most effective
+subset of tools. Alg. 1 presents the pseudocode of the tool
+selection mechanism. In practice, we select a subset (100
+samples) of all data samples for evaluation function f to save
+time. It is worth to notice that our method is differnet from
+OctoTools (Lu et al. 2025). OctoTools evaluates each tool
+independently by adding it to a fixed base toolset and measuring its individual contribution. In contrast, our method
+incrementally adds tools one by one in a greedy fashion,
+evaluating the combined effect at each step. We conduct
+experiments to compare our method with OctoTools (Lu
+et al. 2025). Our approach employs Web Searching, Counterfactual Detection, and Entity Recognition, while OctoTools additionally incorporates Image Understanding. Experimental results show that our method achieves an F1
+score of 0.568, outperforming Octo-Tools (F1 = 0.550). This
+suggests that although Image Understanding can be beneficial when used in isolation, its integration into a multi-tool
+framework may lead to performance degradation. One possible explanation is that Image Understanding can partially
+substitute for other tools—such as Entity Recognition—but
+with lower accuracy. This redundancy and reduced precision
+may interfere with the verification process, ultimately harming performance. The results shows that our strategy enables
+a more accurate assessment of tool selection.
+
+Experiment Details
+In our implementation, we set the number of sampled nodes
+to n = 2 and the exploration weight to C = 2. Additionally,
+the hyperparameter α = 0.5 is used to balance the reasoning trajectory score and the result confidence score in the
+evaluation.
+
+Algorithm 1: Multi-source Verification MCTS
+Require: Initial state s, LVLM model pLV LM , number of generated actions n, depth limit d, number of simulations K,
+exploration weight C, hyperparameter α
+Initialize the tree with sub-task nodes.
+▷ Initialization
+for k ← 1, . . . , K do
+▷ Simulation Loop
+s ← root node
+q
+h
+i
+(s)+1)
+Select nodes ← arg maxs′ ∈children(s) V (s′ ) + C ln(N
+▷ Selection
+N (s′ )+1
+while s not terminal and depth < d do
+▷ Expansion and simulation
+if s has unvisited children then
+Expand s by generating n new child nodes using pLV LM
+end if
+Select next node s′ ∈ children(s) using modified UCT:
+end while
+Combine scores: V (s) = αStT + (1 − α)StC
+▷ Evaluation
+for t ← T − 1, . . . , 0 do
+▷ Backpropagation
+(st ))+V (s)
+V (st ) ← V (st )(N
+N (st )+1
+end for
+end for
+if Early stop with an answer then
+▷ Decision making
+return answer
+else
+
+Q
+i (1/n)
+p(real) = n
+i=1 1 − p fake 
+n 
+answer = arg max p(real), p(f akei ) i=1
+end if
+
+Algorithm 2: Tool selection
+Input: Toolbox D = {di }n
+i=1 , base toolset Dbase
+Output: Optimized toolset D∗
+Accbaseline ← Acc(Dbase )
+for each di in D such that di ∈
+/ Dbase do
+Di ← Dbase ∪ {di }
+Acci ← Acc(Di )
+∆di ← Acci − Accbaseline
+if ∆di > 0 then
+Dbase ← Di
+end if
+end for
+D∗ ← Dbase
+Return D∗
+
+More Results
+We present the results on the AMG benchmark in Table 5.
+It is important to note that the AMG dataset is initially
+designed for supervised learning. All compared methods,
+including CAFE (Chen et al. 2022), MCAN (Wu et al.
+2021), and MGCA (Guo et al. 2025), are trained or finetuned on the provided training set. In contrast, our proposed T2 Agent is based on tool-augmented tree search with
+large language models, requiring no training or fine-tuning.
+Specifically, T2 Agent with GPT-4o obtains an F1 score of
+0.510, surpassing CAFE (Chen et al. 2022) and MCAN (Wu
+et al. 2021). Notably, the test set of AMG has a highly imbalanced class distribution. Under such conditions, the F1
+score is a particularly meaningful metric, and our method’s
+competitive performance on the F1 score suggests its power
+without any task-specific training. Despite underperforming
+compared to MGCA (Guo et al. 2025), which achieves the
+highest F1 score of 0.567, our method demonstrates superiority in the following aspects: (1) Rapid adaptation and
+
+▷ Stage 1: Baseline setup
+▷ Stage 2: Individual tool evaluation
+
+▷ Stage 3: Select optimized toolset
+
+low-cost deployment: Although training-based methods can
+achieve strong performance, they (Chen et al. 2022; Wu et
+al. 2021; Guo et al. 2025) typically require designing different model architectures for different scenarios and often suffer from poor out-of-domain generalization. In contrast, our
+T2 Agent is training-free and can handle emerging misinformation without any additional training, making it particularly valuable in the early stages of information outbreaks.
+(2) Data privacy and regulatory compliance: In domains with
+strict privacy and compliance requirements—such as healthcare or finance—fine-tuning on task-specific training data
+may be infeasible or even prohibited. Our method circumvents this issue by avoiding task-specific training altogether.
+(3) Benefit from powerful LLMs: As shown in the results,
+as the model size increases (from GPT-4.1-nano to GPT4o), the performance of T2 Agent consistently improves, rising from 0.503 to 0.579. This indicates that the performance
+may be further improved with a more powerful model.
+We also evaluate the MMD-agent with different verifi-
+
+Table 5: Comparision results on AMG.
+Training based
+
+F1 ↑
+Accuracy ↑
+
+CAFE
+
+MCAN
+
+MGCA
+
+0.467
+0.638
+
+0.461
+0.612
+
+0.567
+0.739
+
+Training free
+Ours
+GPT-4.1-nano GPT-4o-mini
+0.402
+0.503
+
+0.499
+0.538
+
+GPT-4o
+0.510
+0.579
+
+Table 6: Comparison with different settings of MMD-agent on MMfakebench.
+Match-Text-Image
+F1 ↑
+Accuracy ↑
+
+MMD-agent
+Image-Match-Text Text-Image-Match (default)
+
+0.448
+0.497
+
+0.480
+0.503
+
+cation order settings to make a fair comparison. Experiments are conducted on the MMFakeBench dataset with
+GPT-4o as the Large Vision-Language Model (LVLM). We
+set three different verification order settings of the MMDAgent: Match-Text-Image, Image-Match-Text, and TextImage-Match (the default setting). As shown in Table 6, the
+performance of the MMD-Agent varies considerably across
+these settings, revealing a strong dependence on the order in
+which forgery sources are processed. In contrast, our method
+dynamically explores multiple, interleaved forgery sources
+without being constrained or biased by any predefined processing order. As a result, our approach achieves consistently superior performance across all metrics, demonstrating its robustness and effectiveness.
+Table 7: Comparison of different initialization methods (Experiment with GPT-4.1-nano).
+Method
+
+F1 ↑
+
+Accuracy ↑
+
+Iterations ↓
+
+Random
+Ours
+
+0.560
+0.568
+
+0.560
+0.569
+
+2.40
+2.28
+
+0.614
+0.616
+
+Ours
+0.759
+0.753
+
+from more promising forgery sources. Consequently, our approach requires fewer average iterations (2.28) to reach a
+conclusion compared to random initialization (2.40). This
+reduction in the number of exploration steps demonstrates
+that starting from a promising node enhances efficiency.
+
+Case Study
+Good case The good case demonstrates that our method
+avoids early termination and generates a correct answer only
+after gathering reliable evidence. At the 0-th iteration, the
+system correctly predicts ”mismatch” but, due to low confidence, continues to verify. In the 1st iteration, it explores
+alternative forgery sources, and in the 2nd iteration, it further confirms the ”mismatch” hypothesis. Once sufficient
+evidence is collected, the system returns the final result.
+Bad case Despite employing MCTS and an extensible
+toolset to achieve more effective exploration and exploitation, our method can still be limited by the capabilities
+of individual tools. In this bad case, the model incorrectly
+deemed mismatch cross-modal information as consistent,
+resulting in a wrong final judgment. Similar issues may arise
+from weaknesses in forgery detection, counterfactual reasoning, web searching, etc. Future work may alleviate this
+problem by using more powerful tools.
+
+More Analysis
+Initialization analysis During the initialization phase, we
+use a LVLM to assess and score different nodes. These
+scores determine the priority order for exploring sub-nodes,
+i.e., nodes with higher scores will be selected and explored first. To investigate the impact of different initialization strategies, we compare our LVLM-based initialization
+method against a random initialization approach. As shown
+in Table 7, the overall performance metrics—including F1
+score and accuracy are very similar between the two methods. For example, both achieve nearly identical F1 scores
+(0.560 vs. 0.568), and the differences in accuracy (0.560 vs.
+0.569) are minimal. These results suggest that the choice of
+initialization strategy has little effect on final performance,
+indicating that our method is robust and capable of fully
+exploring all possible forgery sources regardless of which
+node is explored first. However, a key advantage of our
+LVLM-based initialization is its ability to begin exploration
+
+Prompts
+We present the prompts used in our method, including:
+the reasoning trajectory score prompt and the result confidence score prompt used during evaluation; the initialization
+prompt, which is employed to score nodes during the initialization of the search process; and the task prompt, guiding
+the reasoning process throughout tree expansion. We take
+MMfakebench as an example.
+[a1] Chen, Y.; Li, D.; Zhang, P.; Sui, J.; Lv, Q.; Tun, L.; and
+Shang, L. 2022. Cross-modal ambiguity learning for mul-timodal
+fake news detection. In WWW.
+[a2] Liu, X.; Liu, Y.; Chen, J.; and Liu, X. 2022. PSCC-Net:
+Progressive spatio-channel correlation network for image manipulation detection and localization. IEEE TCSVT.
+[a3] Wu, Y.; Zhan, P.; Zhang, Y.; Wang, L.; and Xu, Z. 2021.
+Multimodal fusion with co-attention networks for fake news detection. In ACL-IJCNLP.
+
+Good case: Output a correct answer after obtaining reliable evidence
+
+News Text: Romney announces Ryan as his running
+mate in front of the USS Wisconsin on Aug 11, 2012,
+in Norfolk, Va.
+Binary label: Fake
+Multiple label: Mismatch
+1
+2
+3
+4
+
+5
+
+6
+7
+8
+9
+
+10
+11
+
+12
+13
+14
+
+15
+16
+17
+18
+19
+20
+
+21
+22
+23
+24
+25
+26
+27
+28
+
+=======================Iter 0: select node <match>=====================
+Thought 1: I need to determine what the image depicts, focusing on whether it shows
+the USS Wisconsin a political event with Romney and Ryan.
+Action 1: VQA[What is shown in the image?]
+Observation 1: The image shows a person standing on a stage or platform facing a
+large crowd of people. The crowd appears to be attending a gathering or event
+outdoors with some individuals taking photos or recording. The sky above is
+partly cloudy with patches of blue. The stage is elevated with steps leading up
+to it and there are two microphones or speakers positioned on either side of the
+person on stage.
+Thought 2: Given the description the image depicts a person on stage at an outdoor
+event with a crowd, but there is no clear indication of the USS Wisconsin or
+specific political figures like Romney or Ryan. The scene appears to be a public
+gathering possibly a rally or speech but without identifying features linking
+it to the event described in the text.
+Action 2: Finish[MISMATCH]
+reward = 0.2
+=======================Iter 1: select node <text>======================
+Thought 1: The news mentions Romney announcing Ryan as his running mate on August
+11, 2012 in Norfolk, Virginia, in front of the USS. To verify this, I should
+check credible information regarding Romney’s 2012 vice-presidential pick and
+the specific event location and date.
+Action 1: Google[Romney Ryan 2012 Norfolk USS Wisconsin]
+Observation 1: Retrieved Information 1: Romney Announces Ryan as VP Running Mate Aug
+11 2012 ... ... WI as his vice-presidential running mate during a campaign
+event at the retired battleship USS Wisconsin in Norfolk Virginia August 11
+2012.
+Retrieved Information 2: Mitt Romney campaigns with Paul Ryan Aug 13 2012 ...
+Retrieved Information 3: ...
+Thought 3: The event in Norfolk, Virginia, where Romney announced Ryan as his
+running mate, is a specific campaign event, and the fact that it took place on
+August 11, 2012, is supported by multiple news sources. The 2012 Republican
+National Convention in Tampa, Florida, occurred later in August. These details
+align with the known timeline of events leading up to the convention. Therefore,
+the news caption appears to be accurate regarding the date, location.
+Action 3: Finish[TEXT SUPPORT]
+reward = 0.8
+=======================Iter 2: select node <match>=====================
+Thought 1: I need to determine what the image depicts to see if it aligns with the
+news caption about Romney announcing Ryan as his running mate in front of the
+USS Wisconsin.
+Action 1: VQA[What is shown in the image?]
+Observation 1: The image shows a person standing on a stage or platform, addressing
+or speaking to a large crowd of people gathered in front of them. The stage is
+outdoors, with a blue sky and some clouds visible in the background. The crowd
+appears to be listening attentively, and there are some microphones and audio
+equipment set up on the stage.
+Thought 2: I need to verify whether the background or setting includes the USS
+Wisconsin or a similar naval vessel to confirm if the location matches the
+description in the caption.
+Action 2: VQA[Are there any naval ships, specifically the USS Wisconsin, visible in
+the background or nearby in the image?]
+Observation 2: No, there are no naval ships, including the USS Wisconsin, visible in
+the background or nearby in the image. The background shows a clear sky and
+some distant objects that do not appear to be ships.
+Thought 3: The image does not show the USS Wisconsin or any naval vessel, and there
+is no evidence to suggest the setting matches the location described in the
+caption. Therefore, the image content does not support the news text.
+Action 3: Finish[MISMATCH]
+reward = 0.8
+=======================Final decision===============================
+Finish[MISMATCH]
+
+Bad case: Over-reasoning leads to incorrect text-image association
+
+News Text: Andy Murray returns the ball to YenHsun
+Lu he won comfortably also in straight sets.
+Binary label: Fake
+Multiple label: Mismatch
+
+1
+2
+3
+4
+
+5
+6
+7
+8
+9
+10
+11
+12
+13
+
+14
+15
+
+16
+17
+
+18
+19
+20
+21
+22
+23
+24
+
+25
+26
+27
+28
+29
+30
+
+=======================Iter 0: select node <match>=====================
+Thought 1: I need to determine what the image depicts to see if it aligns with the
+caption.
+Action 1: VQA[What is shown in the image?]
+Observation 1: The image shows a person holding a large trophy, dressed in sports
+attire, with a crowd and other athletes in the background, suggesting a tennis
+victory celebration. Given the context, it is likely a tennis-related event. The
+person in the image appears to be male with curly hair and is smiling,
+indicating a positive outcome related to a sporting achievement.
+Thought 2: The actions of the characters need to be further confirmed.
+Action 2: VQA[Is the person in the image a tennis player celebrating a victory?]
+Observation 2: The person is celebrating a victory, likely after a tennis match.
+Thought 3: Based on the context of celebrating with a trophy and sports attire, this
+image aligns with a tennis victory, supporting the news claim.
+Action 3: Finish[MATCH]
+reward=0.6
+=======================Iter 1: select node <text>=====================
+Thought 1: I need to verify the recent performance and match results of Andy Murray
+and YenHsun Lu to determine the accuracy of this statement. Andy Murray is a
+well-known professional tennis player, and the match details are specific, so I
+will verify if Murray played and won against YenHsun Lu in a recent match.
+Action 1: Google[Andy Murray vs YenHsun Lu match result]
+Observation 1: Retrieved Information 1: Andy Murray wins men’s singles Olympics
+tennis gold, Aug 5, 2012 ... Having suffered a shock first-round defeat by 77thranked Yen-Hsun Lu ... After saving two break points in the opening game of the
+match, he...
+Retrieved Information 2:...
+Thought 2: The search results indicate that Andy Murray has played against YenHsun
+Lu and won a match in straight sets. Multiple sources mention Murray’s victory
+over Lu, including references to a match where Murray "crushes" Lu and
+descriptions of him winning easily. There is no evidence contradicting that
+Murray won the match comfortably in straight sets.
+Action 2: Finish[TEXT SUPPORT]
+reward=0.8
+=======================Iter 2: select node <image>=====================
+Thought 1: Detect["image.jpg"]
+Action 1: Detect["image.jpg"]
+Observation 1: The news image conforms to the objective facts because the image
+shows a person holding a trophy, presumably celebrating a victory or achievement
+. The person is smiling and appears to be in a celebratory mood. There are other
+individuals in the background, some of whom are also smiling and appear to be
+part of the celebration.
+Thought 2: According to the observation, the news image conforms to the objective
+facts.
+Action 2: Finish[IMAGE SUPPORT]
+reward=0.8
+=======================Final decision===============================
+Finish[ORIGINAL]
+
+Reasoning Trajectory Score Prompt
+Task: Analyze Misinformation Detection Trajectories. The trajectories are labeled by environmental observations about
+the situation, thoughts that can reason about the current situation, and actions. Given a news item and a trajectory,
+evaluate its correctness and provide your reasoning and analysis in detail. Focus on the latest thought, action, and
+observation.
+(1) Incomplete trajectories can be correct if the thoughts and actions so far are correct, even if the answer is not found
+yet.
+(2) Do not generate additional thoughts or actions beyond those provided.
+(3) At the last line of your analysis, conclude with ”Thus the correctness score is s”, where s is an integer from 1 to 10.
+
+Result Confidence Score Prompt
+Task: Given a news, thoughts, observations, and a generated answer. If the answer can be drawn by thoughts or observation, then the result is relatively reliable; otherwise, it is unreliable. Give a brief analysis of the reliability of the
+answer. Then, at the last line conclude ”Thus the reliability score is s”, where s is an integer from 1 to 10.
+
+Initialization Prompt
+Task: Given a news text and a news image, your task is to infer the probability that the news belongs to the following
+three different types of forgery based on your experience:
+(1) Textual Veracity Distortion: If the news text contains rich information, the news is more likely to be text veracity
+distortion.
+(2) Visual Veracity Distortion: If the content in the news image contains counterfactual scenarios (e.g. violates the
+physical laws), the news is more likely to be visual veracity distortion.
+(3) Cross-modal Consistency Distortion: If the content in the news image is irrelevant to the image or does not support
+the text, the news is more likely to be cross-modal consistency distortion.
+Please avoid redundant analysis and directly return the judgment result in the following form: ”Thus, the possibility
+of Textual Veracity Distortion, Visual Veracity Distortion, Cross-modal Consistency Distortion are [p1 , p2 , p3 ]”, where
+p1 , p2 , p3 are floats from 0 to 1.
+
+Task Prompt
+Task 1: Textual Veracity Detection Solve a textual veracity detecting task with interleaving Thought, Action, and
+Observation steps. You need to verify the knowledge-based information therein, such as public figures, political events,
+and scientific common sense.
+• Thought: Can reason about the current situation.
+• Actions:
+(1) Wikipedia[entity]: Searches the exact entity on Wikipedia and returns the first paragraph if it exists. If not,
+it will return some similar entities to search.
+(2) Google[entity]: Searches information on Google and returns the snippet if it exists. Please give priority to
+Wikipedia; Google should be considered when Wikipedia fails.
+(3) Finish[answer]: Return the answer and finishes the task.
+If there is any credible objective evidence refuting the news caption, please answer in the form: Finish[TEXT
+REFUTE]. If no such evidence is found, please answer in the form: Finish[TEXT SUPPORT].
+Task 2: Image Veracity Detection Solve an image veracity detecting task (determine whether the content in the news
+image contains counterfactual scenarios, e.g., violates physical laws) with interleaving Thought, Action, and Observation steps.
+• Thought: Can reason about the current situation.
+• Actions:
+(1) Detect[image]: Return the forgery situation detected by a forgery detection model.
+(2) Finish[answer]: Return the answer and finishes the task.
+If there is any credible objective fact refuting the news image, please answer in the form: Finish[IMAGE
+REFUTE]. If no such fact is found, please answer in the form: Finish[IMAGE SUPPORT].
+Task 3: Cross-modal Matching Detection Solve a cross-modal matching detection task (determine whether the content
+in the news image supports the text or not) with interleaving Thought, Action, and Observation steps. Please make a
+direct judgment based on the image content and the text content.
+• Thought: Can reason about the current situation.
+• Actions:
+(1) VQA[question]: Return the description of the image information concerned in the question.
+(2) Entity[image]: Return the entity of the image, including the identity of public figures.
+(3) Finish[answer]: Return the answer and finishes the task.
+If the news caption matches the content of the news image, please answer in the form: Finish[MATCH]. If no
+match is found, please answer in the form: Finish[MISMATCH].
+
+

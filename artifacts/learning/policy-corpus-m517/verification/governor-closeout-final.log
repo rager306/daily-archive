@@ -1,0 +1,31 @@
+scorecard:
+  axis measurability: 5/21 (23.8%) — mandatory acceptance gates that carry a measured mechanism over all mandatory gates. A gate is measured when it carries evidence bound to a manifest and a pointer and its state is one the contract declares in measured_states; a gate whose state is not a measured state is unmeasured, whether it is dispositioned (non-blocking but not a measurement) or still unresolved (blocking). The gate list is read from the acceptance package, never restated.
+  axis declaration_sync_gap: 0 gaps — number of declarations the DATA makes that the code does not enforce: a hard metric with no computed-or-downgraded disposition, a stage hard invariant with no disposition, a prompt call form with no resolvable registry entry, and a declared prompt lineage field with no recorded-or-downgraded disposition. The goal is zero.
+  axis feature_gated_coverage: 19/31 (61.3%) — gated test targets that execute a non-zero number of tests over all test targets carrying a cfg feature gate, under the feature sets the architecture gate actually builds
+  improvement momentum: 3 commit(s) / 0.2d [ok] — commits accumulated since the last milestone close over the DATA threshold beyond which the gap is reported as drift
+  improvement readme_gate: active milestone M517-1tplxa referenced [ok] — the README 'Next gate' section exists and references the active milestone, or its absence is reported
+  improvement dead_code: not scanned [not_measured] — clippy dead_code findings in our crates, at medium severity
+  improvement coverage_delta: 0 of 0 new source(s) untested [ok] — source files added since the last milestone close that carry no corresponding test
+  improvement feature_gated_coverage: 19/31 gated targets execute tests; 12 execute zero [attention] — gated test targets that execute a non-zero number of tests over all gated targets, with zero-executing targets named individually
+trajectory report: verdict=TrajectoryVerdict.DRIFT_RISK phase=closeout flags=8 violations=1
+  report: /root/daily-archive/artifacts/project-trajectory/trajectory-report.json
+  - resource_target_bloat [medium] owner=resource-safety: target/ is 36.2GB (20GB free on disk) — consider 'cargo clean' before workspace builds Recommendation: Examples hold 4.1GB but are hardlinked to deps/ — deleting them reclaims little; prefer 'cargo clean' for a real win; Dependencies cache large (31.4GB) — cargo clean -p <crate> to prune specific deps; Debug profile 36.1GB — run 'cargo clean' before workspace builds
+  - gsd_control_plane_projection_contention [high] owner=gsd-control-plane: 34 occurrence(s) in the last 7 day(s), limit 0; marker='Projection mutation remains fenced'
+  - gsd_control_plane_liveness_wedge [medium] owner=gsd-control-plane: 29 occurrence(s) in the last 7 day(s), limit 0; marker='liveness backstop tripped'
+  - gsd_control_plane_tech_verdict_block [medium] owner=gsd-control-plane: 25 occurrence(s) in the last 7 day(s), limit 0; marker='passing host Technical Verdict'
+  - gsd_control_plane_doctor_new_divergence [high] owner=gsd-control-plane: 9 divergence(s) outside the baseline: ['validation_source_revision_mismatch@M294', 'validation_source_revision_mismatch@M296', 'validation_source_revision_mismatch@M297', 'validation_source_revision_mismatch@M298', 'validation_source_revision_mismatch@M299', 'validation_source_revision_mismatch@M300', 'validation_source_revision_mismatch@M301', 'validation_source_revision_mismatch@M302']
+  - data_integrity_stale_artifact [medium] owner=data-integrity: artifacts/summaries_eval/ is 51 days old with no code readers — archive it
+  - data_integrity_stale_artifact [medium] owner=data-integrity: artifacts/m450-build-reports/ is 51 days old with no code readers — archive it
+  - subdir_not_in_schema [medium] owner=schema-hierarchy: repo root/tools/ exists but is not in SCHEMA valid list (ADR-068: FS must conform to norm)
+  active policy: active_research_authorization (D491) c3_process_gates=waived independent_rights_review_wait=waived graph_locks=retained third_party_legal_rights=not_granted quality_pass=not_inferred historical_c3=pending active_blocker=False
+closeout reclamation:
+  target/: 36.2 GB (cap 60 GB) — within cap
+  policy: exec 30d, quarantine 30d, activity 14d, min age 24h, build cache >= 4GB
+  plan:
+    - scratch_dirs: 0 (older than 24h)
+    - exec_captures: 0 (older than 30d (floor 24h))
+    - quarantine_runs: 0 (older than 30d (floor 24h))
+    - activity_files: 0 (older than 14d (floor 24h))
+    - build_caches: 0 (cache GC for store entries >= 4GB)
+    - package_targets: 12 (cargo clean -p per DATA package (frees second-toolchain artifacts))
+  reclaims 0.0 MB from stores + 12 package clean command(s)

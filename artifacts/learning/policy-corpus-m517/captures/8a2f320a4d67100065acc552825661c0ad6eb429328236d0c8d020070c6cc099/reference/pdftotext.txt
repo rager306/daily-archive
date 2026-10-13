@@ -1,0 +1,2345 @@
+DeepRAG: Thinking to Retrieve Step by Step for Large Language Models
+Xinyan Guan1,2 , Jiali Zeng3 , Fandong Meng3 , Chunlei Xin1,2 , Yaojie Lu1 ,
+Hongyu Lin1 , Xianpei Han1 , Le Sun 1 , Jie Zhou3
+1
+Chinese Information Processing Laboratory, Institute of Software, Chinese Academy of Sciences
+2
+University of Chinese Academy of Sciences
+3
+Pattern Recognition Center, WeChat AI, Tencent Inc, China
+{guanxinyan2022,chunlei2021,hongyu,luyaojie,xianpei,sunle}@iscas.ac.cn
+{lemonzeng,fandongmeng,withtomzhou}@tencent.com
+
+arXiv:2502.01142v2 [cs.AI] 8 Jun 2025
+
+Abstract
+
+Question: What is the total runtime of all movies in The Lord of the Rings?
+Human Thinking
+
+Large Language Models (LLMs) have shown
+remarkable reasoning capabilities, while their
+practical applications are limited by severe factual hallucinations due to limitations in the
+timeliness, accuracy, and comprehensiveness
+of their parametric knowledge. Meanwhile, enhancing retrieval-augmented generation (RAG)
+with reasoning remains challenging due to ineffective task decomposition and redundant
+retrieval, which can introduce noise and degrade response quality. In this paper, we
+propose DeepRAG, a framework that models retrieval-augmented reasoning as a Markov
+Decision Process (MDP), enabling reasonable
+and adaptive retrieval. By iteratively decomposing queries, DeepRAG dynamically determines whether to retrieve external knowledge
+or rely on parametric reasoning at each step.
+Experiments show that DeepRAG improves retrieval efficiency and boosts answer accuracy
+by 26.4%, demonstrating its effectiveness in
+enhancing retrieval-augmented reasoning. 1
+
+1
+
+I know The Lord of the Rings trilogy
+consists of three films: The
+Fellowship of the Ring, The Two
+Towers, and The Return of the King.
+
+What are the titles of the movies in
+The Lord of the Rings?
+The Fellowship of the Ring, The Two
+Towers, The Return of the King
+Step 2,3,4
+
+However, I am unsure of their exact
+runtimes.
+To find out, I first need to determine
+the runtime of each film individually.
+searching...
+After retrieving this information, I
+can compute the total runtime as:
+178 + 179 + 201 = 558 minutes.
+
+Whatisisthe
+theruntime
+runtimeofofThe
+The
+What
+Fellowshipofofthe
+theRing?
+Ring?
+Fellowship
+178 minutes
+Step 5
+
+What is the total runtime of the
+The Lord of the Rings?
+178 + 179 + 201 = 558 minutes
+Final answer: 558 minutes
+
+Retrieval narrative
+
+Atomic
+decisions
+
+Figure 1: Correspondence between human thinking
+processes and DeepRAG. Specifically, retrieval narrative ensures a structured workflow by generating subqueries that seek additional information based on previous content, and atomic decisions dynamically determines whether to retrieve external knowledge or rely
+solely on the parametric knowledge for each subquery.
+
+coherent reasoning process (Radhakrishnan et al.,
+2023; Guan et al., 2024a). Iterative retrieval has
+been proposed as a solution to continuously update retrieval results, addressing the dynamic information needs that arise during the generation
+process (Yue et al., 2024; Wang et al., 2025). Despite this, LLMs frequently struggle to generate
+precise and atomic subqueries, which are essential
+for more effective retrieval and question decomposition (Wu et al., 2024). From the perspective of
+RAG, iterative retrieval should ideally generate the
+next atomic query based on the current question
+and the available information in an adaptive manner. As illustrated in Figure 1, the process flows
+logically from one step to the next. Specifically,
+the goal of finding each movie’s runtime in steps
+2-4 is derived from step 1’s identification of the
+three titles of the Lord of the Rings series.
+Additionally, retrieval is not always essential (Jeong et al., 2024). Some queries depend on
+external knowledge (steps 2-4), while others can
+be addressed through the reasoning capabilities of
+
+Introduction
+
+Large Language Models (LLMs) have shown considerable promise in reasoning (Plaat et al., 2024).
+Nevertheless, their limitations in capacity and capabilities result in significant issues with factual
+hallucinations, stemming from challenges related
+to the timeliness, accuracy, and comprehensiveness
+of their parametric knowledge (Zhang et al., 2023;
+Huang et al., 2023). To mitigate these problems,
+Retrieval-Augmented Generation (RAG) has been
+introduced as a promising approach. By incorporating relevant information from knowledge bases or
+search engines, RAG enhances the factual accuracy
+of model responses (Zhao et al., 2024).
+However, enhancing RAG with reasoning still
+poses several challenges (Gao et al., 2025). One
+significant issue is that complex queries often necessitate multi-step decomposition to establish a
+1
+
+DeepRAG
+Step 1
+
+https://github.com/gxy-gxy/DeepRAG
+
+1
+
+the LLM alone (step 5 requires summarizing previous information). Moreover, LLMs have shown
+the ability to function as knowledge bases in their
+own right (Petroni et al., 2019) (such as in step
+1, where the three movie titles are widely known).
+Unnecessary retrieval can be redundant and may
+introduce noise, and degrade the quality of generated responses (Chen et al., 2023; Tan et al., 2024;
+Yu et al., 2022).
+To tackle these issues, we introduce DeepRAG,
+a new framework inspired by how humans search
+the Internet based on demand. This framework
+aims to enhance reasoning capabilities in retrievalaugmented generation by modeling the process as
+a Markov Decision Process. DeepRAG incorporates two main components: retrieval narrative and
+atomic decisions, which together create a strategic
+and adaptive retrieval system. As depicted in Figure 1, the retrieval narrative ensures a structured
+workflow by generating subqueries that seek additional information based on previous content. For
+each subquery, atomic decisions dynamically determines whether to retrieve external knowledge or
+rely solely on the LLM’s parametric knowledge.
+As illustrated in Figure 2, our framework consists of three components: 1) Binary Tree Search,
+which constructs a binary tree for each subquery
+related to the given question, exploring paths based
+on either parametric knowledge or external knowledge. 2) Imitation Learning, which extracts the
+reasoning process that leads to the correct final answer with minimal retrieval cost based on Binary
+Tree Search, enabling the model to learn the pattern of “subquery generation – atomic decision –
+intermediate answer”. 3) Chain of Calibration,
+which calibrates the LLM’s internal knowledge by
+refining each atomic decision, enabling it to make
+accurate atomic decisions about the necessity of retrieval. By explicitly enhancing the LLM’s ability
+to recognize its own knowledge limits, we can train
+any model in an end-to-end manner, allowing it to
+dynamically decide when and what to retrieve.
+We validate the effectiveness of DeepRAG
+across in-distribution, out-of-distribution, timesensitive, and heterogeneous knowledge base
+datasets. Experimental results show that DeepRAG significantly outperforms existing methods,
+achieving a 21.99% increase in accuracy while also
+enhancing retrieval efficiency. Further analysis indicates that DeepRAG demonstrates a stronger correlation between its retrieval decisions and parametric knowledge, suggesting more effective cali-
+
+bration of knowledge boundaries.
+
+2
+
+Related Work
+
+Adaptive Retrieval-Augmented Generation
+Existing adaptive RAG approaches can be broadly
+categorized into three types: classifier-based
+methods (Cheng et al., 2024; Jeong et al., 2024)
+requiring additional linear head training for
+retrieval decisions, confidence-based methods
+(Jiang et al., 2023; Su et al., 2024; Dhole, 2025)
+relying heavily on threshold-dependent uncertainty
+metrics, and LLM-based methods (Asai et al.,
+2023; Zhang et al., 2024) generating retrieval
+decisions but often fail to accurately recognize
+their knowledge boundaries, making it unreliable
+to delegate retrieval timing decisions to the model.
+Our method leverages the inherent generative
+capabilities of LLMs to explore knowledge
+boundaries in RAG settings. This design maintains
+the model’s native generation abilities while
+eliminating the need for additional parameters or
+unreliable uncertainty metrics.
+Reasoning in Retrieval-Augmented Generation
+Recent advances in RAG have increasingly emphasized the integration of reasoning capabilities.
+Search-o1 (Li et al., 2025) incorporates retrieval
+into inference to build an agentic system, while its
+application is limited to reasoning models (Chen
+et al., 2025). Self-RAG (Asai et al., 2023) and
+Auto-RAG (Yu et al., 2024) enhance reasoning
+through automatic data synthesis within retrievalaugmented frameworks, while AirRAG (Feng et al.,
+2025) combines Monte Carlo Tree Search with selfconsistency techniques. These methods, however,
+often depend heavily on extensive retrieval or sampling overhead. More recent developments have explored reinforcement learning to enhance retrieval
+quality (Jin et al., 2025; Song et al., 2025; Gao
+et al., 2024), while these methods generally overlook retrieval efficiency in their reward function.
+In contrast, DeepRAG offers a flexible, end-to-end
+solution that enables arbitrary models to retrieve
+information step by step as needed, based on their
+evolving reasoning process.
+Knowledge Boundary LLMs struggle to accurately distinguish between what they know and
+what they don’t know (Yin et al., 2023; Kapoor
+et al., 2024a; Yin et al., 2024). Additional finetuning (Kapoor et al., 2024b) or precise probing (Cheng et al., 2024) is typically required to
+2
+
+Retrieved
+
+Parametric
+
+Subquery
+
+Trajectory with least retrieval
+
+Optimization
+
+Preference pairs
+
+Stage I: Imitation Learning
+
+Binary Tree Search
+Question
+
+Ans
+
+Question
+
+RALM
+
+Stage II: Chain of Calibration
+Ans
+
+Ans
+
+Ans
+
+Ans
+
+Parametric
+Knowledge
+
+Ans
+
+Question
+
+Retrieved
+Documents
+Subquery
+
+Knowledge
+Source
+
+Calibrated
+RALM
+
+Intermediate
+Answer
+
+Figure 2: An overview of DeepRAG, our framework comprises three steps: (1) Binary Tree Search, (2) Imitation
+Learning, and (3) Chain of Calibration. Given a set of supervised datasets, we first use binary tree search to
+synthesize data for imitation learning, allowing the model to learn effective retrieval patterns. Next, we employ
+binary tree search to generate preference data, further calibrating the LLM’s awareness of its knowledge boundaries.
+
+calibrate the model’s cognition. Our approach explores knowledge boundaries in RAG settings.
+
+3
+
+sub-decisions:
+1. Termination decision: Given the partial solution st , the model makes a binary decision σt+1 ∈
+{continue, terminate} to determine whether to
+proceed with generating the next subquery qt+1 or
+finalize the answer o.
+2. Atomic decision: For each subquery qt+1 ,
+the model decides whether to retrieve external
+knowledge or rely solely on its parametric knowledge. Formally, this decision is represented as
+δt+1 ∈ {retrieve, parametric}.
+
+Thinking to Retrieve Step by Step
+
+In this section, we present our proposed method,
+DeepRAG. At its core, DeepRAG models the process of question decomposition, atomic decisions,
+and final answer generation as a Markov Decision
+Process. Given a set of supervised datasets, we
+first use binary tree search to synthesize data for
+imitation learning, allowing the model to learn effective retrieval patterns. Next, we employ binary
+tree search to generate preference data, further calibrating the LLM’s awareness of its knowledge
+boundaries. In the following subsections, we provide a detailed description of each component of
+DeepRAG.
+3.1
+
+Transitions. After executing the action at+1 =
+(σt+1 , δt+1 ) in state st , the environment updates
+the state to st+1 based on transition dynamics P .
+Specifically, if σt+1 = terminate, the
+process concludes by generating the final anstate st+1 =
+swer o, resulting in the terminal
+
+x, (q1 , r1 ), . . . , (qt , rt ), o . Otherwise, it generates the next subquery qt+1 .
+If δt+1 = retrieve, the model retrieves documents dt+1 and generates an intermediate answer
+iat+1 for subquery qt+1 . Otherwise, it relies on
+parametric knowledge to generate the intermediate
+answer. The response rt+1 is set as [dt+1 , iat+1 ]
+(if retrieved)
+or iat+1 (if not). The updated
+state is
+
+
+st+1 = x, (q1 , r1 ), . . . , (qt+1 , rt+1 ) .
+
+Overview of the MDP Modeling
+
+We formalize the step-by-step reasoning process of
+retrieval-augmented generation as a Markov Decision Process (Sutton and Barto, 2018), represented
+by the tuple (S, A, P , R), where S denotes the set
+of states, A represents the set of actions, P defines
+the transition dynamics, and R specifies the reward
+function.
+States. At each step t, the state st ∈ S represents
+the partial solution
+to the original question.
+We
+
+
+denote st = x, (q1 , r1 ), . . . , (qt , rt ) , where x is
+the input question, qi refers to the i-th subquery,
+and ri refers to the i-th intermediate answer (and
+any retrieved documents based on qi ).
+
+Rewards. The reward function evaluates the state
+based on answer correctness and retrieval cost, applied only after generating the
+ final answer o. Formally, R st+1 = st + [o] = −C(o) × T (st ),
+where C(o) indicates correctness (1 if correct, ∞
+otherwise), and T (st ) represents the total retrieval
+cost in state st . Therefore, this reward prioritizes
+answer correctness while encouraging the model
+
+Actions. At state st , the model selects an action
+at+1 = (σt+1 , δt+1 ) ∈ A, which consists of two
+3
+
+to reduce retrieval cost as much as possible.
+3.2
+
+process, which can be used to facilitate arbitrary
+LLMs in enhancing the RAG capabilities.
+
+Binary Tree Search
+
+Algorithm 1 Data Construction for Stage I
+
+Building on this formulation, LLM iteratively decomposes a given question into subqueries, each
+derived from previously acquired information. The
+detailed generation instruction is outlined in Appendix A.2, with the answer format below.
+
+Require: Question x, answer y, language model M, Retriever R, max history length T
+Ensure: Optimal reasoning process s∗ or null
+1: Initialize priority queue PQ ← {([x], 0)}
+▷ (trajectory, retrieval count)
+2: while PQ is not empty do
+3:
+(h, r) ← PQ.dequeue()
+▷ Get trajectory with lowest retrieval count
+4:
+q ← M(h)
+▷ Subquery Generation
+5:
+if ShouldAnswer(q) or length(h) > T then
+6:
+o ← M(h, q)
+▷ Final answer
+7:
+if IsEqual(o, y) then return h
+8:
+else
+9:
+a ← M(h, q)
+▷ Direct answer
+10:
+PQ.enqueue(([h, (q, a)], r))
+11:
+d ← R(q)
+▷ Retrieve document
+12:
+a ← M(h, q, d)
+▷ Retrieved answer
+13:
+PQ.enqueue(([h, (q, (d, a))], r + 1))
+14: return null
+
+Answer format
+Question: <Question>
+Follow up: <Subquery1>
+Let’s search the question in Wikipedia.
+Context: <Paragraph Text>
+Intermediate answer: <Intremediate Answer1>
+Follow up: <Subquery2>
+Intermediate answer: <Intermediate Answer2>
+......
+So the final answer is: <Answer>
+
+Then, we implement a binary tree search to construct reasoning paths that integrate different retrieval strategies for each subquery. As illustrated
+in Figure 2, given a question, the model generates the i-th subquery and explores two answering
+strategies: directly leveraging parametric knowledge (blue node) or retrieving external documents
+(green node). Therefore, we can construct a binary
+tree for each subquery related to the given question, exploring paths based on either parametric
+knowledge or external knowledge.
+3.3
+
+Training Objective We implement a masked loss
+function for the retrieved documents to prevent
+the model from learning irrelevant or noisy text
+that could negatively impact its performance. The
+detailed objective is shown in Appendix B.1.
+3.4
+
+Chain of Calibration
+
+Building on the markov process in Section 3.1, we
+identify four key optimization aspects for DeepRAG: termination and atomic decisions, query decomposition, and intermediate answer generation.
+Unlike the others, atomic decisions require the
+model to recognize its own knowledge boundaries
+to make precise judgments.
+We propose a method that dynamically optimizes atomic decisions for each subquery, rather
+than training LLMs on complete reasoning paths.
+Our approach consists of two key components: (1)
+synthesizing preference data to determine when retrieval is necessary, and (2) fine-tuning the LLM
+with this data using Chain of Calibration training
+to enhance its ability to make informed atomic decisions based on its internal knowledge boundaries.
+
+Imitation Learning
+
+We present an algorithm that leverages binary trees
+to identify the optimal reasoning process that leads
+to the correct final answer while minimizing retrieval costs, corresponding to the highest reward
+as defined in Section 3.1. Based on the synthesized
+optimal reasoning data, we fine-tune the model to
+improve its termination and atomic decisions while
+enhancing its query decomposition capabilities and
+generating faithful intermediate answers.
+Synthesizing Data As shown in Alg. 1, we employ a priority queue to maintain reasoning trajectories based on their retrieval costs. This allows us
+to efficiently explore potential reasoning paths by
+iteratively constructing and evaluating them until
+either finding a correct answer or exhausting all
+viable options within specified constraints. For instances where no correct answer can be obtained
+after exhausting all options, we discard them.
+Through the synthesis process above, the training dataset obtained contains an adaptive reasoning
+
+Synthesizing Preference Data First, we identify an optimal path with minimal retrieval based
+on Alg. 1 using the model trained in Stage I. This
+provides the optimal atomic decision for each subquery, determining whether retrieval is necessary.
+From this path, we construct preference pairs for
+each subquery to indicate the preferred retrieval
+choice. For example, in Figure 2, the optimal path
+may suggest answering the first subquery using
+4
+
+UAR (Cheng et al., 2024) employs a trained classifier to determine when to retrieve. FLARE (Jiang
+et al., 2023) and DRAGIN (Su et al., 2024) are
+confidence-based method that decide the timing
+of retrieval based on token importance and uncertainty. TAARE (Zhang et al., 2024) allows the
+LLM itself to determine when retrieval is needed.
+
+parametric knowledge while requiring document
+retrieval for the second. Accordingly, we generate
+preference pairs favoring parametric knowledge for
+the first subquery and retrieval for the second. This
+process enables LLMs to learn when to retrieve
+external information, thereby improving its ability
+to maximize the use of parametric knowledge and
+reducing unnecessary retrievals.
+
+4.3
+
+Chain of Calibration Objective We finetune the LLM using a Chain of Calibration
+objective on our synthesized preference data.
+Given the i-th subquery and a state si =
+[x, (q1 , r1 ), · · · , (qi−1 , ri−1 )], we have two distince intermediate answer ri1 = a1i and ri2 =
+(di , a2i ). Based on the synthesis process above, we
+can tag which ri is preferred and optimize it. The
+detailed equation is shown in Appendix B.2.
+
+4
+
+Experiment
+
+4.1
+
+Datasets
+
+We train our target model on two QA datasets: HotpotQA and 2WikiMultihopQA. For imitation learning, we randomly sample 4,000 examples from
+each dataset. To enhance the model’s question decomposition and context-based generation capabilities, we employ Qwen-2.5-72B to generate the gray
+(query decomposition) and green nodes (retrieved
+answers) in Figure 2, and use the target model to
+generate the blue nodes (parametric answers) for
+data synthesis. For chain of calibration, we sample
+an additional 1,000 examples from each dataset.
+The performance is evaluated using Exact Match
+(EM) and F1 score.
+Following Su et al. (2024), we adopt BM25
+for retrieval and Wikipedia2 as knowledge base.
+For time-sensitive questions in CAG, we utilize the dataset-provided up-to-date passages
+as knowledge base. We selected Llama-3-8BInstruct (Dubey et al., 2024), Qwen-2.5-7B and
+Qwen-2.5-32B (Yang et al., 2024) as our target
+model. To implement Search-o1, we employ the
+distillation series of DeepSeek-R1 (Guo et al.,
+2025), as the method depends on reasoning models.
+
+We use six open-domain QA datasets for our experiments. We treat training datasets as in-distribution,
+and unseen ones as out-of-distribution. The indistribution datasets include HotpotQA (Yang et al.,
+2018), and 2WikMultihopQA (Ho et al., 2020),
+and the out-of-distribution datasets consist of
+CAG (Pan et al., 2024), PopQA (Mallen et al.,
+2022), WebQuestions (Berant et al., 2013), and
+MuSiQue (Trivedi et al., 2022). Specifically, we
+employ the time-sensitive subset of CAG to evaluate temporal reasoning capabilities. Furthermore,
+WebQuestions is built upon Freebase to assess
+model robustness when information may be absent
+from the knowledge base.
+4.2
+
+Implementation Details
+
+4.4
+
+Overall Results
+
+The results in Table 1 demonstrate DeepRAG’s superior performance and robustness across different
+scenarios.
+DeepRAG demonstrates superior performance across most datasets via thinking to retrieve step by step. Our method consistently outperforms existing approaches across various backbones and model sizes. Compared to reasoningbased and adaptive RAG baselines, DeepRAG outperforms across all datasets, demonstrating the effectiveness of the structured retrieval narrative and
+on-demand atomic decisions. Specifically, the limited performance of IterDRAG highlights the necessity of learning both query decomposition and
+faithful answering. Confidence-based methods like
+FLARE struggle to determine the optimal retrieval
+
+Baselines
+
+We use the following baselines to evaluate the
+performance: CoT (Wei et al., 2022) and CoT*,
+which employ 8-shot examples extracted from the
+training dataset. The asterisk (*) indicates the
+model output was trained using the same data employed for training the DeepRAG. CoT-Retrieve
+and CoT-Retrieve* augment the eight examples
+in the context with retrieved relevant documents
+based on the query. IterDRAG (Yue et al., 2024)
+refers to decomposing the question and answer
+step by step based on in-context learning. AutoRAG (Yu et al., 2024) uses trained models to
+iteratively decompose questions and retrieve relevant documents for answering. Search-o1 (Li et al.,
+2025) leverages special tokens to prompt reasoning
+models to autonomously invoke retrieval as needed.
+
+2
+
+https://dl.fbaipublicfiles.com/dpr/wikipedia_
+split/psgs_w100.tsv.gz
+
+5
+
+in-distribution
+Types
+
+Reasoning
+
+Adaptive
+
+Ours
+
+Resaoning
+
+Adaptive
+
+Ours
+
+Reasoning
+Ours
+
+Methods
+
+out-of-distribution
+PopQA
+EM
+F1
+
+Web Question
+EM
+F1
+
+MuSiQue
+EM
+F1
+
+Avg
+
+10.41
+64.08
+7.58
+55.69
+46.18
+59.61
+6.61
+43.45
+7.18
+61.53
+61.59
+59.55
+61.92
+
+21.20
+32.80
+23.10
+38.70
+22.70
+27.80
+10.30
+28.80
+22.60
+33.00
+33.20
+43.60
+42.50
+
+25.33
+45.87
+25.31
+45.64
+34.53
+42.02
+13.54
+40.61
+28.53
+45.95
+46.01
+48.50
+47.80
+
+25.20
+22.90
+26.80
+17.60
+15.90
+17.40
+15.30
+28.80
+21.20
+22.70
+23.40
+30.00
+32.70
+
+40.56
+39.22
+40.20
+29.20
+26.79
+32.94
+29.60
+40.61
+38.72
+39.10
+39.56
+41.76
+45.24
+
+13.70
+19.10
+4.80
+5.70
+12.40
+19.10
+5.40
+14.50
+11.80
+19.10
+18.60
+22.30
+22.50
+
+22.97
+28.18
+13.85
+11.60
+17.75
+28.33
+11.98
+23.57
+19.97
+28.38
+27.55
+30.46
+30.40
+
+24.54
+39.05
+21.41
+29.71
+26.09
+32.62
+15.36
+31.64
+23.71
+37.52
+37.75
+42.32
+44.13
+
+28.97
+23.44
+29.62
+27.51
+20.47
+25.02
+26.51
+16.76
+28.20
+25.67
+38.32
+44.87
+
+Qwen-2.5-7B
+3.12
+5.71
+41.43 51.47
+3.12
+5.62
+43.30 54.51
+21.81 39.59
+3.43
+4.78
+34.89 42.62
+3.43
+5.45
+34.89 43.92
+40.81 50.78
+47.98 56.99
+51.09 59.76
+
+15.20
+27.30
+7.90
+26.60
+18.00
+4.40
+19.00
+12.00
+27.00
+27.00
+37.50
+40.60
+
+19.20
+41.20
+11.06
+35.46
+31.44
+7.61
+28.24
+15.80
+40.47
+40.92
+40.72
+43.19
+
+18.30
+15.10
+15.60
+13.80
+12.50
+7.70
+16.10
+17.40
+16.60
+18.20
+23.90
+24.20
+
+34.86
+29.84
+32.45
+25.60
+26.95
+19.97
+31.89
+32.43
+32.28
+33.14
+38.62
+38.83
+
+5.60
+6.70
+4.70
+6.20
+9.20
+2.10
+8.40
+4.20
+7.10
+6.90
+16.50
+19.50
+
+13.12
+15.10
+13.40
+12.85
+17.25
+7.48
+15.15
+7.98
+15.62
+15.46
+24.67
+32.35
+
+17.85
+27.49
+16.03
+26.99
+20.59
+11.09
+25.00
+14.10
+27.39
+28.38
+35.59
+39.00
+
+30.94
+36.73
+35.70
+35.12
+50.50
+
+Qwen-2.5-32B
+3.12
+5.42
+39.56 49.97
+33.02 45.61
+19
+24.35
+52.02 61.42
+
+10.9
+33.8
+20.3
+23.1
+46.3
+
+14.45
+45.91
+33.2
+30.69
+49.2
+
+9.7
+17.2
+13.3
+17.9
+28.1
+
+26
+34.15
+27.57
+35.11
+43.27
+
+9.5
+12.9
+17.6
+16.4
+19.60
+
+18.26
+21.98
+27.8
+25.6
+27.47
+
+16.99
+32.34
+27.91
+28.00
+42.27
+
+Hotpot QA
+EM
+F1
+
+2WikiMultihopQA
+EM
+F1
+
+CAG
+EM
+F1
+
+CoT
+CoT-Retrieve
+CoT*
+CoT-Retrieve*
+IterDRAG
+Auto-RAG
+Search-o1
+FLARE
+DRAGIN
+UAR
+TAARE
+DeepRAG-Imi
+DeepRAG
+
+27.20
+34.90
+21.80
+22.50
+23.20
+25.80
+14.80
+23.80
+27.60
+29.70
+30.60
+35.10
+40.70
+
+37.75
+46.85
+31.69
+32.15
+30.95
+36.09
+24.08
+32.88
+38.05
+40.66
+41.43
+46.59
+51.54
+
+28.20
+35.80
+25.60
+23.70
+19.60
+23.00
+22.20
+30.30
+29.10
+34.80
+35.20
+47.20
+48.10
+
+34.85
+43.41
+30.89
+29.21
+24.80
+30.09
+27.10
+37.45
+35.68
+42.40
+42.85
+52.33
+53.25
+
+Llama-3-8B
+7.17
+55.45
+5.30
+44.86
+38.32
+49.22
+3.43
+34.89
+4.05
+52.96
+52.96
+50.47
+52.96
+
+CoT
+CoT-Retreive
+CoT*
+CoT-Retrieve*
+IterDRAG
+Search-o1
+FLARE
+DRAGIN
+UAR
+TAARE
+DeepRAG-Imi
+DeepRAG
+
+18.90
+24.90
+17.60
+23.40
+13.70
+11.60
+23.40
+16.70
+24.50
+25.30
+30.40
+32.10
+
+27.81
+34.78
+26.15
+32.29
+26.84
+16.95
+32.06
+24.60
+34.22
+35.03
+39.44
+41.14
+
+23.40
+18.60
+25.10
+22.40
+9.30
+22.00
+21.80
+12.40
+23.90
+21.30
+32.00
+40.40
+
+CoT
+CoT-Retrieve
+Iter-DRAG
+Search-o1
+DeepRAG
+
+20.6
+28.6
+22.9
+34
+36.2
+
+30.62
+39.43
+38.26
+45.64
+46.90
+
+24.4
+27.9
+19.6
+29.1
+46.3
+
+Table 1: The overall experimental results of DeepRAG and other baselines on five benchmarks. The best/second best
+scores in each dataset are bolded/underlined. DeepRAG-Imi (Stage I) and DeepRAG (Stage II) both demonstrate
+superior performance compared to existing methods across all test scenarios.
+
+RAG effectively explores knowledge boundaries
+while minimizing hallucination risks. TAARE
+often underperforms direct retrieval methods, highlighting the mismatch between its internal knowledge and verbose. Moreover, aggressive finetuning approaches like CoT* and CoT-Retrieve* degrade model performance by forcing the model to
+learn knowledge beyond its knowledge boundaries.
+DeepRAG carefully preserves model capabilities
+during fine-tuning by leveraging self-synthesized
+data, effectively preventing additional hallucination
+while maintaining performance.
+
+timing due to their reliance on unstable, predefined
+metrics. Moreover, we observe that confidencebased methods suffer from instability, as their performance is highly sensitive to threshold selection.
+Meanwhile, iterative retrieval methods like AutoRAG often fall into continuous retrieval loops when
+no highly relevant information is found.
+DeepRAG exhibits remarkable generalization
+capabilities and robustness in time-sensitive and
+out-of-distribution settings. In the time-sensitive
+dataset CAG, DeepRAG performs well compared
+to other adaptive and reasoning retrieval methods.
+It is worth noting that CoT-Retrieve outperforms
+it on CAG. We attribute this to the core challenge
+of the time-sensitive setting is to trigger retrieval
+most of the time. Furthermore, DeepRAG achieves
+substantial F1 score improvements of 2.63 and 4.57
+on PopQA and WebQuestions respectively, even
+in scenarios where relevant information may be
+sparse or missing from the knowledge base.
+
+5
+
+Analysis
+
+5.1
+
+Retrieval Efficiency
+
+To evaluate the efficiency of our method, we compare the average number of retrievals on the WebQuestions dataset and report the average computation time per query. The computation time is
+measured on an H20*8 machine. As shown in
+Table 2, We have the following observations: 1)
+
+By learning from self-synthesized data, Deep6
+
+EM
+
+All
+
+FLARE
+DRAGIN
+UAR
+TAARE
+IterDRAG
+Auto-RAG
+DeepRAG-Imi
+DeepRAG
+
+28.80
+21.20
+22.70
+23.40
+15.90
+17.40
+30.00
+32.70
+
+0.00
+0.00
+0.96
+0.66
+2.25
+4.52
+0.43
+0.28
+
+Avg. Retrievals
+Correct Incorrect
+0.00
+0.00
+0.95
+0.65
+2.16
+3.03
+0.13
+0.12
+
+0.00
+0.00
+0.97
+0.66
+2.27
+2.35
+0.56
+0.36
+
+2.58
+1.36
+0.43
+0.11
+1.09
+0.71
+0.67
+0.50
+
+F1
+
+Acc
+
+Balanced Acc
+
+MCC
+
+FLARE
+DRAGIN
+UAR
+TAARE
+Iter-DRAG
+Auto-RAG
+DeepRAG-Imi
+DeepRAG
+
+0.000
+0.007
+0.481
+0.127
+0.000
+0.000
+0.580
+0.621
+
+0.718
+0.709
+0.756
+0.712
+0.718
+0.718
+0.732
+0.749
+
+0.500
+0.495
+0.648
+0.518
+0.500
+0.500
+0.709
+0.743
+
+0.000
+-0.045
+0.341
+0.078
+0.000
+0.000
+0.393
+0.451
+
+Table 3: Analysis of internal knowledge utilization
+across different adaptive retrieval methods on 2WikiMultihopQA.
+
+Table 2: Retrieval frequency analysis on WebQuestions
+across different methods. “Correct” indicates the average number of retrievals for instances where the model
+produced correct answers, while “Incorrect” represents
+the average retrievals for cases with incorrect answers.
+Time refers to the average seconds spent per item.
+
+F1 Score
+
+0.54
+
+DeepRAG can achieve higher accuracy with relatively lower retrieval costs, attributed to its dynamic
+usage of internal knowledge. 2) Confidence-based
+approaches demonstrate limited robustness across
+datasets. For instance, neither FLARE nor DRAGIN triggers retrieval under the default confidence
+threshold in the WebQuestions dataset. 3) Iterative
+retrieval-based methods typically require numerous
+retrieval operations. Therefore, efficient adaptive
+retrieval methods like DeepRAG become crucial
+for optimizing resource utilization while maintaining performance.
+5.2
+
+Method
+
+Time
+
+F1 Score
+Retrieval Count
+
+1.10
+
+Retrieval Count
+
+Method
+
+1.05
+0.53
+
+1.00
+
+0.52
+0.51
+
+0.95
+0.90
+
+20
+
+40
+
+60
+Step
+
+80
+
+100
+
+Figure 3: Experiment result and retrieval efficiency on
+2WikiMultihopQA under RL setting.
+
+retrieval necessity by exploring knowledge boundary; 2) While FLARE, DRAGIN, and TAARE
+exhibit high accuracy scores, their relatively low
+balanced accuracy and MCC scores suggest they
+mainly succeed in retrieval-required cases but struggle to properly avoid unnecessary retrievals.
+
+Relevance to Parametric Knowledge
+
+5.3
+
+In this section, we investigate the relationship between retrieval needs and internal knowledge to
+demonstrate how effectively atomic decisions explores the knowledge boundary.
+Ideally, models should initiate retrieval for
+queries beyond their parametric knowledge while
+utilizing their existing knowledge for familiar
+queries. We use CoT results as an indicator of
+whether the model can answer questions using its
+parametric knowledge. Then, we analyze whether
+other adaptive retrieval methods align with this pattern of parametric knowledge utilization.
+We report four metrics. F1 score and Accuracy
+serve as basic performance measures, while balanced accuracy and Matthews Correlation Coefficient(MCC) (contributors, 2025) are employed to
+account for the class imbalance between retrievalrequired and retrieval-not-required cases.
+As shown in Table 3, we find that: 1) DeepRAG demonstrates superior relevance performance
+across F1, balanced accuracy, and MCC metrics.
+This suggests that DeepRAG successfully identifies
+
+Effectiveness under RL Setting
+
+Recently, reinforcement learning (RL) has demonstrated remarkable success in enhancing model capabilities across various domains (Liu et al., 2025;
+Wen et al., 2024; Guan et al., 2024b). Building upon this, we further explore the potential of
+DeepRAG by incorporating reinforcement learning.
+Specifically, we initialize from DeepRAG-Imi and
+optimize Stage II using the GRPO objective (Shao
+et al., 2024). The detailed implementation can be
+found in Appendix C.5, and our code is released in
+GitHub repository. 3
+Figure 3 presents the training dynamics of our
+RL-enhanced model. The results reveal an encouraging trend: as training progresses, the F1 score
+on 2WikiMultihopQA gradually improves while
+the average number of retrievals decreases. This
+demonstrates that our reward design effectively
+guides the model to achieve better performance
+with more efficient retrieval behavior.
+3
+
+https://github.com/gxy-gxy/Search-R1-forDeepRAG/tree/main
+
+7
+
+42
+0.98
+
+-Imi
+
+RAG
+Deep
+
+0.5
+
+most
+
+35
+30
+25
+20
+
+m
+
+2
+
+1
+
+433
+9
+
+2
+≥3
+
+(b)
+
+1.5
+1.26
+1.13
+
+1
+
+0.98
+0.77
+
+0.5
+
+0.30
+0.12
+
+0.04
+
+0
+
+Figure 7:(a) Subquery Statistics. (b) Retrieval Statistics.
+
+2.05
+
+DeepRAG
+Auto-RAG
+
+WH
+
+Noun
+
+Verb
+
+And/Or
+
+Figure 8: Average counts of WH-words, nouns, verbs,
+and conjunctions (and/or) per subquery.
+
+Question Decomposition Effectiveness
+performance due to long context or irrelevant
+knowledge in certain scenarios.
+
+We systematically analyze the effectiveness of
+question decomposition in retrieval narrative. As
+shown in Figure 7, we present the distribution of
+subquery counts and retrieval attempts for different
+questions. Most questions require 3-5 decomposition steps, while retrieval attempts are primarily
+concentrated within 0-2 rounds. This demonstrates
+that DeepRAG effectively decomposes questions
+while minimizing redundant retrieval.
+Moreover, we analyze the average counts of
+WH-words, nouns, verbs, and conjunctions in subqueries, as shown in Figure 8. DeepRAG decomposes atomic queries with fewer pronouns and conjunctions, indicating its concise and effective query
+decomposition strategy.
+5.5
+
+40
+
+rando
+
+0
+177
+
+(a)
+
+5.4
+
+45
+
+Figure 5: Average score and re- Figure 6: Average score and retrievals on the ablation study for Im- trievals on the ablation study for
+itation Learning.
+Chain of Calibration.
+
+≥6
+
+191
+
+1
+
+40.56
+
+381
+5
+
+41.12
+
+41
+
+2
+1.8
+45.3 1.56
+1.6
+1.37
+1.4
+1.2
+1
+0.8
+21.14 0.57 0.6
+ise
+RAG ll-node
+nce-w
+a
+Deep
+sente
+Avg. Score
+Avg. Retrievals
+
+50 47.67
+
+Average Retrievals
+
+1.5
+
+Average Score
+
+Average Score
+
+43
+
+Average Count
+
+4
+683
+
+2
+
+1.81
+
+3
+65
+61
+
+2.5
+
+2.11
+
+44
+
+40
+
+Figure 4: Comparative analysis of
+retrieval strategies: parametric only
+or retrieve only.
+
+55
+
+3
+
+Avg. Score
+Avg. Retrievals
+
+45 44.6
+
+Average Retrievals
+
+46
+
+Average Retrievals
+
+Average Score
+
+4
+55
+Avg. Score
+Avg. Retrievals
+50
+47.67
+45.39 2.77 3
+45
+40
+2
+35
+1.37
+30
+1
+25.32
+25
+0
+20
+0
+ly
+only pRAG
+ve on
+etric
+e
+e
+i
+e
+m
+r
+t
+a
+D
+e
+r
+r
+pa
+
+5.6
+
+Ablation Study
+
+In this section, we conducted experiments to validate the effectiveness of DeepRAG’s data construction and training process.
+For Imitation Learning, we compare our default
+strategy of selecting paths with minimal retrieval
+cost against two alternative approaches: maximum
+retrieval cost (most) and random path selection
+(random). As shown in Figure 5, DeepRAG-Imi
+achieves lower retrieval costs and higher average
+performance compared to both the most and random methods.
+For Chain of Calibration, we compare our default approach of constructing preferences based
+on nodes from optimal paths against two alternatives: constructing pairs for all nodes and constructing sentence-level partial order pairs based on retrieval efficiency. As shown in Figure 6, DeepRAG achieves lower retrieval costs while maintaining higher average performance. In contrast, the
+sentence-level partial order pairs learned incorrect
+preferences, resulting in over-reliance on internal
+knowledge and consequently leading to both low
+retrieval costs and poor performance.
+
+Different Inference Strategy
+
+To gain a deep insight into the effectiveness of
+atomic decision, we evaluate DeepRAG’s performance under two extreme scenarios: relying solely
+on internal knowledge (retrieve only) and using
+retrieval in each subquery (parametric only). As
+shown in Figure 4, parametric only yields poor performance, while retrieve only achieves relatively
+higher accuracy but incurs substantial retrieval
+costs. DeepRAG achieves superior performance by
+adaptively selecting between internal and external
+knowledge sources.
+Moreover, DeepRAG outperforms the retrieve
+only approach because retrieval can hinder model
+
+6
+
+Conclusion
+
+In this paper, we present DeepRAG to model
+retrieval-augmented reasoning as a Markov Deci8
+
+sion Process, enabling strategic and adaptive retrieval by decomposing queries into subqueries and
+retrieval on demand. Specifically, we develop a
+binary tree search method to synthesize data for
+imitation learning and further chain of calibration
+to train the model in an end-to-end manner. Experiments across various QA tasks show that DeepRAG
+improves retrieval efficiency while improving answer accuracy by 26.4%,demonstrating its effectiveness in optimizing retrieval-augmented reasoning.
+
+Wikipedia contributors. 2025. Phi coefficient —
+Wikipedia, the free encyclopedia.
+https://
+en.wikipedia.org/wiki/Phi_coefficient. Accessed: 2025-01-22.
+Kaustubh D. Dhole. 2025. To retrieve or not to retrieve? uncertainty detection for dynamic retrieval
+augmented generation. Preprint, arXiv:2501.09292.
+Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey,
+Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman,
+Akhil Mathur, Alan Schelten, Amy Yang, Angela
+Fan, et al. 2024. The llama 3 herd of models. arXiv
+preprint arXiv:2407.21783.
+
+Limitations
+
+Wenfeng Feng, Chuzhan Hao, Yuewei Zhang, Jingyi
+Song, and Hao Wang. 2025. Airrag: Activating intrinsic reasoning for retrieval augmented generation
+via tree-based search. Preprint, arXiv:2501.10053.
+
+There are several limitations of our current DeepRAG framework, which we plan to address in the
+future. Firstly, we construct datasets based on
+the final answer accuracy using exact match score.
+In the future, we will expand our work to more
+domains like multi-turn dialogue with richer metrics like perplexity. Secondly, despite our method
+showing strong generalization across multi-hop factual QA, time-sensitive QA, and heterogeneous
+knowledge base QA, it lacks integration with external resources such as knowledge graphs and tools.
+We will expand our work to domains requiring diverse external information integration, including
+retrieved data, knowledge graph data, and tool output.
+
+Jingsheng Gao, Linxu Li, Weiyuan Li, Yuzhuo Fu, and
+Bin Dai. 2024. Smartrag: Jointly learn rag-related
+tasks from the environment feedback. arXiv preprint
+arXiv:2410.18141.
+Yunfan Gao, Yun Xiong, Yijie Zhong, Yuxi Bi, Ming
+Xue, and Haofen Wang. 2025. Synergizing rag and
+reasoning: A systematic review. arXiv preprint
+arXiv:2504.15909.
+Xinyan Guan, Yanjiang Liu, Hongyu Lin, Yaojie Lu,
+Ben He, Xianpei Han, and Le Sun. 2024a. Mitigating
+large language model hallucinations via autonomous
+knowledge graph-based retrofitting. In Proceedings
+of the AAAI Conference on Artificial Intelligence,
+volume 38, pages 18126–18134.
+
+References
+
+Xinyan Guan, Yanjiang Liu, Xinyu Lu, Boxi Cao, Ben
+He, Xianpei Han, Le Sun, Jie Lou, Bowen Yu, Yaojie Lu, et al. 2024b. Search, verify and feedback:
+Towards next generation post-training paradigm of
+foundation models via verifier engineering. arXiv
+preprint arXiv:2411.11504.
+
+Akari Asai, Zeqiu Wu, Yizhong Wang, Avirup Sil, and
+Hannaneh Hajishirzi. 2023. Self-rag: Learning to
+retrieve, generate, and critique through self-reflection.
+arXiv preprint arXiv:2310.11511.
+Jonathan Berant, Andrew Chou, Roy Frostig, and Percy
+Liang. 2013. Semantic parsing on freebase from
+question-answer pairs. In Proceedings of the 2013
+conference on empirical methods in natural language
+processing, pages 1533–1544.
+
+Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song,
+Ruoyu Zhang, Runxin Xu, Qihao Zhu, Shirong Ma,
+Peiyi Wang, Xiao Bi, et al. 2025. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948.
+
+Hung-Ting Chen, Fangyuan Xu, Shane Arora, and
+Eunsol Choi. 2023. Understanding retrieval augmentation for long-form question answering. arXiv
+preprint arXiv:2310.12150.
+
+Xanh Ho, Anh-Khoa Duong Nguyen, Saku Sugawara,
+and Akiko Aizawa. 2020. Constructing a multihop QA dataset for comprehensive evaluation of
+reasoning steps. In Proceedings of the 28th International Conference on Computational Linguistics,
+pages 6609–6625, Barcelona, Spain (Online). International Committee on Computational Linguistics.
+
+Qiguang Chen, Libo Qin, Jinhao Liu, Dengyun Peng,
+Jiannan Guan, Peng Wang, Mengkang Hu, Yuhang
+Zhou, Te Gao, and Wanxiang Che. 2025. Towards
+reasoning era: A survey of long chain-of-thought
+for reasoning large language models. arXiv preprint
+arXiv:2503.09567.
+
+Lei Huang, Weijiang Yu, Weitao Ma, Weihong Zhong,
+Zhangyin Feng, Haotian Wang, Qianglong Chen,
+Weihua Peng, Xiaocheng Feng, Bing Qin, et al. 2023.
+A survey on hallucination in large language models:
+Principles, taxonomy, challenges, and open questions.
+ACM Transactions on Information Systems.
+
+Qinyuan Cheng, Xiaonan Li, Shimin Li, Qin Zhu,
+Zhangyue Yin, Yunfan Shao, Linyang Li, Tianxiang Sun, Hang Yan, and Xipeng Qiu. 2024. Unified
+active retrieval for retrieval augmented generation.
+arXiv preprint arXiv:2406.12534.
+
+9
+
+Soyeong Jeong, Jinheon Baek, Sukmin Cho, Sung Ju
+Hwang, and Jong C Park. 2024. Adaptive-rag: Learning to adapt retrieval-augmented large language models through question complexity. arXiv preprint
+arXiv:2403.14403.
+
+on Natural Language Processing (EMNLP-IJCNLP),
+pages 2463–2473, Hong Kong, China. Association
+for Computational Linguistics.
+Aske Plaat, Annie Wong, Suzan Verberne, Joost
+Broekens, Niki van Stein, and Thomas Back. 2024.
+Reasoning with large language models, a survey.
+arXiv preprint arXiv:2407.11511.
+
+Zhengbao Jiang, Frank F. Xu, Luyu Gao, Zhiqing Sun,
+Qian Liu, Jane Dwivedi-Yu, Yiming Yang, Jamie
+Callan, and Graham Neubig. 2023. Active retrieval
+augmented generation.
+
+Ansh Radhakrishnan, Karina Nguyen, Anna Chen,
+Carol Chen, Carson Denison, Danny Hernandez, Esin
+Durmus, Evan Hubinger, Jackson Kernion, Kamilė
+Lukošiūtė, et al. 2023. Question decomposition improves the faithfulness of model-generated reasoning.
+arXiv preprint arXiv:2307.11768.
+
+Bowen Jin, Hansi Zeng, Zhenrui Yue, Jinsung Yoon,
+Sercan Arik, Dong Wang, Hamed Zamani, and Jiawei
+Han. 2025. Search-r1: Training llms to reason and
+leverage search engines with reinforcement learning.
+arXiv preprint arXiv:2503.09516.
+
+Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu,
+Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan
+Zhang, YK Li, Y Wu, et al. 2024. Deepseekmath:
+Pushing the limits of mathematical reasoning in open
+language models. arXiv preprint arXiv:2402.03300.
+
+Sanyam Kapoor, Nate Gruver, Manley Roberts, Katherine Collins, Arka Pal, Umang Bhatt, Adrian Weller,
+Samuel Dooley, Micah Goldblum, and Andrew Gordon Wilson. 2024a. Large language models must be
+taught to know what they don’t know. arXiv preprint
+arXiv:2406.08391.
+
+Huatong Song, Jinhao Jiang, Yingqian Min, Jie Chen,
+Zhipeng Chen, Wayne Xin Zhao, Lei Fang, and JiRong Wen. 2025. R1-searcher: Incentivizing the
+search capability in llms via reinforcement learning.
+arXiv preprint arXiv:2503.05592.
+
+Sanyam Kapoor, Nate Gruver, Manley Roberts, Arka
+Pal, Samuel Dooley, Micah Goldblum, and Andrew
+Wilson. 2024b. Calibration-tuning: Teaching large
+language models to know what they don‘t know. In
+Proceedings of the 1st Workshop on UncertaintyAware NLP (UncertaiNLP 2024), pages 1–14, St
+Julians, Malta. Association for Computational Linguistics.
+
+Weihang Su, Yichen Tang, Qingyao Ai, Zhijing Wu,
+and Yiqun Liu. 2024. DRAGIN: Dynamic retrieval
+augmented generation based on the real-time information needs of large language models. In Proceedings
+of the 62nd Annual Meeting of the Association for
+Computational Linguistics (Volume 1: Long Papers),
+pages 12991–13013, Bangkok, Thailand. Association
+for Computational Linguistics.
+
+Xiaoxi Li, Guanting Dong, Jiajie Jin, Yuyao Zhang,
+Yujia Zhou, Yutao Zhu, Peitian Zhang, and
+Zhicheng Dou. 2025. Search-o1: Agentic searchenhanced large reasoning models. arXiv preprint
+arXiv:2501.05366.
+
+Richard S. Sutton and Andrew G. Barto. 2018. Reinforcement Learning: An Introduction, 2nd edition.
+The MIT Press, Cambridge, MA.
+
+Yanjiang Liu, Shuhen Zhou, Yaojie Lu, Huijia Zhu,
+Weiqiang Wang, Hongyu Lin, Ben He, Xianpei Han,
+and Le Sun. 2025. Auto-rt: Automatic jailbreak
+strategy exploration for red-teaming large language
+models. arXiv preprint arXiv:2501.01830.
+
+Hexiang Tan, Fei Sun, Wanli Yang, Yuanzhuo Wang,
+Qi Cao, and Xueqi Cheng. 2024. Blinded by generated contexts: How language models merge generated and retrieved contexts for open-domain qa?
+arXiv preprint arXiv:2401.11911.
+
+Alex Mallen, Akari Asai, Victor Zhong, Rajarshi Das,
+Daniel Khashabi, and Hannaneh Hajishirzi. 2022.
+When not to trust language models: Investigating
+effectiveness of parametric and non-parametric memories. arXiv preprint arXiv:2212.10511.
+
+Qwen Team. 2024. Qwq: Reflect deeply on the boundaries of the unknown.
+Harsh Trivedi, Niranjan Balasubramanian, Tushar Khot,
+and Ashish Sabharwal. 2022. musique: Multihop questions via single-hop question composition.
+Transactions of the Association for Computational
+Linguistics, 10:539–554.
+
+OpenAI. Hello gpt-4o. https://openai.com/index/
+hello-gpt-4o/. [Online; accessed 22-January2025].
+Ruotong Pan, Boxi Cao, Hongyu Lin, Xianpei Han, Jia
+Zheng, Sirui Wang, Xunliang Cai, and Le Sun. 2024.
+Not all contexts are equal: Teaching llms credibilityaware generation. arXiv preprint arXiv:2404.06809.
+
+Liang Wang, Haonan Chen, Nan Yang, Xiaolong
+Huang, Zhicheng Dou, and Furu Wei. 2025. Chainof-retrieval augmented generation. arXiv preprint
+arXiv:2501.14342.
+
+Fabio Petroni, Tim Rocktäschel, Sebastian Riedel,
+Patrick Lewis, Anton Bakhtin, Yuxiang Wu, and
+Alexander Miller. 2019. Language models as knowledge bases? In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference
+
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten
+Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou,
+et al. 2022. Chain-of-thought prompting elicits reasoning in large language models. Advances in neural
+information processing systems, 35:24824–24837.
+
+10
+
+Xueru Wen, Xinyu Lu, Xinyan Guan, Yaojie Lu,
+Hongyu Lin, Ben He, Xianpei Han, and Le Sun.
+2024. On-policy fine-grained knowledge feedback for hallucination mitigation. arXiv preprint
+arXiv:2406.12221.
+
+Zihan Zhang, Meng Fang, and Ling Chen. 2024. Retrievalqa: Assessing adaptive retrieval-augmented
+generation for short-form open-domain question answering. arXiv preprint arXiv:2402.16457.
+Penghao Zhao, Hailin Zhang, Qinhan Yu, Zhengren
+Wang, Yunteng Geng, Fangcheng Fu, Ling Yang,
+Wentao Zhang, and Bin Cui. 2024. Retrievalaugmented generation for ai-generated content: A
+survey. arXiv preprint arXiv:2402.19473.
+
+Zhuofeng Wu, He Bai, Aonan Zhang, Jiatao Gu, VG Vydiswaran, Navdeep Jaitly, and Yizhe Zhang. 2024.
+Divide-or-conquer? which part should you distill
+your llm? arXiv preprint arXiv:2402.15000.
+An Yang, Baosong Yang, Binyuan Hui, Bo Zheng,
+Bowen Yu, Chang Zhou, Chengpeng Li, Chengyuan
+Li, Dayiheng Liu, Fei Huang, Guanting Dong, Haoran Wei, Huan Lin, Jialong Tang, Jialin Wang, Jian
+Yang, Jianhong Tu, Jianwei Zhang, Jianxin Ma, Jin
+Xu, Jingren Zhou, Jinze Bai, Jinzheng He, Junyang
+Lin, Kai Dang, Keming Lu, Keqin Chen, Kexin Yang,
+Mei Li, Mingfeng Xue, Na Ni, Pei Zhang, Peng
+Wang, Ru Peng, Rui Men, Ruize Gao, Runji Lin,
+Shijie Wang, Shuai Bai, Sinan Tan, Tianhang Zhu,
+Tianhao Li, Tianyu Liu, Wenbin Ge, Xiaodong Deng,
+Xiaohuan Zhou, Xingzhang Ren, Xinyu Zhang, Xipin
+Wei, Xuancheng Ren, Yang Fan, Yang Yao, Yichang
+Zhang, Yu Wan, Yunfei Chu, Yuqiong Liu, Zeyu
+Cui, Zhenru Zhang, and Zhihao Fan. 2024. Qwen2
+technical report. arXiv preprint arXiv:2407.10671.
+Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William W Cohen, Ruslan Salakhutdinov, and
+Christopher D Manning. 2018. Hotpotqa: A dataset
+for diverse, explainable multi-hop question answering. arXiv preprint arXiv:1809.09600.
+Xunjian Yin, Xu Zhang, Jie Ruan, and Xiaojun Wan.
+2024. Benchmarking knowledge boundary for large
+language model: A different perspective on model
+evaluation. arXiv preprint arXiv:2402.11493.
+Zhangyue Yin, Qiushi Sun, Qipeng Guo, Jiawen Wu,
+Xipeng Qiu, and Xuanjing Huang. 2023. Do large
+language models know what they don’t know? arXiv
+preprint arXiv:2305.18153.
+Tian Yu, Shaolei Zhang, and Yang Feng. 2024. Autorag: Autonomous retrieval-augmented generation for
+large language models.
+Wenhao Yu, Dan Iter, Shuohang Wang, Yichong
+Xu, Mingxuan Ju, Soumya Sanyal, Chenguang
+Zhu, Michael Zeng, and Meng Jiang. 2022. Generate rather than retrieve: Large language models are strong context generators. arXiv preprint
+arXiv:2209.10063.
+Zhenrui Yue, Honglei Zhuang, Aijun Bai, Kai Hui, Rolf
+Jagerman, Hansi Zeng, Zhen Qin, Dong Wang, Xuanhui Wang, and Michael Bendersky. 2024. Inference
+scaling for long-context retrieval augmented generation. arXiv preprint arXiv:2410.04343.
+Yue Zhang, Yafu Li, Leyang Cui, Deng Cai, Lemao Liu,
+Tingchen Fu, Xinting Huang, Enbo Zhao, Yu Zhang,
+Yulong Chen, Longyue Wang, Anh Tuan Luu, Wei
+Bi, Freda Shi, and Shuming Shi. 2023. Siren’s song
+in the ai ocean: A survey on hallucination in large
+language models. arXiv preprint arXiv:2309.01219.
+
+11
+
+A
+
+Templates
+
+A.1
+
+Case Study
+
+A.2
+
+DeepRAG Construct Instruction
+
+for direct answers and retrieved answers, respectively. Specifically, the snippet “Intermediate Answer:” corresponds to a direct answer, while the
+snippet “Let’s search the question on Wikipedia”
+corresponds to retrieval-based answers.
+
+Instruction: You are a helpful Retrieval-Augmented
+Generation (RAG) model. Your task is to answer
+questions by logically decomposing them into clear
+sub-questions and iteratively addressing each one.
+
+C
+
+As illustrated in Figure 9, we conduct a case study
+comparing DeepRAG with Auto-RAG (Yu et al.,
+2024), a closely related method that utilizes iterative retrieval for retrieval-augmented generation.
+For each subquery, Auto-RAG retrieves relevant
+documents and generates a corresponding subanswer. This approach is not only time-consuming
+but also fails when no relevant documents are retrieved. Although Auto-RAG attempts to address
+this issue using its own relevant documents, it
+falls into endless loops in most cases. In contrast, DeepRAG iteratively generates subqueries
+and determines whether to use internal knowledge
+at each iteration. The binary tree search data synthesis method for optimization ensures reliable subquery generation, intermediate answers, and final
+answers. Even when no related information exists
+in retrieved documents, the model is directed to provide a final answer based on internal knowledge.
+
+Use "Follow up:" to introduce each sub-question and
+"Intermediate answer:" to provide answers.
+For each sub-question, decide whether you can provide a direct answer or if additional information is
+required. If additional information is needed, state,
+"Let’s search the question in Wikipedia." and then use
+the retrieved information to respond comprehensively.
+If a direct answer is possible, provide it immediately
+without searching.
+
+B
+
+Method Details
+
+B.1
+
+Imitation Learning Objective
+
+Detailed Analysis
+
+We implement a masked loss function for the retrieved documents to prevent the model from learning irrelevant or noisy text that could negatively
+impact its performance. In this way, we hope the
+model to enhance the ability to decompose subqueries and retrieve them based on demand. For
+each instance, the loss function is formulated as
+follows:
+
+C.1
+
+Retrieval Efficiency
+
+To demonstrate the efficiency of our method, we
+compare the average number of retrievals on 2Wiki1≤i≤n
+MultihopQA and WebQuestions. As shown in Table 2, We have following observations:
+where, di refers to null if there is no reieval for ith
+1) Compared to other adaptive retrieval methreasoning step, n refers to the total iteration.
+ods, DeepRAG can achieve higher accuracy with
+B.2 Chain of Calibration Objective
+relatively lower retrieval costs. This can be attributed to our dynamic usage of internal knowlWe fine-tune the LLM using a Chain of Calibration
+edge. Additionally, DeepRAG exhibits a posiobjective on our synthesized preference data.
+tive trend in exploring relevant evidence when
+Given the i-th subquery and the state si =
+[x, q1 , r1 , · · · , qi−1 , ri−1 ], we have two distince in- faced with insufficient retrieval results, as evitermediate answer ri1 = a1i and ri2 = (di , a2i ). denced by the lower average retrieval numbers in
+both 2WMQA (0.92 compared to 1.25) and WQ
+Based on the process above, we have known which
+(0.12
+compared to 0.36). 2) Confidence-based apri is preferred. As a result, the training objective
+proaches demonstrate limited robustness across
+can be formulated as follows:
+datasets. For instance, while using identical thresh
+ olds, both FLARE and DRAGIN methods show
+πθ (yw | si , qi )
+πθ (yl | si , qi )
+L = − log σ β log
+− β log
+inconsistent behaviors: they trigger approximately
+πref (yw | si , qi )
+πref (yl | si , qi )
+one retrieval per query in 2WMQA, but fail to reach
+where σ is the logistic function, the hyperparam- the retrieval threshold entirely in WQ. This inconeter β regulates the penalty imposed for the devi- sistency highlights the challenge of maintaining
+ations from the base reference model πref . The
+reliable performance across different datasets using
+terms yw and yl refer to the generated snippets
+confidence-based methods. 3) Iterative retrievalL=−
+
+X
+
+log [Pr(qi |si−1 ) + Pr(ai |si−1 , qi , di )]
+
+12
+
+Auto
+RAG
+
+What is the place of birth of the director of film Peter'S Friends?
+
+What is the place of birth of the director of film Peter'S Friends?
+
+Analysis: To answer this question, I would need to know the director of the film “Peter's
+Friends” and his place of birth.
+Initial Query: Who is the director of the film “Peter's Friends” and where was he born?
+Document 1: Peter's Friends Peter's Friends is a 1992 British comedy film…, and
+directed and produced by Kenneth Branagh……
+Intermediate answer_1: Based on the Retrieved Document_1, the director of film
+“Peter‘s Friends” is Richard Curtis. However,…, we need to find the place of birth of
+Richard Curtis.
+Refined Query: What is the place of birth of Richard Curtis, the director of Peter's
+Friends?
+Document 2: Richard Curtis …was born in New Zealand to Australian parents.
+Intermediate answer_2: Based on the Retrieved Document_2, Richard Curtis was born
+in New Zealand. Therefore, the place of birth of the director of film “Peter‘s Friends” is
+New Zealand.
+Final answer: New Zealand.
+
+Follow up: Who is the director of film Peter's Friends?
+Let's search the question in Wikipedia.
+Context: Peter's Friends is a 1992 British comedy film written by Rita
+Rudner and Martin Bergman, and directed and produced by Kenneth
+Branagh......
+Intermediate answer: Kenneth Branagh
+
+Ours
+
+Follow up: What is the place of birth of Kenneth Branagh?
+Intermediate answer: Belfast, Northern Ireland
+Final answer:
+<answer long>The director of film Peter's Friends is Kenneth Branagh,
+and he was born in Belfast, Northern Ireland.</answer long>
+<answer short>Belfast</answer short>
+
+Figure 9: Case Study: Auto-RAG vs. DeepRAG. DeepRAG achieves success by atomic query decomposition,
+faithful intermediate answer, and adaptively using internal knowledge.
+
+based approaches typically require numerous retrieval operations, resulting in substantial computational costs. Therefore, efficient adaptive retrieval
+methods like DeepRAG become crucial for optimizing resource utilization while maintaining performance.
+C.2
+
+gle to properly avoid unnecessary retrievals.
+C.3
+
+Performance against Strong Baseline
+Models
+
+We compare DeepRAG with recent strong reasoning models: QwQ-32B-preview (Team, 2024) and
+gpt-4o-turbo (OpenAI). As shown in Table 4, DeepRAG achieves superior average performance over
+QwQ and gpt-4o, particularly in time-sensitive QA
+tasks. While DeepRAG does not surpass gpt-4o in
+some cases, it achieves comparable performance
+levels. These results demonstrate that by adaptively leveraging retrieval, DeepRAG can achieve
+an equivalent level of factual accuracy to the parametric knowledge of strong reasoning models.
+
+Relevance to Parametric Knowledge
+
+In this section, we investigate the relationship between retrieval needs and parametric knowledge to
+demonstrate how effectively our method explores
+the knowledge boundary.
+Ideally, models should initiate retrieval for
+queries beyond their parametric knowledge while
+utilizing their existing knowledge for familiar
+queries. We use CoT results as an indicator of
+whether the model can answer questions using
+its parametric knowledge. Subsequently, we analyze whether other adaptive retrieval methods align
+with this pattern of parametric knowledge utilization. We evaluate the relevance using four metrics. F1 score and Accuracy serve as basic performance measures, while balanced accuracy and
+Matthews Correlation Coefficient(MCC) are employed to account for the class imbalance between
+retrieval-required and retrieval-not-required cases.
+The MCC ranges from -1 to 1, where a value of 1
+indicates perfect correlation, 0 represents no correlation (random chance), and -1 signifies an inverse
+correlation.
+As shown in Table 3, we find that 1) DeepRAG demonstrates superior relevance performance
+across F1, balanced accuracy, and MCC metrics.
+This suggests that DeepRAG successfully identifies
+retrieval necessity by exploring knowledge boundary. 2) While FLARE, DRAGIN, and TAARE
+exhibit high accuracy scores, their relatively low
+balanced accuracy and MCC scores suggest they
+mainly succeed in retrieval-required cases but strug-
+
+Models
+
+ID
+
+CAG
+
+PopQA
+
+WQ
+
+Avg
+
+QwQ-32B
+gpt-4o-turbo
+DeepRAG-qwen
+DeepRAG-llama
+
+31.43
+60.6
+43.00
+52.40
+
+3.43
+23.36
+51.09
+52.96
+
+10.60
+43.50
+40.60
+42.50
+
+15.10
+25.35
+24.20
+32.70
+
+18.40
+42.68
+40.38
+46.59
+
+Table 4: Performance against strong baseline models.
+
+C.4
+
+Ablation Study
+
+In this section, we conducted experiments to validate the effectiveness of DeepRAG’s data construction and training process.
+
+Method
+DeepRAG-Imi
+most
+random
+
+ID
+F1
+
+CAG
+EM
+
+PopQA
+EM
+
+WebQuestion
+EM
+
+Avg
+
+49.46
+47.31
+44.76
+
+50.47
+51.09
+51.40
+
+43.60
+31.30
+34.80
+
+30.00
+28.00
+27.10
+
+44.60
+41.12
+40.56
+
+Table 5: Experiment results of the ablation study on the
+Imitation Learning Stage. ID refers to the average score
+of two in-distribution dataset HotpotQA and 2WikiMultihopQA.
+
+13
+
+Method
+DeepRAG
+all-node
+sentence-wise
+
+ID
+F1
+
+CAG
+EM
+
+PopQA
+EM
+
+WebQuestion
+EM
+
+Avg
+
+52.40
+50.92
+30.16
+
+61.92
+50.47
+12.46
+
+47.80
+41.50
+20.00
+
+45.24
+32.70
+12.90
+
+47.67
+45.30
+21.14
+
+Dataset
+
+2WMQA
+
+Table 6: Experiment results of the ablation study on the
+Chain of Calibration Stage.
+
+Imitation Learning We compare our default
+strategy of selecting paths with minimal retrieval
+cost against two alternative approaches: maximum
+retrieval cost and random path selection. As shown
+in Table 5, DeepRAG-Imi enables the model to
+learn knowledge boundaries during the imitation
+learning stage. Notably, CAG performs relatively
+poorly at this stage due to its time-sensitive nature, which necessitates constant retrieval of upto-date information. Moreover, as illustrated in
+Figure 5, DeepRAG-Imi achieves lower retrieval
+costs and higher average performance compared
+to both the maximum-retrieval-cost and random
+selection methods.
+
+WQ
+
+Method
+
+EM
+
+All
+
+FLARE
+DRAGIN
+UAR
+TAARE
+IterDRAG
+Auto-RAG
+DeepRAG-Imi
+DeepRAG
+FLARE
+DRAGIN
+UAR
+TAARE
+IterDRAG
+Auto-RAG
+DeepRAG-Imi
+DeepRAG
+
+30.30
+29.10
+34.80
+35.20
+19.60
+23.00
+47.20
+48.10
+28.80
+21.20
+22.70
+23.40
+15.90
+17.40
+30.00
+32.70
+
+0.99
+1.03
+0.81
+0.93
+2.46
+6.26
+1.13
+1.09
+0.00
+0.00
+0.96
+0.66
+2.25
+4.52
+0.43
+0.28
+
+Avg. Retrievals
+Correct Incorrect
+1.00
+1.03
+0.68
+0.93
+2.49
+4.13
+0.95
+0.92
+0.00
+0.00
+0.95
+0.65
+2.16
+3.03
+0.13
+0.12
+
+0.99
+1.03
+0.89
+0.97
+2.45
+1.81
+1.28
+1.25
+0.00
+0.00
+0.97
+0.66
+2.27
+2.35
+0.56
+0.36
+
+Table 7: Retrieval frequency analysis on 2WikiMultihopQA(2WMQA) and WebQuestions(WQ) across different adaptive retrieval methods. "Correct" indicates
+the average number of retrievals for instances where
+the model produced correct answers, while "Incorrect"
+represents the average retrievals for cases with incorrect
+answers.
+
+C.6
+
+Retrieval Efficiency
+
+To demonstrate the efficiency of our method, we
+compare the average number of retrievals on 2WikiMultihopQA and WebQuestions. As shown in Table 7, We have the following observations: 1) DeepRAG can achieve higher accuracy with relatively
+lower retrieval costs, attributed to its dynamic usage of internal knowledge. 2) Confidence-based
+approaches demonstrate limited robustness across
+datasets. For instance, neither FLARE nor DRAGIN trigger retrieval under the default confidence
+threshold in WQ. 3) Iterative retrieval-based methods typically require numerous retrieval operations.
+Therefore, efficient adaptive retrieval methods like
+DeepRAG become crucial for optimizing resource
+utilization while maintaining performance.
+
+Chain of Calibration We compare our default
+approach of constructing preferences based on
+nodes from optimal paths against two alternatives:
+constructing pairs for all nodes and constructing sentence-level partial order pairs based on retrieval efficiency. As shown in Table 6, DeepRAG
+demonstrates significant advantages over both variants. Specifically, as illustrated in Figure 6, DeepRAG achieves lower retrieval costs while maintaining higher average performance. In contrast, the
+sentence-level partial order pairs learned incorrect
+preferences, resulting in over-reliance on internal
+knowledge and consequently leading to both low
+retrieval costs and poor performance.
+C.5 Implementation Details under RL Setting
+We implement based on Search-R1 repository 4 .
+We adopt GRPO with a batch size of 32 and perform 8 rollouts per prompt. To avoid introducing
+noise, we additionally mask the retrieved text during training.
+
+
+ 0, answer ✗ and format ✗
+0.1, answer ✗ and format ✓
+Rt =
+
+1 − 0.1 × min(5, retrieve_timet ), answer ✓
+14
+
+4
+
+https://github.com/PeterGriffinJin/Search-R1
+
+

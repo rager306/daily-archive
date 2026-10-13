@@ -1,0 +1,1269 @@
+arXiv:2503.18968v3 [cs.AI] 2 Jul 2025
+
+MedAgent-Pro: Towards Evidence-based Multi-modal
+Medical Diagnosis via Reasoning Agentic Workflow
+
+Ziyue Wang1 , Junde Wu2 , Linghan Cai3 , Chang Han Low1 ,
+Xihong Yang1,4 , Qiaxuan Li5 , Yueming Jin1∗
+1
+National University of Singapore, 2 University of Oxford,
+3
+Harbin Institute of Technology (Shenzhen) 4 National University of Defense Technology
+5
+The Second Affiliated Hospital Zhejiang University School of Medicine
+
+Abstract
+In modern medicine, clinical diagnosis relies on the comprehensive analysis of
+primarily textual and visual data, drawing on medical expertise to ensure systematic and rigorous reasoning. Recent advances in large Vision–Language Models
+(VLMs) and agent-based methods hold great potential for medical diagnosis, thanks
+to the ability to effectively integrate multi-modal patient data. However, they often
+provide direct answers and draw empirical-driven conclusions without quantitative analysis, which reduces their reliability and clinical usability. We propose
+MedAgent-Pro, a new agentic reasoning paradigm that follows the diagnosis principle in modern medicine, to decouple the process into sequential components for
+step-by-step, evidence-based reasoning. Our MedAgent-Pro workflow presents a
+hierarchical diagnostic structure to mirror this principle, consisting of disease-level
+standardized plan generation and patient-level personalized step-by-step reasoning.
+To support disease-level planning, an RAG-based agent is designed to retrieve
+medical guidelines to ensure alignment with clinical standards. For patient-level
+reasoning, we propose to integrate professional tools such as visual models to
+enable quantitative assessments. Meanwhile, we propose to verify the reliability of
+each step to achieve evidence-based diagnosis, enforcing rigorous logical reasoning
+and a well-founded conclusion. Extensive experiments across a wide range of
+anatomical regions, imaging modalities, and diseases demonstrate the superiority
+of MedAgent-Pro to mainstream VLMs, agentic systems and state-of-the-art expert
+models. Ablation studies and human evaluation by clinical experts further validate
+its robustness and clinical relevance. Code is available at https://github.com/jinlabimvr/MedAgent-Pro.
+
+1
+
+Introduction
+
+Clinical diagnosis, a core task in medical practice, entails synthesizing various clinical information to
+reach a conclusion [1–3], where clinicians make decisions mainly based on visual cues from medical
+imaging and textual information from patient records. For example, it is common for clinicians
+to examine radiology images to identify tumor scales, or analyze pathological images to detect
+potential cancer. Early AI-assisted methods focus on adopting pure image analysis models to support
+diagnosis, such as tumor segmentation in oncology and pneumonia severity assessment in chest
+radiology. Recently, Vision-Language Models (VLMs) have demonstrated that integrating multimodal information can significantly benefit diagnosis, and medical visual question answering (VQA)
+is a key task in this context, where models answer textual questions based on medical images [4–7].
+However, ordinary VQA formulated in the existing methods still fails to reflect the real-world
+diagnostic processes. Rather than performing such one-hop QA, clinical diagnosis involves a
+∗
+
+Corresponding author: ymjin@nus.edu.sg
+
+Preprint. Under review.
+
+Example 1：Glaucoma
+
+Answers from VLMs/Medical Agents
+GPT-4o: To confirm whether a patient has
+glaucoma, it is usually necessary to
+comprehensively analyze multiple factors such as
+the morphology of the optic disc, the thickness of
+the optic nerve fiber layer, intraocular pressure,
+and visual field test. It is difficult to diagnose
+glaucoma based on this fundus photo alone.
+MMedAgent: This is a VQA task and should be
+handled by LLaVa-Med. According to the fundus
+image, the patient does not have glaucoma. The
+image shows a normal optic nerve.
+
+Fundus Image
+
+Example 2：Heart Disease
+
+3D Echocadiography
+Age
+
+height
+
+weight
+
+Sex
+
+47
+
+170cm
+
+96kg
+
+M
+
+Patient Information
+
+Answers from MedAgent-Pro
+
+According to relevant documents, the key indicators for diagnosing
+glaucoma from fundus images are as follows:
+According to the segmentation result of optic cup and disc,
+the vCDR is 0.681, higher than the risk thresold 0.6.
+The thickness of the patient's neuroretinal rim deviates from
+the normal ISNT rule, with a much thinner temporal margin.
+The patient have optic disc hemorrhage with associated cup-todisc and retinal pigmentation.
+The image shows an unclear optic disc boundary, which may
+related to peripapillary atrophy.
+Based on above findings, the patient are very likely to have glaucoma.
+
+Answers from VLMs/Medical Agents
+
+Answers from MedAgent-Pro
+
+GPT-4o: I can help you analyze the features of this
+3D echocardiography image, but I cannot directly
+diagnose heart disease. To determine whether a
+patient has heart disease, professional medical
+image analysis and a doctor's evaluation are
+required.
+
+According to relevant documents, the key indicators for diagnosing
+heart disease from 3D echocardiography images are as follows:
+According to the segmentation result of
+leftventricle and myocardium, the Left
+Ventricular Ejection Fraction (LVEF) of the
+patient is 26%, significant below the normal
+value. The Left Ventricular End-Diastolic
+Diameter (LVEDD) is 62mm, which is larger
+then the normal value of male (42-58mm).
+Considering the given patient information, the patient’s heart burden
+may increase (BMI=33.2). The Left Ventricular Mass Index (LVMI) is
+130g/m², which is larger then the normal value of male (50-118mm).
+In summary, the patient tend to have cardiomyopathy hypertrophic.
+
+MMedAgent: This is a VQA task and should be
+handled by LLaVa-Med. The echocardiography
+image shows normal cardiac function, which
+means that the patient does not have heart
+disease according to the information provided.
+
+Figure 1: Comparison of diagnostic outcomes for two diseases across mainstream VLMs, medical
+agentic systems, and our proposed MedAgent-Pro workflow.
+standardized, step-by-step process [1, 8–11]. The diagnostic process for each patient typically
+involves two stages: i) Determining the target disease and formulating a standardized workflow
+based on medical guidelines with multiple clinical indicators to support the decision; ii) Step-by-step
+analysis of personalized data, combining qualitative and quantitative assessments to evaluate these
+indicators. Throughout the process, each analytical step builds on previous assumptions and is
+supported by relevant literature or analysis provided by specialized tools For example, in glaucoma
+diagnosis, the cup-to-disc ratio is a key indicator, which relies on the accurate localization of the optic
+cup and disc regions in the preceding step. In contrast, conventional VQA models often generate
+diagnostic conclusions hastily, relying on empirical internal knowledge without fine-grained analysis.
+Due to the strict requirement of medical diagnosis, current methods fall short of meeting the clinical
+standard: VLMs [4, 12–15] have shown strong performance across a range of tasks [16–18], however,
+they lack sufficient medical knowledge and remain inadequate for in-depth medical analysis. While
+models like GPT-o1 [12] and DeepSeek-R1 [14] incorporate reasoning capabilities to support more
+structured medical analysis, their limited fine-grained visual perception ability impairs quantitative
+analysis and reduces their effectiveness in clinical applications. Meanwhile, agentic systems [19–23]
+have extended the capabilities of VLMs by introducing more professional models [24–28]. However,
+current medical agentic systems [29–33] simply glued all tools together instead of a clinically
+oriented workflow, functioning more as an integrated toolbox than an end-to-end automated solution.
+As a result, when asked to provide a diagnosis, these systems simply invoke the internal VLM
+without selecting appropriate tools to support their decision-making. In summary, existing methods
+treat medical diagnosis as an empirical one-hop question-answering task, relying solely on VLMs’
+internal knowledge to make qualitative judgments. However, modern medical practice emphasizes
+evidence-based diagnosis, which requires structured reasoning and clinical evidence [8–11].
+To tackle these issues, we propose MedAgent-Pro, a reasoning agentic workflow tackling versatile
+multi-modal medical diagnosis tasks. We aim to design a workflow that aligns with modern medical
+criteria, provides decision support with medical guidelines and quantitative analysis as shown
+in Fig. 1. Our MedAgent-Pro embraces a hierarchical structure to simulate the modern clinical
+procedure, conduct step-by-step reasoning at the disease and patient levels. Disease-level planning
+generates standardized diagnostic plans, while Patient-level reasoning follows these plans to analyze
+personalized information. To ensure that diagnostic plans align with clinical guidelines, MedAgentPro incorporates an RAG agent that retrieves relevant medical knowledge. In line with modern clinical
+workflows, which routinely employ specialized tools for diagnostic support, MedAgent-Pro integrates
+expert tools such as visual models to enable accurate quantitative evaluation of clinical indicators.
+Furthermore, to maintain the rigor of multi-step clinical reasoning, we propose an evidence-based
+analysis in which the system evaluates the reliability of each step’s output before proceeding to the
+next step, ensuring that every diagnostic inference is grounded in a sound and trustworthy foundation.
+Our key contributions are summarized as:
+• We propose MedAgent-Pro, the first agentic paradigm that presents systematic, evidence-based
+reasoning for accurate and reliable medical diagnosis. By aligning with the principle of modern
+2
+
+medical workflow, our paradigm transforms the empirical, ready-made outputs of prior methods
+into more rigorous logical reasoning and a well-founded conclusion.
+• MedAgent-Pro presents a hierarchical structure consisting of disease-level and patient-level reasoning. A RAG-based method ensures that disease-level planning aligns with medical guidelines,
+while quantitative analysis and evidence-based reasoning are devised at the patient level to ensure
+professionalism and reliability of the step-by-step analysis.
+• We validate MedAgent-Pro comprehensively across 10+ imaging modalities, 20+ anatomies, and
+50+ diseases, surpassing mainstream VLMs, medical agentic systems, and even task-specific
+models. Notably, it outperforms GPT-4o by 34% and 22% on glaucoma and heart disease diagnosis.
+Clinician evaluations further highlight diagnostic quality and reliability of our MedAgent-Pro.
+
+2
+
+Related work
+
+Multi-modal Medical Diagnosis Developing AI techniques for multi-modal medical diagnosis has
+become a primary research objective. [34–37]. Prior research focused on medical imaging assessment,
+including classification [24, 38–41], detection [42–46], and segmentation [26, 27, 47–52]. VQA has
+been proposed for end-to-end multi-modal diagnosis [5, 53, 54], while VLMs [4, 55–57] have yielded
+competitive performance in medical VQA. Despite these advancements, medical VQA [6, 7, 58]
+remain overly simplified compared to the diagnostic practice, and further research is highly desired.
+VLM-based AI Agent Developing autonomous intelligent systems is a long-standing research goal,
+with agent-based methods gaining increasing attention. VLM-based agents have made significant
+advancements in diverse applications such as industrial engineering [59–62], scientific experimentation [63–65], embodied agents [66–68], gaming [69–71], and societal simulation [72–74]. Despite
+their adaptability across diverse applications without additional training, VLM-based agents remain
+limited in the medical domain due to insufficient fine-grained visual perception.
+Medical Agentic System Current medical agentic systems can be categorized into two streams.
+The first stream [29–31] enhances VLM capabilities by incorporating mechanisms such as debate or
+majority voting among multiple VLMs to refine responses. The second stream [32, 33] functions as a
+toolkit for diverse medical tasks, integrating an orchestrator agent with various specialized models.
+However, they simply glued all tools together instead of a clinically oriented workflow, functioning
+more as an integrated toolbox, and cannot handle complex diagnoses.
+
+3
+
+Methods
+
+3.1
+
+Overall Workflow
+
+Disease-Level
+
+For a specific disease, clinicians typically develop a standardized diagnostic workflow based on
+medical guidelines. Each patient’s diagnosis then follows this workflow, combining qualitative
+observations with quantitative assessments to obtain clinical indicators [2, 3, 8, 75]. To mirror this
+clinical paradigm, we design a hierarchical reasoning workflow consisting of disease-level planning
+
++ToolBox
+
+Medical Knowledge Base
+
+RAG Agent Guideline
+
+Patient-Level
+
+Continue
+
+Multi-modal Information
+
+Result
+
+Terminate
+
+According to <ref>:
+indicator 1 is abnormal since...
+indicator 2 is normal since...
+Plan
+Complete
+Decide
+......
+Diagnosis Therefore, the final diagnosis is xxx.
+Evi. Reasoning Result
+Indicators
+
+Quantitative Analysis
+
+Image
+
+Planning
+
+Step 1: <Object type 1, Tool1, Result type 1>
+Step 2: <Object type 2, Tool2, Result type2>
+...
+Plan Step n: <Object type n, Tool n Result type n>
+
+Evidence
+
+Available ToolBox
+
+Indicators
+
+Visual/Coding Models
+
+Qualitative Analysis
+
+Guideline Analysis
+
+Indicators
+
+Figure 2: Overview of the MedAgent-Pro framework, which performs diagnosis through a hierarchical
+structure, with reasoning guided by a VLM supported by an RAG agent and specialized tools.
+3
+
+and patient-level reasoning in MedAgent-Pro, to enable personalized diagnosis for each patient
+under standardized, disease-specific guidance. During the workflow, we take a VLM V as a baseline
+model to conduct basic tasks within the workflow. As illustrated in Fig. 2, the disease-level planning
+is designed to formulate standardized diagnostic plans for each disease based on medical guidelines,
+which is assisted by an RAG agent. Meanwhile, patient-level reasoning processes each patient’s
+personalized data individually by executing the diagnostic plan step by step and assisting the VLM in
+performing necessary quantitative analysis through specialized tools, thereby enabling evidence-based
+reasoning. We provide a detailed explanation in the following sections.
+3.2
+
+Disease-level Knowledge-based Planning
+
+In clinical practice, doctors develop standardized workflows for specific diseases based on their
+expertise and experience [9–11, 76]. Following this routine, we introduce a Retrieval-Augmented
+Generation (RAG) agent R to incorporate medical guidelines during the planning stage to guide
+diagnostic plan generation. MedAgent-Pro is equipped with a domain-specific knowledge base K,
+built from MedlinePlus [77, 78], which includes entries on over 1,000 diseases and conditions, and
+more than 4,000 expert-reviewed articles on symptoms, tests, injuries, and treatments. As shown in
+
+Medical Knowledge Base
+
+Preprocess
+
+......
+
+Summarize
+
+Chunk
+
+......
+
+key-word
+search
+
+Summary
+
+RAG Agent
+
+top-5
+
+formulate
+
+Selection
+
+Guideline
+
+Figure 3: The illustration of the RAG process, which leverages a two-step retrieval.
+Fig. 3, the knowledge base K is first indexed into a vector database, where each document is split
+into chunks. To accelerate retrieval, a one-sentence summary is pre-generated for each document and
+used as its index. Upon receiving a disease query, the RAG agent R filters out irrelevant entries via
+keyword search over these summaries, then conducts vector retrieval within the remaining documents
+to extract the top 5 most relevant chunks. Based on the retrieved chunks, the VLM summarizes
+their content and generates a procedural guideline G that reflects real-world clinical practices for the
+queried disease. The generation process of G can be formulated as:
+G = V(R(K)).
+
+(1)
+
+The VLM first summarizes a set of disease-specific clinical indicators I = {I1 , I2 , . . . , Im } from the
+guideline G. To support the analysis of I, MedAgent-Pro is equipped with a toolset T . To construct
+an executable plan, the VLM integrates G with a predefined set of operation descriptions A, where
+each element a ∈ A corresponds one-to-one with a tool t ∈ T (i.e., t can be a segmentation model,
+and a is its paired description, such as: "This model segments the optic cup in a fundus image.") Based
+on G and A, the VLM generates a disease-specific diagnostic plan comprising multiple reasoning
+steps P = {P1 , P2 , . . . , Pn }. Each step Pi ∈ P is represented as:
+Pi : ri = ⟨kri , vri ⟩ = ⟨kri , t(voi )⟩, t ∈ T
+
+(2)
+
+where the processed object oi = ⟨koi , voi ⟩ and result ri = ⟨kr , vr ⟩ are represented as key-value pairs,
+the key (koi or kri ) specifies the data property, and the value (voi or vri ) contains the actual data.
+In practice, P is stored as a JSON file. Each Pi includes an operation key t, a predefined Python
+function from the toolset T with fixed input-output behavior, and two data fields ko and kr specifying
+the expected input and output data property for t. During reasoning, the VLM checks the data property
+of the current input. If it matches any ko in the JSON entry, the corresponding function t is invoked to
+obtain the output data property kr . For example, when provided with a fundus image, MedAgent-Pro
+performs the designated operation and generates the corresponding optic cup segmentation mask.
+Throughout the design, each disease is assigned a diagnosis plan aligned with medical guidelines,
+enabling a regulated and standardized workflow for every patient.
+3.3
+
+Patient-level Evidence-based Reasoning
+
+For each patient case of the disease, MedAgent-Pro follows the generated disease-specific diagnostic
+plan P to analyze clinical indicators I. For each patient’s personalized multi-modal data D, the
+4
+
+Disease-level Knowledge-Based Planning
+
+Patient-level Evidence-based Reasoning
+
+Task: How to diagnose glaucoma?
+RAG Agent: According to retrieved information [1][2], the
+diagnosis of glaucoma needs to focus on the following aspects:
+1. Patient History and Risk Factors: Ask about family history of glaucoma....
+2. Optic Nerve Evaluation: In fundus image, look for increased vertical cup-to-disc ratio,
+rim thinning or notching, disc hemorrhage and peripapillary atrophy; In OCT images,
+assess the retinal nerve fiber layer......
+3. Visual Field Testing: Detecting functional vision loss by......
+......
+[1] Kass, Michael A. "The ocular hypertension treatment study." Journal of glaucoma 3.2 (1994): 97100.
+[2] Hood, Donald C., et al. "Glaucomatous damage of the macula." Progress in retinal and eye
+research 32 (2013): 1-21.
+
+......
+
+Orchestration: The input is Fundus image, the
+following steps will be conducted: step i,..., step i+n
+Observation: According to the original image, it
+is hard to determine whether the patient have optic
+disc hemorrhages (DH).... (Indicator 1)
+Visual Model: Here is the segmentation
+results of optic disc and optic cup.
+Coding Module: The result of vertical Cup-toDisc Ratio is 0.624, and the optic disc region are
+cropped for the following steps. (Indicator 2)
+Observation: The image shows an unclear optic
+disc boundary, which may related to peripapillary
+atrophy (PPA). (Indicator 3)
+
+Toolbox: I have the following tools:
+Segmentation model: model1: segment Optic Cup; model2: segment Optic Disc
+Coding module: Write code/program to deal with vision results
+VLM: Describe the input ophthalmology images
+Planning: The diagnosis plan involves:
+Step 1: Object: Medical records; Tool: VLM; Result: Personalized Risk Factors
+......
+Step i: Object: Fundus Image; Tool: VLM; Result: Drance hemorrhages condition
+Step i+1: Object: Fundus Image; Tool: Segmentation model 1; Result: Optic Cup mask
+Step i+2: Object: Fundus Image; Tool: Segmentation model 2; Result: Optic Disc mask
+......
+Step i+n: Object: Fundus Image; Tool: Coding module; Result: Cup-to-Disc Ratio
+Step i+n+1: Object: Eye photos; Tool: VLM; Result: Visual Field Defects condition
+
+Coding Module: The rim thickness (RT) in the four direction
+is..., obey the ISNT rule (I>S>N>T). (Indicator 4)
+Intergration: Based on the above analysis, vCDR and
+peripapillary atrophy are abnormal, Drance hemorrhages are
+uncertain, and rim thickness is normal.
+Decision-Making: The weights for the four indicators
+(vCDR, RT, PPA, DH) are [0.3, 0.3, 0.2, 0.2]. The final risk
+score is 0.65, exceeding the threshold of 0.4, indicating that
+the patient has glaucoma.
+
+Figure 4: A case study for glaucoma diagnosis, which presents a detailed workflow in the MedAgentPro framework. The blue text indicates the agents, while the green text indicates the reasoning steps.
+In the reasoning, the underlined text indicates the clinical indicators identified through analysis.
+VLM performs an orchestration process to select executable steps from P based on data availability,
+filtering out those requiring unavailable inputs.
+P ′ = V(P, D) s.t. ∀Pi = ⟨kri , vri ⟩ = ⟨kri , t(voi )⟩, ; koi ∈ D.
+(3)
+As shown in Fig. 4, in the glaucoma diagnosis, when provided with the fundus image, the orchestration
+process selects relevant steps and skips those requiring unavailable data such as OCT or visual field.
+A core principle of modern medicine is evidence-based practice, which emphasizes the conscientious
+and judicious use of reliable clinical evidence, integrated with individual clinical expertise, to guide
+patient care decisions [2,3,8,75]. Following this principle, we invoke specialized tools for quantitative
+assessments and adopt an evidence-based reasoning paradigm to ensure the reliability.
+Quantitative Analysis For quantitative analysis, professional tool agents are engaged to perform
+specialized assessments to bridge the gap between AI and clinical practice. The toolset T includes
+visual models such as segmentation tools (e.g., Medical SAM Adapter [27], MedSAM [26], Cellpose
+[79]), grounding models (e.g., Maira-2 [25]), and LLM-based coding tools (e.g., Copilot [80]). As
+shown in Fig. 4, specialized segmentation tools are used to extract the optic cup and disc masks,
+while coding tools subsequently compute the cup-to-disc ratio based on the segmentation results,
+which serves as a key indicator in glaucoma diagnosis.
+Evidence-based Reasoning Paradigm During sequential reasoning, the system evaluates the
+output ri =< kri , vri > at each step Pi′ to determine a status si ∈ {Continue, Terminate, Complete},
+which guides whether the reasoning process should proceed. si is determined by:
+
+Complete, if kri ∈ I
+si = Terminate, if kri ∈
+(4)
+/ I ∧ ¬ϕ(vri )
+
+Continue, if kri ∈
+/ I ∧ ϕ(vri )
+Here, ϕ is a state assessment function implemented by the VLM, which evaluates the reliability of
+the result data vri based on the quality of input data voi , and the plausibility of vri . If si = Continue,
+the output ri is treated as evidence e and used as the input oi+1 for the next reasoning step. If
+si = Terminate, the process is halted, as ri is deemed unreliable and may hinder subsequent
+reasoning and lead to incorrect diagnoses. This process continues iteratively until si = Complete.
+The final output is a set of reasoning results of indicators: Rf inal = {ri |si = Complete}. The VLM
+then assigns risk-based weights W to Rf inal to balance different indicators’ results, guided by the
+clinical guideline G. The final risk score ρ is computed as a weighted sum:
+|Rf inal |=l
+
+ρ=
+
+X
+
+wi vri , s.t.wi ∈ W, ri ∈ Rf inal
+
+i=0
+
+5
+
+(5)
+
+Table 1: Comparison with general VLMs and medical agentic systems on REFUGE2, MITEA and
+NEJM datasets (%). "Opht." is the short form of Ophthalmology.
+Method
+GPT-4o [12]
+Janus-Pro-7B [13]
+LLaVA-Med [4]
+BioMedClip [24]
+Qwen2.5-7B-VL [81]
+InternVL2.5-8B [82]
+MedAgents [30] (ACL’24)
+MMedAgent [32] (EMNLP’24)
+MDAgent [29] (NeurIPS’24)
+MedAgent-Pro (Ours)
+
+Glaucoma
+bAcc
+F1
+56.4 21.1
+53.4 13.3
+50.0
+0.0
+58.1 21.3
+54.3 16.3
+51.8 13.8
+52.1
+8.9
+52.4 16.3
+56.8 22.2
+90.4 76.4
+
+Heart Disease
+bAcc
+F1
+56.8
+28.1
+52.3
+10.7
+50.0
+0.0
+47.0
+37.8
+50.0
+0.0
+49.7
+3.6
+51.1
+15.9
+55.0
+26.7
+57.2
+30.3
+77.8
+72.3
+
+All
+70.9
+30.0
+26.2
+27.9
+41.8
+42.2
+66.1
+71.7
+73.8
+81.7
+
+Cell Imaging
+74.6
+32.2
+39.0
+27.1
+54.2
+37.3
+69.9
+73.8
+79.6
+90.5
+
+NEJM (Acc)
+Chest X-ray CT & MRI
+54.5
+63.4
+36.4
+29.3
+18.2
+24.4
+40.0
+29.3
+30.9
+36.6
+40.0
+41.5
+51.5
+58.7
+56.4
+65.3
+52.9
+67.3
+69.1
+72.7
+
+Opht. Imaging
+70.5
+28.2
+35.9
+20.5
+44.9
+35.9
+68.2
+70.5
+73.0
+89.7
+
+Table 2: Comparison with general VLMs on the MIMIC dataset (%). “Avg.” is the average performance for the 12 sub-tasks. Only bAcc values are presented due to space limitations.
+Method
+
+Avg.
+
+Atelectasis
+
+Cardiomegaly
+
+Consolidation
+
+Edema
+
+GPT-4o [12]
+Janus-Pro-7B [13]
+LLaVA-Med [4]
+BioMedClip [24]
+Qwen2.5-7B-VL [81]
+InternVL2.5-8B [82]
+MedAgent-Pro
+
+58.3
+51.9
+50.2
+57.9
+55.2
+51.6
+72.0
+
+Method
+
+Avg.
+
+60.5
+45.2
+50.0
+62.2
+54.5
+51.7
+66.3
+Pleural
+Effusion
+62.7
+57.4
+50.0
+64.7
+48.2
+54.2
+77.8
+
+Pneumonia
+
+Pneumothorax
+
+58.3
+51.9
+50.2
+57.9
+55.2
+51.6
+72.0
+
+64.3
+54.1
+51.5
+62.7
+58.1
+48.6
+74.2
+Lung
+Opacity
+63.1
+42.1
+50.0
+50.0
+64.4
+49.1
+67.6
+
+61.2
+52.5
+50.0
+50.0
+48.8
+47.5
+59.2
+
+GPT-4o [12]
+Janus-Pro-7B [13]
+LLaVA-Med [4]
+BioMedClip [24]
+Qwen2.5-7B-VL [81]
+InternVL2.5-8B [82]
+MedAgent-Pro
+
+68.7
+61.7
+50.0
+48.6
+69.6
+57.7
+85.5
+Lung
+Leision
+38.6
+59.1
+50.0
+81.8
+43.2
+59.1
+72.2
+
+Enlarged
+Cardiomediastinum
+53.2
+34.1
+50.0
+61.1
+50.8
+50.8
+75.4
+
+59.6
+57.4
+50.1
+55.1
+59.3
+54.0
+62.1
+
+47.7
+47.2
+50.5
+53.0
+34.9
+47.6
+65.6
+
+Fracture
+56.3
+50.0
+50.0
+50.0
+50.0
+43.8
+68.5
+Supporting
+Devices
+63.4
+62.4
+50.0
+55.4
+80.8
+55.3
+89.2
+
+The final diagnosis is then made by comparing s with a risk threshold θ. Through evidence-based
+reasoning, MedAgent-Pro integrates reliable external evidence with expert knowledge to improve
+diagnostic decision-making, thus promoting a modern diagnosis workflow.
+
+4
+
+Experiment
+
+We compare our method with VLMs, task-specific models and medical agentic systems in Section 4.2.
+Ablation studies and in-depth analyses are presented in Section 4.3 to demonstrate the effectiveness
+of our approach. To assess clinical relevance, we also conduct human evaluation in Section 5.
+4.1
+
+Experimental Setup
+
+Dataset We conduct experiments on four datasets with increasingly challenging settings. The
+REFUGE2 dataset [83] is used for glaucoma diagnosis, and the MITEA dataset [84] for heart disease
+diagnosis (e.g., dilated cardiomyopathy, amyloidosis), both of which are suited for evaluating in-depth
+diagnostic reasoning. To assess multi-disease diagnosis for individual patients, we sample 442 chest
+X-ray cases from 100 patients from the MIMIC dataset [85], each case involving the identification of
+up to 12 potential thoracic conditions or abnormalities. We further employ New England Journal of
+Medicine (NEJM) database [86], where we compile 992 real-world diagnostic cases, encompassing
+over 10 anatomical regions, 10 imaging modalities, and 50 diseases. For cases involving cell or
+ophthalmology imaging, visual tools are available. However, non-clinical images (e.g., everyday
+photographs) often lack compatible tool support.
+Evaluation Metrics Three metrics are used to evaluate performance: for REFUGE2, MITEA, and
+MIMIC datasets, we report balanced accuracy (bAcc) and the F1 score. For the NEJM dataset, where
+tasks are framed as multiple-choice questions in accordance with its evaluation protocol, we report
+the accuracy rate. The best results are highlighted in bold, and the second-best are underlined.
+6
+
+Implementation Detail During the MedAgent-Pro workflow, we use GPT-4o [12] as the baseline
+VLM, and implement the RAG agent using LangChain [87]. For fair comparison, all baseline medical
+agentic systems also adopt GPT-4o as their underlying VLM.
+Table 3: Comparison with task-specific models (%).
+REFUGE2 winners
+Ophthalmology VLMs
+Chest X-Ray VLMs
+Team Name
+AUC
+Method
+bAcc
+F1
+Method
+bAcc
+VUNO EYE TEAM 88.3
+RetiZero [88]
+50.8 18.4
+Maira-2 [25]
+64.1
+MIG
+87.6 VisionUnite [89] 85.8 73.1 CheXagent [90] 69.1
+MedAgent-Pro
+95.1
+MedAgent-Pro
+90.4 76.4 MedAgent-Pro
+72.0
+
+4.2
+
+Comparision Experiments
+
+Comparison with General VLMs We have included comparisons with advanced VLMs such as
+BioMedClip [24], GPT-4o [12], LLaVA-Med [4], Janus [13], Qwen [81], and InternVL [82] on all
+settings. As the evaluated VLMs are not designed to process 3D images, we randomly select three
+slices from the 3D echocardiography in the MITEA dataset as visual input. This process is repeated
+ten times and the mean performance is reported to mitigate sampling variability. As presented in
+Table 1 and 2, the proposed MedAgent-Pro framework significantly outperforms existing VLMs
+across all datasets. Specifically, it achieves improvements in bAcc of 34.0% and 21.0%, and gains
+in F1 score of 55.3% and 44.2% for glaucoma and heart disease diagnosis respectively, compared
+to GPT-4o. These results highlight the effectiveness of our MedAgent-Pro workflow in handling
+complex diagnostic tasks, particularly those requiring quantitative indicators such as cup-to-disc ratio
+or left ventricular ejection fraction. By integrating visual tools directly into the reasoning process,
+MedAgent-Pro enables precise indicator calculation and enhances diagnostic performance, effectively
+addressing the existing limitations of VLMs.
+Across diverse real-world diagnostic scenarios in the NEJM database, MedAgent-Pro demonstrates
+significant performance gains in domains with visual tool support, such as cell imaging, chest X-rays,
+CT/MRI, and ophthalmology. Furthermore, it maintains strong performance in cases without visual
+tool support, achieving an overall improvement of 7.9%, which demonstrates its strong robustness
+and generalizability across a variety of diagnostic tasks. In addition, as shown in table 2, chest X-ray
+diagnosis involves certain tasks like Cardiomegaly which rely on precise quantitative measurements
+like the cardiothoracic ratio. Meanwhile, others such as Fracture detection, require detailed step-bystep analysis to identify subtle abnormalities. MedAgent-Pro achieves leading performance across
+most tasks, with an average performance gain of 13.7%.
+Comparison with Medical Agentic Systems We also compare MedAgent-Pro with advanced
+medical agentic frameworks, including MedAgents [30], MMedAgent [32] and MDAgent [29]. Since
+MedAgents and MDAgent are originally designed for text-based questions, we adapt them into a VQA
+setting with their core mechanism. As shown in Table 1, MedAgent-Pro consistently outperforms
+these methods across all diseases and domains. This performance advantage stems from the fact
+that prior methods are primarily designed for basic question answering or as modular toolboxes,
+lacking the capacity to handle complex, multi-modal clinical scenarios. In contrast, MedAgent-Pro
+incorporates retrieval-based diagnostic steps and seamlessly integrates visual tools into its reasoning
+process, enabling effective and comprehensive decision-making support in clinical applications.
+Comparison with Task-specific Models Additionally, we compare MedAgent-Pro with SOTA taskspecific methods, i.e., for glaucoma diagnosis [88,89] and chest X-ray analysis [25,90]. For glaucoma
+diagnosis, we also compare with the winners from the REFUGE2 challenge leaderboard [83]. As the
+leaderboard only reports the AUC metric, our comparison is limited to this metric.
+As shown in Table 3, MedAgent-Pro outperforms these task-specific methods, despite the VLMs
+in MedAgent-Pro remaining zero-shot. In glaucoma diagnosis, the AUC metric has improved by
+6.8%, while the bAcc and F1 scores have increased by 4.6% and 3.3%, respectively. This finding
+further demonstrates that integrating specialized tools with general VLMs can achieve performance
+comparable to domain-specific models, emphasizing the potential of the MedAgent-Pro framework.
+7
+
+Table 4: Ablation on key components, including Planning,
+Evidence-based Reasoning and Quantitative Analysis.
+Planning
+✓
+✓
+✓
+
+4.3
+
+Setting
+Quan. Evi. Reasoning
+
+✓
+✓
+
+✓
+
+Glaucoma
+bAcc
+F1
+56.4 21.1
+75.9 36.5
+88.5 71.0
+90.4 76.4
+
+Heart Disease
+bAcc
+F1
+56.8
+28.1
+63.3
+45.9
+73.4
+66.6
+77.8
+72.3
+
+Table 5: Ablation on qualitative indicators analysis.
+Method
+GPT-4o
+VisionUnite
+
+bAcc
+90.4
+92.9
+
+F1
+76.4
+79.1
+
+Ablation Study and Detailed Analysis
+
+Effectiveness of the Proposed Key Components We conduct an ablation study on glaucoma and
+heart disease diagnosis to evaluate the effectiveness of three key modules: planning, quantitative
+analysis, and evidence-based reasoning, while each module builds upon the previous one. As shown
+in Table 4, incorporating planning significantly improves overall performance, while integrating
+visual tools for quantitative analysis brings further gains, with F1 scores increasing by 34.5% and
+20.7%, respectively. The addition of evidence-based reasoning further enhances the consistency of
+plan execution and the reliability of analysis, thereby reaching the best performance. These results
+validate the effectiveness of the proposed components and demonstrate their complementary roles in
+jointly enabling truly evidence-based medical reasoning.
+
+Figure 5: Ablation on quantitative indicator analysis that reveals how segmentation accuracy influences diagnostic outcomes.
+
+Figure 6: Comparison of two kinds of decisionmaking ways on Glaucoma diagnosis under different indicator numbers.
+
+Analysis of the Impact of Indicator Accuracy Both qualitative and quantitative analyses at each
+reasoning step may introduce errors. To assess their respective impact on final diagnostic accuracy,
+we conduct ablation studies on glaucoma diagnosis. Since the accuracy of qualitative analysis is
+difficult to quantify, we use an ophthalmic-specific model VisionUnite [89] to conduct qualitative
+analysis in our workflow instead of the original GPT-4o. As shown in Table 5, the results show only
+marginal improvement, indicating that general-purpose VLMs, such as GPT-4o, when guided by
+medical guidelines, are sufficient for qualitative analysis without requiring additional domain-specific
+tools. In addition, in Fig. 5, we simulate noisy segmentation masks following prior works [91–94],
+and observe that higher segmentation accuracy consistently yields better diagnostic performance.
+These findings suggest that in multi-modal diagnosis, evidence-based quantitative analysis plays a
+more critical role than experience-driven qualitative assessment.
+Analysis of Decision-Making Strategies We further explore alternative decision-making strategies
+to integrate clinical indicators. In addition to our proposed structured fusion, which assigns risk-based
+weights to clinical indicators, we evaluate flat fusion, where all raw indicators are directly fed into the
+VLM for final decision-making. As shown in Fig. 6, structured fusion consistently outperforms flat
+fusion across varying indicator counts by assigning explicit weights, leading to more balanced and
+comprehensive decisions, whereas VLMs often focus on partial cues.
+8
+
+Figure 7: Diagnostic plan complexity vs. clinician assessment by subtasks on MIMIC.
+
+5
+
+Human Evaluation with Clinical Experts
+
+Alignment with Real-World Clinical Workflow To assess how well MedAgent-Pro reflects real
+clinical workflows, we quantified the number of steps it performs across 12 chest X-ray diagnostic
+tasks. We compared the results with thoracic clinicians’ rankings, where each task was rated from 1
+to 12 based on perceived diagnostic difficulty and time demand. As shown in Fig. 7, most tasks show
+a clear positive correlation between total step count and physician-rated complexity. For instance,
+Fracture is the most complex and involves the highest number of steps, while Support Devices require
+the fewest step and is ranked least complex.
+Notably, conditions like Pleural Effusion and Cardiomegaly benefit from visual tool integration,
+significantly reducing workflow steps. In contrast, tasks such as Fracture and Edema remain stepintensive. This is because diagnoses relying on quantitative indicators (e.g., the cardiothoracic
+ratio) can be automated by visual tools, while those requiring qualitative assessment still depend
+on sequential reasoning. The findings demonstrate the effectiveness and practical compatibility of
+MedAgent-Pro’s structured, evidence-based workflow with real-world clinical diagnostic process.
+Assessment of Generated Diagnostic Content Across Other Methods To further assess diagnostic quality beyond accuracy, we conduct validation with clinical experts on glaucoma and chest X-ray
+diagnosis. The clinicians rate the diagnostic outputs from both VLMs and MedAgent-Pro across five
+dimensions—relevance, comprehensiveness, clinical reliability, reasoning coherence, and language
+clarity—using a 1 to 5 scale following [95–99]. MedAgent-Pro outperforms other VLMs across five
+dimensions and demonstrates strong stability across diverse cases, underscoring the alignment of our
+structured, evidence-based approach with modern medical diagnosis standards.
+
+(a) Doctor Evaluation on Glaucoma Diagnosis
+
+(b) Doctor Evaluation on Chest X-Ray Diagnosis
+
+Figure 8: Evaluation on glaucoma and chest X-ray diagnosis by clinical experts.
+
+6
+
+Conclusion
+
+Broader Impact This paper introduces MedAgent-Pro, a reasoning-based agentic system designed
+to deliver accurate, multi-modal medical diagnoses, addressing the limitations of treating diagnosis
+9
+
+as an empirical task. MedAgent-Pro incorporates medical guidelines for planning, integrating
+quantitative analysis, and verifying the reliability of each reasoning step. Our method bridges the
+gap between AI systems and clinical procedures. This represents a significant step toward the core
+principles of evidence-based medicine and advancing the practical application of AI in healthcare.
+Limitations While advancing automated clinical diagnosis, this work still has several limitations.
+The proposed framework depends on the availability of visual tools, which remain limited in certain
+medical domains. In addition, qualitative analysis still relies on VLMs, which are prone to VLMs’
+inherent inconsistency and hallucination. Addressing these limitations will be essential to further
+improve the reliability and clinical impact of computer-aided diagnosis.
+
+7
+
+Acknowledgment
+
+This work was supported by Ministry of Education Tier 1 Start up grant, NUS, Singapore (A8001267-01-00); Ministry of Education Tier 1 grant, NUS, Singapore (A-8003261-00-00). Junde
+Wu is supported by the Engineering and Physical Sciences Research Council (EPSRC) under grant
+EP/S024093/1 and GE HealthCare.
+
+References
+[1] E. Steinberg, S. Greenfield, D. M. Wolman, M. Mancher, and R. Graham, Clinical practice
+guidelines we can trust. national academies press, 2011.
+[2] G. Guyatt, J. Cairns, D. Churchill, D. Cook, B. Haynes, J. Hirsh, J. Irvine, M. Levine, M. Levine,
+J. Nishikawa et al., “Evidence-based medicine: a new approach to teaching the practice of
+medicine,” jama, vol. 268, no. 17, pp. 2420–2425, 1992.
+[3] D. C. Brater and W. J. Daly, “Clinical pharmacology in the middle ages: Principles that presage
+the 21st century,” Clinical Pharmacology & Therapeutics, vol. 67, no. 5, pp. 447–450, 2000.
+[4] C. Li, C. Wong, S. Zhang, N. Usuyama, H. Liu, J. Yang, T. Naumann, H. Poon, and J. Gao,
+“Llava-med: Training a large language-and-vision assistant for biomedicine in one day,” Advances in Neural Information Processing Systems, vol. 36, 2024.
+[5] L.-M. Zhan, B. Liu, L. Fan, J. Chen, and X.-M. Wu, “Medical visual question answering
+via conditional reasoning,” in Proceedings of the 28th ACM International Conference on
+Multimedia, 2020, pp. 2345–2354.
+[6] J. J. Lau, S. Gayen, A. Ben Abacha, and D. Demner-Fushman, “A dataset of clinically generated
+visual questions and answers about radiology images,” Scientific data, vol. 5, no. 1, pp. 1–10,
+2018.
+[7] X. He, Y. Zhang, L. Mou, E. Xing, and P. Xie, “Pathvqa: 30000+ questions for medical visual
+question answering,” arXiv preprint arXiv:2003.10286, 2020.
+[8] D. Eddy, “Clinical decision making: from theory to practice. practice policies–guidelines for
+methods,” JAMA, vol. 263, no. 13, pp. 1839–1841, 1990.
+[9] D. M. Eddy, “Guidelines for policy statements: the explicit approach,” Jama, vol. 263, no. 16,
+pp. 2239–2243, 1990.
+[10] ——, “Practice policies: where do they come from?” Jama, vol. 263, no. 9, pp. 1265–1275,
+1990.
+[11] L. Albarqouni, T. Hoffmann, S. Straus, N. R. Olsen, T. Young, D. Ilic, T. Shaneyfelt, R. B.
+Haynes, G. Guyatt, and P. Glasziou, “Core competencies in evidence-based practice for health
+professionals: consensus statement based on a systematic review and delphi survey,” JAMA
+network open, vol. 1, no. 2, pp. e180 281–e180 281, 2018.
+[12] J. Achiam, S. Adler, S. Agarwal, L. Ahmad, I. Akkaya, F. L. Aleman, D. Almeida,
+J. Altenschmidt, S. Altman, S. Anadkat et al., “Gpt-4 technical report,” arXiv preprint
+arXiv:2303.08774, 2023.
+[13] X. Chen, Z. Wu, X. Liu, Z. Pan, W. Liu, Z. Xie, X. Yu, and C. Ruan, “Janus-pro: Unified multimodal understanding and generation with data and model scaling,” arXiv preprint
+arXiv:2501.17811, 2025.
+10
+
+[14] D. Guo, D. Yang, H. Zhang, J. Song, R. Zhang, R. Xu, Q. Zhu, S. Ma, P. Wang, X. Bi et al.,
+“Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” arXiv
+preprint arXiv:2501.12948, 2025.
+[15] H. Liu, C. Li, Q. Wu, and Y. J. Lee, “Visual instruction tuning,” Advances in neural information
+processing systems, vol. 36, 2024.
+[16] M. Moor, Q. Huang, S. Wu, M. Yasunaga, Y. Dalmia, J. Leskovec, C. Zakka, E. P. Reis, and
+P. Rajpurkar, “Med-flamingo: a multimodal medical few-shot learner,” in Machine Learning for
+Health (ML4H). PMLR, 2023, pp. 353–367.
+[17] F. Ghezloo, M. S. Seyfioglu, R. Soraki, W. O. Ikezogwo, B. Li, T. Vivekanandan, J. G. Elmore, R. Krishna, and L. Shapiro, “Pathfinder: A multi-modal multi-agent system for medical
+diagnostic decision-making applied to histopathology,” arXiv preprint arXiv:2502.08916, 2025.
+[18] M. Benary, X. D. Wang, M. Schmidt, D. Soll, G. Hilfenhaus, M. Nassir, C. Sigler, M. Knödler,
+U. Keller, D. Beule et al., “Leveraging large language models for decision support in personalized oncology,” JAMA Network Open, vol. 6, no. 11, pp. e2 343 689–e2 343 689, 2023.
+[19] G. Chen, S. Dong, Y. Shu, G. Zhang, J. Sesay, B. F. Karlsson, J. Fu, and Y. Shi, “Autoagents: A
+framework for automatic agent generation,” arXiv preprint arXiv:2309.17288, 2023.
+[20] G. Li, H. Hammoud, H. Itani, D. Khizbullin, and B. Ghanem, “Camel: Communicative agents
+for" mind" exploration of large language model society,” Advances in Neural Information
+Processing Systems, vol. 36, pp. 51 991–52 008, 2023.
+[21] N. Shinn, F. Cassano, A. Gopinath, K. Narasimhan, and S. Yao, “Reflexion: Language agents
+with verbal reinforcement learning,” Advances in Neural Information Processing Systems,
+vol. 36, 2024.
+[22] C. Zhang, K. Yang, S. Hu, Z. Wang, G. Li, Y. Sun, C. Zhang, Z. Zhang, A. Liu, S.-C. Zhu et al.,
+“Proagent: building proactive cooperative agents with large language models,” in Proceedings of
+the AAAI Conference on Artificial Intelligence, vol. 38, no. 16, 2024, pp. 17 591–17 599.
+[23] K. Wang, Y. Lu, M. Santacroce, Y. Gong, C. Zhang, and Y. Shen, “Adapting llm agents through
+communication,” arXiv preprint arXiv:2310.01444, 2023.
+[24] S. Zhang, Y. Xu, N. Usuyama, H. Xu, J. Bagga, R. Tinn, S. Preston, R. Rao, M. Wei, N. Valluri
+et al., “Biomedclip: a multimodal biomedical foundation model pretrained from fifteen million
+scientific image-text pairs,” arXiv preprint arXiv:2303.00915, 2023.
+[25] S. Bannur, K. Bouzid, D. C. Castro, A. Schwaighofer, A. Thieme, S. Bond-Taylor, M. Ilse,
+F. Pérez-García, V. Salvatelli, H. Sharma et al., “Maira-2: Grounded radiology report generation,”
+arXiv preprint arXiv:2406.04449, 2024.
+[26] J. Ma, Y. He, F. Li, L. Han, C. You, and B. Wang, “Segment anything in medical images,”
+Nature Communications, vol. 15, no. 1, p. 654, 2024.
+[27] J. Wu, Z. Wang, M. Hong, W. Ji, H. Fu, Y. Xu, M. Xu, and Y. Jin, “Medical sam adapter:
+Adapting segment anything model for medical image segmentation,” Medical image analysis,
+vol. 102, p. 103547, 2025.
+[28] J. Zhu, Y. Qi, and J. Wu, “Medical sam 2: Segment medical images as video via segment
+anything model 2,” arXiv preprint arXiv:2408.00874, 2024.
+[29] Y. Kim, C. Park, H. Jeong, Y. S. Chan, X. Xu, D. McDuff, H. Lee, M. Ghassemi, C. Breazeal,
+and H. W. Park, “Mdagents: An adaptive collaboration of llms for medical decision-making,” in
+The Thirty-eighth Annual Conference on Neural Information Processing Systems, 2024.
+[30] X. Tang, A. Zou, Z. Zhang, Z. Li, Y. Zhao, X. Zhang, A. Cohan, and M. Gerstein, “Medagents:
+Large language models as collaborators for zero-shot medical reasoning,” in Findings of the
+Association for Computational Linguistics ACL 2024, 2024, pp. 599–621.
+[31] K. Zuo, Y. Jiang, F. Mo, and P. Lio, “Kg4diagnosis: A hierarchical multi-agent llm framework
+with knowledge graph enhancement for medical diagnosis,” arXiv preprint arXiv:2412.16833,
+2024.
+[32] B. Li, T. Yan, Y. Pan, J. Luo, R. Ji, J. Ding, Z. Xu, S. Liu, H. Dong, Z. Lin et al., “Mmedagent:
+Learning to use medical tools with multi-modal agent,” in Findings of the Association for
+Computational Linguistics: EMNLP 2024, 2024, pp. 8745–8760.
+11
+
+[33] A. Fallahpour, J. Ma, A. Munim, H. Lyu, and B. Wang, “Medrax: Medical reasoning agent for
+chest x-ray,” arXiv preprint arXiv:2502.02673, 2025.
+[34] M. Bakator and D. Radosav, “Deep learning and medical diagnosis: A review of literature,”
+Multimodal Technologies and Interaction, vol. 2, no. 3, p. 47, 2018.
+[35] I. Kononenko, “Machine learning for medical diagnosis: history, state of the art and perspective,”
+Artificial Intelligence in medicine, vol. 23, no. 1, pp. 89–109, 2001.
+[36] S. J. McPhee, M. A. Papadakis, M. W. Rabow et al., Current medical diagnosis & treatment
+2010. McGraw-Hill Medical New York:, 2010.
+[37] P. Szolovits, R. S. Patil, and W. B. Schwartz, “Artificial intelligence in medical diagnosis,”
+Annals of internal medicine, vol. 108, no. 1, pp. 80–87, 1988.
+[38] J. Zhang, Y. Xie, Q. Wu, and Y. Xia, “Medical image classification using synergic deep learning,”
+Medical image analysis, vol. 54, pp. 10–19, 2019.
+[39] S. Azizi, B. Mustafa, F. Ryan, Z. Beaver, J. Freyberg, J. Deaton, A. Loh, A. Karthikesalingam,
+S. Kornblith, T. Chen et al., “Big self-supervised models advance medical image classification,”
+in Proceedings of the IEEE/CVF international conference on computer vision, 2021, pp. 3478–
+3488.
+[40] A. D. Association, “2. classification and diagnosis of diabetes: standards of medical care in
+diabetes—2020,” Diabetes care, vol. 43, no. Supplement_1, pp. S14–S31, 2020.
+[41] N. Coudray, P. S. Ocampo, T. Sakellaropoulos, N. Narula, M. Snuderl, D. Fenyö, A. L. Moreira,
+N. Razavian, and A. Tsirigos, “Classification and mutation prediction from non–small cell
+lung cancer histopathology images using deep learning,” Nature medicine, vol. 24, no. 10, pp.
+1559–1567, 2018.
+[42] M. Baumgartner, P. F. Jäger, F. Isensee, and K. H. Maier-Hein, “nndetection: a self-configuring
+method for medical object detection,” in Medical Image Computing and Computer Assisted
+Intervention–MICCAI 2021: 24th International Conference, Strasbourg, France, September
+27–October 1, 2021, Proceedings, Part V 24. Springer, 2021, pp. 530–539.
+[43] D. Wang, Y. Zhang, K. Zhang, and L. Wang, “Focalmix: Semi-supervised learning for 3d
+medical image detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition, 2020, pp. 3951–3960.
+[44] B. E. Bejnordi, M. Veta, P. J. Van Diest, B. Van Ginneken, N. Karssemeijer, G. Litjens, J. A.
+Van Der Laak, M. Hermsen, Q. F. Manson, M. Balkenhol et al., “Diagnostic assessment of
+deep learning algorithms for detection of lymph node metastases in women with breast cancer,”
+Jama, vol. 318, no. 22, pp. 2199–2210, 2017.
+[45] Q. Dou, H. Chen, L. Yu, L. Zhao, J. Qin, D. Wang, V. C. Mok, L. Shi, and P.-A. Heng,
+“Automatic detection of cerebral microbleeds from mr images via 3d convolutional neural
+networks,” IEEE transactions on medical imaging, vol. 35, no. 5, pp. 1182–1195, 2016.
+[46] Z. Habli, W. AlChamaa, R. Saab, H. Kadara, and M. L. Khraiche, “Circulating tumor cell
+detection technologies and clinical utility: Challenges and opportunities,” Cancers, vol. 12,
+no. 7, p. 1930, 2020.
+[47] O. Ronneberger, P. Fischer, and T. Brox, “U-net: Convolutional networks for biomedical image
+segmentation,” in Medical image computing and computer-assisted intervention–MICCAI 2015:
+18th international conference, Munich, Germany, October 5-9, 2015, proceedings, part III 18.
+Springer, 2015, pp. 234–241.
+[48] F. Isensee, P. F. Jaeger, S. A. Kohl, J. Petersen, and K. H. Maier-Hein, “nnu-net: a selfconfiguring method for deep learning-based biomedical image segmentation,” Nature methods,
+vol. 18, no. 2, pp. 203–211, 2021.
+[49] Z. Wang, Y. Zhang, Y. Wang, L. Cai, and Y. Zhang, “Dynamic pseudo label optimization in pointsupervised nuclei segmentation,” in International Conference on Medical Image Computing
+and Computer-Assisted Intervention. Springer, 2024, pp. 220–230.
+[50] M. Aubreville, N. Stathonikos, T. A. Donovan, R. Klopfleisch, J. Ammeling, J. Ganz, F. Wilm,
+M. Veta, S. Jabari, M. Eckstein et al., “Domain generalization across tumor types, laboratories,
+and species—insights from the 2022 edition of the mitosis domain generalization challenge,”
+Medical Image Analysis, vol. 94, p. 103155, 2024.
+12
+
+[51] Y. Zhang, Y. Wang, Z. Fang, H. Bian, L. Cai, Z. Wang, and Y. Zhang, “Dawn: Domain-adaptive
+weakly supervised nuclei segmentation via cross-task interactions,” IEEE Transactions on
+Circuits and Systems for Video Technology, 2024.
+[52] Y. Zhang, L. Cai, Z. Wang, and Y. Zhang, “Seine: Structure encoding and interaction network
+for nuclei instance segmentation,” IEEE Journal of Biomedical and Health Informatics, 2025.
+[53] X. Zhang, C. Wu, Z. Zhao, W. Lin, Y. Zhang, Y. Wang, and W. Xie, “Pmc-vqa: Visual instruction
+tuning for medical visual question answering,” arXiv preprint arXiv:2305.10415, 2023.
+[54] Y. Khare, V. Bagal, M. Mathew, A. Devi, U. D. Priyakumar, and C. Jawahar, “Mmbert: Multimodal bert pretraining for improved medical vqa,” in 2021 IEEE 18th International Symposium
+on Biomedical Imaging (ISBI). IEEE, 2021, pp. 1033–1036.
+[55] M. Moor, Q. Huang, S. Wu, M. Yasunaga, Y. Dalmia, J. Leskovec, C. Zakka, E. P. Reis, and
+P. Rajpurkar, “Med-flamingo: a multimodal medical few-shot learner,” in Machine Learning for
+Health (ML4H). PMLR, 2023, pp. 353–367.
+[56] X. Liang, X. Li, F. Li, J. Jiang, Q. Dong, W. Wang, K. Wang, S. Dong, G. Luo, and S. Li,
+“Medfilip: Medical fine-grained language-image pre-training,” IEEE Journal of Biomedical and
+Health Informatics, 2025.
+[57] J. Lin, Y. Xia, J. Zhang, K. Yan, L. Lu, J. Luo, and L. Zhang, “Ct-glip: 3d grounded languageimage pretraining with ct scans and radiology reports for full-body scenarios,” arXiv preprint
+arXiv:2404.15272, 2024.
+[58] B. Liu, L.-M. Zhan, L. Xu, L. Ma, Y. Yang, and X.-M. Wu, “Slake: A semantically-labeled
+knowledge-enhanced dataset for medical visual question answering,” in 2021 IEEE 18th International Symposium on Biomedical Imaging (ISBI). IEEE, 2021, pp. 1650–1654.
+[59] N. Mehta, M. Teruel, P. F. Sanz, X. Deng, A. H. Awadallah, and J. Kiseleva, “Improving
+grounded language understanding in a collaborative environment by interacting with agents
+through help feedback,” arXiv preprint arXiv:2304.10750, 2023.
+[60] Y. Xia, M. Shenoy, N. Jazdi, and M. Weyrich, “Towards autonomous system: flexible modular
+production system enhanced with large language model agents,” in 2023 IEEE 28th International
+Conference on Emerging Technologies and Factory Automation (ETFA). IEEE, 2023, pp. 1–8.
+[61] R. Li, C. Zhang, S. Mao, H. Huang, M. Zhong, Y. Cui, X. Zhou, F. Yin, S. Theodoridis, and
+Z. Zhang, “From english to pcsel: Llm helps design and optimize photonic crystal surface
+emitting lasers,” 2023.
+[62] G. Qin, R. Hu, Y. Liu, X. Zheng, H. Liu, X. Li, and Y. Zhang, “Data-efficient image quality
+assessment with attention-panel decoder,” in Proceedings of the AAAI Conference on Artificial
+Intelligence, vol. 37, no. 2, 2023, pp. 2091–2100.
+[63] A. Ghafarollahi and M. J. Buehler, “Protagents: protein discovery via large language model
+multi-agent collaborations combining physics and machine learning,” Digital Discovery, 2024.
+[64] D. A. Boiko, R. MacKnight, and G. Gomes, “Emergent autonomous scientific research capabilities of large language models,” arXiv preprint arXiv:2304.05332, 2023.
+[65] A. M. Bran, S. Cox, O. Schilter, C. Baldassari, A. D. White, and P. Schwaller, “Augmenting
+large language models with chemistry tools,” Nature Machine Intelligence, pp. 1–11, 2024.
+[66] A. Brohan, Y. Chebotar, C. Finn, K. Hausman, A. Herzog, D. Ho, J. Ibarz, A. Irpan, E. Jang,
+R. Julian et al., “Do as i can, not as i say: Grounding language in robotic affordances,” in
+Conference on robot learning. PMLR, 2023, pp. 287–318.
+[67] W. Huang, F. Xia, T. Xiao, H. Chan, J. Liang, P. Florence, A. Zeng, J. Tompson, I. Mordatch,
+Y. Chebotar et al., “Inner monologue: Embodied reasoning through planning with language
+models,” arXiv preprint arXiv:2207.05608, 2022.
+[68] J. Wu, R. Antonova, A. Kan, M. Lepert, A. Zeng, S. Song, J. Bohg, S. Rusinkiewicz, and
+T. Funkhouser, “Tidybot: Personalized robot assistance with large language models,” Autonomous Robots, vol. 47, no. 8, pp. 1087–1102, 2023.
+[69] R. Gallotta, G. Todd, M. Zammit, S. Earle, A. Liapis, J. Togelius, and G. N. Yannakakis, “Large
+language models and games: A survey and roadmap,” arXiv preprint arXiv:2402.18659, 2024.
+13
+
+[70] K. Li, A. K. Hopkins, D. Bau, F. Viégas, H. Pfister, and M. Wattenberg, “Emergent world
+representations: Exploring a sequence model trained on a synthetic task,” arXiv preprint
+arXiv:2210.13382, 2022.
+[71] N. Ranella and M. Eger, “Towards automated video game commentary using generative ai.” in
+EXAG@ AIIDE, 2023.
+[72] Z. Ma, Y. Mei, and Z. Su, “Understanding the benefits and challenges of using large language
+model-based conversational agents for mental well-being support,” in AMIA Annual Symposium
+Proceedings, vol. 2023, 2024, p. 1105.
+[73] S. Jinxin, Z. Jiabao, W. Yilei, W. Xingjiao, L. Jiawen, and H. Liang, “Cgmi: Configurable
+general multi-agent interaction framework,” arXiv preprint arXiv:2308.12503, 2023.
+[74] S. Yang, Y. Chen, Z. Tian, C. Wang, J. Li, B. Yu, and J. Jia, “Visionzip: Longer is better but not
+necessary in vision language models,” arXiv preprint arXiv:2412.04467, 2024.
+[75] M. R. Chassin, J. Kosecoff, D. H. Solomon, and R. H. Brook, “How coronary angiography is
+used: clinical determinants of appropriateness,” Jama, vol. 258, no. 18, pp. 2543–2547, 1987.
+[76] T. Shaneyfelt, K. D. Baum, D. Bell, D. Feldstein, T. K. Houston, S. Kaatz, C. Whelan, and
+M. Green, “Instruments for evaluating education in evidence-based practice: a systematic
+review,” Jama, vol. 296, no. 9, pp. 1116–1127, 2006.
+[77] N. L. of Medicine (US). Friends, MedlinePlus. National Institutes of Health and the Friends
+of the National Library of . . . , 2006, vol. 5, no. 1.
+[78] N. Miller, E.-M. Lacroix, and J. E. Backus, “Medlineplus: building and maintaining the national
+library of medicine’s consumer health web service,” Bulletin of the Medical Library Association,
+vol. 88, no. 1, p. 11, 2000.
+[79] C. Stringer, T. Wang, M. Michaelos, and M. Pachitariu, “Cellpose: a generalist algorithm for
+cellular segmentation,” Nature methods, vol. 18, no. 1, pp. 100–106, 2021.
+[80] T. github team, “Github copilot,” https://github.com/features/copilot, accessed: May 11, 2025.
+[81] P. Wang, S. Bai, S. Tan, S. Wang, Z. Fan, J. Bai, K. Chen, X. Liu, J. Wang, W. Ge, Y. Fan,
+K. Dang, M. Du, X. Ren, R. Men, D. Liu, C. Zhou, J. Zhou, and J. Lin, “Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution,” arXiv preprint
+arXiv:2409.12191, 2024.
+[82] Z. Chen, J. Wu, W. Wang, W. Su, G. Chen, S. Xing, M. Zhong, Q. Zhang, X. Zhu, L. Lu et al.,
+“Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks,”
+in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2024, pp. 24 185–24 198.
+[83] H. Fang, F. Li, J. Wu, H. Fu, X. Sun, J. Son, S. Yu, M. Zhang, C. Yuan, C. Bian et al., “Refuge2
+challenge: A treasure trove for multi-dimension analysis and evaluation in glaucoma screening,”
+arXiv preprint arXiv:2202.08994, 2022.
+[84] D. Zhao, E. Ferdian, G. D. Maso Talou, G. M. Quill, K. Gilbert, V. Y. Wang, T. P.
+Babarenda Gamage, J. Pedrosa, J. D’hooge, T. M. Sutton et al., “Mitea: A dataset for machine
+learning segmentation of the left ventricle in 3d echocardiography using subject-specific labels
+from cardiac magnetic resonance imaging,” Frontiers in Cardiovascular Medicine, vol. 9, p.
+1016703, 2023.
+[85] A. E. Johnson, L. Bulgarelli, L. Shen, A. Gayles, A. Shammout, S. Horng, T. J. Pollard, S. Hao,
+B. Moody, B. Gow et al., “Mimic-iv, a freely accessible electronic health record dataset,”
+Scientific data, vol. 10, no. 1, p. 1, 2023.
+[86] T. N. E. J. of Medicine, “Nejm image challenge,” https://www.nejm.org/image-challenge,
+accessed: May 11, 2025.
+[87] O. Topsakal and T. C. Akinci, “Creating large language model applications utilizing langchain:
+A primer on developing llm apps fast,” in International Conference on Applied Engineering and
+Natural Sciences, vol. 1, no. 1, 2023, pp. 1050–1056.
+[88] M. Wang, T. Lin, A. Lin, K. Yu, Y. Peng, L. Wang, C. Chen, K. Zou, H. Liang, M. Chen et al.,
+“Common and rare fundus diseases identification using vision-language foundation model with
+knowledge of over 400 diseases,” arXiv preprint arXiv:2406.09317, 2024.
+14
+
+[89] Z. Li, D. Song, Z. Yang, D. Wang, F. Li, X. Zhang, P. E. Kinahan, and Y. Qiao, “Visionunite: A
+vision-language foundation model for ophthalmology enhanced with clinical knowledge,” arXiv
+preprint arXiv:2408.02865, 2024.
+[90] Z. Chen, M. Varma, J.-B. Delbrouck, M. Paschali, L. Blankemeier, D. Van Veen, J. M. J.
+Valanarasu, A. Youssef, J. P. Cohen, E. P. Reis et al., “Chexagent: Towards a foundation model
+for chest x-ray interpretation,” arXiv preprint arXiv:2401.12208, 2024.
+[91] S. Li, Z. Gao, and X. He, “Superpixel-guided iterative learning from noisy labels for medical
+image segmentation,” in International Conference on Medical Image Computing and ComputerAssisted Intervention, 2021.
+[92] C. Xue, Q. Deng, X. Li, Q. Dou, and P.-A. Heng, “Cascaded robust learning at imperfect
+labels for chest x-ray segmentation,” in Medical Image Computing and Computer Assisted
+Intervention–MICCAI 2020: 23rd International Conference, Lima, Peru, October 4–8, 2020,
+Proceedings, Part VI 23. Springer, 2020, pp. 579–588.
+[93] M. Zhang, J. Gao, Z. Lyu, W. Zhao, Q. Wang, W. Ding, S. Wang, Z. Li, and S. Cui, “Characterizing label errors: confident learning for noisy-labeled image segmentation,” in Medical Image
+Computing and Computer Assisted Intervention–MICCAI 2020: 23rd International Conference,
+Lima, Peru, October 4–8, 2020, Proceedings, Part I 23. Springer, 2020, pp. 721–730.
+[94] T. Zhang, L. Yu, N. Hu, S. Lv, and S. Gu, “Robust medical image segmentation from nonexpert annotations with tri-network,” in Medical Image Computing and Computer Assisted
+Intervention–MICCAI 2020: 23rd International Conference, Lima, Peru, October 4–8, 2020,
+Proceedings, Part IV 23. Springer, 2020, pp. 249–258.
+[95] E. Can, W. Uller, K. Vogt, M. C. Doppler, F. Busch, N. Bayerl, S. Ellmann, A. Kader, A. Elkilany,
+M. R. Makowski et al., “Large language models for simplified interventional radiology reports:
+a comparative analysis,” Academic Radiology, vol. 32, no. 2, pp. 888–898, 2025.
+[96] T. Y. C. Tam, S. Sivarajkumar, S. Kapoor, A. V. Stolyar, K. Polanska, K. R. McCarthy, H. Osterhoudt, X. Wu, S. Visweswaran, S. Fu et al., “A framework for human evaluation of large
+language models in healthcare derived from literature review,” NPJ digital medicine, vol. 7,
+no. 1, p. 258, 2024.
+[97] J. S. Hershenhouse, D. Mokhtar, M. B. Eppler, S. Rodler, L. Storino Ramacciotti, C. Ganjavi,
+B. Hom, R. J. Davis, J. Tran, G. I. Russo et al., “Accuracy, readability, and understandability
+of large language models for prostate cancer information to the public,” Prostate Cancer and
+Prostatic Diseases, pp. 1–6, 2024.
+[98] K. Singhal, S. Azizi, T. Tu, S. S. Mahdavi, J. Wei, H. W. Chung, N. Scales, A. Tanwani,
+H. Cole-Lewis, S. Pfohl et al., “Large language models encode clinical knowledge,” Nature,
+vol. 620, no. 7972, pp. 172–180, 2023.
+[99] D. Fast, L. C. Adams, F. Busch, C. Fallon, M. Huppertz, R. Siepmann, P. Prucker, N. Bayerl,
+D. Truhn, M. Makowski et al., “Autonomous medical evaluation for guideline adherence of
+large language models,” NPJ Digital Medicine, vol. 7, no. 1, pp. 1–14, 2024.
+
+15
+
+

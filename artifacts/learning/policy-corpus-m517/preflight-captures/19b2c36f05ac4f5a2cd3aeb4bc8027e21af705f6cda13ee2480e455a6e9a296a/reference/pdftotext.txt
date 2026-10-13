@@ -1,0 +1,2013 @@
+Preference-Based Multi-Agent Reinforcement Learning: Data
+Coverage and Algorithmic Techniques
+
+arXiv:2409.00717v3 [cs.LG] 9 Jan 2025
+
+Natalia Zhang∗
+
+Xinqi Wang∗
+
+Qiwen Cui∗
+
+Runlong Zhou†
+
+Sham M. Kakade‡
+
+Simon S. Du§
+
+A BSTRACT
+We initiate the study of Preference-Based Multi-Agent Reinforcement Learning (PbMARL), exploring
+both theoretical foundations and empirical validations. We define the task as identifying the Nash
+equilibrium from a preference-only offline dataset in general-sum games, a problem marked by the
+challenge of sparse feedback signals. Our theory establishes the upper complexity bounds for Nash
+Equilibrium in effective PbMARL, demonstrating that single-policy coverage is inadequate and
+highlighting the importance of unilateral dataset coverage. These theoretical insights are verified
+through comprehensive experiments. To enhance the practical performance, we further introduce
+two algorithmic techniques. (1) We propose a Mean Squared Error (MSE) regularization along the
+time axis to achieve a more uniform reward distribution and improve reward learning outcomes. (2)
+We propose an additional penalty based on the distribution of the dataset to incorporate pessimism,
+improving stability and effectiveness during training. Our findings underscore the multifaceted
+approach required for PbMARL, paving the way for effective preference-based multi-agent systems.
+Keywords multi-agent reinforcement learning · reinforcement learning from human feedback · dataset coverage
+
+1
+
+Introduction
+
+Large language models (LLMs) have achieved significant progress in natural language interaction, knowledge acquisition, instruction following, planning and reasoning, which has been recognized as the sparks for AGI [Bubeck et al.,
+2023]. The evolution of LLMs fosters the field of agent systems, wherein LLMs act as the central intelligence [Xi
+et al., 2023]. In these systems, multiple LLMs can interact with each other as well as with external tools. For instance,
+MetaGPT assigns LLM agents various roles, akin to those in a technology company, enabling them to cooperate on
+complex software engineering tasks [Hong et al., 2023].
+Despite some empirical successes in agent systems utilizing closed-source LLMs, finetuning these systems and aligning
+them with human preferences remains a challenge. Reinforcement learning from human feedback (RLHF) has played
+an important role in aligning LLMs with human preferences [Christiano et al., 2017, Ziegler et al., 2019]. However,
+unexpected behavior can arise when multiple LLMs interact with each other. In addition, reward design has been a hard
+problem in multi-agent reinforcement learning [Devlin et al., 2011]. Thus, it is crucial to further align the multi-agent
+system from preference feedback.
+We address this problem through both theoretical analysis and empirical experiments. Theoretically, we characterize
+the dataset coverage condition for PbMARL that enables learning the Nash equilibrium, which serves as a favorable
+policy for each player. Empirically, we validate our theoretical insights through comprehensive experiments utilizing
+the proposed algorithmic techniques.
+∗
+
+Tsinghua University, zsxn21@mails.tinghua.edu.cn. University of Washington, wxqkaxdd@uw.edu. University of Washington, qwcui@cs.washington.edu. These authors contributed equally to this work. The work was done when Natalia Zhang was
+visiting the University of Washington.
+†
+University of Washington, vectorzh@cs.washington.edu.
+‡
+Harvard University, sham@seas.harvard.edu.
+§
+University of Washington, ssdu@cs.washington.edu.
+
+Figure 1: The overall pipeline of offline PbMARL. D is the preference dataset where τi , τi′ are trajectories and
+yi ∈ {1, −1}m indicates which trajectory is preferred by each agent. rϕ is the learned reward. πb is the learned
+reference policy using imitation learning.
+1.1
+
+Contributions and Technical Novelties
+
+1. Necessary and Sufficient Dataset Coverage Condition for PbMARL. In single-agent RLHF, [Zhu et al., 2023]
+demonstrated that single policy coverage is sufficient for learning the optimal policy. However, we prove that this
+condition no longer holds for PbMARL by providing a counterexample. Instead, we introduce an algorithm that
+operates under unilateral coverage, a condition derived from offline MARL [Cui and Du, 2022a, Zhong et al., 2022].
+Specifically, this condition requires the dataset to cover all unilateral deviations from a Nash equilibrium policy. For
+further details, see Section 4.
+2. Algorithmic Techniques for Practical Performance. As a foundational exploration into PbMARL research, we
+focus on employing the simplest learning framework, incorporating only the essential techniques necessary to ensure
+the approach’s feasibility. The framework consists of three key components: 1) leveraging the preference dataset to
+learn a reward function, 2) mitigating extrapolation errors with pessimism, and 3) determining the final policy. Figure 1
+provides an overview of the process.
+However, additional algorithmic techniques are required to identify a robust policy, even when the dataset demonstrates
+good coverage according to our theoretical insights.
+• Reward regularization. We observed that the reward learned through standard Maximum Likelihood
+Estimation (MLE) is sparse and spiky, making it difficult for standard RL algorithms to utilize effectively
+(cf. Figure 2 (b2)). To address this, we introduce an additional Mean Squared Error (MSE) loss between the
+predictions of adjacent time steps as a form of regularization. This regularization helps to prevent the model
+from accumulating reward signals solely at the final time step or relying on reward-irrelevant observation
+patterns, which could otherwise result in the complete failure in producing meaningful predictions.
+• Dataset Distribution-Based Pessimism. To mitigate the extrapolation error in offline RL, we add an extra
+reward term based on the density of a certain state-action pair in the dataset to implement pessimism. In our
+approach, an imitation learning agent is trained to model the density function. The final policy is then trained
+using a DQN-based Value Decomposition Network (VDN) [Mnih et al., 2013, Sunehag et al., 2017]. Our
+ablation study demonstrates the critical role of appropriately tuning the reward coefficient to ensure training
+stability and performance (see Table 4).
+3. Experiment Results. Our experiments, following the pipeline described above, confirm the theoretical necessity of
+unilateral coverage. We performed extensive ablation studies across three Multi-Agent Particle Environment (MPE)
+scenarios—Spread-v3, Tag-v3, and Reference-v3 [Mordatch and Abbeel, 2017]—as well as the popular Overcooked
+environment [Carroll et al., 2020]. These studies focused on the hyperparameter selection for the reward regularization
+coefficient α, pessimism coefficient β, and dataset diversity. The empirical results (Table 2) demonstrate that: 1)
+augmenting expert demonstrations with trivial trajectories significantly improves performance, 2) unilateral datasets
+are advantageous, and 3) dataset diversity contributes to lower variance. Our ablation experiments underscore the
+effectiveness of the proposed algorithmic techniques. Additionally, we introduced a principled standardization technique
+that efficiently tunes hyperparameters across all environments and datasets.
+2
+
+2
+
+Related Works
+
+Reinforcement Learning from Human Feedback (RLHF). RLHF, or preference-based RL (PbRL), plays a pivotal
+role in alignment with various tasks such as video games [Warnell et al., 2018, Brown et al., 2019], robotics [Jain
+et al., 2013, Kupcsik et al., 2016, Christiano et al., 2023, Shin et al., 2023], image augmentation [Metcalf et al., 2024],
+and large language models [Ziegler et al., 2020, Wu et al., 2021, Nakano et al., 2022, Menick et al., 2022, Stiennon
+et al., 2022, Bai et al., 2022, Glaese et al., 2022, Ganguli et al., 2022, Ouyang et al., 2022]. Additionally, a body
+of work focuses on the reward models behind preference data [Sadigh et al., 2017, Bıyık and Sadigh, 2018, Gao
+et al., 2022, Hejna and Sadigh, 2023]. Recent works like VIPO [Cen et al., 2024] incorporates uncertainty-aware
+regularization into the reward model, while [Liu et al., 2024] address over-optimization using adversarial regularization.
+Direct preference optimization (DPO, Rafailov et al. [2023]) and its variants [Azar et al., 2023, Rafailov et al., 2024]
+approach RLHF without directly handling the reward model. Theoretical studies have also explored guarantees, such as
+sample complexity and regret, and the limitations of certain RLHF algorithms [Novoseller et al., 2020, Xu et al., 2020,
+Pacchiano et al., 2023, Chen et al., 2022, Razin et al., 2023, Zhu et al., 2024a, Wang et al., 2023c, Xiong et al., 2024,
+Zhu et al., 2024b].
+Offline Reinforcement Learning. Offline RL [Lange et al., 2012, Levine et al., 2020] has achieved success in a wide
+range of real-world applications, including robotics [Pinto and Gupta, 2015, Levine et al., 2016, Chebotar et al., 2021,
+Kumar et al., 2023], healthcare [Raghu et al., 2017, Wang et al., 2018], and autonomous driving [Shi et al., 2021, Lee
+et al., 2024]. Key algorithms such as Behavior Cloning, BRAC [Wu et al., 2019], BEAR [Kumar et al., 2019], and CQL
+[Kumar et al., 2020, Lyu et al., 2024] have driven these successes. Theoretical research on offline RL has primarily
+focused on sample complexity under various dataset coverage assumptions Le et al. [2019], Chen and Jiang [2019], Yin
+et al. [2020], Rashidinejad et al. [2023], Yin et al. [2021, 2022], Shi et al. [2022], Nguyen-Tang et al. [2022], Xie et al.
+[2022], Xiong et al. [2023b], Li et al. [2024], Xie et al. [2023], Mete et al. [2021].
+Multi-Agent Reinforcement Learning (MARL). Many real-world scenarios are naturally modeled as multi-agent
+environments, whether cooperative or competitive. As a result, MARL has gained popularity in video games [Tian
+et al., 2017, Vinyals et al., 2017, Silver et al., 2017, Vinyals et al., 2019], network design [Shamsoshoara et al., 2018,
+Kaur and Kumar, 2020], energy sharing [Prasad and Dusparic, 2018], and autonomous driving [Palanisamy, 2019, Yu
+et al., 2020, Zhou et al., 2022]. Prominent algorithms in MARL include IQL [Tan, 2003], MADDPG [Lowe et al.,
+2020], COMA [Foerster et al., 2017], MAPPO [Yu et al., 2022], VDN [Sunehag et al., 2017], and QMIX [Rashid et al.,
+2018]. Theoretical research has made great process in reducing the sample complexity [Wang et al., 2023b, Xiong et al.,
+2023a].
+Offline MARL. Offline MARL is a practical solution for handling sophisticated multi-agent environments. Empirically, to address issues related to out-of-distribution actions and complex reward functions, previous works have
+developed algorithms such as MABCQ [Jiang and Lu, 2023], ICQ-MA [Yang et al., 2021], OMAR [Pan et al., 2022],
+and OMIGA [Wang et al., 2023a], which incorporate regularization or constraints on these actions and functions.
+MOMA-PPO [Barde et al., 2024] is a model-based approach to offline MARL that generates synthetic interaction data
+from offline datasets. Tseng et al. [2022] combines knowledge distillation with multi-agent decision transformers [Meng
+et al., 2022] for offline MARL. Theoretical understanding of offline MARL, particularly in the context of Markov
+games, has been advanced by works that provide sample complexity guarantees for learning equilibria Sidford et al.
+[2019], Cui and Yang [2020], Zhang et al. [2023a, 2020], Abe and Kaneko [2020], Cui and Du [2022a,b], Zhang et al.
+[2023b], Blanchet et al. [2023], Shi et al. [2023], Zhong et al. [2022].
+
+3
+
+Preliminaries
+
+General-sum Markov Games. We consider an episodic time-inhomogeneous general-sum Markov game M, consisting
+of m players, a shared state space S, an individual action space Ai for each player i ∈ [m] and a joint action
+space A = A1 × A2 × · · · Am . The game has a time horizon H, an initial state s1 , state transition probabilities
+H
+P = (P1 , P2 , · · · , PH ) with Ph : SA → ∆(S), and rewards R = Rh (· | sh , ah )h=1 where Rh,i ∈ [0, 1] represents the
+random reward for player i at step h. At each step h ∈ [H], all players observe current state sh and simultaneously
+choose their actions ah = (ah,1 , ah,2 , · · · , ah,m ). The next state sh+1 is then sampled from Ph (· | sh , ah ), and the
+reward rh,i for player i is sampled from Rh,i (· | sh , ah ). The game terminates at step H + 1, with each player aiming
+to maximize the total collected rewards.
+We use π = (π1 , π2 , · · · , πm ) to denote a joint policy, where the individual policy for player i is represented as
+πi = (π1,i , π2,i , · · · , πH,i ), with each πh,i : S → ∆(Ai ) defined as the Markov policy for player i at step h. The state
+3
+
+value function and state-action value function for each player i ∈ [m] are defined as
+"H
+#
+"H
+#
+X
+X
+π
+Vh,i
+(sh ) := Eπ
+rt,i (st , at ) | sh , Qπh,i (sh ) := Eπ
+rt,i (st , at ) | sh , ah ,
+t=h
+
+t=h
+
+where Eπ = Es1 ,a1 ,r1 ,··· ,sH+1 ∼π,M denotes the expectation over the random trajectory generated by policy π. The best
+response value for player i is defined as
+†,π
+
+π ,π−i
+
+Vh,i −i (sh ) := max Vh,ii
+πi
+
+(sh ),
+
+which represents the maximal expected total return for player i given that the other players follow policy π−i .
+A Nash equilibrium is a policy configuration where no player has an incentive to change their policy unilaterally.
+Formally, we measure how closely a policy approximates a Nash equilibrium using the Nash-Gap:
+i
+X h †,π
+π
+Nash-Gap(π) :=
+V1,i −i (s1 ) − V1,i
+(s1 ) .
+i∈[m]
+
+By definition, the Nash-Gap is always non-negative, and it quantifies the potential benefit each player could gain by
+unilaterally deviating from the current policy. A policy π is considered an ϵ-Nash equilibrium iff Nash-Gap(π) ≤ ϵ.
+Offline Multi-agent Reinforcement Learning with Preference Feedback. In offline MARL with Preference Feedback, the algorithm has access to a pre-collected preference dataset generated by an unknown behavior policy interacting with an underlying Markov game. We consider two sampled trajectories, τ = (s1 , a1 , s2 , a2 , · · · , sH+1 ) and
+τ ′ = (s′1 , a′1 , s′2 , a′2 , · · · , s′H+1 ), drawn from distribution P(s1 , a1 , s2 , · · · , sH+1 ) = Πh π b (ah | sh )P(sh+1 | sh , ah )
+induced by the behavior policy π b . In MARLHF, the reward signal is not revealed in the dataset. Instead, each player
+can observe a binary signal yi from a Bernoulli distribution following the Bradley-Terry-Luce model [Bradley and
+Terry, 1952]:
+PH
+exp( h=1 ri (sh , ah ))
+P(yi = 1 | τ, τ ′ ) =
+, ∀i ∈ [m].
+PH
+PH
+exp( h=1 ri (sh , ah )) + exp( h=1 ri (s′h , a′h ))
+We make the standard linear Markov game assumption [Zhong et al., 2022]:
+Assumption 1. M is a linear Markov game with a feature map ψ : S × A → Rd if we have
+Ph (sh+1 | sh , ah ) = ⟨ψ(sh , ah ), µh (sh+1 )⟩ , ∀(sh , ah , sh+1 , h) ∈ S × A × S × [H],
+ri (sh , ah ) = ⟨ψ(sh ), θh,i ⟩ , ∀(sh , ah , h, i) ∈ S × A × [H] × [m],
+where µh and θh,i
+√ are unknown
+√ parameters. Without loss of generality, we assume ∥ψ(s, a)∥ ≤ 1 for all (s, a) ∈ S × A
+and ∥µh (s)∥ ≤ d, ∥θ∥h ≤ d for all h ∈ [H].
+The one-hot feature map is defined as ψ h (s, a) := [0, · · · , 0, ψ(s, a), 0, · · · , 0] ∈ RHd , where ψ(s, a) is at position
+(h − 1)d + 1 to hd.
+Value-Decomposition Network (VDN). In our experiments, we utilize VDN as an offline MARL algorithm for its
+effectiveness and simplicity. VDN [Sunehag et al., 2017] is a Q-learning style MARL architecture for cooperative
+games. It takes
+Pn the idea of decomposing the team value function into agent-wise value functions, expressed as:
+Qh (s, a) = i=1 Qh,i (s, ai ). In our experiments, we applied Deep Q-Network (DQN) [Mnih et al., 2013] with VDN
+to learn the team Q function. We chose DQN to maintain the simplicity and controllability of the experimental pipeline,
+which facilitates a more accurate investigation of the impact of various techniques on the learning process.
+
+4
+
+Dataset Coverage Theory for MARLHF
+
+In this section, we study the dataset coverage assumptions for offline MARLHF. For offline single-agent RLHF, Zhu
+et al. [2023], Zhan et al. [2023] show that single policy coverage is sufficient for learning the optimal policy. However,
+we prove that this assumption is insufficient in the multi-agent setting by constructing an counterexample. In addition,
+we prove that unilateral policy coverage is adequate for learning the Nash equilibrium.
+4
+
+4.1
+
+Policy Coverages
+
+We quantify the information contained in the dataset using covariance matrices, as the rewards and transition kernels are
+parameterized by a linear model. With a slight abuse of the notation, for trajectory τ = (s1 , a1 , s2 , a2 , · · · , sH+1 ), we
+use ψ(τ ) := [ψ(s1 , a1 ), ψ(s2 , a2 ), · · · , ψ(sH , aH )] to denote the concatenated trajectory feature. The reward coverage
+is measured by the preference covariance matrix:
+X
+ΣrD = λI +
+(ψ(τ ) − ψ(τ ′ ))(ψ(τ ) − ψ(τ ′ ))⊤ ,
+(τ,τ ′ )∈D
+
+where ψ(τ ) − ψ(τ ′ ) is derived from the preference model. Similarly, the transition coverage is measured by the
+covariance matrix:
+X 
+
+ΣPD,h = λI +
+ψ(sh , ah )ψ(sh , ah )⊤ + ψ(s′h , a′h )ψ(s′h , a′h )⊤ .
+(τ,τ ′ )∈D
+
+For a given state and action pair (sh , ah ), the term ψ h (sh , ah ) [Σr ]−1 measures the uncertainty in reward estimation
+D
+and ∥ψ(sh , ah )∥[ΣP ]−1 measures the uncertainty in transition estimation. As a result, the overall uncertainty of a
+D,h
+given policy π with dataset D is measured by
+"H
+#
+H
+X
+X
+∥ψ(sh , ah )∥[ΣP ]−1 .
+UD (π) := Eπ
+ψ h (sh , ah ) [Σr ]−1 +
+D
+
+h=1
+∗
+
+D,h
+
+h=1
+
+Definition 1. For a Nash equilibrium π , different policy coverages are measured by the following quantities:
+• Single policy coverage: UD (π ∗ ).
+∗
+• Unilateral policy coverage: maxi,πi UD (πi , π−i
+).
+
+• Uniform policy coverage: maxπ UD (π).
+Intuitively, small UD (π ∗ ) indicates that the dataset contains adequate information about π ∗ . A small
+∗
+maxi,πi UD (πi , π−i
+) implies that the dataset covers all of the unilateral deviations of π ∗ , and small maxπ UD (π ∗ )
+suggests that the dataset covers all possible policies.
+4.2
+
+Single Policy Coverage is Insufficient
+
+Our objective is to learn a Nash equilibrium policy from the dataset, which necessitates that the dataset sufficiently
+covers the Nash equilibrium. In the single-agent scenario, if the dataset covers the optimal policy, pessimism-based
+algorithms can be employed to recover the optimal policy. However, previous work [Cui and Du, 2022a, Zhong et al.,
+2022] has demonstrated that single policy coverage is insufficient for offline MARL. We extend this result to the context
+of offline MARL with preference feedback, as follows:
+Theorem 1. (Informal) If the dataset only has coverage on the Nash equilibrium policy (i.e. small UD (π ∗ )), it is not
+sufficient for learning an approximate Nash equilibrium policy.
+The proof is derived by a reduction from standard offline MARL to MARLHF. Suppose that MARLHF with single
+policy coverage suffices, we could construct an algorithm for standard offline MARL, which leads to a contradiction.
+The formal statement and the detailed proof are deferred to Appendix A.1.
+4.3
+
+Unilateral Policy Coverage is Sufficient
+
+While single policy coverage is too weak to learn a Nash equilibrium, uniform policy coverage, though sufficient, is
+often too strong and impractical for many scenarios. Instead, we focus on unilateral policy coverage, which offers a
+middle ground between single policy coverage and uniform policy coverage.
+Theorem 2. (Informal) If the dataset has unilateral coverage on the Nash equilibrium policy, there exists an algorithm
+that can output an approximate Nash equilibrium policy.
+The detailed proof is deferred to Appendix A.2. We leverage a variant of Strategy-wise Bonus and Surrogate Minimization (SBSM) algorithm in [Cui and Du, 2022b] with modified policy evaluation and policy optimization subroutines.
+Intuitively, the algorithm identifies a policy that minimizes a pessimistic estimate of the Nash gap. As a result, if the
+dataset has unilateral coverage, the output policywill have a small Nash gap and serves as a good approximation of the
+Nash equilibrium.
+5
+
+5
+
+Algorithmic Techniques for Practical Performance
+
+In Section 4, we provided a theoretical characterization of the dataset requirements for PbMARL. However, the
+algorithm used in Theorem 2 is not computationally efficient. In this section, we propose a practical algorithm for
+PbMARL and validate our theoretical findings through experiments.
+5.1
+
+High-level Methodology
+
+Our PbMARL pipeline consists of two phases: In the first step, we train a reward prediction model ϕ and approximate
+the behavior policy πb using imitation learning; in the second step, we then apply an MARL algorithm to maximize a
+combination of the KL-divergence-based reward and standardized predicted reward rϕ , ultimately deriving the final
+policy πw .
+Step 1: Reward Training and Dataset Modeling. Given the preference signals of trajectories, we use neural networks
+to predict step-wise rewards rϕ (sh , ah ) for each agent, minimizing the loss defined in (1). The objective is to map
+(s, ai )-pairs to reward values such that the team returns align with the preference signals. At the same time, in order to
+utilize distribution-based penalty term log πb (s, a) to cope with the extrapolation error in offline learning, an imitation
+learner is trained over the entire dataset to model the behavior policy πb .
+Step 2: Offline MARL. Although in this work, VDN is chosen as the MARL oracle, it should be noted that other
+MARL architectures are also applicable. With the reward model rϕ and the approximated dataset distribution learned in
+Step 1, we are now able to construct a virtual step-wise reward for each agent. The agents are then trained to maximize
+the target defined in (3).
+Given this framework, additional techniques are required to build a strong practical algorithm, which we provide more
+details below.
+5.2
+
+Reward Regularization
+
+Compared to step-wise reward signals, preference signals are H times sparser, making them more challenging for
+a standard RL algorithm to utilize effectively. Concretely, this reward sparsity causes the naive optimization of the
+negative log-likelihood (NLL) loss to suffer from two key problems:
+1. Sparse and spiky reward output. When calculating NLL losses, spreading the reward signal along the
+trajectories is equivalent to summing it at the last time step (Figure 2a). However, a sparse reward signal
+is harder for traditional RL methods to handdle due to the lack of continuous supervision. More uniformly
+distributed rewards across the entire trajectory generally leads to more efficient learning in standard RL
+algorithms.
+2. Over-reliance on irrelevant features. The model may exploit redundant features as shortcuts to predict
+rewards. For instance, expert agents in cooperative games usually exhibit a fixed pattern of collaboration from
+the very beginning of the trajectory (such as specific actions or communication moves). The reward model
+might use these patterns to differentiate them from agents of other skill levels, thereby failing to capture the
+true reward-observation causal relationships.
+To mitigate these problems, we introduce an extra Mean Squared Error (MSE) regularization along the time axis
+(Equation 1, 2). By limiting the sudden changes in reward predictions between adjacent time steps, this regularization
+discourages the reward model from concentrating its predictions on just a few time steps. While these issues can also be
+mitigated by using more diversified datasets and adding regularization to experts to eliminate reward-irrelevant action
+patterns, these approaches can be costly and sometimes impractical in real-world applications. In contrast, our MSE
+regularization is both easy to implement and has been empirically verified to be effective, creating more uniform reward
+distribution (Figure 2) and better performances.
+
+LRM (ϕ) = −ED
+
+"m
+X
+
+#
+log σ(yi (rϕ,i (τ1 ) − rϕ,i (τ2 ))) +
+
+i=1
+
+α
+LMSE (ϕ, τ ),
+VarD (rϕ )
+
+where the regularization term LMSE is defined as:
+"H−1
+#
+X
+2
+LMSE (ϕ, τ ) = ED
+∥rϕ (sh , ah ) − rϕ (sh+1 , ah+1 )∥2 .
+h=1
+
+6
+
+(1)
+
+(2)
+
+Here α is the regularization coefficient, which is set to be 1 in our experiments. The variance of rϕ is calculated over
+the training set to adaptively scale the regularization term. During training, VarD (rϕ ) is detached to prevent gradients
+from flowing through it. The effectiveness of this method is validated in the ablation study (cf. Section 6.3).
+5.3
+
+Dataset Distribution-Based Pessimism
+
+There are various methods to mitigate the over-extrapolation errors in offline RL [Peng et al., 2019, Nair et al., 2021],
+including conservative loss over the Q-function [Kumar et al., 2020] and directly restricting the learned policy actions
+to those within within the dataset [Fujimoto et al., 2019]. We add a per-step dataset-based penalty term, log πb (s, a), as
+pessimism towards less explored states. Imitation learning is utilized to estimate the behavior policy πb from the dataset
+distribution. To stabilize training, we standardize predicted reward rϕ over D before combining it with the penalty term
+to make them comparable:
+"H
+#
+X
+objective(w) = Eτ ∼πw
+rstd (sh , ah , ϕ) + β log πb (sh , ah ) ,
+(3)
+h=1
+
+where β is the pessimism coefficient.
+
+5
+
+The standardized reward rstd is defined as:
+
+rstd (sh , ah , ϕ) =
+
+m
+X
+rϕ (sh , ah,i ) − ED (rϕ )
+p
+.
+VarD (rϕ )
+i=1
+
+(4)
+
+Intuitively, the penalty term log πb (sh , ah ) discourages the agents from deviating from the most preferred actions in the
+dataset. The effectiveness of this method is validated in the ablation study (cf. Section 6.3).
+
+6
+
+Experiments
+
+We design a series of experiments to validate our theories and methods in common general-sum games. Specifically, we
+first use online RL algorithms to train expert agents, and take intermediate checkpoints as rookie agents. Then, we use
+these agents to collect datasets and use the Bradley-Terry model over standardized returns to simulate human preference.
+Experiments are carried out to verify the efficiency of our approach with unilateral policy dataset coverage (in Theorem
+2) while single policy coverage is insufficient (stated in Theorem 1). We also design ablation studies to showcase the
+importance of our methods, particularly focusing on reward regularization and dataset distribution-based pessimism.
+6.1
+
+Environments
+
+Our experiments involved three Multi-Agent Particle Environments (MPE), including Spread-v3, Tag-v3 and Referencev3, and Overcooked environment implemented with JaxMARL codebase [Rutherford et al., 2023]. Spread-v3 contains
+a group of agents and target landmarks, where the objective is to cover as many landmarks as possible while avoiding
+collisions. Tag-v3 contains two opposing groups, where quicker "preys" need to escape from "predators". To ensure a
+fair comparison of different predator cooperation policies, we fixed a pretrained prey agent. Reference-v3 involves
+two agents and three potential landmarks, where the agents need to find each one’s target landmark to receive a high
+reward. The target landmark of each agent is only known by the other agent at first. Overcooked involves two agents
+moving and operating objects in a gridworld. A more detailed description of the tasks and their associated challenges is
+provided in Appendix B.2.
+6.2
+
+The Importance of Dataset Diversity
+
+To study the influence of diversity of dataset, we manually designed 4 kinds of mixed joint behavior polices, and change
+their ratios to form different datasets.
+• Expert policy: n expert agents. Trained with online RL algorithms till convergence.
+• Rookie policy: n rookie agents. Trained with online RL algorithms with early stop.
+• Trivial policy: n random agents. All actions are uniformly sampled from the action space.
+• Unilateral policy: n − 1 expert agents and 1 rookie agent of different proficiency level.
+5
+
+β is set to be (1, 1, 10, 10) in Spread-v3, Reference-3, Tag-v3 and Overcooked respectively in the main experiments, and the
+pessimism term β log πb (sh , ah ) is clipped to (-10, 1) in practice.
+
+7
+
+Diversified
+Mix-Unilateral
+Mix-Expert
+Pure-Expert
+
+Expert
+
+Unilateral
+
+Rookie
+
+Trivial
+
+1
+2
+3
+4
+
+1
+1
+0
+0
+
+1
+0
+0
+0
+
+1
+1
+1
+0
+
+Table 1: Final datasets mixed with various ratios. The overall dataset size is kept to 38400 trajectories for MPE, and
+960 trajectories for Overcooked. (cf. Appendix B.1)
+Algorithm
+
+Dataset
+
+Spread-v3
+
+Tag-v3
+
+Reference-v3
+
+Overcooked
+
+VDN with
+Pessimism Penalty
+
+Diversified
+Mix-Unilateral
+Mix-Expert
+Pure-Expert
+
+-21.16 ± 0.54
+-21.03 ± 0.44
+-20.98 ± 0.54
+-21.01 ± 0.57
+
+29.28 ± 1.08
+36.65 ± 0.70
+35.96 ± 0.86
+39.55 ± 0.77
+
+-18.89 ± 0.60
+-18.80 ± 0.63
+-18.80 ± 0.44
+-28.97 ± 2.89
+
+238.89 ± 3.50
+221.80 ± 26.66
+35.26 ± 55.19
+3.36 ± 7.19
+
+Table 2: In the simplest environment, Spread-v3, different dataset gives similar performance. In Tag-v3 environment,
+where precise actions are required, the quality of the dataset (proportion of expert demonstration) is more important than
+diversity. In contrast, in Overcooked environment, which focuses on strategy learning and demands less on precision,
+dataset diversity contributes to improved stability, with Unilateral playing a particularly critical role. In the Reference-v3
+environment, which balances the need for precision and strategic, the importance of both factors is more balanced, but
+non-expert data is still necessary.
+Table 1 presents the ratio of trajectories collected by the four different policies. The experiments are designed to
+hierarchically examine the roles of diversity (Diversified vs. Mix-Unilateral), unilateral coverage (Mix-Unilateral vs.
+Mix-Expert), and trivial comparison (Mix-Expert vs. Pure-Expert).
+The ranking of diversity follows the order:
+Pure-Expert < Mix-Expert < Mix-Unilateral < Diversified
+Due to the inherent limitations of offline reinforcement learning (RL) in action selection dictated by the dataset, the
+effectiveness of learning is often strongly correlated with dataset quality, i.e. the level of expertise demonstrated in
+the dataset. However, the results in preference-based MARL experiments partially diverge from this conventional
+conclusion. While the quality of the dataset remains critical, experiments on Reference-v3 and Overcooked (Table
+2) indicate that diversity and unilateral data can significantly enhance the performance of the reward model, thereby
+facilitating learning.
+The main experimental results are presented in Table 2 and Table 3.Among all the experiments, apart from the
+experiments on Tag-v3, where the high operational precision requirements make data quality more critical than diversity,
+the other three environments validate our conclusions across all algorithms.
+
+(b) reference-v3
+(a) Mix-Expert α = 0 (spread-v3)
+
+(b1) Pure-Expert (b2) Diversified α = 0 (b3) Diversified
+
+Figure 2: (a) Averaged reward predictions and ground truth of a trajectory sample on spread-v3. (b) Standardized
+reward predictions and ground truth of a trajectory sample in reference-v3. When trained with expert data only (b1),
+ϕ experiences a mode collapse, failing to give informative signals. Reward function trained without regularization
+(b2) shows spiky patterns and tends to accumulate predictions at certain time steps when trained with less diversified
+datasets as (a). Our method with diversified dataset (b3) gives predictions that approximate the ground truth well.
+8
+
+Algorithm
+
+Dataset
+
+Spread-v3
+
+Reference-v3
+
+Overcooked
+
+MAIQL
+
+Diversified
+Mix-Unilateral
+Mix-Expert
+Pure-Expert
+
+-25.33 ± 1.40
+-23.25 ± 1.06
+-23.26 ± 0.90
+-26.01 ± 1.53
+
+-22.15 ± 0.55
+-23.22 ± 1.37
+-24.21 ± 1.60
+-29.47 ± 1.65
+
+16.59 ± 11.22
+0.00 ± 0.00
+0.00 ± 0.00
+0.00 ± 0.00
+
+MABCQ
+
+Diversified
+Mix-Unilateral
+Mix-Expert
+Pure-Expert
+
+-20.02 ± 0.64
+-19.47 ± 0.33
+-19.42 ± 0.17
+-20.56 ± 0.38
+
+-17.64 ± 0.43
+-17.64 ± 1.11
+-17.88 ± 0.78
+-25.90 ± 1.11
+
+239.34 ± 1.67
+215.01 ± 65.43
+50.32 ± 82.82
+1.14 ± 3.46
+
+Table 3: Test returns of MAIQL and MABCQ. In the experimental results, we can observe a clear preference toward
+more diversified datasets. Compared to our method and BCQ, which directly calculate maxa Q for Bellman updates, IQL
+employs expectile regression to estimate it. So MAIQL demands higher accuracy of the reward model. Consequently,
+the performance improvements brought by dataset diversity are also more pronounced in MAIQL experiments.
+
+Spread-v3
+Tag-v3
+Reference-v3
+Overcooked
+
+β=0
+
+β = 0.1
+
+β=1
+
+β = 10
+
+β = 100
+
+α=0
+
+-22.56 ± 1.61
+4.11 ± 1.66
+-19.69 ± 0.36
+0.00 ± 0.00
+
+-22.03 ± 0.67
+4.25 ± 0.53
+-19.37 ± 0.53
+0.00 ± 0.00
+
+-20.82 ± 0.53
+10.96 ± 1.20
+-18.89 ± 0.78
+149.53 ± 86.74
+
+-20.46 ± 0.51
+28.88 ± 1.02
+-18.33 ± 0.42
+238.89 ± 3.50
+
+-20.35 ± 0.43
+29.53 ± 1.35
+-18.54 ± 0.46
+240 ± 0.00
+
+-22.21 ± 0.72
+30.77 ± 0.57
+-21.86 ± 0.73
+240 ± 0.00
+
+Table 4: Comparison of test return with different hyperparameters. Standard pipeline take pessimism coefficient β = 1
+for Spread-v3, Reference-v3 and β = 10 for Tag-v3, Overcooked, and the MSE reward regularization coefficient α is
+set to the optimal value for fixed β. All the agents are trained on Diversified Dataset across 10 random seeds. Results
+show that larger β always gives better performance and a proper positive α can improve performance.
+6.3
+
+Other Ablation Studies
+
+Reward regularization In Figure 2, we examined the effectiveness of our proposed reward regularization technique.
+Figure 2a demonstrates that without regularization, the learned rewards tend to be sparse and spiky compared to the
+ground truth rewards. We also observe that the rewards often exhibit temporal continuity, which can create greater
+discrepancies with the sparse, pulse-like ground truth. Notably, we found that adding stronger regularization does not
+necessarily lead to underfitting of the reward model; in some cases, it even helps the model converge to a lower training
+loss. Detailed parameters and experimental results are provided in the appendix (cf. Table 8). We attribute this to the
+role of regularization in preventing the model from overly relying on shortcuts.
+Pessimism coefficient Due to the clipping in Equation 3, excessively large β values will not dominate the entire
+reward function. As a result, larger β values almost never degrade the agent’s performance in our experiments (Table 4).
+This allows us to increase β with relative confidence. Therefore, we generally recommend setting β to a value between
+10 and 100 for optimal performances.
+Scalability We also tested the scalability on Spread-v3. While our current approach manages the scaling of agents
+without introducing new problems, it does not specifically address the inherent issues of instability and complexity that
+are well-documented in traditional MARL (cf. Appendix B.3).
+
+7
+
+Discussion
+
+In this paper, we proposed dedicated algorithmic techniques for offline PbMARL and provided theoretical justification
+for the unilateral dataset coverage condition. We believe our work is a significant step towards systematically studying
+PbMARL and offers a foundational framework for future research in this area. The flexibility of our framework allows
+for application across a wide range of general games, and our empirical results validate the effectiveness of our proposed
+methods in various scenarios.
+Looking ahead, there is significant potential to extend this work to more complex, real-world scenarios, particularly by
+integrating Large Language Models (LLMs) into multi-agent systems. Future research will focus on fine-tuning and
+aligning LLMs within PbMARL, addressing challenges such as increased complexity and the design of effective reward
+structures.
+9
+
+References
+Kenshi Abe and Yusuke Kaneko. Off-policy exploitability-evaluation in two-player zero-sum markov games, 2020.
+Mohammad Gheshlaghi Azar, Mark Rowland, Bilal Piot, Daniel Guo, Daniele Calandriello, Michal Valko, and Rémi
+Munos. A general theoretical paradigm to understand learning from human preferences, 2023.
+Yuntao Bai, Andy Jones, Kamal Ndousse, Amanda Askell, Anna Chen, Nova DasSarma, Dawn Drain, Stanislav Fort,
+Deep Ganguli, Tom Henighan, Nicholas Joseph, Saurav Kadavath, Jackson Kernion, Tom Conerly, Sheer El-Showk,
+Nelson Elhage, Zac Hatfield-Dodds, Danny Hernandez, Tristan Hume, Scott Johnston, Shauna Kravec, Liane Lovitt,
+Neel Nanda, Catherine Olsson, Dario Amodei, Tom Brown, Jack Clark, Sam McCandlish, Chris Olah, Ben Mann,
+and Jared Kaplan. Training a helpful and harmless assistant with reinforcement learning from human feedback, 2022.
+Paul Barde, Jakob Foerster, Derek Nowrouzezahrai, and Amy Zhang. A model-based solution to the offline multi-agent
+reinforcement learning coordination problem, 2024.
+José H. Blanchet, Miao Lu, Tong Zhang, and Han Zhong. Double pessimism is provably efficient for distributionally
+robust offline reinforcement learning: Generic algorithm and robust partial coverage. ArXiv, abs/2305.09659, 2023.
+URL https://api.semanticscholar.org/CorpusID:258714763.
+Ralph Allan Bradley and Milton E Terry. Rank analysis of incomplete block designs: I. the method of paired
+comparisons. Biometrika, 39(3/4):324–345, 1952.
+Daniel S. Brown, Wonjoon Goo, Prabhat Nagarajan, and Scott Niekum. Extrapolating beyond suboptimal demonstrations via inverse reinforcement learning from observations, 2019.
+Sébastien Bubeck, Varun Chandrasekaran, Ronen Eldan, Johannes Gehrke, Eric Horvitz, Ece Kamar, Peter Lee, Yin Tat
+Lee, Yuanzhi Li, Scott Lundberg, et al. Sparks of artificial general intelligence: Early experiments with gpt-4. arXiv
+preprint arXiv:2303.12712, 2023.
+Erdem Bıyık and Dorsa Sadigh. Batch active preference-based learning of reward functions, 2018.
+Micah Carroll, Rohin Shah, Mark K. Ho, Thomas L. Griffiths, Sanjit A. Seshia, Pieter Abbeel, and Anca Dragan. On the
+utility of learning about humans for human-ai coordination, 2020. URL https://arxiv.org/abs/1910.05789.
+Shicong Cen, Jincheng Mei, Katayoon Goshvadi, Hanjun Dai, Tong Yang, Sherry Yang, Dale Schuurmans, Yuejie Chi,
+and Bo Dai. Value-incentivized preference optimization: A unified approach to online and offline rlhf, 2024. URL
+https://arxiv.org/abs/2405.19320.
+Yevgen Chebotar, Karol Hausman, Yao Lu, Ted Xiao, Dmitry Kalashnikov, Jake Varley, Alex Irpan, Benjamin
+Eysenbach, Ryan Julian, Chelsea Finn, and Sergey Levine. Actionable models: Unsupervised offline reinforcement
+learning of robotic skills, 2021.
+Jinglin Chen and Nan Jiang. Information-theoretic considerations in batch reinforcement learning, 2019.
+Xiaoyu Chen, Han Zhong, Zhuoran Yang, Zhaoran Wang, and Liwei Wang. Human-in-the-loop: Provably efficient
+preference-based reinforcement learning with general function approximation, 2022.
+Paul Christiano, Jan Leike, Tom B. Brown, Miljan Martic, Shane Legg, and Dario Amodei. Deep reinforcement learning
+from human preferences, 2023.
+Paul F Christiano, Jan Leike, Tom Brown, Miljan Martic, Shane Legg, and Dario Amodei. Deep reinforcement learning
+from human preferences. Advances in neural information processing systems, 30, 2017.
+Qiwen Cui and Simon S Du. When are offline two-player zero-sum markov games solvable? Advances in Neural
+Information Processing Systems, 35:25779–25791, 2022a.
+Qiwen Cui and Simon S Du. Provably efficient offline multi-agent reinforcement learning via strategy-wise bonus.
+Advances in Neural Information Processing Systems, 35:11739–11751, 2022b.
+Qiwen Cui and Lin F. Yang. Minimax sample complexity for turn-based stochastic game, 2020.
+Sam Devlin, Daniel Kudenko, and Marek Grześ. An empirical study of potential-based reward shaping and advice in
+complex, multi-agent systems. Advances in Complex Systems, 14(02):251–278, 2011.
+Jakob Foerster, Gregory Farquhar, Triantafyllos Afouras, Nantas Nardelli, and Shimon Whiteson. Counterfactual
+multi-agent policy gradients, 2017.
+Scott Fujimoto, David Meger, and Doina Precup. Off-policy deep reinforcement learning without exploration, 2019.
+Deep Ganguli, Liane Lovitt, Jackson Kernion, Amanda Askell, Yuntao Bai, Saurav Kadavath, Ben Mann, Ethan Perez,
+Nicholas Schiefer, Kamal Ndousse, Andy Jones, Sam Bowman, Anna Chen, Tom Conerly, Nova DasSarma, Dawn
+Drain, Nelson Elhage, Sheer El-Showk, Stanislav Fort, Zac Hatfield-Dodds, Tom Henighan, Danny Hernandez,
+Tristan Hume, Josh Jacobson, Scott Johnston, Shauna Kravec, Catherine Olsson, Sam Ringer, Eli Tran-Johnson,
+10
+
+Dario Amodei, Tom Brown, Nicholas Joseph, Sam McCandlish, Chris Olah, Jared Kaplan, and Jack Clark. Red
+teaming language models to reduce harms: Methods, scaling behaviors, and lessons learned, 2022.
+Leo Gao, John Schulman, and Jacob Hilton. Scaling laws for reward model overoptimization, 2022.
+Amelia Glaese, Nat McAleese, Maja Tr˛ebacz, John Aslanides, Vlad Firoiu, Timo Ewalds, Maribeth Rauh, Laura
+Weidinger, Martin Chadwick, Phoebe Thacker, Lucy Campbell-Gillingham, Jonathan Uesato, Po-Sen Huang, Ramona
+Comanescu, Fan Yang, Abigail See, Sumanth Dathathri, Rory Greig, Charlie Chen, Doug Fritz, Jaume Sanchez Elias,
+Richard Green, Soňa Mokrá, Nicholas Fernando, Boxi Wu, Rachel Foley, Susannah Young, Iason Gabriel, William
+Isaac, John Mellor, Demis Hassabis, Koray Kavukcuoglu, Lisa Anne Hendricks, and Geoffrey Irving. Improving
+alignment of dialogue agents via targeted human judgements, 2022.
+Joey Hejna and Dorsa Sadigh. Inverse preference learning: Preference-based rl without a reward function, 2023.
+Sirui Hong, Xiawu Zheng, Jonathan Chen, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing
+Yau, Zijuan Lin, Liyang Zhou, et al. Metagpt: Meta programming for multi-agent collaborative framework. arXiv
+preprint arXiv:2308.00352, 2023.
+Ashesh Jain, Brian Wojcik, Thorsten Joachims, and Ashutosh Saxena. Learning trajectory preferences for manipulators
+via iterative improvement, 2013.
+Jiechuan Jiang and Zongqing Lu. Offline decentralized multi-agent reinforcement learning, 2023.
+Amandeep Kaur and Krishan Kumar. Energy-efficient resource allocation in cognitive radio networks under cooperative
+multi-agent model-free reinforcement learning schemes. IEEE Transactions on Network and Service Management,
+17(3):1337–1348, 2020. doi: 10.1109/TNSM.2020.3000274.
+Ilya Kostrikov, Ashvin Nair, and Sergey Levine. Offline reinforcement learning with implicit q-learning, 2021. URL
+https://arxiv.org/abs/2110.06169.
+Aviral Kumar, Justin Fu, George Tucker, and Sergey Levine. Stabilizing off-policy q-learning via bootstrapping error
+reduction, 2019.
+Aviral Kumar, Aurick Zhou, George Tucker, and Sergey Levine. Conservative q-learning for offline reinforcement
+learning, 2020.
+Aviral Kumar, Anikait Singh, Frederik Ebert, Mitsuhiko Nakamoto, Yanlai Yang, Chelsea Finn, and Sergey Levine.
+Pre-training for robots: Offline rl enables learning new tasks from a handful of trials, 2023.
+Andras Kupcsik, David Hsu, and Wee Sun Lee. Learning dynamic robot-to-human object handover from human
+feedback, 2016.
+Sascha Lange, Thomas Gabel, and Martin Riedmiller. Batch Reinforcement Learning, pages 45–73. Springer Berlin
+Heidelberg, Berlin, Heidelberg, 2012. ISBN 978-3-642-27645-3. doi: 10.1007/978-3-642-27645-3_2. URL
+https://doi.org/10.1007/978-3-642-27645-3_2.
+Hoang M. Le, Cameron Voloshin, and Yisong Yue. Batch policy learning under constraints, 2019.
+Dongsu Lee, Chanin Eom, and Minhae Kwon. Ad4rl: Autonomous driving benchmarks for offline reinforcement
+learning with value-based dataset, 2024.
+Sergey Levine, Peter Pastor, Alex Krizhevsky, and Deirdre Quillen. Learning hand-eye coordination for robotic grasping
+with deep learning and large-scale data collection, 2016.
+Sergey Levine, Aviral Kumar, George Tucker, and Justin Fu. Offline reinforcement learning: Tutorial, review, and
+perspectives on open problems, 2020.
+Gen Li, Laixi Shi, Yuxin Chen, Yuejie Chi, and Yuting Wei. Settling the sample complexity of model-based offline
+reinforcement learning, 2024.
+Zhihan Liu, Miao Lu, Shenao Zhang, Boyi Liu, Hongyi Guo, Yingxiang Yang, Jose Blanchet, and Zhaoran Wang.
+Provably mitigating overoptimization in rlhf: Your sft loss is implicitly an adversarial regularizer, 2024. URL
+https://arxiv.org/abs/2405.16436.
+Ryan Lowe, Yi Wu, Aviv Tamar, Jean Harb, Pieter Abbeel, and Igor Mordatch. Multi-agent actor-critic for mixed
+cooperative-competitive environments, 2020.
+Jiafei Lyu, Xiaoteng Ma, Xiu Li, and Zongqing Lu. Mildly conservative q-learning for offline reinforcement learning,
+2024.
+Linghui Meng, Muning Wen, Yaodong Yang, Chenyang Le, Xiyun Li, Weinan Zhang, Ying Wen, Haifeng Zhang, Jun
+Wang, and Bo Xu. Offline pre-trained multi-agent decision transformer: One big sequence model tackles all smac
+tasks, 2022.
+11
+
+Jacob Menick, Maja Trebacz, Vladimir Mikulik, John Aslanides, Francis Song, Martin Chadwick, Mia Glaese, Susannah
+Young, Lucy Campbell-Gillingham, Geoffrey Irving, and Nat McAleese. Teaching language models to support
+answers with verified quotes, 2022.
+Katherine Metcalf, Miguel Sarabia, Natalie Mackraz, and Barry-John Theobald. Sample-efficient preference-based
+reinforcement learning with dynamics aware rewards, 2024.
+Akshay Mete, Rahul Singh, Xi Liu, and P. R. Kumar. Reward biased maximum likelihood estimation for reinforcement
+learning, 2021. URL https://arxiv.org/abs/2011.07738.
+Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis Antonoglou, Daan Wierstra, and Martin
+Riedmiller. Playing atari with deep reinforcement learning, 2013.
+Igor Mordatch and Pieter Abbeel. Emergence of grounded compositional language in multi-agent populations. arXiv
+preprint arXiv:1703.04908, 2017.
+Ashvin Nair, Abhishek Gupta, Murtaza Dalal, and Sergey Levine. Awac: Accelerating online reinforcement learning
+with offline datasets, 2021.
+Reiichiro Nakano, Jacob Hilton, Suchir Balaji, Jeff Wu, Long Ouyang, Christina Kim, Christopher Hesse, Shantanu
+Jain, Vineet Kosaraju, William Saunders, Xu Jiang, Karl Cobbe, Tyna Eloundou, Gretchen Krueger, Kevin Button,
+Matthew Knight, Benjamin Chess, and John Schulman. Webgpt: Browser-assisted question-answering with human
+feedback, 2022.
+Thanh Nguyen-Tang, Sunil Gupta, Hung Tran-The, and Svetha Venkatesh. Sample complexity of offline reinforcement
+learning with deep relu networks, 2022.
+Ellen R. Novoseller, Yibing Wei, Yanan Sui, Yisong Yue, and Joel W. Burdick. Dueling posterior sampling for
+preference-based reinforcement learning, 2020.
+Long Ouyang, Jeff Wu, Xu Jiang, Diogo Almeida, Carroll L. Wainwright, Pamela Mishkin, Chong Zhang, Sandhini
+Agarwal, Katarina Slama, Alex Ray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens,
+Amanda Askell, Peter Welinder, Paul Christiano, Jan Leike, and Ryan Lowe. Training language models to follow
+instructions with human feedback, 2022.
+Aldo Pacchiano, Aadirupa Saha, and Jonathan Lee. Dueling rl: Reinforcement learning with trajectory preferences,
+2023.
+Praveen Palanisamy. Multi-agent connected autonomous driving using deep reinforcement learning, 2019.
+Ling Pan, Longbo Huang, Tengyu Ma, and Huazhe Xu. Plan better amid conservatism: Offline multi-agent reinforcement
+learning with actor rectification, 2022.
+Xue Bin Peng, Aviral Kumar, Grace Zhang, and Sergey Levine. Advantage-weighted regression: Simple and scalable
+off-policy reinforcement learning, 2019.
+Lerrel Pinto and Abhinav Gupta. Supersizing self-supervision: Learning to grasp from 50k tries and 700 robot hours,
+2015.
+Amit Prasad and Ivana Dusparic. Multi-agent deep reinforcement learning for zero energy communities. 2019
+IEEE PES Innovative Smart Grid Technologies Europe (ISGT-Europe), pages 1–5, 2018. URL https://api.
+semanticscholar.org/CorpusID:52948132.
+Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D. Manning, and Chelsea Finn. Direct
+preference optimization: Your language model is secretly a reward model, 2023.
+Rafael Rafailov, Joey Hejna, Ryan Park, and Chelsea Finn. From r to q ∗ : Your language model is secretly a q-function,
+2024.
+Aniruddh Raghu, Matthieu Komorowski, Imran Ahmed, Leo Celi, Peter Szolovits, and Marzyeh Ghassemi. Deep
+reinforcement learning for sepsis treatment, 2017.
+Tabish Rashid, Mikayel Samvelyan, Christian Schroeder de Witt, Gregory Farquhar, Jakob Foerster, and Shimon
+Whiteson. Qmix: Monotonic value function factorisation for deep multi-agent reinforcement learning, 2018.
+Paria Rashidinejad, Banghua Zhu, Cong Ma, Jiantao Jiao, and Stuart Russell. Bridging offline reinforcement learning
+and imitation learning: A tale of pessimism, 2023.
+Noam Razin, Hattie Zhou, Omid Saremi, Vimal Thilak, Arwen Bradley, Preetum Nakkiran, Joshua Susskind, and Etai
+Littwin. Vanishing gradients in reinforcement finetuning of language models, 2023.
+12
+
+Alexander Rutherford, Benjamin Ellis, Matteo Gallici, Jonathan Cook, Andrei Lupu, Gardar Ingvarsson, Timon Willi,
+Akbir Khan, Christian Schroeder de Witt, Alexandra Souly, Saptarashmi Bandyopadhyay, Mikayel Samvelyan,
+Minqi Jiang, Robert Tjarko Lange, Shimon Whiteson, Bruno Lacerda, Nick Hawes, Tim Rocktaschel, Chris Lu, and
+Jakob Nicolaus Foerster. Jaxmarl: Multi-agent rl environments in jax. 2023.
+Dorsa Sadigh, Anca D. Dragan, S. Shankar Sastry, and Sanjit A. Seshia. Active preference-based learning of reward
+functions. In Robotics: Science and Systems, 2017. URL https://api.semanticscholar.org/CorpusID:
+12226563.
+Alireza Shamsoshoara, Mehrdad Khaledi, Fatemeh Afghah, Abolfazl Razi, and Jonathan Ashdown. Distributed
+cooperative spectrum sharing in uav networks using multi-agent reinforcement learning, 2018.
+Chengshuai Shi, Wei Xiong, Cong Shen, and Jing Yang. Provably efficient offline reinforcement learning with perturbed
+data sources. ArXiv, abs/2306.08364, 2023. URL https://api.semanticscholar.org/CorpusID:259165155.
+Laixi Shi, Gen Li, Yuting Wei, Yuxin Chen, and Yuejie Chi. Pessimistic q-learning for offline reinforcement learning:
+Towards optimal sample complexity, 2022.
+Tianyu Shi, Dong Chen, Kaian Chen, and Zhaojian Li. Offline reinforcement learning for autonomous driving with
+safety and exploration enhancement, 2021.
+Daniel Shin, Anca D. Dragan, and Daniel S. Brown. Benchmarks and algorithms for offline preference-based reward
+learning, 2023.
+Aaron Sidford, Mengdi Wang, Lin F. Yang, and Yinyu Ye. Solving discounted stochastic two-player games with
+near-optimal time and sample complexity, 2019.
+David Silver, Julian Schrittwieser, Karen Simonyan, Ioannis Antonoglou, Aja Huang, Arthur Guez, Thomas Hubert,
+Lucas baker, Matthew Lai, Adrian Bolton, Yutian Chen, Timothy P. Lillicrap, Fan Hui, L. Sifre, George van den
+Driessche, Thore Graepel, and Demis Hassabis. Mastering the game of go without human knowledge. Nature, 550:
+354–359, 2017. URL https://api.semanticscholar.org/CorpusID:205261034.
+Nisan Stiennon, Long Ouyang, Jeff Wu, Daniel M. Ziegler, Ryan Lowe, Chelsea Voss, Alec Radford, Dario Amodei,
+and Paul Christiano. Learning to summarize from human feedback, 2022.
+Peter Sunehag, Guy Lever, Audrunas Gruslys, Wojciech Marian Czarnecki, Vinicius Zambaldi, Max Jaderberg, Marc
+Lanctot, Nicolas Sonnerat, Joel Z. Leibo, Karl Tuyls, and Thore Graepel. Value-decomposition networks for
+cooperative multi-agent learning, 2017.
+Ming Tan. Multi agent reinforcement learning independent vs cooperative agents. 2003. URL https://api.
+semanticscholar.org/CorpusID:260435822.
+Yuandong Tian, Qucheng Gong, Wenling Shang, Yuxin Wu, and C. Lawrence Zitnick. Elf: An extensive, lightweight
+and flexible research platform for real-time strategy games, 2017.
+Wei-Cheng Tseng, Tsun-Hsuan Johnson Wang, Yen-Chen Lin, and Phillip Isola. Offline multi-agent reinforcement learning with knowledge distillation. In S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho,
+and A. Oh, editors, Advances in Neural Information Processing Systems, volume 35, pages 226–237. Curran Associates, Inc., 2022. URL https://proceedings.neurips.cc/paper_files/paper/2022/file/
+01d78b294d80491fecddea897cf03642-Paper-Conference.pdf.
+Oriol Vinyals, Timo Ewalds, Sergey Bartunov, Petko Georgiev, Alexander Sasha Vezhnevets, Michelle Yeo, Alireza
+Makhzani, Heinrich Küttler, John Agapiou, Julian Schrittwieser, John Quan, Stephen Gaffney, Stig Petersen, Karen
+Simonyan, Tom Schaul, Hado van Hasselt, David Silver, Timothy Lillicrap, Kevin Calderone, Paul Keet, Anthony
+Brunasso, David Lawrence, Anders Ekermo, Jacob Repp, and Rodney Tsing. Starcraft ii: A new challenge for
+reinforcement learning, 2017.
+Oriol Vinyals, Igor Babuschkin, Wojciech M. Czarnecki, Michaël Mathieu, Andrew Dudzik, Junyoung Chung, David
+Choi, Richard Powell, Timo Ewalds, Petko Georgiev, Junhyuk Oh, Dan Horgan, Manuel Kroiss, Ivo Danihelka,
+Aja Huang, L. Sifre, Trevor Cai, John P. Agapiou, Max Jaderberg, Alexander Sasha Vezhnevets, Rémi Leblond,
+Tobias Pohlen, Valentin Dalibard, David Budden, Yury Sulsky, James Molloy, Tom Le Paine, Caglar Gulcehre,
+Ziyun Wang, Tobias Pfaff, Yuhuai Wu, Roman Ring, Dani Yogatama, Dario Wünsch, Katrina McKinney, Oliver
+Smith, Tom Schaul, Timothy P. Lillicrap, Koray Kavukcuoglu, Demis Hassabis, Chris Apps, and David Silver.
+Grandmaster level in starcraft ii using multi-agent reinforcement learning. Nature, 575:350 – 354, 2019. URL
+https://api.semanticscholar.org/CorpusID:204972004.
+Lu Wang, Wei Zhang, Xiaofeng He, and Hongyuan Zha. Supervised reinforcement learning with recurrent neural
+network for dynamic treatment recommendation, 2018.
+Xiangsen Wang, Haoran Xu, Yinan Zheng, and Xianyuan Zhan. Offline multi-agent reinforcement learning with
+implicit global-to-local value regularization, 2023a.
+13
+
+Yuanhao Wang, Qinghua Liu, Yu Bai, and Chi Jin. Breaking the curse of multiagency: Provably efficient decentralized
+multi-agent rl with function approximation. In Gergely Neu and Lorenzo Rosasco, editors, Proceedings of Thirty
+Sixth Conference on Learning Theory, volume 195 of Proceedings of Machine Learning Research, pages 2793–2848.
+PMLR, 12–15 Jul 2023b. URL https://proceedings.mlr.press/v195/wang23b.html.
+Yuanhao Wang, Qinghua Liu, and Chi Jin. Is rlhf more difficult than standard rl?, 2023c.
+Garrett Warnell, Nicholas Waytowich, Vernon Lawhern, and Peter Stone. Deep tamer: Interactive agent shaping in
+high-dimensional state spaces, 2018.
+Jeff Wu, Long Ouyang, Daniel M. Ziegler, Nisan Stiennon, Ryan Lowe, Jan Leike, and Paul Christiano. Recursively
+summarizing books with human feedback, 2021.
+Yifan Wu, George Tucker, and Ofir Nachum. Behavior regularized offline reinforcement learning, 2019.
+Zhiheng Xi, Wenxiang Chen, Xin Guo, Wei He, Yiwen Ding, Boyang Hong, Ming Zhang, Junzhe Wang, Senjie
+Jin, Enyu Zhou, et al. The rise and potential of large language model based agents: A survey. arXiv preprint
+arXiv:2309.07864, 2023.
+Tengyang Xie, Nan Jiang, Huan Wang, Caiming Xiong, and Yu Bai. Policy finetuning: Bridging sample-efficient offline
+and online reinforcement learning, 2022.
+Tengyang Xie, Ching-An Cheng, Nan Jiang, Paul Mineiro, and Alekh Agarwal. Bellman-consistent pessimism for
+offline reinforcement learning, 2023. URL https://arxiv.org/abs/2106.06926.
+Nuoya Xiong, Zhihan Liu, Zhaoran Wang, and Zhuoran Yang. Sample-efficient multi-agent rl: An optimization
+perspective, 2023a. URL https://arxiv.org/abs/2310.06243.
+Wei Xiong, Han Zhong, Chengshuai Shi, Cong Shen, Liwei Wang, and Tong Zhang. Nearly minimax optimal offline
+reinforcement learning with linear function approximation: Single-agent mdp and markov game, 2023b.
+Wei Xiong, Hanze Dong, Chenlu Ye, Ziqi Wang, Han Zhong, Heng Ji, Nan Jiang, and Tong Zhang. Iterative preference
+learning from human feedback: Bridging theory and practice for rlhf under kl-constraint, 2024.
+Yichong Xu, Ruosong Wang, Lin F. Yang, Aarti Singh, and Artur Dubrawski. Preference-based reinforcement learning
+with finite-time guarantees, 2020.
+Yiqin Yang, Xiaoteng Ma, Chenghao Li, Zewu Zheng, Qiyuan Zhang, Gao Huang, Jun Yang, and Qianchuan Zhao.
+Believe what you see: Implicit constraint approach for offline multi-agent reinforcement learning, 2021.
+Ming Yin, Yu Bai, and Yu-Xiang Wang. Near-optimal provable uniform convergence in offline policy evaluation for
+reinforcement learning, 2020.
+Ming Yin, Yu Bai, and Yu-Xiang Wang. Near-optimal offline reinforcement learning via double variance reduction,
+2021.
+Ming Yin, Yaqi Duan, Mengdi Wang, and Yu-Xiang Wang. Near-optimal offline reinforcement learning with linear
+representation: Leveraging variance information with pessimism, 2022.
+Chao Yu, Xin Wang, Xin Xu, Minjie Zhang, Hongwei Ge, Jiankang Ren, Liang Sun, Bingcai Chen, and Guozhen Tan.
+Distributed multiagent coordinated learning for autonomous driving in highways based on dynamic coordination
+graphs. IEEE Transactions on Intelligent Transportation Systems, 21(2):735–748, 2020. doi: 10.1109/TITS.2019.
+2893683.
+Chao Yu, Akash Velu, Eugene Vinitsky, Jiaxuan Gao, Yu Wang, Alexandre Bayen, and Yi Wu. The surprising
+effectiveness of ppo in cooperative, multi-agent games, 2022.
+Wenhao Zhan, Masatoshi Uehara, Nathan Kallus, Jason D Lee, and Wen Sun. Provable offline preference-based
+reinforcement learning. In The Twelfth International Conference on Learning Representations, 2023.
+Kaiqing Zhang, Zhuoran Yang, Han Liu, Tong Zhang, and Tamer Basar. Finite-sample analysis for decentralized batch
+multi-agent reinforcement learning with networked agents, 2020.
+Kaiqing Zhang, Sham M. Kakade, Tamer Basar, and Lin F. Yang. Model-based multi-agent rl in zero-sum markov
+games with near-optimal sample complexity, 2023a.
+Yuheng Zhang, Yunru Bai, and Nan Jiang. Offline learning in markov games with general function approximation. In
+International Conference on Machine Learning, 2023b. URL https://api.semanticscholar.org/CorpusID:
+256615864.
+Han Zhong, Wei Xiong, Jiyuan Tan, Liwei Wang, Tong Zhang, Zhaoran Wang, and Zhuoran Yang. Pessimistic minimax
+value iteration: Provably efficient equilibrium learning from offline datasets. In International Conference on Machine
+Learning, pages 27117–27142. PMLR, 2022.
+14
+
+Wei Zhou, Dong Chen, Jun Yan, Zhaojian Li, Huilin Yin, and Wanchen Ge. Multi-agent reinforcement learning for
+cooperative lane changing of connected and autonomous vehicles in mixed traffic. Autonomous Intelligent Systems, 2
+(1), March 2022. ISSN 2730-616X. doi: 10.1007/s43684-022-00023-5. URL http://dx.doi.org/10.1007/
+s43684-022-00023-5.
+Banghua Zhu, Michael Jordan, and Jiantao Jiao. Principled reinforcement learning with human feedback from pairwise
+or k-wise comparisons. In International Conference on Machine Learning, pages 43037–43067. PMLR, 2023.
+Banghua Zhu, Jiantao Jiao, and Michael I. Jordan. Principled reinforcement learning with human feedback from
+pairwise or k-wise comparisons, 2024a.
+Banghua Zhu, Michael I. Jordan, and Jiantao Jiao. Iterative data smoothing: Mitigating reward overfitting and
+overoptimization in rlhf, 2024b.
+Daniel M Ziegler, Nisan Stiennon, Jeffrey Wu, Tom B Brown, Alec Radford, Dario Amodei, Paul Christiano, and
+Geoffrey Irving. Fine-tuning language models from human preferences. arXiv preprint arXiv:1909.08593, 2019.
+Daniel M. Ziegler, Nisan Stiennon, Jeffrey Wu, Tom B. Brown, Alec Radford, Dario Amodei, Paul Christiano, and
+Geoffrey Irving. Fine-tuning language models from human preferences, 2020.
+
+15
+
+A
+
+Missing Proofs in Section 4
+
+A.1
+
+Single Policy Coverage is Insufficient
+
+b1
+b2
+
+a1
+0.5
+0
+
+a2
+1
+0.5
+
+b1
+b2
+
+a1
+0.5
+1
+
+a2
+0
+0.5
+
+Table 5: Here we present two matrix games, M1 (left) and M2 (right). The row player aims to maximize their reward,
+while the column player aims to minimize it. The Nash Equilibrium in M1 is (a1 , b1 ), and in M2 it is (a2 , b2 ). Note
+that with a dataset covering only these two states, it is impossible to distinguish between these two games, and therefore,
+it is not possible to identify the exact Nash Equilibrium.
+Theorem 3. (Restatement of Theorem 1) For any algorithm and constant C > 0, there exists a Markov game and a
+compliant dataset with UD (π ∗ ) ≤ C such that the output policy is at most an 0.5-Nash equilibrium.
+Proof. We construct two linear Markov games with a shared compliant dataset such that no policy is a good approximate
+Nash equilibrium in both Markov games. Similar to [Cui and Du, 2022a], we consider Markov games with H = 1,
+m = 2, A1 = {a1 , a2 } and A2 = {b1 , b2 } with deterministic reward presented in Table 5.
+The feature mapping for these two games is
+ψ(a1 , b1 ) = e1 , ψ(a1 , b2 ) = e2 , ψ(a2 , b1 ) = e3 , ψ(a2 , b2 ) = e4 ,
+where ei ∈ R4 are the unit base vectors. Directly we have the reward parameters θ as the rewards.
+The behavior policy is π b (a1 , b1 ) = π b (a2 , b2 ) = 1/2 and dataset is D = {(τi , τi′ , yi )}ni=1 with
+τi , τi′ ∈ {(a1 , b1 ), (a2 , b2 ), yi ∼ Ber(exp(r1 (τi ) − r1 (τi′ )))}.
+As the dataset covers the Nash equilibrium for both games, with enough samples, we have UD (π ∗ ) ≤ C for any
+constant C. Suppose the output policy of the algorithm is π = (µ, ν), then π is at most 0.5-Nash equilibrium in one of
+these two games 6 .
+A.2
+
+Unilateral Policy Coverage
+
+Algorithm 1 Value Estimation
+1: Input: Offline dataset D, player index i, policy π.
+2: Initialization: V π
+H+1,i (s) = 0.
+3: for h = H, H − 1, · · · , 1 do
+PN
+4:
+wh,i = [ΣPD,h ]−1 n=1 ψ(snh , anh )[rh,i (snh , anh ) + V πh+1,i (snh+1 )].
+
+Qπh,i (·, ·) = max{⟨ψ(·, ·), wh,i ⟩ − CP [ψ(·, ·)⊤ [ΣPD,h ]−1 ψ(·, ·)]1/2 , 0}
+6:
+V πh,i (·) = Ea∼πh (·) Qπh,i (·, a).
+7: end for
+5:
+
+In our framework, we utilize Maximum Likelihood Estimation (MLE) to estimate the reward function for each
+player. For simplicity, we omit the subscript i for player i. Note that the reward function can be expressed as
+PH
+rθ (τ ) = h=1 rh (sh , ah ) = ⟨ψ(τ ), θ⟩, where θ = [θ1 , θ2 , · · · , θH ] represents the parameters we aim to optimize. At
+each step h, we minimize the NLL loss:
+θb =
+
+argmin
+√
+
+θh ≤ d,h∈[H]
+
+−
+
+N
+X
+n=1
+
+
+log
+
+1(y n = 1) exp(rθ (τ ))
+1(y n = 0) exp(rθ (τ ′ ))
++
+exp(rθ (τ )) + exp(rθ (τ ′ )) exp(rθ (τ )) + exp(rθ (τ ′ ))
+
+
+
+This optimization problem helps in learning a reward function that aligns well with the observed data.
+6
+
+See proof for Theorem 3.3 in [Cui and Du, 2022a]
+
+16
+
+.
+
+Algorithm 2 Best Response Estimation
+1: Input: Offline dataset D, player index i, policy π−i .
+†,π−i
+
+2: Initialization: V H+1,i (s) = 0.
+3: for h = H, H − 1, · · · , 1 do
+4:
+5:
+
+†,π−i n
+n
+n
+n
+n
+n=1 ψ(sh , ah )[r h (sh , ah ) + V h+1,i (sh+1 )].
+†,π−i
+Qh,i (·, ·) = min{⟨ψ(·, ·), wh,i ⟩ + β[ψ(·, ·)⊤ [ΣPh,D ]−1 ψ(·, ·)]1/2 , H}
+†,π−i
+†,π−i
+V h,i (·) = maxai ∈Ai Ea−i ∼πh,−i (·) Qh,i (·, a).
+
+wh,i = [ΣPh,D ]−1
+
+PN
+
+6:
+7: end for
+
+Algorithm 3 Surrogate Minimization
+1: Input: Offline dataset D.
+†,π−i
+
+2: Initialization: Algorithm 1 for computing V π
+1,i and Algorithm 2 for computing V 1,i
+
+(s1 ).
+
+h †,π
+i
+P
+−i
+3: Output: π output = argminπ i∈[m] V 1,i (s1 ) − V π
+1,i (s)
+
+By Lemma 5, we establish a confidence region for the estimated parameters θ:
+(
+)
+r
+dH
++
+log(1/δ)
+Θ = θ : θ − θb r
+≤ Cr = C
++d .
+λ2 n
+ΣD +λI
+We define the optimistic reward and the pessimistic reward as follows:
+rh (s, a) := max ⟨ψ(s, a), θh ⟩ , rh (s, a) := min ⟨ψ(s, a), θh ⟩ .
+θ∈Θ
+
+θ∈Θ
+
+We define the Bellman operator:
+[Bh,i Vh+1,i ](s, a) = rh,i (s, a) +
+
+X
+
+P (s′ | s, a)Vh+1,i (s), ∀i ∈ [m], h ∈ [H], s ∈ S, a ∈ A.
+
+s′ ∈S
+
+Lemma 1. With probability at least 1 − δ, we have
+rh,i (s, a)−2Cr ψ h (s, a) [Σr +λI]−1 ≤ rh,i (s, a) ≤ rh,i (s, a) ≤ rh,i (s, a) ≤ rh,i (s, a)+2Cr ψ h (s, a) [Σr +λI]−1 .
+D
+
+D
+
+This lemma establishes bounds on the reward function rh,i (s, a). Specifically, the optimistic reward and pessimistic
+reward are under constrains at a high probability, up to a margin of error determined by Cr and the norms of the feature
+representation ψ h (s, a).
+Proof. We begin by referencing Lemma 5, which establishes that with probability at least 1−δ, the estimated parameters
+θ reside within the confidence region Θ. This allows us to assert the following relationships:
+rh,i (s, a) = min ⟨ψ(s, a), θh ⟩ ≤ rh,i (s, a) ≤ rh,i (s, a) = max ⟨ψ(s, a), θh ⟩ .
+θ∈Θ
+
+θ∈Θ
+
+Next, we quantify the deviation between the optimistic reward and the true reward:
+rh,i (s, a) − rh,i (s, a)
+= ψ(s, a), θh − ⟨ψ(s, a), θh ⟩
+E
+D
+E D
+= ψ h (s, a), θ − θb + ψ h (s, a), θb − θ
+≤ ψ h (s, a) [Σr +λI]−1 θ − θb
+D
+
+ΣrD +λI
+
++ ψ h (s, a) [Σr +λI]−1 θb − θ
+D
+
+≤2Cr ψ h (s, a) [Σr +λI]−1 .
+D
+
+A similar argument can be applied to show that the pessimistic reward is also bounded:
+rh,i (s, a) − rh,i (s, a) ≤ 2Cr ψ h (s, a) [Σr +λI]−1 .
+D
+
+17
+
+ΣrD +λI
+
+Lemma 2. With probability at least 1 − δ, the following bounds hold for all time steps h ∈ [H], for each agent i ∈ [m],
+for all states s ∈ S, and actions a ∈ A:
+π
+V πh,i (s, a) ≤ Vh,i
+(s, a),
+†,π−i
+
+Vh
+
+†,π−i
+
+(s, a) ≥ Vh
+
+(s, a).
+
+Proof. We prove the statements by mathematical induction. The base case for step H + 1 holds trivially, as all quantities
+are zero at this final step. Suppose step h + 1 holds and we consider step h. We will show they also hold for step h. For
+the first argument of pessimistic value, we have
+V πh,i (s) =Ea∼πh (s) Qπh,i (s, a)
+
+
+≤Ea∼πh (s) Bh,i V πh+1,i (s, a)
+
+
+π
+≤Ea∼πh (s) Bh,i Vh+1,i
+(s, a)
+
+(Lemma 6)
+(Lemma 2)
+
+π
+=Vh,i
+(s).
+
+For the second argument of optimistic value, we have
+†,π−i
+
+†,π−i
+
+V h,i (s, a) = max Ea−i ∼πh,−i (s) Qh,i (·, a)
+ai ∈Ai
+h
+i
+†,π−i
+≥ max Ea−i ∼πh,−i (s) Bh,i V h+1,i (s, a)
+ai ∈Ai
+h
+i
+†,π−i
+(s, a)
+≥ max Ea−i ∼πh,−i (s) Bh,i Vh+1,i
+
+(Lemma 6)
+(Lemma 2)
+
+ai ∈Ai
+†,π
+
+=Vh,i −i (s, a).
+These complete the induction step and shows the lemma holds for all steps.
+Lemma 3. With probability at least 1 − δ, we have
+"
+H
+X
+π
+π
+V1,i (s1 ) − V 1,i (s1 ) ≤ Eπ 2CP
+∥ψ(sh , ah )∥[ΣP
+
+D,h +λI]
+
+−1
+
++ 2Cr
+
+h=1
+†,π−i
+†,π
+V 1,i (s1 ) − V1,i −i (s1 ) ≤ Eπ† ,π−i
+i
+
+"H
+X
+
+#
+
+H
+X
+
+ψ(sh , ah ) [Σr +λI]−1 ,
+D
+
+h=1
+
+2CP ∥ψ(sh , ah )∥[ΣP +λI]−1 + 2Cr
+
+H
+X
+
+D
+
+h=1
+
+#
+ψ(sh , ah ) [Σr +λI]−1 .
+D
+
+h=1
+
+This lemma establishes bounds on the difference between the expected value of the policy and its lower or upper
+π
+estimates. Using properties of the Bellman operator, we can show that the difference between V1,i
+(s1 ) and V π1,i (s1 ) is
+controlled by the expected norms of the feature representations ψ and ψ, scaled by constants CP and Cr .
+Proof. We prove each bound separately, utilizing the results from Lemma 6.
+For the first bound of pessimistic value estimation, we analyze the expected action-value Qπ1,i (s1 , a) and its lower
+estimate, applying the Bellman operator iteratively. We have
+π
+V1,i
+(s1 ) − V π1,i (s1 )
+
+=Ea∼π1 (s1 ) Qπ1,i (s1 , a) − Ea∼π1 (s1 ) Qπ1,i (s1 , a)
+h
+i
+≤Ea∼π1 (s1 ) B1,i V2π (s1 , a) − B1,i V 2 (s1 , a) + 2CP ∥ψ(s1 , a)∥[ΣP +λI]−1 + 2Cr ψ 1 (s1 , a) [Σr +λI]−1
+D,1
+h
+i D
+π
+π
+=Ea∼π1 (s) V2,i (s2 ) − V 2,i (s2 ) + 2CP ∥ψ(s1 , a)∥[ΣP +λI]−1 + 2Cr ψ 1 (s1 , a) [Σr +λI]−1
+D,1
+
+D
+
+≤···
+"
+≤Eπ 2CP
+
+H
+X
+
+∥ψ(sh , ah )∥[ΣP
+
+D,h +λI]
+
+h=1
+
+−1
+
++ 2Cr
+
+H
+X
+
+#
+ψ h (sh , ah ) [Σr +λI]−1 .
+D
+
+h=1
+
+18
+
+Similarly, for optimistic value estimation, we have
+†,π−i
+
+V 1,i
+
+†,π
+
+(s1 ) − V1,i −i (s1 )
+†,π
+
+= max Ea−i ∼π1,−i (s1 ) Q1,i (s1 , a) − max Ea−i ∼π1,−i (s1 ) Q1,i −i (s1 , a)
+ai ∈Ai
+ai ∈Ai
+i
+h
+†,π
+≤Ea∼(π† ,π−i ) Q1,i (s1 , a) − Q1,i −i (s1 , a)
+i
+h
+i
+†,π−i
+†,π
+≤Ea∼(π† ,π−i ) B1 V 2
+(s1 , a) − B1 V2 −i (s1 , a) + 2CP ∥ψ(s1 , a1 )∥[ΣP +λI]−1 + 2Cr ψ 1 (s1 , a) [Σr +λI]−1
+D
+
+i
+
+D
+
+≤···
+≤Eπ† ,π−i
+
+"H
+X
+
+2CP ∥ψ(sh , ah )∥[ΣP +λI]−1 + 2Cr
+
+#
+
+H
+X
+
+ψ h (sh , ah ) [Σr +λI]−1 .
+
+D
+
+i
+
+h=1
+
+D
+
+h=1
+
+Lemma 4. Under the event in Lemma 2,
+X h
+
+Nash-gap(π output ) ≤
+
+i
+†,π ∗
+V 1,i −i (s1 ) − V π1,i (s) .
+
+i∈[m]
+
+Proof.
+i
+X h π′ ,π∗
+π
+V1,i −i (s1 ) − V1,i
+(s)
+
+Nash-gap(π output ) = max
+′
+π
+
+i∈[m]
+
+i
+X h †,π∗
+≤
+V 1,i −i (s1 ) − V π1,i (s) .
+i∈[m]
+
+Utilizing Lemma 2, it is straightforward to derive this lemma. The proof is similar to the proof for Lemma 21 in [Cui
+and Du, 2022b].
+Theorem 4. Set λ = 1 for Algorithm 3. With probability 1 − δ, we have
+"H
+#
+H
+X
+X
+output
+∗
+CP ∥ψ(sh , ah )∥[ΣP +λI]−1 + Cr
+Nash-gap(π
+) ≤ max 4Eπi ,π−i
+ψ(sh , ah ) [Σr +λI]−1 ,
+πi
+
+D,h
+
+h=1
+
+D
+
+h=1
+
+√
+e dH) and CP = O(dH).
+e
+where Cr = O(
+Proof. By Lemma 3 and Lemma 4, we have
+Nash-gap(π output )
+i
+X h †,π∗
+∗
+≤
+V 1,i −i (s1 ) − V π1,i (s)
+i∈[m]
+
+"
+≤
+
+X
+
+Eπ 2CP
+
++
+
+∥ψ(sh , ah )∥[ΣP
+
+D,h +λI]
+
+−1
+
++ 2Cr
+
+h=1
+
+i∈[m]
+
+X
+
+H
+X
+
+Eπ† ,π−i
+
+#
+ψ h (sh , ah ) [Σr +λI]−1
+D
+
+h=1
+
+"H
+X
+
+2CP ∥ψ(sh , ah )∥[ΣP +λI]−1 + 2Cr
+
+H
+X
+
+D
+
+i
+
+i∈[m]
+
+H
+X
+
+h=1
+
+#
+ψ h (sh , ah ) [Σr +λI]−1
+D
+
+h=1
+
+i
+X h †,π∗
+π∗
++
+V1,i −i (s1 ) − V1,i
+(s1 )
+i∈[m]
+∗
+≤ max 4Eπi ,π−i
+
+πi
+
+"H
+X
+
+CP ∥ψ(sh , ah )∥[ΣP
+
+D,h +λI]
+
+h=1
+†,π ∗
+
+−1
+
++ Cr
+
+H
+X
+
+#
+ψ h (sh , ah ) [Σr +λI]−1 ,
+
+h=1
+∗
+
+π
+where we leverage the fact that V1,i −i (s1 ) − V1,i
+(s1 ) for Nash equilibrium π ∗ .
+
+19
+
+D
+
+Algorithm 4 Pipeline of Preference-Based Multi-agent Reinforcement Learning
+1: Input: Dataset D = {τi , τi′ , yi }N
+i=1 .
+2: Train a agent-wise reward model rϕ ;
+3: Train a imitation model πb ;
+4: Apply MARL algorithm to learn πw with distribution-based pessimism from πb ;
+5: return πw .
+
+Intuitively, the proof consists of two main phases: 1) we first reduce the MARL problem to the MARLHF problem,
+as preference signals can be sampled given the real rewards; 2) we then observe that in MARL problems, a Nash
+equilibrium is only identifiable when all adjacent actions are represented in the dataset. This observation establishes the
+necessity of unilateral coverage. The sufficiency of unilateral coverage in MARLHF (Theorems 2, 4) is then derived
+from its sufficiency in MARL and the reduction from MARL to MARLHF.
+A.3
+
+Auxiliary Lemmas
+
+Lemma 5. (Lemma 3.1 in [Zhu et al., 2023]) With probability at least 1 − δ, we have
+r
+d + log(1/δ)
+b
+θ−θ r
+≤C
++ λB 2 .
+λ2
+ΣD +λI
+Lemma 6. (Lemma A.1 in [Zhong et al., 2022]) With probability at least 1 − δ, we have
+0 ≤ Bh V h+1,i (·, ·) − Qh,i (·, ·) ≤ 2CP ∥ψ(·, ·)∥[ΣP
+
+D,h +λI]
+
+0 ≥ Bh V h+1,i (·, ·) − Qh,i (·, ·) ≥ −2CP ∥ψ(·, ·)∥[ΣP
+
+−1
+
+,
+
+−1
+D,h +λI]
+
+where CP = CdH
+
+,
+
+p
+log(2dN H/δ).
+
+B
+
+Experiment Details
+
+B.1
+
+Implementation Details
+
+Pipeline Our pipeline for Preference-Based Multi-Agent Reinforcement Learning (PbMARL), detailed in Algorithm 4,
+outlines the key steps for training agents using preference datasets. The process begins with training an agent-specific
+reward model rϕ , followed by learning a imitation model πb . The final policy πw is then optimized using a MARL
+algorithm with distribution-based pessimism derived from πb .
+Model Configurations The models used in our experiments are designed to effectively handle the complexities of
+multi-agent environments. Our reward model rϕ is a fully connected neural network, featuring action and observation
+embedding layers followed by hidden layers. The MADPO agent network uses RNN to output its Q-values, enabling
+the agent to make informed decisions based on its observations and learned policies. MABCQ and MAIQL, as tested
+in Section 6, are modified versions of BCQ Fujimoto et al. [2019] and IQL Kostrikov et al. [2021] tailored for
+MARL. Similar to VDN, the Q-functions in MABCQ and MAIQL are designed to represent the cumulative rewards
+of all agents collectively. This adaptation ensures compatibility with the multi-agent setting while preserving the
+theoretical and practical foundations of the original algorithms. In MAIQL, the coefficient for expectile regression, τ ,
+is consistently set to 0.95 across all experiments. For MABCQ, random noise addition is omitted due to the discrete
+action spaces in the tested environments, and the VAE is replaced with a policy generator trained via imitation learning.
+Table 6 lists the main hyperparameters used in our experiments, while other details can be checked in our codebase:
+https://github.com/NataliaZhang/marlhf.
+Dataset Configurations As mentioned in Section 6.2, we collected trajectories in different environments using
+various policies to ensure a diverse dataset. Each dataset contains 38400 trajectories in each MPE environment and 960
+trajectories in Overcooked. The number of trajectory pairs is chosen as 10 times the number of trajectories. Preference
+tags were then generated for these trajectory pairs in the mixed datasets. To adjust the randomness of the preferences, a
+steepness parameter was introduced as a scalar of the standardized reward. This configuration ensures a comprehensive
+dataset that can effectively support the evaluation of our methods.
+20
+
+Hyperparameter
+
+Default Value
+
+MSE Loss Coefficient α
+Pessimism Coefficient β
+Prediction Steepness
+Episode length
+Reward Model Type
+RNN Hidden Size
+MLP Layer Dimension
+Reward Model Layers
+Reward Model Epochs
+Reward Model Learning Rate
+Reward Model Batch Size
+IL Learning Rate
+IL Epochs
+IL Batch Size
+Policy Model Learning Rate
+Policy Model Epochs
+Policy Model Batch Size
+MAIQL Expectile Regression Coefficient
+Optimizer
+
+1 (MPE), 1e-3 (Overcooked)
+1 (Spread, Reference), 10 (Tag, Overcooked)
+5
+26 (MPE), 400 (Overcooked)
+MLP (Spread, Reference, Overcooked), RNN (Tag)
+64 (Tag)
+64
+4
+100
+1e-3
+256
+1e-3
+100
+128
+1e-3
+1e4 (Spread, Reference), 1e6 (Tag), 1e5 (Overcooked)
+128
+0.95
+Adam
+
+Table 6: Main hyperparameters in experiments
+B.2
+
+Tasks Descriptions
+
+MPE is chosen for our experiments due to its versatility and well-established use as a benchmark for MARL algorithms.
+Among its variety of scenarios, the following three methods are chosen for our experiments:
+• Simple Spread
+– Objective: Group of agents spread out. Each agent aims to occupy a unique landmark while avoiding
+collisions with other agents.
+– Challenge: There is a potential conflict between the collision penalty and the spreading goal. Any biased
+policy would pushes the agents away from their targets, leading to suboptimal performance. Successfully
+balancing these objectives is critical to avoid negative learning outcomes.
+• Simple Tag
+– Objective: Adversaries aim to catch the good agents cooperatively, while good agents aim to avoid being
+caught.
+– Challenge: The adversaries only gets reward at the timestep of catching a good agent, so recovering the
+reward distribution across time becomes a challenging work. Note that the original environment is a 1v3
+adversary game, and we convert it into a 3-agent cooperative game for better evaluation by fixing the
+good agent with a MAPPO pretrained policy. This environments requires high operation precision.
+• Simple Reference
+– Objective: Agents aim to reach target landmarks that are known only to others by communication.
+– Challenge: The requirement for communication increases the complexity of the action space and the
+dependency among cooperating agents. The performance of agents is affected particularly under unilateral
+policy conditions, where misaligned communication signals can significantly impact performance.
+• Overcooked
+– Objective: Two agents in a gridworld scoring points by repeatedly completing a three-step process:
+gathering ingredients, cooking, and serving dishes. Each step requires interacting with the environment at
+specific locations and orientations.
+– Challenge: The episode length in this environment is notably long (400 timesteps), with sparse reward
+signals. This creates significant challenges for training the reward model, as it may incorrectly attribute
+rewards to specific behaviors, resulting in inaccurate training objectives and suboptimal learning outcomes.
+These tasks provide a robust framework for evaluating the effectiveness and adaptability of our offline MARLHF
+algorithm in various multi-agent settings. Additionally, they represents the common environments that are sensitive to
+21
+
+dataset coverage, where dataset with unilateral policy can easily disrupt cooperation. Therefore, robust approaches are
+essential to ensure stable performance across different scenarios.
+
+B.3
+
+Scalability Analysis
+
+To evaluate the scalability of our approach, we tested the performance of different methods as the number of agents
+increased. The experiments were conducted in the Spread-v3 environment, and the test returns per agent were recorded
+in Table 7.
+In our experiments, we observed that as the number of agents increases, convergence times lengthen and the complexity
+of the problem grows, mirroring the challenges typically encountered in traditional MARL settings. While our current
+approach manages this scaling without introducing new problems, it does not specifically address the inherent issues of
+instability and complexity that are well-documented in traditional MARL.
+Further work may involve optimizing the algorithms to better handle larger-scale multi-agent environments or exploring
+alternative methods that maintain high performance even as the agent count increases.
+
+Mix-Unilateral
+Pure-Expert
+Trivial
+
+4 agents
+
+5 agents
+
+6 agents
+
+7 agents
+
+-31.13 ± 0.33
+-31.71 ± 0.17
+-50.83
+
+-28.26 ± 0.43
+-28.80 ± 0.10
+-36.92
+
+-26.92 ± 0.33
+-27.16 ± 0.39
+-28.56
+
+-25.48 ± 0.13
+-26.29 ± 0.32
+-23.62
+
+Table 7: Test returns per agent in spread-v3 when agent scales. We ran 5 seeds for each dataset and kept all parameters
+at their default values (α = 1, β = 1). Trivial represents test returns where all agents take a random policy, serving as
+a comparison. As the number of agents scales, the performance of the method generally decrease, and is eventually
+outperformed by the trivial policy when it reaches 7 agents.
+
+B.4
+
+Ablation Study Details
+
+Figure 3: Reward model training curves on Spread-v3 Diversified dataset. Extra positive MSE regularization results in
+lower final training loss.
+22
+
+(a)
+
+Pure-Expert
+Spread
+
+(b)
+
+Diversified α = 0
+Spread
+
+(c)
+
+Diversified
+Spread
+
+(d)
+
+Pure-Expert
+Tag
+
+(e)
+
+Diversified α = 0
+Tag
+
+(f)
+
+Diversified
+Tag
+
+(g)
+
+Pure-Expert
+Reference
+
+(h)
+
+Diversified α = 0
+Reference
+
+(i)
+
+Diversified
+Reference
+
+Figure 4: Predicted rewards and ground truth (both standardized) in all environments. Our method with diversified
+dataset and reward regularization gives predictions that approximate the ground truth the best.
+
+α
+Spread-v3
+Tag-v3
+Reference-v3
+
+0
+
+0.001
+
+0.01
+
+0.1
+
+1
+
+10
+
+100
+
+1000
+
+0.350
+0.465
+0.358
+
+0.345
+0.431
+0.356
+
+0.347
+0.440
+0.362
+
+0.351
+0.455
+0.374
+
+0.361
+0.484
+0.393
+
+0.389
+0.531
+0.434
+
+0.460
+0.603
+0.508
+
+0.603
+0.676
+0.623
+
+Table 8: NLL loss over diversified dataset. Appropriate regularization can assist the reward model in learning more effectively,
+leading to a reduction in NLL loss. Strengthening regularization (larger α) sometimes leads to lower NLL loss, indicating better
+capability of capturing differences in reward signal.
+
+In this section, we explore the effects of specific components of our method, focusing on the influence of MSE
+regularization and the use of diversified datasets. Our ablation studies collectively underscore the importance of MSE
+regularization and diversified datasets in enhancing the robustness and accuracy of the reward models within our
+framework.
+The incorporation of MSE regularization plays an important role in improving model stability and convergence. As
+seen in Figure 3, appropriate regularization leads to lower final training loss, suggesting a more stable learning process.
+Lower MSE between predicted reward and ground truth (significantly below 2) can indicate a strong correlation between
+23
+
+Diversified
+Mix-Unilateral
+Mix-Expert
+Pure-Expert
+
+Spread-v3
+MSE
+
+Tag-v3
+MSE
+
+Reference-v3
+MSE
+
+Overcooked
+MSE
+
+0.434
+0.647
+0.578
+0.673
+
+1.46
+1.52
+1.78
+1.48
+
+1.19
+1.09
+1.09
+2.33
+
+2.04
+1.98
+2.17
+1.72
+
+Table 9: The mean squared error (MSE) between the standardized predicted rewards and the standardized ground truth
+rewards.
+the two (cf. 9). In the MPE experiments, the reward model predictions align closely with the ground truth, and the
+optimization benefits from dataset diversity are particularly pronounced in the Reference-v3 and Spread-v3 scenarios.
+However, in more complex environments, the reward may exhibit more patterns, making MSE less effective as a metric
+for assessing reward model quality. For example, in the Overcooked environment, assigning rewards for cooking the
+dish and serving the dish results in very similar returns, as a complete scoring cycle involves both actions, but these
+two reward function will have squared difference of 2.
+Additionally, our evaluation of the Negative Log-Likelihood (NLL) loss over diversified datasets reveals that stronger
+regularization can sometimes lead to a reduction in NLL loss, as listed in Table 8. This implies that the model becomes
+more capable of capturing nuances in the reward signals as the regularization parameter, α, is increased. However, it is
+also important to balance the strength of regularization, as overly strong regularization could potentially hinder the
+model’s flexibility in capturing complex reward structures.
+The interplay between regularization strength and dataset diversity is critical for achieving optimal model performance
+in complex multi-agent settings.
+
+24
+
+

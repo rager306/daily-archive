@@ -1,0 +1,2915 @@
+SWE-bench Science: Can Coding Agents Resolve
+Engineering Tasks in Science?
+Zhipeng Xu1,2 , Jiahao Lu1,2 , Yining Zheng1,2 , Yuxin Wang1,2,† , Xipeng Qiu1,2,†
+,
+
+1 Shanghai Innovation Institute 2 Fudan University
+
+arXiv:2608.19799v1 [cs.CL] 20 Aug 2026
+
+† Corresponding author: wangyuxin@sii.edu.cn, xpqiu@sii.edu.cn
+
+Abstract
+Software increasingly functions as part of the scientific instrument itself, making failures in scientific
+code capable of compromising not only program behavior but also the evidence underlying scientific
+conclusions. Yet existing evaluations of coding agents largely emphasize aggregate task success,
+providing limited insight into why agents fail when repairing scientific software. We introduce
+SWE-bench Science, a repository-level benchmark for scientific software engineering comprising
+119 tasks from 98 GitHub repositories across 20 scientific domains. Each task is organized into
+one of three paradigms: Issue-driven, Expert-exploratory, and Engineering-integration. Even the
+best-performing agent, Claude Code with Opus-5 (max), achieves a pass@1 below 50%, highlighting
+the substantial challenges posed by scientific software engineering. We identify four recurring failure
+mechanisms: deficits in scientific knowledge or abstraction, misguided exploration or surface-level
+repair, incomplete repair coverage or system integration, and failures to generalize scientific knowledge
+beyond observed cases in our analysis. We further conduct a paired ablation that removes explicit
+scientific guidance while preserving the repository and executable engineering context. The results
+show that scientific knowledge is not uniformly beneficial: well-grounded information can constrain
+repair and improve average performance and token efficiency, whereas poorly aligned guidance can
+induce anchoring and does not necessarily improve exact repair success. Together, SWE-bench Science
+provides a broad testbed for studying both the capabilities and failure mechanisms of coding agents
+in scientific software engineering.
+Code: https://github.com/OpenMOSS/SWE-bench-Science
+Data: https://huggingface.co/datasets/OpenMOSS-Team/SWE-bench-Science
+Leaderboard: https://swescience.github.io
+
+1
+
+Introduction
+
+Software is no longer merely an aid to science; it is part of the instrument through which scientific claims are
+produced. Research groups rely on code to run simulations, process instrument outputs, train surrogate
+models, search chemical or biological candidates, manage high-throughput experiments, and reproduce
+published results. A defective patch can therefore corrupt not only a program output but also the evidence
+behind a scientific conclusion.
+† Corresponding author.
+
+1
+
+Figure 1 Pass@1 comparison of coding agents on SWE-bench Science.
+
+Understanding why coding agents fail on scientific software is as important as measuring whether their
+patches pass tests. A failed repair may reflect an incorrect scientific abstraction, superficial exploration of an
+observed symptom, incomplete integration across a software system, or an inability to generalize a scientific
+principle beyond visible cases. Aggregate test scores cannot distinguish these sources and therefore provide
+limited guidance for improving scientific coding agents. Existing benchmarks measure function synthesis and
+repository-level software repair [1–3], while scientific coding benchmarks cover curated research problems,
+paper-grounded implementations, scientific workflows, repository execution, and production scientific
+codebases [4–9]. However, repository-level coverage across scientific domains and the analysis of failure
+mechanisms remain limited, leaving broad cross-domain scientific software engineering underexplored.
+We introduce SWE-bench Science, a repository-level benchmark containing 119 tasks from 98 unique GitHub
+repositories and spanning 20 scientific domains. Each task is manually inspected to verify its scientific contract,
+reproducibility, and evaluation validity. We organize the benchmark into three scientific task paradigms—
+Issue-driven, Expert-exploratory, and Engineering-integration—that capture complementary requirements
+in scientific software maintenance. Beyond measuring task success, we manually analyze unsuccessful
+attempts through four recurring scientific failure mechanisms: scientific-knowledge or abstraction deficits,
+misguided exploration or surface-level repair, incomplete repair coverage or system integration, and failures
+of scientific-knowledge generalization. Runtime or evaluation-path failures are recorded separately. We
+further construct a paired comparison that removes explicit scientific auxiliary information while preserving
+the repository and executable engineering context. The resulting analysis shows that scientific knowledge is
+not uniformly beneficial: its effect depends on how the knowledge is organized and grounded in executable
+evidence, because well-targeted information can constrain the repair while poorly aligned information can
+induce anchoring or substitute for independent validation.
+Our contributions are:
+1. We introduce a broad-coverage scientific software engineering benchmark with 119 tasks from 98 unique
+GitHub repositories, spanning 20 scientific domains, and evaluate representative frontier coding agents on
+these tasks.
+2. We analyze unsuccessful scientific software repairs and identify four recurring failure mechanisms,
+revealing concrete directions for improving scientific abstraction, disciplined exploration, system-wide
+repair, and scientific-knowledge generalization.
+3. We provide a paired scientific-knowledge ablation that removes explicit scientific guidance while preserving
+the executable engineering context. The results show that the organization and grounding of scientific
+
+2
+
+knowledge matter in scientific software engineering: additional information can improve average scores
+and token efficiency, but does not automatically improve exact repair success.
+
+2
+
+Related Work
+
+2.1
+
+Code and Software Engineering Benchmarks
+
+Early code-generation benchmarks evaluate whether models can synthesize short functions from naturallanguage prompts. HumanEval [1] and MBPP [2] are representative examples, focusing on unit-test correctness
+for self-contained programming problems. Later benchmarks increase realism by requiring repository-level
+modification and issue resolution. SWE-bench [3] evaluates whether language models can resolve real
+GitHub issues by generating patches against project test suites. More recent benchmarks extend this setting
+toward longer-horizon agentic engineering: SWE-Bench Pro targets complex enterprise-level repository tasks,
+DeepSWE uses original tasks and hand-written verifiers to reduce contamination and oracle ambiguity, and
+Terminal-Bench evaluates agents on hard, realistic tasks in command-line environments [10–12]. Together,
+these benchmarks measure increasingly realistic software engineering capabilities, including repository
+inspection, fault localization, multi-file modification, tool use, and test-validated repair.
+
+2.2
+
+LLMs for Scientific Workflows
+
+Scientific-code benchmarks mainly study two settings. SciCode and MMSciCode evaluate self-contained
+scientific programming and paper-grounded function implementation, respectively, making them closer
+to non-agentic programming evaluation than to repository-level software engineering [4, 5]. A second
+line evaluates coding within broader research workflows: ResearchCodeBench and LMR-BENCH study
+research-paper code implementation and research-code reproduction [13, 14]; ScienceAgentBench, SUPER,
+and CSR-Bench emphasize data-driven scientific discovery, research-repository execution, and researchsystem deployment [6, 7, 15]; and RExBench, AutoMat, and AstaBench evaluate research-code extension,
+scientific workflow recovery, and multi-stage scientific tasks [8, 16, 17]. AInsteinBench is closest to our setting
+because it targets scientific computing through issue-derived and synthesized feature tasks in production
+repositories [9]. SWE-Bench 5G studies specification-dependent telecom repair [18]. SWE-bench Science
+instead centers scientific software engineering as an applied engineering problem: coding agents must inspect
+production repositories, modify interacting components, and preserve scientific validity across Issue-driven,
+Expert-exploratory, and Engineering-integration tasks. This focus differs from solving standalone scientific
+programming problems or completing broader research workflows by evaluating the maintenance and
+extension of scientifically valid software systems.
+Benchmark
+
+Task count
+
+SciCode [4]
+
+80
+
+16
+
+–
+
+MMSciCode [5]
+
+624
+
+6
+
+–
+
+212
+28
+102
+801
+100
+12
+85
+>2,400
+244
+210
+
+1
+1
+4
+–
+5
+–
+1
+–
+6
+1
+
+20
+23
+30
+694
+100
+–
+–
+–
+6
+3
+
+119
+
+20
+
+98
+
+ResearchCodeBench [13]
+LMR-BENCH [14]
+ScienceAgentBench [6]
+SUPER [7]
+CSR-Bench [15]
+RExBench [16]
+AutoMat [17]
+AstaBench [8]
+AInsteinBench [9]
+SWE-Bench 5G [18]
+SWE-bench Science (ours)
+
+# Scientific domains
+
+GitHub repos
+
+Scientific focus
+
+Task source
+
+Function
+programming
+Function
+programming
+Research code
+Research code
+Research code
+Research code
+Research code
+Research code
+Research code
+Research code
+Scientific computing
+Scientific software
+engineering
+Scientific software
+engineering
+
+expert
+expert
+expert
+expert
+expert
+expert
+–
+expert
+expert
+expert
+issue/expert
+issue
+issue/expert/engineer
+
+Table 1 Comparison of coding-agent benchmarks for science. SWE-bench Science covers 20 scientific domains.
+
+3
+
+(a) Benchmark composition
+
+(b) Task context and patch scale
+
+Scientific domains
+
+3%
+3%
+3%
+4%
+4%
+6%
+
+Task paradigms
+Issue-driven
+Expert-exploratory
+Engineering-integration
+
+15.1%
+
+20%
+
+Minimum
+
+119
+
+119
+
+13%
+
+tasks
+
+6%
+9%
+
+Maximum
+
+Input non-empty lines
+
+tasks
+43.7%
+
+41.2%
+
+Mean
+
+11%
+
+174
+
+80,600.12
+
+2,029,051
+
+117.81
+
+1,035
+
+44.53
+
+458
+
+10%
+
+Patch +
+Chemistry (n=24)
+Materials Science and
+Engineering (n=16)
+Biology (n=13)
+Biomedical Engineering
+(n=12)
+Physics (n=11)
+Mathematics (n=7)
+Astronomy (n=7)
+
+Atmospheric Science
+(n=5)
+Civil Engineering
+(n=5)
+Surveying and Mapping
+Science and Technology
+(n=3)
+Geophysics (n=3)
+Mechanics (n=3)
+Electrical Engineering
+(n=2)
+Marine Science (n=2)
+
+Geography (n=1)
+Aeronautical and
+Astronautical Science
+and Technology (n=1)
+Nuclear Science and
+Technology (n=1)
+Computer Science and
+Technology (n=1)
+Statistics (n=1)
+Information and
+Communication
+Engineering (n=1)
+
+1
+
+Patch 0
+
+Exact statistics over 119 tasks
+
+Figure 2 Benchmark coverage and scale over 119 tasks. (a) Scientific-domain distribution and task-paradigm composition.
+The domain legend reports the task count for each of the 20 domains; the task-paradigm chart contains 52 Issue-driven
+tasks (43.7%), 49 Expert-exploratory tasks (41.2%), and 18 Engineering-integration tasks (15.1%). Chemistry is the largest
+domain with 24 tasks, followed by Materials Science and Engineering with 16, Biology with 13, Biomedical Engineering
+with 12, and Physics with 11. (b) Minimum, mean, and maximum input and reference-patch sizes, shown directly in
+horizontal summary bands. Input size is measured as non-empty physical lines in the task code, while Patch + and Patch
+− count additions and deletions in the standard reference diff.
+
+3
+
+SWE-bench Science
+
+We cover 98 unique GitHub repositories and construct 119 tasks across 20 scientific domains, with the domain
+and task-paradigm composition shown in Figure 2(a). The five largest domains contain 76 tasks (63.9%),
+while six domains contribute one task each. The task set contains 52 Issue-driven, 49 Expert-exploratory, and
+18 Engineering-integration tasks. The complete scientific-domain counts are reported in Appendix Table 4.
+The benchmark also spans substantial variation in repository context and repair size. Figure 2(b) shows that
+non-empty input code averages 80,600.12 lines and ranges from 174 to 2,029,051 lines. Reference patches
+add 117.81 lines on average, with a range of 1–1,035, and delete 44.53 lines on average, with a range of 0–458.
+Direct labels preserve the exact values despite the large scale differences among these quantities.
+
+3.1
+
+Task Schema
+
+The following fields are visible to the agent in the standard condition:
+• Repository snapshot: the exact pre-task state with locked dependencies and runnable entry points,
+
+4
+
+stripped of Git history, remotes, future changelogs, build caches, and solution-linked artifacts.
+• Problem statement: a specification frozen before test and reference-patch authors inspect one another’s
+artifacts.
+• Required scientific context 𝑐 𝑖 : local, versioned definitions and constraints required for a well-posed task;
+it is held fixed in every condition.
+req
+
+• Public tests: visible software and scientific assertions that support interactive debugging.
+Evaluator-only fields include private tests, contract labels, reference and alternative-valid patches, scientificrationale and localization support blocks, expected files, source and difficulty metadata, contamination tier,
+and post-hoc annotations. Private tests are mounted only after patch submission in a separate evaluator
+container. None of fields is available through the agent workspace, environment variables, logs, or task
+metadata.
+
+3.2
+
+Example.
+
+Figure 3 illustrates an evaluation pipeline in the benchmark for an example task. The task asks the agent
+to reconcile two periodic representations of the same crystal while preserving their physical energy. The
+example shows the agent-visible problem statement, scientific context, and workspace snapshot as the input
+to the agent-driven coding loop and the clean evaluation phase. Public checks support debugging, whereas
+private scientific cases determine whether the submitted patch completes the intended repair.
+
+Task evaluation in SWE-bench Science
+1. Inputs to the agent
+
+2. Agent-driven coding loop
+
+Problem statement
+
+Apply patch
+
+Patch
+
+Two converged periodic workflows
+represent the same crystal,
+but their energies disagree.
+
+model.patch
+
+scientific issue is fixed before test/patch review
+
+clean verifier baseline
+
+final Agent output
+
+emit
+
+Science content
+Periodic Hartree–Fock
+primitive-cell k points ↔ Γ supercell
+energy per primitive cell is invariant
+Papers + examples
+
+3. Phase 2 · Clean evaluation
+
+Coding agent
+inputs
+
+Workspace snapshot
+
+inspect workspace
+edit source
+form a scientific hypothesis
+Agent chooses when to test and revise
+
+Actual Agent-visible payload
+
+run
+public
+test
+
+feedback
+revise
+
+Public test
+ΔE = |Eₖ − EΓ/N|
+≤ 5×10⁻⁵ Hartree/cell
+allowlist only · no private tests or author material
+
+Public
+
+Private
+
+1 diagnostic check
+
+10 scientific cases
+
+• convergence
+• finite values
+• representation gap
+
+• FFT mesh parity
+• k-point ordering
+• cell geometry
+• MDF integrals
+
+Agent debug
+
+Pass@1
+
+Verified result
+Correct repair
+
+Incomplete repair
+
+public PASS
+private 10/10 · Pass@1 = 1
+
+public PASS
+private 7/10 · Pass@1 = 0
+
+returns convergence + energy gap
+
+Figure 3 Evaluation pipeline in SWE-bench Science for an example task. The diagram shows the frozen agent-visible
+inputs, the agent-driven coding loop, and the clean evaluation phase with separate public diagnostics and private scientific
+cases.
+
+4
+
+Benchmark Construction
+
+To evaluate agent performance across different capability dimensions in real scientific software development
+and maintenance, we establish a unified Chain-of-Evidence Protocol and derive three task paradigms with
+
+5
+
+clearly differentiated evaluation goals: Issue-driven, Expert-exploratory, and Engineering-integration
+tasks. Issue-driven tasks emphasize localized repair and regression avoidance, Expert-exploratory tasks
+require autonomous investigation of scientific discrepancies, and Engineering-integration tasks evaluate
+cross-module completion of end-to-end scientific workflows.
+
+Figure 4 Combined overview of raw-task construction and class-specific task re-design.
+
+All raw tasks are first generated according to a unified and auditable four-stage construction process. The
+process is designed to control environmental interference and prevent information leakage.
+1. Source Sampling and Screening.
+We collect real issues, pull requests (PRs), commit records, and related literature from candidate opensource scientific-computing repositories. We then apply predefined screening criteria to remove overly
+simple fixes, tasks with unstable environment dependencies, tasks with severe solution leakage, and
+projects that substantially overlap with existing samples.
+2. Snapshot Freezing and Reproduction.
+We freeze the source-code snapshot immediately before the target defect or missing capability occurred,
+denoted by 𝒮bug . The snapshot is executed in an isolated container to verify that the target anomaly or
+capability gap can be reproduced reliably. This step ensures that the observed failure is caused by the core
+algorithm or logical semantics rather than by environmental noise.
+3. Public-Material Abstraction and Information Isolation.
+Based on the intended behavioral contract, we extract the scientific invariants and data-flow constraints
+evaluated by each task. We construct a public evaluation package containing the public repository,
+a coarse-grained description of the observed phenomenon, a reproduction script, and the necessary
+domain-background documentation. The public materials do not reveal the patch location or hidden
+assertions.
+
+6
+
+4. Hidden Oracle and Counter-Calibration.
+We construct hidden validation suites based on semantic equivalence and boundary conditions. The
+validators examine not only the execution results under normal inputs, but also include reverse checks for
+hard-coded solutions, heuristic pseudo-fixes, and incomplete repairs.
+Raw tasks are further re-designed according to their fit with the three task paradigms. Figure 4 summarizes
+the four-stage raw-task construction process and the class-specific task re-design for the three paradigms.
+
+4.1
+
+Class-Specific Task Re-design
+
+Through the differentiated construction strategies described below, we re-design the raw tasks to enable the
+benchmarking of three capabilities:
+• Issue-driven tasks focus on repairing known defects;
+• Expert-exploratory tasks focus on autonomously reasoning about unknown root causes in scientific
+scenarios;
+• Engineering-integration tasks focus on understanding architecture across files and connecting a complete
+multi-module capability chain.
+This task taxonomy avoids conflating different agent capabilities and provides a structured experimental
+basis for evaluating large language models in realistic scientific software engineering settings.
+4.1.1
+
+Issue-Driven Tasks
+
+Definition and paradigm. Issue-driven tasks evaluate an agent’s ability to repair real bugs under low-distortion
+conditions. These tasks take a confirmed historical defect as their direct definition starting point. Their central
+design principle is to narrow the observable phenomenon while isolating the patch information.
+Construction process.
+1. Degradation and Isolation.
+We analyze the historical issue and PR discussion, roll the source code back to the state before the
+problematic commit, and construct a minimal reproducible example (MRE).
+2. Phenomenon Narrowing.
+We reduce the upstream error to a coarse-grained and auditable phenomenon, such as inconsistent results
+across different computational paths or data loss under a particular format. The public materials remove
+any specific hints about the solution patch.
+3. Anti-Overfitting Validation.
+Hidden validators cover different data scales, boundary parameters, and input-order transformations.
+These validators test whether the repaired code genuinely restores the scientific semantics rather than
+merely fitting the public script.
+4.1.2
+
+Expert-Exploratory Tasks
+
+Definition and paradigm. Unlike Issue-driven tasks, which directly reproduce a known defect, Expertexploratory tasks simulate a real scientific exploration process. Their definition starts from an exploration
+space containing a scientific scenario. Some tasks may be inspired by historical issues or PRs, but those issues
+or PRs do not serve as the definition starting point. These tasks evaluate how an agent uses domain knowledge
+to perform autonomous black-box or gray-box reasoning when the root cause of a complex phenomenon is
+unknown.
+
+7
+
+Construction process.
+1. Scientific Scenario Design.
+We first define a high-level scientific use case, such as molecular representation consistency calibration, measurement-chain bias analysis, medical-image coordinate alignment, or experimental-workflow
+verification.
+2. Exploration-Point Extraction.
+From theoretical materials, methodological literature, experimental phenomena, or discrepancies between
+results, we identify a core difference that is worth actively exploring. Upstream issues or PRs may provide
+optional background evidence, but they do not define the task.
+3. Phenomenon–Root-Cause Separation.
+We construct a runnable public workflow that preserves the relevant domain background and observable
+anomaly, such as abnormal convergence or biased results, while hiding the precise location of the
+defective source code. The agent must identify the root cause through autonomous observation, controlled
+comparisons, and scientific reasoning.
+4. Mechanism-Generalization Validation.
+Hidden validators change parameter scales, physical topologies, coordinate orderings, or boundary
+conditions. These tests determine whether the agent has genuinely inferred the scientific mechanism
+behind the observed phenomenon.
+4.1.3
+
+Engineering-Integration Tasks
+
+Definition and paradigm. Engineering-integration tasks go beyond single-point bug repair. They focus on
+evaluating an agent’s ability to understand system architecture in a realistic and complex codebase, connect
+different modules, and complete a full capability chain.
+Construction process.
+1. Pipeline Analysis and Gap Selection.
+We analyze the repository’s end-to-end call chain, including data loading, parameter interpretation,
+intermediate-representation (IR) construction, operator assembly, and numerical solving. We then select a
+functionality gap with an appropriate scope.
+2. Preservation of Engineering Context.
+The public source code preserves the complete real package structure and neighboring modules. Public
+reproduction scripts show state comparisons at multiple stages and identify where the functionality chain
+fails to connect correctly. This design requires the agent to navigate across files and develop a system-level
+understanding.
+3. End-to-End Contract Validation.
+Hidden validators include alternative execution paths, state-reset tests, and inter-module behavioralcontract tests. These validators ensure that the proposed repair achieves architecture-level integration
+across the entire module capability chain rather than merely making a single public test pass.
+
+4.2
+
+Scientific Auxiliary Information Separation
+
+The scientific-information factor measures the contribution of externally supplied domain knowledge,
+instantiated as scientific-rationale support. Of the 119 tasks, 91 allow this information to be separated from the
+supplied materials. For each eligible task, we compare paired conditions that differ only in auxiliary scientific
+
+8
+
+information; the source-code snapshot, execution environment, public reproduction entry points, hidden
+req
+validators, and required scientific context 𝑐 𝑖 remain fixed. Scientific auxiliary information denotes evidence
+relevant to scientific validity that is not directly available from source code or observable runtime behavior,
+including scientific rationales, upstream repairs, audit findings, paper excerpts, and expert guidance.
+Withholding this information does not remove repository-intrinsic engineering cues, such as code structure,
+interfaces, traces, tests, and incomplete implementations, because doing so would change the software task
+itself. The ablation retains the executable context, task objective, observable symptoms, input data, and
+minimal interface documentation while removing scientific principles, equations or assumptions, expected
+properties, domain-specific diagnoses, and scientifically motivated repair strategies. It therefore estimates the
+marginal contribution of scientific auxiliary information given the same repository evidence, rather than
+performance in a clue-free setting. Results are analyzed in Section 6.2.
+
+5
+
+Experiments
+
+Coding Agents. We evaluate eight agent configurations in our benchmark: GPT-5.6-sol with Codex at max
+reasoning depth, Claude-Opus-5 with Claude Code at max, Kimi-K3 with Kimi Code at max, GLM-5.2 with
+Codex at max, Nex N2 with Codex, DeepSeek-V4-flash-0731 with Claude Code at max, Qwen3.5-397B with
+Codex, and DeepSeek-V4-Pro-0813 with Claude Code at max. The comparison is shown in Table 2.
+Evaluation. We evaluate each submitted patch with public and private tests while keeping private tests and
+evaluator-only metadata outside the agent workspace. For each task–attempt, PublicScore is the mean
+score across all applicable public test cases, and PrivateScore is the corresponding mean across private test
+cases. Fail2Pass is the fraction of previously failing private tests that pass after the repair, while Pass2Pass
+is the fraction of previously passing private tests that remain passing; we set Pass2Pass to 1 when the
+previously passing set is empty. Pass@1 is a binary exact-private-success measure that equals 1 only when
+every applicable private test passes. Table 2 reports task-level means for the public score, private score,
+Fail2Pass, Pass2Pass, and overall Pass@1, together with Pass@1 for Issue-driven, Expert-exploratory, and
+Engineering-integration tasks.
+
+5.1
+
+Performance and Token Consumption
+Public
+score
+
+LLM
+
+Harness
+
+GPT-5.6-sol (max)
+Claude-Opus-5 (max)
+DeepSeek-V4-Pro (max)
+Kimi-K3 (max)
+GLM-5.2 (max)
+Nex N2
+DeepSeek-V4-flash (max)
+Qwen3.5-397B
+
+Codex
+99.16%
+Claude Code 96.64%
+Claude Code 100.00%
+Kimi Code
+98.32%
+Codex
+94.12%
+Codex
+93.28%
+Claude Code 98.32%
+Codex
+96.64%
+
+Private score
+
+Pass@1
+
+Private score Fail2Pass Pass2Pass Overall
+78.82%
+75.11%
+73.16%
+66.34%
+63.61%
+61.89%
+61.41%
+51.79%
+
+72.30%
+68.60%
+65.77%
+57.55%
+53.81%
+51.09%
+52.34%
+38.33%
+
+97.66%
+97.37%
+96.58%
+94.94%
+97.53%
+94.92%
+95.74%
+95.16%
+
+46.22%
+47.90%
+42.02%
+35.29%
+31.93%
+24.37%
+23.53%
+14.29%
+
+Issue
+
+Expert Engineering
+
+36.54%
+38.46%
+26.92%
+25.00%
+17.31%
+11.54%
+19.23%
+5.77%
+
+59.18%
+65.31%
+57.14%
+44.90%
+46.94%
+36.73%
+26.53%
+24.49%
+
+38.89%
+27.78%
+44.44%
+38.89%
+33.33%
+27.78%
+27.78%
+11.11%
+
+Table 2 Main experimental results. Scores are task-level means over the common 119 tasks. The best value in each
+column is bold and underlined; ties are retained.
+
+Table 2 shows that no single model leads every metric. DeepSeek-V4-Pro achieves the best public score
+and performs best on Engineering-integration tasks. GPT-5.6-sol leads the private score, Fail2Pass, and
+Pass2Pass, indicating that it is the strongest at both repairing failed private tests and preserving tests
+that already pass. Claude-Opus-5 achieves the best overall Pass@1 and leads on both Issue-driven and
+Expert-exploratory tasks. Even frontier models achieve Pass@1 scores below 50%, underscoring the challenge
+of SWE-bench Science.
+Figure 5 further shows the Pass@1 score versus token consumption for those agents. Claude-Opus-5 achieves
+
+9
+
+DeepSeek-V4-Pro
+Kimi-K3
+
+GLM-5.2
+Nex N2
+
+DeepSeek-V4-flash
+
+Qwen3.5-397B
+
+50
+
+50
+
+40
+
+20
+
+Pass@1 (%)
+
+30
+
+40
+
+30
+
+20
+
+10
+
+10
+
+0
+0
+
+5
+
+10
+
+15
+
+Pass@1 (%)
+
+GPT-5.6-sol
+Claude-Opus-5
+
+20
+
+0.00
+
+0.03
+
+0.06
+
+0.09
+
+0.12
+
+0.15
+
+Mean input tokens per task (millions)
+
+Mean output tokens per task (millions)
+
+(a) Mean input-token consumption.
+
+(b) Mean output-token consumption.
+
+0
+0.18
+
+Figure 5 Pass@1 versus mean token consumption per task over the common 119-task evaluation. Dashed guides connect
+each observation to the corresponding axes.
+
+the highest Pass@1 with a moderate token budget, while GPT-5.6-sol reaches a similar level with much shorter
+outputs. DeepSeek-V4-Pro uses more input tokens but ranks behind both. Kimi-K3 and GLM-5.2 achieves
+lower performances but consume fewer input tokens. For smaller models under 400B, Nex-N2 achieves best
+performance-token balance, better than DeepSeek-V4-flash and Qwen3.5-397B. The main difference therefore
+lies in how effectively each model–harness configuration uses its context and generation budget, rather than
+in token volume alone.
+
+6
+
+Analysis
+
+6.1
+
+Observed Failure Mechanisms
+Total
+errors
+
+LLM
+
+Harness
+
+GPT-5.6-sol (max)
+Claude-Opus-5 (max)
+DeepSeek-V4-Pro (max)
+Kimi-K3 (max)
+GLM-5.2 (max)
+Nex N2
+DeepSeek-V4-flash (max)
+Qwen3.5-397B
+
+Codex
+64
+Claude Code 58 (+4)
+Claude Code
+69
+Kimi Code
+77
+Codex
+81
+Codex
+90
+Claude Code
+91
+Codex
+102
+
+Knowledge/ Exploration/
+Repair coverage/
+Scientific
+abstraction surface repair system integration generalization
+18
+24
+15
+20
+20
+31
+23
+26
+
+10
+2
+12
+14
+14
+14
+14
+15
+
+22
+21
+19
+22
+24
+23
+48
+33
+
+14
+11
+23
+21
+23
+22
+6
+28
+
+Table 3 Error-count breakdown by coding agents over the common 119 tasks. The total column records attempts assigned
+to the four mutually exclusive scientific failure mechanisms defined in the text; for Claude-Opus-5, the parenthesized +4
+denotes additional runtime or evaluation-path failures. The four category counts sum to the main total for each row. The
+lowest count in each column is bold and underlined.
+
+We use four recurring scientific failure mechanisms in the audit reports. Scientific-knowledge or abstraction
+deficit denotes a repair based on an incorrect or incomplete scientific object, mathematical definition, or
+domain abstraction. Misguided exploration or surface-level repair denotes a patch that addresses the visible
+symptom or public metric without tracing the failure to an independent oracle or the underlying scientific
+
+10
+
+contract. Incomplete repair coverage or system integration denotes a locally plausible repair that does
+not satisfy the requirements of the full software system: for example, one module is corrected while its
+interactions, data flow, shared invariants, or compatibility with other modules remain unpreserved. Failure
+of scientific-knowledge generalization denotes a repair that handles the observed scientific case but does
+not extend the same scientific principle to unseen conditions, equivalent representations, boundary regimes,
+or other variants that require scientific generalization. Claude-Opus-5 additionally has four runtime or
+evaluation-path failures, in which an attempt does not complete the intended execution or evaluation path
+and therefore cannot be attributed to one of the four scientific mechanisms.
+Claude-Opus-5 produces the lowest categorized scientific-error count (58, plus 4 runtime or evaluation-path
+failures) and the fewest misguided-exploration or surface-level-repair errors (2). DeepSeek-V4-flash (max)
+records the fewest scientific-knowledge generalization errors (6), while DeepSeek-V4-Pro records both the
+fewest scientific-knowledge or abstraction errors (15) and the fewest incomplete-repair or system-integration
+errors (19).
+
+6.2
+
+How Scientific Information Affects Performance
+
+On the 91-task separable subset, we compare GPT-5.6-sol (xhigh) with DeepSeek-V4-flash (high), each with
+and without scientific information. Figure 6 summarizes their mean scores and token use.
+
+Performances Comparison with/without Science Information.
+
+40
+20
+
+Private
+score
+
+Pass@1
+
+4839.39
+
+5000
+4000
+3000
+2000
+
+0
+Public
+score
+
+6000
+
+40.25
+43.75
+159.26
+128.43
+
+31.87
+36.26
+23.08
+16.48
+
+60
+
+3700.44
+3857.64
+
+7000
+
+74.06
+73.23
+62.53
+61.21
+
+Score (%)
+
+80
+
+8000
+
+Input
+tokens
+
+Tokens (thousands)
+
+97.80
+96.70
+100.00
+98.90
+
+100
+
+DeepSeek-V4-flash / with info
+DeepSeek-V4-flash / without info
+7403.11
+
+GPT-5.6-sol / with info
+GPT-5.6-sol / without info
+
+1000
+0
+
+Output
+tokens
+
+Figure 6 Scores and token consumption over the 91 tasks whose scientific-information content differs between conditions.
+GPT-5.6-sol and DeepSeek-V4-flash are each shown with and without scientific information on the same task subset.
+
+For GPT-5.6-sol, scientific information slightly increases the mean public and private scores from 96.70% and
+73.23% to 97.80% and 74.06%, but decreases Pass@1 from 36.26% to 31.87%. Mean input and output tokens
+also decrease from 3.86 million and 43.75 thousand to 3.70 million and 40.25 thousand. For DeepSeek-V4-flash,
+the same intervention raises the public score, private score, and Pass@1 from 98.90%, 61.21%, and 16.48%
+to 100.00%, 62.53%, and 23.08%, while increasing input and output tokens from 4.84 million and 128.43
+thousand to 7.40 million and 159.26 thousand. These paired descriptive differences show model-specific
+score–cost responses but do not establish statistical significance or a causal effect.
+Figure 7 shows how these aggregate changes arise from task-level transitions. GPT-5.6-sol solves eight tasks
+only with scientific information and twelve only without it, whereas DeepSeek-V4-flash solves nine only
+with information and three only without it. Inspection of the GPT-5.6-sol cases suggests that scientific
+
+11
+
+Pass@1 overlap on the 91-task separable subset
+Without info
+With info
+33 passed
+21 passed
+
+With info
+29 passed
+
+8
+
+21
+
+Pass@1 = 31.87%
+
+12
+
+9
+
+Pass@1 = 36.26%
+
+Pass@1 = 23.08%
+
+(a) GPT-5.6-sol.
+
+Without info
+15 passed
+
+12
+
+3
+
+Pass@1 = 16.48%
+
+(b) DeepSeek-V4-flash.
+
+Figure 7 Task-level overlap of Pass@1 success on the 91-task separable subset. (a) GPT-5.6-sol passes 29 tasks with
+scientific information and 33 tasks without it; 21 pass in both conditions, 8 only with information, and 12 only without it.
+(b) DeepSeek-V4-flash passes 21 tasks with scientific information and 15 tasks without it; 12 pass in both conditions, 9
+only with information, and 3 only without it.
+
+information can supply semantic constraints absent from local code symptoms, such as limiting cases,
+coordinate consistency, independent observables, and authoritative interfaces. However, it can also induce
+anchoring, scope spillover, or premature reliance on a supplied explanation, underscoring the need for
+executable evidence and independent validation.
+Within this two-model comparison, scientific information produces a larger Pass@1 gain for the lower-baseline
+DeepSeek-V4-flash configuration than for GPT-5.6-sol. This pattern suggests that weaker-performing models
+may benefit more from external scientific guidance, whereas stronger models may rely less on it.
+
+7
+
+Limitations
+
+The number of tasks in each scientific domain is still relatively limited, which may reduce the reliability
+of comparisons across domains. In addition, the analysis of the role of scientific knowledge in SWE tasks
+remains relatively preliminary, with insufficient exploration of how domain-specific knowledge is actually
+used and how to make it contribute to successful task completion.
+
+8
+
+Conclusion
+
+We introduced SWE-bench Science, a repository-level benchmark for evaluating whether coding agents can
+repair scientific software while preserving its scientific contracts. The benchmark contains 119 tasks from 98
+GitHub repositories across 20 scientific domains and organizes them into Issue-driven, Expert-exploratory,
+and Engineering-integration paradigms. Its Chain-of-Evidence Protocol combines separated public and
+private tests with metrics for repair progress, exact success, and regression preservation, making it possible
+to distinguish visible-test performance from complete private-test correctness.
+Across eight coding-agent configurations, the strongest result is 47.90% Pass@1, while the same configuration
+attains a 96.64% public score. This gap, together with the four recurring scientific failure mechanisms
+identified in unsuccessful repairs, shows that repository-level scientific software engineering requires
+scientific abstraction, disciplined exploration, system-wide integration, and generalization beyond visible
+cases. Paired comparisons on the 91-task scientific-information subset further reveal model-dependent effects:
+
+12
+
+auxiliary scientific information lowers GPT-5.6-sol Pass@1 from 36.26% to 31.87% but raises DeepSeek-V4-flash
+from 16.48% to 23.08%, with opposite changes in token use. These findings indicate that supplying scientific
+information alone does not guarantee a better repair; its value depends on how effectively an agent connects
+that information to repository evidence and validates it through execution. SWE-bench Science provides
+a foundation for measuring this capability, while broader model coverage is needed to understand how
+scientific information affects agent performance on scientific software engineering tasks.
+
+13
+
+References
+[1] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri
+Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, et al. Evaluating large language models trained on code.
+arXiv preprint arXiv:2107.03374, 2021.
+[2] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang,
+Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models. arXiv
+preprint arXiv:2108.07732, 2021.
+[3] Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik R. Narasimhan. Swebench: Can language models resolve real-world github issues? In International Conference on Learning Representations,
+2024.
+[4] Minyang Tian, Luyu Gao, Shizhuo Dylan Zhang, Xinan Chen, Cunwei Fan, Xuefei Guo, Roland Haas, Pan Ji, Kittithat
+Krongchon, Yao Li, et al. Scicode: A research coding benchmark curated by scientists. In Advances in Neural
+Information Processing Systems, 2024.
+[5] Xue Xia, Zheyuan Yang, Arman Cohan, and Yilun Zhao. MMSciCode: Real-world evaluation of multilingual
+multi-discipline scientific research coding. In Proceedings of the 64th Annual Meeting of the Association for Computational
+Linguistics, pages 33981–33999, 2026. doi: 10.18653/v1/2026.acl-long.1566.
+[6] Ziru Chen, Shĳie Chen, Yuting Ning, Qianheng Zhang, Boshi Wang, Botao Yu, Yifei Li, Zeyi Liao, Chen Wei, Zitong
+Lu, et al. Scienceagentbench: Toward rigorous assessment of language agents for data-driven scientific discovery. In
+The Thirteenth International Conference on Learning Representations, 2025.
+[7] Ben Bogin, Kejuan Yang, Shashank Gupta, Kyle Richardson, Erin Bransom, Peter Clark, Ashish Sabharwal, and
+Tushar Khot. SUPER: Evaluating agents on setting up and executing tasks from research repositories. In Proceedings
+of the 2024 Conference on Empirical Methods in Natural Language Processing, pages 12622–12645, 2024.
+[8] Jonathan Bragg, Mike D’Arcy, Nishant Balepur, Dan Bareket, Bhavana Dalvi, Sergey Feldman, Dany Haddad, Jena
+D. Hwang, Peter Jansen, Varsha Kishore, et al. Astabench: Rigorous benchmarking of ai agents with a scientific
+research suite. In The Fourteenth International Conference on Learning Representations, 2026.
+[9] Titouan Duston, Shuo Xin, Yang Sun, Daoguang Zan, Aoyan Li, Shulin Xin, Kai Shen, Yixiao Chen, Qiming Sun, Ge
+Zhang, et al. Ainsteinbench: Benchmarking coding agents on scientific repositories, 2025.
+[10] Xiang Deng, Jeff Da, Edwin Pan, Yannis Yiming He, Charles Ide, Kanak Garg, Niklas Lauffer, Andrew Park, Nitin
+Pasari, Chetan Rane, Karmini Sampath, Maya Krishnan, Srivatsa Kundurthy, Sean Hendryx, Zifan Wang, Vĳay
+Bharadwaj, Jeff Holm, Raja Aluri, Chen Bo Calvin Zhang, Noah Jacobson, Bing Liu, and Brad Kenstler. SWE-Bench Pro:
+Can AI agents solve long-horizon software engineering tasks?, 2025. URL https://arxiv.org/abs/2509.16941.
+[11] Wenqi Huang, Charley Lee, Leonard Tng, and Serena Ge. DeepSWE: Measuring frontier coding agents on original,
+long-horizon engineering tasks, 2026. URL https://arxiv.org/abs/2607.07946.
+[12] Mike A. Merrill, Alexander G. Shaw, Nicholas Carlini, Boxuan Li, Harsh Raj, Ivan Bercovich, Lin Shi, Jeong Yeon
+Shin, Thomas Walshe, E. Kelly Buchanan, Junhong Shen, Guanghao Ye, Haowei Lin, Jason Poulos, Maoyu Wang,
+Marianna Nezhurina, Jenia Jitsev, Di Lu, Orfeas Menis Mastromichalakis, Zhiwei Xu, Zizhao Chen, Yue Liu, Robert
+Zhang, Leon Liangyu Chen, Anurag Kashyap, Jan-Lucas Uslu, Jeffrey Li, Jianbo Wu, Minghao Yan, Song Bian,
+Vedang Sharma, Ke Sun, Steven Dillmann, Akshay Anand, Andrew Lanpouthakoun, Bardia Koopah, Changran Hu,
+Etash Guha, Gabriel H. S. Dreiman, Jiacheng Zhu, Karl Krauth, Li Zhong, Niklas Muennighoff, Robert Amanfu,
+Shangyin Tan, Shreyas Pimpalgaonkar, Tushar Aggarwal, Xiangning Lin, Xin Lan, Xuandong Zhao, Yiqing Liang,
+Yuanli Wang, Zilong Wang, Changzhi Zhou, David Heineman, Hange Liu, Harsh Trivedi, John Yang, Junhong Lin,
+Manish Shetty, Michael Yang, Nabil Omi, Negin Raoof, Shanda Li, Terry Yue Zhuo, Wuwei Lin, Yiwei Dai, Yuxin
+Wang, Wenhao Chai, Shang Zhou, Dariush Wahdany, Ziyu She, Jiaming Hu, Zhikang Dong, Yuxuan Zhu, Sasha
+Cui, Ahson Saiyed, Arinbjörn Kolbeinsson, Jesse Hu, Christopher Michael Rytting, Ryan Marten, Yixin Wang, Alex
+Dimakis, Andy Konwinski, and Ludwig Schmidt. Terminal-Bench: Benchmarking agents on hard, realistic tasks in
+command line interfaces, 2026. URL https://arxiv.org/abs/2601.11868.
+[13] Tianyu Hua, Harper Hua, Violet Xiang, Benjamin Klieger, Sang Truong, Weixin Liang, Fan-Yun Sun, and Nick Haber.
+ResearchCodeBench: Benchmarking LLMs on implementing novel machine learning research code. In Advances in
+Neural Information Processing Systems, volume 38, 2025.
+
+14
+
+[14] Shuo Yan, Ruochen Li, Ziming Luo, Zimu Wang, Daoyang Li, Liqiang Jing, Kaiyu He, Peilin Wu, Juntong Ni, George
+Michalopoulos, Yue Zhang, Ziyang Zhang, Mian Zhang, Zhiyu Chen, and Xinya Du. LMR-BENCH: Evaluating
+LLM agents’ ability on reproducing language modeling research. In Proceedings of the 2025 Conference on Empirical
+Methods in Natural Language Processing, pages 6164–6186, 2025. doi: 10.18653/v1/2025.emnlp-main.314.
+[15] Yĳia Xiao, Runhui Wang, Luyang Kong, Davor Golac, and Wei Wang. CSR-bench: Benchmarking LLM agents
+in deployment of computer science research repositories. In Proceedings of the 2025 Conference of the Nations of the
+Americas Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 12705–12723,
+2025.
+[16] Nicholas Edwards, Yukyung Lee, Yujun Audrey Mao, Yulu Qin, Sebastian Schuster, and Najoung Kim. RExBench:
+Can coding agents autonomously implement AI research extensions? In Proceedings of the 64th Annual Meeting of the
+Association for Computational Linguistics, pages 16380–16417, 2026. doi: 10.18653/v1/2026.acl-long.745.
+[17] Ziyang Huang, Yi Cao, Ali K. Shargh, Jing Luo, Ruidong Mei, Mohd Zaki, Zhan Liu, Wyatt Bunstine, William Jurayj,
+Somdatta Goswami, Tyrel McQueen, Michael Shields, Jaafar El-Awady, Paulette Clancy, Benjamin Van Durme,
+Nicholas Andrews, William Walden, and Daniel Khashabi. Can coding agents reproduce findings in computational
+materials science?, 2026.
+[18] Jiao Chen, Jianhua Tang, Xiaotong Yang, and Zuohong Lv. SWE-Bench 5G: Benchmarking AI coding agents on
+telecom network engineering tasks, 2026.
+
+15
+
+A
+
+Scientific Domain Coverage
+Table 4 Distribution of the 119 SWE-bench Science tasks across 20 scientific domains.
+
+Scientific domain
+
+B
+
+Tasks
+
+Chemistry
+Materials Science and Engineering
+Biology
+Biomedical Engineering
+Physics
+Mathematics
+Astronomy
+Atmospheric Science
+Civil Engineering
+Surveying and Mapping Science and Technology
+Geophysics
+Mechanics
+Electrical Engineering
+Marine Science
+Geography
+Aeronautical and Astronautical Science and Technology
+Nuclear Science and Technology
+Computer Science and Technology
+Statistics
+Information and Communication Engineering
+
+24
+16
+13
+12
+11
+7
+7
+5
+5
+3
+3
+3
+2
+2
+1
+1
+1
+1
+1
+1
+
+Total
+
+119
+
+Task-Level Repository and Knowledge Inventory
+
+This appendix provides the complete task-level annotation used to construct the benchmark. Each row links
+a task identifier to one of the 20 scientific domains used throughout the paper, together with its upstream
+repository, issue or pull request (when available), knowledge-domain scope, and scientific focus. The table
+contains all 119 tasks (IDs 001–119).
+Table 5 Task-level scientific-domain, provenance, and scientific-knowledge inventory. A missing issue or pull-request
+reference indicates that no reference was provided in the source annotation.
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+Knowledge scope
+
+001
+
+Chemistry
+
+Auto-Mech/
+autochem
+
+PR #637
+
+002
+
+Chemistry
+
+aditisingh4812/
+simplified_
+tuned_range_
+separated
+
+Not specified
+
+003
+
+Materials Science deepmodeling/
+and Engineering dpdata
+
+TS linear segment cap selection, roThe rotational symmetry of the TS graph
+tational symmetry number, reaction
+must be determined by the real linear
+edge relabeling invariance, rotor obser- segment and reaction edge topology;
+vation
+changing the atom number or writing it
+in reverse cannot change the rotor/symmetry observation.
+range-separated tuning, local density In range-separated tuning, the units
+structure, bohr-based grid scale and
+of the density cutoff are not converted
+size consistency
+together with the grid representation,
+and the local thresholds are therefore
+misaligned.
+stress/virial tag preservation, ASE
+extxyz parsing must convert stress into
+compatibility, read and write consis- virial and be compatible with tensor
+tency in extxyz/QUIP-GAP parsing
+components and field aliases, otherwise
+the stress semantics will be distorted.
+
+Issue #973 / PR
+#983
+
+Task focus
+
+Continued on next page
+
+16
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+Knowledge scope
+
+004
+
+Biology
+
+arq5x/bedtools2
+
+split-read exon overlap filtering, interval intersection semantics, hit
+determination on splicing boundaries
+
+005
+
+Biomedical
+Engineering
+
+schorschinho/
+osprey
+
+006
+
+Biology
+
+arq5x/bedtools2
+
+007
+
+Biomedical
+Engineering
+
+openmrslab/
+suspect
+
+008
+
+Physics
+
+PlasmaControl/
+DESC
+
+009
+
+Physics
+
+PlasmaControl/
+DESC
+
+010
+
+Physics
+
+PlasmaControl/
+DESC
+
+011
+
+Physics
+
+PlasmaControl/
+DESC
+
+012
+
+Physics
+
+PlasmaControl/
+DESC
+
+013
+
+Physics
+
+PlasmaControl/
+DESC
+
+014
+
+Physics
+
+PlasmaControl/
+DESC
+
+015
+
+Biomedical
+Engineering
+
+IlyaKuprov/
+Spinach
+
+016
+
+Biology
+
+macs3-project/
+MACS
+
+017
+
+Astronomy
+
+gammapy/gammapy
+
+018
+
+Biology
+
+macs3-project/
+MACS
+
+019
+
+Biology
+
+aertslab/
+pycisTopic
+
+020
+
+Materials Science deepmodeling/
+and Engineering deepmd-kit
+
+Issue #750
+
+Task focus
+
+For split-read interval intersection, block
+overlap should be accumulated first and
+then fraction gate should be performed.
+Each block cannot be treated as an independent hit.
+Issue #750 / PR edited MRS subspectrum polarity
+Edited MRS requires polarity correction
+#751
+correction, generalization from two
+and phase-cycle control to be propagated
+subspectra to four subspectra, phase- through every subspectrum path; the fix
+cycle control propagation
+cannot be confined to a single loader.
+Issue #954 / PR Query database tail count after EOF, Fisher statistics require full database
+#959
+same-chrom / later-chrom tails, Fisher counts, and query EOF cannot truncate
+right tail p-value consistency
+chromosome sweeps early.
+Issue #33 / PR
+spectral registration initial value
+The drift sign of spectral registration
+#34
+symbol, warm-start convention drift, must be consistent with the optimizafrequency shift and phase shift consis- tion residual agreement, otherwise the
+tency
+compensation direction will be reversed.
+Not specified
+first usable vacuum-plus-wall capaIn the vacuum-wall link, the outer-region
+bility chain, outer-region operator
+geometry and coefficients must be transpayload, pseudo-vacuum metrics
+ferred together, and different wall shapes
+cannot be pressed into the same diagnosis.
+Not specified
+projection-wall geometry construction, The projection wall cannot degenerate
+external-region path, downstream
+into a scaled wall, and the boundary
+reduced payload propagation
+derivatives and geometric parameters
+must be entered into the outer-region
+calculation together.
+alternate perturbation-representation The PARFAC-driven alternate perturbaNot specified
+support, FOURIN, packed trig lookup, tion representation must not fall back to
+matrix assembly
+the baseline; parity, phase, and coefficient
+assembly must all follow the alternate
+representation.
+response-gated sideband capability,
+Sideband response must propagate
+Not specified
+localized exchange propagation,
+through the support domain, coefficient
+energy diagnostics
+assembly, and energy diagnostics; changing only a local cutoff is insufficient.
+Not specified
+3-D cross-spectral coupling, coefficient 3-D mode coupling must retain the
+assembly, energy channel, modeeffective support of the difference/sum
+family generalization
+two branches, and cross-modal coupling
+cannot be collapsed into a unified weight.
+Not specified
+free / soft-fixed / hard-fixed bound- The boundary response should be closed
+ary regimes, operators and energy
+to coefficients and energies respectively
+closure ladder
+by interval and cannot be smoothed out
+by global averaging.
+Not specified
+prescribed wall geometry, vacuumThe TERPSICHORE link must be closed
+plus-wall chain, outer-region operator end-to-end and cannot rely on a single
+payload, reduced response blocks
+fixture or plasma-only fallback.
+Issue #22
+spin-dynamics thermalization,
+thermalize should use formalism-specific
+formalism-specific identity/projector identity/projector, and unit_state cannot
+construction, unit-state representation be treated as two objects at the same time.
+consistency
+Issue #735 / PR HMMRATAC semantics, blacklist
+HMMRATAC refinement must first guard
+#736
+filtering, query EOF post-count consis- empty peak_content, and cannot close
+tency
+empty peaks on sparse bedGraph.
+Issue #6754 / PR J-factor line-of-sight impact parameter, The J-factor line integral must stabilize
+#6757
+b = D sin(theta), r = b cosh(t) stable
+the branch according to the impact paintegration
+rameter, and cannot use tan(theta) to
+push directly to the singular point.
+Issue #680 / PR blacklist filtering, HMMRATAC train- The blacklist should be filtered before
+#689
+ing/inference path, peak call statistical training and segmentation, and blacklist
+consistency
+segments cannot be allowed to enter the
+model and counting of HMMRATAC.
+PR #196
+Discretization of topic probability
+Topic binarization needs to support
+matrix to region / cell set, legacy
+both matrix/object entries and stable
+object API, Regions_in_binarized_threshold semantics, and cannot just
+topic maintenance
+cover the old object API.
+neighbor graph, periodic-cell mapThe neighbor graph needs to unify PBC
+PR #5581
+ping, segment reductions, force /
+mapping, empty segment reduction and
+atom virial scatter
+force/virial scatter, and guard edges cannot be regarded as effective contributions.
+Continued on next page
+
+17
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+021
+
+Chemistry
+
+deepmodeling/
+dpti
+
+022
+
+023
+
+024
+
+025
+
+026
+
+027
+
+028
+
+029
+
+030
+
+031
+
+032
+
+033
+
+034
+
+035
+
+036
+
+037
+
+038
+
+Knowledge scope
+
+Task focus
+
+PR #103
+
+coupling endpoints, pair-specific
+Soft-core LJ FEP must generate a real
+epsilon, three-stage HTI/FEP input
+compute fep; energy divided by
+generation, thermo_style consumption lambda cannot substitute for derivative
+observations.
+Biomedical
+nilearn/nilearn Issue #5168 / PR Volume-to-surface atlas projection,
+Discrete brain area projections should
+Engineering
+#5169
+discrete region identity preservation adopt mode sampling, and NaN should
+under nearest sampling, missing
+be retained for missing samples. Labels
+samples should return NaN
+cannot be averaged numerically.
+Chemistry
+MDAnalysis/
+Issue #4257 / PR NPT trajectory without jump expan- NoJump’s frame bookkeeping must
+mdanalysis
+#4258
+sion, box dimensions update, first
+preserve the first cross-boundary disframe displacement history initializa- placement and cannot exit early at frame
+tion
+0.
+Statistics
+pymc-devs/pymc
+Issue #6871 / PR ZeroSumNormal’s log-density, norThe logp of ZeroSumNormal must be
+#6872
+malization and pseudo-determinants calculated on the zero-sum manifold and
+on zero-sum manifolds
+cannot directly reuse ambient Gaussian
+normalization.
+Biomedical
+schorschinho/
+Issue #447 / PR acquisition metadata consistency in
+Edited-MRS acquisition metadata and the
+Engineering
+osprey
+#448; Issue #657 / the edited-MRS workflow, consistent water-calibration time scale must remain
+PR #658
+calibration reports and representations consistent; TE/TR must not be converted
+a second time.
+Atmospheric
+Unidata/MetPy
+Issue #3315 / PR Isentropic interpolation on sigma co- Isentropic interpolation must respect
+Science
+#3324
+ordinates, pressure column selection, vertical coordinate semantics such as
+dimension semantic correction
+sigma/eta, and cannot treat them directly
+as pressure columns.
+Chemistry
+little1d/
+Issue #4
+Masking and representation semantics The mask semantics of the peak encoder
+NMRTrans
+of NMR peak-set encoding, batch
+are reversed, the padding is retained,
+padding, and set transformer
+the real peaks are masked, and the set
+representation is distorted.
+Biology
+JialongJiang/
+Not specified
+control-referenced relative responses, The control sample index and relative
+DSPIN
+perturbation response normalization response baseline cannot be misaligned,
+and fallback path integrity
+otherwise the disturbance response will
+shift as a whole.
+Biology
+biopython/
+Issue #4611 / PR Feature coordinates and sequence
+After circular feature reversebiopython
+#4637
+semantics after circular record oricomplement, the part order must be
+entation normalization and reversereversed, and the original cross-origin
+complement
+order cannot be retained.
+Materials Science materialsproject/ Issue #3677 / PR SHELX/AIRSS.res export, SFAC
+The SFAC of.res is an ordered list, and
+and Engineering pymatgen
+#3779
+ordered species column, stable round- species cannot be written as an untrip serialization
+ordered set.
+Biomedical
+mne-tools/
+Issue #13913 /
+average reference across multiple
+The average reference of mixed sensor
+Engineering
+mne-python
+PR #13920
+sensor types, classification type retypes should be done separately accordreference and joint / projection path ing to channel type and cannot be directly
+consistency
+combined into a union mean.
+Issue #5025 / PR GROMACS topology import, NBFIX GROMACS topology import needs to
+Chemistry
+openmm/openmm
+#5026
+/ combination rule semantics, total
+unify the translation semantics of NBFIX,
+energy representation maintenance
+combination rule and 1-4 exception.
+Materials Science pyscf/pyscf
+PR #2946
+consistency between k-point and
+Periodic HF k-point and Gammaand Engineering
+Gamma-supercell representations in supercell paths must implement equivperiodic HF, Coulomb wrap-around
+alent Coulomb semantics; wrap-around
+semantics
+handling must not diverge between them.
+Mathematics
+patrick-kidger/ Issue #598 / PR strong order, reverse-oriented SDE
+The step size and Levy area parity of the
+diffrax
+#746
+integration, boundary conditions and reverse time SDE must be processed achidden state processing
+cording to the direction, and the forward
+SRK convention cannot be followed.
+Mathematics
+scipy/scipy
+Issue #14480 /
+Numerical consistency of LSODA
+The dense output of LSODA needs to
+PR #14552
+event processing, dense output, stiff
+take the history of the last successful step,
+kinetics
+and cannot use the next candidate state
+for event positioning.
+Marine Science
+Parcels-code/
+Issue #2521 / PR Problems with spherical curvilinear
+Curved grid point-in-cell must be calcuParcels
+#2598
+grids, latitude and longitude grid
+lated according to spherical geometry
+index, and downstream parameters
+and cannot continue to be approximated
+still follow the old path
+by longitude and latitude planes.
+Biomedical
+nipy/nibabel
+PR #1340
+Enhanced multiframe DICOM recon- The frame order of multi-frame DICOM
+Engineering
+struction, frame/direction semantics must be consistent with the physical slice
+and image plane consistency
+order, and cannot be reconstructed solely
+by index.
+Materials Science spglib/spglib
+Issue #584 / PR Classification stability, primitive/The operation route of symmetry search
+and Engineering
+#589
+conventional transformation and
+must be updated synchronously with
+symmetry search under equivalent
+the base transformation and cannot be
+lattice representation
+disconnected from the structure route.
+Continued on next page
+
+18
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+039
+
+Geography
+
+landlab/landlab
+
+040
+
+041
+
+042
+
+043
+
+044
+
+045
+
+046
+
+047
+
+048
+
+049
+
+050
+
+051
+
+052
+
+053
+
+Knowledge scope
+
+Task focus
+
+Issue #2408 / PR parcel transport, reach-scale flux con- The speed of parcel transport must be
+#2409
+sistency, segmentation and external
+consistent with reach-level flux converrepresentation consistency
+sion, and the number of particles cannot
+be allowed to change the physical transport rate.
+Geophysics
+simpeg/simpeg
+Issue #1099 / PR magnetic-dipole forward modeling,
+Different formulations of magnetic dipole
+#1575
+source representation equivalence,
+forward modeling must fall into the same
+numerical accuracy and theoretical fit discrete field space, and the representation method cannot change the results.
+Geophysics
+sunpy/sunpy
+Issue #8406 / PR Earth-centered coordinate transforma- The GEI/GSE transformation must follow
+#8415
+tions, GEI/GSE path consistency and a purely rotational path and cannot
+vector conservation
+go through an intermediate map with
+additional corrections.
+Astronomy
+sunpy/sunpy
+Issue #8490 / PR Sun coordinate objects maintain frame, The solar coordinate table round-trip
+#8548
+observer, obstime, representation,
+must retain frame, observer and obstime,
+units and numerical meanings in table and cannot compress the coordinate
+serialization
+object into a pure numerical value.
+Materials Science PMEAL/porespy
+Issue #966 / PR Two-point correlation function, aperi- Finite image two-point correlation needs
+and Engineering
+#1174
+odic boundaries, overlap counting and to perform overlap and radial bin statisradial binning on finite images
+tics according to finite-image semantics,
+and cannot be treated as a periodic domain.
+Chemistry
+pybamm-team/
+PR #5600
+In regularized power operations,
+The fractional-power stabilization in
+PyBaMM
+distinguish between state-independent the exchange current expression must
+fitting coefficients and dynamic state- distinguish between constants and state
+dependent expressions
+variables, and the parameters themselves
+cannot be rewritten.
+Marine Science
+xgcm/xgcm
+Issue #712 / PR Connection surface direction, axis or- cubed-sphere halo/padding must first
+#713
+der, consistency of pad and transpose align the dimensions and surface directions of the source slice, and cannot read
+the adjacent surfaces incorrectly after
+transpose.
+Astronomy
+StingraySoftware/ PR #965
+Coherence/power spectrum calcula- The coherence estimate must correctly
+stingray
+tion under effective domain, boundary deduct the noise deviation and count
+state and invalid value determination as averaged spectra, and cannot return
+a finite value in the noise-dominated
+frequency band.
+Information and scikit-rf/
+Issue #654 / PR Conversion and parameter consistency Network connections under complex
+Communication scikit-rf
+#655
+of different microwave network repreference impedance must first undergo
+Engineering
+resentations under complex reference wave-definition transformation, and the
+impedance
+traveling-wave convention cannot be
+used.
+Chemistry
+pycalphad/
+Issue #310 / PR consistency between phase energy,
+Gibbs-energy bookkeeping for orpycalphad
+#311
+Gibbs energy, and ordered-phase
+dered/disordered phases must project
+representation
+onto the non-ordering sublattice;
+database encoding must not change
+phase stability.
+Mathematics
+zwicker-group/
+PR #839
+Multi-step physical process semantics The noise terms and volume factors of
+py-pde
+and incombinability in the evolution discrete random fields must be processed
+of discrete random fields
+hierarchically, and cell-volume scaling
+cannot be placed in the wrong location.
+Physics
+jcmgray/quimb
+Issue #402
+Scale-dependent norm reconstruction, The norm of the tensor network must reresult consistency of different tensor main unchanged after gauging/rescaling,
+representations
+and the approximate contraction cannot
+change the exact norm.
+Geophysics
+SHTOOLS/SHTOOLS PR #397
+Spherical harmonic gradient, polar
+The gravity/magnetic force secondboundary and planetary magnetic
+order tensor must be consistent from
+field calculation
+the local frame to the Cartesian frame,
+and recursion and boundary constraints
+cannot be allowed to destroy the rotation.
+Materials Science usnistgov/fipy
+Issue #1190 / PR Modular gradients and physical
+Non-uniform Grid3D needs to unify cell
+and Engineering
+#1192
+geometry consistency on non-uniform widths, face sizes and modular gradient
+orthogonal grids
+semantics, and cannot only retain a single
+spacing.
+Biomedical
+Project-MONAI/
+Issue #4103 / PR Physical spacing, subvoxel surface
+Surface Dice should be calculated based
+Engineering
+MONAI
+#6681
+area approximation and surface Dice on physical surface area, and anisotropic
+voxels cannot simply be regarded as
+equal-area boundaries.
+Continued on next page
+
+19
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+054
+
+Chemistry
+
+matchms/matchms
+
+055
+
+056
+
+057
+
+058
+
+059
+
+060
+
+061
+
+062
+
+063
+
+064
+
+065
+
+066
+
+067
+
+068
+
+Knowledge scope
+
+Task focus
+
+PR #863
+
+Screening, merging and entropy-based Entropy similarity cannot allow overlapspectral similarity of highly similar
+ping candidate windows to count the
+peaks
+same peak repeatedly, and the pair/matrix paths must share the same peak
+semantics.
+Astronomy
+astropy/
+Issues #817 /
+Boundary extension, partially overlap- Spectral resampling must propagate flux
+#1059 / #1300;
+ping bins and finite interval filling
+and variance according to limited bin
+specutils
+PRs #1060 /
+overlap, and bins cannot be used as point
+#1305
+samples.
+Aeronautical and poliastro/
+Issue #1563; PR Consistency between orbital state
+Each state and epoch of Orbit->Ephem
+Astronautical
+#1583
+and binding epoch, history sampling must point to the same orbital state,
+poliastro
+Science and
+semantics
+and the anomaly cannot drift with the
+Technology
+timeline.
+Chemistry
+mdtraj/mdtraj
+Issue #1925; PR Molecular reconstruction under pemake_molecules_whole restores the
+#1929
+riodic boundaries, bonded geometry periodic image along the bond graph in
+and coordinate order independence
+one pass, and cannot let the bond order
+determine the translation results.
+Nuclear Science openmc-dev/
+Issue #3852; PR Rectangular lattice distance, boundThe boundary distance and transport
+and Technology openmc
+#3853
+ary and geometric determination in
+event of the repeated rectangular lattice
+particle transport
+must be calculated correctly, and the
+legal geometry cannot be misjudged as
+terminated.
+Computer Sciscikit-image/
+Issue #5112; PR voxel spacing, area and morphometric regionprops should treat spacing
+ence and Techscikit-image
+#6296
+calibration of regionprops
+as a physical scale and cannot treat
+nology
+anisotropic sampling as a lattice index.
+Biomedical
+SpikeInterface/ Issue #3328; PR non-equidistant sampling, cross-band Motion interpolation must align AP/LF
+Engineering
+spikeinterface
+#3517
+motion correction, and interpolation streams on the physical time axis; assumcorrection
+ing uniform motion from the sampling
+rate is invalid.
+Astronomy
+astropy/
+Issue #199; PR
+Numerical elimination, reprojection
+The extremely small sky pixel in highreproject
+#589
+and energy conservation of small
+resolution reproject will have numerical
+sphere area
+cancellation, and overlap geometry and
+flux conservation must be stable.
+Materials Science materialsproject/ Issue #333 / PR Green-Lagrange strain-stress fitting,
+Elastic tensor reconstruction must bring
+and Engineering atomate2
+#415
+independent shear response reconthe complete shear response back to the
+struction, and tensor symmetry in
+final result, and the reduce/reconstruct
+a high-throughput crystal elasticity
+link cannot lose symmetry information.
+workflow
+Biology
+tskit-dev/tskit Issue #3053,
+Distinguishing between "no lineage" Window normalized pair-coalescence
+#3175 / PR #3059, and "multi-rooted trees with no com- needs to distinguish between non-lineage
+#3176
+mon ancestors" under window nortrees and multi-rooted trees without
+malization, and normalizing the
+common ancestors, and the boundary
+observation span
+semantics of the two types cannot be
+confused.
+Issue #660 / PR Signed energy extraction, unit consis- ORCA’s DFT-D dispersion correction
+Chemistry
+cclib/cclib
+#745
+tency and ccData exposure for DFT-D should be written out as an independent
+dispersion correction in ORCA output signed physical quantity and not just left
+inside the parser.
+Astronomy
+yt-project/yt
+Issue #4788 / PR SPH-based three-dimensional proSPH line-of-sight integration and oblique
+#4939
+jection, oblique slicing, real sight
+slicing need to share consistent kernel
+integral and kernel function geometric geometry and normalization, and the
+semantics
+resolution cannot be allowed to change
+the observation results.
+Atmospheric
+SciTools/iris
+Issue #4830 / PR Equivalent identification of Rotated
+The CF grid mapping of rotated Mercator
+Science
+#5548
+Mercator and Oblique Mercator under and oblique Mercator should be recogCF grid mapping, projection object
+nized as equivalent and cannot be linked
+and site matching semantics
+to the wrong projection reference.
+Atmospheric
+Ouranosinc/xclim Issue #700 / PR Overwintering precipitation and
+The seasonal state machine of the fire
+Science
+#704
+Drought Code state transfer, recursive danger index should separate the winter
+boundary between active season and precipitation and active-day updates, and
+dormant phase when seasons switch
+the state transfer cannot be connected to
+the wrong stage.
+Biology
+samtools/htslib Issue #1820 / PR Actual coverage interval, rlen, END
+The reference occupancy interval of
+#1897
+/ symbolic allele / reference block
+VCF/BCF should be consistent on paths
+semantics recorded on the reference
+such as symbolic allele, END and SVLEN.
+genome
+Continued on next page
+
+20
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+Knowledge scope
+
+069
+
+Biology
+
+open2c/cooltools Issue #456 / PR
+
+Contact-frequency and smoothed
+P(s) propagation, normalization and
+multi-region aggregation consistency
+
+expected cis smoothing needs to propagate the numerators and denominators
+of raw contact and weighted contact separately, and observation apertures cannot
+be mixed.
+Biology
+levitsky/
+Issue #202 / PR ProForma local modification and
+ProForma’s global loads, local modifica#203
+global ion-carrying charge calculation, tions, and neutral masses/m/z require
+pyteomics
+charge_state consistency
+unified charge accounting, and electrons
+cannot be counted repeatedly.
+Physics
+silx-kit/pyFAI
+Issue #2773 / PR Transformation from detector direcThe q vector transformation must main#2772
+tion to sample coordinate system
+tain the consistency of the detector to
+q vector, exit-angle and reciprocal
+sample coordinates, and the orientation
+represent consistency
+encoding cannot change the reciprocal
+space results.
+Biomedical
+pydicom/pydicom Issue #2210 / PR Bit depth, sampling, limited-range
+The YBR_* pixel format must unify bit
+Engineering
+#2212
+luma/chroma conversion of YBR_depth and sampling extension semantics,
+FULL / YBR_FULL_422 / YBR_and cannot just modify the limited-range
+PARTIAL_420
+path.
+Biology
+biotite-dev/
+Issue #777 / PR Conformational connectivity, bond
+The alternate location filtering must be
+biotite
+#781
+map preservation and bond mapping completed before the bond graph, and
+after alternate location selection
+the selected conformation cannot be
+disconnected from the struct_conn.
+Materials Science deepmodeling/
+Issue #332 / PR Generalized eigenvalue problems, ill- The generalized eigenvalue problem of
+and Engineering DeePTB
+#320
+conditioned overlap matrix processing, non-orthogonal tight binding must first
+finite band data and validity masks
+deal with the ill-posed overlap matrix,
+and cannot directly Cholesky on the
+invalid subspace.
+Materials Science deepmodeling/
+Issue #5593 / PR Boundary interpolation, first-order
+Compressed table extrapolation must
+and Engineering deepmd-kit
+#5601
+sensitivity, layout and derivative
+maintain both value and derivative conconsistency of DeePMD compressed tinuation semantics, and C1 continuation
+tables
+cannot be truncated outside the boundary.
+Mathematics
+cvxpy/cvxpy
+Issue #3092 / PR Coordinate mapping of NCanonicalization of the Parameter tensor
+#3093
+dimensional parameters to sparse
+requires first folding repeated positions
+coefficient matrix after indexing,
+and then mapping to a sparse coefficient
+broadcasting, and matrix multiplica- matrix.
+tion
+Mathematics
+shapely/shapely Issue #1670,
+Numerical stability fallback, candidate Oriented envelope must truly select the
+#1929 / PR #1708, edge enumeration, NumPy ufunc
+smallest area among candidate edges
+#1939
+batching and output buffering compat- and is compatible with NumPy batch
+ibility
+processing.
+Astronomy
+astropy/
+Issue #2287 / PR Bidirectional transformation, direction The conversion from sky aperture to pixel
+photutils
+#2288
+consistency and round-trip constraints aperture must keep the WCS local base
+of aperture geometry under WCS
+direction consistent, and the aperture
+mirror cannot be shifted.
+Chemistry
+aspuru-guzik-group/
+Issue #120 / PR kekulization of SMILES aromatic
+When converting the SMILES aromatic
+selfies
+#125
+system to SELFIES, charged aromatic system to SELFIES, the electron count of
+carbon electron counting
+the charged aromatic carbon must also be
+dealt with, and the neutral zero-hydrogen
+path cannot only be repaired.
+Surveying and
+xarray-contrib/ Issue #1086 / PR footprint, coordinate direction normal- The footprint, coordinate direction and
+Mapping Science xarray-spatial
+#1087
+ization, nodata propagation and cubic nodata propagation during reprojection
+and Technology
+boundary interpolation
+must be bound to the interpolation order,
+and the boundaries cannot be allowed to
+degenerate into copied values.
+Biology
+scverse/anndata Issue #1854 / PR backed HDF5/Zarr re-indexing, outer Disk-backed concatenation must write
+#2122
+join, and sparse/dense annotation
+non-concatenated-axis annotations back
+consistency
+under the new index; preserving only the
+main matrix is insufficient.
+Materials Science deepmodeling/
+Issue #1639 / PR DP-GEN active-learning input genDP-GEN must propagate the same set
+and Engineering dpgen
+#1801
+eration, LAMMPS template revise,
+of LAMMPS model-deviation settings
+model-deviation control items, relain both direct generation and template
+tive error and electron temperature
+revision paths, and the relative, cluster or
+propagation
+electron temperature items cannot be lost
+in the template path.
+#501
+
+070
+
+071
+
+072
+
+073
+
+074
+
+075
+
+076
+
+077
+
+078
+
+079
+
+080
+
+081
+
+082
+
+Task focus
+
+Continued on next page
+
+21
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+083
+
+Chemistry
+
+deepmodeling/
+Issue #2165 / PR bond-order trajectory, atom-bond
+reacnetgenerator #2221
+graph equivalence, isomer merge
+
+084
+
+Materials Science deepmodeling/
+and Engineering dpdata
+
+085
+
+Chemistry
+
+086
+
+Materials Science materialyzeai/
+and Engineering matgl
+
+087
+
+Biomedical
+Engineering
+
+dipy/dipy
+
+Issue #3968 / PR
+#3976
+
+088
+
+Atmospheric
+Science
+
+pydata/xarray
+
+Issue #9108 / PR
+#9116
+
+089
+
+Chemistry
+
+cclib/cclib
+
+Issue #46 / PR
+#1085
+
+090
+
+Chemistry
+
+jjhelmus/nmrglue Issue #187 / PR
+
+dftbplus/
+dftbplus
+
+Issue #951 / PR
+#957
+
+Issue #1069 / PR
+#1462
+
+Issue #642 / PR
+#819
+
+#189
+
+091
+
+Materials Science materialsproject/ Issue #4607 / PR
+and Engineering pymatgen-core
+#87
+
+092
+
+Chemistry
+
+chemprop/
+chemprop
+
+Issue #426 / PR
+#427
+
+093
+
+Biomedical
+Engineering
+
+Project-MONAI/
+MONAI
+
+Issue #6985 / PR
+#7000
+
+094
+
+Physics
+
+materialsproject/ PR #1706
+pymatgen
+
+095
+
+Materials Science PMEAL/OpenPNM
+and Engineering
+
+Issue #2843 / PR
+#2849
+
+Knowledge scope
+
+Task focus
+
+The species report of ReacNetGenerator
+must define the same molecule according
+mode, cyclic structure species naming to chemical graph equivalence and merge
+and reaction network report
+mode, and cannot separate bond order
+changes or traversal order into different
+species.
+ABACUS relaxation-output parsing,
+The ABACUS relaxation round-trip
+frame-wise coordinates and cell labels, must preserve the complete relaxation
+archive/reload round-trip, complete history and frame-wise labels, rather than
+trajectory recovery
+retaining only the final structure or losing
+cell/coordinate semantics.
+DFTB+ COSMO/GB archived obDFTB+ implicit solvent observations
+servations, atomic order invariance,
+should be insensitive to equivalent atoms
+equivalent atomic records and solvent and input order, and should not allow
+surface adjacencies
+the order of atom records to change
+COSMO-like reporting.
+MatGL dataset element list, preMatGL fine-tuning must first verify that
+trained model element vocabulary,
+the data set element list is consistent
+graph construction atom type encod- with the model element vocabulary,
+ing, fine-tuning compatibility check
+and the graph construction cannot be
+allowed to silently map atoms to wrong
+embeddings.
+Patch2Self small batch denoising,
+Patch2Self wants to keep the diffuse
+trailing-volume flush, b0 volume data volume consistent with b0 semantics on
+processing, patch radius and baseline mini-batch and tail volume data, and
+shift
+cannot leave finite but offset denoised
+observations.
+CFTimeIndex resample, calendar
+CF time aggregation must retain calendar
+and has_year_zero reserved, yearand has_year_zero semantics, and cannot
+zero near month/year-end boundary aggregate legal short sequences into
+aggregation
+failure paths at the year-zero boundary.
+ORCA excited-state absorption spec- cclib must retain the correct oscillatortrum, oscillator strength, multiple
+strength representation when parsing
+transition attribute table, etoscs repre- ORCA excited state spectra, and must not
+sentation selection
+allow subsequent or substitute spectra to
+overwrite semantic values.
+Bruker NUS compressed FID stream, nmrglue needs to expand the sparse
+nuslist sparse coordinates, quadraFID stream into a multi-dimensional
+ture/acquisition order, missing FID
+NMR grid according to the nuslist and
+zero-fill
+collection order, and cannot treat the
+compressed stream as an ordinary dense
+2D sequence.
+Gaussian cube nonzero origin, Bohr-to- When reading Gaussian cube, the nonangstrom unit conversion, voxel origin zero volume data origin and unit converand structural coordinate placement
+sion must be included in the structure
+placement. The first voxel cannot be the
+default coordinate origin.
+Condensed Graph of Reaction, atom Chemprop reaction featurization must
+mapping, reaction-mode options, and construct a CGR according to the reaction
+reactant/product feature propagation mode and atom map; mapped atoms
+must be retained and reactant/product
+changes must not be encoded in reverse.
+ITKReader, MetaTensor, ITK image
+MONAI’s reader -> MetaTensor -> ITK
+round-trip, affine/spacing/origin/di- round-trip must preserve patient-space
+rection coordinate convention
+coordinates and orientation, image geometry cannot be silently changed between
+equivalent paths.
+magnetic space group operations,
+Magnetic space group archive records
+BNS/Jones-Faithful setting transform, must be converted according to setting
+fractional translation, time reversal
+to preserve translation and time-reversal
+semantics, and the old coordinate convention cannot be read directly as the current
+convention.
+throat conductance field, model
+Porous network transmission requires
+builder, operator assembly, advection- consistent transmission of conductance
+diffusion solver, repeated stage trans- representation from model output to
+fer
+solver and flux calculations. Object fields
+and array fields cannot be mixed in
+repeated solves.
+Continued on next page
+
+22
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+096
+
+Atmospheric
+Science
+
+CLIMADA-project/ Issue #831 / PR
+climada_python
+#839
+
+097
+
+098
+
+099
+
+100
+
+101
+
+102
+
+103
+
+104
+
+105
+
+106
+
+107
+
+108
+
+109
+
+Knowledge scope
+
+Task focus
+
+antimeridian longitude normalization, Tropical cyclone hazard calculations need
+track bounds, centroid filtering, sparse to unify longitude wrapper semantics in
+hazard matrix, equivalent date-line
+paths, centroid ranges, and sparse maps,
+encoding
+and cannot miss or misplace wind fields
+near ±180 degrees.
+Physics
+deepmodeling/
+Issue #5663 / PR Spin virtual types, negative placeDeePMD spin model preprocessing
+#5854
+holder atoms, dense/lower layouts,
+requires negative type padding to remain
+deepmd-kit
+dpmodel/PT parity, padded mixedinert in real/virtual type expansion
+size batches
+and backend layout, and cannot change
+placeholder atoms into valid spin types.
+Surveying and
+Issue #3182 / PR geostationary satellite position units, Satpy parallax correction needs to unify
+pytroll/satpy
+Mapping Science
+#3217
+TLE fallback, cloud-top-height paral- internal satellite height/radius units, only
+and Technology
+lax, observer-look boundary, inverse convert at external library boundaries,
+resampling
+and cannot mix meters/km between
+reader metadata, TLE and Cartesian
+geometry.
+Surveying and
+Stanford-NavLab/ PR #121
+WLS pseudorange positioning, Earth- GNSS WLS point positioning requires roMapping Science gnss_lib_py
+rotation/Sagnac correction, satellite
+tating the satellite position to the receive
+and Technology
+ECEF convention, simulator direct
+measurement frame and being compatsatellite states
+ible with simulator input. Transmittedframe ECEF cannot be directly solved as
+receive-frame.
+Chemistry
+DCoupry/
+Issue
+AuToGraFS relaxed embedding, topol- Relaxed framework embedding must
+autografs
+#174/#197/#198/#207
+ogy slot motion, closure regression,
+allow low symmetry slot movement
+/ PR #208
+cell volume scaling, pinned-net control while maintaining topology, closure and
+volume scale, the objective cannot be
+adjusted to allow individual nets to pass.
+Chemistry
+pybamm-team/
+Issue #5414 / PR half-cell Doyle-Fuller-Newman model, PyBaMM half-cell DFN must consistently
+PyBaMM
+#5540
+surface-form electrolyte potential,
+register electrolyte/solid phase potential
+boundary-condition registration,
+boundary conditions for surface-form
+thermal Ohmic-heating coupling
+and thermal sub-models, and cannot
+allow half-cell domain splitting to cause
+gradient shape mismatch.
+Materials Science marrink-lab/
+Issue #380 / PR polymer residue graph, template/vol- Polymer workflows must pass template,
+and Engineering polyply_1.0
+#381
+ume identity, coordinate generation, volume, and residue graph identities all
+library loading, residue equivalence
+the way to coordinate generation without
+losing graph structure semantics between
+loading and generation.
+Issue #584 / PR symmetric PCOMP expansion, ABD The ABD of the symmetrical layup must
+Mechanics
+SteveDoyle2/
+pyNastran
+#85
+equivalent, D block calculation, exbe consistent with the explicit layup, and
+plicit layup and symmetric layup
+the expanded directional stiffness and D
+consistency
+matrix cannot deviate.
+Chemistry
+pybamm-team/
+Issue #3526 / PR upwind/downwind edge states, cell- The three-layer semantics of celPyBaMM
+#3979
+centered and edge-centered flux,
+l/edge/boundary in a finite volume
+Dirichlet FV boundary handling,
+must be consistent, and upwind/downmesh-size invariance
+wind cannot be mismatched in boundary
+processing.
+Chemistry
+rdkit/rdkit
+Issue #9338 / PR tautomer canonicalization, stereo
+Tautomeric normalization must pre#9339
+preservation, V3000 structure serializa- serve chirality and output serializable
+tion, atropisomer bond validity
+molecules, and the stereochemistry cannot be broken in canonicalize.
+Chemistry
+MLCIL/
+Issue #519 / PR MAP4 / MAPC retrieval protocol,
+Molecular retrieval protocols need to
+scikit-fingerprints
+#525 / PR #528
+chirality invariance, representation
+maintain the same semantics across
+consistency, benchmark panel, version chirality, representation, and batch propinning
+cessing paths, and cannot be true only for
+visible panels.
+Mathematics
+sympy/sympy
+Issue #28186 /
+rational integration, exact root hanThe original function returned by rational
+PR #28189
+dling, log_to_real, derivative identity, integration must really be able to convert
+real antiderivative semantics
+back to the original integrand, and root
+processing cannot break the derivative
+identity.
+Mathematics
+mpmath/mpmath
+Issue #1104 / PR theta3/theta4 fixed-precision paths,
+Jacobi theta must also be stable on legal
+#1107; Issue #930 near-unit nome stability, tiny-nome
+nomes. It cannot be rejected by mistake,
+/ PR #1111
+cancellation, derivative propagation, nor can it explode on the path of small
+modular transform
+nomes.
+Mechanics
+elhajjar1/
+Issue #252 / PR multi-wrinkle field composition, fiber- The multi-wrinkle field cannot be approxwrinkleFE
+#285
+angle propagation, phase offsets, FE
+imated by single wrinkle RSS, and the
+analysis, RSS shortcut
+fiber angle must follow the synthesized
+wrinkle field.
+Continued on next page
+
+23
+
+Table 5 – continued from previous page
+Task
+
+Scientific domain
+
+Upstream repository Issue/PR
+
+Knowledge scope
+
+110
+
+Civil Engineering
+
+robbievanleeuwen/ Issue #272 / PR
+section-properties#287
+
+first-moment result, outline quantity
+semantics, cross-section property
+consistency, reported vs constructed
+geometry
+
+111
+
+Mechanics
+
+112
+
+Civil Engineering
+
+113
+
+Electrical Engineering
+
+114
+
+Electrical Engineering
+
+115
+
+Civil Engineering
+
+116
+
+Civil Engineering
+
+117
+
+Civil Engineering
+
+118
+
+Chemistry
+
+119
+
+Chemistry
+
+Task focus
+
+The first-order moment result cannot
+be mistakenly reported as an outline
+quantity, and the report semantics and
+construction geometry must be consistent.
+GazzolaLab/
+Issue #81 / PR
+tapered slender filaments, inverseThe free response of the slender body
+#87
+time material-response, cross-section cannot jump randomly with the change of
+PyElastica
+variation, translational observations, cross section, and the material response
+free-response consistency
+and geometric changes must be coordinated.
+The plastic load-bearing of the composite
+robbievanleeuwen/ Issue #460 / PR hybrid-section plastic capacity, consection-properties#462
+stituent force/centroid preservation, section must preserve the force and
+split geometry pieces, plastic neutral centroid of each material segment, and
+axis
+cannot just report a seemingly reasonable
+number.
+Issue #2054 / PR timezone-aware timestamps, calendar Solar resource calculations must give
+pvlib/
+pvlib-python
+#2055
+bins, day-of-year, extraterrestrial
+consistent results for "different time
+irradiance, SPA, equivalent aware
+representations of the same moment",
+representations
+and time zone normalization cannot be
+aliased.
+Issue #1360 / PR storage history, planning-epoch
+The energy storage state must abide by
+PyPSA/PyPSA
+#1371
+boundary, cyclic vs initial state,
+the cycle boundary priority rules before
+Store/StorageUnit boundary seman- and after the planning boundary, and the
+tics, state recurrence
+initial state cannot be mistaken for the
+previous period.
+JWock82/Pynite
+Issue #255, #275 / Global stiffness singularity, structural Legal frames cannot return finite but
+PR #323
+stability determination, sparse/dense distorted displacements when unstable.
+solution consistency, zero right end
+Global stiffness singularities, zero load
+boundary
+boundaries, and sparse/dense path
+consistency must be determined together.
+JWock82/Pynite
+Issue #255, #275 / Structural response reports, equilibResponse reporting by the same framePR #323
+rium equations, matrix storage modes, work in sparse / dense matrix storage
+physical interpretation of control
+modes must remain physically interstudies
+pretable and consistent with equilibrium
+equations and API conventions.
+JWock82/Pynite
+Issue #317 / PR inactive member results, node disThe inactive member still needs to be
+#319
+placement chord, physical member
+linearly interpolated along the chord after
+segmentation, local/global coordinate displacement to ensure that the scalar /
+transformation
+sampled results are compatible with the
+geometry.
+tblite/tblite
+PR #326 / PR
+GFN2-xTB multipole electrostatics,
+Different legitimate periodic unit cell
+#343
+3-D periodic Ewald decomposition,
+representations of the same molecule
+energy/force/stress consistency, unit should give consistent energies, forces,
+cell translation and derivative cache
+and stresses; multipolar Ewald’s real/reciprocal paths and cached derivatives
+must be aligned.
+MolSSI/QCEngine PR #349
+Turbomole nprhessian/hessian seTurbomole Hessian analysis must recoglection, 3N×3N Cartesian Hessian,
+nize nprhessian/hessian records, infer
+projected/unprojected curvature,
+the full 3N×3N dimensions, and pass
+QCSchema result consistency
+the unprojected Cartesian curvature to
+downstream reaction path/vibration
+analysis.
+
+24
+
+

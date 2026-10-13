@@ -1,0 +1,1072 @@
+MobileExperts: A Dynamic Tool-Enabled Agent Team
+in Mobile Devices
+Jiayi Zhang1,2 , Chuang Zhao3 , Yihan Zhao2 , Zhaoyang Yu2 ,
+Ming He1 ∗, Jianping Fan1
+
+arXiv:2407.03913v1 [cs.AI] 4 Jul 2024
+
+1
+
+AI Lab at Lenovo Research, 2 Renmin University of China,
+3
+The Hong Kong University of Science and Technology
+
+Abstract
+The attainment of autonomous operations in mobile computing devices has consistently been a goal of human pursuit. With the development of Large Language
+Models (LLMs) and Visual Language Models (VLMs), this aspiration is progressively turning into reality. While contemporary research has explored automation
+of simple tasks on mobile devices via VLMs, there remains significant room for
+improvement in handling complex tasks and reducing high reasoning costs. In this
+paper, we introduce MobileExperts, which for the first time introduces tool formulation and multi-agent collaboration to address the aforementioned challenges. More
+specifically, MobileExperts dynamically assembles teams based on the alignment
+of agent portraits with the human requirements. Following this, each agent embarks
+on an independent exploration phase, formulating its tools to evolve into an expert.
+Lastly, we develop a dual-layer planning mechanism to establish coordinate collaboration among experts. To validate our effectiveness, we design a new benchmark
+of hierarchical intelligence levels, offering insights into algorithm’s capability to
+address tasks across a spectrum of complexity. Experimental results demonstrate
+that MobileExperts performs better on all intelligence levels and achieves ∼22%
+reduction in reasoning costs, thus verifying the superiority of our design.
+
+1
+
+Introduction
+
+The human pursuit of creating autonomous device operation agents to perform tasks independently
+continues, intensified by the widespread adoption of personal electronic devices[33, 22, 28, 32, 34, 20].
+People leverage these intelligent assistants to help themselves, not only completing mundane tasks on
+a daily basis, but also surpassing their own capabilities to perform higher-level operations. In previous
+research, achieving autonomous planning and execution abilities in agents has been challenging due
+to limitations in intelligence levels. However, the advent and evolution of large language models
+(LLMs) bring forward the potential for its realization. A significant number of studies concentrate on
+LLM-based agents [23, 4]and demonstrate remarkable competency in varied domains.
+Recent researchers attempt to implement this concept using LLMs or VLMs. With the integration of
+a LLM/VLM core, it’s possible to configure the agent’s action space to interact with a device enabling
+the agent to operate and control the specific device autonomously. We refer to this type of work as
+"Device Operation Agent (DOA)". Among all possible device types, mobile devices, due to their
+close ties with human daily life, are the platform most urgently needing DOAs. Currently, research
+on mobile device DOA has become a popular field of focus. For example, research work such as
+[26, 33, 22] demonstrate the application of LLM and VLM to accomplish automated operational
+tasks.
+∗
+
+Ming He (E-mail: heming01@foxmail.com), is the corresponding author.
+
+Preprint. Under review.
+
+However, based on the intelligence levels defined by [12], even the best-performing DOA is currently
+only at the level of "Simple Step Following" and "Deterministic Task Automation". Additionally,
+current UI-based DOAs are facing considerable challenges regarding reasoning efficiency and time
+cost. A typical UI operation may require 5 to 10 steps, while each step of an existing UI-based
+agent requires the invocation of the VLM model to choose the action, undoubtedly adding significant
+reasoning and time costs.
+To solve these problems, we introduce MobileExperts, a multimodal multi-agent framework for
+mobile devices on android, designed to enhance DOA intelligence and reduce reasoning costs and
+time. It features two key features: (1) Code-Combined Procedure Memory (Tool) Formulation: To
+minimize reliance on the VLM model, we propose a new form of tool pattern: with the code writing
+ability of LLM, MobileExperts combines the basic actions of experts through code combination to
+form reusable code block tools. These tools are stored in the procedure memory shared by all experts
+in the system, thereby reducing the cost of tool formation and effectively improving operational
+efficiency. (2) Expert Collaboration via Double-layer Planning: MobileExperts adopts double layer
+planning method to solve long-term planning problems: the first layer is the team task distributed layer,
+at this level, tasks are decomposed into dependent subtasks for experts to execute, these dependencies
+form a collaborative network between experts; the second layer is expert task decomposition layer,
+the subtasks received by the experts are further decomposed into smaller action units to gradually
+achieve the goal. By these methods, MobileExperts not only improves the intelligence level but also
+reduces the cost of reasoning and time, providing a more efficient task execution mode for the DOA
+field.
+In addition, to effectively measure the capability of the MobileExperts framework, we proposed
+Expert-Eval to measure the performance of DOA at different intelligence levels. We compared
+MobileExperts with multiple baselines on this benchmark and conducted ablation experiments on the
+module to verify the effectiveness of the framework. We summarize the contributions of this paper as
+below:
+• MobileExperts is an autonomous multimodal agent framework that excels in handling complex
+device operation tasks, which enhanced by dynamic agent collaboration mechanism.
+• We propose an automatic code based tool formation method based on VLM, utilizing action
+trajectories accumulated within the interaction with environment, which fills the gap in tool
+formation for the mobile device operation field.
+• We design a tiered intelligence evaluation benchmark, Expert Eval, to assess the performance of
+mobile device operation agents across tasks of varying complexities.
+
+2
+
+Related Work
+
+2.1
+
+LLM Based MultiAgent System
+
+Due to the extraordinary performance demonstrated by LLMs under the Zero Shot paradigm, research
+on LLM-based agents become a hot topic. Recent research on LLM-based agents, covering various
+resoning paradigms[25, 30, 29, 3] and structures [14, 17, 18], has significantly improved single-agent
+capabilities. This has led to important advances across multiple fields [6, 19, 21]. Inspired by the
+concept of swarm intelligence, the LLM-based MultiAgent System has become a hot subtopic in this
+research field. By integrating agents with different skills and characteristics into one system, this
+system can achieve more complex and advanced objectives than single agents. For example, in the
+fields of software engineering [7, 16], social simulation [15, 24], and building general problem-solving
+frameworks [10, 27, 9], multi-agent systems have demonstrated their ability to solve higher-level and
+broader range of problems.
+With the development of VLM, the Agent has gradually shifted from a single text module to multimodal interaction, and has derived fields that can interact with the real world, such as the Device
+Operation Agent(DOA)[22, 5, 33], robot control [11]. However, in the field where VLM is used as
+the core of the Agent, research on using swarm intelligences to accomplish more complex tasks is
+still relatively less. We hope to supplement research in this field through MobileExperts, promoting
+the development of Agents in multi-modal multi-agent systems.
+2
+
+2.2
+
+Device Operation Agent
+
+Device Operation Agent (DOA) is an agent system that enables automation of human computing
+devices by configuring their action spaces, using either LLM or VLM. Currently, DOA mainly applies
+to three types of devices: web browsers, computers, and mobile devices. The present research trend
+focuses on developing User Interface (UI)-based agents that can automate user tasks on these devices.
+The progression of this type of research can be summarized via two primary directions.
+First, UI-based Agents [12] simulate basic user operations thereby transforming user tasks into a
+series of interactions with the device’s UI. In this process, the core model of DOA is undergoing
+transformation.Earlier studies utilized the LLM to describe the sequence of actions for tasks by
+structuring device UI elements into textual data, such as HTML and XML formats. This LLMcentric approach was reflected across web, computer and mobile devices[26, 35]. However, with the
+development of VLM, end-to-end methods show greater potential as the core model of DOA and
+achieved superior performance in multiple platforms[28, 32, 5, 20, 22, 33]. But an increase in agents
+that apply VLM has introduced new challenges for DOA’s development: accurately interpreting
+the meaning behind each UI element’s operation becomes significantly difficult for the universal
+multimodal models. This leads to the second direction in the development of DOA — enhancing
+the model’s understanding of the UI. For instance, research like [1, 8, 13, 31, 2] carried out in-depth
+training on the UI elements of Android, Apple as well as PC operating systems, achieving comparable
+performance with large-scale parameter models with a smaller scale parameter volume.
+As previously mentioned, UI-based Agents need to frequently call the model when executing operations, leading to costs in reasoning and time. For devices based on web browsers or computers, this
+problem can be solved by generating executable scripts with LLM to form tools[32, 28]. However,
+due to the limitations of mobile device operating systems, this tool formation strategy is not applicable
+on mobile devices, impacting the operation efficiency of DOA on mobile devices.
+In response to this limitation, we propose the MobileExperts, aiming to develop an innovative tool
+formation strategy for mobile devices, effectively solving the above problems, reducing reasoning
+and time costs in a mobile environment.
+
+3
+
+Methodology
+
+In this section, we initially present an overview of MobileExperts, our proposed multi-agent collaborative framework for solving complex tasks in the field of mobile device operation agent, as shown in
+Figure 1.
+
+User Requirement
+
+Expert Exploration
+
+Heuristic
+Agent
+Generation
+
+Generation Role
+
+Human Basic Operation
+
+Expert Planner
+
+round
+
+Expert Team
+Code Combination Based
+Tool Formulation
+
+yes
+
+Confidence Based Interface
+Memory Formulation
+
+Insight Memory Formulation
+
+V
+Check alignment
+
+Expert Pool
+
+I
+
+...
+
+III
+
+User
+Requirement
+
+Team Roles
+alignment
+
+I
+
+II
+
+III
+
+IV
+
+Exisiting Expert
+
+IV
+
+V
+
+Team Planner
+
+Developed Expert
+
+Expert Development
+
+Expert Collaboration
+
+Figure 1: The Framework of MobileExperts: Upon fielding a user’s request, the system undertakes an
+examination of the expert pool to identify an appropriate alignment to assemble the team. When no suitable
+expert is present, the system utilizes a heuristic algorithm to create a new expert. Subsequently, The newly
+minted experts then engage in the exploration process, accumulating experience to become competent for the
+task. After all the experts are in position, the execution process based on the expert’s portraits generates a
+dual-layer plan, and then the experts complete the task in a self-verifying manner.
+
+3
+
+3.1
+
+Expert Development
+
+Ensuring that mobile device operating agents have high efficiency, strong generalization, and effective
+error correction across various devices is crucial for their successful integration into real-world
+applications. However, due to inherent differences among mobile devices, an agent not specifically
+trained for each device may struggle to meet these criteria. To address this, we’ve introduced an
+exploration stage designed to equip the agent with unique tools and knowledge, enabling it to become
+proficient on a specific mobile device. The exploration process of MobileExperts is illustrated in the
+figure 2.
+User Requirement
+
+Help me operate
+a Twitter
+account with the
+llm topic
+
+Sub Explore Plan
+
+Step1:Tap
+
+①How to reply
+messages
+②How to handle
+comments
+③How to post tweets
+
+Step2:Tap
+
+Step3:Tap
+
+Step4:Tap
+
+Step5:Tap
+
+Action
+
+Step7:Tap
+
+Step6:Text
+
+Trajectory
+
+How to handle
+comments
+
+Expert
+
+Explore Plan
+Interface
+
+Terminate
+
+HumanBasic Operation
+
+Operate
+Insight
+
+Trajectory
+
+Expert Team
+
+Interface Memory Formulate
+ID:13
+
+Tool Formulate
+
+ID:11
+
+Name: X_notifications_box
+Start Interface: After entering Twitter
+End Interface: Go into the notifications box
+Result: Enters the tweet notifications box
+
+Confidence: Guess
+
+Function:The lable is possible to be used to view notifications
+
+ID:10
+
+Insight Formulate
+
+Confidence: Verification
+
+Function:It’s used to enter message box to reply to messages
+
+Confidence: Unknown
+
+Step: 7
+Failure Paths: 0
+Performance: Average
+Insight: When responding to Comments, I should extract
+more working memory to achieve better preformance.
+
+Function:Unable to recognize the role of the lable
+
+Figure 2: Expert Exploration: In the exploration phase, each agent receives tailored tasks, which are then
+broken down into sub-tasks to streamline the exploration process. Upon completion of a sub-task, whether
+successful or not, the agent extracts three types of memories from its trajectory: interface memories, procedural
+memories (tools), and insight memories for use in subsequent execution phases. It’s a pivotal step for expert’s
+development.
+
+3.1.1
+
+Exploration Process
+
+Expert exploration is a pivotal phase in the mobileexperts. During this phase, each Expert E leverages
+their individual portraits to formulate multiple explore subtasks S aligned with the current requirement
+R as Equation 1
+S = {r1 , r2 , · · · rn } = Decompose(E, R),
+
+(1)
+
+As the Expert engages in individual exploration phases, they tailor the generation of a tool set T and
+memories unique to user’s device, including device-specific interface memories Minterface and insight
+memories Minsight as shown in Equation 2. This process enables the Expert to become a domain
+specialist on the user’s device, effectively addressing device-specific challenges.
+Ti , Minterface
+, Minsight
+= E(ri )
+i
+i
+3.1.2
+
+(2)
+
+Code Combination Based Tool Formulation
+
+In the mobile device environment, the mobile device operation agent faces complex challenges of
+learning different application usage methods. Current studies primarily concentrate on enhancing the
+agent’s recognition of icons to tackle the challenge, neglecting the method of forming tools through
+exploration. The absence of such tools forces these agents to rely on a Visual Language Model
+(VLM) for each action, which has led to significant room for improvement in the reasoning costs of
+the mobile device operation agent. To surmount this challenge, we introduce an innovative approach,
+Code Combination Based Action Extension. Specifically, we have defined a basic operational space
+for experts, drawing upon human behaviors. We task experts with the exploration of the user device to
+4
+
+identify fixed operational workflows. By harnessing the encoding capabilities, we effectively connect
+these basic operations to form a series of new extended actions, achieving tool generation in the field
+of mobile device operation agents.
+HumanBasic Operation. Emulating human behavior, we craft nine basic operations for the expert,
+known as HumanBasic Operations. These encompass basic smartphone interactions, such as: tapping
+(Tap), text entry (Text), swiping (Swipe), reverting (Back), navigating to the home screen (Home),
+and terminating an operation (Stop). These operations extend beyond facilitating basic interaction,
+they also emulate the processes of human cognition. The Think operation models human cognitive
+processes concerning short-term objectives. The Read operation facilitates processing extensive
+documents, while the Wait function ensures adaptability to the performance variations of different
+devices. Detailed operation parameters and descriptions are presented in the table 1.
+Table 1: HumanBasic Operation’s parameters and descriptions
+Operation
+
+Params
+
+Description
+
+Tap
+
+x, y
+
+Simulates the human touch by selecting an element on the screen, used for choosing menu options or activating features.
+
+Text
+
+content
+
+Inputs a specified string into a text field on the interface, used for filling out forms or searching for information.
+
+Swipe
+
+x, y, direction
+
+Navigates through content or performs actions by swiping in a particular direction on the screen, such as switching pages.
+
+Read
+
+file, goal
+
+Reads the content of a specified document, such as PDFs or Word files, used for obtaining and analyzing information.
+
+think
+
+flow, goal
+
+Used during task execution to read from or write to working memory, assisting in decision-making and planning.
+
+Back
+
+none
+
+Returns to the previous interface, used for undoing actions or navigating to the previous screen.
+
+Home
+
+none
+
+Navigates back to the smartphone’s main screen, typically used to end the current session or access other applications.
+
+Wait
+
+none
+
+Chooses to wait when the current operation is unresponsive or loading, ensuring the system has adequate time to process.
+
+Stop
+
+none
+
+Ends the exploration of the current task when it is believed to be completed or no longer feasible.
+
+WorkFlow Operation. The absence of tool formulation in the field of mobile device operation
+agent is closely tied to the unique attributes of mobile devices. Contrasting with the proficiency
+of PC-based agents in creating and executing scripts for broad application control [21, 28], mobile
+platform agents encounter limitations imposed by their APIs. These constraints, while hindering
+traditional script-based tool construction, also inspire us to conceive a new formation method for
+tools: code combination based tool formulation.
+In the applications of mobile devices, there are variable and immutable UI elements, and essentially,
+the interaction of the mobile device operation agent with mobile devices is the operation of these
+UI elements. By recording the action trajectory of the agent and the user interface in a specific
+exploration process of an app, the agent can identify a reusable workflow around multiple immutable
+positional elements. To enhance the efficiency and precision of workflow generation, the expert
+initiates by creating a rigorous description of the workflow, which encompass three key elements: the
+initial UI state, the final state, and a functional summary. Following that, by integrating the parameters
+from prior action trajectory and the code of each subsequent operation within humanbasic operation
+space, the expert can finalize the corresponding workflow operation function, thereby giving rise to a
+tool. In figure 3, we present an illustrative example of tool formulation using twitter’s operational
+trajectory.
+3.1.3
+
+Memory Formulation
+
+Accumulating memory from the Action Trajectory of exploration is a critical step to ensure the Expert
+has the ability to maintain its generalization capability and self-correction ability through device
+exploration. During the exploration stage, we pay special attention to the accumulation of memory of
+the functions of the user’s interface icons, as well as the accumulation of insights closely related to
+the expert’s own responsibilities.
+InterFace Memory InterFace memory outlines a memory mechanism exclusively designed for
+device-specific icons. Due to the diversity of mobile device icon layouts and the widespread existence
+of system themes, generic VLMs struggle to directly discern the functions of different icons on the
+mobile interface.
+To address this issue, we have proposed a Confidence-based Icon Memory Mechanism. Differing
+from previous research[33], our method encourages the expert to guess and verify the functions of
+the icons related to the task goal, instead of being limited to the icons that have been manipulated,
+achieving three types (Verified, Hypothesized, Uncharted) of confidence labelling for different
+icons. By forming such memories, we managed to enhance the scope of interface memory while
+5
+
+WorkFlow Prompt
+
+Action Trajectory
+
+## BackGround
+You are skilled in operating Android smartphones.
+To enhance the efficiency of actions, you're tasked with abstracting a workflow from past operations, consisting of several fixed actions.
+By combining these workflows, you can reduce the number of actions taken. For better task completion, here are detailed instructions:
+## Guidelines
+You can complete this task based on the following guidelines:
+### Action Space
+{action_space}
+### Task Description
+In the last task, to accomplish {task_desc} you sequentially performed the following actions: {act_list}.
+Each action causes a change in the phone interface, which is described in actions.
+Your goal is to identify a workflow (a combination of multiple actions) that can be used across different tasks and abstract it accordingly.
+
+WorkFlow Code Generation
+
+Figure 3: Tool Formulation: In the exploration phase, we documented action trajectories with names, parameters,
+goals, and results. Using workflow prompts, we recognized sequences of actions from fixed UI elements and
+make agent write tool code based on foundational classes, to achieve automated tool formulation.
+
+maintaining the effects of interface exploration prompting more icons that might be related to tasks,
+and thereby minimizing the possibility that visual language models ignore icons that may be related
+to tasks due to hallucination.
+Insight Memory One key distinction between experts and novices lies in their profound understanding of their responsibilities. Leveraging their insight into relevant tasks, experts can achieve superior
+performance with fewer steps. This insight is derived from reflecting on action trajectories. To this
+end, we have designed an insight memory mechanism that focuses on task execution efficiency,
+failure paths, and performance. By comprehensively considering these three elements, the agent
+can gain deep insights into the current exploration task, thereby achieving a leap from novice to
+expert in terms of responsibility fulfillment.
+
+3.2
+
+Expert Collaboration
+
+Device Operation Agents face another crucial challenge in real-world applications: maintaining
+action consistency during high-frequency environmental interactions while effectively decomposing
+complex long-term tasks. To address this, we propose an innovative Expert Act Manner, ensuring
+consistency and efficiency in the Agent’s execution of tasks. Furthermore, inspired by [6], we
+introduce a dual-layer planning mechanism at both Team and Expert levels, transforming complex
+tasks into atomic tasks with shorter execution paths.
+
+Experts Team
+
+Team Task Distributed Layer
+Based On DAG
+
+Team Memory
+
+Expert Task Distributed Layer
+
+A
+
+A
+
+B
+F₁
+
+F₁
+
+B
+
+C₁
+
+2.1
+
+User Requirements
+Experts Role
+
+C
+
+Memory
+Pool
+
+B
+1-1
+
+1
+
+A
+
+B
+
+E
+
+Expert Tasks
+
+...
+
+A
+
+2.2
+
+1
+
+D
+
+3.1
+B
+
+1-2
+
+1-3
+
+D
+
+F₁
+
+C
+
+END
+
+2.3
+
+2.1-1
+
+C
+
+2.1-2
+
+2.1-3
+
+2.1
+
+E
+
+...
+
+Figure 4: Collaboration mechanism: MobileExperts employs Double Layer Planning to decompose complex
+tasks and construct Team Memory. Each Expert selectively interacts with the Team Memory through Commit
+and Fetch methods, enabling effective collaboration.
+
+6
+
+3.2.1
+
+Expert Act Manner
+
+The fundamental principle behind maintaining action consistency in Device Operation Agents lies in
+its role as the foundation for agent decision-making. In previous studies, experts typically employed
+the React paradigm to reason about and interact with the current environment, and enhancing their
+perception of the current state by summarizing action trajectories. While this approach maintains
+consistency in atomic tasks, it often results in significant information loss when confronting long-term
+tasks, consequently compromising the decision accuracy of Operation Agents. To mitigate this
+limitation, we propose an enhanced agent behavior paradigm coupled with a proactive working
+memory processing function.
+Self Verifying Manner: We propose self verifying manner, which enhances expert’s ability on visuallinguistic tasks by incorporating dual-state visual information input and an ’Observe-Verify-Act’ cycle.
+This mechanism continuously comparing previous and current visual states while considering action
+objectives. This approach enables the expert to maintain better consistency between consecutive
+actions, resulting in more precise and context-aware decision-making in device operation tasks.
+Proactive Working Memory: During Expert Level’s task execution, critical information generated
+by the Expert is stored as its Working Memory. For long-term tasks, simply placing accumulated
+extensive Working Memory within the prompt leads to increased token and time costs, while excess
+information may also affect the Expert’s decision-making ability. To address this issue, we’ve
+incorporated a Proactive Working Memory Processing function as a BasicOperation, allowing the
+Expert to efficiently manage its working memory during task execution. This ensures the Expert
+maintains action consistency during long-term tasks while reducing token costs.
+3.2.2
+
+Expert Collaboration Via Double-Layer Planning
+
+Accomplishing complex and long-term tasks, such as managing a Twitter account, presents two
+major challenges for Experts. The first challenge lies in decomposing the task into atomic task that
+an Expert can complete. The second challenge involves executing these tasks with high quality. In
+real-world scenarios, complex tasks typically require team collaboration. Therefore, developing an
+appropriate collaborative mechanism for Experts becomes crucial in addressing this issue. We tackle
+these challenges by implementing a double-layer planning mechanism and a team-shared memory
+pool, enabling effective collaboration among Experts.
+Through Expert Development, Experts with diverse capabilities and roles form a team. Double layer
+planning operates at both team and expert levels to plan user instructions. Specifically, the team task
+distributed Layer decomposes instructions into a graph organized as a DAG (Directed Acyclic Graph)
+based on user directives and team member role descriptions. Each node in this graph represents a
+task assigned to an Expert with corresponding abilities.
+This graph structure also establishes a communication mechanism among Experts. By maintaining
+a team-shared Memory Pool, each Expert uses the Commit method to store structured descriptions
+of task states and accumulated working memories upon completion of Team Level tasks. Experts
+dependent on these tasks then use the Fetch method to selectively extract relevant information, storing
+it in their individual working memories to support current task execution.
+At the expert task decomposition layer, the planner breaks down Team Level task descriptions into
+sequences of atomic tasks. Based on the status of these atomic tasks, the Planner can dynamically
+adjust the sequence order or repeat execution, implementing a flexible regulation mechanism to
+ensure successful completion of atomic tasks.
+
+4
+
+Experiments
+
+In order to comprehensively evaluate the ability of MobileExperts in handling diversified and complex
+tasks, we have constructed a new benchmark - Expert-eval. Based on this Benchmark, we compared
+our method with two baselines, and performed ablation experiments on various key modules of
+MobileExperts. Meanwhile, in order to intuitively display the performance of MobileExperts in tasks
+of different intelligence levels, we have carried out a case study to deeply analyze its behavior strategy
+and effect. Considering the requirement of overall action space for api accessibility, we chose to
+7
+
+conduct these experiments on the Android system. The overall tasks included in Expert-Eval can be
+found in Table 2.
+Table 2: Expert Eval: We developed 28 examples encompassing various complexity levels and application
+scenarios to comprehensively assess the performance of Device Operation Agent in practical applications.
+Category
+
+Application
+Twitter
+
+Social Media
+
+Instagram
+Tiktok
+Xiaohongshu
+Google Maps
+
+Online Service
+
+Alibaba
+Google Play
+Messenger
+Notion
+
+Productivity Tool
+
+Gmail
+Google Chrome
+Wikipedia
+
+Cross-App
+
+4.1
+
+Complexity
+
+Task Description
+
+C1
+
+Open the messages on twitter and read the first unread message.
+
+C2
+
+Post a tweet summarizing the recent discussions on twitter about LLM Based Agents.
+
+C1
+
+Search for "lenovo" on Instagram.
+
+C2
+
+Search for meme-related accounts on Instagram and post comments based on the content.
+
+C1
+
+Leave a comment on tiktok’s latest video.
+
+C2
+
+Review the last ten videos on my TikTok feed trends and search for topics that might interest me.
+
+C1
+
+Scroll through Xiaohongshu until you find a post that explains a trip to Miami, and then like it.
+
+C2
+
+Find popular food in Miami and then create a collection album in Xiaohongshu.
+
+C1
+
+Navigate to Renmin University of China.
+
+C2
+
+Find delicious Xinjiang cuisine near Renmin University of China and then navigate there.
+
+C1
+
+Enter Lenovo’s store in Temu.
+
+C2
+
+Find the price of the latest Lenovo Legion model.
+
+C1
+
+Download the JD (Jingdong) App from Google Play.
+
+C2
+
+Download a popular note-taking software.
+
+C1
+
+Check the latest verification code information.
+
+C2
+
+Delete messages in the text that are unrelated to the verification code.
+
+C1
+
+Create a new page in Notion.
+
+C2
+
+Create a new note detailing your job duties and title it appropriately.
+
+C1
+
+Write an email to {address}.
+
+C2
+
+Go through the unread emails and draft a response based on their content.
+
+C1
+
+Enter arxiv.org in Chrome.
+
+C2
+
+Download the latest paper on LLM (Large Language Model) Based Agent from arXiv.
+
+C1
+
+Open Wikipedia and search for "collective intelligence".
+
+C2
+
+Create a Wikipedia page about yourself.
+
+C2
+
+Download {app_name} and complete account registration with my phone number.
+
+C3
+
+Help me operate a twitter account with the theme {topic}.
+
+C3
+
+Help me find {Product Name} that is popular and reasonably priced.
+
+C3
+
+Help me explore how to use {app_name} and write a technical report-style document in Notion.
+
+Settings
+
+Expert-Eval. In order to comprehensively evaluate MobileExperts’ performance in handling diverse
+applications and tasks of different complexities, we have designed a new benchmark named ExpertEval. Expert-Eval aims to measure the intelligence level of mobile device operation agent at varying
+levels, which is closely related to the planning capabilities required for the task. We have defined
+three intelligence levels, ranging from simple to complex as follows:
+• C1 (Executor): Task execution is directly in accordance with the user’s instructions, with no
+additional planning required.
+• C2 (Planner): The task requires basic planning, the system needs to autonomously plan and
+execute tasks with clear objectives.
+• C3 (Strategist): The task requires complex, long-term planning, the system needs to formulate
+detailed plans for tasks of high complexity with clear objectives, and make adjustments during
+execution based on feedback.
+In addition, in order to verify the generalization ability of MobileExperts in different application
+scenarios, we divide applications into three main categories: Social Media, Online Service, and
+Productivity Tool. Based on these classifications, we have designed a series of tasks that require the
+use of one or more applications to test the adaptability and flexibility of MobileExperts in actual
+applications.
+Metrics. We design five metrics to measure the performance of the mobile device operation agent in
+various dimensions.
+• Success Rate: This metric measures whether the agent successfully completes tasks. If the task
+is completed, the score is marked as 1.
+8
+
+• Process Score: This metric assesses the action score of the agent during the execution of the
+task. When facing tasks that require complex planning ability, even if the agent cannot complete
+all actions, its effective actions will have a positive impact on this metric.
+• Reasoning Steps: This metric measures the efficiency of the agent in executing tasks. For
+mobile device operation agents, the main time consumption is to choose actions through calling
+the VLM. This metric is equal to the number of times the agent calls the VLM during the
+execution of the task.
+• Complete Performance: Unlike the performance score, this metric measures the quality of
+the agent’s task completion. For C1 level instruction obedience tasks, it can get full marks (10
+points) as long as it is completed. For tasks of C2 and C3 levels, there is a significant difference
+in the effect of completing tasks by different methods. We use the visual language model to
+score the initial goal of the task and the action track of the agent completing the task.
+4.2
+
+Experiment Results
+
+In this experiment, we used a unified mobile device, pre-installed with all the necessary applications,
+and tested expert-eval on three methods. In order to ensure the consistency of the experimental results,
+we set the maximum number of automatic explorations for individual tasks of MobileExperts and
+AppAgent to 10 times, and required each method to try a maximum of three times, finally choosing
+the best results as the outcome. In addition, considering the importance of the process score, we set
+the maximum number of execution steps for all methods’s C1 and C2 Task to 15 steps to prevent
+cycle errors, ensuring the efficiency of the experiment and the reliability of the results. The results of
+the experiment are presented in table 3.
+Table 3: Performance of MobileExperts, AppAgent[33] and MobileAgent[22] on Expert Eval.
+Complexity 1
+
+Method
+Mobile Experts
+App Agent
+Mobile Agent
+
+5
+
+Complexity 2
+
+Complexity 3
+
+SU
+
+PS
+
+RS
+
+CP
+
+SU
+
+PS
+
+RS
+
+CP
+
+SU
+
+PS
+
+RS
+
+CP
+
+0.8333
+0.7500
+0.7500
+
+0.7605
+0.7345
+0.7537
+
+5.9167
+7.4167
+6.0000
+
+8.3333
+7.5000
+7.5000
+
+0.7692
+0.6154
+0.2308
+
+0.6739
+0.6174
+0.5095
+
+7.1538
+8.9231
+9.3077
+
+7.3077
+5.2308
+1.9231
+
+1.0000
+0.3333
+0.3333
+
+0.5408
+0.3754
+0.4014
+
+28.3333
+33.6667
+38.3333
+
+7.0000
+2.6667
+2.3333
+
+Conclusion
+
+This paper introduces MobileExperts, an innovative multimodal agent framework designed to address
+complex mobile device operation tasks. The framework achieves breakthrough performance through
+two core features: code combination based tool formulation on mobile devices and expert collaboration via double-layer planning. This approach not only provides a novel method for automatic
+tool formulation in the field of mobile device operation agents but also introduces innovative action
+strategies for agent teams. Experimental results demonstrate that MobileExperts excels in handling
+high-complexity tasks while significantly reducing reasoning costs. These findings not only confirm
+the framework’s potential to enhance agent capabilities and reduce resources consumption but also
+advance research in mobile device operation automation.
+
+9
+
+References
+[1] Fuyu-8B: A Multimodal Architecture for AI Agents.
+[2] Gilles Baechler, Srinivas Sunkara, Maria Wang, Fedir Zubach, Hassan Mansoor, Vincent Etter,
+Victor Cărbune, Jason Lin, Jindong Chen, and Abhanshu Sharma. Screenai: A vision-language
+model for ui and infographics understanding. arXiv preprint arXiv:2402.04615, 2024.
+[3] Maciej Besta, Nils Blach, Ales Kubicek, Robert Gerstenberger, Michal Podstawski, Lukas
+Gianinazzi, Joanna Gajda, Tomasz Lehmann, Hubert Niewiadomski, Piotr Nyczyk, and Torsten
+Hoefler. Graph of thoughts: Solving elaborate problems with large language models. In AAAI,
+pages 17682–17690. AAAI Press, 2024.
+[4] Taicheng Guo, Xiuying Chen, Yaqi Wang, Ruidi Chang, Shichao Pei, Nitesh V Chawla, Olaf
+Wiest, and Xiangliang Zhang. Large language model based multi-agents: A survey of progress
+and challenges. arXiv preprint arXiv:2402.01680, 2024.
+[5] Hongliang He, Wenlin Yao, Kaixin Ma, Wenhao Yu, Yong Dai, Hongming Zhang, Zhenzhong
+Lan, and Dong Yu. Webvoyager: Building an end-to-end web agent with large multimodal
+models. arXiv preprint arXiv:2401.13919, 2024.
+[6] Sirui Hong, Yizhang Lin, Bangbang Liu, Binhao Wu, Danyang Li, Jiaqi Chen, Jiayi Zhang,
+Jinlin Wang, Lingyao Zhang, Mingchen Zhuge, et al. Data interpreter: An llm agent for data
+science. arXiv preprint arXiv:2402.18679, 2024.
+[7] Sirui Hong, Xiawu Zheng, Jonathan Chen, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili
+Wang, Steven Ka Shing Yau, Zijuan Lin, Liyang Zhou, et al. Metagpt: Meta programming for
+multi-agent collaborative framework. arXiv preprint arXiv:2308.00352, 2023.
+[8] Wenyi Hong, Weihan Wang, Qingsong Lv, Jiazheng Xu, Wenmeng Yu, Junhui Ji, Yan Wang,
+Zihan Wang, Yuxuan Zhang, Juanzi Li, Bin Xu, Yuxiao Dong, Ming Ding, and Jie Tang.
+Cogagent: A visual language model for gui agents. arXiv preprint arXiv:2312.08914, 2023.
+[9] Chenliang Li, He Chen, Ming Yan, Weizhou Shen, Haiyang Xu, Zhikai Wu, Zhicheng Zhang,
+Wenmeng Zhou, Yingda Chen, Chen Cheng, Hongzhu Shi, Ji Zhang, Fei Huang, and Jingren
+Zhou. Modelscope-agent: Building your customizable agent system with open-source large language models. In EMNLP (Demos), pages 566–578. Association for Computational Linguistics,
+2023.
+[10] Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, and Bernard
+Ghanem. Camel: Communicative agents for "mind" exploration of large language model society.
+In Thirty-seventh Conference on Neural Information Processing Systems, 2023.
+[11] Xinghang Li, Minghuan Liu, Hanbo Zhang, Cunjun Yu, Jie Xu, Hongtao Wu, Chilam Cheang,
+Ya Jing, Weinan Zhang, Huaping Liu, et al. Vision-language foundation models as effective
+robot imitators. arXiv preprint arXiv:2311.01378, 2023.
+[12] Yuanchun Li, Hao Wen, Weijun Wang, Xiangyu Li, Yizhen Yuan, Guohong Liu, Jiacheng Liu,
+Wenxing Xu, Xiang Wang, Yi Sun, et al. Personal llm agents: Insights and survey about the
+capability, efficiency and security. arXiv preprint arXiv:2401.05459, 2024.
+[13] Runliang Niu, Jindong Li, Shiqi Wang, Yali Fu, Xiyu Hu, Xueyuan Leng, He Kong, Yi Chang,
+and Qi Wang. Screenagent: A vision language model-driven computer control agent. arXiv
+preprint arXiv:2402.07945, 2024.
+[14] Charles Packer, Vivian Fang, Shishir G. Patil, Kevin Lin, Sarah Wooders, and Joseph E.
+Gonzalez. Memgpt: Towards llms as operating systems. CoRR, abs/2310.08560, 2023.
+[15] Joon Sung Park, Joseph O’Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, and
+Michael S Bernstein. Generative agents: Interactive simulacra of human behavior. In Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology, pages
+1–22, 2023.
+[16] Chen Qian, Xin Cong, Cheng Yang, Weize Chen, Yusheng Su, Juyuan Xu, Zhiyuan Liu,
+and Maosong Sun. Communicative agents for software development. arXiv preprint
+arXiv:2307.07924, 2023.
+[17] Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro,
+Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can
+teach themselves to use tools. In NeurIPS, 2023.
+10
+
+[18] Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao.
+Reflexion: language agents with verbal reinforcement learning. In NeurIPS, 2023.
+[19] Significant Gravitas. AutoGPT, April 2023. original-date: 2023-03-16T09:21:07Z.
+[20] Weihao Tan, Ziluo Ding, Wentao Zhang, Boyu Li, Bohan Zhou, Junpeng Yue, Haochong
+Xia, Jiechuan Jiang, Longtao Zheng, Xinrun Xu, et al. Towards general computer control: A
+multimodal agent for red dead redemption ii as a case study. arXiv preprint arXiv:2403.03186,
+2024.
+[21] Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan,
+and Anima Anandkumar. Voyager: An open-ended embodied agent with large language models.
+arXiv preprint arXiv:2305.16291, 2023.
+[22] Junyang Wang, Haiyang Xu, Jiabo Ye, Ming Yan, Weizhou Shen, Ji Zhang, Fei Huang, and
+Jitao Sang. Mobile-agent: Autonomous multi-modal mobile device agent with visual perception.
+arXiv preprint arXiv:2401.16158, 2024.
+[23] Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen,
+Jiakai Tang, Xu Chen, Yankai Lin, et al. A survey on large language model based autonomous
+agents. Frontiers of Computer Science, 18(6):1–26, 2024.
+[24] Zhilin Wang, Yu-Ying Chiu, and Yu Cheung Chiu. Humanoid agents: Platform for simulating human-like generative agents. In EMNLP (Demos), pages 167–176. Association for
+Computational Linguistics, 2023.
+[25] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed H. Chi,
+Quoc V. Le, and Denny Zhou. Chain-of-thought prompting elicits reasoning in large language
+models. In NeurIPS, 2022.
+[26] Hao Wen, Yuanchun Li, Guohong Liu, Shanhui Zhao, Tao Yu, Toby Jia-Jun Li, Shiqi Jiang,
+Yunhao Liu, Yaqin Zhang, and Yunxin Liu. Autodroid: Llm-powered task automation in android.
+In MobiCom, pages 543–557. ACM, 2024.
+[27] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Shaokun Zhang, Erkang Zhu, Beibin Li,
+Li Jiang, Xiaoyun Zhang, and Chi Wang. Autogen: Enabling next-gen llm applications via
+multi-agent conversation framework. arXiv preprint arXiv:2308.08155, 2023.
+[28] Zhiyong Wu, Chengcheng Han, Zichen Ding, Zhenmin Weng, Zhoumianze Liu, Shunyu
+Yao, Tao Yu, and Lingpeng Kong. Os-copilot: Towards generalist computer agents with
+self-improvement. arXiv preprint arXiv:2402.07939, 2024.
+[29] Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Tom Griffiths, Yuan Cao, and Karthik
+Narasimhan. Tree of thoughts: Deliberate problem solving with large language models. In
+NeurIPS, 2023.
+[30] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R. Narasimhan, and Yuan
+Cao. React: Synergizing reasoning and acting in language models. In ICLR. OpenReview.net,
+2023.
+[31] Keen You, Haotian Zhang, Eldon Schoop, Floris Weers, Amanda Swearngin, Jeffrey Nichols,
+Yinfei Yang, and Zhe Gan. Ferret-ui: Grounded mobile ui understanding with multimodal llms.
+arXiv preprint arXiv:2404.05719, 2024.
+[32] Chaoyun Zhang, Liqun Li, Shilin He, Xu Zhang, Bo Qiao, Si Qin, Minghua Ma, Yu Kang,
+Qingwei Lin, Saravan Rajmohan, Dongmei Zhang, and Qi Zhang. Ufo: A ui-focused agent for
+windows os interaction. arXiv preprint arXiv:2402.07939, 2024.
+[33] Chi Zhang, Zhao Yang, Jiaxuan Liu, Yucheng Han, Xin Chen, Zebiao Huang, Bin Fu, and Gang
+Yu. Appagent: Multimodal agents as smartphone users. arXiv preprint arXiv:2312.13771, 2023.
+[34] Chuang Zhao, Hongke Zhao, Yong Ge, Runze Wu, and Xudong Shen. Winning tracker: A new
+model for real-time winning prediction in MOBA games. In WWW, pages 3387–3395. ACM,
+2022.
+[35] Shuyan Zhou, Frank F Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng,
+Yonatan Bisk, Daniel Fried, Uri Alon, et al. Webarena: A realistic web environment for building
+autonomous agents. arXiv preprint arXiv:2307.13854, 2023.
+
+11
+
+

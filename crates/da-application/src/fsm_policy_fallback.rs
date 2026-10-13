@@ -70,28 +70,28 @@ impl FsmPolicyPort for NativeFallbackPolicy {
     ) -> FsmPolicyResult<PolicyDecision> {
         match point {
             DecisionPoint::GrammarRoute => {
-                if let Some(table) = self.learned_grammar_table() {
-                    if let Some(route) = table.grammar_for(features) {
-                        return Ok(PolicyDecision::grammar(table.source(), route));
-                    }
+                if let Some(table) = self.learned_grammar_table()
+                    && let Some(route) = table.grammar_for(features)
+                {
+                    return Ok(PolicyDecision::grammar(table.source(), route));
                 }
                 let route = grammar_route_native(features, &self.registry.grammar_native());
                 Ok(PolicyDecision::grammar(PolicySource::Native, route))
             }
             DecisionPoint::BatchAdmission => {
-                if let Some(table) = self.learned_admission_table() {
-                    if let Some(admission) = table.admission_for(features) {
-                        return Ok(PolicyDecision::admission(table.source(), admission));
-                    }
+                if let Some(table) = self.learned_admission_table()
+                    && let Some(admission) = table.admission_for(features)
+                {
+                    return Ok(PolicyDecision::admission(table.source(), admission));
                 }
                 let admission = batch_admission_native(features, &self.registry.admission_native());
                 Ok(PolicyDecision::admission(PolicySource::Native, admission))
             }
             DecisionPoint::ProfileRoute => {
-                if let Some(table) = self.learned_profile_table() {
-                    if let Some(profile) = table.profile_for(features) {
-                        return Ok(PolicyDecision::profile(table.source(), profile));
-                    }
+                if let Some(table) = self.learned_profile_table()
+                    && let Some(profile) = table.profile_for(features)
+                {
+                    return Ok(PolicyDecision::profile(table.source(), profile));
                 }
                 let profile = profile_route_native(features, &self.registry.profile_route_native());
                 Ok(PolicyDecision::profile(PolicySource::Native, profile))

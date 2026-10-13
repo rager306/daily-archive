@@ -86,6 +86,7 @@ fn candidate_manifest(corpus: &Sha256Digest) -> CandidateManifest {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    let _logging_guard = da_cli::logging::init_pipeline_logging("learning_critic_e2e");
     let raw = std::fs::read_to_string(&args.observations)?;
     let parsed = serde_json::from_str::<serde_json::Value>(&raw)?;
     let corpus_str = parsed["corpus"]

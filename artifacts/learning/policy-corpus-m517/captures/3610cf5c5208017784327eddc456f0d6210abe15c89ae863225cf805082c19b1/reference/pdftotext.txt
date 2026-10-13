@@ -1,0 +1,2685 @@
+arXiv:2506.04625v1 [cs.CL] 5 Jun 2025
+
+Advancing Tool-Augmented Large Language Models via
+Meta-Verification and Reflection Learning
+Zhiyuan Ma
+
+Jiayu Liu
+
+Xianzhen Luo
+
+State Key Laboratory of Cognitive
+Intelligence, University of Science and
+Technology of China
+Hefei, China
+zhyma@mail.ustc.edu.cn
+
+State Key Laboratory of Cognitive
+Intelligence, University of Science and
+Technology of China
+Hefei, China
+jy251198@mail.ustc.edu.cn
+
+Research Center for Social
+Computing and Interactive Robotics,
+Harbin Institute of Technology
+Harbin, China
+xzluo@ir.hit.edu.cn
+
+Zhenya Huang∗
+
+Qingfu Zhu
+
+Wanxiang Che
+
+State Key Laboratory of Cognitive
+Intelligence, University of Science and
+Technology of China
+Hefei, China
+huangzhy@ustc.edu.cn
+
+Research Center for Social
+Computing and Interactive Robotics,
+Harbin Institute of Technology
+Harbin, China
+qfzhu@ir.hit.edu.cn
+
+Research Center for Social
+Computing and Interactive Robotics,
+Harbin Institute of Technology
+Harbin, China
+car@ir.hit.edu.cn
+
+Abstract
+Empowering large language models (LLMs) with effective tool
+utilization capabilities is crucial for enabling AI agents to solve
+complex problems. However, current models face two major limitations: (1) unreliable tool planning and invocation due to lowquality instruction datasets (e.g., widespread hallucinated API calls),
+and (2) weak tool reflection abilities (over 90% of errors cannot
+be corrected) resulting from static imitation learning. To address
+these critical limitations, we propose Tool-MVR, a novel ToolAugmented LLM that achieves comprehensive System 2 reasoning through two key innovations. Specifically, we first introduce
+Multi-Agent Meta-Verification (MAMV), a systematic pipeline
+that rigorously validates APIs, queries, and reasoning trajectories
+to construct ToolBench-V, a new high-quality instruction dataset
+that addresses the limitation of unreliable tool planning and invocation. Second, we propose Exploration-based Reflection Learning
+(EXPLORE), which enhances tool reflection capabilities by leveraging tool feedback through a dynamic “Error → Reflection →
+Correction” learning paradigm, resulting in our reflection dataset
+ToolBench-R and addressing the critical weakness in tool reflection. Finally, we obtain Tool-MVR by finetuning open-source LLMs
+(e.g., Qwen-7B) on both ToolBench-V and ToolBench-R. Our experiments demonstrate that Tool-MVR achieves state-of-the-art
+performance on StableToolBench, surpassing both ToolLLM (by
+23.9%) and GPT-4 (by 15.3%) while reducing API calls by 31.4%,
+with strong generalization capabilities across unseen tools and scenarios. Additionally, on our proposed RefineToolBench, the first
+∗ Zhenya Huang is the corresponding author.
+
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than the
+author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or
+republish, to post on servers or to redistribute to lists, requires prior specific permission
+and/or a fee. Request permissions from permissions@acm.org.
+KDD ’25, Toronto, ON, Canada.
+© 2025 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+ACM ISBN 979-8-4007-1454-2/25/08
+https://doi.org/10.1145/3711896.3736835
+
+benchmark specifically designed to evaluate tool reflection capabilities. Tool-MVR achieves a 58.9% error correction rate, significantly
+outperforming ToolLLM’s 9.1%. 1
+
+CCS Concepts
+• Computing methodologies → Knowledge representation
+and reasoning; Natural language processing.
+
+Keywords
+Large Language Models, Tool learning, Self-Reflection
+ACM Reference Format:
+Zhiyuan Ma, Jiayu Liu, Xianzhen Luo, Zhenya Huang, Qingfu Zhu, and Wanxiang Che. 2025. Advancing Tool-Augmented Large Language Models via
+Meta-Verification and Reflection Learning. In Proceedings of the 31st ACM
+SIGKDD Conference on Knowledge Discovery and Data Mining V.2 (KDD ’25),
+August 3–7, 2025, Toronto, ON, Canada. ACM, New York, NY, USA, 26 pages.
+https://doi.org/10.1145/3711896.3736835
+
+1
+
+Introduction
+
+Large language models (LLMs) have shown impressive capabilities
+in various tasks, from natural language understanding to complex
+reasoning [7, 12, 25, 43, 57, 64–66, 69]. However, general-purpose
+LLMs face inherent limitations in accessing real-time data and specialized expertise [26, 38, 52, 60]. Similar to how humans leverage
+tools for problem-solving, the tool learning task enables LLMs to
+utilize external tools (e.g., weather forecast APIs, airline reservation
+APIs) for accessing real-time information and interacting with the
+physical world, expanding their capabilities [36].
+Tool learning requires multi-turn interactions between LLMs
+and external tools. As shown in the green trajectory of Figure 1, for
+a weather query “What’s the weather . . . December 25, 2024?”, the
+model involves three key capabilities: (1) Tool planning: The LLM
+correctly identifies the need to use the weather forecast API. (2)
+Tool invocation: It then generates precise API calls with proper parameters (city=“London”, date=“2024-12-25”). (3) Tool reflection: It
+corrects errors through feedback when tool planning or invocation
+1 Codes and data are available at: https://github.com/zhymma/Tool-MVR
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+fails [17, 19, 31, 35, 47, 68]. Such a complex tool learning process requires System 2 reasoning - a deliberate, step-by-step approach that
+humans use for sophisticated problem-solving [11, 22, 24, 50, 55].
+Recent studies have explored two main approaches to tackle
+tool learning task [38, 52]. The first approach focuses on building Tool-Augmented agents using powerful closed-source LLMs
+through prompt engineering [4, 13], from ReAct’s “thought-actionobservation” format [59] to more sophisticated frameworks like
+ToolChain’s A* search [71]. The second approach aims to enhance
+open-source LLMs’ tool utilization capabilities through instruction
+tuning. ToolBench [37], currently the most widely-used dataset,
+leverages large-scale REST API collections and constructs extensive
+tool instruction data through depth-first search annotation. This
+dataset has enabled the development of various Tool-Augmented
+LLMs [3, 8, 61]. For example, the instruction-tuned ToolLLM achieves
+performance comparable to ChatGPT [33].
+However, current tool learning research faces two critical limitations. First, mainstream tool instruction datasets (e.g., ToolBench)
+used for training Tool-Augmented LLMs suffer from severe quality
+issues. Recent analysis [18] reveals that in ToolBench [37], 57.3%
+of queries contain unsolvable requests or incomplete information,
+and more critically, 74.4% of API call trajectories exhibit hallucination behaviors (detailed in Section 3.2). As illustrated by the
+blue trajectory in Figure 1, which shows a typical hallucinated API
+call in ToolBench: (1) omitting the required date parameter and
+only calling the API with “city: London”; and (2) incorrectly using current weather data (December 20) to answer a query about
+December 25. These poor-quality instructions severely impair the
+model’s System 2 reasoning capabilities in both tool planning and
+tool invocation [23].
+Furthermore, current Tool-Augmented LLMs lack tool reflection
+capabilities - a critical weakness is given that API call errors are
+inevitable in complex real-world scenarios [20, 44]. The ability to
+correct errors based on execution feedback is essential for robust
+tool utilization. However, we observe that ToolLLM abandons over
+25% of tasks because it falls into local traps when encountering errors, unable to correct wrong actions from multi-turn interactions.
+As shown in the red trajectory of Figure 1, when encountering
+an incorrect date format error, the model fails to make the simple correction despite receiving explicit API feedback about the
+required YYYY-MM-DD format, and abandons the task. To further
+emphasize this phenomenon, we introduce RefineToolBench, the
+first benchmark designed to measure tool reflection capabilities
+(detailed in Section 4.1.2), which shows that ToolLLM successfully
+corrects errors in only 9.1% of cases. This lack of adaptive tool
+reflection capability reveals that current Tool-Augmented LLMs
+have not yet achieved genuine System 2 reasoning [2].
+To address these limitations, we develop a novel two-stage approach: First, unlike previous instruction construction methods that
+lack reliable verification mechanisms, we construct a new highquality tool instruction dataset ToolBench-V through Multi-Agent
+Meta-Verification (MAMV), a systematic pipeline that validates: (1)
+APIs and queries for tool planning - ensuring reliable API functionality and complete user requirements; and (2) API-call trajectories
+for tool invocation - guaranteeing accurate API call trajectories.
+This MAMV pipeline effectively addresses the data quality issues,
+establishing solid foundations for tool planning and tool invocation.
+
+Ma et al.
+
+Building upon this foundation, we introduce Exploration-based
+Reflection Learning (EXPLORE) to enhance models’ tool reflection
+capabilities. In contrast to previous training methods that focus
+solely on imitating successful expert trajectories while ignoring
+error cases [49, 56], EXPLORE actively explores error scenarios to
+identify model weaknesses and leverages execution feedback to
+construct reflection data. This forms a dynamic “Error → Reflection → Correction” learning paradigm, resulting in our reflection
+dataset ToolBench-R. Through this process, models learn to reflect
+and optimize wrong actions based on tool feedback, addressing the
+critical weakness in tool reflection capabilities.
+Finally, by finetuning open-source LLMs (e.g., Qwen-2.5-7B [58])
+on both ToolBench-V and ToolBench-R, we obtain Tool-MVR that
+achieves sophisticated System 2 reasoning with deliberate tool
+planning, accurate tool invocation, and adaptive tool reflection.
+The main contributions of this work are as follows:
+• We propose Tool-MVR, achieving comprehensive System 2
+reasoning capabilities with significantly improved performance, efficiency and generalization - surpassing GPT-4 by
+15.3% on StableToolBench while reducing API calls by 31.4%,
+and maintaining strong performance across diverse unseen
+tools and scenarios.
+• We develop MAMV for systematic instruction data verification, achieving substantial improvements in both query
+validity (from 52.7% to 98.8%) and trajectory accuracy (from
+25.6% to 81.3%) in ToolBench-V.
+• We introduce EXPLORE learning algorithm, enabling ToolMVR to achieve a 58.9% error correction rate on RefineToolBench, significantly outperforming ToolLLM’s 9.1%.
+
+2 Related Works
+2.1 Tool Learning
+Tool learning has emerged as a crucial task for expanding LLMs’
+problem-solving abilities by enabling interaction with external tools
+to overcome inherent limitations such as outdated information and
+lack of real-time data access [43, 66]. Prior works have explored two
+main approaches. The first approach, focusing on prompt engineering with closed-source LLMs [4, 13, 46, 53, 62], has evolved from
+ReAct’s [59] basic thought-action format to more sophisticated
+frameworks. Chameleon [30] enhanced compositional reasoning
+by orchestrating multiple tools with GPT-4, while ToolChain [71]
+improved efficiency through A* search in action space. The second
+approach aims to enhance open-source LLMs through instruction
+tuning [5, 15, 46, 54, 63]. Toolformer [45] pioneered this direction
+by embedding API calls into text generation. ToolBench [37] made
+significant progress by establishing the largest tool learning dataset
+to date, encompassing 16,464 real-world APIs, and introduced ToolLLM with its depth-first search decision tree strategy (DFSDT) for
+trajectory annotation. This work provided a foundation for systematic tool learning research but was limited by dataset quality issues.
+Building upon ToolBench, TP-LLaMA [3] introduced preference
+learning to leverage failed explorations through DPO [39, 40].
+Most recently, works such as APIGen [29] and Tool-Ace [27]
+have introduced automated data generation frameworks aimed at
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+User Query: What's the weather like in London on December 25, 2024?
+APIs: `get_weather_forecast`: Providing a required city name and optional date (YYYY-MM-DD), returning temperature, condition and humidity.
+
+Input
+
+LLM
+
+Thought: I need to check the weather forecast
+for London on December 25, 2024.
+API Name: get_weather_forecast
+Arguments: {"city": "London","data":"202412-25"}
+Observation: {"error": "", "response":
+{"date": "2024-12-25", "temperature": 2,
+"condition": "Snow", "humidity": 85}}
+
+Tool
+
+LLM
+
+Thought: I have successfully retrieved the
+weather forecast.
+Final Answer: On December 25, 2024, London
+will experience snow with a temperature of 2°C
+and 85% humidity.
+Correct Result
+
+Thought: Let me check the weather forecast for
+London using API `get_weather_forecast`.
+API Name: get_weather_forecast
+Arguments: {"city": "London"} Missing Date
+Parameter
+Observation: {"error": "", "response": {"date":
+"2023-12-20", "temperature": 8, "condition":
+"Cloudy", "humidity": 75}}
+Get Wrong
+Date Weather
+Thought: I have found the weather for London.
+Final Answer: The weather in London will be
+cloudy with a temperature of 8°C and 75%
+Hallucinated
+humidity.
+Result
+
+Thought: I'll check the weather forecast for
+London on the specified date.
+API Name: get_weather_forecast
+Arguments: {"city": "London", "date":
+Wrong
+"December 25, 2024"}
+Date Format
+Observation: {"error": "Invalid date format.
+Date should be in YYYY-MM-DD format",
+"response": "{}"}
+...
+Failed Attempts
+Thought: I cannot correct the date format error
+after attempts.
+Final Answer: Finish by Giving Up
+
+Figure 1: Tool learning examples: given user queries and APIs, models generate API calls for answers. The green trajectory shows
+correct API calls, the blue trajectory shows hallucinated API calls, and the red trajectory demonstrates failed self-reflection.
+improving tool utilization capabilities through methods like multistage API validation and diverse query styles. However, these approaches primarily focus on single-API instructions. In contrast,
+our work aims to enhance tool using and reflexion in complex
+multi-tool scenarios.
+
+2.2
+
+Self-Reflection
+
+Recent work has explored feedback-based approaches for LLM selfreflection through various mechanisms [20, 44, 67]. Self-Refine [32]
+uses the same LLM for output generation and feedback-based improvements, while Reflexion [48] adds memory mechanisms to prevent recurring errors [34]. For precise reasoning tasks, LeDex [21]
+enhances code generation through explanation-based debugging,
+and CRITIC [14] leverages external verification for mathematical
+reasoning. However, in tool learning, self-reflection remains limited.
+Existing approaches like DFSDT [37] and AnyTool [9] handle errors
+through simple backtracking or complete restarts, leading to inefficient reasoning. Our work advances feedback-driven reflection
+through an exploration-based learning algorithm, enabling direct
+error correction from tool feedback.
+
+3
+
+Method
+
+In this section, we first provide a formal definition of tool learning task in Section 3.1. Then we present our approach to enhance
+Tool-Augmented LLMs through two key innovations: (1) developing MAMV to construct a new high-quality dataset ToolBench-V
+with 11,765 multi-turn tool interaction instances (Section 3.2), and
+(2) developing EXPLORE, an exploration-based reflection learning
+algorithm that enables models to learn from tool feedback and
+correct errors in tool interaction (Section 3.3).
+
+3.1
+
+Preliminaries
+
+The tool learning task requires models to effectively utilize external
+tools through multi-turn interactions [38, 52]. As shown in Figure 1,
+
+given a user query 𝑄 (e.g., “What’s the weather . . . ?”) and a tool
+subset 𝑇 = {𝑡 1, . . . , 𝑡𝑛 } (e.g., weather forecast APIs), the agent’s
+objective is to utilize appropriate tools to acquire information and
+derive an answer. Let T denote the tool learning process:
+T : 𝑄 × 𝑇 → (𝑆, 𝑟 ),
+
+(1)
+
+where 𝑆 represents the reasoning trajectory and 𝑟 the final answer.
+The model gradually solves problems through multiple rounds of
+interaction. Each round 𝑖 consists of: (1) action 𝑎𝑖 = (𝑡𝑖 , 𝑝𝑖 ): selecting tool 𝑡𝑖 ∈ 𝑇 and generating calling parameters 𝑝𝑖 (e.g., selecting weather API and specifying parameters like city=“London”,
+date=“2024-12-25”); (2) observation 𝑜𝑖 = 𝑡𝑖 (𝑝𝑖 ): executing the call
+and obtaining API feedback information 𝑜𝑖 (e.g., receiving weather
+forecast data or error messages about incorrect date format). Over
+the course of interaction, the model forms a reasoning trajectory
+and generates the final answer:
+(𝑆, 𝑟 ) = ((𝑎 1, 𝑜 1, . . . , 𝑎𝑡 , 𝑜𝑡 ), 𝑟 ).
+
+(2)
+
+Based on the API responses in trajectory 𝑆, the model synthesizes
+a final answer 𝑟 (e.g., “The weather will be . . . ”). The effectiveness
+of solution is evaluated by determining whether trajectory 𝑆 and
+answer 𝑟 adequately address query 𝑄 (details in Section 4.1).
+Unlike System 1’s fast, intuitive thinking process, tool learning
+requires sophisticated System 2 reasoning - a deliberate, step-bystep problem solving approach [11, 17, 35]. Specifically, this involves
+three key capabilities: (1) tool planning: analyzing query requirements and available APIs to determine the necessary tools; (2) tool
+invocation: constructing API calls with appropriate parameters (e.g.,
+date=“2024-12-25”); and (3) tool reflection: adjusting tool planning
+and invocation based on execution feedback (e.g., modifying date
+format or selecting alternative APIs). In this work, we aim to enhance open-source LLMs’ System 2 reasoning capabilities through
+these three aspects, enabling them to achieve the tool utilization
+capability of powerful closed-source models like GPT-4 [1].
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+(c) APICallAgent
+
+(a) APIOptAgent
+Complete Missing Docs
+
+DocRefiner
+Validator
+Sample Callings
+Excution
+Observation
+
+Is
+AP
+
+Add Response Schema
+Refined Doc
+
+Invalid
+
+Input Parameters
+
+Simulator
+API Sever
+
+LLM
+Enhanced
+API Pool
+
+Planning
+
+Response JSON
+
+Observation
+...
+
+Environment
+
+Multi-turn Iterations
+
+(b) QueryVerifyAgent
+
+Qu
+
+Dataset
+ToolBench
+
+Action
+
+Fix Invalid Desc
+
+Valid
+
+eri
+
+Well-Specified and
+Solvable Queries
+
+es
+Feasibility
+Checker
+
+Question
+Difficulty
+
+Semantic
+Clarity
+
+Missing Information
+Incomplete Tools
+Invalid Content
+
+Information
+Completeness
+
+Rank and Select
+Score 1-10
+
+Qiality Assessment
+
+Format Checker
+Semantic Checker
+Execution Checker
+Verified
+Queries
+
+Step-Level Chcker
+
+Dataset
+ToolBench-V
+
+Figure 2: Overview of Multi-Agent Meta-Verification (MAMV) framework. MAMV creates a new high-quality tool instruction
+dataset ToolBench-V via (a) APIOptAgent for API verification and optimization, (b) QueryVerifyAgent for query assessment
+and filtering, and (c) APICallAgent for step-level accurate API call trajectory generation.
+
+3.2
+
+Multi-Agent Meta-Verification Pipeline
+
+While instruction quality is crucial for model performance in specialized domains, existing mainstream tool instruction datasets
+primarily focus on quantity over quality [23, 28]. Recent analysis from Quality Matters [18] reveals systematic issues in current
+datasets’ construction methodology. These issues arise primarily
+from the lack of systematic verification in data collection process.
+Specifically, ToolBench [37] relies heavily on ChatGPT [33] for data
+generation and employs a depth-first search strategy for trajectory
+annotation, without incorporating reliable verification mechanisms.
+This leads to the propagation of model hallucinations and annotator
+biases into the instruction data.
+Specifically, we first analyze the representative dataset ToolBench [37], following the evaluation protocol in Quality Matters [18].
+As shown in Table 1, our analysis reveals significant quality issues:
+For query quality, approximately 47.3% of queries exhibit three
+critical issues: (1) information completeness: queries frequently
+omitting essential parameters (e.g., “Recommend romantic venues”
+missing location specification); (2) logical consistency: requirements
+often containing contradictions (e.g., booking past dates); and (3)
+API feasibility: queries requesting operations beyond API capabilities. For API-call quality, about 74.4% of trajectories contain three
+systematic problems: (1) parameter accuracy: 47.2% of API calls containing incorrect formats or values; (2) solution completeness: 33.1%
+of trajectories missing critical API calls; and (3) trajectory minimality: redundant API calls appearing as repeated queries. Such
+hallucination-prone instruction datasets like ToolBench lead to
+ToolLLM learning incorrect tool reasoning patterns, fundamentally
+limiting its tool planning and invocation capabilities.
+To address the severe quality issues in existing tool learning
+datasets, we propose Multi-Agent Meta-Verification (MAMV), a
+novel pipeline that systematically validates three meta-components
+in tool learning: APIs, user queries, and API call trajectories. Through
+collaborative verification, MAMV performs: (1) API verification (for
+tool planning - ensuring reliable API functionality and clear documentation), (2) query verification (for tool planning - ensuring
+
+Table 1: Evaluation of instruction dataset quality scores (%).
+Query Quality
+
+Spec.
+
+Coh.
+
+Solv.
+
+Overall
+
+ToolBench
+ToolBench-V
+
+79.6
+99.9
+
+77.9
+99.0
+
+81.8
+99.9
+
+52.7
+98.8
+
+API-Call Quality
+
+Align.
+
+Suff.
+
+Min.
+
+Overall
+
+ToolBench
+ToolBench-V
+
+52.1
+90.6
+
+66.4
+96.5
+
+54.9
+81.9
+
+25.6
+81.3
+
+query completeness and feasibility for tool selection), and (3) trajectory verification (for tool invocation - ensuring accurate parameter
+generation and efficient execution flow). Using MAMV, we improve
+ToolBench to ToolBench-V. Formally, each instance in ToolBench-V
+can be represented as:
+𝑉 = {(𝑄,𝑇 , 𝑆)},
+
+(3)
+
+where 𝑄 represents the verified queries from ToolBench, 𝑇 the enhanced API pool, and 𝑆 the newly constructed API call trajectory
+with step-wise verification. MAMV employs multiple agents powered by GPT-4. Each agent focuses on a specific verification task,
+collaboratively ensuring comprehensive quality control.
+3.2.1 API Verification. We first focus on verifying and enhancing
+both API functionality and documentation. Leveraging RapidAPI
+Hub [42], the world’s largest API marketplace, we selected over
+12,000 real-world APIs spanning 49 core domains (e.g., social media,
+travel services). These professionally maintained APIs support diverse practical applications, denoted as 𝑇𝑎𝑙𝑙 = {𝑡 1, . . . , 𝑡𝑛 }. However,
+these third-party APIs often present two major challenges: service
+instability and inconsistent documentation quality with incomplete
+parameter descriptions. To address these challenges, we develop
+APIOptAgent as part of our MAMV pipeline (Figure 2(a)). Specifically, we first employ GPT-4 to generate and execute diverse request
+samples for feedback collection. The Validator then assesses API
+validity based on these results, identifying common failure cases
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+(e.g., “API doesn’t exist”, “ACCESS_DENIED”). For invalid APIs, our
+Simulator serves as a virtual API server, responding to requests
+with semantically appropriate JSON responses containing simulated data derived from API documentation to ensure continuous
+API functionality. For valid APIs, DocRefiner enhances documentation by adding missing parameter specifications (types, defaults,
+ranges) and standardizing descriptions based on API response analysis. Through this process, we transformed 11,302 original APIs
+into an optimized pool: validating 6,770 functional APIs, enhancing 6,334 API documents, and providing simulation alternatives
+for 4,500+ unavailable APIs. This verification ensures both API
+functionality and clear documentation for effective tool planning
+(details in Appendix B.1).
+3.2.2 Query Verification. User queries are crucial for accurate user
+intent analysis and appropriate tool selection. In ToolBench [37], approximately 80,000 initial queries were generated by ChatGPT [33],
+covering various API usage scenarios. For each query 𝑄, we select
+a relevant subset 𝑇 ⊆ 𝑇𝑎𝑙𝑙 to address it. However, these ChatGPTgenerated queries often contain unsolvable cases that hinder proper
+requirement analysis and tool mapping. For instance, queries like
+“I’m interested in a famous actor’s career. Could you provide detailed information about their filmography?” lack essential information (actor name specification), making it impossible to map to
+appropriate APIs and parameters. Such incomplete queries lead to
+incorrect tool selection and flawed reasoning patterns, fundamentally limiting the model’s tool planning capabilities. We tackle these
+limitations by developing QueryVerifyAgent with two key components, as illustrated in Figure 2(b). The Feasibility Checker utilizes
+GPT-4 to filter out unsolvable queries due to missing information,
+logical contradictions, or lack of necessary tools. The Quality Assessor then evaluates remaining queries across three dimensions:
+semantic clarity, information completeness, and reasoning complexity, using a 1-10 scoring scale. We retain only high-quality queries
+(scores 8-10) to ensure query solvability, complexity, and completeness (see Appendix B.2 in Appendix). This rigorous filtering process
+yielded 23,903 high-quality queries from an initial pool of 62,147
+(detailed implementation in Appendix B.2).
+3.2.3 Trajectory Verification. The quality of API call trajectories
+directly impacts models’ tool invocation capabilities. The previous
+DFSDT approach, which combines ChatGPT with DFS algorithm
+for API sequence search, results in over 47% parameter errors, 33%
+incomplete solutions, and 45.1% redundant trajectories. By focusing
+solely on final answer accuracy while ignoring intermediate reasoning processes, DFSDT generates numerous intermediate errors
+and hallucinated behaviors.
+These challenges stem from the absence of verification in existing
+methods. To overcome these limitations, we develop APICallAgent, a multi-turn interactive framework with step-wise verification mechanism. As shown in Figure 2(c), APICallAgent operates
+through multi-round interactions among user queries, LLM reasoning (GPT-4), and API environment feedback. The agent follows a
+systematic cycle of planning (chain-of-thought reasoning for tool
+selection), action (parameter generation), and observation (execution feedback processing) to ensure logical consistency throughout
+the reasoning process. Inspired by CodeAct [51], we adopt Python
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+function calls instead of JSON format to better leverage LLMs’ inherent coding capabilities, thereby improving API calling accuracy.
+To ensure reliable API call trajectories, we designed a stepwise verification mechanism with three components: (1) Format
+Checker ensures final answer generation through syntax parsing,
+(2) Semantic Checker validates comprehensive problem resolution through constraint verification, and (3) Execution Checker
+examines each execution round to ensure positive contribution
+while eliminating redundant calls and hallucinated behaviors. This
+comprehensive verification ensures high-quality API call trajectories (detailed implementation in Appendix B.3).
+3.2.4 ToolBench-V. Hence, our MAMV pipeline creates ToolBenchV, a high-quality dataset of 11,765 multi-turn tool interaction instances. Through systematic verification, we effectively address the
+quality issues in existing datasets - achieving significant improvements in both query validity (from 52.7% to 98.8%) and trajectory
+accuracy (from 25.6% to 81.3%). The well-verified queries enhance
+models’ ability to understand user intent and select appropriate
+tools, while accurate trajectories guide proper API parameter generation. This comprehensive meta-verification approach establishes
+a solid foundation for System 2 reasoning by ensuring reliable tool
+planning and efficient tool invocation capabilities.
+
+3.3
+
+Exploration-based Reflection Learning
+
+Currently, existing Tool-Augmented LLMs rely solely on static imitation learning with correct expert trajectories, inevitably leading to
+brittle models that struggle with error recovery [49, 56]. Our analysis reveals that ToolLLM abandons 25% of tasks when encountering
+execution failures, failing to recover and continue reasoning. To
+systematically verify this limitation, we introduce RefineToolBench,
+the first benchmark for evaluating models’ tool reflection capabilities, where ToolLLM achieves only a 9.1% error correction rate
+(details in Section 4.6). This poor tool reflection ability significantly
+limits models’ practical applications in complex scenarios.
+3.3.1 EXPLORE. In response to these limitations, we introduce
+EXPLORE, an exploration-based reflection learning algorithm enabling systematic error correction through a dynamic “Error →
+Reflection → Correction” learning paradigm. As illustrated in Figure 3, EXPLORE actively samples step-level error actions online to
+identify model weaknesses and leverages tool feedback to construct
+reflection data using GPT-4. We categorize tool learning errors into
+two types: (1) API Calling errors (execution failures due to missing parameters, type mismatches, or incorrect API names); and (2)
+API Planning errors (successful but task-irrelevant executions due
+to incorrect tool selection or parameter content). Unlike previous
+approaches that discard failed cases [37], EXPLORE utilizes these
+errors as valuable learning signals, enabling models to reflect on
+mistakes and improve multi-turn interaction capabilities.
+Building upon the foundational capabilities from the first stage,
+EXPLORE uses verified ToolBench-V trajectories as references for
+self-improvement. For a trajectory 𝑆 = (𝑎 1, 𝑜 1, . . . , 𝑎𝑛 , 𝑜𝑛 ), we randomly select steps 𝑜𝑡 as exploration points. As shown in Figure 3,
+for a weather query, the verified trajectory 𝑆 demonstrates correct
+API usage. Through multiple sampling, we construct an exploration
+tree where successful explorations (blue) lead to task completion,
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Sample 1
+
+Trajectory S from ToolBench-V
+User: What's the current temperature in
+New York and what's the weather forecast
+for Christmas Day?
+
+a1
+
+Thought: I need to first get the current...
+Action: get_weather(city="New York")
+Observation: {"temperature": "8°C",
+"humidity": "65%", "date"="2024-12-20"}
+
+Observation: {"error":
+Invalid date format ...}
+
+wa
+Error
+
+wo
+
+3.4
+
+a1
+
+a2
+
+a2
+
+o2
+
+o2
+
+o2
+
+Success
+
+Trajectory S
+
+Fail
+
+Based on the observation "Invalid
+date format", this is a parameter
+error. The correct format should
+be ..., so I need to convert
+"Christmas Day" to "2024-12-25"
+
+a2
+
+L𝑉 = −
+
+Observation: {"temperature":
+"2°C", "conditions": ...}
+
+ra
+
+Reflection
+
+ro
+Correction
+
+while failed attempts (red) trigger reflection generation. For failed
+attempts, the exploration process with 𝑜𝑡 as the starting point can
+be formalized as:
+(4)
+
+where wa represents wrong actions, wo represents the feedback,
+and ra = 𝑎𝑡 +1 the corresponding correct action. This reflection
+process is crucial, enabling models to learn from feedback and
+adjust tool planning or invocation.
+3.3.2 ToolBench-R. Through this dynamic exploration process, we
+construct ToolBench-R, a reflection-oriented dataset:
+𝑅 = {(𝑄,𝑇 , 𝑆 <𝑡 , wa, wo, (ref, ra)) |
+(wa, wo, ra) ∈ 𝐸𝑡 },
+
+log 𝑝 (𝑎𝑡 |𝑄,𝑇 , 𝑎 <𝑡 , 𝑜 <𝑡 ),
+
+(6)
+
+where 𝑥 = (𝑄,𝑇 , 𝑆) denotes instances from the meta-verified dataset.
+For ToolBench-R, which enhances tool reflection capabilities
+through reflection learning, we optimize the joint prediction of
+reflection and corrected action:
+∑︁
+L𝑅 = −
+log 𝑝 ((ref, ra)|𝑄,𝑇 , 𝑆 <𝑡 , wa, wo),
+(7)
+𝑦 ∈𝑅
+
+Figure 3: Exploration-based Reflection Learning (EXPLORE):
+performs step-level exploration with sampling, enabling
+“Error→Reflection→Correction” learning paradigm.
+
+𝐸𝑡 = {(wa, wo, ra)|ra = 𝑎𝑡 +1 },
+
+|𝑆 |
+∑︁ ∑︁
+𝑥 ∈𝑉 𝑡 =1
+
+Action: get_weather(...,
+date="2024-12-25")
+
+ref
+
+Training
+
+We train our model through Supervised Fine-Tuning (SFT) to develop three System 2 reasoning capabilities. The training objective
+consists of two components corresponding to tool planning, invocation, and reflection abilities.
+For ToolBench-V, which focuses on tool planning and invocation capabilities, we optimize the action prediction loss at each
+interaction step 𝑡 in sequence 𝑆:
+
+Sample 2
+
+o1
+
+Reflection
+
+...... (final answer)
+
+covering diverse error types, robustly handling errors in complex
+real-world scenarios (further details in Appendix Appendix B.4).
+
+Task
+
+o1
+
+Thought: Now I'll ... for Christmas Day.
+Action: get_weather(city="New York",
+date="2024-12-25")
+Observation: {"temperature": "2°C",
+"conditions": "Snow","date"="2024-12-25"}
+
+Action: get_weather(...,
+date="December 25, 2024")
+
+Ma et al.
+
+(5)
+
+where each instance captures a complete reflection process with
+context: the query 𝑄, tools 𝑇 , and historical interactions 𝑆 <𝑡 .
+ToolBench-R is constructed by leveraging GPT-4 to generate
+structured reflection content for each error case. This involves analyzing execution feedback for issues, developing correction strategies, and formulating precise execution plans. For example, when
+encountering date format errors in weather queries, GPT-4 analyzes the tool feedback to generate structured reflections that guide
+parameter correction from “December 25, 2024" to “2024-12-25".
+This structured reflection content forms the basis of ToolBench-R.
+The reflection process emphasizes adaptive tool reflection through
+active processing and learning from real-time feedback. Each instance in ToolBench-R includes analytical (error analysis, correction
+strategy) and practical (concrete execution plans) components, enabling comprehensive tool reflection capabilities. This systematic
+approach results in ToolBench-R having 3,625 reflection instances
+
+where 𝑦 = (𝑄,𝑇 , 𝑆 <𝑡 , wa, wo, (ref, ra)) denotes instances from the
+reflection dataset. The final training objective combines both losses:
+L = L𝑉 + 𝜆L𝑅 ,
+
+(8)
+
+where 𝜆 is a hyperparameter balancing the importance between
+meta-verified instruction learning and reflection learning.
+By jointly optimizing these objectives during SFT, we train ToolMVR to master all three System 2 capabilities: (1) reliable tool
+planning through high-quality API and query verification, (2) accurate tool invocation through verified trajectories, and (3) effective
+tool reflection through feedback-based error correction.
+
+4 Experiments
+4.1 Benchmark and Evaluation Metrics
+4.1.1 StableToolBench. We evaluate model performance on StableToolBench [16], an enhanced and more stable test set derived from
+ToolBench [37]. It contains 765 carefully curated tasks that systematically evaluate different aspects of tool learning capabilities.
+We examine six test scenarios: G1-Ins., G1-Tool, G1-Cat., G2-Ins.,
+G2-Cat., and G3-Ins. These scenarios combine task complexity (G1:
+single-tool instructions, G2: intra-category multi-tool instructions,
+G3: cross-category multi-tool instructions) with generalization levels (Ins.: unseen instructions, Tool: unseen tools from seen categories, Cat.: unseen tool categories). Performance is measured
+using two key metrics: Pass Rate and Win Rate, evaluating task
+completion success and reasoning quality respectively.
+4.1.2 RefineToolBench. While existing benchmarks focus primarily on basic tool usage capabilities, they lack systematic assessment
+of error recovery - a crucial aspect of System 2 reasoning. To address this gap, we introduce RefineToolBench, the first benchmark
+specifically designed to evaluate tool reflection capabilities. To ensure comprehensive coverage of error scenarios, the benchmark
+includes both API-level errors in single-tool scenarios (𝐼 1, 𝐼 2) and
+complex reasoning failures in multi-tool interactions (𝐼 3), with
+carefully designed test cases that require models to recover from
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+errors through reflection. The final dataset contains 344 𝐼 1 cases
+(testing parameter and API name errors with available APIs), 388
+𝐼 2 cases (evaluating error handling with simulator-required APIs),
+and 178 𝐼 3 cases (assessing complex tool selection and interaction
+errors). We evaluate using two key metrics: Error Recognition
+Rate (ERR) measuring error identification capability, and Error
+Correction Rate (ECR) assessing successful error resolution.
+The construction process for RefineToolBench varies by scenario
+type. For single-tool scenarios (I1 and I2), we use GPT-4 to generate query-action pairs with deliberate API-level errors, ensuring
+coverage of various error types. For multi-tool scenarios (I3), we
+first obtain complete reasoning trajectories from StableToolBench
+using our Stage 1 multi-agent system, then use GPT-4 to introduce
+errors in tool selection and parameter content at randomly selected
+steps. All cases undergo rigorous filtering to ensure solvability
+and meaningful feedback availability, resulting in a comprehensive
+benchmark for evaluating models’ error handling and reflection
+capabilities.
+Comprehensive and detailed evaluation protocols for both benchmarks are provided in Appendix Appendix A.
+
+4.2
+
+Baselines and Settings
+
+We compare our Tool-MVR with the following baselines: GPT3.5 [33], a widely-adopted closed-source LLM that demonstrates
+excellent performance in tool utilization. GPT-4 [1], the current
+state-of-the-art closed-source model, exhibits exceptional capabilities in complex reasoning and tool invocation. In the opensource domain, we select two powerful models: LLaMA-3.1-8BInstruct [10] and Qwen-2.5-7B-Instruct [58]. Using these as backbone models, ToolLLM [37] was developed through supervised
+fine-tuning on the ToolBench dataset. Subsequently, TP-LLaMA [3]
+represents a strong DPO-optimized baseline that enhances inference trajectories by leveraging preference data extracted from decision trees. StepTool [61] introduces an effective PPO framework
+that pioneers step-grained reinforcement learning with reward
+shaping to improve tool learning capabilities. Note that all baselines here are combined with DFSDT for inference.
+
+4.3
+
+Implementation Details
+
+We adopt LLaMA-3.1-8B-instruct and Qwen-2.5-7B-instruct as our
+Tool-MVR backbone and develop our training pipeline based on
+the LLaMA-Factory [70] framework. For training loss, we set 𝜆 = 1
+and maintain a 10:1 ratio between ToolBench-V and ToolBench-R
+to balance three System 2 reasoning capabilities. The models are
+optimized using full-parameter fine-tuning with a learning rate of
+2e-5 and warmup ratio of 0.04. We leverage DeepSpeed ZeRO-3 [41]
+optimization and Flash Attention [6] for training acceleration. All
+experiments are conducted on a machine equipped with 8 NVIDIA
+A800 GPUs (80GB memory each).
+For dataset construction in our ToolBench-V and ToolBench-R,
+we employ a combination of “gpt-4-turbo”, “gpt-4o”, and “gpt-4”
+models. In our baseline comparisons, GPT-4 refers to “gpt-4-turbo”,
+while GPT-3.5 refers to “gpt-3.5-turbo”. All evaluation metrics are
+computed using “gpt-4-turbo” with temperature set to 0.
+
+4.4
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Data Quality Comparison
+
+As discussed in Section 3.2, ToolBench suffers from severe quality issues across two dimensions: query quality and API-call quality, both
+of which are evaluated using three key metrics, following the evaluation protocol in Quality Matters [18]. To validate the effectiveness
+of our MAMV pipeline in addressing these limitations, we conducted a comprehensive quality assessment comparing ToolBenchV against the ToolBench dataset, as shown in Table 1. The results
+demonstrate substantial improvements with our MAMV approach:
+for user queries, MAMV increases the overall quality score from
+52.7% to 98.8%, validating our QueryVerifyAgent’s effectiveness in
+filtering out problematic queries. Similarly, for API-call trajectories,
+our method improves the overall accuracy from 25.6% to 81.3%
+through APICallAgent’s comprehensive verification mechanism.
+For instance, the Execution Checker effectively eliminates redundant API calls and trial-and-error attempts, raising the trajectory
+minimality score from 54.9% to 81.9%. Through these systematic improvements, MAMV successfully addresses the critical limitations
+in existing datasets: poor query quality, hallucinated API usage,
+and establishes a strong foundation for tool learning."
+
+4.5
+
+Main Results on StableToolBench
+
+We evaluate Tool-MVR against various baselines through three aspects. First, we conduct comprehensive performance comparisons
+using Pass Rate and Win Rate metrics on StableToolBench, with
+results presented in Tables 2 and 3. Second, we perform ablation
+studies to analyze the contribution of each component in our framework. Third, we provide detailed case studies in Appendix A.1 (see
+Tables 8, 9) to intuitively illustrate the differences between ToolMVR and ToolLLM in tool planning and invocation capabilities.
+4.5.1 Pass Rate Analysis. As shown in Tables 2, we first evaluate
+models’ performance using Pass Rate, which measures their ability
+to successfully complete tool learning tasks. Our Tool-MVR models,
+implemented on both LLaMA-3.1-8B (Tool-MVR (L)) and Qwen-2.57B (Tool-MVR (Q)), achieve substantial improvements over existing
+baselines. Tool-MVR (Q) attains an average Pass Rate of 83.8%, surpassing GPT-4 (by 15.3%), GPT-3.5 (by 39.9%), and ToolLLM (Q)
+(by 23.9%). Similarly, Tool-MVR (L) achieves 80.5%, exceeding all
+LLaMA-based baselines and GPT-4 by 12%. The superior performance of Tool-MVR can be attributed to two key innovations. First,
+MAMV’s systematic verification ensures high-quality instruction
+data, which directly improves tool planning and invocation capabilities. Second, EXPLORE’s reflection learning mechanism enables
+models to effectively adapt to and recover from errors. Beyond performance improvements, our experimental results also demonstrate
+Tool-MVR’s advantages in several key aspects: 1) Generalization
+Performance: Tool-MVR (Q) achieves its highest Pass Rate of 86.7%
+on G1-Tool scenarios with unseen tools from seen categories. 2)
+Less is More: Tool-MVR achieves these results with only 15,390
+training examples, compared to ToolLLM’s 73,423, demonstrating
+that high-quality instruction data matters more than data quantity.
+3) Data Quality Impact: While recent approaches like TP-LLaMA
+and StepTool focus on advanced optimization techniques (DPO and
+PPO), their modest gains over SFT baselines stem from ToolBench’s
+low-quality data significantly limiting models’ basic capabilities.
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+Table 2: Pass Rate (%) comparison in StableToolBench. Bold values indicate the highest scores, underlined values indicate the
+second highest. L and Q represent using LLaMA-3.1-8B-Instruct and Qwen-2.5-7B-Instruct as backbone, respectively.
+Type
+
+Model
+
+G1-Ins.
+
+G1-Tool
+
+G1-Cat.
+
+G2-Ins.
+
+G2-Cat.
+
+G3-Ins.
+
+Average
+
+Closed
+
+GPT-3.5
+GPT-4
+
+49.1
+74.2
+
+49.4
+72.8
+
+54.2
+60.8
+
+29.2
+63.2
+
+26.6
+66.1
+
+50.8
+75.4
+
+43.9
+68.5
+
+Base
+
+LLaMA-3.1-8B-Instruct
+Qwen-2.5-7B-Instruct
+
+53.4
+57.7
+
+53.2
+57.0
+
+54.2
+58.2
+
+42.5
+46.2
+
+48.4
+51.6
+
+49.2
+54.1
+
+50.8
+54.8
+
+SFT
+
+ToolLLM(L)
+ToolLLM(Q)
+
+60.1
+63.2
+
+60.1
+60.1
+
+67.3
+67.3
+
+50.0
+51.9
+
+46.8
+57.3
+
+70.5
+50.8
+
+58.8
+59.9
+
+DPO
+
+TP-LLaMA(L)
+
+54.0
+
+65.2
+
+78.4
+
+59.4
+
+65.3
+
+60.7
+
+64.3
+
+PPO
+
+StepTool(L)
+StepTool(Q)
+
+63.8
+68.7
+
+62.7
+72.8
+
+66.7
+67.3
+
+60.4
+58.5
+
+62.9
+65.3
+
+54.1
+70.5
+
+62.7
+67.5
+
+Ours
+
+Tool-MVR(L)
+w/o Stage 2(L)
+w/o Stage 1&2(L)
+Tool-MVR(Q)
+w/o Stage 2(Q)
+w/o Stage 1&2(Q)
+
+79.1
+76.1
+60.7
+83.4
+76.1
+46.6
+
+82.9
+78.5
+65.2
+86.7
+75.3
+43.7
+
+79.1
+80.4
+60.8
+83.0
+74.5
+54.2
+
+79.2
+79.2
+57.5
+79.2
+79.2
+47.2
+
+79.0
+80.6
+49.2
+85.5
+74.2
+47.6
+
+86.9
+78.7
+70.5
+83.6
+82.0
+41.0
+
+80.5
+78.8
+60.1
+83.8
+76.2
+47.3
+
+Table 3: Win Rate (%) comparison in StableToolBench.
+Model
+
+Reference
+
+G1
+
+G2
+
+G3
+
+Average
+
+GPT-4
+ToolLLM(L)
+ToolLLM(Q)
+TP-LLaMA(L)
+StepTool(L)
+StepTool(Q)
+
+GPT-3.5
+GPT-3.5
+GPT-3.5
+GPT-3.5
+GPT-3.5
+GPT-3.5
+
+77.8
+73.4
+72.6
+75.5
+75.1
+77.4
+
+83.5
+77.8
+78.3
+80.9
+80.0
+83.0
+
+77.0
+78.7
+60.7
+78.7
+70.5
+77.0
+
+79.5
+75.2
+73.3
+77.4
+76.2
+79.1
+
+Tool-MVR(L)
+Tool-MVR(Q)
+
+GPT-3.5
+GPT-3.5
+
+84.8
+86.3
+
+88.7
+89.1
+
+86.9
+90.2
+
+86.1
+87.5
+
+Tool-MVR(L)
+Tool-MVR(L)
+Tool-MVR(L)
+
+GPT-4
+ToolLLM
+StepTool
+
+75.5
+80.4
+78.1
+
+78.7
+83.0
+80.4
+
+78.7
+80.3
+78.7
+
+76.7
+81.2
+78.8
+
+Tool-MVR (L/Q) represents our complete framework incorporating both meta-verification and reflection learning. (2) “w/o Stage
+2 (L/Q)”, which uses only ToolBench-V without reflection learning, and (3) “w/o Stage 1&2 (L/Q)”, which employs the base model
+with only APICallAgent inference. Results demonstrate the complementary nature of our two-stage approach. Specifically, (1) the
+significant performance improvement of “w/o Stage 2 (Q)” models
+over ToolLLM (Q) (76.2% vs. 59.9% ) validates MAMV’s effectiveness
+in developing tool planning and invocation abilities; (2) the further enhancement achieved by the complete Tool-MVR (Q) (83.8%)
+highlights EXPLORE’s crucial role in strengthening tool reflection
+capabilities; (3) the substantially lower performance of “w/o Stage
+1&2 (L)” (47.3%) confirms that both components are essential for
+comprehensive System 2 reasoning in tool learning.
+
+4.6
+This highlights that improving instruction data quality for SFT is
+fundamental for enhancing tool learning capabilities.
+4.5.2 Win Rate Analysis. To further evaluate the quality of tool
+reasoning beyond simple task completion, we analyze models’ Win
+Rate performance. As shown in Table 3, Tool-MVR (Q) and ToolMVR (L) demonstrate superior capabilities with Win Rates of 87.5%
+and 86.1% against GPT-3.5 respectively. Notably, Tool-MVR (L)
+maintains strong performance even against GPT-4 (76.7%), ToolLLM (81.2%), and StepTool (78.8%). These results confirm that our
+systematic approach to developing tool capabilities - combining
+high-quality instruction data with reflection learning - not only
+improves task completion rates but also significantly enhances
+the quality and completeness of intermediate reasoning processes
+characteristic of System 2 Reasoning.
+4.5.3 Ablation Study. To analyze how different components contribute to System 2 reasoning capabilities, we conduct ablation
+experiments with three configurations. As shown in Table 2, (1)
+
+Tool Reflection Results on RefineToolBench
+
+To systematically evaluate models’ tool reflection capabilities, we
+conduct experiments on RefineToolBench across three error scenarios: single API errors with available APIs (𝐼 1), single API errors
+requiring simulators (𝐼 2), and multi-API interaction errors (𝐼 3). As
+shown in Table 4, we assess both Error Recognition Rate (ERR) and
+Error Correction Rate (ECR) to measure models’ ability to identify
+and rectify mistakes. Additionally, we provide detailed case studies
+in the appendix (see Appendix A.2 and Tables 10, 11) to qualitatively
+analyze the differences in reflection capabilities.
+4.6.1 Limitations of Existing Approaches. Our analysis reveals a
+critical limitation in existing Tool-Augmented LLMs: their poor tool
+reflection capabilities. ToolLLM(L) and ToolLLM(Q) achieve only
+7.8% and 9.1% Error Correction Rate (ECR) respectively. These models repeatedly make the same mistakes without adaptation when
+encountering errors. Notably, base models (LLaMA-3.1-8B-Instruct
+and Qwen-2.5-7B-Instruct) show better error handling (29.7% and
+35.4% ECR), indicating that static imitation learning on ToolBench
+actually impairs models’ inherent error recovery capabilities by
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Table 4: Error Recognition Rate (%) and Correction Rate (%)
+across different error scenarios in RefineToolBench. Note:
+LLaMA-3.1-8B and Qwen-2.5-7B refer to instruction versions.
+Error Correction
+I1
+I2
+I3 Avg.
+
+GPT-3.5
+GPT-4
+LLaMA-3.1-8B
+Qwen-2.5-7B
+ToolLLM (L)
+ToolLLM (Q)
+
+42.2
+50.0
+30.8
+46.2
+6.1
+5.2
+
+45.9
+45.4
+37.1
+48.2
+4.1
+4.9
+
+66.3
+81.5
+24.7
+28.1
+34.8
+36.5
+
+48.5
+54.2
+32.3
+43.5
+10.9
+11.2
+
+39.0
+48.0
+28.8
+36.3
+4.9
+5.2
+
+44.6
+44.1
+34.8
+41.0
+2.8
+4.9
+
+60.1
+72.5
+20.2
+21.3
+24.2
+25.8
+
+45.5
+51.1
+29.7
+35.4
+7.8
+9.1
+
+Tool-MVR (L)
+w/o Stage 2 (L)
+Tool-MVR (Q)
+w/o Stage 2 (Q)
+
+59.9
+51.2
+63.7
+56.1
+
+57.7
+50.0
+60.3
+53.9
+
+88.8
+78.1
+90.4
+82.6
+
+64.6
+55.9
+67.5
+60.3
+
+51.2
+43.3
+53.2
+46.2
+
+52.3 81.5
+45.9 68.0
+54.4 79.8
+46.6 66.9
+
+57.6
+49.2
+58.9
+50.4
+
+6
+Average API Call Nums
+
+Method
+
+Error Recognition
+I1
+I2
+I3 Avg.
+
+GPT-4
+ToolLLM(L)
+Tool-MVR(L)
+
+7
+
+5
+
+5.19
+
+5.51
+
+7.00
+5.92
+
+5.55
+
+5.19
+3.99
+
+4
+
+3.70
+
+3.48
+
+3
+2
+1
+0
+
+G1
+
+G2
+
+G3
+
+Figure 4: Average number of API calls required by different
+models across test scenarios in StableToolBench.
+focusing solely on successful examples while ignoring valuable
+learning signals from failures.
+4.6.2 Performance Improvements. Tool-MVR demonstrates substantial improvements in reflection capabilities across all scenarios.
+Tool-MVR(Q) achieves an average ERR of 67.5% and ECR of 58.9%,
+significantly outperforming GPT-4 (54.2% ERR, 51.1% ECR), while
+Tool-MVR(L) attains 64.6% ERR and 57.6% ECR. These results validate the effectiveness of our dynamic “Error → Reflection → Correction” learning paradigm, which enables models to systematically
+learn from and adapt to execution feedback.
+4.6.3 Ablation Analysis. Ablation studies further validate the importance of reflection learning. As shown in Table 4, removing Stage
+2 (EXPLORE) leads to significant performance drops: ERR decreases
+from 67.5% to 60.3%, and ECR drops from 58.9% to 50.4%, demonstrating EXPLORE’s crucial role in error handling. The benefits of
+reflection capabilities extend beyond RefineToolBench: on StableToolBench, the pass rate improves from 76.2% to 83.8% through
+enhanced tool reflection abilities from Stage 2 (EXPLORE).
+4.6.4 Performance Analysis Across Different Scenarios. Tool-MVR
+shows varying performance across error scenarios: lower ECR on
+single-tool cases (53.2% and 54.4% for 𝐼 1 and 𝐼 2) compared to multitool scenarios (79.8% for 𝐼 3). This pattern aligns with the training
+data distribution, as 𝐼 3 cases from StableToolBench contain familiar multi-tool tasks, while single-tool scenarios present entirely
+novel challenges. Notably, despite this domain gap, Tool-MVR(Q)
+maintains strong generalization ability, achieving substantial improvements over GPT-4 (48.0%, 44.1%, 72.5%) across all scenarios.
+
+4.7
+
+Efficiency Analysis
+
+As shown in Figure 4, Tool-MVR achieves superior efficiency in
+StableToolBench, requiring only 3.48-3.99 API calls per task across
+scenarios. This represents a 37.4% reduction compared to ToolLLM
+and 31.4% compared to GPT-4, while maintaining state-of-the-art
+performance. This significant reduction in API calls substantially
+decreases user interaction latency and reduces operational costs
+
+in commercial applications. Our MAMV pipeline achieves this efficiency improvement by significantly enhancing training data quality, reaching a minimality score of 81.9% compared to ToolBench’s
+54.9%, as shown in Table 1. High-quality training examples with
+minimal and accurate API calls enable Tool-MVR to develop efficient tool usage patterns, eliminating redundant operations during
+inference. This combination of improved efficiency and effectiveness demonstrates Tool-MVR’s enhanced capabilities in deliberate
+tool planning and precise tool invocation.
+
+5
+
+Conclusions
+
+In this paper, we introduced Tool-MVR, which successfully enhanced open-source LLMs’ System 2 reasoning capabilities and
+achieved state-of-the-art performance in tool learning through
+two key innovations. First, we developed MAMV to establish highquality instruction data through meta-verification, addressing the
+critical limitation of instruction dataset quality and establishing
+strong foundations for deliberate tool planning and accurate tool
+invocation. Second, we proposed EXPLORE to enable systematic error correction through reflection learning, addressing a critical gap
+in existing models’ reflection capabilities that resulted from static
+imitation learning. Our experiments demonstrated that Tool-MVR
+achieved state-of-the-art performance on StableToolBench, surpassing both open-source and closed-source baselines while requiring
+significantly fewer API calls, and exhibited strong generalization
+capabilities across unseen tools and scenarios. Additionally, on
+RefineToolBench - the first benchmark for evaluating tool reflection capabilities - Tool-MVR achieved the highest error recognition
+and correction rates, demonstrating unprecedented adaptive tool
+reflection capabilities.
+
+References
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal
+Anadkat, et al. 2023. Gpt-4 technical report. arXiv preprint arXiv:2303.08774
+(2023).
+[2] Erkan Bas, ar, Xin Sun, Iris Hendrickx, Jan de Wit, Tibor Bosse, Gert-Jan De Bruijn,
+Jos A Bosch, and Emiel Krahmer. 2025. How Well Can Large Language Models
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Reflect? A Human Evaluation of LLM-generated Reflections for Motivational
+Interviewing Dialogues. In Proceedings of the 31st International Conference on
+Computational Linguistics. 1964–1982.
+[3] Sijia Chen, Yibo Wang, Yi-Feng Wu, Qing-Guo Chen, Zhao Xu, Weihua Luo, Kaifu
+Zhang, and Lijun Zhang. 2024. Advancing Tool-Augmented Large Language
+Models: Integrating Insights from Errors in Inference Trees. In The Thirty-eighth
+Annual Conference on Neural Information Processing Systems. https://openreview.
+net/forum?id=ZIpdu0cHYu
+[4] Wenhu Chen, Xueguang Ma, Xinyi Wang, and William W. Cohen. 2023. Program of Thoughts Prompting: Disentangling Computation from Reasoning for
+Numerical Reasoning Tasks. Transactions on Machine Learning Research (2023).
+[5] Zhi-Yuan Chen, Shiqi Shen, Guangyao Shen, Gong Zhi, Xu Chen, and Yankai Lin.
+2024. Towards Tool Use Alignment of Large Language Models. In Proceedings
+of the 2024 Conference on Empirical Methods in Natural Language Processing.
+1382–1400.
+[6] Tri Dao. 2024. FlashAttention-2: Faster Attention with Better Parallelism and
+Work Partitioning. In International Conference on Learning Representations (ICLR).
+[7] Hao Ding, Ziwei Fan, Ingo Guehring, Gaurav Gupta, Wooseok Ha, Jun Huan,
+Linbo Liu, Behrooz Omidvar-Tehrani, Shiqi Wang, and Hao Zhou. 2024. Reasoning
+and planning with large language models in code development. In Proceedings
+of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining.
+6480–6490.
+[8] Ling Ding, Chao Li, Di Jin, and Shifei Ding. 2024. Survey of spectral clustering
+based on graph theory. Pattern Recognition 151 (2024), 110366. doi:10.1016/j.
+patcog.2024.110366
+[9] Yu Du, Fangyun Wei, and Hongyang Zhang. [n. d.]. AnyTool: Self-Reflective, Hierarchical Agents for Large-Scale API Calls. In Forty-first International Conference
+on Machine Learning.
+[10] Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad
+Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Amy Yang, Angela Fan,
+et al. 2024. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 (2024).
+[11] Jonathan St BT Evans. 2003. In two minds: dual-process accounts of reasoning.
+Trends in cognitive sciences 7, 10 (2003), 454–459.
+[12] Wenqi Fan, Yujuan Ding, Liangbo Ning, Shijie Wang, Hengyun Li, Dawei Yin,
+Tat-Seng Chua, and Qing Li. 2024. A survey on rag meeting llms: Towards
+retrieval-augmented large language models. In Proceedings of the 30th ACM
+SIGKDD Conference on Knowledge Discovery and Data Mining. 6491–6501.
+[13] Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang,
+Jamie Callan, and Graham Neubig. 2023. Pal: Program-aided language models. In
+International Conference on Machine Learning. PMLR, 10764–10799.
+[14] Zhibin Gou, Zhihong Shao, Yeyun Gong, Yujiu Yang, Nan Duan, Weizhu Chen,
+et al. [n. d.]. CRITIC: Large Language Models Can Self-Correct with ToolInteractive Critiquing. In The Twelfth International Conference on Learning Representations.
+[15] Zhibin Gou, Zhihong Shao, Yeyun Gong, yelong shen, Yujiu Yang, Minlie Huang,
+Nan Duan, and Weizhu Chen. 2024. ToRA: A Tool-Integrated Reasoning Agent
+for Mathematical Problem Solving. In The Twelfth International Conference on
+Learning Representations.
+[16] Zhicheng Guo, Sijie Cheng, Hao Wang, and et al. 2024. StableToolBench: Towards
+Stable Large-Scale Benchmarking on Tool Learning of Large Language Models. In
+Findings of the Association for Computational Linguistics: ACL 2024. Association for
+Computational Linguistics, 11143–11156. doi:10.18653/v1/2024.findings-acl.664
+[17] Ruixin Hong, Xinyu Pang, and Changshui Zhang. 2024. Advances in reasoning by
+prompting large language models: A survey. Cybernetics and Intelligence (2024).
+[18] Shadi Iskander, Sofia Tolmach, Ori Shapira, Nachshon Cohen, and Zohar Karnin.
+2024. Quality Matters: Evaluating Synthetic Data for Tool-Using LLMs. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing.
+4958–4976.
+[19] Yixin Ji, Juntao Li, Hai Ye, Kaixin Wu, Jia Xu, Linjian Mo, and Min Zhang. 2025.
+Test-time Computing: from System-1 Thinking to System-2 Thinking. arXiv
+preprint arXiv:2501.02497 (2025).
+[20] Ziwei Ji, Tiezheng Yu, Yan Xu, Nayeon Lee, Etsuko Ishii, and Pascale Fung.
+2023. Towards mitigating LLM hallucination via self reflection. In Findings of the
+Association for Computational Linguistics: EMNLP 2023. 1827–1843.
+[21] Nan Jiang, Xiaopeng Li, Shiqi Wang, Qiang Zhou, Soneya Binta Hossain,
+Baishakhi Ray, Varun Kumar, Xiaofei Ma, and Anoop Deoras. 2024. LeDex:
+Training LLMs to Better Self-Debug and Explain Code. In The Thirty-eighth Annual Conference on Neural Information Processing Systems. https://openreview.
+net/forum?id=d1XrZ4EINV
+[22] Daniel Kahneman. 2011. Thinking, fast and slow. Macmillan.
+[23] Ming Li, Yong Zhang, Zhitao Li, Jiuhai Chen, Lichang Chen, Ning Cheng, Jianzong
+Wang, Tianyi Zhou, and Jing Xiao. 2024. From Quantity to Quality: Boosting
+LLM Performance with Self-Guided Data Selection for Instruction Tuning. In
+Proceedings of the 2024 Conference of the North American Chapter of the Association
+for Computational Linguistics: Human Language Technologies (Volume 1: Long
+Papers). 7595–7628.
+
+Ma et al.
+
+[24] Jiayu Liu, Zhenya Huang, Qi Liu, Zhiyuan Ma, Chengxiang Zhai, and Enhong
+Chen. 2025. Knowledge-Centered Dual-Process Reasoning for Math Word Problems With Large Language Models. IEEE Transactions on Knowledge and Data
+Engineering 37, 6 (2025), 3457–3471. doi:10.1109/TKDE.2025.3556367
+[25] Jiayu Liu, Zhenya Huang, Zhiyuan Ma, Qi Liu, Enhong Chen, Tianhuang Su, and
+Haifeng Liu. 2023. Guiding Mathematical Reasoning via Mastering Commonsense
+Formula Knowledge. In Proceedings of the 29th ACM SIGKDD Conference on
+Knowledge Discovery and Data Mining. 1477–1488.
+[26] Jiayu Liu, Zhenya Huang, Tong Xiao, Jing Sha, Jinze Wu, Qi Liu, Shijin Wang, and
+Enhong Chen. 2024. SocraticLM: Exploring Socratic Personalized Teaching with
+Large Language Models. In Advances in Neural Information Processing Systems,
+Vol. 37.
+[27] Weiwen Liu, Xu Huang, Xingshan Zeng, xinlong hao, Shuai Yu, Dexun Li, et al.
+2025. ToolACE: Winning the Points of LLM Function Calling. In The Thirteenth
+International Conference on Learning Representations. https://openreview.net/
+forum?id=8EB8k6DdCU
+[28] Yilun Liu, Shimin Tao, Xiaofeng Zhao, Ming Zhu, Min Ma, et al. 2024. Coachlm:
+Automatic instruction revisions improve the data quality in llm instruction tuning.
+In 2024 IEEE 40th International Conference on Data Engineering (ICDE). IEEE, 5184–
+5197.
+[29] Zuxin Liu, Thai Quoc Hoang, Jianguo Zhang, Ming Zhu, Tian Lan, Shirley Kokane,
+Juntao Tan, Weiran Yao, Zhiwei Liu, Yihao Feng, Rithesh R N, Liangwei Yang,
+Silvio Savarese, Juan Carlos Niebles, Huan Wang, Shelby Heinecke, and Caiming
+Xiong. 2024. APIGen: Automated PIpeline for Generating Verifiable and Diverse
+Function-Calling Datasets. In The Thirty-eight Conference on Neural Information
+Processing Systems Datasets and Benchmarks Track. https://openreview.net/
+forum?id=Jfg3vw2bjx
+[30] Pan Lu, Baolin Peng, Hao Cheng, Michel Galley, Kai-Wei Chang, Ying Nian Wu,
+Song-Chun Zhu, and Jianfeng Gao. 2024. Chameleon: Plug-and-play compositional reasoning with large language models. Advances in Neural Information
+Processing Systems 36 (2024).
+[31] Zhiyuan Ma, Zhenya Huang, Jiayu Liu, Minmao Wang, Hongke Zhao, and Xin
+Li. 2025. Automated Creation of Reusable and Diverse Toolsets for Enhancing
+LLM Reasoning. Proceedings of the AAAI Conference on Artificial Intelligence 39,
+23 (Apr. 2025), 24821–24830. doi:10.1609/aaai.v39i23.34664
+[32] Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah
+Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, et al.
+2024. Self-refine: Iterative refinement with self-feedback. Advances in Neural
+Information Processing Systems 36 (2024).
+[33] OpenAI. 2022. ChatGPT: Optimizing Language Models for Dialogue. https:
+//openai.com/blog/chatgpt. Accessed: 2024-01-30.
+[34] Hongbin Pei, Yuheng Xiong, Pinghui Wang, Jing Tao, Jialun Liu, Huiqi Deng, Jie
+Ma, and Xiaohong Guan. 2024. Memory disagreement: A pseudo-labeling measure
+from training dynamics for semi-supervised graph learning. In Proceedings of the
+ACM Web Conference 2024. 434–445.
+[35] Aske Plaat, Annie Wong, Suzan Verberne, Joost Broekens, Niki van Stein, and
+Thomas Back. 2024. Reasoning with large language models, a survey. arXiv
+preprint arXiv:2407.11511 (2024).
+[36] Yujia Qin, Shengding Hu, Yankai Lin, Weize Chen, Ning Ding, et al. 2024. Tool
+Learning with Foundation Models. ACM Comput. Surv. 57, 4, Article 101 (Dec.
+2024), 40 pages. doi:10.1145/3704435
+[37] Yujia Qin, Shihao Liang, Yining Ye, Kunlun Zhu, Lan Yan, Yaxi Lu, Yankai Lin,
+Xin Cong, Xiangru Tang, Bill Qian, et al. [n. d.]. ToolLLM: Facilitating Large
+Language Models to Master 16000+ Real-world APIs. In The Twelfth International
+Conference on Learning Representations.
+[38] Changle Qu, Sunhao Dai, Xiaochi Wei, Hengyi Cai, Shuaiqiang Wang, Dawei
+Yin, Jun Xu, and Ji-Rong Wen. 2024. Tool Learning with Large Language Models:
+A Survey. arXiv preprint arXiv:2405.17935 (2024).
+[39] Rafael Rafailov, Archit Sharma, Eric Mitchell, Christopher D Manning, Stefano
+Ermon, and Chelsea Finn. 2023. Direct Preference Optimization: Your Language
+Model is Secretly a Reward Model. In Thirty-seventh Conference on Neural Information Processing Systems. https://openreview.net/forum?id=HPuSIXJaa9
+[40] Rafael Rafailov, Archit Sharma, Eric Mitchell, Christopher D Manning, Stefano
+Ermon, and Chelsea Finn. 2024. Direct preference optimization: Your language
+model is secretly a reward model. Advances in Neural Information Processing
+Systems 36 (2024).
+[41] Samyam Rajbhandari, Jeff Rasley, Olatunji Ruwase, and Yuxiong He. 2020. Zero:
+Memory optimizations toward training trillion parameter models. In SC20: International Conference for High Performance Computing, Networking, Storage and
+Analysis. IEEE, 1–16.
+[42] RapidAPI. 2024. RapidAPI Hub - The World’s Largest API Hub. https://rapidapi.
+com/hub. Accessed: 2024-01-30.
+[43] Xubin Ren, Jiabin Tang, Dawei Yin, Nitesh Chawla, and Chao Huang. 2024. A
+survey of large language models for graphs. In Proceedings of the 30th ACM
+SIGKDD Conference on Knowledge Discovery and Data Mining. 6616–6626.
+[44] Matthew Renze and Erhan Guven. 2024. Self-Reflection in LLM Agents: Effects
+on Problem-Solving Performance. arXiv preprint arXiv:2405.06682 (2024).
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+[45] Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli,
+Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. 2023.
+Toolformer: Language models can teach themselves to use tools. Advances in
+Neural Information Processing Systems 36 (2023), 68539–68551.
+[46] Zhengliang Shi, Shen Gao, Xiuyi Chen, Yue Feng, Lingyong Yan, Haibo Shi,
+Dawei Yin, Pengjie Ren, Suzan Verberne, and Zhaochun Ren. 2024. Learning to
+Use Tools via Cooperative and Interactive Agents. In Findings of the Association
+for Computational Linguistics: EMNLP 2024. 10642–10657.
+[47] Zhengliang Shi, Shen Gao, Lingyong Yan, Yue Feng, Xiuyi Chen, Zhumin Chen,
+Dawei Yin, Suzan Verberne, and Zhaochun Ren. 2025. Tool learning in the wild:
+Empowering language models as automatic tool agents. In Proceedings of the
+ACM on Web Conference 2025. 2222–2237.
+[48] Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and
+Shunyu Yao. 2024. Reflexion: Language agents with verbal reinforcement learning.
+Advances in Neural Information Processing Systems 36 (2024).
+[49] Yifan Song, Da Yin, Xiang Yue, Jie Huang, Sujian Li, and Bill Yuchen Lin. 2024.
+Trial and Error: Exploration-Based Trajectory Optimization of LLM Agents. In
+Proceedings of the 62nd Annual Meeting of the Association for Computational
+Linguistics (Volume 1: Long Papers), Lun-Wei Ku, Andre Martins, and Vivek
+Srikumar (Eds.). Association for Computational Linguistics, Bangkok, Thailand,
+7584–7600. doi:10.18653/v1/2024.acl-long.409
+[50] Keith E Stanovich and Richard F West. 2000. Individual differences in reasoning:
+Implications for the rationality debate? Behavioral and brain sciences 23, 5 (2000),
+645–665.
+[51] Xingyao Wang, Yangyi Chen, Lifan Yuan, Yizhe Zhang, Yunzhu Li, Hao Peng, and
+Heng Ji. [n. d.]. Executable Code Actions Elicit Better LLM Agents. In Forty-first
+International Conference on Machine Learning.
+[52] Zhiruo Wang, Zhoujun Cheng, Hao Zhu, Daniel Fried, and Graham Neubig. 2024.
+What are tools anyway? a survey from the language model perspective. arXiv
+preprint arXiv:2403.15452 (2024).
+[53] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Jiale Li, et al. [n. d.]. AutoGen:
+Enabling Next-Gen LLM Applications via Multi-Agent Conversation. In ICLR
+2024 Workshop on Large Language Model (LLM) Agents.
+[54] Qinzhuo Wu, Wei Liu, Jian Luan, and Bin Wang. 2024. ToolPlanner: A Tool
+Augmented LLM for Multi Granularity Instructions with Path Planning and
+Feedback. In Proceedings of the 2024 Conference on Empirical Methods in Natural
+Language Processing. 18315–18339.
+[55] Tong Xiao, Jiayu Liu, Zhenya Huang, Jinze Wu, Jing Sha, Shijin Wang, and
+Enhong Chen. 2024. Learning to Solve Geometry Problems via Simulating Human
+Dual-Reasoning Process. In Proceedings of the Thirty-Third International Joint
+Conference on Artificial Intelligence, IJCAI-24, Kate Larson (Ed.). International
+Joint Conferences on Artificial Intelligence Organization, 6559–6568. doi:10.
+24963/ijcai.2024/725 Main Track.
+[56] Weimin Xiong, Yifan Song, Xiutian Zhao, Wenhao Wu, Xun Wang, Ke Wang,
+Cheng Li, Wei Peng, and Sujian Li. 2024. Watch Every Step! LLM Agent Learning
+via Iterative Step-level Process Refinement. In Proceedings of the 2024 Conference
+on Empirical Methods in Natural Language Processing, Yaser Al-Onaizan, Mohit
+Bansal, and Yun-Nung Chen (Eds.). Association for Computational Linguistics,
+Miami, Florida, USA, 1556–1572. doi:10.18653/v1/2024.emnlp-main.93
+[57] Shangzi Xue, Zhenya Huang, Jiayu Liu, Xin Lin, Yuting Ning, Binbin Jin, Xin Li,
+and Qi Liu. 2024. Decompose, Analyze and Rethink: Solving Intricate Problems
+with Human-like Reasoning Cycle. In Advances in Neural Information Processing
+Systems, Vol. 37.
+[58] An Yang, Baosong Yang, Beichen Zhang, Binyuan Hui, Zheng, et al. 2024. Qwen2.
+5 Technical Report. arXiv preprint arXiv:2412.15115 (2024).
+[59] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan,
+and Yuan Cao. [n. d.]. ReAct: Synergizing Reasoning and Acting in Language
+Models. In The Eleventh International Conference on Learning Representations.
+[60] Mingjia Yin, Hao Wang, Wei Guo, Yong Liu, Suojuan Zhang, Sirui Zhao, Defu Lian,
+and Enhong Chen. 2024. Dataset Regeneration for Sequential Recommendation.
+In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and
+Data Mining (Barcelona, Spain) (KDD ’24). Association for Computing Machinery,
+New York, NY, USA, 3954–3965. doi:10.1145/3637528.3671841
+[61] Yuanqing Yu, Zhefan Wang, Weizhi Ma, Zhicheng Guo, Jingtao Zhan, Shuai Wang,
+Chuhan Wu, Zhiqiang Guo, and Min Zhang. 2024. StepTool: A Step-grained
+Reinforcement Learning Framework for Tool Learning in LLMs. arXiv preprint
+arXiv:2410.07745 (2024).
+[62] Siyu Yuan, Kaitao Song, Jiangjie Chen, Xu Tan, Yongliang Shen, Kan Ren, Dongsheng Li, and Deqing Yang. [n. d.]. EASYTOOL: Enhancing LLM-based Agents
+with Concise Tool Instruction. In ICLR 2024 Workshop on Large Language Model
+(LLM) Agents.
+[63] Xiang Yue, Xingwei Qu, Ge Zhang, Yao Fu, Wenhao Huang, Huan Sun, Yu Su,
+and Wenhu Chen. 2024. MAmmoTH: Building Math Generalist Models through
+Hybrid Instruction Tuning. In The Twelfth International Conference on Learning
+Representations.
+[64] Weixu Zhang, Yifei Wang, Yuanfeng Song, Victor Junqiu Wei, Yuxing Tian,
+Yiyan Qi, Jonathan H. Chan, Raymond Chi-Wing Wong, and Haiqin Yang. 2024.
+Natural Language Interfaces for Tabular Data Querying and Visualization: A
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Survey. IEEE Trans. on Knowl. and Data Eng. 36, 11 (Nov. 2024), 6699–6718.
+doi:10.1109/TKDE.2024.3400824
+[65] Hongke Zhao, Likang Wu, Yuqing Shan, Zonghan Jin, Yuanpei Sui, Zipeng Liu,
+Nan Feng, Minqiang Li, and Wei Zhang. 2024. A comprehensive survey of large
+language models in management: Applications, challenges, and opportunities.
+Challenges, and Opportunities (August 14, 2024) (2024).
+[66] Wayne Xin Zhao, Kun Zhou, Junyi Li, Tianyi Tang, Xiaolei Wang, Yupeng Hou,
+Yingqian Min, Beichen Zhang, Junjie Zhang, Zican Dong, et al. 2023. A survey
+of large language models. arXiv preprint arXiv:2303.18223 (2023).
+[67] Yuze Zhao, Zhenya Huang, Yixiao Ma, Rui Li, Kai Zhang, Hao Jiang, Qi Liu, Linbo
+Zhu, and Yu Su. 2024. RePair: Automated Program Repair with Process-based
+Feedback. In Findings of the Association for Computational Linguistics ACL 2024.
+16415–16429.
+[68] Yuze Zhao, Tianyun Ji, Wenjun Feng, Zhenya Huang, Qi Liu, Zhiding Liu, Yixiao
+Ma, Kai Zhang, and Enhong Chen. 2025. Unveiling the Magic of Code Reasoning
+through Hypothesis Decomposition and Amendment. In The Thirteenth International Conference on Learning Representations. https://openreview.net/forum?id=
+kN25ggeq1J
+[69] Zihuai Zhao, Wenqi Fan, Jiatong Li, Yunqing Liu, Mei, et al. 2024. Recommender
+Systems in the Era of Large Language Models (LLMs). IEEE Transactions on
+Knowledge and Data Engineering 36, 11 (2024), 6889–6907. doi:10.1109/TKDE.
+2024.3392335
+[70] Yaowei Zheng, Richong Zhang, Junhao Zhang, Yanhan Ye, and Zheyan Luo.
+2024. LlamaFactory: Unified Efficient Fine-Tuning of 100+ Language Models.
+In Proceedings of the 62nd Annual Meeting of the Association for Computational
+Linguistics (Volume 3: System Demonstrations), Yixin Cao, Yang Feng, and Deyi
+Xiong (Eds.). Association for Computational Linguistics, Bangkok, Thailand,
+400–410. doi:10.18653/v1/2024.acl-demos.38
+[71] Yuchen Zhuang, Xiang Chen, Tong Yu, Saayan Mitra, Victor Bursztyn, Ryan A
+Rossi, Somdeb Sarkhel, and Chao Zhang. [n. d.]. ToolChain*: Efficient Action
+Space Navigation in Large Language Models with A* Search. In The Twelfth
+International Conference on Learning Representations.
+
+A
+
+Experimental Evaluation Details
+
+We employ four comprehensive metrics to evaluate model performance, with standardized evaluation protocols implemented
+through GPT-4:
+Pass Rate (PR) evaluates the overall task completion success
+by examining both final answers and execution chains (Table 5).
+A Pass requires sufficient query resolution with successful API
+calls and verifiable information, while a Fail indicates execution
+errors or invalid solutions. Cases lacking sufficient validation data
+or complete reasoning processes are marked as Unsure:
+
+
+1.0
+𝑁
+
+
+
+1 ∑︁
+𝑃𝑅 =
+𝑠𝑖 , where 𝑠𝑖 = 0.5
+
+𝑁 𝑖=1
+
+ 0.0
+
+
+if Pass
+if Unsure
+if Fail
+
+(9)
+
+Win Rate (WR) conducts pairwise comparisons between solutions using a comprehensive 100-point scoring system (Table 6).
+The evaluation considers answer quality (60%) - assessing completeness of required information (20pts), accuracy with API responses
+(20pts), presentation clarity (10pts), and error documentation (10pts)
+- and execution efficiency (40%) - evaluating appropriate tool selection and usage (15pts), logical progression (15pts), and strategic
+optimization (10pts):
+Í𝑀
+⊮(𝐶 (𝐴𝑖 , 𝐵𝑖 ) = 0)
+𝑊 𝑅 = 𝑖=1
+(10)
+𝑀
+where 𝐶 (𝐴𝑖 , 𝐵𝑖 ) returns 0 if 𝐴𝑖 is superior to 𝐵𝑖 , with ties resolved
+in favor of higher answer quality scores.
+Following the error handling evaluation protocol (Table 7), we
+assess two complementary aspects:
+Error Recognition Rate (ERR) measures the model’s ability to
+explicitly identify API errors or invalid responses. A Pass requires
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+clear error acknowledgment, while proceeding without recognizing
+errors results in a Fail:
+Í𝐾
+⊮(𝑟𝑖 = Pass)
+(11)
+𝐸𝑅𝑅 = 𝑖=1
+𝐾
+Error Correction Rate (ECR) evaluates both error recognition
+and successful resolution, requiring valid subsequent API calls and
+proper error handling. This metric captures the complete error
+recovery process:
+Í𝐾
+⊮(𝑟𝑖 = Pass ∧ 𝑐𝑖 = Pass)
+(12)
+𝐸𝐶𝑅 = 𝑖=1
+𝐾
+Here, 𝑁 denotes the total number of tasks, 𝑀 the number of
+comparison pairs, and 𝐾 the number of error cases. All evaluations
+require complete execution chains and API responses for comprehensive assessment.
+
+A.1
+
+Case Study 1: Tool Planning and Invocation
+
+To better understand Tool-MVR’s enhanced System 2 reasoning
+capabilities, we present a detailed case study comparing Tool-MVR
+with ToolLLM. Given a query requesting both a comprehensive
+language list for an event and specific airplane details for an aviation
+presentation (shown in Table 8), the two approaches demonstrate
+stark differences in their reasoning capabilities.
+Tool-MVR demonstrates sophisticated System 2 reasoning through
+systematic planning and precise execution (Table 8). In Step 1, it
+begins with a comprehensive analysis of the task, explicitly recognizing the need to obtain valid airplane IDs before querying
+specific details. Following this analysis, Tool-MVR executes an efficient three-step solution: first retrieving the language list (Step 1),
+then fetching the airplane list to identify suitable IDs (Step 2), and
+finally obtaining detailed information about the Boeing 737-800
+using ID 1 (Step 3). Each step builds logically on previous results,
+with no redundant API calls, culminating in a complete solution
+that addresses both the language list and airplane details in its final
+response (Step 4).
+In stark contrast, ToolLLM’s approach reveals several critical
+limitations (Table 9). Its tool planning exhibits characteristics of
+System 1’s quick, intuitive thinking - after retrieving the language
+list (Step 1), it immediately attempts to query airplane details with
+an arbitrary ID 12345 (Step 2) without proper planning. When this
+fails, ToolLLM does successfully retrieve the airplane list (Step 3)
+containing valid IDs including the Boeing 737-800 (ID: 1). However,
+instead of utilizing this information, it demonstrates severely flawed
+tool invocation patterns:
+• Redundant API Calls: Unnecessarily retrieves the same language list three times (Steps 1, 4, and 6)
+• Repeated Errors: Attempts the same invalid airplane ID 12345
+twice (Steps 2 and 5), despite previous failure
+• Ignored Information: Fails to use the valid airplane IDs obtained in Step 3
+Most critically, ToolLLM’s final response (Step 7) exhibits classic
+hallucination behavior - providing only the language list while
+completely omitting airplane information, despite having access
+to valid airplane data in Step 3. This mirrors the broader issue
+of hallucinated trajectories in ToolBench leading to incomplete
+solutions.
+
+Ma et al.
+
+Tool-MVR addresses these limitations through our two-stage
+approach. MAMV’s systematic verification ensures high-quality
+instruction data in ToolBench-V, enabling models to learn proper
+tool planning and invocation patterns, as demonstrated by the
+logical progression and efficient API usage in Table 8. Additionally,
+EXPLORE’s reflection-based learning replaces blind backtracking
+with deliberate error analysis and strategy adjustment, preventing
+the type of repetitive errors seen in ToolLLM’s approach.
+The stark contrast between Tool-MVR’s systematic three-step
+solution and ToolLLM’s chaotic seven-step process validates our
+approach’s effectiveness in developing true System 2 reasoning
+capabilities. While ToolLLM exhibits trial-and-error behavior characteristic of System 1 thinking - making repeated mistakes without
+learning from them - Tool-MVR demonstrates deliberate planning,
+precise execution, and complete solution generation through systematic verification and reflection-based learning.
+
+A.2
+
+Case Study 2: Tool Reflection
+
+To demonstrate how Tool-MVR handles real-world API challenges
+through EXPLORE’s reflection learning, we present a detailed comparison of successful and failed approaches to an order retrieval
+task (shown in Tables 10 and 11). This case study is particularly
+relevant as it deals with two common challenges in production environments: incomplete API documentation and evolving parameter
+specifications.
+The task involves interacting with two poorly documented APIs:
+get_user_orders_for_onboarding_project_v3() for retrieving
+order history and get_order_for_onboarding_project_v3(is_id:
+str) for detailed order information. The documentation presents
+real-world challenges: missing parameter specifications for the first
+API and an outdated parameter name (is_id instead of order_id)
+for the second - reflecting how API implementations often evolve
+faster than their documentation.
+Tool-MVR demonstrates sophisticated System 2 reasoning through
+its dynamic interaction with these imperfect APIs (Table 10). Its
+systematic error correction process includes:
+• Parameter Discovery: When encountering "Input parameters missing" error in Step 1, it analyzes the feedback and
+discovers the need for user identification, successfully adding
+it in Step 2
+• Type Adaptation: Upon receiving "Invalid API Request"
+in Step 3, it identifies the parameter type mismatch and
+attempts integer conversion in Step 4
+• Parameter Evolution: Despite documentation showing
+is_id, it discovers and implements the correct order_id
+parameter in Step 5 through feedback analysis
+In contrast, the failed approach (Table 11) exhibits classic System
+1 behavior with multiple critical failures:
+• Feedback Ignorance: Despite receiving explicit error message "Missing required parameters" in Step 3, it continues
+with empty parameter calls
+• Strategy Stagnation: Repeats identical wrong API calls four
+times without modification
+• Learning Failure: Misses key information in error messages, such as "you need to provide the user ID" in Step
+3
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+• Premature Abandonment: Gives up after Step 4 without
+attempting parameter adjustments or exploring alternative
+approaches
+This stark contrast validates EXPLORE’s effectiveness in developing true System 2 reasoning for tool reflection. While the failed
+approach demonstrates “fast thinking” - making quick, repetitive
+attempts without reflection - Tool-MVR exhibits deliberate “slow
+thinking” through structured error analysis and strategic adjustment. This capability, enabled by EXPLORE’s systematic “Error
+→ Reflection → Correction” cycles, transforms API errors into
+learning opportunities, effectively handling real-world scenarios
+such as ambiguous user queries, incomplete API documentation,
+and evolving API specifications across different versions.
+
+B Implementation Details of Tool-MVR
+B.1 APIOptAgent Details
+APIOptAgent enhances API documentation through three components: Validator, Simulator, and DocRefiner. The Validator first generates diverse API calls following the example generation prompt
+shown in Table 12 to obtain real execution observations. These observations serve as empirical evidence for API validation and documentation refinement. For instance, when testing a car data API, the
+Validator systematically explores different parameter combinations
+(e.g., varying page numbers, makes, and models) to understand the
+API’s actual behavior and limitations.
+For invalid or unstable APIs, the Simulator creates standardized responses following the system prompt presented in Table 14,
+which ensures consistent error handling and response structure.
+The DocRefiner then leverages both successful and failed API calls
+to improve documentation quality using the refinement prompt described in Table 13. Following OpenAI’s function calling format, the
+refined documentation is structured as a JSON object with standardized fields including “type”, “function”, “name”, “description”, and
+“parameters”, ensuring compatibility with existing LLM tool-use
+frameworks.
+The effectiveness of this empirical refinement process is demonstrated in Table 15, where vague documentation is transformed
+based on observed API behaviors. The original description “This
+is the subfunction for tool car_data” is enhanced with concrete
+pagination and filtering capabilities discovered through actual API
+interactions. Parameter descriptions are similarly refined based on
+observed valid inputs and error cases, ensuring documentation accurately reflects real API functionality. This observation-driven approach significantly improves documentation quality by grounding
+specifications in empirical evidence rather than theoretical assumptions, while maintaining strict adherence to OpenAI’s standardized
+API documentation format.
+
+B.2
+
+QueryVerifyAgent Details
+
+QueryVerifyAgent evaluates query solvability and quality through
+a systematic verification process following the template shown in
+Table 16. The agent determines query solvability based on four
+key rules: (1) queries containing invalid or nonsensical information
+are marked as unsolvable, (2) queries missing essential information required by the APIs are unsolvable, (3) queries that cannot
+be mapped to available tools are unsolvable, and (4) queries with
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+sufficient valid information that match available API capabilities
+are marked as solvable. Additionally, each query is assigned a quality score from 1 to 10 based on five criteria: solvability (ease of
+solving using tools), semantic clarity (query clarity and grammar),
+information completeness (necessary detail inclusion), reasoning
+difficulty (complexity of required reasoning), and tool compatibility (alignment with tool capabilities). For example, the query “I
+need to keep track of the transaction volume on the BSC testnet
+and receive webhook notifications for new transactions” would be
+marked as unsolvable despite having clear intent - while the transaction volume part is solvable, the webhook notification request
+lacks required transaction IDs for API setup, making the complete
+query unsolvable.
+Our analysis reveals substantial variations in query solvability
+across groups. G3 demonstrates the highest solvability rate at 50.7%
+of 14,361 queries, while G1 achieves 47.0% of 27,059 queries. G2
+shows notably lower solvability at 23.4% of 20,727 queries, indicating potential mismatches between queries and available tools.
+To ensure high-quality instruction data, we retain only queries
+with quality scores between 8 and 10, as highlighted in yellow in
+Figure 5. This filtering process results in 11,776 queries from G1
+(43.5% retention), 4,347 from G2 (21.0% retention), and 6,664 from
+G3 (46.4% retention).
+The retained high-quality queries demonstrate clear intent, complete information, and strong alignment with available tools. For
+instance, queries like “I want to analyze the options data for the
+stock symbol ‘AAPL’. Can you fetch the options data for this stock?”
+provide all necessary parameters and match well with available
+API capabilities. This rigorous quality control ensures that our
+instruction dataset effectively develops models’ tool planning capabilities, enabling them to accurately understand user intent and
+systematically plan appropriate API selections.
+
+B.3
+
+APICallAgent Details
+
+APICallAgent constructs high-quality API call trajectories through
+a two-stage process: trajectory construction and verification. The
+trajectory construction stage follows the prompt template shown
+in Table 17, which guides the agent to break down complex queries
+into sub-problems and solve them iteratively through API calls.
+Unlike traditional JSON-based function calling formats, we adopt
+Python function calls to enable more sophisticated operations including complex data processing and transformation, conditional
+branching based on API responses, cascading API calls with intermediate result handling, and adaptive parameter adjustment based
+on previous call results.
+For each sub-problem, the agent must provide its reasoning in a
+<thought> tag before making API calls in an <execute> block. This
+structured format ensures transparent decision-making process,
+clear connection between reasoning and actions, traceable problemsolving steps, and flexible adaptation to API feedback.
+The verification stage implements a comprehensive triple-verification
+mechanism using the template in Table 18. The Format Checker
+validates whether the trajectory contains all required components,
+particularly focusing on the presence of a <final_answer> tag. Trajectories lacking a final answer or containing incomplete responses
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+are filtered out, ensuring that each retained trajectory represents a
+complete solution attempt.
+The Semantic Checker evaluates whether the answer comprehensively resolves the user’s query. It examines information completeness by verifying all aspects of the query are addressed, logical
+consistency by ensuring the reasoning aligns with API responses,
+and answer validity by confirming the solution’s correctness based
+on API outputs. Trajectories that only partially solve the problem
+or contain incorrect solutions are eliminated, maintaining high
+solution quality.
+The Execution Checker assesses the accuracy and necessity of
+each step in the trajectory. It validates that each API call meaningfully contributes to the final solution and eliminates trajectories
+containing redundant or trial-and-error steps. This ensures trajectory optimality by retaining only those solutions where each step
+plays a crucial role in problem resolution. The checker also verifies proper error handling and parameter selection throughout the
+trajectory.
+The verification process assigns each trajectory an answer status (“Pass”, “Fail”, or “Unsure”) and validates step necessity. Only
+trajectories that pass all verification stages are retained, ensuring
+the final dataset contains only complete, accurate, and efficient
+solutions. This rigorous filtering eliminates common issues such
+
+Ma et al.
+
+as incomplete answers, partial solutions, redundant API calls, and
+trial-and-error attempts.
+Through this comprehensive construction and verification pipeline,
+APICallAgent successfully generates reliable and efficient API call
+trajectories that serve as high-quality training examples for developing robust tool invocation capabilities. The combination of
+Python-based flexibility and rigorous verification ensures that models learn to generate accurate parameter values and execute APIs in
+the correct format, leading to precise and efficient tool invocation
+during inference.
+
+B.4
+
+Reflection Details from EXPLORE
+
+To systematically develop tool reflection capabilities characteristic
+of System 2 reasoning, we implement a structured reflection mechanism. This mechanism enables models to dynamically process
+execution feedback and adjust their reasoning strategies through
+three key steps: (1) Error Analysis: identifying specific issues in
+API selection or parameter generation from execution feedback. (2)
+Reflection Generation: developing correction strategies through
+deliberate analysis of API documentation and previous attempts.
+(3) Action Planning: formulating precise execution plans with
+corrected API calls.
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Table 5: Pass Rate evaluation prompt template.
+Pass Rate Evaluation Prompt
+You are an assistant responsible for evaluating whether an LLM agent’s response should be counted as Pass, Fail, or Unsure in passrate calculations. Your
+evaluation must consider both the final answer and the complete execution chain.
+Status Determination Rules:
+Pass: Answer sufficiently solves query; Execution chain shows successful API calls; Initial errors were corrected; Information verifiable through API responses
+Fail: API observations show execution errors; Answer contradicts evidence; Information incorrect/invalid; Solution misses core requirements
+Unsure: Cannot verify authenticity; Insufficient validation data; Need complete reasoning process; No useful information despite attempts
+Output Format:
+{"content": "Evaluation reasoning", "answer_status": "Pass/Fail/Unsure"}
+Required Input: Original query; Final answer; Complete execution chain with API responses
+
+Table 6: Win Rate evaluation prompt template.
+Win Rate Evaluation Prompt Template
+You are an assistant responsible for comparing two answers (Answer_0 and Answer_1) to determine which solution is superior. Your evaluation must follow a
+weighted scoring system to select the better answer.
+Evaluation Criteria (100 points):
+1. Answer Quality (60 points): Completeness (20pts): Contains all required information, fully addresses query requirements; Accuracy (20pts): Information
+correctness, alignment with API responses; Clarity (10pts): Well-structured presentation, easy to understand; Error Handling (10pts): Clear explanation of
+failures, proper error documentation
+2. Execution Efficiency (40 points): Tool Usage (15pts): Failed API calls (-2pts each), redundant calls (-1pt each), appropriate tool selection; Execution Path
+(15pts): Logical progression, minimal steps, efficient goal achievement; Strategy (10pts): Tool selection planning, response adaptation, resource optimization
+Output Format:
+{"content": "Comparative analysis", "better_answer_index": "0 or 1"}
+Required Input: Original query text; Answer_0 and Answer_1 with complete execution chains
+Tiebreaker Rule: In case of equal scores, prefer the answer with higher quality score
+
+Query Quality Score Distribution for G1
+
+Query Quality Score Distribution for G2
+
+9808
+
+7000
+
+6618
+
+5000
+Count
+
+Count
+
+6000
+
+2884
+2196
+
+2000
+
+4000
+
+3373
+
+1263
+130
+2
+
+4
+
+1000
+
+682 673
+
+6
+Score
+
+8
+
+251
+10
+
+0
+
+814
+224
+2
+
+4
+
+3000
+2421
+2000
+
+2166
+
+2000
+
+1827
+
+5802
+
+4000
+
+4744
+
+3000
+
+4000
+
+Query Quality Score Distribution for G3
+
+5000
+
+6000
+
+8000
+
+0
+
+6000
+
+7294
+
+Count
+
+10000
+
+6
+Score
+
+8
+
+1072
+
+1000
+
+949
+290 343
+
+1530
+473
+
+75
+10
+
+0
+
+309 360
+
+60
+2
+
+4
+
+6
+Score
+
+659
+222
+8
+
+10
+
+Figure 5: Distribution of query quality scores across different groups (G1, G2, G3) in ToolBench. The yellow bars indicate
+high-quality queries (scores 8-10) that are retained in our filtered dataset.
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+Table 7: Error Recognition Rate and Error Correction Rate evaluation prompt template.
+Error Recognition and Error Correction Rate Evaluation Prompt Template
+You are an assistant responsible for evaluating a model’s ability to recognize and correct errors in API interactions. Your evaluation must determine both error
+recognition status and error correction status.
+Evaluation Rules:
+Error Recognition (Pass/Fail): Model must explicitly acknowledge API errors or invalid responses; Fail if model proceeds without recognizing the error;
+Only Pass when clear indication of error awareness is shown
+Error Correction (Pass/Fail): Model must successfully resolve the identified error; Subsequent API calls must yield valid results; Fail if error persists or
+workaround is unsuccessful
+Combined Status Rules: Both Pass: Must recognize AND successfully correct error; Both Fail: No error recognition leads to automatic correction failure;
+Mixed Case: Can Pass recognition but Fail correction if error identified but not resolved
+Output Format:
+{
+"content": "Evaluation reasoning",
+"error_recognition": "Pass/Fail",
+"error_correction": "Pass/Fail"
+}
+Required Input:
+- Initial messages (query and API context)
+- Wrong action messages (failed API calls/responses)
+- After messages (subsequent handling)
+Constraints: Only Pass/Fail values allowed; No other status values permitted
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Table 8: Case study 1: Tool-MVR’s correct solution - demonstrating systematic tool planning and precise API invocation.
+Input Details
+Query: I’m organizing a language learning event and I need a list of languages to include in the program. Can you provide me with a comprehensive list of
+languages? Additionally, I would like to know the details of a specific airplane for a presentation on aviation history.
+Available APIs:
+search_roman_god_by_name_for_roman_gods_by_pizza_api(god: str) - Search god by name for details and Greek equivalents
+random_roman_god_for_roman_gods_by_pizza_api() - Get random Roman god info
+get_list_of_languages_for_businessmate() - Get supported languages with codes
+endpoint1_for_chattydata() - Get HTML formatted static response
+single_airplane_for_airplanesdb(is_id: int) - Get specific airplane details by ID
+all_airplanes_for_airplanesdb() - Get all airplanes data
+airplanes_ordered_by_ascending_for_airplanesdb(ordering: str) - Get airplanes ordered by field
+Step 1: Initial Planning and Language List
+Thought: To solve this task, I need to perform the following steps: 1. Retrieve a list of languages supported by the ‘businessmate’ tool for the language
+learning event. 2. Retrieve detailed information about a specific airplane using the ‘single_airplane_for_airplanesdb’ API. To do this, I need a valid airplane ID.
+Since the task doesn’t provide an ID for the airplane, I will first fetch the list of all airplanes using ‘all_airplanes_for_airplanesdb’ to identify a specific airplane
+to study further.
+Action: get_list_of_languages_for_businessmate()
+Observation: {"error": "", "response":{"success": true, "message": "success", "results": [{"text": "AFRIKAANS", "value": "af"}, {"text": "ALBANIAN", "value": "sq"},
+{"text": "AMHARIC", "value": "am"}, . . . ]}}
+Step 2: Getting Airplane Options
+Thought: I have successfully retrieved a comprehensive list of languages. Next, I need to fetch the list of all airplanes using the ‘all_airplanes_for_airplanesdb’
+API to identify a specific airplane ID for further detailed retrieval. This will allow me to select an appropriate aircraft for the aviation history presentation.
+Action: all_airplanes_for_airplanesdb()
+Observation: {"error": "", "response":{"id":1,"plane":"Boeing 737-800","brand":"Boeing","passenger_capacity":189,. . . ,"id":2,"plane":"A220 100",. . . }}
+Step 3: Getting Specific Airplane Details
+Thought: I have retrieved the list of all airplanes. For the presentation on aviation history, I can use details about the “Boeing 737-800" (plane ID: 1) due to its
+widespread use and significance in commercial aviation. Next, I will retrieve detailed information about this specific airplane using its ID.
+Action: single_airplane_for_airplanesdb(is_id=1)
+Observation: {"error": "", "response":{"id": 1, "plane": "Boeing 737-800", "brand": "Boeing", "passenger_capacity": 189, "priceUSD": 84400000.0,
+"fuel_capacity_litres": 26020.0, "max_takeoff_weight_kg": 79000.0, . . . }}
+Step 4: Final Response
+Thought: I have successfully retrieved both required pieces of information: 1. A comprehensive list of languages for the language learning event, which
+includes multiple options across different language families and regions. 2. Detailed specifications of the Boeing 737-800, including its technical specifications,
+performance capabilities, and commercial details. Now I can provide a complete response that addresses both aspects of the original query.
+Action: given_final_answer
+Final Answer: For your language learning event, you can include these languages: Afrikaans, Albanian, Amharic, Arabic, Armenian, Azerbaijani, and more.
+For the aviation presentation, key details of the Boeing 737-800: • Passenger Capacity: 189 • Price: $84,400,000 • Fuel Capacity: 26,020 liters • Range: 5,400 km •
+Engine: CFMI CFM56-7B24/26
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+Table 9: Case study 1: ToolLLM’s incorrect solution - showing flawed tool planning and redundant, erroneous API calls.
+Input Details
+Query and Available APIs are identical to Table 8
+Step 1: Get Languages (First Attempt)
+Thought: To solve this task, I need to perform the following steps: 1. Retrieve a list of languages supported by the ‘businessmate’ tool for the language learning
+event. 2. Retrieve detailed information about a specific airplane using the ‘single_airplane_for_airplanesdb’ API. Let me start with getting the languages...
+Action: get_list_of_languages_for_businessmate()
+Observation: {"error": "", "response": {"success": true, "results": [{"text": "AFRIKAANS", "value": "af"}, {"text": "ALBANIAN", "value": "sq"}, {"text": "AMHARIC",
+"value": "am"}, {"text": "ARABIC", "value": "ar"}, {"text": "ARMENIAN", "value": "hy"},...]}}
+Step 2: Wrong Airplane ID (First Attempt)
+Thought: I have successfully retrieved a comprehensive list of languages. Next, I need to fetch the details of a specific airplane. I will use the ‘single_airplane_for_airplanesdb’ API with ID 12345 to get airplane information for the presentation...
+Action: single_airplane_for_airplanesdb(is_id=12345)
+Observation: {"error": "", "response": "[]"}
+Step 3: Get All Airplanes (But Not Used)
+Thought: Based on the previous actions and the current state, it seems that the attempt to retrieve the details of a specific airplane using
+the ‘single_airplane_for_airplanesdb’ function with ID 12345 did not return any results. To proceed, I will try a different approach and use the
+‘all_airplanes_for_airplanesdb’ function...
+Action: all_airplanes_for_airplanesdb()
+Observation: {"error": "", "response": [{"id": 1, "plane": "Boeing 737-800", "brand": "Boeing", "passenger_capacity": 189, "priceUSD": 84400000.0,
+"fuel_capacity_litres": 26020.0}, {"id": 2, "plane": "A220 100", "brand": "Airbus",...}]}
+Step 4: Get Languages Again (Unnecessary Repetition 1)
+Thought: The current API call is to retrieve a list of supported languages for the ‘businessmate’ tool. This API call is made to fulfill the user’s request for
+a comprehensive list of languages. By calling this API, I can provide the user with the necessary information to include in their language learning event
+program...
+Action: get_list_of_languages_for_businessmate()
+Observation: {"error": "", "response": {"success": true, "results": [{"text": "AFRIKAANS", "value": "af"}, {"text": "ALBANIAN", "value": "sq"}, {"text": "AMHARIC",
+"value": "am"}, {"text": "ARABIC", "value": "ar"},...]}}
+Step 5: Wrong Airplane ID Again (Repeated Mistake)
+Thought: I have successfully retrieved a comprehensive list of languages. Next, I will proceed to retrieve the details of a specific airplane using the
+‘single_airplane_for_airplanesdb’ function. I will provide the ID 12345 to gather the required information for the user’s presentation on aviation history...
+Action: single_airplane_for_airplanesdb(is_id=12345)
+Observation: {"error": "", "response": "[]"}
+Step 6: Get Languages Yet Again (Unnecessary Repetition 2)
+Thought: Based on the previous action, it seems that the attempt to retrieve details of a specific airplane using the ‘single_airplane_for_airplanesdb’ function
+failed. Since the previous action did not provide any useful information, I will try a different approach. To fulfill the user’s request for a comprehensive list of
+languages, I will use the ‘get_list_of_languages_for_businessmate’ function again...
+Action: get_list_of_languages_for_businessmate()
+Observation: {"error": "", "response": {"success": true, "results": [{"text": "AFRIKAANS", "value": "af"}, {"text": "ALBANIAN", "value": "sq"}, {"text": "AMHARIC",
+"value": "am"}, {"text": "ARABIC", "value": "ar"}, {"text": "ARMENIAN", "value": "hy"},...]}}
+Step 7: Final Response
+Thought: The function ‘single_airplane_for_airplanesdb’ was called to retrieve the details of a specific airplane. However, the function output indicates
+that the request was unsuccessful and an empty response was returned. Since I couldn’t retrieve the details of the specific airplane, I will provide the list of
+languages obtained from the previous action as the final answer for the language learning event...
+Action: given_final_answer
+Final Answer: Here is a comprehensive list of languages: AFRIKAANS... [Incomplete response - missing airplane details]
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Table 10: Case study 2: Tool-MVR’s correct solution - demonstrating tool reflection in API calling and strategy adaptation based
+on API feedback.
+Input Details
+Query: Can you fetch the details of my recent orders? I would like to know the products I ordered, the order status, and the delivery date.
+Available APIs:
+get_user_orders_for_onboarding_project_v3() - Get user’s order history
+get_order_for_onboarding_project_v3(is_id: str) - Get detailed information for a specific order
+... (other available APIs omitted)
+Step 1: Initial Order History Attempt
+Thought: To fetch the details of recent orders, I will use the ‘get_user_orders_for_onboarding_project_v3’ API. This API should provide information regarding
+the products ordered, order status, and delivery date.
+Action: get_user_orders_for_onboarding_project_v3()
+Observation: {"error": "Input parameters missing; please provide the user ID or name to retrieve orders.", "response": ""}
+Step 2: Adding User Identification
+Thought: The previous API call returned an error because I didn’t provide the required user identifier. I need to adjust my strategy and pass the user ID
+or name as a parameter to retrieve the orders. Since the documentation doesn’t specify which parameter to use, I will try with ‘user_id’ first. If
+that doesn’t work, I will try ‘name’.
+Action: get_user_orders_for_onboarding_project_v3(user_id="my_user_id")
+Observation: {"error": "", "response": {"user_id": "my_user_id", "orders": [{"order_id": "1234", ...}, {"order_id": "1235", ...}], ...}}
+Step 3: First Attempt at Detailed Order Info
+Thought: The API call was successful, and I retrieved the user’s orders. However, the response lacks information on the order status and delivery date. I will
+need to use the ‘get_order_for_onboarding_project_v3’ API with the ‘order_id’ to fetch more detailed information, including the order status and delivery date.
+Action: get_order_for_onboarding_project_v3(is_id="1234")
+Observation: {"error": "Invalid API Request", "response": "The parameters provided do not match with any of our API requirements..."}
+Step 4: Adjusting Parameter Type
+Thought: The error message indicates that there is a mismatch in the parameters provided. It seems that the parameter should be an integer, not a
+string. I will adjust the strategy and try passing the parameter as an integer.
+Action: get_order_for_onboarding_project_v3(is_id=1234)
+Observation: {"error": "The ’Get Order’ API has insufficient information in its description...", "response": ""}
+Step 5: Final Parameter Adjustment
+Thought: The error message suggests that the ‘is_id’ parameter is unclear or not documented for this API. It might be an issue with the
+parameter type or name. Given the situation, I will try to use the ‘order_id’ as a last resort since it’s the primary key for the order. I will call the
+‘get_order_for_onboarding_project_v3’ API again but this time using ‘order_id’ as the parameter.
+Action: get_order_for_onboarding_project_v3(order_id=1234)
+Observation: {"error": "", "response": {"order_id": 1234, "customer": "John Doe", "items": [{"product_name": "Apple iPhone 12", ...}], "status": "Shipped"}}
+Step 6: Final Response
+Thought: I successfully retrieved the detailed information for the order using the ‘get_order_for_onboarding_project_v3‘ API. The information includes the
+customer name, items ordered, their quantities and prices, the total price, and the order status. Although the delivery date is not available, the order status is
+mentioned as "Shipped." Given the details I have, I will now summarize the information for the recent orders placed by the user.
+Action: given_final_answer
+Final Answer: Your recent orders are as follows: 1. Order ID: 1234, Product: Apple iPhone 12, Quantity: 1, Price: $699, Status: Shipped 2. Order ID: 1235,
+Product: Product B, Quantity: 1, Price: $24.99, Status: Not available
+The delivery date for the above orders is not available.
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+Table 11: Case study 2: ToolLLM’s failed solution - showing repetitive incorrect API calling without adjustment leading to
+abandonment.
+Input Details
+Query: Can you fetch the details of my recent orders? I would like to know the products I ordered, the order status, and the delivery date.
+Available APIs:
+get_user_orders_for_onboarding_project_v3() - Get user’s order history
+get_order_for_onboarding_project_v3(is_id: str) - Get detailed information for a specific order
+... (other available APIs omitted)
+Step 1: Initial Attempt
+Thought: Based on the user’s request to fetch the details of their recent orders, I need to call the ‘get_user_orders_for_onboarding_project_v3’ function. This
+function will retrieve the user’s orders from the onboarding project. By calling this function with the appropriate arguments, I can obtain the necessary
+information about the products ordered, the order status, and the delivery date. This will help me provide the user with the requested details and fulfill their
+query.
+Action: get_user_orders_for_onboarding_project_v3()
+Observation: {"error": "Incomplete input parameters", "response": {}}
+Step 2: Repeated Empty Attempt
+Thought: I apologize, but it seems that there is an error with the input parameters. Please provide the necessary information to fetch your recent
+orders.
+Action: get_user_orders_for_onboarding_project_v3()
+Observation: {"error": "Input is incomplete or unclear.", "response": ""}
+Step 3: Another Empty Attempt
+Thought: I apologize, but it seems that there is still an error with the input parameters. Please provide the necessary information to fetch your recent
+orders.
+Action: get_user_orders_for_onboarding_project_v3()
+Observation: {"error": "Missing required parameters", "response": "To retrieve the user’s orders, you need to provide the user ID. Please refer to the API
+documentation for necessary parameters."}
+Step 4: Final Failed Attempt
+Thought: Based on the previous action and the current state, it seems that the input parameters for fetching the user’s orders are missing. To resolve this, I
+will provide the necessary user ID as an argument when calling the ‘get_user_orders_for_onboarding_project_v3’ function.
+Action: get_user_orders_for_onboarding_project_v3()
+Observation: {"error": "Invalid input: No parameters provided.", "response": {}}
+Step 5: Giving Up
+Thought: It seems that the function ‘get_user_orders_for_onboarding_project_v3’ requires input parameters to retrieve the user orders. Since I don’t have
+the necessary input parameters, I won’t be able to fetch the details of your recent orders. I will need to restart the task and try again.
+Action: given_up_and_restart
+Final Answer: given_up
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Table 12: Prompt template for generating API call examples.
+Example Generation Prompt
+Please generate a few example function calls based on the following API documentation, using keyword arguments to fully understand the API functionality.
+The output should be in Python format with printed results in code blocks. Maximum 3 example calls, and results must be printed.
+Note: No need to import API package names, just call the API functions directly. If the API has no parameters, just call the API function directly.
+Example Format:
+print("Example 1:")
+print(ticket_info_query(destination="Beijing", travel_mode="Train"))
+print("Example 2:")
+print(ticket_info_query(departure="Shanghai", destination="Beijing", travel_mode="Plane"))
+print("Example 3:")
+print(ticket_info_query(departure="Guangzhou", destination="Shenzhen", travel_mode="Bus"))
+Input: API name, API documentation
+
+Table 13: Prompt template for refining API documentation.
+API Documentation Refinement Prompt
+You are a expert in API documentation. Now we have a few API call results. Please refine the API description based on the API call results to better describe
+the API functionality. Note you can only change the API description and parameters description, you can’t change the API name and parameters name and
+you can’t add or remove parameters.
+Response Format:
+# For invalid/no-data APIs:
+{"is_api_valid": false}
+# For valid APIs (no changes):
+{"is_api_valid": true}
+# For APIs needing refinement:
+{
+"is_api_valid": true,
+"refine_api": {
+"type": "function",
+"function": {"name": "...", "description": "...",
+"parameters": {"properties": {...}, "required": [...]}}}
+}
+Input: API name, Original doc, API call, Observation
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+Table 14: System prompt template for API Simulation.
+API Simulation Prompt
+Imagine you are an API Server operating within a specialized tool, which contains a collection of distinct APIs. Your task is to process the given input parameters
+and construct a meaningful, relevant, and structured JSON response based on these inputs and we provide API descriptions in the API documentation. Analyze
+the input carefully to understand its intended purpose, and generate the corresponding output data. Your response must follow the structure below:
+{
+"error": "",
+"response": "<Your_Response>"
+}
+Example:
+# API Doc
+GetFinalExamScores: Retrieves student's exam scores
+Input: {"student_id": "12345"}
+Output: {
+"error": "",
+"response": {
+"student_id": "12345",
+"scores": [{"subject": "Math", "score": 95}]
+}
+}
+Input: API Documentation, API Input, API Output
+
+Table 15: Comparison of original and refined API documentation.
+Original API Documentation
+
+Refined API Documentation
+
+Name: cars_for_car_data
+
+Name: cars_for_car_data
+
+Description: This is the subfunction for tool
+“car_data”, you can use this tool. The description
+of this function is: “Retrieve and filter lists of
+cars”
+
+Description: “Retrieve and filter lists of cars based on parameters such as page, limit, make,
+year, model, and type. Use this function to fetch paginated car data, ensuring correct parameter
+configuration to avoid empty responses.”
+
+Parameters and Description:
+page (required): “”
+
+page (required): “The page number for pagination. Starts from 0.”
+
+limit (required): “”
+
+limit (required): “The maximum number of car records to retrieve per page.”
+
+make (optional): “”
+
+make (optional): “The manufacturer or brand of the car (e.g., Toyota, Tesla).”
+
+year (optional): “”
+
+year (optional): “The manufacturing year of the car.”
+
+model (optional): “”
+
+model (optional): “The specific model of the car (e.g., Corolla, Escape).”
+
+type (optional): “”
+
+type (optional): “The type or body style of the car (e.g., Sedan, SUV, Electric).”
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Table 16: Query verification prompt template.
+Query Verification Prompt
+You are an assistant responsible for evaluating whether a given user query can be solved using the provided APIs and tools. Your evaluation must consider
+both the completeness of the query’s information, the capabilities of the available APIs, and the overall quality of the query.
+Rules:
+1. Invalid Information: If the query contains invalid or nonsensical information, return “Unsolvable”.
+2. Missing Information: If the query lacks essential information required to solve it, return “Unsolvable”.
+3. Incomplete or Ambiguous Tools: If unable to determine how to solve the query with provided tools, return “Unsolvable”.
+4. Solvable Query: If the query provides sufficient valid information and available APIs/tools can solve it, return “Solvable”.
+Quality Scoring (1-10):
+- Solvability: Ease of solving using provided tools
+- Semantic Clarity: Query clarity and grammar
+- Information Completeness: Necessary detail inclusion
+- Reasoning Difficulty: Complexity of required reasoning
+- Tool Compatibility: Alignment with tool capabilities
+Output Format:
+1. Explanation of decision
+2. JSON response with decision and quality score
+Example:
+Query: “Can you fetch the flight data for the company AZU on June 15th, 2022?”
+Tools: Flight data API with company and date parameters
+Output: {“decision”: “Solvable”, “quality_score”: 7}
+Input Required: Query text, Available tools list
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+Table 17: Prompt template for API call trajectory construction.
+API Call Trajectory Construction Prompt
+You are an AutoGPT, capable of utilizing numerous APIs to complete the given task. You will use an interactive programming environment and retrieve the
+latest knowledge through the provided APIs. The APIs are real and have been defined and imported—do not define new APIs. The API documentation may be
+limited or brief, but you must try to use them. When calling an API, carefully read the documentation, use appropriate parameters, and ensure correct values.
+If there is no parameter in documentation, use the API directly. If the API returns nothing, retry and adjust your strategy. Each sub-question requires an API
+call to solve.
+Problem-Solving Process:
+Break the problem into sub-steps and solve iteratively. In each iteration, complete one of:
+1. API Call Required:
+- Provide analysis in <thought> tag:
+<thought> I need to get the price of Hilton hotels in Shanghai. </thought>
+- Call API with <execute> tag and Python code:
+<execute>
+print(query_hotel_list_by_demand(city="Shanghai", demand="Hilton Hotel"))
+</execute>
+- Ensure logical flow between <thought> and <execute>
+- Call only subfunctions’ names, not original tool names
+- Maximum 2 API calls per iteration
+2. Problem Resolution:
+- Summarize reasoning in <thought> tag
+- Conclude with either:
+- <final_answer>: Provide solution
+- <given_up>: Indicate inability to solve
+Core Rules:
+Each iteration must include:
+- One <thought> tag
+- Followed by either <execute>, <final_answer>, or <given_up>
+Input Required: Query text and API docs
+
+Advancing Tool-Augmented Large Language Models via Meta-Verification and Reflection Learning
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Table 18: Answer verification prompt template.
+Answer Verification Prompt
+You are an assistant responsible for verifying the quality and correctness of answers by analyzing both the query and its reasoning process. Your evaluation
+must consider the answer status and the validity of reasoning steps.
+Answer Status Rules:
+Pass: If confident the answer sufficiently solves the query or contains successful tool executions
+Fail: If API errors occur, final answer is invalid, or information contradicts observations
+Unsure: If unable to determine solution status or API provides no valid information
+Step Validity Analysis:
+Evaluate each reasoning step’s contribution to final result
+Check for irrelevant or incorrect attempts
+Verify logical progression of steps
+Assess necessity of each API call
+Output Format:
+{
+"content": "Verification explanation",
+"answer_status": "Pass/Fail/Unsure",
+"all_steps_validity": "yes/no"
+}
+Example:
+Query: “What’s the weather in New York?”
+Process: API call successful, temperature retrieved
+Output: {“content”: “Valid weather data obtained”, “answer_status”: “Pass”, “all_steps_validity”: “yes”}
+Input Required: Query text, Reasoning process and answer
+
+KDD ’25, August 3–7, 2025, Toronto, ON, Canada.
+
+Ma et al.
+
+Table 19: Reflection generation prompt template.
+Reflection Generation Prompt
+Given a query and several initial iterations with the last being incorrect, generate a reflection for self-correction.
+Instructions:
+1. Context Understanding: Review API documentation in system prompt containing multiple APIs with documentation. Analyze previous iterations that
+attempted to solve the query. Examine the incorrect iteration’s <thought> and <execute> components. Consider the observation feedback from the failed
+attempt.
+2. Error Analysis Categories:
+API Selection Errors: Using incorrect API names that differ from the correct ones, applying wrong API parameter values leading to incorrect results,
+attempting to use non-existent APIs not in the provided list.
+Parameter Errors: Omitting required parameters in API calls, providing invalid input parameters, type mismatches (e.g., using strings for integer parameters),
+date format errors, parameter values outside valid ranges, logically meaningless parameters despite correct formatting.
+3. Reflection Generation Format:
+<thought>
+Analyze the observation feedback to identify the specific error type and its root cause. For execution errors, examine API call correctness and parameter
+validity. For successful but meaningless executions, evaluate API choice relevance. Plan step-by-step correction strategy and formulate proper API selection
+and parameter configuration.
+</thought>
+<execute>
+print(corrected_api_call(parameter1="value1",parameter2="value2"))
+</execute>
+Core Rules: Must include both <thought> and <execute> components. Reflection should simulate a self-correcting LLM capable of proper API selection and
+parameter understanding. Analysis must be based on observation feedback rather than prior knowledge of errors. Thought process should be thorough and
+detailed for training purposes. Error discovery should be active based on feedback, not predetermined.
+Reference: Correct iteration provided as reference for proper solution approach: ===right_iteration===
+Output Format:
+# Reflection
+<thought> Detailed error analysis and correction strategy </thought>
+<execute>
+# correct api call
+</execute>
+Input Required: Query text, previous iterations, incorrect iteration with feedback, reference correct iteration
+
+

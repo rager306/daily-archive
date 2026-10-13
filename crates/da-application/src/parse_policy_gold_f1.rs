@@ -282,8 +282,8 @@ mod tests {
         fn f1_is_deterministic(
             labels in proptest::collection::vec("[a-z]{3,10}", 0..20),
         ) {
-            let gold: Vec<GoldEntity> = labels.iter().enumerate()
-                .map(|(i, l)| GoldEntity { label: format!("{l}"), entity_type: "Test".into() })
+            let gold: Vec<GoldEntity> = labels.iter()
+                .map(|l| GoldEntity { label: l.to_string(), entity_type: "Test".into() })
                 .collect();
             let predicted: Vec<(String, String)> = labels.iter()
                 .map(|l| (l.to_string(), "Test".into()))
@@ -322,8 +322,8 @@ mod tests {
         fn perfect_match_gives_f1_one(
             labels in proptest::collection::vec("[a-z]{3,12}", 1..20),
         ) {
-            let gold: Vec<GoldEntity> = labels.iter().enumerate()
-                .map(|(i, l)| GoldEntity { label: l.clone(), entity_type: "Test".into() })
+            let gold: Vec<GoldEntity> = labels.iter()
+                .map(|l| GoldEntity { label: l.clone(), entity_type: "Test".into() })
                 .collect();
             let predicted: Vec<(String, String)> = labels.iter()
                 .map(|l| (l.clone(), "Test".into()))

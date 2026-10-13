@@ -1,0 +1,1474 @@
+GUI-R1: A Generalist R1-Style Vision-Language
+Action Model For GUI Agents
+
+Run Luo1,2 Lu Wang3 Wanwei He1,2 Longze Chen1,2 Jiaming Li1,2
+Min Yang1,2 Xiaobo Xia3
+
+arXiv:2504.10458v4 [cs.CV] 1 Oct 2025
+
+1
+
+Shenzhen Institute of Advanced Technology, Chinese Academy of Sciences
+2
+University of Chinese Academy of Sciences
+3
+National University of Singapore
+{R . LUO @ SIAT. AC . CN M . YANG @ SIAT. AC . CN XIAOBOXIA . UNI @ GMAIL . COM}
+
+Abstract
+Existing efforts in building graphical user interface (GUI) agents largely rely on
+the training paradigm of supervised fine-tuning (SFT) on large vision-language
+models (LVLMs). However, this approach not only demands extensive amounts
+of training data but also struggles to effectively understand GUI screenshots and
+generalize to unseen interfaces. The issue significantly limits its application in
+real-world scenarios, especially for high-level tasks. Inspired by reinforcement
+fine-tuning (RFT) in large reasoning models (e.g., DeepSeek-R1), which efficiently enhances the problem-solving capabilities of large language models in
+real-world settings, we propose GUI-R1, the first reinforcement learning framework designed to enhance the GUI capabilities of LVLMs in high-level real-world
+task scenarios, through unified action space rule modeling. By leveraging a small
+amount of carefully curated high-quality data across multiple platforms (including Windows, Linux, MacOS, Android, and Web) and employing policy optimization algorithms such as group relative policy optimization (GRPO) to update the model, GUI-R1 achieves superior performance using only 0.02% of the
+data (3K vs. 13M) compared to previous state-of-the-art methods like OS-Atlas
+across eight benchmarks spanning three different platforms (mobile, desktop, and
+web). These results demonstrate the immense potential of reinforcement learning
+based on unified action space rule modeling in improving the execution capabilities of LVLMs for real-world GUI agent tasks. The codebase is available at
+https://github.com/ritzz-ai/GUI-R1.git.
+
+1
+
+Introduction
+
+Recent studies [1; 2; 3] have explored the use of large vision-language models (LVLMs) [4] to develop graphical user interface (GUI) agents capable of performing high-level complex tasks. These
+agents analyze the screen as a self-contained source of information for decision-making, without relying on environment-based textual descriptions such as HTML or accessibility trees. This approach
+offers greater flexibility in agent decision-making. However, previous works have predominantly relied on the training paradigm of supervised fine-tuning (SFT), which not only requires large amounts
+of high-quality training data but also struggles to effectively comprehend GUI screenshots and generalize to unseen interfaces. These limitations have significantly hindered the real-world applicability
+of these works, particularly for high-level GUI tasks that lack explicit step-by-step instructions.
+Rule-based reinforcement fine-tuning has recently emerged as an efficient and scalable alternative to
+SFT, requiring only a small number of examples to fine-tune models effectively while demonstrating
+strong performance and generalization capabilities in domain-specific tasks. RFT has been increasTechnical report.
+
+65
+
+ScreenSpot-Pro_CAD_Text
+ScreenSpot-Pro_CAD_Icon ScreenSpot-Pro_Creative_Icon
+
+OmniAct-Web_Type
+OmniAct-Web_GR
+
+GUI-Act-Web_SR
+
+ScreenSpot-Pro_Scientific_Text
+
+mniAct-Web_SR
+
+ScreenSpot-Pro_Creative_Text
+
+OmniAct-Web_GR
+
+GUI-Act-Web_SR
+
+ScreenSpot-Pro_Scientific_Text
+OmniAct-Web_SR
+
+GUI-Act-Web_GR
+82
+
+ScreenSpot-Pro_Office_Text
+
+25
+
+ScreenSpot-Pro_Dev_Text
+
+ScreenSpot-Pro_Office_Icon
+
+Act-Desktop_GR
+
+ScreenSpot_Desktop_Icon
+
+AndroidControl-Low_SR
+ScreenSpot-Pro_OS_Text
+
+OmniAct-Desktop_SR
+
+AndroidControl-Low_GR
+
+Os-Atlas-7B
+QwenVL2.5-3B*
+QwenVL2.5-7B*
+
+GPT-4o
+QwenVL2.5-3B
+QwenVL2.5-7B
+
+UI-R1-3B
+GUI-R1-3B
+GUI-R1-7B
+
+Os-Atlas-7B
+QwenVL2.5-3B*
+QwenVL2.5-7B*
+
+18
+
+OmniAct-Desktop_Type
+
+GUI-Act-Web_Type
+
+39
+
+ScreenSpot-Pro_Office_Text
+
+QwenVL2.5-3B
+QwenVL2.5-7B
+UI-R1-3B
+
+GUI-R1-3B
+GUI-R1-7B
+
+(a) Grounding capability.
+
+25
+
+ScreenSpot-Pro_Dev_Text
+
+45
+
+ScreenSpot-Pro_Office_Icon
+OmniAct-Desktop_GR
+
+ScreenSpot_Desktop_Icon
+
+AndroidControl-Low_SR
+ScreenSpot-Pro_OS_Text
+
+ScreenSpot_Desktop_Text
+
+ScreenSpot-Pro_OS_Icon
+ScreenSpot_Web_Icon
+ScreenSpot_Web_Text
+
+AndroidControl-Low_Type
+
+68
+54
+
+34
+
+39
+
+GUI-Act-Web_Type
+
+ScreenSpot-Pro_Dev_Icon
+83
+
+ScreenSpot-Pro_Scientific_Icon
+
+66
+
+54
+
+34
+18
+
+ScreenSpot-Pro_Creative_Text
+
+50
+
+68
+
+50
+
+esktop_Type
+
+82
+
+ScreenSpot-Pro_Dev_Icon
+83
+
+ScreenSpot-Pro_Scientific_Icon
+
+66
+
+QwenVL2.5-3B
+QwenVL2.5-3B*
+GUI-R1-3B
+QwenVL2.5-7B
+QwenVL2.5-7B*
+GUI-R1-7B
+
+GUI-Act-Web_GR
+
+Overall Score
+
+ScreenSpot-Pro_CAD_Text
+ScreenSpot-Pro_CAD_Icon ScreenSpot-Pro_Creative_Icon
+
+OmniAct-Web_Type
+
+OmniAct-Desktop_SR
+
+AndroidControl-Low_GR
+
+AndroidControl-Low_Type
+
+Os-Atlas-7B
+QwenVL2.5-3B*
+QwenVL2.5-7B*
+
+GPT-4o
+QwenVL2.5-3B
+QwenVL2.5-7B
+
+UI-R1-3B
+GUI-R1-3B
+GUI-R1-7B
+
+(b) Low-level task capability.
+
+35
+
+30
+
+ScreenSpot_Desktop_Text
+
+ScreenSpot-Pro_OS_Icon
+ScreenSpot_Web_Icon
+ScreenSpot_Web_Text
+
+Os-Atlas-7B
+
+QwenVL2.5-3B
+
+QwenVL2.5-7B*
+
+Metrics
+UI-R1-3B
+
+QwenVL2.5-3B*
+QwenVL2.5-7B
+AndroidControl-High
+AndroidControl-High
+GUI-Odyssey
+
+GUI-R1-3B
+GUI-R1-7B
+GUI-Odyssey
+
+(c) High-level task capability.
+
+Figure 1: GUI-R1 achieves the best performance on eight evaluation datasets covering various platforms and task granularities, demonstrating the promising potential of RFT in GUI agent tasks.
+ingly adopted for developing various LVLMs [5; 6; 7; 8; 9]. Inspired by these advancements, this
+study extends the rule-based reinforcement learning (RL) paradigm to the domain of GUI agents,
+which focuses on GUI action prediction tasks within a unified action space driven by high-level instructions. Specifically, LVLMs generate multiple responses (trajectories) for each input, containing
+both reasoning traces and final answers. These responses are evaluated using a unified action space
+reward function designed in this work, and the model is updated through policy optimization [10].
+This iterative self-learning process enhances the model’s reasoning capabilities in action prediction
+and its generalization to out-of-distribution (OOD) scenarios. By modeling a unified action space,
+we efficiently curate high-quality data spanning multiple platforms, including Windows, Linux, MacOS, Android, and Web, while avoiding action prediction conflicts across different platforms.
+As demonstrated in Figure 1, the proposed framework (GUI-R1) achieves superior performance
+using only 0.02% of the data (3K vs. 13M) compared to previous state-of-the-art methods like OSAtlas [1] across eight benchmarks covering three different platforms (mobile, desktop, and web) and
+three levels of task granularity (low-level grounding, low-level tasks, and high-level tasks). Before
+delving into details, we clearly emphasize our contribution as follows.
+• We propose GUI-R1, the first framework that utilizes rule-based reinforcement fine-tuning
+to enhance the reasoning capabilities of LVLMs in high-level GUI action prediction tasks.
+• We design a rule-based unified action space reward function, which efficiently validates
+GUI task responses across different platforms and task granularities. This ensures reliable
+and efficient data selection and model training.
+• Leveraging the rule-based unified action space reward function, we construct GUI-R1-3K,
+which is a high-quality fine-tuning dataset with diversity and complexity. This dataset
+significantly improves both training efficiency and model performance.
+• We conduct a comprehensive evaluation of GUI agents, covering three distinct platforms
+(desktop, mobile, and web) and three levels of task granularity (low-level grounding, lowlevel tasks, and high-level tasks) across eight benchmarks. Experimental results demonstrate that our GUI-R1 is leading in multiple realistic cases. This creates a strong baseline
+of GUI agents for future research.
+
+2
+
+Related Work
+
+2.1
+
+GUI Agents
+
+Autonomous agents driven by large foundation models (e.g., large language models (LLMs) and
+large vision-language models (LVLMs)) have gained significant attention for their powerful interactive capabilities [11]. These operating systems via programs or API calls [12; 13]. However, the
+closed-source nature of most commercial software limits access to internal APIs or code, which promotes a shift in research toward GUI agents. Different from traditional programmatic agents, GUI
+agents simulate human interactions via mouse and keyboard inputs, which enable broader flexibility
+2
+
+in solving complex tasks. Recent works have advanced this direction. For instance, UGround [14]
+developed a specialized GUI grounding model for precise GUI element localization. OS-Atlas [1]
+introduced large action models to handle general agent tasks by interpreting human intentions and
+predicting actions in the form of function calls. UITars [2] proposed a more comprehensive method
+by combining GUI-related pretraining with task-level reasoning fine-tuning to better capture the
+complexity of GUI interactions. Nevertheless, these methods all rely on the paradigm of supervised
+fine-tuning (SFT), which suffers from two main limitations: (1) the training process requires vast
+amounts of diverse data; (2) the models exhibit limited generalization capabilities, which struggle
+to understand GUI screenshots and adapt to unseen interfaces. These limitations motivate the development of a more advanced learning paradigm for GUI agents beyond traditional SFT methods.
+2.2
+
+Reinforcement Fine-Tuning
+
+Rule-based reinforcement fine-tuning, exemplified by OpenAI o1 [15] and DeepSeek-R1 [10], has
+demonstrated strong performance in mathematical reasoning [16], code generation [17], and multistep logic tasks [18]. Subsequent studies have extended this paradigm to multimodal models by
+designing task-specific reward functions for vision-based tasks, such as correct class prediction in
+image classificati [19; 7; 20], intersection-over-union (IoU) metrics in image localization and detection [6; 5], and accurate click position prediction in low-level GUI grounding tasks [9]. These works
+demonstrate that verifiable reward signals, e.g., symbolic correctness or execution-based feedback,
+can effectively substitute traditional supervision. Despite the strong potential of RFT in various
+tasks, it remains underexplored in complex high-level GUI agent tasks. Compared to other domains,
+building intelligent agents for high-level GUI tasks is particularly challenging due to diverse UI layouts, implicit task semantics, and long-horizon action dependencies. This imposes higher demands
+on the model’s contextual learning and understanding capabilities. To the best of our knowledge,
+GUI-R1 is the first RFT-based framework specifically designed for high-level GUI agents.
+
+3
+
+GUI-R1 Framework
+
+Task: Open Sound Recorder Plus app, Save the current recording
+with the title Mike in the recording folder
+Step 1: Open Sound Recorder Plus app
+Step 2: Click on the button at the bottom right corner of the screen
+Step 3: Clear the Text bar
+
+6
+
+1
+
+Policy Gradient
+Optimization
+
+5
+
+Reference Model
+
+Policy Model
+
+4
+
+2
+
+<think> The goal is to save the current recording with
+the title "Mike" in the recording folder. The current step
+involves entering the name \"Mike\" into the text field.
+Since the text field is already active, typing the name is
+the next logical step.\n</think> <answer>[{'action': 'type',
+'point': [546, 789], 'input text': 'Mike'}]</answer>
+3
+Verifiable Reward in
+Unified Action Space
+
+𝐑 𝐭𝐞𝐱𝐭 = 𝟏 𝐢𝐟 𝐏𝐭𝐞𝐱𝐭 == 𝐆𝐓𝐭𝐞𝐱𝐭 𝐞𝐥𝐬𝐞 𝟎
+𝐑 𝐚𝐜𝐭 = 𝟏 𝐢𝐟 𝐏𝐚𝐜𝐭 == 𝐆𝐓𝐚𝐜𝐭 𝐞𝐥𝐬𝐞 𝟎
+𝐑 𝐩𝐨𝐢𝐧𝐭 = 𝟏 𝐢𝐟 𝐏𝐩𝐨𝐢𝐧𝐭 𝐢𝐧 𝐆𝐓𝐛𝐛𝐨𝐱 𝐞𝐥𝐬𝐞 𝟎
+
+Figure 2: Overview of the GUI-R1 Framework. Given the high-level instruction, action history,
+and visual image inputs, the policy model generates multiple responses containing reasoning steps.
+Then the verifiable rewards, such as action type reward, click point reward, and input text reward,
+are used with the policy gradient optimization algorithm to update the policy model.
+GUI-R1 is based on a reinforcement learning training paradigm designed to enhance the ability
+of GUI agents to complete sophisticated instructional tasks. As shown in Figure 2, unlike lowlevel tasks, high-level GUI tasks lack explicit and fine-grained instructions, which require action
+predictions based on high-level task objectives and execution history. This imposes greater demands
+on the model’s contextual learning and understanding capabilities.
+3.1
+
+Preliminaries
+
+We define the goal of GUI agents in high-level instructional tasks as understanding and executing
+low-level instructions to complete the high-level task Q, based on the current interface image I,
+3
+
+and the execution history H. Formally, given the input Q, I, and H, the model generates a set of
+candidate responses O = {o1 , o2 , . . . , oN }, where each response contains attributes of the predicted
+low-level action oact , input text otext , and input point opoint . Each response is evaluated using a
+unified action space reward function to compute its reward {r1 , r2 , . . . , rN }. GRPO [10] is applied
+to estimate advantages and update the policy model under KL divergence constraints. The relative
+advantage Ai of the i-th response is calculated as follows:
+Ai =
+
+ri − mean({r1 , r2 , . . . , rN })
+,
+std({r1 , r2 , . . . , rN })
+
+where mean and std denote the mean and standard deviation of the rewards, respectively.
+3.2
+
+Verifiable Rewards in Unified Action Space
+
+We adopt a unified action space modeling strategy, which extracts action space categories across
+different platforms and integrates them into a unified action space. This ensures that all high-level
+instructions can be decomposed into a sequence of atomic actions, resolving action space conflicts
+in multi-platform data joint training. Based on the unified action space, we design verifiable reward
+functions to evaluate the accuracy of predicted actions to guide reinforcement learning. We detail
+these verifiable rewards below.
+Format reward. Following previous work [20; 10; 6], we introduce format rewards during training
+to evaluate whether the generated output adheres to the expected structural format, including both
+syntactic and semantic validity. Specifically, format rewards guide the model to generate reasoning
+processes and final answers in a structured format, which play a critical role in self-learning and iterative improvement during reinforcement fine-tuning. The format reward templates used in training
+and inference are as follows, where ‘<think>’ represents the reasoning process and ‘<answer>’
+represents the final answer.
+Unified Action Space Prompt for Task Training and Inference
+You are GUI-R1, a reasoning GUI Agent Assistant. In this UI screenshot < image >, I
+want you to continue executing the command task, with the action history being history.
+Please provide the action to perform (enumerate from [complete, close/delete,
+press home, click, press back, type, select, scroll, enter]), the point where the
+cursor is moved to (integer) if a click is performed, and any input text required to complete
+the action.
+Output the thinking process in <think> </think> tags, and the final answer in <answer> </answer> tags as follows: <think> ... </think>
+<answer>[‘action’:
+enum[complete, close/delete, press home, click,
+press back, type, select, scroll, enter], ‘point’: [x, y], ‘input text’: ‘no input
+text [default]’]</answer>.
+Unified Action Space Prompt for Grounding Training and Inference
+You are GUI-R1, a reasoning GUI Agent Assistant. In this UI screenshot < image >, I
+want you to continue executing the command task, with the action history being history.
+Please provide the action to perform (enumerate from [click]), the point where the cursor
+is moved to (integer) if a click is performed, and any input text required to complete the
+action.
+Output the thinking process in <think> </think> tags, and the final answer in <answer> </answer> tags as follows: <think> ... </think>
+<answer>[‘action’: enum[click], ‘point’: [x, y], ‘input text’: ‘no input text
+[default]’]</answer>.
+Accuracy rewards. For the model’s predicted output o = {oact , otext , opoint }, which consists of three
+components: oact (action type, e.g., click, scroll), opoint (click point position), and otext (input text),
+we define the accuracy reward Racc as a combination of action type reward Ract , click point reward
+Rpoint , and input text reward Rtext , i.e., Racc = Ract + Rpoint + Rtext . This design provides reliable
+correctness rewards for all actions.
+4
+
+Action type reward. The action type reward Ract is calculated by comparing the predicted action
+type oact with the ground truth action type gtact . If oact == gtact , the reward is 1; otherwise, it is 0.
+This simple yet effective evaluation mechanism guides action type prediction.
+Click point reward. The click point reward Rpoint is calculated by comparing the predicted click
+point opoint = [x, y] with the ground truth bounding box gtbbox = [x1 , y1 , x2 , y2 ]. The calculation
+formula is as follows:
+
+Rpoint =
+
+if opoint ∈ gtbbox ,
+otherwise.
+
+1
+0
+
+Input text reward The input text reward Rtext is calculated by comparing the predicted input text
+otext with the ground truth text parameter gttext using the semantic F1 score. The calculation formula
+is as follows:
+
+Rtext =
+
+1 if F1 (otext , gttext ) > 0.5,
+0 otherwise.
+
+Response reward. The final response reward is composed of format rewards and accuracy rewards,
+defined as:Ro = αRf + βRacc , where Rf represents the format reward, Racc represents the accuracy
+reward, and α and β are weighting parameters respectively.
+3.3
+
+Training Data Curation
+
+Data collection. We collect data related to GUI tasks from multiple open-source datasets, including
+FineWeb [21], UIBert [22], AMEX [23], RICOSCA [24], as well as portions of pretraining data from
+Seeclick [3] and OS-Otlas [1]. This leads to ∼14M examples of grounding and low-level task data.
+Additionally, we collect ∼30K high-level GUI data points from OS-Otlas instruction datasets. In
+total, we gather ∼14M examples spanning multiple platforms (including Windows, Linux, MacOS,
+Android, and Web) and various task granularities (grounding, low-level, and high-level).
+Data filtering. To filter out low-quality data for efficient RFT, we use the Qwen2.5VL-7B [4] model
+to generate 10 responses for each example and evaluate them using a rule-based reward function
+designed for unified action space modeling. We remove the problems with an estimated accuracy
+of 0 or 1 to ensure a stable training process, resulting in 140K low-level data and 1.5K high-level
+data. Since the quantity of low-level data far exceeds that of high-level data, we randomly sample
+1.5K low-level data and combine it with all high-level data to create a balanced dataset of 3K highquality training examples, named GUI-R1-3K. The distribution of image categories, action types,
+and corresponding difficulty levels is demonstrated in Figure 3.
+Image Category Quantity and Difficulty Distribution
+
+Action Category Quantity and Difficulty Distribution
+
+1.0
+
+1.0
+
+2500
+
+1600
+
+0.8
+
+0.8
+
+1400
+
+2000
+
+Difficulty Distribution
+
+Difficulty Distribution
+
+0.6
+
+0.6
+
+1000
+800
+
+Quantity
+
+Quantity
+
+1200
+
+0.4
+
+0.4
+
+1000
+
+600
+400
+
+1500
+
+0.2
+
+500
+
+0.0
+
+0
+
+0.2
+
+200
+0
+
+amex
+
+fineweb
+
+aitz
+
+seeclick
+
+windows
+
+mind2web
+
+Image Category
+
+uibert
+
+mobile
+
+linux
+
+macos
+
+(a) Image category quantity and difficulty distribution.
+
+click
+
+scroll
+
+complete
+
+type
+
+enter
+
+Action Category
+
+select
+
+press_home
+
+press_back
+
+0.0
+
+(b) Action category quantity and difficulty distribution.
+
+Figure 3: Illustrations of image and action category quantity and difficulty distributions in the dataset
+GUI-R1-3K.
+
+5
+
+4
+
+Experiments
+
+4.1
+
+Implementation Details
+
+Training and inference details. For supervised fune-tuning (SFT), we use the QwenVL2.53B/7B [4] model as the base model for experiments and employ the LLaMA Factory [25] framework
+for one epoch of training to avoid overfitting. For RFT, we use the EasyR1 [26] framework for training over nine epochs. During inference, to ensure fairness, we apply a unified and simple prompt
+across all comparison methods, and conduct experiments under zero-shot prompt configurations.
+All experiments are conducted using 8×NVIDIA A100-80G GPUs.
+Evaluation benchmarks. We evaluate our model on eight agent benchmarks on three different platforms, including AndroidControl-Low [27], AndroidControl-High [27], GUI-Odyssey [28],
+ScreenSpot [3], ScreenSpot-Pro [29], GUI-Act-Web [30], OmniAct-Web [31], and OmniActDesktop [31]. We only use the test splits of these benchmarks for evaluation.
+Evaluation metrics. Following Os-Atlas [1], we use three commonly adopted metrics for GUI
+agents in evaluation: action type prediction accuracy, click point prediction accuracy, and step success rate, denoted as Type, Grounding, and SR, respectively. In more detail, Type measures the
+exact match score between the predicted action types (e.g., ‘click’ and ‘scroll’) and the ground truth.
+Grounding evaluates the performance of GUI grounding in downstream tasks. Besides, SR represents the step-wise success rate, where a step is deemed successful only if both the predicted action
+and its associated arguments (e.g., point for click actions and input text for scroll actions) are correct.
+4.2
+
+Experimental Results
+
+We here evaluate our GUI-R1 model by comparing it with current state-of-the-art (SOTA) models
+on various tasks including GUI grounding tasks, GUI low-level tasks, and GUI high-level tasks.
+Grounding capability. We evaluate the grounding capability of GUI-R1 using ScreenSpot [3] and
+ScreenSpot-Pro [29]. ScreenSpot assesses GUI grounding performance across mobile, desktop, and
+web platforms, while ScreenSpot-Pro focuses on high-resolution professional environments, featuring expert-annotated tasks spanning 23 applications, five industries, and three operating systems.
+As shown in Table 1, compared to the previous SOTA model Os-Atlas-7B, which was trained with
+large-scale data using supervised fine-tuning (SFT), the RFT approach achieves superior performance on the 3B-sized Qwen2.5-VL model using only 0.2% of the data (3K vs. 14M). Furthermore, compared to the base models QwenVL2.5-3B/7B and the SFT-trained QwenVL2.5* 3B/7B
+models using the same dataset, the RFT-based GUI-R1 demonstrates significantly better performance in GUI grounding tasks. Moreover, at the 3B scale, GUI-R1 achieves substantial gains over
+SFT models on ScreenSpot (80.08 vs. 63.55) and ScreenSpot-Pro (25.23 vs. 13.80), representing improvements of 26.3% and 82.8%, respectively. This highlights the effectiveness of the RL
+training framework in leveraging small-scale datasets to achieve significant performance improvements, which demonstrates its potential as a data-efficient and scalable approach for model training
+in resource-constrained environments.
+Low-level task capability. We evaluate the low-level task execution capability of GUI-R1 using four benchmark datasets: AndroidControl-Low [27], GUI-Act-Web [29], OmniAct-Web, and
+OmniAct-Desktop [31]. AndroidControl-Low evaluates low-level task execution on mobile platforms, while GUI-Act-Web and OmniAct-Web focus on low-level task execution on web platforms.
+OmniAct-Desktop is used to test low-level task execution on desktop platforms.
+As demonstrated in Table 2, our method impressively improves the success rate of GUI low-level
+tasks for 3B and 7B models, with the average success rate increasing from 55.65 to 80.88 at the 3B
+scale. Compared to UI-R1 [9], which is concurrent work also trained using RFT, our model achieves
+a 10-point improvement at the 3B scale, validating that RL training focused on high-level tasks
+can further enhance the model’s understanding of low-level instructions. Note that an interesting
+observation is that the use of small-scale SFT data even leads to performance degradation on some
+metrics such as GR on AndroidControl-Low. This limitation stems from SFT’s reliance on taskspecific labeled data, which constrains the model’s ability to adapt to unseen environments. In
+contrast, our RFT method not only enhances out-of-distribution (OOD) generalization by optimizing
+6
+
+Table 1: GUI grounding accuracy on ScreenSpot and ScreenSpot-Pro. All experiments are conducted under the same zero-shot prompt for fair comparison. * denotes supervised fine-tuned on
+GUI-R1-3K. The best results are in bold.
+Models
+
+ScreenSpot-Pro
+ScreenSpot
+Dev
+Creative
+CAD
+Scientific
+Office
+OS
+Web
+Desktop
+Text Icon Text Icon Text Icon Text Icon Text Icon Text Icon Text Icon Text Icon
+
+Supervised Fine-Tuning
+SeeClick
+Os-Atlas-4B
+ShowUI-2B
+CogAgent-18B
+Aria-GUI
+UGround-7B
+Claude**
+Os-Atlas-7B
+QwenVL2.5-3B*
+QwenVL2.5-7B*
+
+0.6
+7.1
+16.9
+14.9
+16.2
+26.6
+22.0
+33.1
+20.3
+31.4
+
+0.0
+0.0
+1.4
+0.7
+0.0
+2.1
+3.9
+1.4
+1.8
+1.8
+
+1.0
+3.0
+9.1
+9.6
+23.7
+27.3
+25.9
+28.8
+24.6
+27.3
+
+0.0
+1.4
+0.0
+0.0
+2.1
+2.8
+3.4
+2.8
+2.8
+3.5
+
+2.5
+2.0
+2.5
+7.1
+7.6
+14.2
+14.5
+12.2
+11.2
+15.7
+
+0.0
+0.0
+0.0
+3.1
+1.6
+1.6
+3.7
+4.7
+4.7
+5.1
+
+3.5 0.0 1.1 0.0 2.8
+9.0 5.5 5.1 3.8 5.6
+13.2 7.3 15.3 7.5 10.3
+22.2 1.8 13.0 0.0 5.6
+27.1 6.4 20.3 1.9 4.7
+31.9 2.7 31.6 11.3 17.8
+33.9 15.8 30.1 16.3 11.0
+37.5 7.3 33.9 5.7 27.1
+39.5 6.4 28.6 5.7 17.8
+40.7 7.9 39.7 8.9 32.4
+
+0.0
+0.0
+2.2
+0.0
+0.0
+0.0
+4.5
+4.5
+2.2
+6.9
+
+55.7
+82.6
+70.4
+80.4
+90.8
+73.0
+87.8
+
+32.5
+63.1
+28.6
+70.4
+74.2
+48.5
+68.2
+
+72.2
+72.1
+74.2
+82.5
+91.7
+85.7
+90.3
+
+30.0
+45.7
+20.0
+63.6
+62.8
+46.2
+62.8
+
+0.0
+1.3
+16.2
+33.1
+
+0.0
+0.0
+1.4
+2.1
+
+0.0
+1.0
+23.3
+23.7
+
+0.0
+0.0
+1.4
+3.5
+
+0.0
+2.0
+10.2
+12.2
+
+0.0
+0.0
+4.7
+6.3
+
+0.7
+2.1
+38.2
+36.8
+
+0.0
+0.0
+1.1
+6.9
+
+60.8 43.5 70.1 35.0
+86.9 65.1 89.7 60.0
+
+27.3
+40.9
+38.9
+
+3.5
+5.6
+8.4
+
+11.2
+26.4
+23.9
+
+6.3
+7.8
+6.3
+
+43.4 11.8 32.2 11.3 13.1 4.5 85.2 73.3 90.2 59.3
+61.8 17.3 53.6 17.0 28.1 5.6 89.6 72.1 93.8 64.8
+55.6 11.8 58.7 26.4 42.1 16.9 91.3 75.7 91.8 73.6
+
+Zero Shot
+QwenVL-7B
+GPT-4o
+QwenVL2.5-3B
+QwenVL2.5-7B
+
+0.0
+0.0
+6.4
+7.3
+
+0.0
+1.1
+24.3
+37.8
+
+0.0
+0.0
+3.8
+7.5
+
+0.0
+0.0
+15.0
+30.8
+
+Reinforcement Fine-Tuning
+UI-R1-3B
+GUI-R1-3B
+GUI-R1-7B
+
+22.7
+33.8
+49.4
+
+4.1
+4.8
+4.8
+
+Table 2: GUI low-level task accuracy on GUI-Act-Web, OmniAct-Web, OmniAct-Desktop, and
+AndroidControl-Low. All experiments are conducted under the same zero-shot prompt for fair comparison. * denotes supervised fine-tuned on GUI-R1-3K. The best results are in bold.
+Models
+
+GUI-Act-Web
+Type GR
+SR
+
+OmniAct-Web
+Type GR
+SR
+
+OmniAct-Desktop
+Type GR
+SR
+
+AndroidControl-Low
+Overall
+Type GR
+SR
+
+46.74
+85.63
+66.24
+81.62
+
+63.30
+90.24
+77.62
+86.23
+
+64.58
+73.00
+71.08
+84.00
+
+Supervised Fine-Tuning
+Os-Atlas-4B
+Os-Atlas-7B
+QwenVL2.5-3B*
+QwenVL2.5-7B*
+
+79.22
+86.95
+76.95
+87.66
+
+58.57
+75.61
+66.34
+84.77
+
+42.62
+57.02
+61.69
+79.89
+
+49.24
+69.35
+56.91
+73.45
+
+22.99
+59.15
+53.02
+73.39
+
+42.55
+62.87
+62.54
+80.17
+
+26.94
+56.73
+63.76
+79.80
+
+71.19
+73.37
+74.53
+85.74
+
+40.62
+50.94
+58.79
+64.32
+
+50.71
+70.07
+65.79
+80.09
+
+77.09 45.02 41.84 79.33 42.79 34.06 79.97 63.25 50.67 74.33 38.67 28.39
+56.10 64.28 55.61 50.63 46.89 47.02 56.95 47.97 46.89 62.03 74.07 59.32
+86.59 84.39 78.63 79.15 71.32 71.21 84.74 79.89 79.66 83.44 87.08 62.50
+
+54.46
+55.65
+79.05
+
+Zero Shot
+GPT-4o
+QwenVL2.5-3B
+QwenVL2.5-7B
+
+Reinforcement Fine-Tuning
+UI-R1-3B
+GUI-R1-3B
+GUI-R1-7B
+
+75.89 79.43 67.31 75.42 61.35 61.33 73.41 64.12 63.98 79.15 82.41 66.44
+89.86 87.42 76.31 88.58 75.10 75.08 91.86 78.37 78.31 83.68 81.59 64.41
+90.85 88.06 80.31 91.16 77.29 77.35 92.20 83.36 83.33 85.17 84.02 66.52
+
+70.85
+80.88
+83.30
+
+task-specific rewards but also achieves this with fewer training examples, which provides a scalable
+and efficient alternative to traditional SFT methods.
+High-level task capability. We evaluate the high-level task execution capability of GUI-R1 using AndroidControl-High [27] and GUI-Odyssey [28]. AndroidControl-High evaluates high-level
+task execution on mobile platforms, while GUI-Odyssey focuses on cross-app navigation scenarios,
+featuring high-level tasks spanning six applications and 203 apps.
+As shown in Table 3, due to our unified action space with rule-based reward modeling, GUI-R1
+achieves SOTA on high-level GUI tasks. Compared to the closed-source model GPT-4o, our 3Bscale method achieves an absolute improvement of 21.06, demonstrating that RFT, in contrast to
+SFT, can efficiently and reliably enhance the success rate of GUI agents in real-world tasks. Furthermore, compared to UI-R1 [9], which focuses on improving low-level grounding capabilities, our
+model achieves an average improvement of 3.4 points at the 3B scale, with a particularly notable
+7
+
+Table 3: GUI high-level task accuracy on AndroidControl-High and GUI-Odyssey. All experiments
+are conducted under the same zero-shot prompt for fair comparison. * denotes supervised fine-tuned
+on GUI-R1-3K. The best results are in bold.
+AndroidControl-High
+GUI-Odyssey
+Overall
+Models
+Type
+GR
+SR
+Type
+GR
+SR
+Supervised Fine-Tuning
+OS-Atlas-4B
+OS-Atlas-7B
+QwenVL2.5-3B*
+QwenVL2.5-7B*
+
+49.01
+57.44
+52.05
+69.15
+
+49.51
+54.90
+49.53
+58.69
+
+22.77
+29.83
+41.22
+48.11
+
+49.63
+60.42
+43.69
+56.78
+
+34.63
+39.74
+32.21
+38.65
+
+20.25
+26.96
+27.31
+34.44
+
+37.63
+44.88
+41.00
+50.97
+
+63.06
+47.81
+68.67
+
+30.90
+46.51
+59.71
+
+21.17
+38.90
+47.06
+
+37.50
+37.40
+55.60
+
+14.17
+26.49
+37.78
+
+5.36
+26.69
+34.37
+
+28.69
+37.30
+50.53
+
+55.70
+56.24
+65.56
+
+45.44
+46.55
+51.67
+
+52.16
+54.84
+65.49
+
+34.46
+41.52
+43.64
+
+32.49
+41.33
+38.79
+
+46.35
+49.75
+56.13
+
+Zero Shot
+GPT-4o
+QwenVL2.5-3B
+QwenVL2.5-7B
+
+Reinforcement Fine-Tuning
+UI-R1-3B
+GUI-R1-3B
+GUI-R1-7B
+
+57.85
+58.04
+71.63
+
+Reward Score vs Training Steps
+Data Quality & Image Resolution
+
+70
+
+High Quality + High Resolution
+High Quality + Low Resolution
+Low Quality + Low Resolution
+
+Reward Score
+
+60
+
+50
+
+40
+
+30
+0
+
+10
+
+20
+
+30
+
+40
+
+50
+
+Training Steps
+
+60
+
+70
+
+80
+
+90
+
+Figure 4: Ablation study of image resolution and data quality.
+
+27.2% lead in the step success rate on GUI-Odyssey. This indicates that RL training focused on lowlevel tasks is insufficient for handling complex high-level instructions. RFT designed for high-level
+tasks is better suited as a direction for developing GUI agent models.
+4.3
+
+Ablation Study
+
+Image resolution and data quality. To investigate the impact of image resolution and data quality
+on GUI RFT, we conduct corresponding ablation experiments, with the results shown in Figure 4.
+As observed, when using the filtered GUI-R1-3K dataset, the model requires only a few updates to
+achieve relatively high rewards. In contrast, training with unfiltered and low-quality data necessitates significantly more training time for the model to converge, with a noticeably lower performance
+ceiling. To further explore the effect of image resolution on model training, we increase the image
+resolution to twice its original size (from 1,048,576 pixels to 2,097,152 pixels). As shown in Figure 4, because of the high resolution of GUI task images and the small size of many UI elements,
+increasing the image resolution allows the model to perceive these elements more clearly, which
+accelerates the convergence speed of RFT and improves the performance ceiling.
+Coefficients in the reward function. To explore the impact of the coefficients for format rewards
+and accuracy rewards in the reward function on the final performance, we conduct relevant ablation
+experiments, as shown in Table 4. The results indicate that reducing the coefficient ratio of format
+rewards leads to consistent performance improvements. This is because format rewards are easier to
+learn during training and often converge early in the process. By amplifying the accuracy rewards,
+the advantages of providing correct answers are further emphasized, ultimately leading to more
+performance improvements.
+8
+
+Table 4: Ablation study of the coeffient α and β in reward function.
+AndroidControl-High
+GUI-Odyssey
+Type GR
+SR
+Type GR
+SR
+
+Overall
+
+0.2 0.8 58.04 56.24 46.55 54.84 41.52 41.33
+0.5 0.5 57.93 55.91 46.62 52.77 37.44 35.66
+0.8 0.2 57.85 55.70 45.44 52.16 34.46 32.49
+
+49.75
+47.72
+46.48
+
+α
+
+4.4
+
+β
+
+Visualization
+
+In Figure 5, we provide additional visualization of the training process. As shown in Figure 5a and
+Figure 5b, it can be observed that the format reward converges quickly in the early stages of training,
+while the accuracy reward becomes the main source of differentiated rewards in the later stages of
+training. Furthermore, as illustrated in Figure 5d, the mean response length first decreases and then
+gradually increases, but the “aha moment” does not occur. This may be due to the single-image input
+training method in a non-interactive environment, which prevents the model from autonomously
+tracing back the sequence of incorrect actions. Exploring multi-image high-level tasks in interactive
+environments could be a potential direction for inducing the emergence of the “aha moment” in
+future research.
+Accuracy Reward Over Steps
+
+0.8
+
+Format Reward Over Steps
+1.0
+
+Model
+
+GUI-R1-3B
+GUI-R1-7B
+
+0.7
+
+0.8
+
+Format Reward
+
+Accuracy Reward
+
+0.6
+0.5
+0.4
+0.3
+0.2
+
+0.6
+
+0.4
+
+0.2
+
+Model
+
+0.1
+0.0
+
+0
+
+20
+
+40
+
+Step
+
+60
+
+0.0
+
+80
+
+GUI-R1-3B
+GUI-R1-7B
+
+0
+
+(a) Accuracy reward curve with training steps.
+
+20
+
+40
+
+Step
+
+60
+
+80
+
+(b) Format reward curve with training steps.
+Response Length Over Steps
+
+PG Loss Over Steps
+
+Model
+
+Model
+
+GUI-R1-3B
+GUI-R1-7B
+
+0.025
+
+GUI-R1-3B
+GUI-R1-7B
+
+130
+
+Response Length
+
+PG Loss
+
+0.020
+
+0.015
+
+0.010
+
+0.005
+
+0.000
+
+120
+
+110
+
+100
+
+90
+
+0
+
+20
+
+40
+
+Step
+
+60
+
+80
+
+80
+
+(c) PG loss curve with training steps.
+
+0
+
+20
+
+40
+
+Step
+
+60
+
+80
+
+(d) Mean response length curve with training steps.
+
+Figure 5: Visualization of the training process of GUI-R1 . To provide more details, we report the
+curves of GUI-R1 ’s key metrics during training, including format reward, accuracy reward, mean
+response length, and policy gradient (PG) loss, as they vary with the training steps.
+
+5
+
+Conclusion
+
+This paper presents GUI-R1, which is the first GUI reinforcement learning framework grounded in
+unified action space rule modeling. By integrating reinforcement fine-tuning with large visionlanguage models, GUI-R1 enables effective contextual action prediction and verifiable rewarddriven learning in GUI environments. Extensive experiments demonstrate that GUI-R1 consistently
+outperforms baselines on various tasks. Moving forward, we plan to extend GUI-R1 to support collaborative multi-agent interaction and robust error correction policies, enabling the system to handle
+complex tasks with greater scalability.
+
+9
+
+References
+[1] Zhiyong Wu, Zhenyu Wu, Fangzhi Xu, Yian Wang, Qiushi Sun, Chengyou Jia, Kanzhi Cheng,
+Zichen Ding, Liheng Chen, Paul Pu Liang, et al. Os-atlas: A foundation action model for
+generalist gui agents. arXiv preprint arXiv:2410.23218, 2024.
+[2] Yujia Qin, Yining Ye, Junjie Fang, Haoming Wang, Shihao Liang, Shizuo Tian, Junda Zhang,
+Jiahao Li, Yunxin Li, Shijue Huang, et al. Ui-tars: Pioneering automated gui interaction with
+native agents. arXiv preprint arXiv:2501.12326, 2025.
+[3] Kanzhi Cheng, Qiushi Sun, Yougang Chu, Fangzhi Xu, Yantao Li, Jianbing Zhang, and Zhiyong Wu. Seeclick: Harnessing gui grounding for advanced visual gui agents. arXiv preprint
+arXiv:2401.10935, 2024.
+[4] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang,
+Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint
+arXiv:2502.13923, 2025.
+[5] Ziyu Liu, Zeyi Sun, Yuhang Zang, Xiaoyi Dong, Yuhang Cao, Haodong Duan, Dahua Lin, and
+Jiaqi Wang. Visual-rft: Visual reinforcement fine-tuning. arXiv preprint arXiv:2503.01785,
+2025.
+[6] Wenxuan Huang, Bohan Jia, Zijie Zhai, Shaosheng Cao, Zheyu Ye, Fei Zhao, Yao Hu, and
+Shaohui Lin. Vision-r1: Incentivizing reasoning capability in multimodal large language models. arXiv preprint arXiv:2503.06749, 2025.
+[7] Liang Chen, Lei Li, Haozhe Zhao, Yifan Song, and Vinci. R1-v: Reinforcing super generalization ability in vision-language models with less than $3. https://github.com/
+Deep-Agent/R1-V, 2025. Accessed: 2025-02-02.
+[8] Haozhan Shen, Zilun Zhang, Kangjia Zhao, Qianqian Zhang, Ruochen Xu, and Tiancheng
+Zhao. Vlm-r1: A stable and generalizable r1-style large vision-language model. https:
+//github.com/om-ai-lab/VLM-R1, 2025. Accessed: 2025-02-15.
+[9] Zhengxi Lu, Yuxiang Chai, Yaxuan Guo, Xi Yin, Liang Liu, Hao Wang, Guanjing Xiong, and
+Hongsheng Li. Ui-r1: Enhancing action prediction of gui agents by reinforcement learning.
+arXiv preprint arXiv:2503.21620, 2025.
+[10] Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Ruoyu Zhang, Runxin Xu, Qihao Zhu,
+Shirong Ma, Peiyi Wang, Xiao Bi, et al. Deepseek-r1: Incentivizing reasoning capability in
+llms via reinforcement learning. arXiv preprint arXiv:2501.12948, 2025.
+[11] Theodore Sumers, Shunyu Yao, Karthik Narasimhan, and Thomas Griffiths. Cognitive architectures for language agents. Transactions on Machine Learning Research, 2023.
+[12] Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen,
+Jiakai Tang, Xu Chen, Yankai Lin, et al. A survey on large language model based autonomous
+agents. Frontiers of Computer Science, 18(6):186345, 2024.
+[13] Qiushi Sun, Zhangyue Yin, Xiang Li, Zhiyong Wu, Xipeng Qiu, and Lingpeng Kong. Corex:
+Pushing the boundaries of complex reasoning through multi-model collaboration. arXiv
+preprint arXiv:2310.00280, 2023.
+[14] Boyu Gou, Ruohan Wang, Boyuan Zheng, Yanan Xie, Cheng Chang, Yiheng Shu, Huan Sun,
+and Yu Su. Navigating the digital world as humans do: Universal visual grounding for gui
+agents. arXiv preprint arXiv:2410.05243, 2024.
+[15] Aaron Jaech, Adam Kalai, Adam Lerer, Adam Richardson, Ahmed El-Kishky, Aiden Low,
+Alec Helyar, Aleksander Madry, Alex Beutel, Alex Carney, et al. Openai o1 system card.
+arXiv preprint arXiv:2412.16720, 2024.
+[16] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang,
+Mingchuan Zhang, YK Li, Y Wu, et al. Deepseekmath: Pushing the limits of mathematical
+reasoning in open language models. arXiv preprint arXiv:2402.03300, 2024.
+10
+
+[17] Jiawei Liu and Lingming Zhang. Code-r1: Reproducing r1 for code with reliable rewards.
+arXiv preprint arXiv:2503.18470, 2025.
+[18] Zihan Wang*, Kangrui Wang*, Qineng Wang*, Pingyue Zhang*, Linjie Li*, Zhengyuan Yang,
+Kefan Yu, Minh Nhat Nguyen, Monica Lam, Yiping Lu, Kyunghyun Cho, Jiajun Wu, Li FeiFei, Lijuan Wang, Yejin Choi, and Manling Li. Training agents by reinforcing reasoning,
+2025.
+[19] Zhenyu Pan and Han Liu. Metaspatial: Reinforcing 3d spatial reasoning in vlms for the metaverse. arXiv preprint arXiv:2503.18470, 2025.
+[20] Fanqing Meng, Lingxiao Du, Zongkai Liu, Zhixiang Zhou, Quanfeng Lu, Daocheng Fu, Botian Shi, Wenhai Wang, Junjun He, Kaipeng Zhang, et al. Mm-eureka: Exploring visual aha
+moment with rule-based large-scale reinforcement learning. arXiv preprint arXiv:2503.07365,
+2025.
+[21] Guilherme Penedo, Hynek Kydlı́ček, Anton Lozhkov, Margaret Mitchell, Colin A Raffel, Leandro Von Werra, Thomas Wolf, et al. The fineweb datasets: Decanting the web for the finest
+text data at scale. In NeurIPS, pages 30811–30849, 2024.
+[22] Chongyang Bai, Xiaoxue Zang, Ying Xu, Srinivas Sunkara, Abhinav Rastogi, Jindong Chen,
+and Blaise Aguera y Arcas. Uibert: Learning generic multimodal representations for ui understanding, 2021.
+[23] Yuxiang Chai, Siyuan Huang, Yazhe Niu, Han Xiao, Liang Liu, Dingyu Zhang, Peng Gao,
+Shuai Ren, and Hongsheng Li. Amex: Android multi-annotation expo dataset for mobile gui
+agents. arXiv preprint arXiv:2407.17490, 2024.
+[24] Yang Li, Jiacong He, Xin Zhou, Yuan Zhang, and Jason Baldridge. Mapping natural language
+instructions to mobile ui action sequences. arXiv preprint arXiv:2005.03776, 2020.
+[25] Yaowei Zheng, Richong Zhang, Junhao Zhang, Yanhan Ye, Zheyan Luo, Zhangchi Feng, and
+Yongqiang Ma. Llamafactory: Unified efficient fine-tuning of 100+ language models. In ACL,
+2024.
+[26] Yaowei Zheng, Junting Lu, Shenzhi Wang, and Y Xiong. Easyr1: An efficient, scalable, multimodality rl training framework, 2025.
+[27] Wei Li, William Bishop, Alice Li, Chris Rawles, Folawiyo Campbell-Ajala, Divya Tyamagundlu, and Oriana Riva. On the effects of data scale on computer control agents. arXiv
+preprint arXiv:2406.03679, 2024.
+[28] Quanfeng Lu, Wenqi Shao, Zitao Liu, Fanqing Meng, Boxuan Li, Botong Chen, Siyuan Huang,
+Kaipeng Zhang, Yu Qiao, and Ping Luo. Gui odyssey: A comprehensive dataset for cross-app
+gui navigation on mobile devices. arXiv preprint arXiv:2406.08451, 2024.
+[29] Kaixin Li, Ziyang Meng, Hongzhan Lin, Ziyang Luo, Yuchen Tian, Jing Ma, Zhiyong Huang,
+and Tat-Seng Chua. Screenspot-pro: Gui grounding for professional high-resolution computer
+use. Workshop on Reasoning and Planning for Large Language Models, 2025.
+[30] Wentong Chen, Junbo Cui, Jinyi Hu, Yujia Qin, Junjie Fang, Yue Zhao, Chongyi Wang, Jun
+Liu, Guirong Chen, Yupeng Huo, et al. Guicourse: From general vision language models to
+versatile gui agents. arXiv preprint arXiv:2406.11317, 2024.
+[31] Raghav Kapoor, Yash Parag Butala, Melisa Russak, Jing Yu Koh, Kiran Kamble, Waseem AlShikh, and Ruslan Salakhutdinov. Omniact: A dataset and benchmark for enabling multimodal
+generalist autonomous agents for desktop and web. In ECCV, pages 161–178. Springer, 2024.
+
+11
+
+

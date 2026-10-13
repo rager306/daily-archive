@@ -1,0 +1,1963 @@
+ReARTeR: Retrieval-Augmented Reasoning with Trustworthy
+Process Rewarding
+Zhongxiang Sun
+Qipeng Wang
+
+Weijie Yu
+
+arXiv:2501.07861v1 [cs.CL] 14 Jan 2025
+
+School of Information Technology
+and Management
+Gaoling School of Artificial Intelligence
+University
+of International Business
+Renmin University of China
+and
+Economics
+Beijing, China
+Beijing,
+China
+{sunzhongxiang,wqp}@ruc.edu.cn
+yu@uibe.edu.cn
+
+Xiaoxue Zang
+Kai Zheng
+Kuaishou Technology Co., Ltd.
+Beijing, China
+xxic666@126.com
+zhengkai@kuaishou.com
+
+Jun Xu∗
+Xiao Zhang
+
+Yang Song
+Han Li
+
+Gaoling School of Artificial Intelligence
+Renmin University of China
+Beijing, China
+{junxu,zhangx89}@ruc.edu.cn
+
+Kuaishou Technology Co., Ltd.
+Beijing, China
+lihan08@kuaishou.com
+ys@sonyis.me
+
+ABSTRACT
+Retrieval-Augmented Generation (RAG) systems for Large Language Models (LLMs) have shown promise in knowledge-intensive
+tasks, yet their reasoning capabilities, particularly for complex
+multi-step reasoning, remain limited. Although recent approaches
+have explored integrating RAG with chain-of-thought reasoning or
+incorporating test-time search with process reward model (PRM),
+these methods face several untrustworthy challenges, including
+lack of explanations, bias in PRM training data, early-step bias in
+PRM scores, and ignoring post-training that fails to fully optimize
+reasoning potential. To address these issues, we propose RetrievalAugmented Reasoning through Trustworthy Process Rewarding
+(ReARTeR), a framework that enhances RAG systems’ reasoning
+capabilities through both post-training and test-time scaling. At
+test time, ReARTeR introduces Trustworthy Process Rewarding via
+a Process Reward Model for accurate scalar scoring and a Process
+Explanation Model (PEM) for generating natural language explanations, enabling step refinement. During post-training, we leverage
+Monte Carlo Tree Search guided by Trustworthy Process Rewarding to collect high-quality step-level preference data, which is used
+to optimize the model through Iterative Preference Optimization.
+ReARTeR tackles three key challenges: (1) misalignment between
+PRM and PEM, addressed through off-policy preference learning;
+(2) bias in PRM training data, mitigated by a balanced annotation
+∗ Corresponding author.
+Work partially done at Engineering Research Center of Next-Generation Intelligent
+Search and Recommendation, Ministry of Education.
+
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than the
+author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or
+republish, to post on servers or to redistribute to lists, requires prior specific permission
+and/or a fee. Request permissions from permissions@acm.org.
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+© 2025 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+ACM ISBN 978-1-4503-XXXX-X/18/06. . . $15.00
+https://doi.org/XXXXXXX.XXXXXXX
+
+method and incorporating stronger annotations for difficult examples; and (3) early-step bias in PRM, resolved via a temporaldifference-based look-ahead search strategy. Experimental results
+on multi-step reasoning benchmarks demonstrate that ReARTeR
+significantly improves reasoning performance, highlighting its potential to advance the reasoning capability of RAG systems.
+
+CCS CONCEPTS
+• Information systems → Question answering.
+
+KEYWORDS
+Retrieval Augment Generation, Reasoning, Trustworthy
+ACM Reference Format:
+Zhongxiang Sun, Qipeng Wang, Weijie Yu, Xiaoxue Zang, Kai Zheng, Jun Xu,
+Xiao Zhang, Yang Song, and Han Li. 2025. ReARTeR: Retrieval-Augmented
+Reasoning with Trustworthy Process Rewarding. In Proceedings of Make
+sure to enter the correct conference title from your rights confirmation email
+(Conference acronym ’XX). ACM, New York, NY, USA, 11 pages. https://doi.
+org/XXXXXXX.XXXXXXX
+
+1
+
+INTRODUCTION
+
+Retrieval-augmented generation (RAG) for Large Language Models
+(LLMs) is widely utilized to address knowledge-intensive tasks,
+typically comprising a generator (LLM) and a retriever (for external
+knowledge retrieval) [6, 11, 16, 44]. However, complex multi-step
+reasoning tasks remain challenging even for the most advanced
+RAG systems. Existing works have explored integrating RAG with
+chain-of-thought (CoT) reasoning [36, 46], but these approaches
+have yet to fully leverage the reasoning potential of LLMs.
+Recently, Process Reward Models (PRMs) have been introduced
+to enhance the reasoning capability of RAG systems through testtime scaling [3, 18]. However, these methods often face untrustworthy challenges: (1) Lack of Explanations: Existing PRMs often
+generate unexplainable scalar scores and cannot incorporate natural language critiques, which limits interpretability and hinders
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+Question
+
+Question: What is the capital value of the company Elon Musk found in 1999?
+1
+
+Generator after Reasoning Fine-tuned
+
+Rollout
+&
+
+PRM
+
+Retriever
+Retrieved Document: X.com was an American
+online bank founded by Ed Ho, Harris Fricker, Elon
+Musk, ……
+
+Backpropagation
+
+0.4
+
+Thought: Elon Musk founded X.com in 1999 ……
+
+0.6
+
+2
+
+Generator
+Query: What is the current name of X.com?
+Search: Yes.
+
+0.7
+
+1
+
+0.4
+
+Refine Reasoning step
+using Explanation from PEM
+
+0.5
+
+Question Decomposition Errors?
+Retrieval Errors?
+Answer Generation Errors?
+
+Retriever
+
+Retrieved Document: X.com was rebranded as
+PayPal after merging with Confinity in 2000 ……
+
+Generator
+
+0.2 Bias-reducing
+Score
+
+0.4
+
+0.3
+
+Query: What company did Elon Musk found in 1999?
+Search: Yes.
+Adaptive search decided by Generator
+
+Generator
+
+Trovato et al.
+
+Sub-Query
+2
+
+Retrieval?
+
+Thought how to utilize the retrieved document
+
+Thought: The current name of X.com is PayPal ……
+
+Reasoning
+
+…
+
+…
+
+Figure 1: An example of how RARTPR tackles complex multistep questions. The right part highlights test-time search
+with PRM and refinement via PEM explanations, while the
+left part details the reasoning step, including sub-query, adaptive retrieval, and reasoning thought.
+their effectiveness in enhancing refinement during test-time reasoning [21, 39]; (2) Bias in PRM training data: Traditional Monte
+Carlo methods for collecting Process Supervision Datasets often
+result in a distributional bias, where most questions receive disproportionately high scores [18, 39, 41]. Consequently, the PRM
+struggles to identify erroneous steps and fails to provide meaningful feedback on difficult examples; (3) Early-Step Bias in PRM:
+PRMs exhibit reduced accuracy in predicting rewards for earlier
+reasoning steps compared to those closer to the reasoning endpoint, due to the increased randomness and uncertainty in earlier
+steps; (4) Lack of Reasoning Optimization: Additionally, these
+approaches rely on off-the-shelf LLMs as generators without incorporating reasoning-specific optimization during the post-training
+phase [22, 43, 48].
+To address the above limitations and improve the reasoning capabilities of RAG systems, we explore enhancing Retrieval-Augmented
+Reasoning through Trustworthy Process Rewarding (ReARTeR)
+in both test-time and post-training scaling. Specifically, as shown
+in Figure 1, the testing phase is guided by the Trustworthy Process
+Rewarding. The Trustworthy Process Rewarding is implemented
+through two models: (1) a Process Reward Model (PRM), which
+provides scalar scores that, while accurate, lack interpretability;
+and (2) a Process Explanation Model (PEM), which generates natural language explanations for the process reward model’s scores,
+facilitating refinement of steps with lower scores. During the posttraining phase, we introduce step-level offline reinforcement finetuning to enhance the reasoning capabilities of the RAG system.
+Specifically, recognizing the dynamic interaction between the generator and retriever in RAG, on each iteration we employ Monte
+Carlo Tree Search (MCTS) [2] guided by Trustworthy Process Rewarding to generate high-quality, step-level preference data. This
+data is subsequently utilized to optimize the model, resulting in a
+substantial improvement in the system’s reasoning performance.
+As the core component of ReARTeR, the Trustworthy Process
+Rewarding solving the following challenges: (1) Misalignment between the PEM and PRM: Off-the-shelf LLMs used as PEM often
+generate explanations that are not aligned with the PRM’s scalar
+scores, hindering the generator’s ability to refine outputs based on
+
+external feedback. To address this issue, we propose aligning the
+PEM with the PRM through Off-policy Preference Learning, which
+leverages preference labels derived from PRM scores before and
+after the generator refines the reasoning step based on PEM explanations. If the explanation improves the PRM score, it is treated
+as a positive example; otherwise, it is treated as a negative example; (2) Bias in PRM training data: To mitigate this, we leverage
+OmegaPRM [21], which emphasizes identifying errors in reasoning
+steps and balances positive and negative examples. For challenging
+samples, we incorporate annotations from stronger models or human experts to provide accurate reasoning steps, thereby enhancing
+the PRM’s ability to discern correct reasoning paths in difficult scenarios; (3) Early-Step Bias in PRM: To resolve this, we propose a
+temporal-difference (TD)-based look-ahead search strategy, where
+simulated future reasoning steps are used to compute expected
+rewards, enabling updates to the current step’s reward estimation.
+Compared to previous approaches [31], this method effectively
+achieves a balance between bias and variance.
+We summarize the major contributions of this paper as follows:
+(1) We pioneer the exploration of combining post-training and
+test-time scaling to enhance reasoning capabilities in RetrievalAugmented Generation scenarios. By integrating Trustworthy Process Rewarding, ReARTeR significantly improves the quality of
+reasoning paths discovered during the post-training phase, as well
+as the accuracy of search and the generator’s refinement ability
+during the test phase.
+(2) We tackle key challenges in implementing Trustworthy Process Rewarding by aligning the PEM and PRM through off-policy
+preference learning, balancing the training data of PRM, and employing a TD-based look-ahead search strategy to reduce Early-Step
+Bias of PRM.
+(3) Experimental results demonstrate that ReARTeR achieves
+significant improvements on multiple public multi-step reasoning
+RAG datasets, validating the feasibility of enhancing RAG systems’
+reasoning capabilities through post-training and inference-time
+scaling with ReARTeR.
+
+2 RELATED WORK
+2.1 Learning and Search for Reasoning
+Advanced reasoning models often follow the learning and search
+principle [32] to enhance reasoning capabilities through post-training
+and test-time scaling strategies.
+Post-training Scaling. ReFT [22] employs reinforcement finetuning, where LLMs explore reasoning paths and optimize based on
+feedback, using PPO for training. While PPO achieves better results
+than DPO due to interactive updates, it suffers from instability. Iterative training methods [30] offer more stability and efficiency, with
+Iterative Preference Optimization [25] improving reasoning by constructing preference CoT data and using iterative DPO. However,
+these approaches face challenges in collecting step-level reasoning
+preferences and rely on difficult-to-collect pairwise data. To address
+these limitations, we propose using MCTS to collect step-level preference data and employ KTO [5] for stable optimization, leveraging
+process supervision to enhance reasoning.
+Test-time Scaling. Test-time scaling typically relies on (1) SelfRefinement, where models iteratively improve outputs [23], but
+
+ReARTeR: Retrieval-Augmented Reasoning with Trustworthy Process Rewarding
+
+this approach is limited by the lack of external feedback [10]; and
+(2) Search with Verifier, which generates multiple outputs and
+selects the best using a verifier, such as a Process Reward Model
+(PRM). While PRM scores have been used as feedback for SelfRefinement [42], they often fail to guide effective improvements in
+RAG scenarios. To overcome this, we combine PRM-aligned PEM
+explanations with step-level Self-Refinement for better reasoning
+performance. PRMs are critical during search, but their training
+data collection significantly affects performance. Existing methods [3, 18] use Monte Carlo methods to generate process supervision signals, discarding reasoning steps after rollouts, resulting in
+inefficiency. OmegaPRM [21] improves this by storing rollouts for
+reuse and using binary search to identify errors, balancing positive
+and negative examples. Building on OmegaPRM, we incorporate
+stronger generators for difficult problems and propose a TD-based
+look-ahead search strategy to enhance PRM accuracy for shallow
+reasoning nodes, achieving trustworthy process rewards.
+
+2.2
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+where 𝑇 represents the maximum length of the reasoning steps.
+As illustrated in Figure 2, each reasoning step 𝑒𝑡 comprises a subquery 𝑞𝑡 , a retrieval indicator 𝑗𝑡 , external knowledge 𝑑𝑡 retrieved
+by 𝐸 from the corpus D if 𝑗𝑡 = “Yes”, and a thought 𝑟𝑡 generated
+by the generator based on the context:
+𝑒𝑡 = [𝑞𝑡 , 𝑗𝑡 , 𝑑𝑡 , 𝑟𝑡 ].
+
+𝑒ˆ𝑡 = arg 𝑚
+max 𝑅(𝑠𝑡 , 𝑒𝑡𝑚 ),
+
+Retrieval-Augmented Reasoning
+
+Retrieval-augmented generation for Large Language Models is
+widely used for knowledge-intensive tasks [6, 11, 16, 44], but remains limited in handling complex multi-step reasoning. Facing
+this challenge, existing works integrate RAG with CoT reasoning [36, 46]. For instance, Self-Ask [26] uses CoT to explicitly reason
+through follow-up questions before addressing the query, while
+IRCoT [36] interleaves retrieval with reasoning steps to iteratively
+refine reasoning using CoT and retrieved results. Recently, Yue et al.
+[47] proposed an iterative demonstration-based RAG method that
+performs multiple iterations to achieve test-time scaling. However,
+these approaches primarily leverage the long context capabilities of
+LLMs and directly combine CoT with retrieval without effectively
+utilizing learning and search to enhance the reasoning capabilities
+of RAG systems. CR-Planner [18] attempts to directly use Process
+Reward Models (PRMs) to assist search and improve the reasoning
+capability of RAG systems through test-time scaling. However, it
+fails to address the untrustworthy challenges inherent in PRMs. We
+pioneer the use of trustworthy process rewarding to guide both
+post-training scaling and test-time scaling, significantly enhancing
+the multi-step reasoning capabilities of RAG systems.
+
+3 METHOD
+3.1 Overview
+In this section, we present the overview of ReARTeR, which enhances Retrieval-Augmented Reasoning through Trustworthy Process Rewarding in both test-time and post-training scaling. The
+policy model 𝜋𝜃 of ReARTeR includes a generator 𝐺, which can
+either be an off-the-shelf LLM such as the proprietary model GPT4o [1] or an open-source model such as LLaMA3 [4] which can be
+post-trained for enhancing reasoning, and a retriever 𝐸. Additionally, ReARTeR incorporates a Process Reward Model (PRM) 𝑅 and
+a Process Explanation Model (PEM) 𝐶.
+Given a complex multi-step question 𝑞 and a retrieval corpus D,
+ReARTeR generates a reasoning process (CoT) e before producing
+an answer 𝑎 to 𝑞. The CoT of ReARTeR consists of a sequence of
+reasoning steps:
+e = [𝑒 1, 𝑒 2, . . . , 𝑒𝑇 ],
+(1)
+
+(2)
+
+At timestep 𝑡, the reasoning step 𝑒𝑡 is sampled from the policy 𝜋𝜃 (𝑠𝑡 ), where the state 𝑠𝑡 represents the combination of the
+question 𝑞 and the sequence of reasoning steps up to 𝑒𝑡 −1 .
+For the sampling process of 𝑒𝑡 , we first sample 𝑀 different reasoning steps:
+E𝑡 = [𝑒𝑡1, 𝑒𝑡2, . . . , 𝑒𝑡𝑀 ].
+Subsequently, the PRM 𝑅 predicts scores to the reasoning steps in
+E𝑡 :
+𝑟𝑡 = 𝑅(𝑠𝑡 , 𝑒𝑡 ), 𝑟𝑡 ∈ (0, 1).
+The reasoning step with the highest reward score is selected:
+𝑒𝑡 ∈ E𝑡
+
+if 𝑟ˆ𝑡 > 𝜏, then 𝑒𝑡 ← 𝑒ˆ𝑡 is directly added to 𝑠𝑡 . Otherwise, a refinement phase is initiated, where the process critic model 𝐶 provides
+an explanation 𝑐𝑡 for the low process reward score of 𝑒ˆ𝑡 :
+𝑐𝑡 = 𝐶 (𝑠𝑡 , 𝑒ˆ𝑡 , 𝑟ˆ𝑡 ).
+The policy model then utilizes external feedback to correct 𝑒ˆ𝑡 :
+𝑒𝑡 = 𝜋𝜃 (𝑠𝑡 |𝑒ˆ𝑡 , 𝑐𝑡 , 𝑟ˆ𝑡 ).
+Finally, 𝑒𝑡 is added to the reasoning process:
+𝑠𝑡 +1 = [𝑠𝑡 , 𝑒𝑡 ].
+Ultimately, the policy 𝜋𝜃 generates the final answer 𝑎 based on
+the question 𝑞 and the complete reasoning process e.
+In the following sections, we will introduce the implementation
+of the PRM (§ 3.2), including its training process and the method
+for reducing early-step bias for PRM. Additionally, we describe the
+training process of the PEM (§ 3.4) and the post-training scaling
+strategy for ReARTeR (§ 3.5).
+
+3.2
+
+Process Reward Model Training
+
+The Process Reward Model of ReARTeR is trained to truthfully
+predict the process reward score of each intermediate step 𝑒𝑡 .
+Training data collection: Considering the training data requires process supervision labels which are hard to annotate, to
+reduce human annotation costs, existing methods propose an automatic annotation approach using the Monte Carlo method to
+generate process supervision signals [3, 18]. For each step of a CoT
+e, multiple complete reasoning paths and final answers are obtained
+via rollouts. By evaluating the accuracy of the final answers, process
+supervision signals for the current reasoning step can be derived.
+However, as shown in Figure 2(a), we observed that this method
+often introduces distributional bias, where most questions receive
+disproportionately high scores. Additionally, for difficult questions,
+the sampled process supervision signals frequently result in a value
+of zero, leaving the PRM unable to identify erroneous steps or
+provide meaningful feedback on challenging examples.
+To address this issue, as illustrated in Figure 2(a), we first perform
+𝑁 rollouts for the question 𝑞 to obtain {(𝑞 1, e1, 𝑎 1 ), . . . , (𝑞 𝑁 , e𝑁 , 𝑎 𝑁 )}.
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+Test-Time Scaling
+
+Question
+
+Collecting PRM training data
+
+0.4
+
+0.3
+
+Bias-reducing
+Score
+
+Question
+
+Answer: 𝑎1
+
+Rollout 2: 𝒆𝟐…
+
+Answer: 𝑎2
+
+Rollout 3: 𝒆𝟑 …
+
+Answer: 𝑎3
+
+Collecting PRM data
+Monte Carlo Estimation:
+
+0.4 (Low Score)
+
+σ3𝑖=1 𝑐𝑜𝑟𝑟𝑒𝑐𝑡(𝑎𝑖 )
+3
+
+Using Stronger
+Generator
+
+Collecting PRM data
+Using OmegaPRM
+
+Ours:
+
+…
+
+RAG
+0.6
+
+(a)
+
+Question Decomposition Errors?
+Retrieval Errors?
+Answer Generation Errors?
+
+Reasoning
+
+Rollout 1: 𝒆𝟏…
+
+PRM
+
+Sub-Query
+
+Retrieval?
+
+MC =
+
+0.2
+
+Rollout
+&
+Backpropagation
+Refinement with
+Explanation
+
+Trovato et al.
+
+Avg Example MC Score
+
+Avg Example MC Score
+
+PEM
+RAG
+
+PRM
+
+𝑒𝑡1 + 𝑟1 + 𝑐1
+
+1
+
+2
+
+6
+
+Step 𝑒𝑡1
+
+Reward: 𝑟1
+
+3
+
+PRM
+
+5
+
+4
+
+Step 𝑒𝑡2
+
+Explanation: 𝑐1
+
+Reward: 𝑟2
+7
+
+Training
+
+Alignment between
+PEM and PRM
+
+PEM
+
+(b)
+
+Collecting PEM data
+𝑟2 > 𝑟1: Positive Example
+𝑟2 < 𝑟1: Negtive Example
+
+8
+
+(c)
+
+Figure 2: Test-Time Scaling of ReARTeR, which includes collecting unbiased PRM training data for PRM, reducing early-step
+bias in PRM, and alignment between PEM and PRM.
+
+Post-Training Scaling
+Reasoning Fine-tuning
+
+Select
+MC
+
+Interactive
+
+{(q, 𝒆, a)}
+
+MC
+
+Sampling
+
+1
+
+0
+
+Maintain
+
+Binary Search
+
+Selected
+
+3 MC
+
+0
+1
+
+3
+
+0
+
+Rollout from Node 4
+
+…
+
+4
+
+2
+
+MC
+
+Strong Generator
+
+2
+
+1
+
+3
+
+4
+
+MC
+
+5
+
+MC
+
+6
+
+MC
+
+7
+
+Binary
+
+PRM
+
+5
+
+2
+
+8
+
+6
+
+8
+
+Refine
+PEM
+
+SFT for Warm-up
+Update using {( 0
+
+4
+
+,
+
+5
+
+, +1), … ( 0
+
+4
+
+5 ,
+
+6
+
+, -1)}
+
+Generator after
+Reasoning Fine-tuning
+
+Weak Generator
+Figure 3: Post-Training Scaling of ReARTeR, which includes Warm-Up and Step-Level Offline Reinforcement Stages.
+The accuracy of the final answers across all rollouts is used to compute the Monte Carlo (MC) score:
+Í𝑁
+MC =
+
+𝑛=1 correct(𝑎𝑛 )
+
+.
+
+(3)
+
+𝑁
+For questions where 0 < MC < 1, we employ the OmegaPRM [21]
+annotation scheme, which efficiently identifies the first error in e
+using binary search and balances positive and negative examples,
+thereby ensuring both efficiency and quality. For questions where
+MC = 0, we switch to a stronger generator for reasoning. Questions
+with final MC = 1 or MC = 0 (even when using a stronger generator) are discarded, as they lack discriminative value and do not
+enable the model to identify correct or incorrect reasoning steps
+for specific questions.
+
+For the selected questions, following the above process, we
+𝑀𝑟
+construct the process supervision data Dprm = {(𝑠𝑖 , 𝑒𝑖 , MC𝑖 )}𝑖=1
+,
+where 𝑀𝑟 represents the number of samples in Dprm , and MC𝑖 is
+the MC score computed for [𝑠𝑖 , 𝑒𝑖 ] after 𝑁 rollouts using Eq. 3.
+PRM Training: For each process supervision data (𝑠𝑖 , 𝑒𝑖 , MC𝑖 )
+in Dprm , we define binary labels 𝑦𝑖 = 1 if MC𝑖 > 0.5, otherwise
+𝑦𝑖 = 0. We utilize the Cross-Entropy (CE) loss to train the PRM:
+𝑀
+
+Lprm = −
+
+𝑟
+1 ∑︁
+[𝑦𝑖 log 𝑅(𝑠𝑖 , 𝑒𝑖 ) + (1 − 𝑦𝑖 ) log(1 − 𝑅(𝑠𝑖 , 𝑒𝑖 ))] ,
+𝑀𝑟 𝑖=1
+
+where 𝑅 denotes the process reward model.
+
+3.3
+
+Reducing Early-Step Bias for PRM
+
+At the inference stage of PRM, we observe that PRMs exhibit reduced accuracy in predicting rewards for earlier reasoning steps
+
+ReARTeR: Retrieval-Augmented Reasoning with Trustworthy Process Rewarding
+
+(shallow nodes) compared to those closer to the reasoning end-point
+(deep nodes), as shown in Figure 2(b). This phenomenon, attributed
+to the increased randomness and uncertainty in earlier steps, is
+referred to as early-step bias.
+Some existing works adopt a Lookahead Search strategy [31],
+which performs a simulation by rolling out up to 𝐻 steps further,
+stopping early if the solution end-point is reached. The PRM’s
+score at the end of this rollout is then used to evaluate the current
+step during beam search. While this approach mitigates bias, it
+introduces significant variance [33]. To achieve a bias-variance
+trade-off, inspired by Temporal Difference (TD) learning [34], we
+propose a TD-based Lookahead Search to update the PRM scores
+for shallow nodes:
+𝑟𝑡 ← 𝑟𝑡 + 𝛼Δ𝑡 ,
+where
+Δ𝑡 = (𝑟𝑡 +1 − 𝑟𝑡 ) ,
+𝑟𝑡 = 𝑅(𝑠𝑡 , 𝑒𝑡 ), and 𝛼 is the discount factor.
+In our approach, the termination of the Lookahead Search simulation is adaptively determined by whether Δ𝑡 falls below a threshold
+𝛽 (indicating diminishing returns in further rollouts when reward
+scores stabilize) or if the predefined step limit 𝐻 is reached. This
+adaptive simulation mechanism balances computational efficiency
+and bias reduction, saving resources while maintaining performance.
+
+3.4
+
+Process Explanation Model
+
+In this section, we introduce the training procedure of the Process
+Explanation Model. After training the PRM, the PRM can effectively score the reasoning process; however, the PRM score is an
+unexplainable scalar and cannot provide natural language critiques.
+To address this limitation, we designed PEM, a generative model
+specifically aimed at producing explanations for refinement.
+However, directly using off-the-shelf LLMs as PEM often results
+in explanations misaligned with the PRM’s scalar scores, hindering
+the generator’s ability to refine reasoning steps based on external
+feedback. To address this issue, as shown in Figure 2(c), we propose
+aligning the PEM with the PRM through Off-policy Preference
+Learning. This method uses the PRM as a verifier to provide feedback for the PEM-generated explanations, yielding preference data
+Dpem . The PEM is then updated to align its explanations with
+the PRM’s scoring, facilitating the generation of explanations that
+enhance the policy model’s reasoning step through refinement.
+Given the state 𝑠𝑡 and reasoning step 𝑒𝑡1 , the process is as follows:
+1. The PRM provides an initial score:
+𝑟𝑡1 = 𝑅(𝑠𝑡 , 𝑒𝑡1 ),
+and the PEM generates an explanation:
+𝑐𝑡 = 𝐶 (𝑠𝑡 , 𝑒𝑡1, 𝑟𝑡1 ).
+2. Using external feedback, the policy model 𝜋𝜃 (i.e., RAG) refines
+the reasoning step:
+𝑒𝑡2 = 𝜋𝜃 (𝑠𝑡 | 𝑒𝑡1, 𝑐𝑡 , 𝑟𝑡1 ).
+3. The PRM re-evaluates the refined step:
+𝑟𝑡2 = 𝑅(𝑠𝑡 , 𝑒𝑡2 ).
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+
+If 𝑟𝑡2 > 𝑟𝑡1 , then 𝑠𝑡 , 𝑒𝑡1, 𝑐𝑡 is labeled as a positive example with
+preference label 𝑝𝑡 = +1. Otherwise, it is labeled as a negative
+example with 𝑝𝑡 = −1 (cases where 𝑟𝑡2 = 𝑟𝑡1 are discarded). The
+collected PEM preference training dataset is denoted as:
+n
+o 𝑀𝑒
+Dpem = 𝑠𝑡 , 𝑒𝑡1, 𝑐𝑡 , 𝑟𝑡1, 𝑟𝑡2, 𝑝𝑡
+,
+𝑖=1
+
+where 𝑀𝑒 is the size of Dpem .
+During the training phase, since the collected preference data is
+binary, we employ the KTO Loss [5] to optimize the PEM. This loss
+is designed for binary preference optimization and is robust to noise
+in the data. The KTO Loss incorporates a hyperparameter 𝜆𝑈 > 1
+for negative examples, reflecting loss aversion. In our dataset, the
+negative examples include the corresponding PRM scores 𝑟 1 and 𝑟 2 ,
+which can be used to dynamically adjust 𝜆𝑈 , reflecting the degree
+of loss aversion. Instead of assigning a uniform 𝜆𝑈 for all negative
+examples as in the original KTO Loss, we introduce a dynamic 𝜆𝑈 :
+𝜆𝑈 = 𝜆0 · exp (𝑟 1 − 𝑟 2 ) ,
+where 𝜆0 is the base value.
+
+3.5
+
+Post-Training Scaling of ReARTeR
+
+In this section, we introduce how ReARTeR enhances the reasoning
+capabilities of RAG systems through post-training scaling. While
+test-time scaling can improve the reasoning performance of RAG
+systems to some extent, for certain weak open-source LLM-based
+RAG systems 𝜋𝜃𝑤 , their inherent limitations in reasoning capabilities prevent them from solving complex multi-hop questions solely
+through test-time scaling. Inspired by [37, 43], we propose a steplevel offline reinforcement fine-tuning approach to strengthen the
+reasoning abilities of the RAG system. As illustrated at the bottom
+of Figure 3 (the retriever is omitted for simplicity), this approach
+comprises two stages: warm-up stage and step-level offline reinforcement stage.
+Warm-Up Stage: In the warm-up stage, we utilize a strong
+generator-based RAG system (𝜋𝜃𝑠 ) to generate a dataset containing
+reasoning steps:
+𝑀𝑤
+D𝑤 = {(𝑞𝑖 , e𝑖 , 𝑎𝑖 )}𝑖=1
+,
+where e = [𝑒 1, 𝑒 2, . . . , 𝑒𝑇 ] and 𝑒𝑡 = [𝑞𝑡 , 𝑗𝑡 , 𝑑𝑡 , 𝑟𝑡 ].
+During fine-tuning of the weak policy 𝜋𝜃𝑤 using D𝑤 , the retrievergenerated content 𝑑𝑡 must be masked, as it is not produced by the
+generator:
+L𝑤 = −
+
+|𝑒𝑡 |
+𝑀𝑤 ∑︁
+𝑇 ∑︁
+∑︁
+
+
+
+1 𝑜𝑡,𝑘 ∉ 𝑑𝑡 log 𝜋𝜃𝑤 𝑜𝑡,𝑘 | 𝑞𝑖 , 𝑜 <𝑡 , 𝑜𝑡,<𝑘 ,
+𝑖=1 𝑡 =1 𝑘=1
+
+where 𝑜𝑡,𝑘 denotes the 𝑘-th token in sequence 𝑒𝑡 , 𝑜 <𝑡 represents
+all tokens generated before step 𝑡 (i.e., tokens in 𝑒 1, . . . , 𝑒𝑡 −1 ), and
+𝑜𝑡,<𝑘 denotes tokens from the first to the position (𝑘 − 1) within 𝑒𝑡 .
+Step-Level Offline Reinforcement Stage: In the step-level
+offline reinforcement stage, the policy model 𝜋𝜃𝑤 iteratively collects
+step-level preference data using MCTS and leverages this data to
+improve its reasoning capability via KTO Loss. The updated model
+is then used to collect new data for further policy updates.
+Data Collection: To ensure efficient data collection and balance
+between positive and negative examples, we adopt the OmegaPRMbased MCTS approach [21] introduced in § 3.2. During rollouts, the
+generated nodes are scored using the PRM and PCM trained with
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+the strong generator 𝜋𝜃𝑠 . Reasoning steps with low reward scores
+are refined to gather higher-quality data.
+Iterative Updates: In the first iteration, the policy model is ini𝑤 , which is the model fine-tuned during the warm-up
+tialized as 𝜋𝜃,0
+stage. Using the collected preference data:
+𝑀𝑢
+D0𝑢 = {(𝑠𝑖 , 𝑒𝑖 , 𝑀𝐶𝑖 )}𝑖=1
+,
+
+where 𝑀𝐶𝑖 > 0.5 indicates desirable (positive) reasoning steps and
+𝑀𝐶𝑖 ≤ 0.5 indicates undesirable (negative) reasoning steps, D0𝑢 is
+𝑤 via KTO Loss [5] (with the retrieved document
+used to update 𝜋𝜃,0
+𝑤 .
+𝑑𝑖 in reasoning steps 𝑒𝑖 masked). This yields the updated model 𝜋𝜃,1
+𝑤 is used as the policy model to generate
+In subsequent iterations, 𝜋𝜃,1
+𝑤 to 𝜋 𝑤 . This
+preference data D1𝑢 , which is then used to update 𝜋𝜃,1
+𝜃,2
+process is repeated for 𝐼 iterations, progressively improving the
+𝑤
+reasoning capability of 𝜋𝜃 . Compared to the PPO approach used
+in ReFT [22], our method sacrifices some exploration but achieves
+𝑤 represents the policy model after
+more stable updates. Finally, 𝜋𝜃,𝐼
+post-training scaling of ReARTeR, which can be combined with
+test-time scaling to further enhance the reasoning capabilities of
+RAG systems.
+
+4
+
+EXPERIMENTS
+
+In this section, we empirically verify the effectiveness of ReARTeR
+by addressing the following research questions:
+RQ1: How does ReARTeR improve the reasoning capabilities of
+RAG systems in both closed-source and open-source models?
+RQ2: How do the components of ReARTeR affect test-time scaling?
+RQ3: How does the number of iterations during the post-training
+process of ReARTeR affect its performance?
+RQ4: How effective is ReARTeR in aligning PEM and PRM?
+
+Trovato et al.
+
+systems. Specifically, while the model accurately answers the question, it often includes extensive supplementary information. This
+renders exact-match metrics such as EM unsuitable for our evaluation tasks. Therefore, we adopt accuracy (ACC𝑅 ) as our primary
+evaluation metric, which determines whether the golden answer is
+contained within the predicted answer generated by the RAG system. To further refine our evaluation, we employ an LLM-as-Judge
+approach [17], using GPT4-o [1] as the evaluation model to assess
+whether the predicted answer is correct. This accuracy metric is
+referred to as ACC𝐿 . The evaluation prompt is as follows:
+Given a Question and its Golden Answer, verify whether
+the Predicted Answer is correct. The prediction is correct
+if it fully aligns with the meaning and key information of
+the Golden Answer. Respond with True if the prediction is
+correct and False otherwise.
+Question:
+Golden Answer:
+Predicted Answer:
+During the Process Reward Model Training and Post-Training
+stages, we use ACC𝑅 to determine correctness in Eq. 3, which is
+more efficient and better suited for collecting large amounts of
+training data as reward feedback.
+
+4.1.1 Datasets. In this paper, we focus on leveraging ReARTeR to
+address complex multi-step question-answering (QA) tasks. To this
+end, we utilize five benchmark datasets: HotpotQA [45], 2WikiMultiHopQA [8], Musique [35], Bamboogle [27], and StrategyQA [7].
+Wikipedia passages serve as the retrieval corpus for all datasets [14].
+Following the general experimental setup of RAG [12, 14, 15], we
+sample 500 examples from the development sets of HotpotQA,
+2WikiMultiHopQA, and Musique as test sets. For Bamboogle, which
+has only 125 examples in its test set, we include all of them as the
+test set. Since StrategyQA lacks dev or test sets, we sample 500
+examples from its training set for testing.
+For the training data used in PRM and PCM, and for the posttraining of ReARTeR, we sample 200 examples from the training
+sets of each dataset. Using the PRM training data construction strategy described in § 3.2, we generate a total of 𝑀𝑟 = 167, 716 training
+examples. Similarly, using the PCM training data construction strategy described in § 3.4, we generate 𝑀𝑒 = 769 training examples.
+For the post-training phase, the warm-up stage uses 𝑀𝑤 = 548
+examples, and the preference data collected during each iteration
+averages 𝑀𝑢 = 27, 822 examples.
+
+4.1.3 Backbone and Baseline Models. To verify the effectiveness
+of ReARTeR in enhancing the reasoning capabilities of RAG systems, we selected different generators for evaluation. These include the proprietary GPT4o-mini [1] for test-time scaling and
+the open-source LLaMA3.1-8B [4] (Llama-3.1-8B-Instruct) for both
+post-training (warm-up from GPT4o-mini) and test-time scaling.
+We compared ReARTeR against several baselines: 1. Naive Generation: Directly generating answers using the generator without
+retrieval. 2. Standard RAG: Traditional retrieval-augmented generation systems. Given that ReARTeR employs multi-path reasoning
+with CoT processes, which include adaptive retrieval and final answer
+generation summarized from CoTs, we further compared it with: 3.
+Branching Methods (Branching): These execute multiple reasoning paths in parallel for a single query, including SuRe [16] and
+REPLUG [29]. 4. Summarization-based Methods (Summary):
+LongLLMLingua [13], RECOMP-abstractive [44], and SelectiveContext [19]. 5. Adaptive Retrieval Methods (AR): SKR [40]
+which adaptively retrieve based on generator’s knowledge. 6. RAGCoT Methods (RAG-CoT): These integrate RAG with CoT reasoning, including Self-Ask [26], Iter-RetGen [28], and IRCoT [36].
+7. Test-time Scaling Methods (Test-Time): CR-Planner [18], a
+recently proposed approach for scaling RAG at test time.
+Additionally, we compared ReARTeR with LLaMA3.1-8B as the
+backbone against recent Open-source Reasoning Models (Reasoning), such as Marco-o1-Qwen-7B [49] and Skywork-o1-Llama3.1-8B [24], which have been extensively optimized for reasoning
+through large-scale training in general domains and test-time scaling, both integrated into standard RAG configurations.
+
+4.1.2 Evaluation Metrics. During the evaluation phase, we observed that the outputs of reasoning-optimized RAG systems are
+typically longer compared to those generated by traditional RAG
+
+4.1.4 Implementation Details. The implementation of ReARTeR
+and the baseline models is based on the open-source RAG framework FlashRAG [14]. The number of samples 𝑀 generated per
+
+4.1
+
+Experimental Settings
+
+ReARTeR: Retrieval-Augmented Reasoning with Trustworthy Process Rewarding
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+Table 1: Performance comparisons between ReARTeR and the baselines. The above table shows results with GPT4-o-mini as
+the generator (Only Test-Time Scaling), while the below table uses LLaMA3.1-8B. The boldface indicates the best performance.
+
+Types
+GPT4o-mini
+Branching
+Summary
+Adaptive
+RAG-CoT
+Test-Time
+Ours
+LLaMA3.1-8B
+Branching
+Summary
+Adaptive
+RAG-CoT
+Test-Time
+Reasoning
+Ours
+
+2WikiMultiHopQA
+
+Bamboogle
+
+Naive Generation
+Standard RAG
+SuRe
+REPLUG
+LongLLMLingua
+RECOMP-abstractive
+Selective-Context
+SKR
+Self-Ask
+Iter-RetGen
+IRCoT
+CR-Planner
+ReARTeR
+
+ACC𝑅
+0.348
+0.344
+0.244
+0.296
+0.324
+0.298
+0.350
+0.364
+0.336
+0.326
+0.492
+0.520
+0.554
+
+ACC𝐿
+0.346
+0.292
+0.264
+0.254
+0.316
+0.306
+0.290
+0.314
+0.478
+0.270
+0.114
+0.478
+0.534
+
+ACC𝑅
+0.240
+0.272
+0.168
+0.224
+0.248
+0.136
+0.240
+0.248
+0.336
+0.232
+0.272
+0.488
+0.496
+
+ACC𝐿
+0.280
+0.328
+0.208
+0.256
+0.288
+0.176
+0.288
+0.288
+0.416
+0.256
+0.184
+0.524
+0.544
+
+ACC𝑅
+0.324
+0.342
+0.270
+0.350
+0.358
+0.332
+0.366
+0.360
+0.392
+0.374
+0.434
+0.404
+0.468
+
+ACC𝐿
+0.404
+0.450
+0.380
+0.428
+0.450
+0.398
+0.442
+0.454
+0.462
+0.456
+0.308
+0.416
+0.506
+
+ACC𝑅
+0.134
+0.172
+0.128
+0.132
+0.150
+0.118
+0.152
+0.162
+0.260
+0.178
+0.192
+0.272
+0.296
+
+ACC𝐿
+0.170
+0.188
+0.146
+0.138
+0.172
+0.134
+0.172
+0.174
+0.270
+0.188
+0.214
+0.262
+0.302
+
+ACC𝑅
+0.724
+0.674
+0.550
+0.654
+0.722
+0.628
+0.688
+0.712
+0.556
+0.686
+0.406
+0.744
+0.772
+
+ACC𝐿
+0.724
+0.674
+0.576
+0.654
+0.722
+0.628
+0.688
+0.712
+0.556
+0.686
+0.406
+0.744
+0.772
+
+Naive Generation
+Standard RAG
+SuRe
+REPLUG
+LongLLMLingua
+RECOMP-abstractive
+Selective-Context
+SKR
+Self-Ask
+Iter-RetGen
+IRCoT
+CR-Planer
+Marco-o1
+Skywork-o1
+ReARTeR
+
+0.326
+0.336
+0.122
+0.334
+0.304
+0.324
+0.266
+0.336
+0.306
+0.310
+0.338
+0.420
+0.442
+0.344
+0.470
+
+0.254
+0.212
+0.262
+0.204
+0.294
+0.322
+0.204
+0.212
+0.322
+0.224
+0.312
+0.350
+0.184
+0.190
+0.364
+
+0.144
+0.168
+0.160
+0.168
+0.168
+0.104
+0.144
+0.176
+0.360
+0.144
+0.120
+0.304
+0.224
+0.176
+0.438
+
+0.168
+0.216
+0.192
+0.232
+0.216
+0.160
+0.200
+0.208
+0.432
+0.176
+0.104
+0.336
+0.200
+0.160
+0.484
+
+0.208
+0.334
+0.266
+0.290
+0.314
+0.318
+0.296
+0.300
+0.316
+0.302
+0.210
+0.332
+0.352
+0.306
+0.424
+
+0.268
+0.398
+0.346
+0.348
+0.382
+0.380
+0.358
+0.372
+0.408
+0.362
+0.146
+0.350
+0.348
+0.256
+0.434
+
+0.068
+0.104
+0.106
+0.078
+0.088
+0.112
+0.092
+0.100
+0.222
+0.084
+0.060
+0.144
+0.134
+0.092
+0.244
+
+0.096
+0.098
+0.144
+0.090
+0.100
+0.126
+0.104
+0.112
+0.226
+0.084
+0.042
+0.098
+0.104
+0.060
+0.252
+
+0.672
+0.674
+0.478
+0.654
+0.584
+0.628
+0.690
+0.662
+0.616
+0.642
+0.242
+0.664
+0.654
+0.612
+0.724
+
+0.672
+0.674
+0.498
+0.654
+0.584
+0.628
+0.690
+0.662
+0.616
+0.642
+0.242
+0.654
+0.504
+0.326
+0.724
+
+Models
+
+reasoning step for ReARTeR at test-time is set to 3, balancing accuracy and efficiency. The maximum number of reasoning steps 𝑇
+for Chain-of-Thought (CoT) reasoning is set to 5, where shallow
+nodes are defined as the first 3 reasoning steps and deep nodes are
+the remaining steps. The threshold 𝜏 for initiating the refinement
+phase is set to 0.5. For the lookahead search, the predefined step
+limit 𝐻 and stopping threshold 𝛽 are set to 3 and 0.05, respectively.
+The number 𝑁 in PRM training data collection is set to 5. To ensure
+fairness, we configure the retrieval settings as follows: for iterative
+retrieval baselines and ReARTeR, the number of external documents
+retrieved per step is set to Top 1; for single-pass retrieval baselines,
+the number of retrieved documents is set to 3. The stronger generator used for collecting PRM training data is GPT4-o. The retriever
+utilized in all experiments is e5-base-v2 [38]. For the PRM, following [18] we fine-tune skywork-reward-llama-3.1-8b-v0.2 [20] with
+LoRA [9], which is fine-tuned from the general-purpose LLM and
+excels at scoring in complex scenarios. For the PEM, we fine-tune
+the Llama-3.2-3B-Instruct [4], which is efficient and effective in
+generating the explanation for the policy model to refine error reasoning steps. We run all the experiments on machines equipped
+
+HotpotQA
+
+Musique
+
+StrategyQA
+
+with NVIDIA A6000 GPUs and 52-core Intel(R) Xeon(R) Gold 6230R
+CPUs at 2.10GHz.
+
+4.2
+
+RQ1: Overall Performance
+
+Table 1 presents the experimental results of applying ReARTeR to
+RAG systems with two different generators: the proprietary GPT4omini and the open-source LLaMA3.1-8B, across five multi-step QA
+datasets. For the RAG system with GPT4o-mini as the generator,
+where fine-tuning is not feasible, we applied only the Test-Time
+Scaling component of ReARTeR. Based on the results in Table 1,
+we observed the following key findings: (1) Compared to baseline
+models, ReARTeR significantly improves the reasoning capabilities of RAG systems in both closed-source and open-source setups,
+demonstrating the generalizability of the ReARTeR framework in
+enhancing RAG systems’ reasoning abilities. (2) ReARTeR outperforms Branching methods, indicating that multi-path exploration
+through Chain-of-Thought (CoT) reasoning is better suited for complex multi-step QA tasks than probability integration in REPLUG or
+Best-of-K strategies in SuRe. (3) ReARTeR surpasses summarizationbased methods, suggesting that conducting CoT reasoning followed
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+Trovato et al.
+
+Table 2: Ablation Study of ReARTeR across different generators and datasets.
+
+2WikiMultiHopQA
+
+Bamboogle
+
+ACC𝑅
+
+ACC𝐿
+
+ACC𝑅
+
+ACC𝐿
+
+ACC𝑅
+
+ACC𝐿
+
+ACC𝑅
+
+ACC𝐿
+
+GPT4o-mini
+
+w/o Refinement
+w/o PEM
+w/o TD-Lookahead
+w/o Beam Search
+w/o PRM Data
+ReARTeR
+
+0.522
+0.532
+0.524
+0.526
+0.536
+0.554
+
+0.466
+0.484
+0.490
+0.492
+0.476
+0.534
+
+0.474
+0.486
+0.488
+0.482
+0.474
+0.496
+
+0.522
+0.532
+0.540
+0.522
+0.534
+0.544
+
+0.424
+0.426
+0.458
+0.442
+0.464
+0.468
+
+0.456
+0.462
+0.494
+0.474
+0.504
+0.506
+
+0.282
+0.284
+0.290
+0.278
+0.288
+0.296
+
+0.276
+0.286
+0.294
+0.272
+0.290
+0.302
+
+Llama-3.1-8B
+
+w/o Refinement
+w/o PEM
+w/o TD-Lookahead
+w/o Beam Search
+w/o PRM Data
+ReARTeR
+
+0.444
+0.450
+0.462
+0.452
+0.466
+0.470
+
+0.334
+0.340
+0.352
+0.346
+0.350
+0.364
+
+0.418
+0.420
+0.428
+0.424
+0.416
+0.438
+
+0.440
+0.446
+0.454
+0.448
+0.458
+0.484
+
+0.402
+0.406
+0.414
+0.416
+0.406
+0.424
+
+0.424
+0.416
+0.438
+0.420
+0.400
+0.434
+
+0.230
+0.234
+0.222
+0.236
+0.238
+0.244
+
+0.238
+0.218
+0.242
+0.246
+0.232
+0.252
+
+4.3
+
+RQ2: Ablation Study of ReARTeR
+
+In this section, we conduct an ablation study to analyze the impact
+of different components of ReARTeR on the test-time scaling performance of RAG systems. Specifically, we evaluate the following
+configurations: (1) w/o Refinement: Removing the refinement
+phase to analyze its effect on the reasoning process of ReARTeR. (2)
+w/o PEM: Replacing the Process Explanation Model (PEM) with
+the process reward score directly provided by the PRM during the
+refinement phase, to evaluate the importance of PEM-generated
+explanations for refinement. (3) w/o TD-Lookahead: Removing
+the TD-based lookahead search to validate its role in mitigating
+early-step bias in the PRM. (4) w/o PRM Data: Training the PRM
+using data collected with traditional Monte Carlo methods instead
+of the unbiased data collection strategy proposed in ReARTeR, to
+
+0.40
+
+2WikiMultiHopQA
+
+Bamboogle
+
+0.50
+0.48
+
+0.36
+
+0.46
+
+ACCL
+
+0.38
+
+0.44
+
+0.34
+
+0.42
+
+0.32
+0.30
+
+Musique
+
+Iter-1
+
+Iter-2
+
+Iter-3
+
+HotpotQA
+
+0.44
+
+0.40
+
+Iter-1
+
+0.25
+
+0.40
+
+0.24
+
+Iter-3
+
+Musique
+
+0.26
+
+0.42
+
+Iter-2
+
+ACCL
+
+by summarization is superior to directly compressing and summarizing external document knowledge for multi-step reasoning tasks.
+(4) ReARTeR outperforms adaptive retrieval methods, showing that
+allowing the generator to dynamically decide whether to retrieve in
+the CoT process can further unlock the model’s reasoning potential
+and improve its ability to answer complex questions. (5) ReARTeR
+exceeds the performance of RAG-CoT methods, demonstrating that
+our approach, which leverages Post-Training and Test-Time Scaling, more effectively enhances reasoning capabilities compared
+to directly combining RAG and CoT reasoning. (6) ReARTeR outperforms CR-Planner, validating that our proposed Trustworthy
+Process Rewarding mechanism produces superior reasoning paths
+for RAG systems, thereby improving their ability to handle complex multi-step reasoning problems. (7) ReARTeR surpasses models
+extensively optimized for reasoning through large-scale training
+on general domains and test-time scaling, such as Skywork-o1 and
+Marco-o1. This result indicates that models optimized for general
+tasks are less effective in RAG-specific reasoning scenarios compared to our framework, further highlighting the effectiveness of
+ReARTeR in enhancing the reasoning capabilities of RAG systems.
+
+HotpotQA
+
+ACCL
+
+Ablation
+
+ACCL
+
+Model
+
+0.23
+
+0.38
+
+0.22
+
+0.36
+
+0.21
+
+0.34
+Iter-1
+
+Iter-2
+
+Iter-3
+
+0.20
+
+Iter-1
+
+Iter-2
+
+Iter-3
+
+Figure 4: The impact of Post-Training Scaling iterations on
+ReARTeR using LLaMA-3.1-8B as the generator.
+analyze the quality of the PRM trained with our data collection
+method. (5) w/o Beam Search: Disabling beam search by setting
+𝑀 = 1, resulting in only a single reasoning path being sampled to
+generate the CoT.
+The experimental results, presented in Table 1, demonstrate that
+removing any of these components negatively impacts the overall
+performance of ReARTeR. This highlights the importance of each
+
+ReARTeR: Retrieval-Augmented Reasoning with Trustworthy Process Rewarding
+
+4.4
+
+RQ3: Post-training iterations analysis.
+
+In this section, we analyze the impact of the number of iterations in
+the Step-Level Offline Reinforcement Stage during the post-training
+scaling of ReARTeR on the reasoning capabilities of RAG systems.
+In this experiment, we used LLaMA-3.1-8B as the generator and
+conducted three iterations of Offline Reinforcement, testing the
+system on four multi-step reasoning datasets.
+The experimental results, presented in Figure 4, demonstrate
+that the performance of the RAG system on multi-step reasoning
+datasets improves significantly as the number of Offline Reinforcement iterations increases. Additionally, the results show that our
+algorithm achieves stable performance improvements across iterations, validating that the proposed Step-Level Offline Reinforcement
+method provides effective and consistent updates. Due to resource
+constraints, we did not verify the scalability of our approach on
+larger datasets or with additional iterations. However, based on
+the current experimental results, we observe a promising scaling
+property, suggesting the potential for even greater improvements
+under resource-abundant conditions.
+
+4.5
+
+RQ4: The effective of RARTPR in aligning
+PEM and PRM.
+
+To evaluate the effectiveness of the alignment strategy for PEM
+and PRM proposed in RARTPR, we first calculated the improvement rate of process reward scores for reasoning steps with low
+initial scores after refinement using explanations generated by PEM,
+both before and after alignment. As shown in Figure 5(a), before
+aligning PEM with PRM (w/o PEM Align), the improvement rate
+achieved using explanations from an off-the-shelf LLM-based PEM
+was only around 50%. This result indicates that PEM struggles to
+produce accurate explanations aligned with PRM scores, making
+it difficult for the RAG system to leverage these explanations to
+refine reasoning steps and improve PRM scores. In contrast, after
+aligning PEM and PRM (w PEM Align), we observed a significant
+increase in the improvement rate, validating the effectiveness of
+the alignment strategy for enhancing the refinement process and
+improving reasoning quality. Furthermore, as shown in Figure 5(b),
+we directly compared the accuracy of RARTPR in solving complex multi-hop queries before and after aligning PEM with PRM.
+The results demonstrate consistent improvements across multiple
+datasets after alignment, further confirming the effectiveness of the
+proposed alignment strategy for PEM and PRM in RARTPR.
+We further present a case study of explanations generated by
+the aligned PEM to demonstrate the effectiveness of PEM under
+process supervision:
+
+0.80
+
+Improvement Rate
+
+0.75
+0.70
+
+w/o PEM Align
+w PEM Align
+
+0.65
+0.60
+0.55
+0.50
+0.45
+0.40
+
+2Wiki
+
+Bamboogle HotpotQA
+
+Musique
+
+(a) The impact of alignment between PEM and PRM on the improvement rate of process reward scores.
+
+0.60
+
+w/o PEM Align
+w PEM Align
+
+0.55
+0.50
+ACC_L
+
+component in enhancing the reasoning capabilities of the RAG system. Moreover, these results validate that the unbiased PRM training
+data collection strategy designed to address the untrustworthy challenges of process reward models enables the training of a more
+reliable PRM, which provides accurate reward scores for reasoning
+steps. Additionally, the combination of a more accurate PRM with
+the TD-based lookahead search enhances the feedback provided
+during the refinement stage. By leveraging explanations generated
+by the PEM during the refinement phase, ReARTeR achieves better
+reasoning step improvements compared to using PRM scores alone.
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+0.45
+0.40
+0.35
+0.30
+0.25
+
+2Wiki
+
+Bamboogle HotpotQA
+
+Musique
+
+(b) The impact of PEM on ReARTeR’s final performance before and
+after alignment with PRM.
+
+Figure 5: The impact of aligning PEM and PRM on ReARTeR’s
+overall performance with GPT4-o-mini as generator.
+Based on the provided information, I’ve evaluated the Actor
+model’s current reasoning step and identified the following
+errors:
+Question Decomposition Errors
+- 1.1: The sub-question "Who was the father of John V, Prince
+of Anhalt-Zerbst?" is a valid sub-question, but the subsequent sub-question "Follow up: Who was John V, Prince
+Of Anhalt-Zerbst’s father?" is not directly related to the
+original question. This can be improved by rephrasing the
+sub-question to better align with the original query.
+Retrieval Errors
+- 2.1: The retrieved documents contain noise or erroneous
+information, as the intermediate answer states that the retrieved document does not provide information relevant to
+the death of John IV, Prince of Anhalt-Zerbst, despite the
+search result being "Yes".
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+- 2.2: The retrieved documents are inadequate or irrelevant,
+as the intermediate answer fails to provide a clear answer
+to the original question.
+Answer Generation Errors
+- 3.1: The answer "John V, Prince of Anhalt-Zerbst died in
+1454" is irrelevant to the query, as the original question asks
+for the death date of John IV, Prince of Anhalt-Zerbst.
+- 3.2: The answer is incomplete, as the original question asks
+for the death date of John IV, Prince of Anhalt-Zerbst.
+Suggestions for improvement:
+1. Refine the sub-question decomposition to ensure that
+subsequent sub-questions are directly related to the original
+query. 2. Improve the retrieval process to ensure that relevant
+and accurate information is retrieved. 3. Verify the accuracy
+of the answer generation process to provide relevant and
+correct information. 4. Consider adding additional checks
+to ensure that the answer is complete and relevant to the
+original question.
+
+5
+
+CONCLUSION
+
+We propose ReARTeR, a framework that enhances the multi-step
+reasoning capabilities of RAG systems through both post-training
+and test-time scaling. ReARTeR integrates Trustworthy Process
+Rewarding, which combines a Process Reward Model for accurate
+scoring and a Process Explanation Model for explanation-based
+refinements. During post-training, step-level offline reinforcement
+fine-tuning with MCTS generates high-quality preference data to
+optimize the generator. ReARTeR addresses key reasoning challenges, including misalignment between PEM and PRM, bias in
+PRM training data, and early-step bias in PRM scores, through
+off-policy preference learning, balanced annotation strategies, and
+a temporal-difference-based look-ahead search. Experiments on
+multi-step reasoning benchmarks show that ReARTeR outperforms
+existing methods, demonstrating its effectiveness in enhancing
+RAG systems for knowledge-intensive tasks.
+
+REFERENCES
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal
+Anadkat, et al. 2023. Gpt-4 technical report. arXiv preprint arXiv:2303.08774
+(2023).
+[2] Cameron B Browne, Edward Powley, Daniel Whitehouse, Simon M Lucas, Peter I
+Cowling, Philipp Rohlfshagen, Stephen Tavener, Diego Perez, Spyridon Samothrakis, and Simon Colton. 2012. A survey of monte carlo tree search methods.
+IEEE Transactions on Computational Intelligence and AI in games 4, 1 (2012), 1–43.
+[3] Guanting Dong, Chenghao Zhang, Mengjie Deng, Yutao Zhu, Zhicheng Dou,
+and Ji-Rong Wen. 2024. Progressive Multimodal Reasoning via Active Retrieval.
+arXiv preprint arXiv:2412.14835 (2024).
+[4] Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad
+Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Amy Yang, Angela Fan,
+et al. 2024. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 (2024).
+[5] Kawin Ethayarajh, Winnie Xu, Niklas Muennighoff, Dan Jurafsky, and Douwe
+Kiela. 2024. Kto: Model alignment as prospect theoretic optimization. arXiv
+preprint arXiv:2402.01306 (2024).
+[6] Wenqi Fan, Yujuan Ding, Liangbo Ning, Shijie Wang, Hengyun Li, Dawei Yin,
+Tat-Seng Chua, and Qing Li. 2024. A Survey on RAG Meeting LLMs: Towards
+Retrieval-Augmented Large Language Models. In Proceedings of the 30th ACM
+SIGKDD Conference on Knowledge Discovery and Data Mining (Barcelona, Spain)
+(KDD ’24). Association for Computing Machinery, New York, NY, USA, 6491–6501.
+https://doi.org/10.1145/3637528.3671470
+[7] Mor Geva, Daniel Khashabi, Elad Segal, Tushar Khot, Dan Roth, and Jonathan
+Berant. 2021. Did aristotle use a laptop? a question answering benchmark with
+
+Trovato et al.
+
+implicit reasoning strategies. Transactions of the Association for Computational
+Linguistics 9 (2021), 346–361.
+[8] Xanh Ho, Anh-Khoa Duong Nguyen, Saku Sugawara, and Akiko Aizawa. 2020.
+Constructing A Multi-hop QA Dataset for Comprehensive Evaluation of Reasoning Steps. In Proceedings of the 28th International Conference on Computational
+Linguistics. 6609–6625.
+[9] Edward J Hu, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu
+Wang, Weizhu Chen, et al. [n. d.]. LoRA: Low-Rank Adaptation of Large Language
+Models. In International Conference on Learning Representations.
+[10] Jie Huang, Xinyun Chen, Swaroop Mishra, Huaixiu Steven Zheng, Adams Wei
+Yu, Xinying Song, and Denny Zhou. 2024. Large Language Models Cannot
+Self-Correct Reasoning Yet. In The Twelfth International Conference on Learning
+Representations. https://openreview.net/forum?id=IkmD3fKBPQ
+[11] Soyeong Jeong, Jinheon Baek, Sukmin Cho, Sung Ju Hwang, and Jong Park.
+2024. Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language
+Models through Question Complexity. In Proceedings of the 2024 Conference of the
+North American Chapter of the Association for Computational Linguistics: Human
+Language Technologies (Volume 1: Long Papers), Kevin Duh, Helena Gomez, and
+Steven Bethard (Eds.). Association for Computational Linguistics, Mexico City,
+Mexico, 7036–7050. https://doi.org/10.18653/v1/2024.naacl-long.389
+[12] Soyeong Jeong, Jinheon Baek, Sukmin Cho, Sung Ju Hwang, and Jong C Park.
+2024. Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language
+Models through Question Complexity. In Proceedings of the 2024 Conference of the
+North American Chapter of the Association for Computational Linguistics: Human
+Language Technologies (Volume 1: Long Papers). 7029–7043.
+[13] Huiqiang Jiang, Qianhui Wu, Xufang Luo, Dongsheng Li, Chin-Yew Lin, Yuqing
+Yang, and Lili Qiu. 2023. Longllmlingua: Accelerating and enhancing llms in
+long context scenarios via prompt compression. arXiv preprint arXiv:2310.06839
+(2023).
+[14] Jiajie Jin, Yutao Zhu, Xinyu Yang, Chenghao Zhang, and Zhicheng Dou. 2024.
+FlashRAG: A Modular Toolkit for Efficient Retrieval-Augmented Generation
+Research. arXiv preprint arXiv:2405.13576 (2024).
+[15] Jaehyung Kim, Jaehyun Nam, Sangwoo Mo, Jongjin Park, Sang-Woo Lee, Minjoon
+Seo, Jung-Woo Ha, and Jinwoo Shin. [n. d.]. SuRe: Summarizing Retrievals using
+Answer Candidates for Open-domain QA of LLMs. In The Twelfth International
+Conference on Learning Representations.
+[16] Jaehyung Kim, Jaehyun Nam, Sangwoo Mo, Jongjin Park, Sang-Woo Lee, Minjoon Seo, Jung-Woo Ha, and Jinwoo Shin. 2024. SuRe: Summarizing Retrievals
+using Answer Candidates for Open-domain QA of LLMs. In The Twelfth International Conference on Learning Representations. https://openreview.net/forum?id=
+w4DW6qkRmt
+[17] Haitao Li, Qian Dong, Junjie Chen, Huixue Su, Yujia Zhou, Qingyao Ai, Ziyi Ye,
+and Yiqun Liu. 2024. LLMs-as-Judges: A Comprehensive Survey on LLM-based
+Evaluation Methods. arXiv preprint arXiv:2412.05579 (2024).
+[18] Xingxuan Li, Weiwen Xu, Ruochen Zhao, Fangkai Jiao, Shafiq Joty, and Lidong
+Bing. 2024. Can We Further Elicit Reasoning in LLMs? Critic-Guided Planning
+with Retrieval-Augmentation for Solving Challenging Tasks. arXiv preprint
+arXiv:2410.01428 (2024).
+[19] Yucheng Li, Bo Dong, Frank Guerin, and Chenghua Lin. 2023. Compressing
+Context to Enhance Inference Efficiency of Large Language Models. In Proceedings
+of the 2023 Conference on Empirical Methods in Natural Language Processing,
+Houda Bouamor, Juan Pino, and Kalika Bali (Eds.). Association for Computational
+Linguistics, Singapore, 6342–6353. https://doi.org/10.18653/v1/2023.emnlp-main.
+391
+[20] Chris Yuhao Liu, Liang Zeng, Jiacai Liu, Rui Yan, Jujie He, Chaojie Wang,
+Shuicheng Yan, Yang Liu, and Yahui Zhou. 2024. Skywork-Reward: Bag of
+Tricks for Reward Modeling in LLMs. arXiv preprint arXiv:2410.18451 (2024).
+[21] Liangchen Luo, Yinxiao Liu, Rosanne Liu, Samrat Phatale, Harsh Lara, Yunxuan
+Li, Lei Shu, Yun Zhu, Lei Meng, Jiao Sun, et al. 2024. Improve Mathematical
+Reasoning in Language Models by Automated Process Supervision. arXiv preprint
+arXiv:2406.06592 (2024).
+[22] Trung Quoc Luong, Xinbo Zhang, Zhanming Jie, Peng Sun, Xiaoran Jin, and
+Hang Li. 2024. Reft: Reasoning with reinforced fine-tuning. arXiv preprint
+arXiv:2401.08967 (2024).
+[23] Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah
+Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, et al.
+2024. Self-refine: Iterative refinement with self-feedback. Advances in Neural
+Information Processing Systems 36 (2024).
+[24] Skywork o1 Team. 2024. Skywork-o1 Open Series. https://huggingface.co/
+Skywork. https://huggingface.co/Skywork
+[25] Richard Yuanzhe Pang, Weizhe Yuan, Kyunghyun Cho, He He, Sainbayar
+Sukhbaatar, and Jason Weston. 2024. Iterative reasoning preference optimization.
+arXiv preprint arXiv:2404.19733 (2024).
+[26] Ofir Press, Muru Zhang, Sewon Min, Ludwig Schmidt, Noah A Smith, and Mike
+Lewis. 2022. Measuring and narrowing the compositionality gap in language
+models. arXiv preprint arXiv:2210.03350 (2022).
+[27] Ofir Press, Muru Zhang, Sewon Min, Ludwig Schmidt, Noah A Smith, and Mike
+Lewis. 2023. Measuring and Narrowing the Compositionality Gap in Language
+
+ReARTeR: Retrieval-Augmented Reasoning with Trustworthy Process Rewarding
+
+Models. In Findings of the Association for Computational Linguistics: EMNLP 2023.
+5687–5711.
+[28] Zhihong Shao, Yeyun Gong, Yelong Shen, Minlie Huang, Nan Duan, and Weizhu
+Chen. 2023. Enhancing retrieval-augmented large language models with iterative
+retrieval-generation synergy. arXiv preprint arXiv:2305.15294 (2023).
+[29] Weijia Shi, Sewon Min, Michihiro Yasunaga, Minjoon Seo, Rich James, Mike
+Lewis, Luke Zettlemoyer, and Wen-tau Yih. 2023. Replug: Retrieval-augmented
+black-box language models. arXiv preprint arXiv:2301.12652 (2023).
+[30] Avi Singh, John D Co-Reyes, Rishabh Agarwal, Ankesh Anand, Piyush Patil,
+Xavier Garcia, Peter J Liu, James Harrison, Jaehoon Lee, Kelvin Xu, et al. 2023.
+Beyond human data: Scaling self-training for problem-solving with language
+models. arXiv preprint arXiv:2312.06585 (2023).
+[31] Charlie Snell, Jaehoon Lee, Kelvin Xu, and Aviral Kumar. 2024. Scaling llm testtime compute optimally can be more effective than scaling model parameters.
+arXiv preprint arXiv:2408.03314 (2024).
+[32] Richard Sutton. 2019. The Bitter Lesson. http://incompleteideas.net/IncIdeas/
+BitterLesson.html Incomplete Ideas (blog), 13(1):38.
+[33] Richard S Sutton and Andrew G Barto. 2018. Reinforcement learning: An introduction. MIT press.
+[34] Gerald Tesauro. 1995. Temporal difference learning and TD-Gammon. Commun.
+ACM 38, 3 (March 1995), 58–68. https://doi.org/10.1145/203330.203343
+[35] Harsh Trivedi, Niranjan Balasubramanian, Tushar Khot, and Ashish Sabharwal.
+2022. MuSiQue: Multihop Questions via Single-hop Question Composition.
+Transactions of the Association for Computational Linguistics 10 (2022), 539–554.
+[36] Harsh Trivedi, Niranjan Balasubramanian, Tushar Khot, and Ashish Sabharwal.
+2023. Interleaving Retrieval with Chain-of-Thought Reasoning for KnowledgeIntensive Multi-Step Questions. In Proceedings of the 61st Annual Meeting of the
+Association for Computational Linguistics (Volume 1: Long Papers). 10014–10037.
+[37] Luong Trung, Xinbo Zhang, Zhanming Jie, Peng Sun, Xiaoran Jin, and Hang Li.
+2024. ReFT: Reasoning with Reinforced Fine-Tuning. In Proceedings of the 62nd
+Annual Meeting of the Association for Computational Linguistics (Volume 1: Long
+Papers), Lun-Wei Ku, Andre Martins, and Vivek Srikumar (Eds.). Association for
+Computational Linguistics, Bangkok, Thailand, 7601–7614. https://doi.org/10.
+18653/v1/2024.acl-long.410
+[38] Liang Wang, Nan Yang, Xiaolong Huang, Binxing Jiao, Linjun Yang, Daxin Jiang,
+Rangan Majumder, and Furu Wei. 2022. Text embeddings by weakly-supervised
+contrastive pre-training. arXiv preprint arXiv:2212.03533 (2022).
+[39] Peiyi Wang, Lei Li, Zhihong Shao, Runxin Xu, Damai Dai, Yifei Li, Deli Chen, Yu
+Wu, and Zhifang Sui. 2024. Math-shepherd: Verify and reinforce llms step-by-step
+
+Conference acronym ’XX, June 03–05, 2018, Woodstock, NY
+
+without human annotations. In Proceedings of the 62nd Annual Meeting of the
+Association for Computational Linguistics (Volume 1: Long Papers). 9426–9439.
+[40] Yile Wang, Peng Li, Maosong Sun, and Yang Liu. 2023. Self-knowledge guided
+retrieval augmentation for large language models. arXiv preprint arXiv:2310.05002
+(2023).
+[41] Zihan Wang, Yunxuan Li, Yuexin Wu, Liangchen Luo, Le Hou, Hongkun Yu, and
+Jingbo Shang. 2024. Multi-step problem solving through a verifier: An empirical
+analysis on model-induced process supervision. arXiv preprint arXiv:2402.02658
+(2024).
+[42] Zhenyu Wu, Qingkai Zeng, Zhihan Zhang, Zhaoxuan Tan, Chao Shen, and Meng
+Jiang. 2024. Enhancing Mathematical Reasoning in LLMs by Stepwise Correction.
+arXiv preprint arXiv:2410.12934 (2024).
+[43] Yuxi Xie, Anirudh Goyal, Wenyue Zheng, Min-Yen Kan, Timothy P Lillicrap,
+Kenji Kawaguchi, and Michael Shieh. 2024. Monte Carlo Tree Search Boosts
+Reasoning via Iterative Preference Learning. arXiv preprint arXiv:2405.00451
+(2024).
+[44] Fangyuan Xu, Weijia Shi, and Eunsol Choi. 2024. RECOMP: Improving RetrievalAugmented LMs with Context Compression and Selective Augmentation. In The
+Twelfth International Conference on Learning Representations. https://openreview.
+net/forum?id=mlJLVigNHp
+[45] Zhilin Yang, Peng Qi, Saizheng Zhang, Yoshua Bengio, William Cohen, Ruslan
+Salakhutdinov, and Christopher D Manning. 2018. HotpotQA: A Dataset for
+Diverse, Explainable Multi-hop Question Answering. In Proceedings of the 2018
+Conference on Empirical Methods in Natural Language Processing. 2369–2380.
+[46] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan,
+and Yuan Cao. 2023. ReAct: Synergizing Reasoning and Acting in Language
+Models. In International Conference on Learning Representations (ICLR).
+[47] Zhenrui Yue, Honglei Zhuang, Aijun Bai, Kai Hui, Rolf Jagerman, Hansi Zeng,
+Zhen Qin, Dong Wang, Xuanhui Wang, and Michael Bendersky. 2024. Inference scaling for long-context retrieval augmented generation. arXiv preprint
+arXiv:2410.04343 (2024).
+[48] Yuxiang Zhang, Yuqi Yang, Jiangming Shu, Yuhang Wang, Jinlin Xiao, and Jitao
+Sang. 2024. OpenRFT: Adapting Reasoning Foundation Model for Domainspecific Tasks with Reinforcement Fine-Tuning. arXiv preprint arXiv:2412.16849
+(2024).
+[49] Yu Zhao, Huifeng Yin, Bo Zeng, Hao Wang, Tianqi Shi, Chenyang Lyu, Longyue
+Wang, Weihua Luo, and Kaifu Zhang. 2024. Marco-o1: Towards open reasoning
+models for open-ended solutions. arXiv preprint arXiv:2411.14405 (2024).
+
+

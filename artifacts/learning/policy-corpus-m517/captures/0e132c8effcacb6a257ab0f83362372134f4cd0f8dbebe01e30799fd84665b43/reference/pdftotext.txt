@@ -1,0 +1,1724 @@
+AtomAgents: Alloy design and discovery through
+physics-aware multi-modal multi-agent artificial
+intelligence ∗
+
+arXiv:2407.10022v1 [cs.AI] 13 Jul 2024
+
+Alireza Ghafarollahi
+Laboratory for Atomistic and Molecular Mechanics (LAMM)
+Massachusetts Institute of Technology
+77 Massachusetts Ave.
+Cambridge, MA 02139, USA
+Markus J. Buehler
+Laboratory for Atomistic and Molecular Mechanics (LAMM)
+Center for Computational Science and Engineering
+Schwarzman College of Computing,
+Massachusetts Institute of Technology
+77 Massachusetts Ave.
+Cambridge, MA 02139, USA
+Correspondence: mbuehler@MIT.EDU
+
+Abstract
+The design of new alloys is a multi-scale problem that requires a holistic approach that
+involves retrieving relevant knowledge, applying advanced computational methods, conducting
+experimental validations, and analyzing the results, a process that is typically slow and
+reserved for human experts. Machine learning (ML) can help accelerate this process, for
+instance, through the use of deep surrogate models that connect structural and chemical
+features to material properties, or vice versa. However, existing data-driven models often
+target specific material objectives, offering limited flexibility to integrate out-of-domain
+knowledge and cannot adapt to new, unforeseen challenges. Here, we overcome these
+limitations by leveraging the distinct capabilities of multiple AI agents that collaborate
+autonomously within a dynamic environment to solve complex materials design tasks. The
+proposed physics-aware generative AI platform, AtomAgents, synergizes the intelligence of
+large language models (LLM) the dynamic collaboration among AI agents with expertise in
+various domains, including knowledge retrieval, multi-modal data integration, physics-based
+simulations, and comprehensive results analysis across modalities that includes numerical
+data and images of physical simulation results. The concerted effort of the multi-agent system
+allows for addressing complex materials design problems, as demonstrated by examples that
+include autonomously designing metallic alloys with enhanced properties compared to their
+pure counterparts. Our results enable accurate prediction of key characteristics across alloys
+and highlight the crucial role of solid solution alloying to steer the development of advanced
+metallic alloys. Our framework enhances the efficiency of complex multi-objective design
+tasks and opens new avenues in fields such as biomedical materials engineering, renewable
+energy, and environmental sustainability.
+
+∗
+
+Citation: A. Ghafarollahi, M.J. Buehler. arXiv, DOI:000000/11111., 2024
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+K eywords Multi-agent system · Mechanics and materials · Large language model · Materials design ·
+Atomistic simulation · Scientific machine learning · Multi-modal generative AI · Materials science · Natural
+language processing
+
+1
+
+Introduction
+
+The continuous demand for new materials is driven by the need to address emerging technological challenges,
+enhance efficiencies, reduce costs, and minimize environmental impacts across a range of industries [1, 2, 3, 4].
+Innovations in materials science can catalyze breakthroughs in sectors such as electronics [5], aerospace [6, 7],
+energy storage [8, 9], and biomedicine [10]. For example, the development of lighter, stronger materials
+could lead to more fuel-efficient vehicles and aircraft, while advancements in semiconductor technology could
+revolutionize electronics through enhanced functionality and reduced energy consumption [11].
+Metal alloys are indispensable for many structural applications mainly due to the critical role of defects
+in their crystalline lattices, such as dislocations, interfaces, crack tips, grain boundaries, precipitates, and
+vacancies. These defects and their interactions determine key properties like plastic flow behavior, creep,
+fatigue, and fracture toughness, directly impacting the material’s performance [12, 13, 14, 15, 16, 17].
+Understanding these defects and their chemical dependencies is crucial for optimizing existing alloys and
+designing new, high-performance materials. Experimental and computational methods are essential in this
+pursuit, providing detailed insights into the complex behaviors of metallic systems under varying conditions.
+Advanced experimental techniques reveal the formation and dynamics of defects in real-time, enhancing
+our understanding of material behavior under operational conditions. Atomistic simulations, including
+molecular dynamics (MD) [18, 19, 20, 21] and Density Functional Theory (DFT) [22], offer detailed models
+of defect behaviors at the atomic level, enabling the prediction of material behaviors under various conditions.
+These are complemented by physics-based theoretical models, which bridge the gap between atomic-scale
+phenomena and macroscopic material behavior, thereby further accelerating the material design process
+and providing mechanistic insights. [23, 24, 25, 26, 27, 28, 29, 30, 31] Recently, machine learning (ML) and
+artificial intelligence (AI) techniques have been integrated into computational materials science, enabling
+property prediction and accelerating materials analysis and design [32, 33, 34, 35, 36, 37, 38]. In early stages
+of such ML driven AI methods as applied to physics, prime applications have been as surrogate models
+or tools to serve specific inverse problems, like the design of new microstructures to meet certain material
+behaviors [39, 40, 41, 42, 43, 44, 45].
+Materials design is inherently a multi-scale challenge, necessitating the integration of materials characteristics
+across different scales—from atomic interactions to macroscopic behaviors [46, 47, 48]. The vast array of data
+generated from these diverse scales—including deformation mechanisms, mechanical and thermal properties,
+processing-structure-property relationships, microstructural characteristics, and chemical compositions—exists
+in various formats such as text, images, and tabular data. Valuable insights are also embedded in resources
+like books, materials databases, patents, and technical reports [13, 49, 50, 51]. Moreover, designing materials
+with enhanced performance involves satisfying multiple criteria, a task complicated by the limitations of
+current modeling approaches. Physics-based models are precise but generally target specific properties and
+depend on computationally expensive input parameters derived from intensive simulations like DFT, and
+their integration requires reasoning over results, simulation strategies, and and understanding of relative
+weaknesses and strenghths of various tools. Machine learning and deep learning models complement these
+efforts in various ways: For instance, as surrogate models that bridge different scales enabling the exploration
+of massive design spaces [52], or by developing state-of-the-art ML interatomic potentials to achieve DFT
+accuracy with the speed of empirical potentials. [53, 54, 55, 56, 57].
+However, a persistent frontier in materials science is the development of systems that cultivate comprehensive
+intelligence by automating complex materials modeling and design tasks, while leveraging a diverse array of
+knowledge, tools, and capabilities across different scales. These systems are crucial not only for generating
+novel insights into materials but also for dynamically integrating existing knowledge and developing new
+data. Importantly, these systems should ideally be able to iteratively refine their strategies, merging insights
+across disciplines to progressively evolve towards optimal solutions, along with an understanding, awareness
+and ability to probe specific details of the physics. Such a broad and integrative capability enables them to
+continuously enhance their approaches, adapting to new data (e.g. observations) and findings, thus improving
+the efficiency and effectiveness of material design and discovery processes. In this study, we propose a method
+to achieve such an integration of external knowledge, tools, logic, reasoning, and show how a physics-aware
+artificial intelligence can be effectively implemented through the deployment of a multi-model multi-agent AI
+system driven by Large Language Models (LLMs).
+2
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+Multi-model multi-agent AI system
+
+Perception
+
+Multi-model data
+
+Inputs
+
+Multi-agent system
+
+•
+•
+•
+•
+•
+
+Task: …
+Experiments
+Computations
+Papers
+books
+
+Multi
+model
+data
+
+User
+
+Question
+Multi-model data
+Context
+New question
+In-context learning
+
+Reasoning
+and
+decision making
+
+Learning
+and
+Adaptation
+
+Actions: …
+
+Multi-model multi-agent AI system
+
+Theory
+
+Brain
+
+Action
+Materials
+Databases
+
+AI agent
+
+AI
+models
+
+Actions: …
+AI agent
+
+Planning
+
+Tools
+• Calling API
+
+Predictions
+
+• Physics simulators
+
+Develop new
+data
+
+• Experiments
+• AI models
+
+Multi-model
+data analysis
+
+LLM
+Self-correction
+and
+improvement
+
+Knowledge
+storage and
+retrieval
+
+Figure 1: Multi-model multi-agent approach as a flexible modeling strategy for materials
+discovery, modeling, and prediction. Multi-agent modeling can extend the power of large-language
+models by enabling the integration of multimodal data from diverse sources, including simulations, experiments,
+materials databases, and theoretical models.
+
+Large language models [58, 59] have demonstrated significant potential in various scientific and engineering
+domains [60, 61] such as materials [62, 63], chemistry [64], mechanics [65, 41], and proteins discovery [66].
+Such models, built upon attention mechanism and transformer architectures [67] have shown proficiency in
+complex reasoning, strategic planning, coding, and workflow development, showing promising capabilities
+in materials analysis and prediction applications including hypothesis generation [68], critical knowledge
+retrieval via in-context learning, and multi-model reasoning [69]. However, they face challenges in materials
+design due to limitations such as the inability to perform physics-based simulations, restricted access to
+external sources, and reliance on potentially outdated knowledge, which may not align with the rapidly
+advancing field of materials science.
+To extend the utility of LLMs, we propose that multi-agent systems can serve as frameworks that transcend
+the traditional conversational functions of LLMs, with incipient applications across different domains [70, 71,
+72, 73, 74]. These systems consist of three primary components [75]: The brain, perception, and action, as
+illustrated in Figure 1. The brain is the core of an AI agent model and is primarily composed of a frontier
+LLM, undertaking essential tasks of decision-making, reasoning, and planning. The perception module
+gathers and processes multi-model data, while the action module implements decisions based on the brain’s
+guidance. The proposed workflow of our multi-model multi-agent system is as follows: first the perception
+module, perceives changes in the external environment and then converts multi-model information into an
+understandable representation for the agents. Next, the brain module, engages in processing activities such
+as planning, thinking, and decision-making. Finally, the action module, carries out the execution with the
+assistance of tools. By repeating the above process, the system of agents can collaborate, continuously get
+feedback and interact with the environment.
+The unique characteristics of multi-agent systems make them particularly suited to address the complexities
+of materials design, where traditional human-centric approaches may fail. These systems can integrate diverse
+data modalities and extract new knowledge from a broad range of external sources, including academic
+literature, online databases, and cutting-edge physics simulations, as depicted in Figure 1. Enhanced by
+multi-modal LLMs, multi-agent systems are also capable of reasoning over images, facilitating the analysis of
+numerous experimental and computational results in visual formats. Such capabilities ensure the continuous
+evolution and improvement of material design and analysis, keeping pace with new scientific discoveries and
+methodological advancements.
+In this paper, we present a novel multi-agent approach designed to address the unique challenges associated
+with alloy modeling and design. We propose “AtomAgents," a physics-aware multi-agent framework tailored
+to resolve complex issues in materials design that require detailed atomistic simulations. This framework
+utilizes a coordinated network of multi-agent systems to significantly enhance the efficiency and effectiveness
+of simulation processes in the development and analysis of crystalline materials at the atomic level. The
+primary contributions of our work are as follows:
+3
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+• Integrating physics with generative AI: A deep capability to synergistically combine Large Language
+Models (LLMs) with detailed physics-based simulations, here demonstrated for the design of crystalline
+materials invoking the general-purpose LAMMPS MD code [76].
+• Multi-Modal Data Integration: Our model has the capability to integrate multimodal data from
+various sources, enhancing its utility and adaptability in diverse research contexts.
+• Advanced Simulation Capabilities: Our model demonstrates exceptional performance in retrieving
+new physics through atomistic simulations, validated by several complex computational experiments.
+• Reduction in Human Intervention: AtomAgents significantly reduces the need for human intervention,
+displaying its capacity to autonomously design complex workflows, particularly useful for highthroughput simulations.
+• Accessibility for Non-Experts: Operating based on textual input, our model empowers non-expert
+researchers to effectively address challenges in the realm of crystalline materials design, making
+advanced simulations more accessible.
+• Interpretability: The interactions between agents and tools is fully traceable for interpretation and
+analysis of intermediate results. This allows human researchers to understand potential issues and
+intervene, or redirect the process if necessary.
+The structure of this paper is organized as follows. In Section 2, we provide a detailed overview of the
+multi-agent system developed in our study. Subsequently, we present a series of computational experiments
+designed to demonstrate the efficacy of multi-agent collaboration in tackling complex tasks in alloy design
+and analysis involving atomistic simulations. Finally, a comprehensive discussion of the limitations and future
+perspectives of our approach is offered in Section 3, featuring also a critical discussion of challenges and
+future research opportunities.
+
+2
+
+Results and discussion
+
+The outline of our proposed multi-agent model is shown in Figure 2, illustrating the collaborative efforts of a
+team of agents to solve complex multi-objective problems in the context of alloy design and analysis requiring
+atomistic simulations. At the core of AtomAgents lies a group of agents—User, Engineer, Scientist, and
+Group Manager—who control the overall workflow of the problem-solving process by calling and executing
+relevant tools, providing appropriate inputs, and returning output results. Several tools are implemented in
+AtomAgents to facilitate the alloy design and analysis process, performing different tasks as shown in Figure
+2. A fundamental tool is the planning tool, which consists of a group of agents: an Admin, a Planner, and a
+Critic, who are responsible for providing a detailed, well-structured plan to solve the multi-objective complex
+task. When a problem is posed, the planning tool is executed at the beginning, and a plan is created through
+collaboration between the Planner and the Critic, and returned to the core agents. Then, the core agents
+start executing the plan by calling the appropriate tools. These agents (except the User who poses the task)
+are powered by a state-of-the-art general-purpose large language model from the GPT family [77] accessed
+via the OpenAI API [78]. Moreover, each agent is characterized by a unique profile that describes its role in
+the system, as shown in Table 1.
+The full description of the tools and functions incorporated in AtomAgents is listed in Table S2 of the Supporting Information, showcasing a broad range of capabilities and functionalities. These include computations
+by atomistic simulations, knowledge retrieval from external sources, coding, plotting, and image analysis,
+collectively making AtomAgents a robust physics-aware LLM-based framework for solving intricate materials
+design and analysis tasks. As shown in Figure 2, each tool is equipped with a set of agents that autonomously
+collaborate to respond to the given query. Similar to the core agents, each of these AI agents is powered
+by a general-purpose LLM and is assigned a role described by its profile. Upon receiving a query from the
+user, the core agents dynamically and non-linearly call and execute the necessary tools until the solution is
+reached and the problem is resolved. The full profile of tool’s agents is shown in Table S2 of the Supporting
+Information. Moreover, the computation tool is composed of a rich library of functions covering a wide range
+of atomistic simulations such as elastic constant and surface energy calculations, and performing complex
+nudged elastic band computations. The full list of computation functions along with their profile is listed in
+Table S3 in the Supporting Information.
+The following sections present a series of experiments to demonstrate how the multi-agent system addresses
+various tasks in the domain of alloy design, particularly through generating new physics via atomistic
+simulations, eliminating or substantially reducing the need for human intervention. All atomistic simulations
+4
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+AtomAgents
+Admin
+
+Plot analyze tool:
+Empowered by a multi-model
+agent, this tool can analyze
+plots and images and draw
+conclusions from them.
+
+To assistant
+ol
+
+reviewer
+
+planner
+
+me
+mo
+ry
+
+Computation tool: Computes
+material properties from theory,
+e.g. fracture toughness from
+LEFM, or by performing atomistic
+simulations, e.g. elastic constants,
+surface energies, and Peierls
+barrier.
+
+Plot analyzer
+
+o
+To
+
+ory
+em
+lm
+
+ry
+mo
+me
+
+Coding tool: Writes and
+executes Python code to save
+the data in desired format, e.g.
+image.
+
+Assistant
+
+Chat Scientist
+manager
+
+Co
+re
+
+ry
+mo
+me
+re
+Co
+
+admin
+
+critic
+
+ol
+To
+
+Core memory
+
+User
+Tool memory:
+The tool agents’
+memory stores
+the conversations
+between agents.
+After the task is
+accomplished, a
+summary of the
+key results is
+returned to the
+core module.
+
+Planning tool: Sugeests a
+detailed plan to solve the multiobjective complex task.
+
+Admin
+
+m
+em
+or
+y
+
+Knowledge retrieval tool:
+Retrieves knowledge from
+external sources such as
+papers, documents, tables,
+etc.
+
+executor
+
+To
+o
+
+lm
+em
+ory
+
+coder
+
+query
+response
+
+Core memory: The core agents’ memory stores the
+conversations between the core agents, as well as
+responses returned from the tools. This memory is
+retained throughout the problem-solving process.
+
+admin
+
+Core: Consists of a group of LLM-based AI agents that collaborate in a
+dynamic environment to solve complex tasks, leveraged by the power
+of various tools.
+
+engineer
+
+o
+To
+
+ory
+em
+lm
+
+Figure 2: AtomAgents, a physics-based generative multi-agent model for automating alloy
+discovery and analysis with atomistic simulations. The structure of AtomAgents comprises a team
+of agents constructing the core who collaborate to solve complex alloy design tasks with the help of a set
+of tools for different purposes described in the image from knowledge retrieval to coding to image analysis.
+Each tool is composed of a set of AI agents that collaborate to solve the query received from the User and
+return the results to the core agents. Each individual AI agent in AtomtAgents is assigned a distinct profile
+that defines its role and may be powered by a general purpose large language model from the OpenAI GPT
+family. The entire process is automated, providing a robust framework for solving challenging tasks in alloy
+design and analysis with minimal or no human intervention.
+
+are performed using LAMMPS [76] at zero temperature. Due to the weak performance of current state-of-theart LLMs in constructing LAMMPS scripts, all the atomistic simulations are performed by human-generated
+LAMMPS scripts integrated into the model as python functions and executed via the computation tool. An
+example of such script is shown in Figure S1 in the Supplementary Information.
+The provided experiments highlight different strengths of the developed multi-agent system. Specifically,
+we show that the model can a) integrate materials properties from diverse sources, b) tackle multi-modal
+problems involving image analysis, c) solve multi-scale problems connecting microscale feature to macroscopic
+properties, and generate and validate new hypotheses through atomistic simulations. These complex processes
+typically demand expertise from multiple domains, sophisticated reasoning abilities, and advanced scripting
+skills to execute atomistic simulations—tasks that have traditionally required significant manual effort. Our
+current approach showcases the capability of AI multi-agent modeling to not only seamlessly integrate
+different modalities but also to automate and optimize the entire workflow. By leveraging logic and reasoning
+capabilities of LLMs, the system can efficiently manage and solve intricate alloy design problems, significantly
+reducing the need for manual intervention. This innovation not only enhances the precision and effectiveness
+of alloy design processes but also accelerates discovery and development, paving the way for more advanced
+and efficient materials engineering.
+5
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+Table 1: : The profiles of the agents implemented in the current study to solve multi-objective tasks in the
+context of alloy design and analysis.
+Agent #
+
+Agent role
+
+Agent profile
+
+1 (None)
+
+User
+
+User. You pose the task.
+
+2 (GPT-4o)
+
+Assistant
+
+Assistant. You execute a plan developed by Planning tool.
+
+3 (GPT-4-turbo)
+
+Scientist
+
+Scientist. You are a leading material scientist. You propose
+innovative hypotheses in the realm of materials science.
+
+4 (GPT-4o)
+
+Group chat manager
+
+You dynamically select a speaker.
+
+5 (GPT-4-turbo)
+
+Planner
+
+Planner. Suggest a plan to solve a problem. Do not execute
+the plan. The plan should include the functions and required
+input parameters. The plan should be approved by the critic.
+
+5 (GPT-4-turbo)
+
+Critic
+
+Critic. Double-check the plan from planner for completeness
+and correctness. Ensure the plan includes all the functions
+with correct input parameters.
+
+2.1
+
+Experiment I - Material Properties Calculation and Knowledge Retrieval; multi-model
+integration problem
+
+Computing material properties such as lattice and elastic constants is crucial in atomistic simulations. These
+properties characterize materials and are particularly important for theoretical modeling. For instance, when
+computing the critical fracture toughness based on Griffith’s theory, both the elastic constants and surface
+energies must be determined. However, computing various material properties often requires setting up
+different structures, writing and adjusting multiple LAMMPS scripts, and running numerous simulations,
+which becomes cumbersome when studying a broad range of materials, especially in alloy design.
+In this section, we demonstrate the capability of multi-agent modeling to perform complex tasks without the
+need for extensive coding knowledge or expertise in LAMMPS. Furthermore, we illustrate how multi-agents
+can automate the extraction of valuable knowledge from the literature, such as material properties computed
+by specific interatomic potentials from corresponding papers. The entire problem-solving process is managed
+by AI agents, encompassing plan definition, simulation execution, knowledge retrieval, and the storage of
+results. The workflow illustrating multi-agent collaboration for this experiment is shown in Figure 3.
+Initially, the core agents activate the "planning" tool responsible for developing a plan to address the query
+posed by the user. The "planner" agent within this tool breaks down the complex task into simpler sub-tasks
+by proposing a step-by-step plan. This plan is then evaluated and approved by the accompanying "critic"
+agent, and the approved plan is returned to the AtomAgents for execution. The plan involves using a
+computation tool to derive material properties from atomistic simulations, a knowledge retrieval tool to
+extract these properties from papers, and coding tools to write a Python script for saving the results.
+The “Assistant" agents in AtomAgents demonstrate excellent performance in following the developed plan,
+calling, and executing the relevant functions. They are particularly adept at providing the correct query to
+the team of agents embedded in different tools, as these agents do not have access to external information.
+Once the results from the computation and knowledge retrieval tools are returned, they are collected and
+formatted as a Python dictionary. This dictionary is then utilized by the “coder" agent to save the results in
+a CSV file, as illustrated in Figure 3 in tabular format.
+This experiment showcases the efficacy of the multi-agent system in solving complex tasks that involve
+conducting atomistic simulations. Moreover, the agreement between the computed and reported values
+confirms the accuracy of the computations, paving the way for more challenging experiments.
+2.2
+
+Experiment II-Analyzing screw dislocation core structure; multi-model analysis problem
+
+The previous experiment focused on computing basic material properties through atomistic simulations
+conducted on pristine materials. In this experiment, we extend the scope to include simulations on defected
+structures, specifically modeling screw dislocations in BCC materials. Screw dislocations are line defects that
+significantly influence the plasticity of BCC materials and have been extensively studied through atomistic
+6
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+User
+
+Knowledge retrieval Tool
+
+Task input:
+Compute the lattice constant, elastic constants (C11, C12, C44), and
+surface energies of [110] and [111] planes of Al and Ni using
+Al99.eam.alloy and Ni99.eam.alloy EAM potentials. Then, compare the
+results with the reported values in the Mishin paper. Save all the
+results in a csv file named Mishin_Al_Ni.csv
+
+Core agents
+Core agent actions:
+1- Asks Planning Tool to develop a plan for the
+task.
+2- Asks Computation Tool to compute the
+material properties.
+3- Asks Knowledge retrieval tool to retrieving
+properties from Mishin paper
+4- Asks Coding tool to save the data obtained in
+1 & 2 in a csv file.
+
+3
+4
+
+Knowledge retrieval tool actions:
+Retrieves the materials properties from the Mishin
+paper and returns them to AtomAgents.
+Coding Tool
+Coding tool actions:
+Writes and executes a python code to save the
+results in a csv file. Informs AtomAgents that the file
+successfully saved.
+
+Table generated by multi-agent collaboration
+Material
+
+Property
+
+Computed
+Value
+
+Reported
+Value
+
+Units
+
+Al
+
+Lattice Constant
+
+4.05
+
+4.05
+
+A
+
+Al
+
+Elastic Constant C11
+
+113.8
+
+114
+
+GPa
+
+Al
+
+Elastic Constant C12
+
+61.55
+
+61.9
+
+GPa
+
+Planning Tool
+
+Al
+
+Elastic Constant C44
+
+31.59
+
+31.6
+
+GPa
+
+Planning Tool actions:
+Develops and returns a detailed plan for the
+given task.
+
+Al
+
+Surface energy [110]
+
+1.006
+
+1.006
+
+J/m^2
+
+Al
+
+Surface energy [111]
+
+0.871
+
+0.87
+
+J/m^2
+
+Ni
+
+Lattice Constant
+
+3.52
+
+3.52
+
+A
+
+Ni
+
+Elastic Constant C11
+
+247.86
+
+247
+
+GPa
+
+Ni
+
+Elastic Constant C12
+
+147.83
+
+148
+
+GPa
+
+Ni
+
+Elastic Constant C44
+
+124.84
+
+125
+
+GPa
+
+Ni
+
+Surface energy [110]
+
+2.049
+
+2.049
+
+J/m^2
+
+Ni
+
+Surface energy [111]
+
+1.63
+
+1.629
+
+J/m^2
+
+Computation Tool
+Computation Tool actions:
+Computes the lattice constant, elastic
+constants, and surface energies for each EAM
+potential and returns the results to AtomAgents.
+
+1
+
+2
+
+Figure 3: Overview of the multi-agent collaboration to solve the complex task posed in Experiment I. After
+receiving the task from the user, the core agents call the "planning" tool to create a plan for the task. Then
+the core agents start executing the plan by using “computation" tool to compute the material properties and
+“knowledge retrieval" tool to retrieve the material properties from a set of scientific papers or other documents.
+Finally, all the data are collected and sent to “Coding" tool to save them in a comma-separated values (CSV)
+file.
+
+simulations. A critical aspect of these studies is the dislocation core structure and its interaction with nearby
+solutes. Many empirical potentials suggest that the screw dislocation core in pure BCC metals is polarized,
+whereas ab-initio simulations based on Density Functional Theory (DFT) indicate an unpolarized, compact
+core structure. The nature of the core structure profoundly affects the movement of long screw dislocations
+and is crucial for accurately investigating dislocation motion mechanisms, particularly double-kink nucleation.
+To evaluate the performance of these potentials in predicting the core structure accurately, we analyze
+differential displacement maps. These maps are generated by subtracting the atomic positions in dislocated
+structures from those in pristine conditions. Consequently, this experiment employs a specialized multi-model
+agent equipped with image reasoning capabilities, enhancing the model’s performance ability to accurately
+characterize and understand these complex defects.
+In this segment, we address a complex multi-objective problem where a team of agents is tasked with
+determining the screw dislocation core structure in BCC tungsten using two commonly employed EAM
+potentials: Zhou-Johnson [79] and Marinica (EAM4) [80]. Figure 4 illustrates the workflow executed by the
+agents to conduct this experiment. The process begins with a query from the user and proceeds through
+meticulous planning, execution of atomistic simulations, and culminates in image analysis to examine the
+generated differential displacement (DD) maps. The plan ensures the correct tools are executed with the
+appropriate input parameters. Furthermore, the computation tool performs all necessary tasks to create the
+differential displacement maps without errors. This includes creating the potential file describing pair_style
+and pair_coeff parameters, computing the lattice constant required to create the BCC structure, creating
+and relaxing a screw dislocation within tungsten, and constructing the differential displacement maps as
+shown in Figure 4.
+The last and crucial step in this experiment is the determining of the core structure of the screw dislocations
+from the generated DD maps. This is done by our multi-model agent capable of reasoning over images.
+However, our initial assessments indicated the poor performance of the multi-model agent equipped with
+GPT-4o (or GPT-4v) in distinguishing between the polarized and unpolarized core structures. To circumvent
+this, we leverage in-context learning to empower the multi-model agent to correctly identify screw core
+structure by providing it an image including polarized and unpolarized cores with corresponding labels as
+illustrated in Figure S2 in the Supporting Information.
+7
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+User
+Task input:
+First create a 1/2[111] screw dislocation in W using “W_Zhou04.eam.alloy” and “w_eam4.fs” EAM potentials.
+Then, analyze their dislocation structure.
+The dislocation line is aligned along [-1,1,1] direction, and dislocation glide and glide plane normal directions
+are [1,-1,2] and [1,1,0], respectively.
+Core agents
+
+Planning Tool
+
+Core agents actions:
+1- Asks Planning Tool to develop a plan for the task.
+2- After the plan is returned, asks Computation Tool
+to create a screw dislocation in W using the EAM
+potentials.
+3- Asks Analyze Screw Tool to analyze the DD map
+obtained in 2 to determine the screw core structure.
+
+Planning Tool actions:
+Develops and returns a detailed plan for the
+given task.
+
+1
+
+Analyze Screw Tool
+Analyze Screw Tool actions:
+Analyzes the provided DD map and returns
+the analyzes results to core agents..
+
+Computation Tool
+Computation Tool actions:
+Creates a W with a screw dislocation and returns
+the path of the DD map file to AtomAgents.
+
+2
+
+3
+
+Results from Computation Tool
+
+W_Zhou04.eam.alloy
+
+Results from Analyze Screw Tool
+W_Zhou04.eam.alloy gives polarized screw
+core in W.
+w_eam4.fs predicts compact/unpolarized
+screw core in W.
+
+w_eam4.fs
+
+Figure 4: Overview of the multi-agent collaboration to solve the complex task posed in Experiment II. After
+receiving the task from the user, the core agents call the "planning" tool to create a plan for the task. Then the
+core agents start executing the plan by using “computation" tool to generate the DD maps and subsequently
+“Analyze Screw" tool to determine the screw core structure. The DD maps returned by the “computation"
+tool and the summary of the image analysis made by the "Analyze Screw" tool are included in the image.
+
+The results from the "Analyze Screw Core" tool indicate that the multi-model agent has successfully identified
+the screw dislocation core structure in W generated by the two eam potentials. After the successful completion
+of all the computation and analysis tasks, a summary of the final results is returned by the "Assistant" agent:
+Assistant
+The analysis of the screw dislocation core structures for the 1/2[111] screw dislocation in
+Tungsten (W) using two different potentials has been completed:
+1. **Using W_Zhou04.eam.alloy Potential:**
+- The screw dislocation core structure is identified as a **polarized/non-compact core**.
+- The displacement vectors around the core form a more complex, non-triangular pattern,
+indicating a non-compact core structure.
+2. **Using w_eam4.fs Potential:**
+- The screw dislocation core structure is identified as a **compact/unpolarized core**.
+- The displacement vectors are directed towards the center of a triangular arrangement,
+indicating a compact core structure.
+
+The collaborative efforts of the agents in this experiment, leveraging computational techniques and multimodel reasoning capabilities, ensure a thorough and precise evaluation of the dislocation core structures as
+predicted by the selected potentials.
+8
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+2.3
+
+Experiment III - Multi-Scale Mechanics Problem: Fracture Toughness in Alloy Systems
+
+To further explore the capabilities of our multi-agent model in solving complex simulation-based problems, this
+experiment is devoted to addressing a multi-scale mechanics problem that combines simulations with theories.
+Specifically, this task involves computing the critical fracture toughness, a macro-scale material property.
+Based on linear elastic fracture mechanics (refer to 4.1 for more details), computing the critical fracture
+toughness necessitates calculating the elastic constants and surface energies of the material. Moreover, this
+task extends beyond computations in pure materials, as conducted in previous experiments, by incorporating
+simulations on alloy systems.
+The overall workflow employed by our multi-agent system is illustrated in Figure 5, where the user poses
+a highly complex multi-objective task to explore the effect of niobium (Nb) concentration on the fracture
+toughness in NbMo alloys for two crack systems. An important feature of this experiment is the use of a
+moment tensor potential [81, 82], a machine-learning-based potential, to describe the interatomic interactions,
+showcasing the flexibility of the multi-agent system. Furthermore, the task includes plotting the results
+and discussing them, which is performed by the multi-model agent expert in analyzing images and plots.
+Another critical aspect of this problem is the computation of material properties (elastic constants and surface
+energies) for alloy systems. Due to fluctuations in random solute environments, multiple configurations may
+need to be sampled to obtain an average material property, increasing the computational cost. Here, we have
+assigned five as the default value for the number of samples, but the user can opt for higher values if needed
+(e.g., user assigns 20 samples for the NEB simulations in Experiment IV).
+At the initial step, the core agents engage the “planning" tool to provide a detailed implementation plan for
+the given task. The “planner" agent develops a comprehensive plan, which is then validated for accuracy by
+the “critic" agent. The plan (shown in Figure S3 in the supporting information), demonstrates the planner’s
+effectiveness in identifying the key steps necessary for accomplishing the tasks posed by the user. Specifically,
+the planner correctly identifies that calculating the critical fracture toughness requires computing the surface
+energy and elastic constants. Moreover, it accurately recognizes that the surface energy should be computed
+along the crack planes. Saving the final results and analyzing them is another crucial step adeptly captured
+in the plan.
+Upon receiving the plan, the "Assistant" agent in the core module initiates the implementation of the plan
+step-by-step by activating the tools as outlined. Despite the complexity and length of the tasks, all tools are
+implemented and the necessary results are gathered autonomously, without human intervention. After the
+material properties are collected, the fracture toughness is computed for the specified crack systems and alloy
+compositions. These results are then used as input for the plotting tool.
+The plot of the results, generated by the multi-agent collaboration, is displayed in Figure 5. Subsequently,
+the plot is analyzed, and conclusions are drawn by the multi-model agent within the analysis tool, as shown
+in Figure 6. The multi-model agent, empowered by GPT-4, adeptly captures all details of the plot both
+quantitatively and qualitatively. This includes identifying the maximum and minimum values of the fracture
+toughness for the crack systems and providing a detailed discussion on the variation of fracture toughness
+relative to the Nb concentration.
+The results from this experiment showcase the competence of the multi-model agent in providing a robust
+framework for automating the design of alloys. This integration effectively combines various modalities
+such as theory, simulations, coding, and image analysis, illustrating the comprehensive capabilities of the
+multi-agent system.
+
+2.4
+
+Experiment IV-Hypothesis generation and validation
+
+The previous experiments demonstrated the exceptional performance of our multi-agent model in solving
+complex computational problems requiring atomistic simulations. In this experiment, we explore another
+intriguing aspect of the multi-agent strategy: hypothesis generation and validation. Due to their high
+reasoning capabilities, general-purpose large language models like the GPT family have the potential to
+generate innovative research ideas across fields, including materials science. Combining this with the
+computational prowess of the multi-agent strategy offers a robust framework where LLM-based research
+ideas and hypotheses can be validated and refined, providing new opportunities for scientific discovery. The
+objective of this experiment is to assess the performance of our multi-agent model in hypothesis generation
+and validation.
+9
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+User
+Task input:
+Explore the effect of Nb concentration on the critical fracture toughness for the following crack systems in NbMo alloys:
+(a) [100] crack propagation, [010] crack plane, and [001] crack front direction.
+(b) [1-10] crack propagation, [111] crack plane, and [-1-12] crack front direction.
+Use NbMo.mtp potential (Nb is the first element and Mo is the second element) and consider Nb concentration from 0 to 100 in
+intervals of 20.
+Also, for surface energy calculations, consider 50 Angstrom as the lattice size along free surfaces and 20 along other directions.
+Finally, plot the results as a function of Nb concentration and discuss them.
+Core Agents
+
+Computation Tool
+
+Core agents actions:
+1- Asks Planning Tool to develop a plan for the task.
+2- After the plan is provided, asks Computation Tool to
+perform simulations to compute the surface energy of the
+crack planes for each alloy.
+3- Asks Computation Tool to perform simulations to
+compute the elastic constants of the alloys.
+4- Asks Computation Tool to compute the critical fracture
+toughness for NbMo alloys using the results of 2 and 3.
+5- Asks Coding tool to plot the fracture toughness against
+Nb concentration for the two crack systems.
+6- Asks Plot Analyze Tool to analyze the plot generated in
+5 and discuss the results.
+
+Computation Tool actions:
+Performs atomistic simulations to compute the surface
+energy and elastic constants for the crack systems and
+NbMo alloys.
+Computes the critical fracture toughness using the
+results from atomistic simulations.
+
+Planning Tool
+
+2-4
+
+5
+
+Coding Tool
+Coding tool actions:
+Writes and executes a python code to plot the results
+and save them as an image.
+Returns the image path to the core agents.
+
+1
+
+6
+
+Planning Tool actions:
+Develops and returns a detailed plan for the given task.
+Plot generated by multi-agent collaboration
+
+Plot Analyze Tool
+Plot Analyze Tool actions:
+Performs a comprehensive analysis on the plot of the
+fracture toughness versus Nb concentration for the
+given crack systems.
+
+Figure 5: Overview of the multi-agent collaboration to solve the complex task posed in Experiment III. After
+receiving the task from the user, the core agents call the “planning" tool to create a plan for the task. Then
+the core agents start executing the plan by using "computation" tool to compute the elastic constants and
+surface energies, and eventually the fracture toughness. Subsequently “Coding" tool is used to plot the results
+which are then analyzed by the “Plot analyze" tool via a multi-model agent.
+
+It is well-known that plastic deformation in BCC metals is dominated by <111> screw dislocation motion.
+An important physical property of BCC materials is the Peierls potential, which is the energy change of the
+straight dislocation line as it moves from one Peierls valley (minimum energy configuration) to the next. The
+maximum energy along this profile is the Peierls barrier, which profoundly affects screw dislocation motion
+and, consequently, the mechanical properties of BCC materials. Therefore, accurately estimating the Peierls
+potential is essential for predicting and understanding the behavior of BCC materials. The Peierls barrier can
+be computed using transition state calculations such as the nudged elastic band (NEB) method. While the
+Peierls potential in pure BCC metals is constant and has been extensively studied [83, 84, 22, 85, 86, 87], the
+energy landscape in alloys is more complex, leading to a wide distribution of energy barriers. Consequently,
+multiple NEB simulations are required to accurately estimate the mean barrier. However, this process becomes
+computationally expensive when screening the entire design space, for instance, to search for compositions
+with high energy barriers. Therefore, finding a correlation between the Peierls barriers and more easily
+computed properties could significantly save time by narrowing down the composition space towards designs
+with higher barriers and thus enhanced mechanical performance.
+10
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+Plot analyze tool (GPT-4o)
+The plot shows the variation of critical fracture toughness as a function of Nb concentration
+for two crack systems (A and B) in NbMo alloys. Here are some conclusions that can be drawn
+from the results:
+1. **General Trend**:
+- For both crack systems, the
+critical fracture toughness
+generally decreases as the Nb
+concentration increases from 0% to
+80%.
+- There is a slight increase
+in fracture toughness at 100%
+Nb concentration for both crack
+systems.
+2. **Crack System A**:
+- At 0% Nb concentration, the
+critical fracture toughness
+is
+√
+approximately 1.25 MPa m.
+- The fracture toughness remains
+relatively stable up to 20% Nb
+concentration, with a slight
+increase.
+- Beyond 20% Nb concentration,
+the fracture
+toughness decreases steadily, reaching a minimum at 80% Nb concentration (around
+√
+0.65 MPa m).
+- At 100% Nb concentration,
+there is a slight increase in fracture toughness to
+√
+approximately 0.75 MPa m.
+3. **Crack System B**:
+√
+- At 0% Nb concentration, the critical fracture toughness is approximately 1.2 MPa m.
+- The fracture toughness decreases steadily as
+√ Nb concentration increases, reaching a
+minimum at 80% Nb concentration (around 0.6 MPa m).
+- At 100% Nb concentration,
+there is a slight increase in fracture toughness to
+√
+approximately 0.7 MPa m.
+4.
+
+**Comparison Between Crack Systems**:
+- Crack System A generally exhibits higher critical fracture toughness than Crack System B
+across all Nb concentrations.
+- The difference in fracture toughness between the two crack systems is more pronounced at
+lower Nb concentrations (0% to 40%) and becomes less significant at higher Nb concentrations
+(60% to 100%).
+5.
+
+**Implications**:
+- The decrease in fracture toughness with increasing Nb concentration suggests that higher
+Nb content may lead to a more brittle material.
+- The slight increase in fracture toughness at 100% Nb concentration for both crack
+systems could indicate a change in the fracture mechanism or material properties at this
+composition.
+These observations can help in understanding the mechanical behavior of NbMo alloys and in
+optimizing the Nb concentration for desired fracture toughness properties.
+
+Figure 6: The analyzes returned by the "plot analyzer" agent for the plot of critical fracture toughness versus
+Nb concentration created by the multi-agent collaboration.
+
+To facilitate hypothesis generation, a “Scientist" agent is integrated into our model, profiled to act as a
+leading materials scientist. In the current framework, the user can directly collaborate with the Scientist
+to generate innovative hypotheses. However, it is possible to integrate other mechanisms for hypothesis
+generation, such as two AI agents that adversarially collaborate to push each other towards more innovative
+and robust research ideas, or extracting and generating novel research ideas from powerful knowledge graphs
+[71, 68, 88]. Figure 7 shows a summary of the hypotheses generated by the "Scientist" agent in response to the
+user’s query. It can be observed that, the scientist proposes a positive correlation between the Peierls barrier
+11
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+and the standard deviation of the energy change. Th proposed correlation by the “Scientist" is particularly
+encouraging as it reduces the computational burden of performing costly NEB simulations to compute the
+Peierls barrier directly.
+Chat between a User and AI scientist
+User
+In random alloys, dislocations at different minimum locations have different potential
+energies. Therefore, when a dislocation moves from a minimum position to the next one,
+the net energy change might not be zero. However, for a large number of dislocations,
+the average of the net energy change might be zero with a non-zero standard deviation.
+Do you think there is a correlation between the standard deviation of the energy
+changes and the Peierls barrier, which is the maximum energy between two adjacent
+energy minima?
+
+Scientist (GPT-4-turbo)
+Here are the summarized hypotheses regarding the correlation between the standard
+deviation of energy changes in dislocation movements and the Peierls barrier in random
+alloys:
+1. **Correlation with Peierls Barrier**: A higher standard deviation in the energy
+changes suggests a more irregular energy landscape, potentially leading to higher
+Peierls barriers. This implies that materials with greater variability in their energy
+landscapes might generally exhibit higher Peierls barriers.
+2. **Effect on Dislocation Mobility**: Increased variability (higher standard
+deviation) in the energy landscape can reduce dislocation mobility due to higher and
+more variable Peierls barriers, impacting the material’s mechanical properties such as
+strength and ductility.
+3. **Material Design Implications**: By understanding and manipulating the standard
+deviation of energy changes, it may be possible to tailor the Peierls barrier and,
+consequently, the mechanical properties of alloys to meet specific performance
+criteria.
+While a direct quantitative correlation would require detailed computational or
+experimental studies specific to the alloy system in question, qualitatively, a higher
+standard deviation in energy changes among dislocations is likely indicative of a
+higher and more variable Peierls barrier, affecting dislocation mobility and material
+properties.
+
+Figure 7: The hypotheses generated by the "scientist" agent empowered by GPT-4-turbo in response to the
+user’s query.
+We now utilize our multi-agent system to test the hypotheses generated in the previous experiments using
+atomistic simulations. As in the earlier experiment, we use NbMo as our model system, described by the
+moment tensor potential, though it is feasible to apply other alloy systems and interatomic potentials. The
+overall workflow of the problem-solving process is depicted in Figure 8, where the user assigns a computational
+task pertaining to the aforementioned hypotheses, followed by a detailed plan from the "Planner." Subsequent
+computations are performed by the "Computation Tool" to compute the energy change and Peierls barrier
+from NEB simulations. The details of these NEB simulations can be found in 4.
+After the completion of the NEB simulations, the results are collected and sent to the "Coding Tool" for
+plotting. Figure 8 presents the plot of the Peierls barrier mean and standard deviation against the potential
+energy change standard deviation. The analysis of this plot is shown in Figure 9. The comprehensive analysis
+reveals the proficient performance of the multi-model agent, empowered by GPT-4o, in analyzing the plot.
+Following a thorough review, the agent concludes that there is a positive correlation between the mean Peierls
+barrier and the standard deviation of the potential energy change, hence verifying the hypothesis developed
+by the "Scientist". This finding is significant as it points toward a method for accelerating the design process
+12
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+of materials with enhanced mechanical performance by focusing on specific energy characteristics that are
+indicative of higher barriers.
+User
+Task input 1:
+It is hypothesized that there is positive correlation between the Peierls barrier and the potential energy change standard deviation due to
+dislocation movement. Can you test this hypothesis using atomistic simulations in NbMo binary system for Nb concentrations between 10 and 90
+in intervals of 10.
+Use ”NbMo.mtp" potential (Nb is the first element and Mo is the second) with 40 cpus, 20 replicas, and 20 samples for each composition.
+The dislocation line is aligned along [-1, 1, 1] with size 5, and dislocation glide and glide plane normal directions are [1, -1, 2] and [1, 1, 0 ] with
+sizes 6 and 10, respectively.
+Coding Tool
+
+Core agents
+Core agent actions:
+1- Asks Planning Tool to develop a plan for the posed
+complex task.
+2- After the plan is provided, asks Computation Tool to
+perform NEB simulations to compute the Peierls barrier and
+the standard deviation of energy changes for the NbMo
+alloys.
+3- Asks Coding Tool to plot the Peierls barrier against the
+standard deviation of the potential energy change.
+4- Asks Plot Analyze Tool to analyze the plot generate in 3
+to test the hypothesis.
+Planning Tool
+
+Coding Tool actions:
+Writes and executes a Python script to plot the data returned by the
+Computation Tool and saves the plot as an image.
+Returns the image path to core agents.
+
+3
+4
+
+Plot Analyze Tool
+Plot Analyze Tool actions:
+Performs a comprehensive analyzes on the plot generated by the
+coding tool.
+Plot generated by multi-agent collaboration to test the hypothesis
+
+1
+
+Planning Tool actions:
+Develops and returns a detailed plan for the given task.
+Computation Tool
+Computation Tool actions:
+a- Performs the following for each NbMo composition:
+1- Computes the lattice constant.
+2- Creates the initial and final dislocation configurations and
+relaxes them to find minimized structures.
+3- Performs NEB simulations wth 40 cpus and 20 replicas
+and returns the Peierls barrier.
+4- Repeats the second and third stages 20 times.
+b- Returns the standard deviation of the potential energy
+change, as well as the mean and standard deviation of the
+Peierls barrier for each alloy composition.
+
+2
+
+Plot generated by multi-agent collaboration for the second task
+User
+Task input 2:
+As the last step, can you plot the Peierls barrier mean with its
+standard deviation as the function of Nb concentration and
+draw conclusions on the effect of Nb concentration on
+Peielrs barrier in NbMo alloys.
+Core agents
+Core agent actions:
+1- Asks Coding Tool to plot the Peierls barrier mean with its
+standard deviation against the Nb concentration.
+2- Asks Plot Analyze Tool to analyze the plot generate in 1
+to draw conclusions on the effect of Nb concentration on
+Peierls barrier in NbMo alloys.
+Plot Analyze Tool
+Plot Analyze Tool actions:
+Performs a comprehensive analyzes on the plot generated by
+the coding tool.
+
+Figure 8: Overview of the multi-agent collaboration to solve the complex task posed in Experiment IV and
+then a follow-up task. After receiving the task from the user, the core agents call the "planning" tool to
+create a plan for the task. Then the core agents start executing the plan by using "computation" tool to
+compute the Peierls barrier and the standard deviation of the potential energy changes for a set of alloys.
+Subsequently "Coding" tool is used to plot the results which are then analyzed by the "Plot analyze" tool via
+a multi-model agent. In the second task, the results of the first task are plotted via the coding agent to show
+the variation of the Peierls barrier against Nb concentration. The final analysis from the multi-agent model
+finalizes the task.
+AtomAgents facilitates human-AI collaboration at various stages of the problem-solving process. For example,
+after the multi-agent system successfully completed the complex computations and analyses required to test
+the hypotheses, we posed another task to explore the effect of niobium (Nb) concentration on the Peierls
+barrier in NbMo alloys. Since the necessary data had already been collected during the main task, no further
+simulations were required. Figure 8 displays the follow-up task posed by the user to the multi-agent system,
+along with the plot generated by the “Coding Tool." This plot is subsequently evaluated by the “Analyze Plot"
+tool to draw conclusions about the impact of the Nb concentration on the Peierls barrier in NbMo alloys. The
+results of this analysis are depicted in Figure S4 in the supporting material, demonstrating the proficiency of
+the multi-model agent, powered by GPT-4o, in analyzing the variations of the Peierls barrier with respect
+to the Nb concentration. This capability highlights the system’s effectiveness in leveraging existing data to
+generate new insights without the need for additional computational resources, thus streamlining the research
+process and enhancing the efficiency of materials design evaluations.
+13
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+Plot analyze tool (GPT-4o)
+To draw conclusions from the data presented in the plot, we need to analyze
+the relationship between the Peierls barrier mean and the potential energy
+change standard deviation. Here are some observations and conclusions:
+1. **Positive Correlation**:
+- The plot shows that as the
+potential energy change standard
+deviation increases, the Peierls
+barrier mean also tends to
+increase. This suggests a positive
+correlation between the two
+variables.
+2. **Error Bars**:
+- The error bars represent the
+standard deviation of the Peierls
+barrier mean. The error bars
+are relatively large, indicating
+significant variability in the
+Peierls barrier mean for each
+potential energy change standard
+deviation.
+3. **Trend Analysis**:
+- Despite the variability, there is
+a noticeable upward trend in the Peierls barrier mean with increasing potential energy change
+standard deviation. This trend supports the conclusion of a positive correlation.
+4. **Data Points**:
+- The data points are scattered but generally follow an upward trajectory. This further
+reinforces the positive correlation between the Peierls barrier mean and the potential energy
+change standard deviation.
+In summary, the plot indicates a positive correlation between the Peierls barrier mean and
+the potential energy change standard deviation for different compositions of the NbMo binary
+system. However, the significant variability (as shown by the error bars) suggests that
+while the trend is positive, there is considerable spread in the data.
+
+Figure 9: The results of the analyze tool from the analyzes of the plot generated by the multi-agent
+collaboration in experiment IV.
+
+3
+
+Summary and future perspective
+
+We constructed a physics-aware artificial intelligence (AI) model that combines multimodal capabilities in
+complex reasoning, rational thinking, and strategic planning of large language models (LLMs) with abilities to
+write and execute code, conduct atomistic-level molecular simulations to solicit new real-world physics data,
+and conduct visual analysis of graphed data, molecular mechanisms and motions. Through a multi-agent
+strategy in which these capabilities are integrated, we construct a physics-aware intelligent system capable of
+solving complex analysis and design tasks, applied here to alloy design and discovery. We showed that such
+an integration is possible to model complex compositional problems in alloy modeling and design. Our model,
+AtomAgents, combines a comprehensive suite of tools with various capabilities, including physics-based
+atomistic simulators, effectively coupling the formidable multimodal reasoning capabilities of LLMs with the
+essential computational power required for addressing sophisticated materials design problems.
+A key feature of the proposed multi-model system is the potential of integration of different modalities
+from different domains into the materials design process, offering a paradigms shift in solving challening
+multi-scale materials problems that traditionally demands considerable human expertise and manual effort.
+The comprehensive data integration allows AtomAgents to continuously update and improve its predictive
+capabilities, ensuring that the latest findings and trends in materials science are incorporated into its models.
+The systematic assimilation of such diverse and dynamic data sources not only enhances the accuracy
+of simulations and predictions but also accelerates the materials discovery process, paving the way for
+groundbreaking advancements in the field
+14
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+While the research reported here primarily focuses on designing binary alloys and metallic materials, the
+AtomAgents framework inherently offers the flexibility to explore more complex systems, such as highentropy alloys [89, 90, 90]. These systems open a vast compositional design space, providing unprecedented
+opportunities to engineer materials with novel properties like enhanced strength and fracture toughness
+[91, 92]. However, navigating this extensive space presents significant challenges, requiring innovative and
+precise methodologies to manage its complexities effectively. AtomAgents, with its multi-agent architecture, is
+ideally equipped for these tasks, utilizing collective intelligence to efficiently explore and exploit this expansive
+design space. Furthermore, our framework is not confined to just metallic materials; owing to the versatility
+of LAMMPS, which serves as our physics engine, AtomAgents can also model a wide range of other materials
+systems—including biomaterials, polymers, ceramics, and liquids, that can be readily simulated within the
+LAMMPS environment.
+Further, the potential of integrating advanced deep learning models and generative tools within AtomAgents
+offers a promising avenue to enhance its capabilities. These AI-driven models can predict material properties
+across diverse alloy systems, potentially reducing reliance on extensive atomistic simulations [93, 94]. Such
+integration could significantly streamline the process, reducing both time and computational overhead,
+especially when dealing with complex multi-component alloys. This strategic enhancement would not only
+optimize the efficiency of material design but also expand the boundaries of what can be achieved in materials
+science, propelling AtomAgents to the forefront of innovative materials discovery.
+Working as the integrative agent in the multi-agent system, Large Language Models (LLMs) play a crucial
+role in orchestrating the interactions and operations within these systems. They facilitate critical steps such
+as planning, reasoning, and critical thinking, thereby shaping the system’s overall efficiency and output.
+Therefore, the accuracy and performance of the entire model heavily depend on the capabilities of the
+underlying LLM. As advancements in LLMs continue, their enhanced computational power and refined
+algorithms can significantly boost the performance of multi-agent systems. Moreover, the modular architecture
+of our approach allows for the integration of different LLMs tailored to the specific needs of individual agents.
+The integration of high-performance, open-source foundation models such as Llama 3 and Mistral/Mixtral,
+alongside specialized smaller models like Phi-3 or fine-tuned models in scientific subjects [63], opens up exciting
+possibilities for further enhancement [95]. As these foundation models continue to advance in capability, the
+potential for our multi-agent systems to improve becomes even more pronounced. This adaptability not
+only ensures that our systems stay at the cutting edge of technological advancements but also signifies that
+the effectiveness and efficiency of AtomAgents will invariably increase. By continuously incorporating more
+capable LLMs, our systems can achieve deeper insights and more precise predictions, leading to accelerated
+innovation in materials design and discovery.
+
+4
+
+Materials and Methods
+
+Screw dislocation generation
+To model the screw dislocation, a periodic array of dislocations (PAD) configuration is used (e.g. ref. [96])
+with periodic boundary conditions along the dislocation glide direction z||[112] and dislocation line direction
+x||[111], and free boundaries along the glide plane normal direction y||[110]. Atomic positions are relaxed by
+using a combination of the FIRE algorithm [97] and relaxation of the cell dimensions until the convergence is
+achieved-the norm of the force vector fell below 10−6 eV/ Å and stresses σxx , σxy , and σyy fell below 0.1
+MPa.
+NEB simulations
+To compute the minimum energy path between initial and final screw dislocation configurations, nudged
+elastic band (NEB) [98, 99, 100] computations are performed as implemented in LAMMPS. To perform NEB
+simulations, first the initial and final screw dislocation configurations were created inside the material using
+the PAD method. Then NEB simulations are performed using the desired number of replicas. An initial
+path of intermediate configurations (replicas) is constructed by linearly interpolating the atomic positions
+2
+between the relaxed initial and final states. The NEB inter-replica spring constant is set to 10−2 eV/Å and
+convergence is assumed when the maximum of the force acting on all of the atoms across all replicas is less
+than 10−3 eV/Å.
+15
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+Surface energy calculations
+The surface energies along a given plane are computed as follows. First, system with periodic boundary
+conditions in all directions is created and relaxed and the energy E bulk is computed. Then, the supercell is
+extended along the desired direction and then the system is relaxed and the energy is computed E surf . The
+surface energy is then computed as
+E surf − E bulk
+γs =
+2A
+where A is the area of the surface plane.
+4.1
+
+Critical fracture toughness
+
+The mode I anisotopic critical fracture toughness is given by
+r
+2γs
+KIc =
+λ22
+where γs is the surface energy and λ22 is the component of the the Stroh energy tensor [101, 102].
+Agent design
+We design AI agents using the state-of-the-art all-purpose LLM GPT-4 family models. The dynamic
+multi-agent collaboration is implemented in the AutoGen framework [103], an open-source ecosystem for
+agent-based AI modeling. In our multi-agent system, the user, admin, and executor agents are constructed
+using UserProxyAgent class from Autogen, and assistant and reviewer agents in the “Knowledge retrieval"
+tool are crated using RetrieveAssistantAgent class. Moreover, the “Plot analyzer" agent is created via the
+MultimodelConversableAgent class. The remaining agents are created via AssistantAgent class from Autogen;
+and the group chat manager is created using GroupChatManager class. Each agent is assigned a role through
+a profile description, included as system_message at their creation. Details of the implementation can be
+identified in the source code shared via GitHub.
+Function and tool design
+All the tools implemented in this work are defined as Python functions. Each function is characterized by a
+name, a description, and input properties with a description.
+Conflict of interest
+The author declares no conflict of interest.
+Data and code availability
+All data and codes are available on GitHub at https://github.com/lamm-mit/AtomAgents. Alternatively,
+they will be provided by the corresponding author based on reasonable request.
+
+Supplementary Materials
+Additional materials are provided as Supplementary Materials.
+
+Acknowledgements
+We acknowledge support from USDA (2021-69012-35978), DOE-SERDP (WP22-S1-3475), ARO (79058LSCSB,
+W911NF-22-2-0213 and W911NF2120130) as well as the MIT-IBM Watson AI Lab, MIT’s Generative AI
+Initiative, and Google. Additional support from NIH (U01EB014976 and R01AR077793) is acknowledged.
+AG gratefully acknowledges the financial support from the Swiss National Science Foundation (project
+#P500PT_214448).
+16
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+References
+[1] Daniel B Miracle, Jonathan D Miller, Oleg N Senkov, Christopher Woodward, Michael D Uchic, and
+Jaimie Tiley. Exploration and development of high entropy alloys for structural applications. Entropy,
+16(1):494–525, 2014.
+[2] Chunya Wang, Kailun Xia, Huimin Wang, Xiaoping Liang, Zhe Yin, and Yingying Zhang. Advanced
+carbon for flexible and wearable electronics. Advanced materials, 31(9):1801072, 2019.
+[3] Dierk Raabe. The materials science behind sustainable metals and alloys. Chemical reviews, 123(5):2436–
+2608, 2023.
+[4] Sabrina C Shen, Eesha Khare, Nicolas A Lee, Michael K Saad, David L Kaplan, and Markus J
+Buehler. Computational design and manufacturing of sustainable materials through first-principles and
+materiomics. Chemical Reviews, 123(5):2242–2275, 2023.
+[5] John A Rogers, Takao Someya, and Yonggang Huang. Materials and mechanics for stretchable
+electronics. science, 327(5973):1603–1607, 2010.
+[6] Xuesong Zhang, Yongjun Chen, and Junling Hu. Recent advances in the development of aerospace
+materials. Progress in Aerospace Sciences, 97:22–34, 2018.
+[7] Byron Blakey-Milner, Paul Gradl, Glen Snedden, Michael Brooks, Jean Pitot, Elena Lopez, Martin
+Leary, Filippo Berto, and Anton Du Plessis. Metal additive manufacturing in aerospace: A review.
+Materials & Design, 209:110008, 2021.
+[8] Chang Liu, Feng Li, Lai-Peng Ma, and Hui-Ming Cheng. Advanced materials for energy storage.
+Advanced materials, 22(8):E28–E62, 2010.
+[9] Seama Koohi-Fayegh and Marc A Rosen. A review of energy storage types, applications and recent
+developments. Journal of Energy Storage, 27:101047, 2020.
+[10] Shaoting Lin, Ji Liu, Xinyue Liu, and Xuanhe Zhao. Muscle-like fatigue-resistant hydrogels by
+mechanical training. Proceedings of the National Academy of Sciences, 116(21):10244–10249, 2019.
+[11] A Chaves, Javad G Azadani, Hussain Alsalman, DR Da Costa, R Frisenda, AJ Chaves, Seung Hyun
+Song, Young Duck Kim, Daowei He, Jiadong Zhou, et al. Bandgap engineering of two-dimensional
+semiconductor materials. npj 2D Materials and Applications, 4(1):29, 2020.
+[12] Subra Suresh. Fatigue of materials. Cambridge university press, 1998.
+[13] Markus J Buehler. Atomistic modeling of materials failure. Springer, 2008.
+[14] Zhaoxuan Wu and WA Curtin. Mechanism and energetics of< c+ a> dislocation cross-slip in hcp
+metals. Proceedings of the National Academy of Sciences, 113(40):11137–11142, 2016.
+[15] Zhaoxuan Wu, Rasool Ahmad, Binglun Yin, Stefanie Sandlöbes, and WA Curtin. Mechanistic origin
+and prediction of enhanced ductility in magnesium alloys. Science, 359(6374):447–452, 2018.
+[16] Eleanor Mak, Binglun Yin, and WA Curtin. A ductility criterion for bcc high entropy alloys. Journal
+of the Mechanics and Physics of Solids, 152:104389, 2021.
+[17] Significant-gravitas/autogpt: Autogpt is the vision of accessible ai for everyone, to use and to build on.
+our mission is to provide the tools, so that you can focus on what matters.
+[18] Markus J Buehler, Farid F Abraham, and Huajian Gao. Hyperelasticity governs dynamic fracture at a
+critical length scale. Nature, 426(6963):141–146, 2003.
+[19] Markus J Buehler, Alexander Hartmaier, Huajian Gao, Mark Duchaineau, and Farid F Abraham.
+Atomic plasticity: description and analysis of a one-billion atom simulation of ductile materials failure.
+Computer methods in applied mechanics and engineering, 193(48-51):5257–5282, 2004.
+[20] Roland J-M Pellenq, Akihiro Kushima, Rouzbeh Shahsavari, Krystyn J Van Vliet, Markus J Buehler,
+Sidney Yip, and Franz-Josef Ulm. A realistic molecular model of cement hydrates. Proceedings of the
+National Academy of Sciences, 106(38):16102–16107, 2009.
+[21] Seyedeh Mohadeseh Taheri Mousavi, Haofei Zhou, Guijin Zou, and Huajian Gao. Transition from
+source-to stress-controlled plasticity in nanotwinned materials below a softening temperature. npj
+Computational Materials, 5(1):2, 2019.
+[22] Lisa Ventelon, François Willaime, Emmanuel Clouet, and David Rodney. Ab initio investigation of the
+peierls potential of screw dislocations in bcc fe and w. Acta Materialia, 61(11):3973–3985, 2013.
+17
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+[23] Markus J Buehler, Alexander Hartmaier, and Huajian Gao. Atomistic and continuum studies of
+crack-like diffusion wedges and associated dislocation mechanisms in thin films on substrates. Journal
+of the Mechanics and Physics of Solids, 51(11-12):2105–2125, 2003.
+[24] Markus J Buehler, Alexander Hartmaier, and Huajian Gao. Hierarchical multi-scale modelling of
+plasticity of submicron thin metal films. Modelling And Simulation In Materials Science And Engineering,
+12(4):S391, 2004.
+[25] Alexander Hartmaier, Markus J Buehler, and Huajian Gao. Multiscale modeling of deformation in
+polycrystalline thin metal films on substrates. Advanced Engineering Materials, 7(3):165–169, 2005.
+[26] Alireza Ghafarollahi and William A Curtin. Theory of double-kink nucleation in dilute bcc alloys. Acta
+Materialia, 196:635–650, 2020.
+[27] Alireza Ghafarollahi and WA Curtin. Theory of kink migration in dilute bcc alloys. Acta Materialia,
+215:117078, 2021.
+[28] RE Kubilay, A Ghafarollahi, F Maresca, and WA Curtin. High energy barriers for edge dislocation
+motion in body-centered cubic high entropy alloys. Npj computational materials, 7(1):112, 2021.
+[29] Alireza Ghafarollahi and William A Curtin. Screw-controlled strength of bcc non-dilute and high-entropy
+alloys. Acta Materialia, 226:117617, 2022.
+[30] Francesco Maresca and William A Curtin. Theory of screw dislocation strengthening in random bcc
+alloys from dilute to “high-entropy” alloys. Acta Materialia, 182:144–162, 2020.
+[31] Céline Varvenne, Gerard Paul M Leyson, Maryam Ghazisaeidi, and William A Curtin. Solute strengthening in random alloys. Acta Materialia, 124:660–683, 2017.
+[32] Mojtaba Mozaffar, Ramin Bostanabad, W Chen, K Ehmann, Jian Cao, and MA Bessa. Deep learning
+predicts path-dependent plasticity. Proceedings of the National Academy of Sciences, 116(52):26414–
+26420, 2019.
+[33] Xing Liu, Christos E Athanasiou, Nitin P Padture, Brian W Sheldon, and Huajian Gao. Knowledge
+extraction and transfer in data-driven fracture mechanics. Proceedings of the National Academy of
+Sciences, 118(23):e2104765118, 2021.
+[34] Kai Guo, Zhenze Yang, Chi-Hua Yu, and Markus J Buehler. Artificial intelligence and machine learning
+in design of mechanical materials. Materials Horizons, 8(4):1153–1172, 2021.
+[35] Eric L Buehler and Markus J Buehler. End-to-end prediction of multimaterial stress fields and fracture
+patterns using cycle-consistent adversarial and transformer neural networks. Biomedical Engineering
+Advances, 4:100038, 2022.
+[36] Zhenze Yang and Markus J Buehler. Linking atomic structural defects to mesoscale properties in
+crystalline solids using graph neural networks. Npj Computational Materials, 8(1):198, 2022.
+[37] Markus J Buehler. Modeling atomistic dynamic fracture mechanisms using a progressive transformer
+diffusion model. Journal of Applied Mechanics, 89(12):121009, 2022.
+[38] Amil Merchant, Simon Batzner, Samuel S Schoenholz, Muratahan Aykol, Gowoon Cheon, and Ekin Dogus Cubuk. Scaling deep learning for materials discovery. Nature, 624(7990):80–85, 2023.
+[39] Frank YC Liu, Bo Ni, and Markus J Buehler. Presto: Rapid protein mechanical strength prediction
+with an end-to-end deep learning model. Extreme Mechanics Letters, 55:101803, 2022.
+[40] Markus J Buehler. A computational building block approach towards multiscale architected materials
+analysis and design with application to hierarchical metal metamaterials. Modelling and Simulation in
+Materials Science and Engineering, 31(5):054001, 2023.
+[41] Markus J. Buehler. Melm, a generative pretrained language modeling framework that solves forward
+and inverse mechanics problems. Journal of the Mechanics and Physics of Solids, 181:105454, 12 2023.
+[42] Andrew J Lew and Markus J Buehler. Single-shot forward and inverse hierarchical architected materials
+design for nonlinear mechanical properties using an attention-diffusion model. Materials Today, 64:10–20,
+2023.
+[43] Wei Lu, Nic A Lee, and Markus J Buehler. Modeling and design of heterogeneous hierarchical bioinspired
+spider web structures using deep learning and additive manufacturing. Proceedings of the National
+Academy of Sciences, 120(31):e2305273120, 2023.
+18
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+[44] Bo Ni, David L Kaplan, and Markus J Buehler. Forcegen: End-to-end de novo protein generation
+based on nonlinear mechanical unfolding responses using a language diffusion model. Science Advances,
+10(6):eadl4000, 2024.
+[45] Wei Lu, David L Kaplan, and Markus J Buehler. Generative modeling, design, and analysis of spider silk
+protein sequences for enhanced mechanical properties. Advanced Functional Materials, 34(11):2311324,
+2024.
+[46] Juan J de Pablo and William A Curtin. Multiscale modeling in advanced materials research: challenges,
+novel methods, and emerging applications. Mrs Bulletin, 32(11):905–911, 2007.
+[47] Franz Roters, Philip Eisenlohr, Luc Hantcherli, Denny Dharmawan Tjahjanto, Thomas R Bieler, and
+Dierk Raabe. Overview of constitutive laws, kinematics, homogenization and multiscale methods
+in crystal plasticity finite-element modeling: Theory, experiments, applications. Acta materialia,
+58(4):1152–1211, 2010.
+[48] Jacob Fish, Gregory J Wagner, and Sinan Keten. Mesoscopic and multiscale modelling in materials.
+Nature materials, 20(6):774–786, 2021.
+[49] Anubhav Jain, Shyue Ping Ong, Geoffroy Hautier, Wei Chen, William Davidson Richards, Stephen
+Dacek, Shreyas Cholia, Dan Gunter, David Skinner, Gerbrand Ceder, et al. Commentary: The materials
+project: A materials genome approach to accelerating materials innovation. APL materials, 1(1), 2013.
+[50] Maarten De Jong, Wei Chen, Thomas Angsten, Anubhav Jain, Randy Notestine, Anthony Gamst,
+Marcel Sluiter, Chaitanya Krishna Ande, Sybrand Van Der Zwaag, Jose J Plata, et al. Charting the
+complete elastic properties of inorganic crystalline compounds. Scientific data, 2(1):1–13, 2015.
+[51] Peter M Anderson, John P Hirth, and Jens Lothe. Theory of dislocations. Cambridge University Press,
+2017.
+[52] Doksoo Lee, Wei Chen, Liwei Wang, Yu-Chin Chan, and Wei Chen. Data-driven design for metamaterials
+and multiscale systems: A review. Advanced Materials, 36(8):2305254, 2024.
+[53] Jörg Behler and Michele Parrinello. Generalized neural-network representation of high-dimensional
+potential-energy surfaces. Physical review letters, 98(14):146401, 2007.
+[54] Ryo Kobayashi, Daniele Giofré, Till Junge, Michele Ceriotti, and William A Curtin. Neural network
+potential for al-mg-si alloys. Physical Review Materials, 1(5):053604, 2017.
+[55] Tim Mueller, Alberto Hernandez, and Chuhong Wang. Machine learning for interatomic potential
+models. The Journal of chemical physics, 152(5), 2020.
+[56] Yunxing Zuo, Chi Chen, Xiangguo Li, Zhi Deng, Yiming Chen, Jörg Behler, Gábor Csányi, Alexander V
+Shapeev, Aidan P Thompson, Mitchell A Wood, et al. Performance and cost assessment of machine
+learning interatomic potentials. The Journal of Physical Chemistry A, 124(4):731–745, 2020.
+[57] Y Mishin. Machine-learning interatomic potentials for materials science. Acta Materialia, 214:116980,
+2021.
+[58] Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel, Barret Zoph, Sebastian Borgeaud, Dani Yogatama,
+Maarten Bosma, Denny Zhou, Donald Metzler, et al. Emergent abilities of large language models.
+arXiv preprint arXiv:2206.07682, 2022.
+[59] Yupeng Chang, Xu Wang, Jindong Wang, Yuan Wu, Linyi Yang, Kaijie Zhu, Hao Chen, Xiaoyuan
+Yi, Cunxiang Wang, Yidong Wang, et al. A survey on evaluation of large language models. ACM
+Transactions on Intelligent Systems and Technology, 15(3):1–45, 2024.
+[60] James Boyko, Joseph Cohen, Nathan Fox, Maria Han Veiga, Jennifer I Li, Jing Liu, Bernardo Modenesi,
+Andreas H Rauch, Kenneth N Reid, Soumi Tribedi, et al. An interdisciplinary outlook on large language
+models for scientific research. arXiv preprint arXiv:2311.04929, 2023.
+[61] Yiwen Hu and Markus J Buehler. Deep language models for interpretative and predictive materials
+science. APL Machine Learning, 1(1), 2023.
+[62] Kevin Maik Jablonka, Qianxiang Ai, Alexander Al-Feghali, Shruti Badhwar, Joshua D Bocarsly,
+Andres M Bran, Stefan Bringuier, L Catherine Brinson, Kamal Choudhary, Defne Circi, et al. 14
+examples of how llms can transform materials science and chemistry: a reflection on a large language
+model hackathon. Digital Discovery, 2(5):1233–1250, 2023.
+[63] Rachel K Luu and Markus J Buehler. Bioinspiredllm: Conversational large language model for the
+mechanics of biological and bio-inspired materials. Advanced Science, 11(10):2306724, 2024.
+19
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+[64] Kevin Maik Jablonka, Philippe Schwaller, Andres Ortega-Guerrero, and Berend Smit. Leveraging large
+language models for predictive chemistry. Nature Machine Intelligence, 6(2):161–169, 2024.
+[65] Markus J Buehler. Mechgpt, a language-based strategy for mechanics and materials modeling that
+connects knowledge across scales, disciplines, and modalities. Applied Mechanics Reviews, 76(2):021001,
+2024.
+[66] Ali Madani, Bryan McCann, Nikhil Naik, Nitish Shirish Keskar, Namrata Anand, Raphael R Eguchi,
+Po-Ssu Huang, and Richard Socher. Progen: Language modeling for protein generation. arXiv preprint
+arXiv:2004.03497, 2020.
+[67] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz
+Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing
+systems, 30, 2017.
+[68] Markus J Buehler. Accelerating scientific discovery with generative knowledge extraction, graph-based
+representation, and multimodal intelligent graph reasoning. arXiv preprint arXiv:2403.11996, 2024.
+[69] Markus J Buehler. Cephalo: Multi-modal vision-language models for bio-inspired materials analysis
+and design. arXiv preprint arXiv:2405.19076, 2024.
+[70] Bo Ni and Markus J Buehler. Mechagents: Large language model multi-agent collaborations can
+solve mechanics problems, generate new data, and integrate knowledge. Extreme Mechanics Letters,
+67:102131, 2024.
+[71] Markus J Buehler. Generative retrieval-augmented ontologic graph and multiagent strategies for
+interpretive large language model-based materials design. ACS Engineering Au, 4(2):241–277, 2024.
+[72] Alireza Ghafarollahi and Markus J Buehler. Protagents: protein discovery via large language model
+multi-agent collaborations combining physics and machine learning. Digital Discovery, 2024.
+[73] Andres M. Bran, Sam Cox, Oliver Schilter, Carlo Baldassari, Andrew D White, and Philippe Schwaller.
+Augmenting large language models with chemistry tools. Nature Machine Intelligence, pages 1–11,
+2024.
+[74] Isabella Stewart and Markus Buehler. Molecular analysis and design using multimodal generative
+artificial intelligence via multi-agent modeling. ChemRxiv, 2024.
+[75] Zhiheng Xi, Wenxiang Chen, Xin Guo, Wei He, Yiwen Ding, Boyang Hong, Ming Zhang, Junzhe Wang,
+Senjie Jin, Enyu Zhou, Rui Zheng, Xiaoran Fan, Xiao Wang, Limao Xiong, Yuhao Zhou, Weiran Wang,
+Changhao Jiang, Yicheng Zou, Xiangyang Liu, Zhangyue Yin, Shihan Dou, Rongxiang Weng, Wensen
+Cheng, Qi Zhang, Wenjuan Qin, Yongyan Zheng, Xipeng Qiu, Xuanjing Huang, and Tao Gui. The rise
+and potential of large language model based agents: A survey, 2023.
+[76] Steve Plimpton. Fast parallel algorithms for short-range molecular dynamics. Journal of computational
+physics, 117(1):1–19, 1995.
+[77] OpenAI, Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni
+Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, Red Avila, Igor
+Babuschkin, Suchir Balaji, Valerie Balcom, Paul Baltescu, Haiming Bao, Mohammad Bavarian, Jeff
+Belgum, Irwan Bello, Jake Berdine, Gabriel Bernadett-Shapiro, Christopher Berner, Lenny Bogdonoff,
+Oleg Boiko, Madelaine Boyd, Anna-Luisa Brakman, Greg Brockman, Tim Brooks, Miles Brundage,
+Kevin Button, Trevor Cai, Rosie Campbell, Andrew Cann, Brittany Carey, Chelsea Carlson, Rory
+Carmichael, Brooke Chan, Che Chang, Fotis Chantzis, Derek Chen, Sully Chen, Ruby Chen, Jason
+Chen, Mark Chen, Ben Chess, Chester Cho, Casey Chu, Hyung Won Chung, Dave Cummings, Jeremiah
+Currier, Yunxing Dai, Cory Decareaux, Thomas Degry, Noah Deutsch, Damien Deville, Arka Dhar,
+David Dohan, Steve Dowling, Sheila Dunning, Adrien Ecoffet, Atty Eleti, Tyna Eloundou, David Farhi,
+Liam Fedus, Niko Felix, Simón Posada Fishman, Juston Forte, Isabella Fulford, Leo Gao, Elie Georges,
+Christian Gibson, Vik Goel, Tarun Gogineni, Gabriel Goh, Rapha Gontijo-Lopes, Jonathan Gordon,
+Morgan Grafstein, Scott Gray, Ryan Greene, Joshua Gross, Shixiang Shane Gu, Yufei Guo, Chris
+Hallacy, Jesse Han, Jeff Harris, Yuchen He, Mike Heaton, Johannes Heidecke, Chris Hesse, Alan Hickey,
+Wade Hickey, Peter Hoeschele, Brandon Houghton, Kenny Hsu, Shengli Hu, Xin Hu, Joost Huizinga,
+Shantanu Jain, Shawn Jain, Joanne Jang, Angela Jiang, Roger Jiang, Haozhun Jin, Denny Jin, Shino
+Jomoto, Billie Jonn, Heewoo Jun, Tomer Kaftan, Łukasz Kaiser, Ali Kamali, Ingmar Kanitscheider,
+Nitish Shirish Keskar, Tabarak Khan, Logan Kilpatrick, Jong Wook Kim, Christina Kim, Yongjik
+Kim, Jan Hendrik Kirchner, Jamie Kiros, Matt Knight, Daniel Kokotajlo, Łukasz Kondraciuk, Andrew
+Kondrich, Aris Konstantinidis, Kyle Kosic, Gretchen Krueger, Vishal Kuo, Michael Lampe, Ikai Lan,
+Teddy Lee, Jan Leike, Jade Leung, Daniel Levy, Chak Ming Li, Rachel Lim, Molly Lin, Stephanie
+20
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+Lin, Mateusz Litwin, Theresa Lopez, Ryan Lowe, Patricia Lue, Anna Makanju, Kim Malfacini, Sam
+Manning, Todor Markov, Yaniv Markovski, Bianca Martin, Katie Mayer, Andrew Mayne, Bob McGrew,
+Scott Mayer McKinney, Christine McLeavey, Paul McMillan, Jake McNeil, David Medina, Aalok Mehta,
+Jacob Menick, Luke Metz, Andrey Mishchenko, Pamela Mishkin, Vinnie Monaco, Evan Morikawa,
+Daniel Mossing, Tong Mu, Mira Murati, Oleg Murk, David Mély, Ashvin Nair, Reiichiro Nakano,
+Rajeev Nayak, Arvind Neelakantan, Richard Ngo, Hyeonwoo Noh, Long Ouyang, Cullen O’Keefe, Jakub
+Pachocki, Alex Paino, Joe Palermo, Ashley Pantuliano, Giambattista Parascandolo, Joel Parish, Emy
+Parparita, Alex Passos, Mikhail Pavlov, Andrew Peng, Adam Perelman, Filipe de Avila Belbute Peres,
+Michael Petrov, Henrique Ponde de Oliveira Pinto, Michael, Pokorny, Michelle Pokrass, Vitchyr H. Pong,
+Tolly Powell, Alethea Power, Boris Power, Elizabeth Proehl, Raul Puri, Alec Radford, Jack Rae, Aditya
+Ramesh, Cameron Raymond, Francis Real, Kendra Rimbach, Carl Ross, Bob Rotsted, Henri Roussez,
+Nick Ryder, Mario Saltarelli, Ted Sanders, Shibani Santurkar, Girish Sastry, Heather Schmidt, David
+Schnurr, John Schulman, Daniel Selsam, Kyla Sheppard, Toki Sherbakov, Jessica Shieh, Sarah Shoker,
+Pranav Shyam, Szymon Sidor, Eric Sigler, Maddie Simens, Jordan Sitkin, Katarina Slama, Ian Sohl,
+Benjamin Sokolowsky, Yang Song, Natalie Staudacher, Felipe Petroski Such, Natalie Summers, Ilya
+Sutskever, Jie Tang, Nikolas Tezak, Madeleine B. Thompson, Phil Tillet, Amin Tootoonchian, Elizabeth
+Tseng, Preston Tuggle, Nick Turley, Jerry Tworek, Juan Felipe Cerón Uribe, Andrea Vallone, Arun
+Vijayvergiya, Chelsea Voss, Carroll Wainwright, Justin Jay Wang, Alvin Wang, Ben Wang, Jonathan
+Ward, Jason Wei, CJ Weinmann, Akila Welihinda, Peter Welinder, Jiayi Weng, Lilian Weng, Matt
+Wiethoff, Dave Willner, Clemens Winter, Samuel Wolrich, Hannah Wong, Lauren Workman, Sherwin
+Wu, Jeff Wu, Michael Wu, Kai Xiao, Tao Xu, Sarah Yoo, Kevin Yu, Qiming Yuan, Wojciech Zaremba,
+Rowan Zellers, Chong Zhang, Marvin Zhang, Shengjia Zhao, Tianhao Zheng, Juntang Zhuang, William
+Zhuk, and Barret Zoph. Gpt-4 technical report, 2024.
+[78] Openai api.
+[79] XW Zhou, RA Johnson, and HNG Wadley. Misfit-energy-increasing dislocations in vapor-deposited
+cofe/nife multilayers. Physical Review B, 69(14):144113, 2004.
+[80] Mihai-Cosmin Marinica, Lisa Ventelon, MR Gilbert, L Proville, SL Dudarev, J Marian, G Bencteux,
+and F Willaime. Interatomic potentials for modelling radiation defects and dislocations in tungsten.
+Journal of Physics: Condensed Matter, 25(39):395502, 2013.
+[81] Alexander V Shapeev. Moment tensor potentials: A class of systematically improvable interatomic
+potentials. Multiscale Modeling & Simulation, 14(3):1153–1173, 2016.
+[82] Sheng Yin, Yunxing Zuo, Anas Abu-Odeh, Hui Zheng, Xiang-Guo Li, Jun Ding, Shyue Ping Ong, Mark
+Asta, and Robert O Ritchie. Atomistic simulations of dislocation mobility in refractory high-entropy
+alloys and the effect of chemical short-range order. Nature communications, 12(1):4873, 2021.
+[83] Laurent Proville, David Rodney, and Mihai-Cosmin Marinica. Quantum effect on thermally activated
+glide of dislocations. Nature materials, 11(10):845–849, 2012.
+[84] R Gröger and V Vitek. Stress dependence of the peierls barrier of 1/2< 1 1 1> screw dislocations in
+bcc metals. Acta materialia, 61(17):6362–6371, 2013.
+[85] L Dezerald, Lisa Ventelon, E Clouet, C Denoual, David Rodney, and F Willaime. Ab initio modeling of
+the two-dimensional energy landscape of screw dislocations in bcc transition metals. Physical Review B,
+89(2):024104, 2014.
+[86] David Rodney, L Ventelon, E Clouet, Laurent Pizzagalli, and F Willaime. Ab initio modeling of
+dislocation core properties in metals and semiconductors. Acta Materialia, 124:633–659, 2017.
+[87] Francesco Maresca, Daniele Dragoni, Gábor Csányi, Nicola Marzari, and William A Curtin. Screw
+dislocation structure and mobility in body centered cubic fe predicted by a gaussian approximation
+potential. npj Computational Materials, 4(1):69, 2018.
+[88] Eric L Buehler and Markus J Buehler. X-lora: Mixture of low-rank adapter experts, a flexible framework
+for large language models with applications in protein mechanics and molecular design. APL Machine
+Learning, 2(2), 2024.
+[89] Daniel B Miracle and Oleg N Senkov. A critical review of high entropy alloys and related concepts.
+Acta materialia, 122:448–511, 2017.
+[90] Easo P George, Dierk Raabe, and Robert O Ritchie. High-entropy alloys. Nature reviews materials,
+4(8):515–534, 2019.
+21
+
+AtomAgents: Alloy design and discovery through physics-aware multi-modal multi-agent AI
+
+[91] A Ghafarollahi, F Maresca, and WA Curtin. Solute/screw dislocation interaction energy parameter for
+strengthening in bcc dilute to high entropy alloys. Modelling and Simulation in Materials Science and
+Engineering, 27(8):085011, 2019.
+[92] Y Rao, C Baruffi, A De Luca, C Leinenbach, and WA Curtin. Theory-guided design of high-strength, highmelting point, ductile, low-density, single-phase bcc high entropy alloys. Acta Materialia, 237:118132,
+2022.
+[93] Zhao Fan, Bin Xing, and Penghui Cao. Predicting path-dependent diffusion barrier spectra in vast
+compositional space of multi-principal element alloys via convolutional neural networks. Acta Materialia,
+237:118159, 2022.
+[94] Xinyi Wang, Lorenzo Valdevit, and Penghui Cao. Neural network for predicting peierls barrier spectrum
+and its influence on dislocation motion. Acta Materialia, 267:119696, 2024.
+[95] Rachel K. Luu, Sofia Arevalo, Wei Lu, Bo Ni, Zhenze Yang, Sabrina C. Shen, Jaime Berkovich, Yu-Chuan
+Hsu, Stone Zan, and Markus J. Buehler. Learning from Nature to Achieve Material Sustainability:
+Generative AI for Rigorous Bio-inspired Materials Design. An MIT Exploration of Generative AI, mar
+27 2024. https://mit-genai.pubpub.org/pub/jpkwte2n.
+[96] DJ Bacon, Yu N Osetsky, and D Rodney. Dislocation–obstacle interactions at the atomic level.
+Dislocations in solids, 15:1–90, 2009.
+[97] Erik Bitzek, Pekka Koskinen, Franz Gähler, Michael Moseler, and Peter Gumbsch. Structural relaxation
+made simple. Physical review letters, 97(17):170201, 2006.
+[98] G Mills, H Jonsson, KW Jacobsen, In BJ Berne, G Ciccotti, and DF Coker. Nudged elastic band
+method for finding minimum energy paths of transitions, 1998.
+[99] Graeme Henkelman, Blas P Uberuaga, and Hannes Jónsson. A climbing image nudged elastic band
+method for finding saddle points and minimum energy paths. The Journal of chemical physics,
+113(22):9901–9904, 2000.
+[100] Graeme Henkelman and Hannes Jónsson. Improved tangent estimate in the nudged elastic band method
+for finding minimum energy paths and saddle points. The Journal of chemical physics, 113(22):9978–9985,
+2000.
+[101] Predrag Andric and William A Curtin. Atomistic modeling of fracture. Modelling and Simulation in
+Materials Science and Engineering, 27(1):013001, 2018.
+[102] AN Stroh. Dislocations and cracks in anisotropic elasticity. Philosophical magazine, 3(30):625–646,
+1958.
+[103] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Shaokun Zhang, Erkang Zhu, Beibin Li, Li Jiang,
+Xiaoyun Zhang, and Chi Wang. Autogen: Enabling next-gen llm applications via multi-agent conversation framework. arXiv preprint arXiv:2308.08155, 2023.
+
+22
+
+

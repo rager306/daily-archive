@@ -1,0 +1,3573 @@
+Reflect-then-Plan:
+Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Jihwan Jeong 1 * Xiaoyu Wang 1 Jingmin Wang 1 Scott Sanner 1 Pascal Poupart 2
+
+arXiv:2506.06261v1 [cs.AI] 6 Jun 2025
+
+Abstract
+
+Most offline RL methods aim to learn a conservative policy
+that stays close to the data distribution, thus steering away
+from high epistemic uncertainty.
+
+Offline reinforcement learning (RL) is crucial
+when online exploration is costly or unsafe but
+often struggles with high epistemic uncertainty
+due to limited data. Most of existing methods rely
+on fixed conservative policies, restricting adaptivity and generalization. To address this, we propose Reflect-then-Plan (RefPlan), a novel doubly
+Bayesian offline model-based (MB) planning approach. RefPlan unifies uncertainty modeling and
+MB planning by recasting planning as Bayesian
+posterior estimation. At deployment, it updates a
+belief over environment dynamics using real-time
+observations, incorporating uncertainty into MB
+planning via marginalization. Empirical results
+on standard benchmarks show that RefPlan significantly improves the performance of conservative
+offline RL policies. In particular, RefPlan maintains robust performance under high epistemic
+uncertainty and limited data, while demonstrating resilience to changing environment dynamics,
+improving the flexibility, generalizability, and robustness of offline-learned policies.
+
+While incorporating conservatism into offline learning has
+proven effective (Jin et al., 2021; Kumar et al., 2020), it
+can result in overly restrictive policies that lack generalizability. Most methods learn a Markovian policy that relies
+solely on the current state, leading the agent to potentially
+take poor actions in unexpected states during evaluation.
+Model-based (MB) planning can enhance the agent’s responsiveness during evaluation (Sikchi et al., 2021; Argenson &
+Dulac-Arnold, 2021; Zhan et al., 2022), but it still primarily
+addresses epistemic uncertainty through conservatism.
+Noting this challenge, Chen et al. (2021) and Ghosh et al.
+(2022) propose to learn an adaptive policy that can reason
+about the environment and accordingly react at evaluation.
+Essentially, they formulate the offline RL problem as a
+partially observable MDP (POMDP)—where the partial
+observability relates to the agent’s epistemic uncertainty, aka
+Epistemic POMDP (Ghosh et al., 2021). Thus, learning an
+adaptive policy involves approximately inferring the belief
+state from the history of transitions experienced by the agent
+and allowing the policy to condition on this belief state.
+While learning an adaptive policy can help make the agent
+more flexible and generalizable, it still heavily depends on
+the training phase. Our empirical evaluation demonstrates
+that a learned policy—whether it be adaptive or fixed—can
+be significantly strengthened by incorporating MB planning.
+However, existing MB planning methods fall short in adequately addressing the agent’s epistemic uncertainty, and
+it remains elusive how one can effectively incorporate the
+uncertainty into planning.
+
+1. Introduction
+Recent advances in offline reinforcement learning (RL)
+enable learning performant policies from static datasets
+(Levine et al., 2020; Kumar et al., 2020), making it appealing when online exploration is costly or unsafe.
+The agent’s inability to gather more experiences have severe
+implications. In particular, it becomes practically impossible to precisely identify the true Markov decision process
+(MDP) with a limited dataset, as it only covers a portion of
+the entire state-action space, leading to high epistemic uncertainty for states and actions outside the data distribution.
+
+We propose Reflect-then-Plan (RefPlan), a novel doubly
+Bayesian approach for offline MB planning. RefPlan combines epistemic uncertainty modeling with MB planning in
+a unified probabilistic framework, inspired by the control-asinference paradigm (Levine, 2018). RefPlan adapts Bayesadaptive deep RL techniques (Zintgraf et al., 2020; Dorfman
+et al., 2021) to infer a posterior belief distribution from past
+experiences during test time (Reflect). To harness this uncertainty for planning, we recast planning as Bayesian posterior
+
+*
+
+Currently at Google Research, Mountain View, CA.
+University of Torornto, Toronto 2 University of Waterloo, Waterloo.
+Correspondence to: Jihwan Jeong <jihwanjeong@google.com>.
+
+1
+
+Proceedings of the 42 nd International Conference on Machine
+Learning, Vancouver, Canada. PMLR 267, 2025. Copyright 2025
+by the author(s).
+
+1
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Reflect
+
+at 2
+
+at 12
+
+rt 2
+
+at 1
+stst 1
+
+rt 12
+
+Ot
+
+Ot+1
+
+Ot+2
+
+at
+
+at+1
+
+at+2
+
+ŝt
+
+ŝt+1
+
+ŝt+2
+
+✓
+
+Encoder
+
+s·t · ·1
+
+···
+
+Plan
+
+st
+
+mt
+
+rt 1
+"
+
+𝑚!
+
+%&
+"#$
+
+Updating posterior belief over the possible MDPs
+
+p(τ |O) =
+
+!
+
+mt
+
+p(τ |O, mt )p(mt )dmt
+
+Figure 1: Schematic illustration of RefPlan. (Reflect) At time t, real-time experiences τ:t = (s0 , a0 , r0 , . . . , st ) are used to
+infer the posterior belief mt over environments using a variational autoencoder. Unlike prior methods, RefPlan learns diverse
+dynamics models conditioned on mt , capturing different transition and reward functions. (Plan) Offline planning is framed
+as probabilistic inference, where the posterior over optimal plans p(τ |O) (O denotes optimality variables in the control-asinference framework) is inferred. Importantly, a prior p(τ ) is incorporated by learning πθ via offline policy learning. By
+marginalizing out mt , RefPlan addresses epistemic uncertainty, enhancing πθ for better adaptivity and generalizability.
+L(ψ) = ED [− log p̂ψ (s′ , r|s, a)]. The learned model p̂ψ
+then generates imaginary data Dmodel to aid offline policy
+learning.
+
+estimation (Plan). By marginalizing over the agent’s epistemic uncertainty, RefPlan effectively considers a range of
+possible scenarios beyond the agent’s immediate knowledge, resulting in a posterior distribution over optimized
+plans under the learned model (Figure 1).
+
+Here, we focus on using learned models for test-time planning. MB planning typically employs model predictive
+control (MPC), where at each step, a trajectory optimization (TrajOpt) method re-plans to maximize the expected
+H-step return under p̂ψ , incorporating a value function Vϕ
+for long-term rewards (Lowrey et al., 2018):
+
+In our experiments, we demonstrate that RefPlan can be integrated with various offline RL policy learning algorithms
+to consistently boost their test-time performance in standard
+offline RL benchmark domains (Fu et al., 2020). RefPlan
+maintains robust performance under high epistemic uncertainty, demonstrating superior resilience when faced with
+out-of-distribution states, shifts in environment dynamics,
+or limited data availability, consistently outperforming competing methods in these challenging scenarios.
+
+a∗t:t+H = arg max Ep̂ψ [RH (st , at:t+H )] ,
+
+(1)
+
+at:t+H
+
+PH−1 h
+where RH (st , at:t+H ) :=
+h=0 γ r̂ψ (ŝt+h , at+h ) +
+γ H Vϕ (ŝt+H ) is the return of a candidate sequence at:t+H
+under p̂ψ , with r̂ψ denoting the learned reward model.
+
+2. Preliminaries
+
+MPPI is a TrajOpt method that optimizes trajectories by
+sampling N̄ action sequences, weighting them via a softmax function with inverse temperature κ based on returns (Nagabandi et al., 2019). The optimized action is
+
+We study RL in the framework of Markov decision processes
+(MDPs), characterized by a tuple M = (S, A, T, r, d0 , γ).
+The state (S) and action (A) spaces are continuous,
+T (s′ |s, a) is the transition probability, r(s, a) is the reward
+function, d0 is the initial state distribution, and γ ∈ [0, 1]
+is the discount factor. The model of the environment refers
+to the transition and reward functions. The goal of RL is
+to find an optimal policy π ∗ which maximizes
+P∞ the expected
+discounted return, Es0 ∼d0 ,st ∼T,at ∼π∗ [ t=0 γ t r(st , at )].
+
+a∗t+h =
+
+PN̄
+
+n
+n
+n=1 exp(κRH )·at+h
+PN̄
+n
+n=1 exp(κRH )
+
+n
+where RH
+is the return of the
+
+nth trajectory. MBOP (Argenson & Dulac-Arnold, 2021)
+adapts MPPI for offline settings by sampling actions from a
+behavior-cloning (BC) policy with smoothing.
+The control-as-inference framework The control-asinference framework reformulates RL as a probabilistic
+inference problem (Levine, 2018), introducing auxiliary
+binary variables Ot , where Ot = 1 denotes that (st , at )
+is optimal. The likelihood of optimality for a trajectory
+τt:t+H = (st , at , . . . , st+H ) is:
+
+Offline MB planning Given an offline dataset D =
+{(si , ai , ri , s′i )}N
+i=1 collected by a behavior policy β, modelbased (MB) methods train a predictive model p̂ψ (s′ , r|s, a)
+via maximum likelihood estimation (MLE), minimizing
+2
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Definition 1 (The optimality likelihood). For τt:t+H , let
+O = 1 if Ot+h = 1 ∀h. Then,
+Y
+p(O = 1|τ ) ∝
+p(Ot+h = 1|st+h , at+h ).
+(2)
+
+unseen states or slightly altered dynamics during deployment, leading to arbitrarily poor performance.
+To address these challenges, we provide a Bayesian take on
+the offline RL problem, enabling reasoning over the agent’s
+uncertainty through a prior belief b0 = p(M), updated to a
+posterior bt = p(M|τ:t ) as new experiences τ:t are gathered
+during deployment. However, computing the exact posterior
+belief is generally intractable. Therefore, in Section 3, we
+tackle this challenge by approximating the belief distribution
+through variational inference techniques adapted from metaRL approaches (Zintgraf et al., 2020; Dorfman et al., 2021).
+
+h
+
+Assuming p(Ot+h = 1|st+h
+P , at+h ) ∝ exp(κ · rt+h ), we
+obtain p(O|τ ) ∝ exp(κ · h rh ).1 Thus, expected return
+maximization reduces to posterior inference over trajectories
+given that all time steps are optimal under the probabilistic
+graphical model (PGM) (see Figure 2, left):
+p(τ |O) ∝ p(τ, O) =
+p(st )
+
+H
+Y
+
+h=1
+
+3. RefPlan: a Probabilistic Framework for
+Offline Planning
+
+p(Ot+h |st+h , at+h )p(st+h+1 |st+h , at+h ). (3)
+
+In this section, we seek to address the following question:
+
+Typically, the prior over actions is assumed to be uniform
+or implicitly defined by rewards (Levine, 2018; Piché et al.,
+2019). However, in Section 3.1, we explicitly model the
+action prior to formalize an offline MB planning framework,
+enabling policy refinement via MB planning.
+
+How can we leverage a learned model at test time
+for enhancing an offline-trained agent?
+To tackle this, we introduce RefPlan, a novel probabilistic
+framework for offline MB planning that allows an agent
+to reason with its uncertainty during deployment. Our approach is developed in three parts.
+
+Epistemic POMDP, BAMDP, and Offline RL A partially observable MDP (POMDP) extends MDPs to scenarios with incomplete state information. POMDPs can be
+reformulated as belief-state MDPs, where a belief —a probability distribution over states—represents the uncertainty
+over states given the agent’s prior observations and actions
+(Kaelbling et al., 1998).
+
+First, in Section 3.1, we derive a sampling-based offline
+MB planning algorithm from the control-as-inference perspective. This view is crucial as it provides a principled
+foundation for our framework and formally justifies using
+an offline-trained policy as a prior to guide planning. Next,
+in Section 3.2, we detail our approach for modeling the
+agent’s epistemic uncertainty over the environment dynamics by adapting recent variational inference techniques from
+meta-RL (Zintgraf et al., 2020; Dorfman et al., 2021).
+
+Unlike an ordinary POMDP, epistemic POMDPs address
+generalization to unseen test conditions in RL (Ghosh et al.,
+2021). In this scenario, the agent experiences partial observability entirely due to its epistemic uncertainty about the
+identity of the true environment M at test time. Specifically,
+at test time, the agent’s
+P goal is to maximize the expected
+return EM∼p(M|D) [ t γ t rt ] under the posterior p(M|D)
+given the train data D. Thus, an epistemic POMDP is an
+instance of Bayes-adaptive MDP (BAMDP) (Duff, 2002;
+Kaelbling et al., 1998) or Bayesian RL (Ghavamzadeh et al.,
+2015). Compared to a standard BAMDP, epistemic POMDP
+puts focus on the agent’s test time evaluation performance.
+For a thorough definition of BAMDPs, please check Appendix A.1.
+
+While these individual components are built upon concepts
+from prior work, our primary conceptual novelty lies in their
+synthesis. In Section 3.3, we unify the probabilistic planning
+formulation with the learned epistemic uncertainty. This
+integration allows the agent to plan under the learned models
+and adapt in real-time while accounting for its uncertainty.
+3.1. Offline Model-Based Planning as Probabilistic
+Inference
+
+In this work, we view offline RL as epistemic POMDP,
+following Ghosh et al. (2022), drawing connections to
+Bayesian approaches. That is, limited coverage of the stateaction space in the offline dataset induces epistemic uncertainty about dynamics beyond the data distribution. Failure
+to manage this uncertainty can result in catastrophic outcomes, particularly when an offline-trained agent encounters
+
+We recast offline MB planning within the control-asinference framework, treating planning as a posterior inference problem. This approach enables the agent to optimize
+its actions by reasoning over the learned dynamics model
+and prior knowledge obtained from offline training. Central
+to this formulation is the use of a prior policy, which guides
+the agent’s plans based on knowledge learned offline.
+
+1
+
+While we use an exponential form for p(O|τ ), other monotonic functions are possible (Okada & Taniguchi, 2020). We simplify notation by writing Ot = 1 as Ot and τt:t+H as τ .
+
+We start by formalizing the concept of a prior policy, which
+lay the basis for our Bayesian formulation of the offline MB
+3
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+Ot+1
+
+Ot
+
+Ot+2
+
+Ot
+
+Ot+1
+
+Ot+2
+
+Ot
+
+Ot+1
+
+Ot+2
+
+at
+
+at+1
+
+at+2
+
+st
+
+st+1
+
+st+2
+
+τ:t
+
+mt
+
+θ
+θ1
+at+1
+
+at
+
+st+1
+
+st
+
+at+2
+
+at
+
+st+2
+
+st
+
+at+1
+
+st+1
+
+at+2
+
+st+2
+
+Figure 2: PGMs for the control-as-inference framework, offline MB planning, and RefPlan. (Left) States evolve within the learned
+model, with actions and states influencing optimality. Optimality variables act like observations in a hidden Markov model, framing
+planning as inferring the posterior over actions given optimality. (Middle) In offline MB planning, actions follow the prior policy πp :
+at ∼ πp (·|st ; θ). (Right) RefPlan uses past experiences τ:t to infer mt , the agent’s belief about the environment, and computes the
+expected optimal action sequence by marginalizing over mt .
+
+planning process.
+
+Then, we can estimate the expected value of an arbitrary
+function f (at:t+H ) under p(τ |O). That is,
+Z
+Ep(τ |O) [f (at:t+H )] = f (at:t+H ) p(τ |O) dτ
+τ P
+
+Z
+α · exp κ h rt+h
+= f (at:t+H )
+p(τ ) dτ
+p(O)
+τ
+h
+ P
+i
+Ep(τ ) f (at:t+H ) exp κ h rt+h
+h
+ P
+i
+=
+.
+(5)
+Ep(τ ) exp κ h rt+h
+
+Definition 2 (Prior policy). A prior policy πp : S → P(A)
+is a policy learned from an offline RL algorithm L using the
+dataset D.
+The prior policy, parameterized by θ, is provided by an
+offline learning algorithm L, such as CQL (Kumar et al.,
+2020) or BC, and must be considered by the offline MB
+planner when optimizing the planning objective in (1).
+In the offline setting, we aim to enhance the prior policy πp
+via MB planning at test time by inferring the posterior over
+at:t+H , conditioned on the optimality observations Ot+h
+predicted by the learned model p̂ψ . At time t, we seek to
+compute p(at:t+H |O), as shown in Figure 2 (middle).
+
+R
+In the last
+step,
+we
+used
+p(O)
+=
+p(O|τ )p(τ )dτ =
+τ
+
+
+P
+α Ep(τ ) exp κ h rt+h and the proportionality coefficient α > 0 cancels out.
+
+The key distinction in this setup from the original controlas-inference framework is the inclusion of the prior policy,
+which serves as a source for action sampling during planning. Given πp and p̂ψ , we can define the prior distribution
+over the trajectory τ as follows:
+p(τ ) =
+
+H−1
+Y
+h=0
+
+Thus, the posterior expectation over at:t+H can be obtained
+with f (at:t+H ) = at:t+H as below.
+
+
+P
+Ep(τ ) at:t+H exp κ h rt+h
+
+
+P
+Ep(τ |O) [at:t+H ] =
+(6)
+Ep(τ ) exp κ h rt+h
+P n  
+N̄ 
+X
+exp κ h rt+h
+n
+≈
+PN̄
+P i  at:t+H . (7)
+n=1
+i=1 exp κ
+h rt+h
+
+πp (at+h |st+h )p̂ψ (st+h+1 |st+h , at+h ). (4)
+
+Sampling trajectories from this prior, p(τ ), is straightforward through forward sampling, where actions are drawn
+from πp and state transitions are generated using p̂ψ .
+
+That is, we estimate the posterior mean by sampling N̄
+trajectories from p(τ ) with πp and p̂ψ , then computing
+the weighted
+sum of the actions. Each weight wn :=
+P
+exp(κ h rt+h )
+PN̄
+P i
+is proportional to the exponentiated
+
+Computing the exact posterior p(τ |O) is intractable due to
+the difficulty of calculating the marginal p(O). However,
+importance sampling offers a practical method to estimate
+the posterior expectation over at:t+H . To demonstrate, we
+first expand the posterior using Bayes’ rule:
+
+i=1 exp(κ
+
+We note that (7) can also be derived from an optimization
+perspective. Specifically, LOOP (Sikchi et al., 2021) constrains the distribution over plans by minimizing the KL
+divergence from the prior policy. In LOOP, the variance
+of values generated by the model ensemble is penalized to
+mitigate uncertainty; however, the agent’s epistemic uncertainty is not explicitly modeled and fully addressed. By
+
+ H−1
+
+X
+p(τ |O) ∝ p(O|τ )p(τ ) ∝ exp κ
+rt+h
+ H−1
+Y
+h=0
+
+h rt+h )
+
+MB return of the nth trajectory, assigning higher weights to
+plans with better returns. This helps the agent select actions
+likely to improve on those from the prior policy.
+
+h=0
+
+
+p̂ψ (st+h+1 |st+h , at+h )πp (at+h |st+h ) .
+4
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Here, p̂ψ learns to predict future states and rewards conditioned on the latent variable mt . The encoder captures the
+agent’s epistemic uncertainty, while the decoder provides
+predictions about the environment under different latent
+variables mt . To sum up,h we train a variational autoencoder
+i
+PT
+(VAE) via maxϕ,ψ ED
+t=0 ELBOt (ϕ, ψ) using trajectories sampled from the offline dataset D.
+
+contrast, by viewing offline RL as an epistemic POMDP
+and formulating it as a probabilistic inference problem, we
+can directly incorporate the agent’s epistemic uncertainty
+into MB planning by approximately learning the belief distribution, which we delve into in the next part.
+3.2. Learning Epistemic Uncertainty via Variational
+Inference
+
+Unlike VariBAD, where the decoder is only used to train the
+encoder, we also use p̂ψ for MB planning. To improve p̂ψ ’s
+accuracy, we employ a two-stage training procedure: first,
+the VAE is trained with ELBO; then, the encoder is frozen
+and p̂ψ is further finetuned using the MLE objective:
+
+Although offline RL can be framed as a BAMDP, obtaining
+an exact posterior belief update is impractical. Inspired by
+Zintgraf et al. (2020) and Dorfman et al. (2021), we introduce a latent variable m to approximate the underlying MDP.
+We assume that knowing the posterior distribution p(m|τ:t )
+is sufficient for planning under epistemic uncertainty. As
+a result, transitions and rewards are assumed to depend on
+m, i.e., T (st+1 |st , at , m) and r(st , at , m). When p(m|τ:t )
+is accurate and τ:t is in-distribution, T and r will closely
+match the transitions in D. For out-of-distribution (OOD)
+τ:t , the posterior over m allows modeling diverse scenarios
+for T and r.
+
+L(ψ) = Eτ
+
+h=0
+
+Building on the probabilistic inference formulation of offline
+MB planning and the representation of epistemic uncertainty
+via variational inference in the BAMDP framework, we
+introduce RefPlan. This offline MB planning algorithm
+integrates epistemic uncertainty into the planning process,
+improving decision-making and enhancing the performance
+of any offline-learned prior policy during test time.
+Assume we have a sample mt ∼ qφ (m|τ:t ), representing the
+agent’s belief about the environment at time t. Our goal is to
+use this posterior to enhance test-time planning. In Section
+3.1, we have computed p(τ |O) using the learned models p̂ψ
+and the prior policy πp . By introducing the latent variable
+m to capture epistemic uncertainty, we extend the transition
+and reward functions to depend on m, giving the dynamics
+p̂ψ (st+1 |st , at , mt ) and rewards r(st , at , mt ), resulting in
+the following conditional trajectory distribution:
+
+(8)
+
+The encoder qφ is parameterized as an RNN followed
+by a fully connected layer that outputs Gaussian param2
+eters µ(τ:t ) and log
+ σ (τ:t ). Thus, mt ∼ qφ (·|τ:t ) =
+N µ(τ:t ), σ 2 (τ:t ) . The KL term regularizes the posterior
+with the prior p(mt ), which is a standard normal at t = 0
+and the previous posterior qφ (·|τ:t−1 ) for subsequent time
+steps. The decoder p̂ψ learns the transition dynamics and
+reward function of the true MDP. This becomes clear when
+we observe that the first term in ELBOt corresponds to the
+reconstruction loss, which can be decomposed as follows:
+log p̂ψ (s0 , r0 , . . . , st+1 |mt , a0 , . . . , at )
+= log p(s0 |mt ) +
+
+t
+X
+
+
+h=0
+
+Emh [− log p̂ψ (sh+1 , rh |sh , ah , mh )] .
+
+3.3. Integrating Epistemic Uncertainty into
+Model-Based Planning
+
+log p(s0 , r0 , . . . , st+1 |a0 , . . . , at )
+Z
+= log
+p(s0 , r0 , . . . , st+1 , mt | a0 , . . . , at ) dmt
+mt
+
+
+p(s0 , r0 , . . . , st+1 , mt | a0 , . . . , at )
+= log Emt ∼qφ (·|τ:t )
+qφ (mt |τ:t )
+− KL(qφ (mt |τ:t )||p(mt )) = ELBOt (φ, ψ).
+
+#
+
+Trajectory segments of length H are sampled from D. At
+each step h ∈ [0, H), the encoder qφ (·|τ:h ) samples mh ,
+enabling computation of the inner expectation and refining
+p̂ψ for improved predictions.
+
+Given a trajectory τ:t , consider the task of maximizing its
+likelihood, conditioned on the actions. Conditioning on the
+actions is essential because they are generated by a policy—
+β during training and πp at evaluation—and are not modeled
+by the environment. Although directly optimizing the likelihood p(s0 , r0 , s1 , r1 , . . . , st+1 |a0 , . . . , at ) is intractable,
+we can maximize the ELBO as in VariBAD by introducing
+an encoder qφ and a decoder p̂ψ :
+
+≥ Emt ∼qφ (·|τ:t ) [log p̂ψ (s0 , . . . , st+1 |mt , a0 , . . . , at )]
+
+"H−1
+X
+
+p(τ |O, mt ) ∝ p(O|τ, mt )p(τ |mt )
+ H−1
+
+X
+r(st+h , at+h , mt )
+∝ exp κ
+×
+
+(9)
+
+ H−1
+Y
+h=0
+
+h=0
+
+
+p̂ψ (st+h+1 |st+h , at+h , mt )πp (at+h |st+h ) .
+
+Thus, we can apply the sampling-based posterior estimation
+in (7) to compute Ep(τ |O,mt ) [at:t+H ].
+
+log p̂ψ (sh+1 |sh , ah , mt )
+
+
++ log p̂ψ (rh+1 |sh , ah , mt ) .
+
+A practical approach to handle epistemic uncertainty is to
+marginalize over the latent variable mt , effectively averag5
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Table 1: Normalized score performance when trained on ME and tested starting from OOD states sampled from R. For each
+prior policy, we report the performance of the prior policy (Prior), performance with LOOP, and performance with RefPlan.
+The ‘Orig’ column shows the performance of the original prior policy on the ME dataset for reference. Best results under
+OOD conditions are in bold.
+Prior Policy
+
+Environment
+
+Orig
+
+Prior
+
++ LOOP
+
++ RefPlan
+
+CQL
+
+Hopper
+HalfCheetah
+Walker2d
+
+111.4
+98.3
+108.9
+
+84.21
+71.81
+65.01
+
+90.01
+85.48
+85.95
+
+89.39
+85.92
+92.61
+
+MAPLE
+
+Hopper
+HalfCheetah
+Walker2d
+
+46.9
+64.0
+111.8
+
+39.60
+62.31
+66.82
+
+45.78
+91.41
+74.05
+
+42.50
+91.84
+87.82
+
+COMBO
+
+Hopper
+HalfCheetah
+Walker2d
+
+105.6
+97.6
+108.3
+
+81.75
+57.89
+62.54
+
+80.67
+79.57
+66.88
+
+85.51
+84.49
+72.82
+
+(RQ3) How does RefPlan perform when trained on limited
+offline datasets that increase epistemic uncertainty by restricting the datasets’ coverage of the state-action space?
+(RQ4) How robust is RefPlan when faced with shifts in
+environment dynamics at test time?
+
+ing over possible scenarios. This results in the marginal posterior p(τ |O). Although directly computing this marginal
+posterior is challenging, we can estimate the expectation of
+optimal plans using the law of total expectation:
+
+
+Ep(τ |O) [at:t+H ] = Emt ∼qφ (·|τ:t ) Ep(τ |O,mt ) [at:t+H | mt ] .
+
+We evaluate these RQs using the D4RL benchmark (Fu
+et al., 2020) and its variations, focusing on locomotion tasks
+in HalfCheetah, Hopper, and Walker2d environments, each
+with five configurations: random (R), medium (M), mediumreplay (MR), medium-expert (ME), and full-replay (FR).
+
+The inner expectation follows (7), with states and rewards
+sampled from p̂ψ , conditional on mt . The outer expectation
+over mt is computed using Monte Carlo sampling with n̄
+samples, giving us:
+
+Ep(τ |O) [at:t+H ] ≈
+" N̄ 
+#
+P n,j  
+n̄
+exp κ h rt+h
+1X X
+n
+ at:t+H , (10)
+n̄ j=1 n=1 PN̄ exp κ P ri,j
+i=1
+h t+h
+
+Metrics: For RQ1-RQ3, we compare normalized scores
+averaged over 3 seeds, with 100 for online SAC and 0 for a
+random policy, scaled linearly in between, using the D4RL
+library (Fu et al., 2020). For RQ4, we report average returns.
+
+n,j
+j
+n,j
+n
+where rt+h
+= r(sn,j
+∼
+t+h , at+h , mt ) and st+h+1
+j
+n
+Figure
+2
+(right)
+illustrates
+how
+Refp̂ψ (·|sn,j
+,
+a
+,
+m
+).
+t
+t+h
+t+h
+Plan leverages the agent’s past experiences τ:t to shape
+epistemic uncertainty through the latent variable mt and
+enhances the prior policy πp through posterior inference.
+Algorithm 2 in the appendix summarizes RefPlan.2 Additionally, following Sikchi et al. (2021), we apply an uncertainty penalty based on the variance of the returns predicted
+by the learned model ensemble.
+
+Baselines: RefPlan is designed to improve any offline
+learned policy through planning. We have obtained prior
+policies using model-free methods (CQL, EDAC) and MB
+methods (MOPO, COMBO, MAPLE). Among offline MB
+planning methods, we use LOOP, which is designed to enhance prior policies and outperforms methods like MBOP.
+Therefore, for each prior policy, we compare its original performance to its performance when augmented with LOOP
+or RefPlan for test-time planning.
+
+4. Experiments
+
+4.1. Epistemic Uncertainty from OOD States
+
+In this part, we answer the following research questions:
+(RQ1) How does RefPlan perform when the agent is initialized in a way that induces high epistemic uncertainty due to
+OOD states? (RQ2) Can RefPlan effectively improve policies learned from diverse offline policy learning algorithms?
+
+To address RQ1, we assessed RefPlan’s robustness under
+high epistemic uncertainty caused by OOD initialization.
+Prior policies were trained on the ME dataset and evaluated
+on the states from the R dataset. We tested three prior
+policies: CQL, MAPLE, and COMBO (Table 1).
+Across all environments, RefPlan consistently mitigated performance degradation due to OOD initialization, with particularly notable improvements in HalfCheetah and Walker2d.
+For instance, when MAPLE was used as the prior policy in
+
+2
+
+Direct planning with sampling methods like SIR (Skare et al.,
+2003) may be better for multi-modal problems. However, our
+approach using (10) yields strong empirical results, so we leave
+direct sampling for future work.
+
+6
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Table 2: Normalized scores of offline RL algorithms on D4RL MuJoCo Gym environments (3 seeds). For each prior policy, we show its
+original performance and its performance augmented with LOOP or RefPlan (Ours) for MB planning during testing. Bold indicates the
+best performance, while underline denotes cases where confidence intervals significantly overlap between two methods.
+COMBO
+
+MAPLE
+
+Orig
+
+LOOP
+
+Ours
+
+Orig
+
+LOOP
+
+Ours
+
+Orig
+
+LOOP
+
+Ours
+
+Orig
+
+LOOP
+
+Ours
+
+Hopper
+
+MOPO
+
+Ours
+
+R
+M
+MR
+ME
+FR
+
+1.0
+66.9
+94.6
+111.4
+104.2
+
+1.1
+73.9
+97.5
+111.6
+106.2
+
+1.2
+85.1
+98.1
+112.1
+107.6
+
+23.6
+101.5
+100.4
+106.7
+106.6
+
+23.5
+101.5
+101.0
+104.7
+107.0
+
+23.5
+101.5
+101.1
+109.9
+107.2
+
+32.2
+66.9
+90.3
+91.3
+73.2
+
+32.4
+67.5
+93.6
+82.7
+55.6
+
+32.4
+67.7
+94.5
+96.5
+77.2
+
+6.3
+60.9
+101.1
+105.6
+89.9
+
+6.2
+67.9
+101.4
+78.4
+54.9
+
+6.0
+77.2
+101.8
+107.8
+84.1
+
+31.5
+29.4
+61.0
+46.9
+79.1
+
+31.8
+33.7
+77.7
+53.4
+77.0
+
+31.6
+32.8
+82.6
+57.8
+91.7
+
+HalfCheetah
+
+EDAC
+
+LOOP
+
+R
+M
+MR
+ME
+FR
+
+19.9
+47.4
+47.0
+98.3
+77.5
+
+21.4
+57.1
+52.1
+104.0
+81.8
+
+21.2
+56.5
+54.1
+108.5
+86.7
+
+22.5
+63.8
+61.8
+100.8
+81.7
+
+25.8
+73.0
+66.9
+107.1
+87.5
+
+25.9
+71.4
+66.5
+108.8
+88.5
+
+29.8
+42.8
+70.6
+73.5
+81.7
+
+31.5
+58.4
+71.8
+94.5
+88.2
+
+33.0
+59.8
+73.8
+96.6
+90.8
+
+40.3
+67.2
+73.0
+97.6
+71.8
+
+40.0
+73.2
+71.2
+110.3
+82.6
+
+40.7
+77.4
+75.0
+110.3
+86.3
+
+33.5
+68.8
+71.5
+64.0
+66.8
+
+34.9
+72.9
+74.7
+91.9
+87.8
+
+35.0
+74.6
+76.3
+92.8
+90.2
+
+Walker2d
+
+CQL
+Orig
+
+R
+M
+MR
+ME
+FR
+
+0.1
+77.1
+63.5
+108.9
+96.6
+
+0.1
+84.4
+81.9
+111.4
+99.4
+
+0.3
+86.2
+93.6
+111.8
+101.3
+
+17.5
+77.6
+85.0
+98.5
+98.0
+
+13.4
+91.7
+86.0
+97.4
+98.3
+
+21.7
+93.2
+86.4
+116.0
+99.7
+
+13.3
+82.0
+81.7
+51.9
+90.5
+
+12.4
+79.1
+85.2
+49.0
+92.6
+
+13.1
+85.9
+88.3
+68.1
+93.2
+
+4.1
+71.2
+88.0
+108.3
+78.1
+
+3.0
+81.1
+89.5
+111.1
+83.0
+
+4.3
+87.4
+93.3
+112.7
+99.5
+
+21.8
+88.3
+85.0
+111.8
+94.2
+
+21.8
+89.7
+89.5
+112.9
+96.7
+
+21.9
+91.6
+91.2
+114.0
+98.4
+
+Median
+
+IQM
+
+Mean
+
+Optimality Gap
+
+RefPlan
+LOOP
+0.875 0.900 0.925
+
+0.88 0.90 0.92 0.94
+
+0.850 0.875 0.900 0.12 0.14 0.16 0.18
+
+Human Normalized Score
+
+Figure 3: RLiable (Agarwal et al., 2022) comparison of RefPlan and LOOP. Across all four metrics (the higher the better for
+Median, IQM, and Mean, while the lower the better for Optimality Gap), RefPlan demonstrates superior performance with
+non-overlapping confidence intervals, highlighting statistically significant improvements over LOOP.
+HalfCheetah, RefPlan outperformed the original policy. In
+Walker2d, RefPlan boosted performance by 16.4%, 31.4%,
+and 42.5% for COMBO, MAPLE, and CQL, respectively.
+Although the gains were more modest in Hopper, RefPlan
+still reduced performance drops. Overall, RefPlan showed
+strong resilience under high epistemic uncertainty caused
+by OOD initialization.
+
+using bootstrapping with stratified sampling, RLiable also
+estimates confidence intervals, ensuring that comparisons
+are not skewed by outliers or noise.
+We applied RLiable to compare RefPlan and LOOP across
+the tested environments and prior policy setups (Figure
+3). Across all metrics, RefPlan consistently outperformed
+LOOP, with non-overlapping confidence intervals, indicating statistically significant improvements. These results
+demonstrate RefPlan’s superior ability to enhance various
+offline policy learning algorithms by explicitly accounting
+for epistemic uncertainty during planning.
+
+4.2. RefPlan Enhances Any Offline-learned Policies
+To address RQ2, we evaluated the normalized score metric
+across the five offline policy learning algorithms. Table 2
+shows that RefPlan outperformed baselines in 10 (CQL), 7
+(EDAC), 12 (MOPO), 9 (COMBO), and 12 (MAPLE) of 15
+tasks, matching performance in the others. Both MB planning methods, LOOP and RefPlan, improved performance,
+with RefPlan showing a more substantial gain. On average, RefPlan enhanced prior policy performance by 11.6%,
+compared to LOOP’s 5.3%.
+
+Another key question is whether the performance gains
+from RefPlan stem from its principled Bayesian framework
+or simply from a larger inference budget. To investigate
+this, we conducted an additional experiment using CQL as
+the prior policy on the MR and FR datasets. We compared
+RefPlan to LOOP under an equivalent computational load by
+allocating LOOP a 16-fold increase in its sampling budget,
+matching the maximum budget used by RefPlan (i.e., when
+n̄ = 16). The results, summarized in Table 3, demonstrate
+that while increasing the computational budget improves
+LOOP’s performance, RefPlan consistently maintains its
+advantage across the tested configurations. This finding
+suggests that the superior performance of RefPlan is not
+merely a product of increased computation but is attributable
+
+In order to make a more statistically rigorous comparison
+between RefPlan and LOOP, we leverage RLiable (Agarwal
+et al., 2022), a framework designed for robust evaluation
+of RL algorithms. RLiable focuses on statistically sound
+aggregate metrics, such as the median, interquartile mean
+(IQM), mean, and optimality gap, which provide a comprehensive view of algorithm performance across tasks. By
+7
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Hopper
+
+110
+
+90
+85
+
+105
+
+80
+
+100
+
+75
+
+95
+90 50K
+
+CQL (Orig)
+CQL + LOOP
+CQL + Ours
+
+70
+65
+
+100K 250K 500K Full (1M) 60 50K
+Dataset Size
+
+HalfCheetah
+
+105
+100
+95
+90
+85
+80
+CQL (Orig)
+CQL + LOOP
+75
+CQL + Ours
+100K 250K 500K Full (1M) 70 50K
+Dataset Size
+
+Walker2d
+
+CQL (Orig)
+CQL + LOOP
+CQL + Ours
+
+100K 250K 500K Full (1M)
+Dataset Size
+
+Figure 4: Performance comparison of RefPlan and LOOP across different dataset sizes in Hopper, HalfCheetah, and Walker2d
+environments using the FR dataset, which contains 1M samples. We use CQL as the prior policy learning algorithm, and the results
+represent the average and standard error calculated from three random seeds.
+
+Table 3: RefPlan vs. LOOP with an equivalent inference
+budget.
+
+Table 4: Average returns on HalfCheetah with dynamics
+changes.
+
+Environment
+
+Config
+
+LOOP (16x)
+
+RefPlan
+
+Task
+
+Orig
+
+LOOP
+
+Ours
+
+Hopper
+
+MR
+FR
+
+97.8 ± 1.1
+107.5 ± 0.6
+
+98.1 ± 0.5
+107.6 ± 0.5
+
+Walker2d
+
+MR
+FR
+
+83.2 ± 8.8
+99.9 ± 1.5
+
+93.6 ± 1.1
+101.3 ± 0.3
+
+HalfCheetah
+
+MR
+FR
+
+53.2 ± 0.1
+83.1 ± 0.8
+
+54.1 ± 0.6
+86.7 ± 0.7
+
+joint
+hill
+gentle
+steep
+field
+
+5295
+327.1
+1087
+2123
+1205
+
+6088
+949.7
+2363
+3245
+2774
+
+6190
+1224
+2435
+6238
+3345
+
+Table 4 shows that while MAPLE struggled with changed
+dynamics, MB planning methods improved performance.
+RefPlan achieved the best results across all variations but
+still faced notable drops, especially in the hill and gentle
+environments. Data augmentation for single-task offline RL
+could enhance adaptability, a topic for future work.
+
+to its explicit modeling and marginalization of epistemic
+uncertainty during planning.
+4.3. Performance with Data with Different Sizes
+With limited data, the agent faces increased epistemic uncertainty. A key question is whether RefPlan can better
+handle these scenarios with constrained data (RQ3). To
+explore this, we randomly subsample 50K, 100K, 250K,
+and 500K transition samples from the FR dataset for each
+environment. We then train the prior policy using CQL and
+compare its performance with that achieved when enhanced
+by either LOOP or RefPlan. As shown in Figure 4, RefPlan
+consistently demonstrates greater resilience to limited data,
+outperforming the baselines across all three environments.
+
+5. Related Work
+Offline RL Policy distribution shift in offline RL leads
+to instabilities like extrapolation errors and value overestimation (Kumar et al., 2019; Fujimoto et al., 2019). To
+mitigate this, policy constraint methods limit deviation from
+the behavior policy (Wu et al., 2019; Kumar et al., 2019;
+Fujimoto & Gu, 2021), while value-based approaches penalize OOD actions (Kumar et al., 2020; An et al., 2021).
+Another strategy avoids querying OOD actions by learning
+values only from in-dataset samples and distilling a policy
+(Kostrikov et al., 2022).
+
+4.4. Is RefPlan More Robust to Changing Dynamics?
+To address RQ4, we evaluated RefPlan in the HalfCheetah
+environment under varying dynamics, including disabled
+joint, hill, slopes (gentle and steep), and field, following the
+approach of Clavera et al. (2019) (Appendix D). High epistemic uncertainty arises when dynamics differ from those
+seen during prior policy training. We trained the prior policy
+using the FR dataset, which contains the most diverse trajectories, and used MAPLE for its adaptive policy learning.
+
+MB offline policy learning trains a dynamics model from
+batch data to generate imaginary rollouts for dataset augmentation. To prevent exploiting model errors, ensembleestimated uncertainty can be penalized in rewards (Yu et al.,
+2020; Kidambi et al., 2021; Lu et al., 2021). Alternatively,
+values of model-generated samples can be minimized (Yu
+et al., 2021), or adversarial dynamics models can discourage
+8
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+selecting OOD actions (Rigter et al., 2022).
+
+possible environments.
+
+Offline policies are typically fixed after training, but Ghosh
+et al. (2021; 2022) show they can fail under high epistemic
+uncertainty, underscoring the need for adaptivity. APE-V
+(Ghosh et al., 2022) addresses this by using a value ensemble to approximate the distribution over environments, enabling policy adaptation during evaluation. MAPLE (Chen
+et al., 2021) employs an RNN to encode the agent’s history
+into a dense vector for adaptive conditioning while leveraging an ensemble dynamics model to expose the policy to
+diverse simulated environments, improving robustness to
+uncertainty.
+
+Relatedly, Ghosh et al. (2021) introduced the epistemic
+POMDP, where an agent’s epistemic uncertainty—arising
+from incomplete exploration or task ambiguity—induces
+partial observability. An epistemic POMDP is an instance
+of BAMDP, with a special focus on performance during a
+single evaluation episode rather than online learning and
+asymptotic regret minimization. Ghosh et al. (2022) further
+noted that offline RL in a single-task setting can be viewed
+as an epistemic POMDP, as static offline datasets typically
+cover only a subset of the state-action space, leading to
+partial observability in environment dynamics beyond the
+dataset.
+
+Model-based planning for offline RL MB planning enhances responsiveness at test time. MBOP (Argenson &
+Dulac-Arnold, 2021) applies MPC with MPPI (Williams
+et al., 2015), adapting it for offline RL by using a BC policy
+for trajectory generation. Uncertain rollouts can be filtered
+based on ensemble disagreement (Zhan et al., 2022).
+
+We also adopt the epistemic POMDP perspective for singletask offline RL but focus on MB planning. Unlike prior
+approaches, our goal is to enhance offline-learned policies
+by addressing epistemic uncertainty, enabling more effective
+generalization during deployment.
+
+LOOP (Sikchi et al., 2021) improves offline-learned policies
+with planning, outperforming MBOP. It uses KL-regularized
+optimization for offline planning but only addresses epistemic uncertainty by penalizing ensemble variance in rewards during TrajOpt. In contrast, RefPlan takes a Bayesian
+approach, explicitly modeling epistemic uncertainty for better generalization and performance.
+
+6. Conclusion
+In this paper, we introduced RefPlan (Reflect-then-Plan),
+a novel doubly Bayesian approach to offline model-based
+planning that integrates epistemic uncertainty modeling with
+model-based planning in a unified probabilistic framework.
+Our method enhances offline RL by explicitly accounting
+for epistemic uncertainty, a common challenge in offline
+settings where data coverage is often incomplete. Through
+extensive experiments on standard offline RL benchmarks,
+we demonstrated that RefPlan consistently outperforms existing methods, particularly under challenging conditions of
+OOD initialization, limited data availability, and changing
+environment dynamics, making it a valuable tool for more
+reliable and adaptive offline RL. Future work could extend
+RefPlan to more complex models and environments.
+
+Probabilistic interpretation of MB planning The
+control-as-inference framework (Levine, 2018; Abdolmaleki et al., 2018) provides a probabilistic view of control and RL problems, naturally leading to sampling-based
+solutions in MB planning (Piché et al., 2019). Okada &
+Taniguchi (2020) showed that various sampling-based TrajOpt algorithms can be derived from this perspective. Janner et al. (2022) introduced a diffusion-based planner using
+control-as-inference to derive a perturbation distribution,
+embedding reward signals into the diffusion sampling process. However, to our knowledge, we are the first to propose
+an offline MB planning algorithm that integrates an offlinelearned policy as a prior in a Bayesian framework while
+explicitly modeling epistemic uncertainty within a unified
+probabilistic formulation.
+Bayesian RL and epistemic POMDP Bayesian RL
+(Ghavamzadeh et al., 2015) and BAMDPs (Duff, 2002)
+address learning optimal policies in unknown MDPs. A
+BAMDP can be reformulated as a belief-state MDP, where
+the belief serves as a sufficient statistic of the agent’s history (Guez et al., 2012), framing BAMDPs as a special
+case of partially observable MDPs (POMDPs) (Kaelbling
+et al., 1998). Zintgraf et al. (2020) extended this perspective
+to meta-RL, introducing VariBAD, a variational inferencebased method for approximating the belief distribution over
+9
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Acknowledgements
+
+3de568f8597b94bda53149c7d7f5958c-Paper.
+pdf.
+
+This work was supported by the Institute of Information &
+Communications Technology Planning & Evaluation (IITP)
+grant funded by the Korean Government (MSIT) (No. RS2024-00457882, National AI Research Lab Project).
+
+Clavera, I., Nagabandi, A., Liu, S., Fearing, R. S., Abbeel,
+P., Levine, S., and Finn, C. Learning to adapt in dynamic,
+real-world environments through meta-reinforcement
+learning. In International Conference on Learning Representations, 2019. URL https://openreview.
+net/forum?id=HyztsoC5Y7.
+
+Impact Statement
+This paper presents work whose goal is to advance the field
+of Machine Learning, particularly Reinforcement Learning.
+There are many potential societal consequences of our work,
+none which we feel must be specifically highlighted here.
+
+Dorfman, R., Shenfeld, I., and Tamar, A. Offline meta
+reinforcement learning – identifiability challenges and
+effective data collection strategies. In Beygelzimer,
+A., Dauphin, Y., Liang, P., and Vaughan, J. W. (eds.),
+Advances in Neural Information Processing Systems,
+2021. URL https://openreview.net/forum?
+id=IBdEfhLveS.
+
+References
+Abdolmaleki, A., Springenberg, J. T., Tassa, Y., Munos,
+R., Heess, N., and Riedmiller, M. Maximum a posteriori policy optimisation. In International Conference on Learning Representations, 2018. URL https:
+//openreview.net/forum?id=S1ANxQW0b.
+
+Duff, M. O. Optimal Learning: Computational Procedures
+for Bayes-Adaptive Markov Decision Processes. PhD
+thesis, University of Massachusetts Amherst, Amherst,
+USA, 2002.
+
+Agarwal, R., Schwarzer, M., Castro, P. S., Courville, A.,
+and Bellemare, M. G. Deep reinforcement learning at
+the edge of the statistical precipice, 2022. URL https:
+//arxiv.org/abs/2108.13264.
+
+Fu, J., Kumar, A., Nachum, O., Tucker, G., and Levine,
+S. D4RL: datasets for deep data-driven reinforcement
+learning. CoRR, abs/2004.07219, 2020.
+Fujimoto, S. and Gu, S. A minimalist approach to offline
+reinforcement learning. In Beygelzimer, A., Dauphin, Y.,
+Liang, P., and Vaughan, J. W. (eds.), Advances in Neural
+Information Processing Systems, 2021. URL https:
+//openreview.net/forum?id=Q32U7dzWXpc.
+
+An, G., Moon, S., Kim, J.-H., and Song, H. O. Uncertaintybased offline reinforcement learning with diversified qensemble. In Beygelzimer, A., Dauphin, Y., Liang,
+P., and Vaughan, J. W. (eds.), Advances in Neural Information Processing Systems, 2021. URL https:
+//openreview.net/forum?id=ZUvaSolQZh3.
+Argenson, A. and Dulac-Arnold, G. Model-based offline
+planning. In International Conference on Learning Representations, 2021. URL https://openreview.
+net/forum?id=OMNB1G5xzd4.
+Biewald, L. Experiment tracking with weights and biases,
+2020. URL https://www.wandb.com/. Software
+available from wandb.com.
+
+Fujimoto, S., Meger, D., and Precup, D. Off-policy deep
+reinforcement learning without exploration. In Proceedings of the 36th International Conference on Machine
+Learning, volume 97 of Proceedings of Machine Learning Research, pp. 2052–2062. PMLR, 09–15 Jun 2019.
+URL https://proceedings.mlr.press/v97/
+fujimoto19a.html.
+Ghavamzadeh, M., Mannor, S., Pineau, J., and Tamar,
+A. Bayesian reinforcement learning: A survey. Found.
+Trends Mach. Learn., 8(5–6):359–483, November 2015.
+ISSN 1935-8237.
+
+Chen, X.-H., Yu, Y., Li, Q., Luo, F.-M., Qin, Z. T., Wenjie, S., and Ye, J. Offline model-based adaptable policy learning. In Beygelzimer, A., Dauphin, Y., Liang,
+P., and Vaughan, J. W. (eds.), Advances in Neural Information Processing Systems, 2021. URL https:
+//openreview.net/forum?id=lrdXc17jm6.
+Chua, K., Calandra, R., McAllister, R., and Levine, S.
+Deep reinforcement learning in a handful of trials
+using probabilistic dynamics models. In Advances
+in Neural Information Processing Systems, volume 31, 2018.
+URL https://proceedings.
+neurips.cc/paper/2018/file/
+10
+
+Ghosh, D., Rahme, J., Kumar, A., Zhang, A., Adams,
+R. P., and Levine, S. Why generalization in rl is
+difficult: Epistemic pomdps and implicit partial
+observability.
+In Ranzato, M., Beygelzimer, A.,
+Dauphin, Y., Liang, P., and Vaughan, J. W. (eds.),
+Advances in Neural Information Processing Systems,
+volume 34, pp. 25502–25515. Curran Associates, Inc.,
+2021. URL https://proceedings.neurips.
+cc/paper_files/paper/2021/file/
+d5ff135377d39f1de7372c95c74dd962-Paper.
+pdf.
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Ghosh, D., Ajay, A., Agrawal, P., and Levine, S. Offline RL policies should be trained to be adaptive.
+In Chaudhuri, K., Jegelka, S., Song, L., Szepesvari, C., Niu, G., and Sabato, S. (eds.), Proceedings of the 39th International Conference on Machine
+Learning, volume 162 of Proceedings of Machine
+Learning Research, pp. 7513–7530. PMLR, 17–23 Jul
+2022. URL https://proceedings.mlr.press/
+v162/ghosh22a.html.
+
+via bootstrapping error reduction.
+In Advances
+in Neural Information Processing Systems, volume 32, 2019.
+URL https://proceedings.
+neurips.cc/paper/2019/file/
+c2073ffa77b5357a498057413bb09d3a-Paper.
+pdf.
+Kumar, A., Zhou, A., Tucker, G., and Levine, S. Conservative q-learning for offline reinforcement learning.
+In Advances in Neural Information Processing Systems,
+2020.
+
+Guez, A., Silver, D., and Dayan, P. Efficient bayesadaptive reinforcement learning using sample-based
+Levine, S. Reinforcement learning and control as probasearch. In Pereira, F., Burges, C., Bottou, L., and
+bilistic inference: Tutorial and review, 2018.
+Weinberger, K. (eds.), Advances in Neural Information
+Processing Systems, volume 25. Curran Associates, Inc.,
+Levine, S., Kumar, A., Tucker, G., and Fu, J. Offline rein2012. URL https://proceedings.neurips.
+forcement learning: Tutorial, review, and perspectives on
+cc/paper_files/paper/2012/file/
+open problems. CoRR, abs/2005.01643, 2020.
+35051070e572e47d2c26c241ab88307f-Paper.
+pdf.
+Lowrey, K., Rajeswaran, A., Kakade, S., Todorov, E., and
+Mordatch, I. Plan online, learn offline: Efficient learning
+Janner, M., Fu, J., Zhang, M., and Levine, S. When to trust
+and exploration via model-based control, 2018. URL
+your model: Model-based policy optimization. In Adhttps://arxiv.org/abs/1811.01848.
+vances in Neural Information Processing Systems, 2019.
+
+Lu, C., Ball, P., Parker-Holder, J., Osborne, M., and
+Roberts, S. Revisiting design choices in offline model
+based reinforcement learning, 2021. URL https:
+//openreview.net/forum?id=UfX6vkvhtl.
+
+Janner, M., Du, Y., Tenenbaum, J., and Levine, S. Planning with diffusion for flexible behavior synthesis. In
+Chaudhuri, K., Jegelka, S., Song, L., Szepesvari, C., Niu,
+G., and Sabato, S. (eds.), Proceedings of the 39th International Conference on Machine Learning, volume
+162 of Proceedings of Machine Learning Research, pp.
+9902–9915. PMLR, 17–23 Jul 2022.
+
+Nagabandi, A., Konoglie, K., Levine, S., and Kumar, V.
+Deep dynamics models for learning dexterous manipulation, 2019. URL https://arxiv.org/abs/1909.
+11652.
+
+Jin, Y., Yang, Z., and Wang, Z. Is pessimism provably efficient for offline rl? In Meila, M. and Zhang, T. (eds.),
+Proceedings of the 38th International Conference on Machine Learning, volume 139 of Proceedings of Machine
+Learning Research, pp. 5084–5096. PMLR, 18–24 Jul
+2021. URL https://proceedings.mlr.press/
+v139/jin21e.html.
+
+Okada, M. and Taniguchi, T. Variational inference
+mpc for bayesian model-based reinforcement learning. In Kaelbling, L. P., Kragic, D., and Sugiura, K.
+(eds.), Proceedings of the Conference on Robot Learning, volume 100 of Proceedings of Machine Learning Research, pp. 258–272. PMLR, 30 Oct–01 Nov
+2020. URL https://proceedings.mlr.press/
+v100/okada20a.html.
+
+Kaelbling, L. P., Littman, M. L., and Cassandra, A. R. Planning and acting in partially observable stochastic domains.
+Artif. Intell., 101(1–2):99–134, may 1998. ISSN 00043702.
+
+Piché, A., Thomas, V., Ibrahim, C., Bengio, Y., and Pal, C.
+Probabilistic planning with sequential monte carlo methods. In International Conference on Learning Representations, 2019. URL https://openreview.net/
+forum?id=ByetGn0cYX.
+
+Kidambi, R., Rajeswaran, A., Netrapalli, P., and Joachims,
+T. Morel : Model-based offline reinforcement learning.
+In Advances in Neural Information Processing Systems,
+2021.
+
+Rigter, M., Lacerda, B., and Hawes, N. Rambo-rl: Robust
+adversarial model-based offline reinforcement learning.
+arXiv preprint arXiv:2204.12581, 2022.
+
+Kostrikov, I., Nair, A., and Levine, S. Offline reinforcement
+learning with implicit q-learning. In International Conference on Learning Representations, 2022. URL https:
+//openreview.net/forum?id=68n2s9ZJWF8.
+
+Sikchi, H., Zhou, W., and Held, D. Learning off-policy
+with online planning. In 5th Annual Conference on Robot
+Learning, 2021. URL https://openreview.net/
+forum?id=1GNV9SW95eJ.
+
+Kumar, A., Fu, J., Soh, M., Tucker, G., and
+Levine, S.
+Stabilizing off-policy q-learning
+11
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Skare, Ø., Bølviken, E., and Holden, L. Improved samplingimportance resampling and reduced bias importance
+sampling. Scandinavian Journal of Statistics, 30(4):
+719–737, 2003. doi: https://doi.org/10.1111/1467-9469.
+00360. URL https://onlinelibrary.wiley.
+com/doi/abs/10.1111/1467-9469.00360.
+Snoek, J., Larochelle, H., and Adams, R. P. Practical
+bayesian optimization of machine learning algorithms.
+Advances in neural information processing systems, 25,
+2012.
+Williams, G., Aldrich, A., and Theodorou, E. Model predictive path integral control using covariance variable
+importance sampling, 2015.
+Wu, Y., Tucker, G., and Nachum, O.
+Behavior
+regularized offline reinforcement learning.
+CoRR,
+abs/1911.11361, 2019. URL http://arxiv.org/
+abs/1911.11361.
+Yu, T., Thomas, G., Yu, L., Ermon, S., Zou, J., Levine,
+S., Finn, C., and Ma, T. Mopo: Model-based offline
+policy optimization. In Advances in Neural Information
+Processing Systems, 2020.
+Yu, T., Kumar, A., Rafailov, R., Rajeswaran, A., Levine, S.,
+and Finn, C. COMBO: conservative offline model-based
+policy optimization. CoRR, abs/2102.08363, 2021.
+Zhan, X., Zhu, X., and Xu, H. Model-based offline planning with trajectory pruning. In Raedt, L. D. (ed.),
+Proceedings of the Thirty-First International Joint Conference on Artificial Intelligence, IJCAI-22, pp. 3716–
+3722. International Joint Conferences on Artificial Intelligence Organization, 7 2022. doi: 10.24963/ijcai.2022/
+516. URL https://doi.org/10.24963/ijcai.
+2022/516. Main Track.
+Zintgraf, L., Shiarlis, K., Igl, M., Schulze, S., Gal, Y., Hofmann, K., and Whiteson, S. Varibad: A very good method
+for bayes-adaptive deep rl via meta-learning, 2020. URL
+https://arxiv.org/abs/1910.08348.
+
+12
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+A. Additional Background
+A.1. Bayes-Adaptive Markov Decision Processes
+Bayes-Adaptive Markov Decision Processes (BAMDPs) (Duff, 2002) extend the standard MDP framework by explicitly
+incorporating uncertainty over the transition and reward functions. In a BAMDP, instead of assuming that the transition
+dynamics T (s′ |s, a) and reward function r(s, a) are known and fixed, we assume that they are drawn from an unknown
+distribution. The agent maintains a posterior belief over these functions and updates it as new data are collected through
+interaction with the environment.
+To illustrate, consider a simple case where we have finite and discrete state and action spaces with |S| = ns and |A| = na ;
+hence, a state can be represented with an integer, i.e., s = i for i = 1, . . . , ns , and similarly for the actions. While the
+reward function r(s, a) is assumed to be known, we are uncertain about the transition probabilities T (s′ |s, a). We can model
+this uncertainty by placing a prior distribution over the transition probabilities, typically using a Dirichlet prior, which is
+conjugate to the multinomial likelihood of observing transitions between states.
+For each state-action pair (s, a) ∈ S × A, the transition probabilities T (s′ |s, a) are parameterized by a multinomial
+distribution:
+T (s′ |s, a) ∼ Multinomial(θ s,a,s′ ),
+
+(11)
+
+where θ s,a = (θ s,a,1 , . . . , θ s,a,ns ) represents the probabilities of transitioning from state s to any state s′ ∈ S under action
+a. These parameters follow a Dirichlet distribution:
+θ s,a ∼ Dirichlet(αs,a ),
+
+(12)
+
+where αs,a = (αs,a,1 , . . . , αs,a,ns ) > 0 are the Dirichlet hyperparameters.
+Initially, the agent holds a prior belief about the transition probabilities, represented by the Dirichlet hyperparameters αs,a
+for all state-action pairs. As the agent interacts with the environment and observes transitions of the form (s, a, s′ ), it updates
+its posterior belief by simply updating the corresponding Dirichlet hyperparameters. Specifically, when the agent observes a
+transition from state s to state s′ under action a, the corresponding Dirichlet hyperparameter is updated as:
+αs,a,s′ ← αs,a,s′ + 1,
+
+(13)
+
+while all other Dirichlet hyperparameters remain unchanged. This process of updating the Dirichlet hyperparameters fully
+captures the agent’s experiences; hence, these hyperparameters act as sufficient statistics for the agent’s belief about the
+environment.
+By transforming the BAMDP into a belief-state MDP, where the belief state bt = p(θ|τ:t ) is a distribution over transition
+probabilities conditioned on the observed trajectory τ:t = (s0 , a0 , s1 , . . . , st ), the agent can solve the problem using standard
+MDP solution methods. The augmented state space, or hyper-state space, includes both the physical state s ∈ S and the
+belief state b ∈ B. In this simple finite state-action example, the belief state corresponds to the Dirichlet hyperparameters α.
+The transition dynamics of the resulting belief-state MDP are fully known and can be written as:
+T (s̄′ |s̄, a) = T (s′ , α′ |s, α, a) = T (s′ |s, a, α)p(α′ |s, α, a)
+
+αs,a,s′
+′
+=P
+I αs,a,s
+′ = αs,a,s′ + 1 ,
+′′
+s′′ ∈S αs,a,s
+
+(14)
+(15)
+
+where I(·) is the indicator function. This transformation turns the BAMDP into a fully observable MDP in the hyper-state
+space, which allows the use of standard, e.g., DP methods to compute an optimal policy.
+However, the computational complexity of solving the BAMDP grows quickly with the number of states and actions. If the
+states are fully connected (i.e., p(s′ |s, a) > 0, ∀s, a, s′ ), the number of reachable belief states increases exponentially over
+time, making exact solutions intractable for even moderately sized problems.
+For a comprehensive overview of solution methods for BAMDPs, we refer readers to the survey by Ghavamzadeh et al.
+(2015). In this work, we have utilized variational inference techniques from Zintgraf et al. (2020) and Dorfman et al. (2021)
+to approximate the agent’s posterior belief over the environment dynamics, p(b|τ:t ), based on past experiences.
+13
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+RefPlan
+
+Hopper
+
+M
+MR
+ME
+
+66.9
+90.3
+91.3
+
+93.2
+-
+
+98.18
+-
+
+67.7
+94.5
+96.5
+
+HalfCheetah
+
+M
+MR
+ME
+
+42.8
+70.6
+73.5
+
+40.6
+53.2
+71.6
+
+66.45
+72.46
+100.34
+
+59.8
+73.8
+96.6
+
+M
+MR
+ME
+
+82.0
+81.7
+51.9
+
+60.6
+53.3
+42.4
+
+72.73
+79.75
+64.59
+
+85.9
+88.3
+68.1
+
+Orig
+
+NM
+(Train)
+
+NM (Train)
++RefPlan
+
+RefPlan
+
+Hopper
+
+NM (Train)
++RefPlan
+
+M
+MR
+ME
+
+60.9
+101.1
+105.6
+
+52.2
+44.9
+27.3
+
+62.30
+61.90
+39.23
+
+77.2
+101.8
+107.8
+
+HalfCheetah
+
+NM
+(Train)
+
+M
+MR
+ME
+
+67.2
+73.0
+97.6
+
+30.3
+47.6
+93.5
+
+41.61
+59.54
+109.25
+
+77.4
+75.0
+110.3
+
+Walker2d
+
+Orig
+
+Walker2d
+
+Table 5: Performance comparison of RefPlan against baseline methods on Hopper, HalfCheetah, and Walker2d tasks using
+MOPO and COMBO for offline policy optimization. The table evaluates original policies (Orig), policies trained with
+Non-Markovian (NM) dynamics models (NM (Train)), NM-trained policies combined with RefPlan for planning (NM
+(Train) + RefPlan), and RefPlan using original policies as priors. Results demonstrate RefPlan’s ability to improve test-time
+performance across different dynamics models and environments.
+
+M
+MR
+ME
+
+71.2
+88.0
+108.3
+
+79.1
+80.4
+36.7
+
+89.43
+91.01
+38.47
+
+87.4
+93.3
+112.7
+
+B. Additional Results
+B.1. Performance comparison: non-Markovian dynamics model for training vs. planning
+The experiments presented in Table 5 aims to evaluate the effectiveness of RefPlan in leveraging the VAE dynamics—
+consisting of the variational encoder qϕ and the probabilistic ensemble decoder p̂ψ (Figure 6)—for planning at test time.
+Specifically, these experiments compare the following approaches:
+• “Orig": the original prior policy trained using MOPO or COMBO.
+• “NM (Train)": the policy trained using a non-Markovian (NM) VAE dynamics model during offline policy optimization
+via MOPO or COMBO.
+• “NM (Train) + RefPlan ": the RefPlan agent that uses the policies trained using NM dynamics models as priors.
+• “RefPlan ": the RefPlan agent that uses the original prior policies as priors.
+The results demonstrate several key findings. First, RefPlan consistently outperforms NM (Train) across all environments
+and datasets, confirming that the VAE dynamics models are significantly more effective when used for planning at test
+time rather than during offline policy training. This highlights RefPlan’s ability to explicitly handle epistemic uncertainty,
+leveraging the agent’s real-time history to infer the underlying MDP dynamics.
+Second, in MOPO results, NM (Train) diverged or underperformed in several cases. This suggests that the heuristically
+estimated model uncertainty used in MOPO is not well-suited for integrating with the VAE dynamics models during offline
+training. Even with large penalty parameters, the value function diverged in the Hopper tasks, indicating a fundamental
+limitation in using NM models with MOPO for policy optimization. By contrast, COMBO results did not exhibit these
+issues, suggesting that COMBO’s framework is better equipped to incorporate such dynamics models during training.
+Finally, applying RefPlan to policies trained with NM dynamics models (NM (Train) + RefPlan) further boosted test-time
+performance, often by substantial margins. This demonstrates that even when NM dynamics models introduce suboptimality
+during offline training, RefPlan can recover and enhance the policy’s performance through effective planning at test time.
+Across all environment-dataset combinations, RefPlan provides robust improvements over both the original and NM
+(Train)-optimized policies, further validating its capability to address epistemic uncertainty and improve the generalization
+of offline-learned policies.
+B.2. Evaluating the impact of the number of latent samples on variances and performance
+This experiment evaluates how the sample variance of the marginal action posterior mean from (10) changes with the number
+of latent samples (n̄) used in the outer expectation. At each time step, we compute the posterior mean K times, calculate its
+14
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+97.8
+
+4.00
+
+97.5
+
+3.95
+
+97.2
+
+3.90
+
+96.9
+20
+
+21
+
+22
+
+23
+
+Number of Latent Samples n
+
+24
+
+108
+
+1.20
+
+Normalized Score
+
+4.05
+
+×10 2
+
+Sample Variance
+
+98.1
+
+Normalized Score
+
+Sample Variance
+
+×10 4
+
+104
+
+1.14
+1.08
+
+100
+
+1.02
+
+96
+
+0.96
+
+20
+
+21
+
+53.9
+
+1.65
+
+53.8
+21
+
+22
+
+23
+
+Number of Latent Samples n
+
+24
+
+Normalized Score
+
+1.80
+
+×10 2
+
+Sample Variance
+
+Normalized Score
+
+Sample Variance
+
+54.1
+54.0
+
+20
+
+1.44
+
+86.50
+
+1.36
+
+86.25
+
+1.28
+
+86.00
+
+1.20
+1.12
+
+20
+
+21
+
+23
+
+24
+
+1.6
+1.4
+
+87.5
+
+1.2
+
+85.0
+22
+
+23
+
+Number of Latent Samples n
+
+24
+
+2.1
+
+100.45
+
+1.8
+
+100.30
+
+1.5
+
+100.15
+100.00
+
+1.2
+20
+
+(e) Walker2d (MR)
+
+100.60
+
+Normalized Score
+
+90.0
+
+Sample Variance
+
+92.5
+
+1.8
+
+21
+
+85.75
+
+(d) HalfCheetah (FR)
+
+×10 2
+
+Normalized Score
+
+Sample Variance
+
+22
+
+Number of Latent Samples n
+
+(c) HalfCheetah (MR)
+
+×10 2
+
+20
+
+92
+
+(b) Hopper (FR)
+
+×10 2
+
+1.95
+
+1.50
+
+24
+
+23
+
+Number of Latent Samples n
+
+(a) Hopper (MR)
+
+2.10
+
+22
+
+21
+
+22
+
+23
+
+Number of Latent Samples n
+
+24
+
+(f) Walker2d (FR)
+
+Figure 5: The sample variance and the performance vs. the number of latent samples of RefPlan, evaluated from three
+environments with the MR and FR datasets using CQL as the prior policy.
+
+variance averaged across action dimensions, and report the running average over a 1,000-step episode. Results are averaged
+over three random seeds, with CQL as the prior policy, across three environments (Hopper, HalfCheetah, Walker2d) and two
+dataset configurations (MR, FR).
+The figures show that as n̄ increases, the average sample variance decreases, with n̄ = 1 consistently yielding the highest
+variance. Performance, measured as normalized scores, generally improves with increasing n̄, suggesting a positive
+correlation between reduced variance and higher performance. However, while reduced variance likely contributes to this
+improvement, further investigation is needed to confirm causality, as other factors may also play a role.
+
+C. Algorithm Details
+C.1. Algorithm Summary
+RefPlan is designed to enhance any offline RL policy by incorporating MB planning that accounts for epistemic uncertainty.
+The algorithm operates in two primary stages: pretraining (Appendix C.3) and test-time planning.
+15
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Algorithm 1 Offline MB Planning
+Input: p̂, Vϕ , D, πθ , L
+Train p̂ψ with D via MLE
+Train Vϕ and πθ with L and D
+t←1
+repeat
+Observe st
+a∗t:t+H ←TrajOpt(st , p̂ψ , πθ , Vϕ )
+Take a∗t , observe st+1 , rt
+t←t+1
+until episode terminates
+Algorithm 2 RefPlan: Offline MB Planning as Probabilistic Inference
+Input: τ:t = (s0 , a0 , r0 , . . . , st ), p̂ψ , qϕ , πp , Q̂, H, N̄ , n̄, κ
+µt , σt ← qϕ (·|τ:t ) {Get the Gaussian parameters}
+{mjt }n̄j=1 ∼ N (µt , σt2 ) {Sample n̄ latent vectors from the approximate posterior}
+for n = 1, . . . , N̄ do
+for h = 0, . . . , H − 1 do
+ant+h ∼ πp (·|st+h ) {Sample prior action sequence}
+snt+h+1 ∼ p̂ψ (·|snt+h , ant+h , µt ) {Sample the next state from model using µt }
+end for
+for j = 1, . . . , n̄ do
+← st
+sn,j
+t
+for h = 0, . . . , H − 1 do
+j
+j
+n,j
+n
+sn,j
+t+h+1 ∼ p̂ψ (·|st+h , at+h , mt ) {Sample next state from model using mt }
+j
+j
+n,j
+n
+rt+h
+← r(sn,j
+t+h , at+h , mt ) {Compute the reward using mt }
+end for
+end for
+end for
+Compute Ep(τ |O) [at:t+H ] with (10)
+return Ep(τ |O) [at:t+H ] {Return the plan to be used in line 7 of Algorithm 1}
+
+Pretraining stage The first step is to train a prior policy πp using any offline RL algorithm. In parallel, a VAE is trained
+using the ELBO objective in (8), where the encoder captures the agent’s epistemic uncertainty and the decoder learns the
+environment dynamics. See Appendix C.3 for more details.
+Test-time planning stage During evaluation, the agent employs MPC (Algorithm 1), where RefPlan serves as the trajectory
+optimization subroutine. At each time step t, the agent gathers its history τ:t and encodes it into a latent variable mt using the
+pretrained encoder (line 2 of Algorithm 2). This latent variable encapsulates the agent’s current belief about the environment,
+reflecting epistemic uncertainty.
+Then, we first generate N̄ prior plans with the prior policy and the learned model (lines 5-8). Each plan has the length of H,
+and we use µt to condition p̂ψ at this stage. Optionally, we add a Gaussian noise to the actions sampled by πp , following
+Argenson & Dulac-Arnold (2021); Sikchi et al. (2021).
+Once the prior plans are prepared, we rollout the plans under the learned model to generate multiple trajectories. That is,
+for each sampled mt , we obtain N̄ trajectories (lines 9-14). These trajectories are then used to estimate the optimal plan,
+conditioned on mjt . We marginalize out the latent variable via Monte-Carlo expectation using the law of total expectation.
+Finally, the first action from the optimized plan is selected and executed in the environment. This process repeats at
+each subsequent time step, with the agent continuously updating its belief state and re-optimizing its plan based on new
+observations.
+16
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Table 6: Hyperparameters for Model Architecture and Training
+Architecture Hyperparameters
+
+Value
+
+Task Embedding Dimension
+State Embedding Dimension
+Action Embedding Dimension
+Reward Embedding Dimension
+GRU Hidden Dimension
+Decoder Network Architecture
+Decoder ensemble size
+Decoder number of elite models
+
+16
+16
+16
+4
+256
+Fully connected, [200, 200, 200, 200] with skip connection
+20
+14
+
+Training Hyperparameters
+
+Value
+
+KL Weight Coefficient
+Input Normalization
+Learning Rate
+Weight Decay
+Optimizer
+Batch Size
+
+0.1
+True
+0.001
+0.01
+AdamW
+64
+
+C.2. Architecture
+
+Encoder
+
+Decoder
+
+GRU
+
+Figure 6: A schematic illustration of the architecture of RefPlan. We use the same encoder architecture as in VariBAD
+(Zintgraf et al., 2020), which consists of a GRU model and a fully connected layer. Unlike VariBAD, which uses the decoder
+only for training the encoder, we employ a two-stage training procedure (Appendix C.3) to learn a decoder that is directly
+used for planning at test time. The decoder network reconstructs the past trajectory and predicts the next state but does not
+attempt to predict the entire future trajectory as in the prior work (see also Eq.(9)).
+Figure 6 illustrates the architecture of RefPlan. For the encoder, we adopt the architecture from VariBAD (Zintgraf et al.,
+2020), with a few minor modifications to the hyperparameters. The encoder utilizes a GRU network to encode the agent’s
+history and outputs the parameters of a Gaussian distribution representing the latent variable mt .
+At time t = 0, we initialize z−1 = 0 and a−1 = 0. The state st , the previous action at−1 , and the previous reward rt−1
+are first embedded into their respective latent spaces using distinct linear layers, each followed by ReLU activation. These
+embedded vectors, along with the hidden state from the previous time step zt−1 , are then processed by the GRU, which
+outputs the updated hidden state zt . This hidden state is subsequently linearly projected onto the task embedding space to
+obtain the mean (µt ) and log variance (log σt2 ) of the Gaussian distribution for the latent variable at the current time step.
+Since the decoder plays a critical role in test-time planning, we follow established practices from prior work and implement
+the decoder using a probabilistic ensemble network (Chua et al., 2018; Janner et al., 2019; Yu et al., 2020; 2021; Chen et al.,
+2021). Specifically, the ensemble consists of 20 models, from which we select the 14 elite models that achieve the lowest
+validation loss during training. The decoder network conditions on a latent sample mt ∼ N (µt , σt2 ), along with st and at ,
+to predict the next state st+1 and reward rt+1 . The hyperparameters associated with the architecture are summarized in
+Table 6.
+17
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+Table 7: Reproducing the reported performances of offline policy learning algorithms on the D4RL MuJoCo tasks. ∗ Numbers reported in
+An et al. (2021).
+COMBO
+
+MAPLE
+
+Rep.
+
+Paper
+
+Rep.
+
+Paper
+
+Rep.
+
+Paper
+
+Rep.
+
+Hopper
+
+MOPO
+
+Paper
+
+R
+M
+MR
+ME
+FR
+
+10.8
+86.6
+48.6
+111.0
+101.9∗
+
+1.0
+66.9
+94.6
+111.4
+104.2
+
+25.3
+101.6
+101.0
+110.7
+105.4
+
+23.6
+101.5
+100.4
+106.7
+106.6
+
+11.7
+28.0
+67.5
+23.7
+-
+
+32.2
+66.9
+90.3
+91.3
+73.2
+
+17.9
+97.2
+89.5
+111.1
+-
+
+6.3
+60.9
+101.1
+105.6
+89.9
+
+10.6
+21.1
+87.5
+42.5
+-
+
+31.5
+29.4
+61.0
+46.9
+79.1
+
+HalfCheetah
+
+EDAC
+Rep.
+
+R
+M
+MR
+ME
+FR
+
+35.4
+44.4
+46.2
+62.4
+76.9∗
+
+19.9
+47.4
+47.0
+98.3
+77.5
+
+28.4
+65.9
+61.3
+106.3
+84.6
+
+22.5
+63.8
+61.8
+100.8
+81.7
+
+35.4
+42.3
+53.1
+63.3
+-
+
+29.8
+42.8
+70.6
+73.5
+81.7
+
+38.8
+54.2
+55.1
+90.0
+-
+
+40.3
+67.2
+73.0
+97.6
+71.8
+
+38.4
+50.4
+59.0
+63.5
+-
+
+33.5
+68.8
+71.5
+64.0
+66.8
+
+Walker2d
+
+CQL
+Paper
+
+R
+M
+MR
+ME
+FR
+
+7.0
+74.5
+32.6
+98.7
+94.2∗
+
+0.1
+77.1
+63.5
+108.9
+96.6
+
+16.6
+92.5
+87.1
+114.7
+99.8
+
+17.5
+77.6
+85.0
+98.5
+98.0
+
+13.6
+17.8
+39.0
+44.6
+-
+
+13.3
+82.0
+81.7
+51.9
+90.5
+
+7.0
+81.9
+56.0
+103.3
+-
+
+4.1
+71.2
+88.0
+108.3
+78.1
+
+21.7
+56.3
+76.7
+73.8
+-
+
+21.8
+88.3
+85.0
+111.8
+94.2
+
+C.3. Pretraining
+RefPlan requires two stages of pretraining. First, we use an off-the-shelf offline RL algorithm to train a prior policy πp . In
+our experiments, we evaluated several algorithms, including CQL (Kumar et al., 2020), EDAC (An et al., 2021), MOPO (Yu
+et al., 2020), COMBO (Yu et al., 2021), and MAPLE (Chen et al., 2021), though any offline RL policy learning algorithm
+could be utilized.
+Second, we train the encoder qϕ and the decoder p̂ψ . The encoder qϕ is trained using the ELBO loss as defined in (8). The
+decoder p̂ψ is trained to reconstruct the past and to predict the next state, conditioned on the sample mt the current state st ,
+and the action at . This training constitutes the first phase of dynamics learning. During this step, the encoder learns a latent
+representation that captures essential information for reconstructing the trajectory. Unlike VariBAD, where the decoder
+is trained to reconstruct the entire trajectory including future states, we found that focusing on the past and the next state
+improves the decoder’s performance.
+After completing the first training phase, we freeze the encoder network parameters and proceed to the second phase. In this
+phase, we fine-tune the decoder network p̂ψ to accurately predict the next state given mt , st , and at . This is achieved using
+the loss function that we reiterate here for clarity:
+#
+"H−1
+X
+L(ψ) = Eτ ∼D
+Emh ∼qϕ (·|τ:h ) [− log p̂ψ (sh+1 , rh |sh , ah , mh )] .
+(16)
+h=0
+
+The second training phase ensures that the learned dynamics model, p̂ψ , accurately predicts the next state. This two-stage
+approach allows RefPlan to maintain an effective dynamics moel for planning at test time, unlike VariBAD, where the
+decoder is discarded after training the VAE.
+
+D. Experimental Details
+D.1. Experimental settings
+D4RL MuJoCo environments & datasets We use the v2 version for each dataset as provided by the D4RL library (Fu
+et al., 2020).
+Evaluation under high epistemic uncertainty due to OOD initialization (RQ1) To address RQ1, we assessed a policy
+trained on the ME dataset of each MuJoCo environment by initializing the agent from a state randomly selected from the R
+dataset. The results, presented in Figure 1, 1, and 1 are averaged over 3 seeds. For a fair comparison, the same initial state
+was used across all methods being compared—the prior policy, LOOP, and RefPlan—under the same random seed.
+Benchmarking on D4RL tasks (RQ2) To generate the benchmark results shown in Table 2, we first trained the
+five baseline policies on each dataset across the three environments. The focus of our analysis is on the performance
+18
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+CQL + RefPlan (BayesOpt)
+CQL + Refplan (Grid)
+
+100
+
+95
+
+90
+
+0
+
+5
+
+10
+
+15
+
+20
+
+Iteration
+
+(a) Hopper (MR)
+
+25
+
+30
+
+CQL + RefPlan (BayesOpt)
+CQL + Refplan (Grid)
+
+Best Performance
+
+Best Performance
+
+Best Performance
+
+CQL + RefPlan (BayesOpt)
+CQL + Refplan (Grid)
+
+55
+
+50
+
+45
+
+0
+
+5
+
+10
+
+15
+
+20
+
+Iteration
+
+(b) HalfCheetah (MR)
+
+25
+
+30
+
+95
+
+90
+
+85
+
+0
+
+5
+
+10
+
+15
+
+20
+
+Iteration
+
+25
+
+30
+
+(c) Walker2d (MR)
+
+Figure 7: Best performance vs. the number of BayesOpt iterations, using CQL as a prior policy on the MR datasets across
+three environments.
+
+improvements of these prior policies when augmented with either LOOP or RefPlan as an MB planning algorithm during
+the evaluation phase. Thus, our approach is designed to be complementary to any offline policy learning algorithms, making
+the relative performance gains more relevant than the absolute performance of each algorithm. Nevertheless, we aimed to
+closely replicate the original policy performance reported in prior studies. Table 7 compares our reproduced results with
+those originally reported. Overall, our implementation closely matches the original performances, often exceeding them
+significantly across various datasets. However, in some cases, our reproduced policy checkpoints underperformed compared
+to the originally reported results, such as CQL on the R datasets, EDAC on Walker2d M and ME datasets, COMBO on
+the Hopper R and M datasets, and MAPLE on the Hopper MR dataset. We will make our code publicly available upon
+acceptance.
+Varying dataset sizes (RQ3) In Figure 4, we present the normalized average return scores for CQL and its enhancements
+with either LOOP or RefPlan as we vary the dataset size from 50K to 500K. We conducted these experiments using the
+FR dataset across three environments, which originally contains 1M transition samples. To create the smaller datasets, we
+randomly subsampled trajectories. If the subsampled data exceeded the desired dataset size, we trimmed the last trajectory
+accordingly. For CQL training, we applied the same hyperparameters as those used for the full FR dataset.
+Changing dynamics (RQ4) To explore RQ4, we
+Table 8: Environment configuration for the HalfCheetah variations used in RQ4 experiments, showing the original and modified
+adapted the HalfCheetah environment following the apheight parameter values for each task.
+proach of Clavera et al. (2019), introducing five variTask
+Original
+Modified
+ations: disabled joint, hill, gentle slope, steep slope,
+and field. These variations were implemented using
+hill
+0.6
+0.2
+the code from https://github.com/iclavera/
+gentle
+1
+0.2
+steep
+4
+0.5
+learning_to_adapt. Unlike the original work,
+field U nif orm(0.2, 1) U nif orm(0.05, 0.4)
+which focuses on meta-RL, our study addresses an offline RL problem within a single task framework. Hence,
+to make the tasks easier, we modified the height parameter for most variations, excluding the disabled joint task. The specific adjustments to the height parameters are detailed in
+Table 8. These changes were intended to create more manageable tasks while still providing a meaningful challenge for the
+offline RL algorithms.
+D.2. Hyperparameters
+Table 9-13 outline the hyperparameters used for RefPlan across the five prior policies discussed in Section 4. We conducted
+a grid search over the following hyperparameters: the planning horizon H ∈ {2, 4}, the standard deviation of the Gaussian
+19
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+Table 9: Hyperparameters used for MAPLE + RefPlan used on D4RL MuJoCo Gym environments
+Hopper
+
+random
+medium
+med-replay
+med-expert
+full-replay
+
+HalfCheetah
+
+Walker2D
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+2
+2
+4
+2
+2
+
+0.01
+0.01
+0.01
+0.01
+0.01
+
+10.0
+0.1
+5.0
+0.1
+10.0
+
+1
+8
+1
+1
+1
+
+1.0
+0.1
+0.1
+1.0
+0.5
+
+4
+4
+4
+4
+2
+
+0.05
+0.01
+0.01
+0.01
+0.01
+
+10.0
+5.0
+10.0
+10.0
+5.0
+
+16
+16
+8
+4
+16
+
+1.0
+0.5
+0.1
+0.1
+0.1
+
+2
+2
+4
+2
+2
+
+0.05
+0.05
+0.05
+0.01
+0.05
+
+0.1
+10.0
+0.1
+10.0
+5.0
+
+16
+1
+16
+8
+1
+
+1.0
+0.1
+0.1
+0.5
+1.0
+
+Table 10: Hyperparameters used for COMBO + RefPlan used on D4RL MuJoCo Gym environments
+Hopper
+
+random
+medium
+med-replay
+med-expert
+full-replay
+
+HalfCheetah
+
+Walker2d
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+2
+2
+4
+4
+4
+
+0.05
+0.01
+0.01
+0.01
+0.01
+
+0.1
+10.0
+0.5
+0.5
+0.1
+
+16
+16
+8
+8
+8
+
+0.1
+0.5
+1.0
+1.0
+0.5
+
+2
+4
+2
+2
+4
+
+0.05
+0.05
+0.01
+0.05
+0.01
+
+0.1
+5.0
+5.0
+5.0
+10.0
+
+4
+16
+4
+16
+4
+
+0.1
+0.1
+0.1
+0.1
+0.1
+
+4
+4
+4
+4
+4
+
+0.01
+0.05
+0.01
+0.01
+0.05
+
+0.5
+1.0
+5.0
+10.0
+1.0
+
+16
+16
+16
+16
+8
+
+1.0
+0.5
+0.1
+0.1
+0.5
+
+Table 11: Hyperparameters used for MOPO + RefPlan used on D4RL MuJoCo Gym environments
+Hopper
+
+random
+medium
+med-replay
+med-expert
+full-replay
+
+HalfCheetah
+
+Walker2d
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+2
+2
+4
+4
+2
+
+0.01
+0.05
+0.05
+0.05
+0.05
+
+5.0
+5.0
+5.0
+1.0
+5.0
+
+1
+1
+16
+8
+16
+
+0.1
+0.1
+0.1
+0.1
+1.0
+
+4
+4
+2
+4
+4
+
+0.01
+0.05
+0.05
+0.01
+0.05
+
+10.0
+10.0
+10.0
+10.0
+5.0
+
+8
+4
+4
+16
+16
+
+0.1
+0.1
+0.1
+0.1
+0.1
+
+2
+2
+4
+4
+4
+
+0.05
+0.05
+0.01
+0.01
+0.05
+
+0.1
+5.0
+1.0
+10.0
+10.0
+
+8
+4
+16
+16
+1
+
+1.0
+1.0
+0.1
+1.0
+0.1
+
+Table 12: Hyperparameters used for CQL + RefPlan used on D4RL MuJoCo Gym environments
+Hopper
+
+random
+medium
+med-replay
+med-expert
+full-replay
+
+HalfCheetah
+
+Walker2d
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+4
+2
+4
+4
+4
+
+0.01
+0.01
+0.05
+0.01
+0.05
+
+10.0
+5.0
+0.1
+1.0
+10.0
+
+1
+16
+8
+1
+16
+
+0.1
+0.5
+0.1
+0.5
+0.1
+
+4
+2
+4
+2
+2
+
+0.05
+0.01
+0.01
+0.01
+0.01
+
+5.0
+5.0
+5.0
+5.0
+5.0
+
+1
+1
+16
+8
+8
+
+0.1
+0.5
+0.1
+0.1
+0.1
+
+4
+2
+4
+2
+4
+
+0.05
+0.05
+0.05
+0.01
+0.01
+
+10.0
+10.0
+1.0
+5.0
+5.0
+
+16
+16
+4
+8
+8
+
+1.0
+1.0
+0.1
+0.1
+0.1
+
+Table 13: Hyperparameters used for EDAC + RefPlan used on D4RL MuJoCo Gym environments
+Hopper
+
+random
+medium
+med-replay
+med-expert
+full-replay
+
+HalfCheetah
+
+Walker2d
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+H
+
+σ
+
+κ
+
+n̄
+
+p
+
+4
+2
+2
+2
+4
+
+0.05
+0.01
+0.05
+0.01
+0.05
+
+10.0
+10.0
+10.0
+1.0
+10.0
+
+16
+16
+1
+16
+4
+
+0.5
+0.1
+0.1
+0.5
+0.1
+
+4
+4
+4
+2
+2
+
+0.05
+0.05
+0.05
+0.05
+0.05
+
+5.0
+10.0
+10.0
+5.0
+10.0
+
+8
+4
+8
+8
+8
+
+0.1
+0.1
+0.1
+0.1
+0.1
+
+2
+4
+4
+4
+2
+
+0.05
+0.05
+0.05
+0.05
+0.05
+
+10.0
+10.0
+5.0
+5.0
+10.0
+
+4
+1
+16
+16
+1
+
+0.1
+0.1
+0.1
+0.1
+0.1
+
+noise σ ∈ {0.01, 0.05}, the inverse temperature parameter κ ∈ {0.1, 0.5, 1.0, 5.0, 10.0}, the number of latent samples
+n̄ ∈ {1, 4, 8, 16}, and the value uncertainty penalty p ∈ {0.1, 0.5, 1.0}. Our findings indicate that κ and n̄ are the most
+influential hyperparameters, while the others have a comparatively minor effect on performance. For LOOP, we conducted a
+similar grid search over the same hyperparameters, excluding n̄, which is specific to RefPlan.
+In addition, we used Bayesian optimization (BayesOpt, Snoek et al. (2012)), implemented in W&B (Biewald, 2020), to
+explore the challenge of identifying optimal hyperparameters for RefPlan. Figure 7 compares the number of iterations
+required for BayesOpt to achieve or surpass the performance of the best hyperparameter configuration found via grid search
+in each environment. Specifically, we used CQL as the prior policy and the MR dataset from three environments. Notably,
+BayesOpt required fewer than 20 iterations to exceed the performance reported in Table 2.
+20
+
+Reflect-then-Plan: Offline Model-Based Planning through a Doubly Bayesian Lens
+
+Table 14: Per-epoch runtimes for VAE pretraining on the ME dataset.
+Hopper
+
+HalfCheetah
+
+Walker2d
+
+qϕ
+
+p̂ψ
+
+qϕ
+
+p̂ψ
+
+qϕ
+
+p̂ψ
+
+55.3s
+
+39.8s
+
+53.2s
+
+40.7s
+
+54.6s
+
+40.7s
+
+Table 15: Runtime per environment step for RefPlan during evaluation in the HalfCheetah environment.
+n̄
+
+1
+
+2
+
+3
+
+4
+
+7.9 × 10−3 s
+1.5 × 10−2 s
+
+8.7 × 10−3 s
+1.6 × 10−2 s
+
+9.3 × 10−3 s
+1.8 × 10−2 s
+
+1.0 × 10−2 s
+1.9 × 10−2 s
+
+H
+2
+4
+
+D.3. Computational Costs of RefPlan
+In this section, we provide a detailed discussion of the computational costs associated with deploying RefPlan. As outlined
+in Appendix C.3, RefPlan requires the following pretrained components: a prior policy πp , an encoder qϕ , and a decoder p̂ψ .
+Since the prior policy is trained using standard offline policy learning algorithms (e.g., CQL, EDAC, MOPO, COMBO, and
+MAPLE), which are not our contributions, we focus on reporting the computational costs associated with training the VAE
+model and executing the planning stage. All experiments were conducted on a single machine equipped with an RTX 3090
+GPU.
+VAE Pretraining Table 14 presents the per-epoch runtimes for VAE pretraining in the three environments. The reported
+runtimes correspond to datasets with 2M transition samples, the largest dataset size used in our experiments. Both the VAE
+pretraining and decoder fine-tuning phases were executed for up to 200 epochs or until the validation loss ceased to improve
+for 5 consecutive epochs, whichever occurred first.
+Test-Time Planning At test time, planning with RefPlan involves selecting hyperparameters as detailed in Appendix D.2.
+Among these, the planning horizon H and the number of latent samples n̄ influence runtime. Specifically, the computational
+cost scales linearly with H, which is an inherent property of planning algorithms. However, the cost increases sub-linearly
+with n̄, as shown in Table 15. For example, with H = 4 and n̄ = 4, the agent achieves approximately 53 environment steps
+per second. We hypothesize that further optimization of PyTorch tensor operations to fully exploit GPU parallelism could
+yield even better computational performance, particularly with respect to n̄.
+
+21
+
+

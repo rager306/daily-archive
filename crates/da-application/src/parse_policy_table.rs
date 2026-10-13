@@ -330,13 +330,13 @@ pub fn rouge_l(a: &str, b: &str) -> f64 {
     for i in 1..=n {
         let mut prev_diag = 0u64;
         for j in 1..=m {
-            let tmp = dp[j];
-            if ta[i - 1].eq_ignore_ascii_case(tb[j - 1]) {
-                prev_diag = prev_diag + 1;
-            } else if dp[j] > prev_diag {
-                prev_diag = dp[j];
-            }
-            dp[j] = prev_diag;
+            let previous_row = dp[j];
+            dp[j] = if ta[i - 1].eq_ignore_ascii_case(tb[j - 1]) {
+                prev_diag + 1
+            } else {
+                dp[j].max(dp[j - 1])
+            };
+            prev_diag = previous_row;
         }
     }
     let lcs = dp[m] as f64;
@@ -352,18 +352,20 @@ pub fn rouge_l(a: &str, b: &str) -> f64 {
     }
 }
 
-/// Deterministic mean reward of a table's decisions over covered observations.
+/// Deterministic mean reward over observations of the table's selected code.
+/// Uncovered buckets and unmeasured decisions contribute no observation.
+/// Returns 0.0 when no selected-code observation exists.
 pub fn table_mean_reward(table: &LearnedDecisionTable, observations: &[PolicyObservation]) -> f64 {
     let mut sum = 0.0;
     let mut count = 0usize;
     for obs in observations {
-        let covered = match obs.decision_point {
-            DecisionPoint::GrammarRoute => table.grammar_for(&obs.features).is_some(),
-            DecisionPoint::BatchAdmission => table.admission_for(&obs.features).is_some(),
-            DecisionPoint::ProfileRoute => table.profile_for(&obs.features).is_some(),
-            _ => false,
+        let selected = match obs.decision_point {
+            DecisionPoint::GrammarRoute => table.grammar_for(&obs.features).map(|r| r.as_str()),
+            DecisionPoint::BatchAdmission => table.admission_for(&obs.features).map(|a| a.as_str()),
+            DecisionPoint::ProfileRoute => table.profile_for(&obs.features).map(|p| p.as_str()),
+            _ => None,
         };
-        if covered {
+        if selected == Some(obs.decision_code.as_str()) {
             sum += obs.reward;
             count += 1;
         }
@@ -570,6 +572,49 @@ mod tests {
     }
 
     #[test]
+    fn mean_reward_uses_only_the_selected_counterfactual_arm() {
+        let features = feat(18, 0, 0.85);
+        let observations = vec![
+            obs("d1", features.clone(), "page_outline", 1.0),
+            obs("d1", features.clone(), "xy_cut", 0.0),
+        ];
+        let table_for = |code: &str| {
+            LearnedDecisionTable::seal(
+                DecisionPoint::GrammarRoute,
+                BTreeMap::from([(
+                    feature_bucket(DecisionPoint::GrammarRoute, &features),
+                    code.to_string(),
+                )]),
+            )
+        };
+        assert_eq!(
+            table_mean_reward(&table_for("page_outline"), &observations),
+            1.0
+        );
+        assert_eq!(table_mean_reward(&table_for("xy_cut"), &observations), 0.0);
+    }
+
+    #[test]
+    fn mean_reward_excludes_uncovered_and_unmeasured_decisions() {
+        let features = feat(18, 0, 0.85);
+        let table = LearnedDecisionTable::seal(
+            DecisionPoint::GrammarRoute,
+            BTreeMap::from([(
+                feature_bucket(DecisionPoint::GrammarRoute, &features),
+                "xy_cut".to_string(),
+            )]),
+        );
+        let observations = vec![
+            obs("d1", features.clone(), "xy_cut", 0.25),
+            obs("d2", features.clone(), "xy_cut", 0.75),
+            obs("d2", features.clone(), "page_outline", 1.0),
+            obs("d3", feat(700, 40, 0.9), "xy_cut", 1.0),
+        ];
+        assert_eq!(table_mean_reward(&table, &observations), 0.5);
+        assert_eq!(table_mean_reward(&table, &observations[2..]), 0.0);
+    }
+
+    #[test]
     fn sealed_table_from_learner_validates() {
         let observations = vec![
             obs("d1", feat(18, 0, 0.85), "xy_cut", 0.9),
@@ -712,6 +757,65 @@ mod tests {
             let cell = table.lookup_with_fallback(&f).expect("covered");
             prop_assert_eq!(cell.code.as_str(), "xy_cut");
         }
+    }
+
+    fn rouge_l_matrix_oracle(a: &str, b: &str) -> f64 {
+        let a: Vec<&str> = a.split_whitespace().collect();
+        let b: Vec<&str> = b.split_whitespace().collect();
+        if a.is_empty() || b.is_empty() {
+            return 0.0;
+        }
+        let mut matrix = vec![vec![0usize; b.len() + 1]; a.len() + 1];
+        for (i, a_token) in a.iter().enumerate() {
+            for (j, b_token) in b.iter().enumerate() {
+                matrix[i + 1][j + 1] = if a_token.eq_ignore_ascii_case(b_token) {
+                    matrix[i][j] + 1
+                } else {
+                    matrix[i][j + 1].max(matrix[i + 1][j])
+                };
+            }
+        }
+        2.0 * matrix[a.len()][b.len()] as f64 / (a.len() + b.len()) as f64
+    }
+
+    fn rouge_tokens(tokens: &[u8]) -> String {
+        tokens
+            .iter()
+            .map(|token| ["alpha", "ALPHA", "beta", "gamma"][*token as usize])
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn rouge_l_matches_independent_matrix_oracle(
+            a in proptest::collection::vec(0u8..4, 0..12),
+            b in proptest::collection::vec(0u8..4, 0..12),
+        ) {
+            let a = rouge_tokens(&a);
+            let b = rouge_tokens(&b);
+            let score = rouge_l(&a, &b);
+            let expected = rouge_l_matrix_oracle(&a, &b);
+            prop_assert!((score - expected).abs() < 1e-12);
+            prop_assert!((0.0..=1.0).contains(&score));
+            prop_assert!((score - rouge_l(&b, &a)).abs() < 1e-12);
+        }
+
+        #[test]
+        fn rouge_l_nonempty_identity_is_one(
+            tokens in proptest::collection::vec(0u8..4, 1..12),
+        ) {
+            let text = rouge_tokens(&tokens);
+            prop_assert!((rouge_l(&text, &text) - 1.0).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn rouge_l_does_not_reuse_repeated_tokens() {
+        assert!((rouge_l("a", "a a") - 2.0 / 3.0).abs() < 1e-12);
+        assert!((rouge_l("a a", "a") - 2.0 / 3.0).abs() < 1e-12);
+        assert!((rouge_l("a b", "b b b") - 2.0 / 5.0).abs() < 1e-12);
+        assert!((rouge_l("b a", "b b a") - 4.0 / 5.0).abs() < 1e-12);
     }
 
     #[test]

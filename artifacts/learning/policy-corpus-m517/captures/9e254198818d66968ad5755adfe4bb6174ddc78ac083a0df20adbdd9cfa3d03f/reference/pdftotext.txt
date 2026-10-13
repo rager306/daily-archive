@@ -1,0 +1,1474 @@
+Chain-of-Tools: Utilizing Massive Unseen Tools in the CoT Reasoning of
+Frozen Language Models
+Mengsong Wu
+
+Tong Zhu
+Han Han
+Xiang Zhang
+Wenbiao Shao
+Wenliang Chen
+Soochow University, Shizi Street 1, 215006 Suzhou, China
+{mswumsw,tzhu7,hhan,xzhangxzhang23,wbshao}@stu.suda.edu.cn, wlchen@suda.edu.cn
+
+arXiv:2503.16779v1 [cs.CL] 21 Mar 2025
+
+Abstract
+Tool learning can further broaden the usage scenarios of large language models (LLMs). However most of the existing methods either need
+to finetune that the model can only use tools
+seen in the training data, or add tool demonstrations into the prompt with lower efficiency.
+In this paper, we present a new Tool Learning method Chain-of-Tools. It makes full use
+of the powerful semantic representation capability of frozen LLMs to finish tool calling in
+CoT reasoning with a huge and flexible tool
+pool which may contain unseen tools. Especially, to validate the effectiveness of our approach in the massive unseen tool scenario,
+we construct a new dataset SimpleToolQuestions. We conduct experiments on two numerical reasoning benchmarks (GSM8K-XL and
+FuncQA) and two knowledge-based question
+answering benchmarks (KAMEL and SimpleToolQuestions). Experimental results show that
+our approach performs better than the baseline.
+We also identify dimensions of the model output that are critical in tool selection, enhancing the model interpretability. Our code and
+data are available at: https://github.com/
+fairyshine/Chain-of-Tools .
+
+1
+
+Introduction
+
+The development of autonomous agent systems
+(Wang et al., 2024; Xi et al., 2023), propelled by
+real-world applications (Achiam et al., 2023) of
+Large Language Models (LLMs), has become a
+popular focus in both academic and industry communities. Benefit from LLM’s emergent ability
+(Wei et al., 2022a; Zhao et al., 2023) to think questions comprehensively and integratedly, LLM agent
+may give brilliant step-by-step solutions during
+multiple-turn chat with users. Despite LLM is expert in logical reasoning and breaking down problems, it can’t accomplish a lot of specific tasks like
+calculating math formulas or drawing paintings. In
+order to extend the application scenarios, equip-
+
+ping LLM agent with external tools is a reasonable
+solution. That’s what the Tool Learning (Qin et al.,
+2023a) task investigates: how to make LLMs better
+utilize tools in the process of reasoning?
+User Query
+What's the weather like at my destination tomorrow?
+Agent
+Generate output text token by token.
+Answer the following question step by step.
+(Relevant ICL Demos)
+Question: What's the weather like at my
+destination tomorrow?
+Answer: Tomorrow you will take part in
+NLP conference, Shanghai. The weather in
+Shanghai will be sunny …
+
+prompt
+input
+output
+tool calling
+result
+
+Schedule( )
+
+Weather( )
+
+Whenever a token is to be generated,
+determine whether to call a tool here?
+
+Tool Judge
+YES
+
+Tool Calling
+
+NO
+
+Generate next token. #
+
+Weather: sunny
+
+Add in answer. #
+
+Reply
+Answer
+
+sunny
+
+Thought
+
+Tomorrow you will take part in NLP
+conference, Shanghai. The weather in
+Shanghai will be sunny. Have a nice day!
+
+Tool Calling
+POST 1
+
+Schedule(date:tomorrow)
+
+GET 1 NLP conference, Shanghai
+POST 2
+GET 2
+
+Weather(location:Shanghai, date:tomorrow)
+weather:sunny temperature:18-26℃
+
+Figure 1: The ideal tool calling procedure.Take the
+input query "What’s the weather like at my destination
+tomorrow?" as an example.
+
+There are two kinds of typical methods for Tool
+Learning. (1) Fine-tuning based methods like
+API-Bank (Li et al., 2023) and ToolLLM (Qin
+et al., 2023b) can efficiently and precisely call
+tools which have been seen during training, while
+the general capabilities of LLMs such as emergent ability and Chain of Thought (CoT) might
+
+be influenced by fine-tuning (Wei et al., 2022b).
+ToolkenGPT (Hao et al., 2024) introduces a method
+which only fine-tunes extra tool-token embeddings
+without hurting the original model, but it still
+can’t use unseen tools. (2) In-context learning
+(ICL) based methods like HuggingGPT (Shen et al.,
+2024) and AgentBench (Liu et al., 2023) are flexible to call unseen tools with ICL prompt, while it
+is less efficient in reasoning when given massive
+tools. The above methods in Table 1 have shown a
+certain success in utilizing tools in the LLM agents.
+However, we argue that the LLM agent should be
+capable of efficiently managing a large amount of
+tools and fully utilizing unseen ones during the
+CoT reasoning, as many new tools may emerge
+daily in real-world application scenarios.
+Tool Learning
+Paradigms
+Fine-tuning
+In-Context Learning
+ToolkenGPT
+CoTools(Ours)
+
+Frozen
+LMs
+✘
+✔
+✔
+✔
+
+Plugable
+
+Massive
+Tools
+
+Unseen
+Tools
+
+Ability to
+Use Extensive Data
+
+✘
+✔
+✔
+✔
+
+✘
+✘
+✔
+✔
+
+✘
+✔
+✘
+✔
+
+✔
+✘
+✔
+✔
+
+also be computed from their description for flexible
+retrieval. What’s more, since the LLM is frozen,
+its CoT reasoning ability remains unaffected.
+Contributions of this paper are listed as following:
+• The new Tool Learning method CoTools can
+utilize massive unseen tools efficiently in the
+process of CoT reasoning with the frozen
+LLM. It fully explores the generation capability and the semantic representation capability
+of the LLM for better Tool Learning procedure. Unseen tools can be easily equipped for
+tool selection with their detailed descriptions
+without introducing external retriever.
+• We construct the dataset SimpleToolQuestions (STQuestions) including 1836 tools to
+evaluate the tool selection performance of
+each method. Compared with former benchmarks, it focuses on evaluating in the massive
+unseen tool scenario.
+
+Table 1: Comparision of the mainstream Tool Learning
+paradigms. "Plugable" means that tools can be flexibly
+loaded. "Ability to use extensive data" means that training data can be used to improve the performance of the
+method. (The table is partially referenced from Table 1
+in the paper of ToolkenGPT.)
+
+In this paper, we introduce Chain-of-Tools
+(CoTools), a brand new fine-tuning based Tool
+Learning method. We follow the way of fine-tuning
+based method since it is much more efficient to call
+tools which is critical for practical applications.
+The remaining problem is how to effectively utilize
+unseen tools in the process of CoT reasoning without hurting the model’s capability. In order to address this problem, we design the ideal Tool Learning procedure shown in Figure 1. CoTools fully
+utilizes the token semantic representation, which
+is often called as the hidden states generated by
+LLMs, as input to judge where to call tools and
+select which tools to call (e.g. "Weather" tool in
+Figure 1) then the tool calling result is added in
+the answer (e.g. "sunny" in Figure 1). First, the
+user query is prompted with ICL and CoT before
+being inputted into the LLM. Then CoTools judges
+whether to call a tool with the hidden state of new
+answer token when the LLM is generating every
+answer token. If tool calling is needed, CoTools
+calculates query vectors and tool vectors respectively with corresponding hidden states given for
+tool selection. The tool vectors of unseen tools can
+
+• For detailed evaluation, we conduct experiments on four benchmarks: GSM8K-XL,
+FuncQA, KAMEL and STQuestions. Experimental results show that CoTools performs
+better than baseline in both numerical reasoning and knowledge-based question answering.
+Moreover, we discover the key dimensions of
+the hidden states for tool selection, which may
+enhance the interpretability of the model.
+
+2
+
+Related Work
+
+2.1
+
+Tool Learning
+
+Tool Learning (Qin et al., 2023a) enables foundation models to leverage specialized external tools.
+LLMs then can accomplish much more complex
+tasks in realistic scenarios.
+Fine-Tuning based Tool Learning
+Most of these researches construct relevant tool
+datasets to fine-tune LLMs. Toolformer (Schick
+et al., 2024) explores how to generate tool learning data with raw dataset given. API-Bank (Li
+et al., 2023) builds the comprehensive tool learning
+benchmark with tools in many fields. GeneGPT
+(Jin et al., 2024) uses NCBI web APIs as tools
+to validate the model’s ability to call tools under
+a specific field. Gorilla (Patil et al., 2023) takes
+online models from platforms like HuggingFace
+as tools to extend the usage scenarios of tool calls.
+
+ToolLLM (Qin et al., 2023b) generates dataset ToolBench with massive real world tools and also propose a multi-step tool learning inference method
+DFSDT. API-BLEND (Basu et al., 2024) aggregates the various types of datasets available with
+elaborate analysis. ToolkenGPT (Hao et al., 2024)
+doesn’t adapt model weights but add many special
+tokens in the vocabulary. One special token represents one external tool. The corresponding tool is
+called when the model generates the special token.
+ToolkenGPT just need to train the token embedding which is efficient. CoTools does not train the
+foundation model but post-processing modules for
+the hidden states output by the model.
+In-Context Learning based Tool Learning
+In-context learning (Brown et al., 2020) is one
+of the most prominent capabilities of the LLMs.
+With the help of ICL, the model performance in
+the few-shot scenario of many tasks has improved
+dramatically. ICL has become a basic trick in the
+wide usage of LLMs. There is no exception in the
+Tool Learning task. TaskMatrix.AI (Liang et al.,
+2023) proposes the multimodal conversational system to equip the foundation model with rich crossmodal tools from the API platform. Huggingface
+models are also treated as tools in the paper of
+HuggingGPT (Shen et al., 2024). ToolDoc (Hsieh
+et al., 2023) provides tool documentions as an alernative to tool demonstraions which are added in
+ICL prompt. AgentBench (Liu et al., 2023) is a
+comprehensive agent benchmark for both commercial and open-sourced LLMs. ToolTalk (Farn and
+Shin, 2023) evaluates GPT-3.5 and GPT-4 (Achiam
+et al., 2023) with OpenAI API, which emphasizes
+tools that affect the external world such as sending emails. TaskWeaver (Qiao et al., 2023) asks
+the model to call tools in the format of generating
+python code. Tools in it are python functions which
+can be executed. ChatCoT (Chen et al., 2023) generates iterative tool-augmented reasoning according to the given problem. CoTools does not use the
+ICL prompt for tool selection, thereby enhancing
+efficiency in massive tool scenarios. It uses the ICL
+prompt to fill in tool parameters with tool calling
+demonstrations given.
+
+Instead of just being used to generate the next token
+as usual, the hidden state hn plays an important role
+in our method.
+The main structure of CoTools contains 3 parts:
+Tool Judge, Tool Retriever and Tool Calling like in
+Figure 2. The Tool Judge determines whether or
+not to invoke a tool during the CoT reasoning process. The Tool Retriever selects the most suitable
+tool based on the query and the answer fragment
+that has been generated. The Tool Calling fills in
+parameters of the selected tool with ICL prompt,
+executes it and gets the return value.
+
+2.2
+
+3.1
+
+Chain of Thought
+
+Prompt learning is developing rapidly with the rise
+of LLMs. Chain of Thought is firstly proposed
+in Wei et al. (2022b). It encourages the model to
+generate thought about the question that leads to a
+better answer. Zero-shot-CoT (Kojima et al., 2022)
+
+finds it work that add the phrase "Let’s think step by
+step." in prompt. The phrase is now widespreadly
+used in the prompt engineering of LLMs. There are
+also attempts to combine Zero-shot-CoT and Tool
+Learning together like ChatCoT and ToolkenGPT.
+It’s helpful to improve tool selection and invocation by models for complex problems. Subsequent
+attempts can be made to utilize improved versions
+of CoT such as Tree of Thoughts (Yao et al., 2024)
+to complete Tool Learning task.
+
+3
+
+Methodology
+
+In this section, we introduce Chain-of-Tools, a
+novel fine-tuning based Tool Learning method. The
+core idea of CoTools is to leverage the semantic representation capabilities of frozen foundation models for determining where to call tools and which
+tools to call. The foundation model M is usually
+an auto-regressive language model that would generate output token-by-token. Given the input token
+list of length n [x1 , x2 , . . . , xn ] (x ∈ V, V is the vocabulary of M) which is tokenized from the input
+text, the model M can generate the hidden state of
+the last token, which is called hn (hn ∈ Rd , d is
+the dim of the hidden states):
+hn = M(xn ; x1 , . . . , xn−1 )
+
+(1)
+
+Then we can get the next token xn+1 caculated by
+the language model head HLM of M:
+xn+1 = HLM (hn )
+
+(2)
+
+Tool Judge: Whether Calling Tools
+
+The Tool Judge J is used for determining whether
+to call a tool at the specific position of answer. It is
+calculated with the input hidden states h:
+J
+J
+J
+J (h) = Wdown
+((σWgate
+(h)) ⊗ Wup
+(h))
+
+(3)
+
+CoT Reasoning
+
+Tool Selection
+
+Task Prompt
+Answer
+
+Query
+
+Generate
+Next
+Token
+#
+NO
+
+LM
+Head
+
+Foundation Model
+Ⅰ. Tool Judge
+
+Tool Judge
+
+Tool Prompt
+
+Query
+
+Tool Name
+
+Answer Fragment
+
+Tool Description
+
+Foundation Model
+
+Foundation Model
+
+Query Encoder
+
+Tool Encoder
+
+Calling Prompt
+
+Foundation Model
+
+Tool Doc
+
+Tool DataBase
+Tool Pool
+
+Management
+
+YES
+
+Ⅲ. Tool Calling
+
+Retrieval Prompt
+
+Tool Vectors
+
+Demo
+
+Query Vector
+
+• Add Tools
+• Remove Tools
+• Execute Tools
+
+Score
+
+Similarity
+
+Query
+Answer Fragment
+
+Add in Answer #
+
+…
+
+…
+
+Tool Execution
+
+MAX
+
+Ⅱ. Tool Retriever
+
+Figure 2: Overview of the method CoTools. Just like the example in Figure 1, CoTools judges whether to call a
+tool whenever a new answer token is to be generated. The answer Fragment means the answer text that has been
+generated by the foundation model.
+
+Foundation Model
+
+Judge
+
+Encoder
+
+down
+
+weighting
+
+0.5), we attempt to call a tool here. Otherwise, the
+model outputs the next token xt+1 with Equation 2.
+We train J as the sequence labeling task. The
+objective function is the binary cross entropy loss:
+
+norm
+
+Tool Judge
+Tool Retriever
+Query Encoder
+
+down
+
+σ
+gate
+
+up
+
+σ
+
+(b)
+
+LJudge = LBCE (ScoreJ , Label)
+
+×
+
+gate
+
+Tool Encoder
+(a)
+
++
+
+×
+
+where Label ∈ {0, 1}.
+
+up
+
+3.2
+
+(c)
+
+Figure 3: Composition and structure of the model. The
+parameters of the foundation model are frozen. We
+only train the tool judge, the query encoder and the tool
+encoder.
+J
+J ∈ Rd×D , W J
+D×1
+where Wgate
+, Wup
+down ∈ R
+are parameters to be optimized. (D is the hyperparameter for the intermediate size). σ represents
+the activation function and ⊗ represents multiplication of corresponding positions.
+The initial input token list is tokenized from the
+query with ICL and CoT prompt. CoTools judges
+whether to call a tool whenever a new answer token
+is to be generated. Suppose the current token list is
+[x1 , x2 , . . . , xt ]. We calculate the hidden state ht
+of the last token xt with Equation 1. It is used to
+calculate the ScoreJ :
+
+ScoreJ = J (ht ) ∈ [0, 1]
+
+(5)
+
+(4)
+
+If ScoreJ is larger than threshold θ (typically set to
+
+Tool Retriever: Find Needed Tools
+
+The Tool Retriever consists of the Query Encoder
+EQ and the Tool Encoder ET . Both of them are used
+to calculate the vectors for retrieval. The Query Encoder EQ takes the hidden state of a token as input.
+In order to keep as much information as possible in
+the original hidden states, we use residual connection which is really important for the final result.
+EQ ′ can thus be seen as an offset optimization of
+the original hidden states used for retrieval:
+Q
+Q
+Q
+EQ ′ (h) = Wdown
+((σWgate
+(h)) ⊗ Wup
+(h))
+
+EQ (h) = norm(Wdim ⊗ (h + EQ ′ (h)))
+
+(6)
+
+Q
+Q ∈ Rd×D , W Q
+D×d and
+where Wgate
+, Wup
+down ∈ R
+d
+Wdim ∈ R are parameters to be optimized. ⊗ represents multiplication of corresponding positions.
+norm represents tensor normalization.
+When CoTools decides to call a tool in the process of reasoning, it tokenizes the query and answer
+fragment in retrieval prompt ending with the special END token xend (e.g. "</s>" in LLaMA2) to
+
+get [x1 , x2 , . . . , xLq , xend ]. The model M then calculates the hidden states of xend which is used for
+calculating the query vector VQ :
+VQ = EQ (M(xend ; x1 , . . . , xLq ))
+
+(7)
+
+Suppose the external tool pool is T. For any tool
+T ∈ T, we compute the tool vector VT in a similar
+way as we compute the query vector VQ :
+T
+T
+T
+ET ′ (h) = Wdown
+((σWgate
+(h)) ⊗ Wup
+(h))
+
+ET (h) = norm(Wdim ⊗ (h + ET ′ (h)))
+
+we use the numerical reasoning datasets GSM8KXL and FuncQA which are created in ToolkenGPT
+(Hao et al., 2024). For the later, we select the
+Knowledge-Based Question Answering (KBQA)
+datasets KAMEL (Kalo and Fichtel, 2022) and SimpleQuestionsv2 (Weston et al., 2015). To make the
+SimpleQuestionsv2 better suited for evaluation, we
+rewrite it using ChatGPT then get the new dataset
+SimpleToolQuestions (STQuestions). Number of
+tools in these datasets is shown in Table 2.
+
+(8)
+
+Dataset
+
+VT = ET (M(xend ; x1 , . . . , xLt ))
+T , W T ∈ Rd×D , W T
+D×d are
+where Wgate
+up
+down ∈ R
+parameters to be optimized. EQ and ET share the
+same parameter Wdim since Wdim is used to identify which dimensions of the hidden state play a
+role in the process of tool retrieval.
+We dot multiply the query vecotor VQ and the
+tool vector VT to calculate the similarity score for
+the corresponding tool T . The tool TQ∗ with the
+highest score is what we needed here.
+
+ScoreQ,T = VQ · VT
+
+(9)
+
+TQ∗ = argmax ScoreQ,T
+
+(10)
+
+T
+
+The Tool Retriever is trained with the constrastive learning method in batch as other retrievers do (Karpukhin et al., 2020). The tool search
+during training is limited to the tools involved in
+the single data batch, rather than the entire tool
+pool during evaluation. The objective function is
+the cross entropy loss:
+LRetriever = LCE (ScoreQ,TBatch , Label) (11)
+3.3
+
+Tool Calling: Use Retrieved Tools
+
+After finding the needed tool, the foundation model
+generates the parameters of it with ICL prompting.
+The tool calling format should be emphasized in
+the prompt so that we can extract parameters value
+properly with regex expression from the model
+output. Then the tool is executed and the result is
+added in answer.
+
+4
+
+Experiment
+
+In this section, we apply CoTools to two distinct
+Tool Learning application scenarios in English: calculating arithmetic questions and finding relevant
+knowledge in the Knowledge Base. For the former,
+
+Tool Amount
+
+GSM8K-XL
+FuncQA
+KAMEL
+SimpleToolQuestions
+
+4
+13
+234
+1,836
+
+Table 2: Number of tools for several datasets. Dataset
+SimpleToolQuestions has 999 seen tools and 837 unseen
+tools (only in the test set).
+
+Experiments on these benchmarks show that CoTools outperforms baseline across the board. Our
+method allows for more accurate tool selection
+even when the tool scale is very large. Also it
+demonstrates generalization performance on unseen tools. Besides, we find key dimensions of
+using hidden states for vector retrieval that help
+enhance the interpretability of the model.
+4.1
+4.1.1
+
+Experiment Setting
+Numerical Reasoning
+
+To evaluate tool learning paradigms on the numerical reasoning task, we use the two datasets
+created by ToolkenGPT (Hao et al., 2024): (1)
+GSM8K-XL: It’s an enhanced version of the existing GSM8K (Cobbe et al., 2021) dataset with
+4 basic arithmetic operations (+ − ×÷) as tools.
+(2) FuncQA: It’s an synthetic dataset with 13
+arithemetic tools, with both one-hop and multihops questions.
+Because the same arithmetic problem can often
+be solved in many different procedures, we focus
+on the correctness of the final result rather than on
+the specific tool calling process in the evaluation.
+The evaluation metric is just like in ToolkenGPT.
+We use the Round Accuracy metric for GSM8KXL and FuncQA One-Hop test sets. The float numbers are rounded to two decimals. The Approx
+Accuracy metric is used for the FuncQA MultiHop test set. It allows for errors of 0.1% accuracy
+in multi-step calculations.
+
+4.1.2
+
+Knowledge-Based Question Answering
+
+For evaluating whether tool learning paradigms can
+choose proper relevant tools on the KBQA task,
+we use an existing dataset KAMEL and construct
+a new dataset SimpleToolQuestions with a much
+larger amount of tools.
+(1) KAMEL (Kalo and Fichtel, 2022): It’s an
+QA dataset built with the knowledge in KB Wikidata. It has 234 relations which are viewed as tools.
+We use the post-processing version of the paper
+ToolkenGPT (Hao et al., 2024) with a gold training set KAMEL(sup) and a synthetic training set
+KAMEL(syn) generated by ChatGPT.
+(2) SimpleToolQuestions (STQuestions): we
+construct it based on the KBQA dataset SimpleQuestionsv2 (Weston et al., 2015). One case in
+the raw dataset contains a question and a triplet
+(head entity, relationship, tail entity). The raw data
+needs models to find the head entity in the question. Then the knowledge subgraph about the head
+entity is founded in the KB Freebase. Relationship
+is searched in a small scope. But if we add all relations into the tool pool, it’s not proper to retrieve
+tools in the whole with short questions. There are
+many similar tools thus it is impossible to judge. In
+order to make this dataset more applicable for tool
+learning evaluation, we rewrite the original question using ChatGPT. The new questions provide a
+more detailed description of the needed relationship. The dataset has 1836 tools with description
+from many different domains. 999 of them appear
+in the training set and 837 unseen tools are only in
+the test set. We also generates tool description for
+each tool like the format of KAMEL. It can be used
+to assess the accuracy of selection against seen and
+unseen tools in the large tool scale scenario, and
+whether the model favors tools of certain domains.
+For KBQA benchmarks, we are more concerned
+about the accuracy of tool selection. We want to
+evaluate whether the model is able to understand
+the semantic information of the questions and select
+the relevant tools, espcially when the tool pool is
+pretty large or the tools are unseen.
+4.2
+
+Main Result
+
+Here is the main evaluation section of the paper.
+We compare our method CoTools with baselines
+like 0-shot ChatGPT and ToolkenGPT.
+For the numerical reasoning task, the performances of different methods on the GSM8K-XL
+and FuncQA datasets are shown in Table 3. On
+
+Method
+
+GSM8K-XL
+
+FuncQA
+One-Hop Multi-Hops
+
+0-shot ChatGPT
+
+0.17
+
+0.55
+
+0.09
+
+0-shot Prompting LLaMA
+CoT Prompting LLaMA
+ToolkenGPT LLaMA
+CoTools(ours) LLaMA
+
+0.04
+0.00
+0.18
+0.19
+
+0.05
+0.00
+0.48
+0.53
+
+0.00
+0.00
+0.06
+0.07
+
+0-shot Prompting Mistral
+CoT Prompting Mistral
+CoTools(ours) Mistral
+
+0.14
+0.10
+0.42
+
+0.17
+0.20
+0.63
+
+0.04
+0.06
+0.07
+
+Table 3: Main results on Numerical Reasoning Benchmarks. Round Acc metric (round float numbers to two
+decimals) for GSM8K-XL and FuncQA One-Hop. Approx Acc metric (allow 0.1% error) for FuncQA MultiHops. LLaMA refers to LLaMA2-7B-Chat. Mistral
+refers to Mistral-7B-Instruct-v0.2. Every result is from
+a single run.
+
+the GSM8K-XL dataset, CoTools and ToolkenGPT
+based on LLaMA2-7B are comparable with ChatGPT in effect. On the FuncQA dataset, CoTools
+is a little bit better than ToolkenGPT in one-hop
+questions with the foundation model LLaMA2-7B
+while makes even in multi-hops questions. The
+performance of CoTools is very dependent on the
+foundation model’s own ability. It enhances the
+performance of foundation models across all ability levels compared to baseline methods, making
+the strong even stronger.
+Method (%)
+ToolkenGPT LLaMA
+CoTools(Ours) LLaMA
+
+KAMEL
+SUP SYN
+
+STQuestions
+Seen Unseen
+
+93.4
+93.8
+
+23.8
+35.1
+
+20.6
+43.6
+
+0.0
+10.4
+
+Table 4: Main results on KBQA Benchmarks. The eval
+metric is the accuracy of tool selection. Because of the
+large number of tools, we do not evaluate the Prompting
+method which is inefficient and hard to guarantee results.
+LLaMA refers to LLaMA2-7B-Chat.
+
+For KBQA benchmarks, the tool selection results of different methods are listed in Table 4.
+For cases with large amounts of gold training data
+such as KAMEL(sup), both methods perform well.
+With synthetic training sets KAMEL(syn) created
+by ChatGPT, CoTools does much better though
+it is still a long way from being usable. CoTools
+does better in low-quality training data scenarios,
+perhaps because of the contrastive learning training approach. Similarly CoTools performs better
+in massive tool (999 seen tools in the STQuestions dataset) scenarios. For 837 unseen tools in
+the STQuestions dataset, CoTools can use the detailed description of tools for better retrieval while
+
+ToolkenGPT only can use tools that have been
+trained. More details about unseen tools are further
+investigated in Section 4.3.3.
+4.3
+4.3.1
+
+Analysis
+Data Synthesis
+
+The quality of dataset used for fine-tuning is very
+important (Zhou et al., 2024), so we want to investigate the effect of dataset generated by human and
+the LLM. We use two versions of KAMEL training
+set for comparative validation. (1) KAMEL(sup)
+is sampled from raw KAMEL training set. It simulates the real-world scenario with sufficient indomain training data. (2) KAMEL(syn) is synthesized by ChatGPT. For the situation where massive
+new tools are added to the tool pool, it is costly for
+human annotators to annotate sufficient data. It is
+common today to use LLMs to assist in generating
+data for model tuning.
+100
+99
+98
+97
+96
+95
+94
+93
+92
+91
+90
+
+ToolkenGPT
+
+30
+
+CoTools
+
+60
+
+CoTools top5
+
+100
+
+234
+
+Figure 4: Performances of the methods with foundation
+model fine-tuned by KAMEL(sup). The X-axis represents the number of tools in the tool pool. The Y-axis
+represents the tool selection accuracy.
+
+With KAMEL(sup), both methods perform
+pretty well in Figure 4. This demonstrates that the
+tool selection subtask can already be well solved by
+existing methods when high quality training data
+are sufficient. CoTools remains nearly 100% correct with the TOP 5 tools selected so it would land
+well in real-world scenarios.
+100
+90
+80
+70
+60
+50
+40
+30
+20
+10
+
+ToolkenGPT
+
+30
+
+CoTools
+
+60
+
+CoTools top5
+
+100
+
+234
+
+Figure 5: Performances of the methods with foundation
+model fine-tuned by KAMEL(syn). The rest of the
+settings are the same as in Figure 4.
+
+For the synthetic training set KAMEL(syn),
+Figure 5 shows that CoTools is stronger than
+
+ToolkenGPT by more than 20%. Since the foundation model is frozen and the training data is limited, contrastive learning methods used in CoTools
+might be particularly effective. It can better teach
+the agent to distinguish between tools, even though
+the data quality is poor.
+4.3.2
+
+The number of tools
+
+In this part, we try to explore the upper limit of the
+amount of loading tools supported by each method.
+The benchmark STQuestions contains 999 tools
+which appear in the training set. The evaluation
+results on it are shown in Figure 6 below.
+90
+80
+70
+60
+50
+40
+30
+20
+10
+
+ToolkenGPT
+
+200
+
+400
+
+CoTools
+
+600
+
+CoTools top5
+
+800
+
+999
+
+Figure 6: Tool selection result with massive tools. The
+X-axis represents the number of tools in the tool pool.
+The Y-axis represents the tool selection accuracy.
+
+As the number of tools reaches a thousand scale,
+CoTools still outperforms the baseline by more than
+10%. With the number of tools increases, the probability of similar tools appearing is much higher.
+Benefit from the strong language understandng capabilty of LLMs, the tool learning method CoTools
+which better uses the LLM’s own ability does better
+in this situation.
+4.3.3
+
+Unseen Tools
+
+It is meaningful to evaluate the generalizability of
+the fine-tuned model especially in tool learning.
+It’s inconvenient to adapt the model weight whenever some new tools are added. As mentioned in
+Section 4.1.2, total 837 tools in the dataset STQuestions do not appear in the training set. We use these
+unseen tools as out-of-domain distributions to examine the generalization ability of the model.
+The main results on unseen tools have been listed
+in Table 4. CoTools has a top1 accuracy of 10.41%
+and a top5 accuracy of 33.68%. ToolkenGPT has a
+top1 accuracy of 0.0%. We count the wrong cases
+in the results as in Figure 7. It’s easy to see from
+the figure that ToolkenGPT has a clear preference
+for a small group of tools however CoTools does
+not. In other words, CoTools focuses more on how
+to distinguish and identify tools during training
+instead of remembering them.
+
+ToolkenGPT
+
+lr=0.001
+
+CoTools
+
+40
+30
+20
+10
+0
+
+Figure 7: Error analysis for instances with unseen tools.
+We count the number of instances where the unseen
+tool should have been called but the seen tool is called
+instead. The X-axis represents the 999 seen tools. The
+Y-axis represents the number of times the seen tool is
+incorrectly called. (It is recommended to view the colorprinted version.)
+
+4.3.4 Key Dimension in Hidden States
+In this section, we would like to explore which
+dimensions of hidden states play a key role when
+retrieving tools. During experiments we find a
+robust model probing (Alain and Bengio, 2016)
+method For LLM outputs. It may help to enhance
+model interpretability.
+As mentioned in Section 3.2, the Query Encoder
+EQ and the Tool Encoder ET share the same Wdim
+weight (Wdim ∈ Rd , with all-ones initialization).
+We individually set its learning rate to 0.001, 0.01
+and 0.1 for training respectively, and other hyperparameters are kept constant. The raw Wdim weights
+after training are partially displayed in Figure 8.
+lr=0.001
+
+lr=0.01
+
+Figure 8: Raw Wdim weight segment (only the first 64
+dimensions). The weights are initialized with all ones.
+
+It’s obvious in Figure 8 that parameters change
+more drastically with larger learning rates. At a
+learning rate setting of 0.1, many of the parameters
+change from the initial 1 to 0. In addition a similar
+trend can be vaguely observed for the three folds.
+In order to better analyze the commonality of the
+parameters at different learning rates, we normalize
+them using Equation 12. The similar trend of the
+three folds can be clearly found in Figure 9. We
+view dimensions with the common upper value
+of 3 Wdim weights as the key dimensions. The
+subscales corresponding to the key dimensions play
+an important role in tool selection.
+Ŵdim =
+
+Wdim − W dim
+σWdim
+
+(12)
+
+lr=0.1
+
+Figure 9: Normalized Wdim weight segment (only the
+first 64 dimensions) by equation 12.
+
+Taking this a step further, we observe the data
+distribution of raw Wdim weights. The values of
+4096 dimensions after the descending order are
+shown in Figure 10. As the learning rate increases,
+the key dimensions become more and more centralized. At a learning rate of 0.01, 1561 of the
+4096 dimensions are weighted more than the initial
+1. We use only these dimensions for tool retrieval.
+The TOP1 accuracy has decreased by only 1.4%
+from the original 93.8%, while the TOP5 accuracy
+remains unchanged. This provides some evidence
+that the dimensions of the hidden state of LLM are
+divided in representing semantic information.
+5
+4
+3
+2
+1
+0
+
+lr=0.1
+
+4.5
+4
+3.5
+3
+2.5
+2
+1.5
+1
+0.5
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64
+
+lr=0.01
+
+4
+3.5
+3
+2.5
+2
+1.5
+1
+0.5
+0
+-0.5
+-1
+-1.5
+-2
+-2.5 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64
+
+lr=0.001
+
+lr=0.01
+
+lr=0.1
+
+Figure 10: Sorted raw Wdim weight. It’s trained with
+the dataset KAMEL.
+
+5
+
+Conclusion
+
+In this paper, we present a novel CoT tool learning
+method CoTools which is based on frozen LLMs.
+CoTools incorporates tool invocation into the process of generating answers to the model while maintaining the original generalized ability of the foundation model. It leverages the powerful semantic
+representation capability of the foundation model
+to determine whether to call a tool and what tool
+to call. Experiments on Benchmarks of numerical
+reasoning and KBQA tasks show that our method
+performs well in different scenarios. In particular, its tool selection capability is much improved
+compared to the baseline. In addition, we roughly
+explore the role that different hidden states dimensions of model output play in the tool selection process, which helps to enhance model interpretability. We believe that our ideal Tool Learning agent
+framework based on frozen LLMs with its practical realization method CoTools can be useful in
+
+real-world applications and even drive further development of Tool Learning.
+
+Limitations
+Research on LLM Tool Learning is still on its early
+stage. Although the open source community already has a number of Tool Learning datasets, a
+large proportion of them are too simple or of low
+quality. As a whole, our research is thus limited.
+One limitation is that we do not conduct experiments for tools containing multiple return values.
+In this situation, we need to select the return value
+that should be added to the answer. Our solution
+is to train a similar Return Value Encoder ER like
+EQ in Section 3.2. Unfortunately it cannot not be
+evaluated at the moment because of the lack of relevant CoT Tool Learning datasets with this kind of
+tools. For the selection of return values for this type
+of tools, a temporary alternative to the prompting
+scheme is currently available.
+Another possible limitation is that we do not
+attempt the complete Tool Learning process on a
+large-scale real-world toolset. A Tool Learning
+dataset with large-scale realizable tools still does
+not exist. The dataset ToolBench (Qin et al., 2023b)
+comes closest to this goal. However the format
+of its gold data is too cumbersome and not well
+filtered.
+
+References
+Josh Achiam, Steven Adler, Sandhini Agarwal, Lama
+Ahmad, Ilge Akkaya, Florencia Leoni Aleman,
+Diogo Almeida, Janko Altenschmidt, Sam Altman,
+Shyamal Anadkat, et al. 2023. Gpt-4 technical report.
+arXiv preprint arXiv:2303.08774.
+Guillaume Alain and Yoshua Bengio. 2016. Understanding intermediate layers using linear classifier
+probes. arXiv preprint arXiv:1610.01644.
+Kinjal Basu, Ibrahim Abdelaziz, Subhajit Chaudhury,
+Soham Dan, Maxwell Crouse, Asim Munawar, Sadhana Kumaravel, Vinod Muthusamy, Pavan Kapanipathi, and Luis A Lastras. 2024. Api-blend: A
+comprehensive corpora for training and benchmarking api llms. arXiv preprint arXiv:2402.15491.
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie
+Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind
+Neelakantan, Pranav Shyam, Girish Sastry, Amanda
+Askell, et al. 2020. Language models are few-shot
+learners. Advances in neural information processing
+systems, 33:1877–1901.
+Zhipeng Chen, Kun Zhou, Beichen Zhang, Zheng
+Gong, Xin Zhao, and Ji-Rong Wen. 2023. ChatCoT: Tool-augmented chain-of-thought reasoning on
+
+chat-based large language models. In Findings of the
+Association for Computational Linguistics: EMNLP
+2023, pages 14777–14790, Singapore. Association
+for Computational Linguistics.
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian,
+Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias
+Plappert, Jerry Tworek, Jacob Hilton, Reiichiro
+Nakano, et al. 2021. Training verifiers to solve math
+word problems. arXiv preprint arXiv:2110.14168.
+Nicholas Farn and Richard Shin. 2023. Tooltalk: Evaluating tool-usage in a conversational setting. arXiv
+preprint arXiv:2311.10775.
+Shibo Hao, Tianyang Liu, Zhen Wang, and Zhiting Hu.
+2024. Toolkengpt: Augmenting frozen language
+models with massive tools via tool embeddings. Advances in neural information processing systems, 36.
+Cheng-Yu Hsieh, Si-An Chen, Chun-Liang Li, Yasuhisa
+Fujii, Alexander Ratner, Chen-Yu Lee, Ranjay Krishna, and Tomas Pfister. 2023. Tool documentation enables zero-shot tool-usage with large language
+models. arXiv preprint arXiv:2308.00675.
+Qiao Jin, Yifan Yang, Qingyu Chen, and Zhiyong Lu.
+2024. Genegpt: Augmenting large language models
+with domain tools for improved access to biomedical
+information. Bioinformatics, 40(2):btae075.
+Jan-Christoph Kalo and Leandra Fichtel. 2022. Kamel:
+Knowledge analysis with multitoken entities in language models. In Proceedings of the Conference on
+Automated Knowledge Base Construction.
+Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick
+Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and
+Wen-tau Yih. 2020. Dense passage retrieval for opendomain question answering. In Proceedings of the
+2020 Conference on Empirical Methods in Natural
+Language Processing (EMNLP), pages 6769–6781,
+Online. Association for Computational Linguistics.
+Takeshi Kojima, Shixiang Shane Gu, Machel Reid, Yutaka Matsuo, and Yusuke Iwasawa. 2022. Large language models are zero-shot reasoners. Advances in
+neural information processing systems, 35:22199–
+22213.
+Minghao Li, Yingxiu Zhao, Bowen Yu, Feifan Song,
+Hangyu Li, Haiyang Yu, Zhoujun Li, Fei Huang,
+and Yongbin Li. 2023. API-bank: A comprehensive
+benchmark for tool-augmented LLMs. In Proceedings of the 2023 Conference on Empirical Methods
+in Natural Language Processing, pages 3102–3116,
+Singapore. Association for Computational Linguistics.
+Yaobo Liang, Chenfei Wu, Ting Song, Wenshan Wu,
+Yan Xia, Yu Liu, Yang Ou, Shuai Lu, Lei Ji,
+Shaoguang Mao, et al. 2023. Taskmatrix. ai: Completing tasks by connecting foundation models with
+millions of apis. arXiv preprint arXiv:2303.16434.
+
+Xiao Liu, Hao Yu, Hanchen Zhang, Yifan Xu, Xuanyu
+Lei, Hanyu Lai, Yu Gu, Hangliang Ding, Kaiwen
+Men, Kejuan Yang, et al. 2023. Agentbench: Evaluating llms as agents. arXiv preprint arXiv:2308.03688.
+Shishir G Patil, Tianjun Zhang, Xin Wang, and
+Joseph E Gonzalez. 2023. Gorilla: Large language
+model connected with massive apis. arXiv preprint
+arXiv:2305.15334.
+Bo Qiao, Liqun Li, Xu Zhang, Shilin He, Yu Kang,
+Chaoyun Zhang, Fangkai Yang, Hang Dong, Jue
+Zhang, Lu Wang, et al. 2023.
+Taskweaver:
+A code-first agent framework. arXiv preprint
+arXiv:2311.17541.
+Yujia Qin, Shengding Hu, Yankai Lin, Weize Chen,
+Ning Ding, Ganqu Cui, Zheni Zeng, Yufei Huang,
+Chaojun Xiao, Chi Han, et al. 2023a.
+Tool
+learning with foundation models. arXiv preprint
+arXiv:2304.08354.
+Yujia Qin, Shihao Liang, Yining Ye, Kunlun Zhu, Lan
+Yan, Yaxi Lu, Yankai Lin, Xin Cong, Xiangru Tang,
+Bill Qian, et al. 2023b. Toolllm: Facilitating large
+language models to master 16000+ real-world apis.
+arXiv preprint arXiv:2307.16789.
+Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta
+Raileanu, Maria Lomeli, Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. 2024.
+Toolformer: Language models can teach themselves
+to use tools. Advances in Neural Information Processing Systems, 36.
+Yongliang Shen, Kaitao Song, Xu Tan, Dongsheng Li,
+Weiming Lu, and Yueting Zhuang. 2024. Hugginggpt: Solving ai tasks with chatgpt and its friends
+in hugging face. Advances in Neural Information
+Processing Systems, 36.
+Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao
+Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang,
+Xu Chen, Yankai Lin, et al. 2024. A survey on large
+language model based autonomous agents. Frontiers
+of Computer Science, 18(6):1–26.
+Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel,
+Barret Zoph, Sebastian Borgeaud, Dani Yogatama,
+Maarten Bosma, Denny Zhou, Donald Metzler, et al.
+2022a. Emergent abilities of large language models.
+arXiv preprint arXiv:2206.07682.
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten
+Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou,
+et al. 2022b. Chain-of-thought prompting elicits reasoning in large language models. Advances in neural
+information processing systems, 35:24824–24837.
+Jason Weston, Antoine Bordes, Sumit Chopra, Alexander M Rush, Bart Van Merriënboer, Armand Joulin,
+and Tomas Mikolov. 2015. Towards ai-complete
+question answering: A set of prerequisite toy tasks.
+arXiv preprint arXiv:1502.05698.
+
+Zhiheng Xi, Wenxiang Chen, Xin Guo, Wei He, Yiwen
+Ding, Boyang Hong, Ming Zhang, Junzhe Wang,
+Senjie Jin, Enyu Zhou, et al. 2023. The rise and
+potential of large language model based agents: A
+survey. arXiv preprint arXiv:2309.07864.
+Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran,
+Tom Griffiths, Yuan Cao, and Karthik Narasimhan.
+2024. Tree of thoughts: Deliberate problem solving
+with large language models. Advances in Neural
+Information Processing Systems, 36.
+Wayne Xin Zhao, Kun Zhou, Junyi Li, Tianyi Tang,
+Xiaolei Wang, Yupeng Hou, Yingqian Min, Beichen
+Zhang, Junjie Zhang, Zican Dong, et al. 2023. A
+survey of large language models. arXiv preprint
+arXiv:2303.18223.
+Chunting Zhou, Pengfei Liu, Puxin Xu, Srinivasan Iyer,
+Jiao Sun, Yuning Mao, Xuezhe Ma, Avia Efrat, Ping
+Yu, Lili Yu, et al. 2024. Lima: Less is more for alignment. Advances in Neural Information Processing
+Systems, 36.
+
+A
+
+Hyper Parameter
+
+Hyper parameters for fine-tuning is shown in Table 5. When fine-tuning the Tool Retriever with
+GSM8K-XL, we adjust the batch size because of
+the CUDA Out Of Memory Error reported. Back
+propagation frequency in fine-tuning Tool Retriever
+with FuncQA is also adapted since it only has 611
+pieces of data.
+Module
+Judge
+Retriever
+Retriever(GSM8K-XL)
+Retriever(FuncQA)
+
+Epoch
+
+Learning Rate
+
+Batch Size
+
+Accumulation Step
+
+3
+10
+10
+10
+
+1e-5
+1e-4
+1e-4
+1e-4
+
+8
+16
+12
+8
+
+16
+12
+16
+6
+
+Table 5: Hyper parameters used in fine-tuning with
+foundation models LLaMA2-7B-Chat and Mistral-7BInstruct-v0.2.
+
+For learning rate of Wdim , we generally set it to
+0.01. In fact, Wdim has little effect on the finetuning effect and can be removed by adjusting
+"tensor_weighting" to "false" in the settings of our
+source code. It is mainly used to explore the semantic information contained in hidden states.
+
+B
+
+Dataset
+
+B.1
+
+Dataset Split
+
+The specific details of the 4 datasets are shown in
+Table 6. Further additional explanation of the details of the dataset is provided below: The test set
+of dataset FuncQA contains 60 single-hop problems and 68 multi-hop problems. The training set
+of KAMEL contains 19,000 artificially constructed
+
+Dataset
+
+Tool
+
+Train
+
+Dev
+
+Test
+
+GSM8K-XL
+
+4
+
+5,054
+
+1,000
+
+568
+
+FuncQA
+
+13
+
+611
+
+39
+
+60
+68
+
+KAMEL
+
+234
+
+19,000
+8,095
+
+1,000
+
+500
+
+STQuestions
+
+999
+837
+
+10,483
+
+1,707
+
+1,707
+1,066
+
+Table 6: Detailed information of 4 datasets, including
+the number of tools for each dataset and the distribution
+of data across the training, development, and test sets.
+
+gold standard data (sup) and 8,095 ChatGPT synthesized data (syn). They are separated for training.
+The dataset STQuestions contains 999 seen tools
+and 837 unseen tools. Its test set is also divided into
+1,707 questions for seen tools and 1,066 questions
+for unseen tools.
+B.2
+
+Dataset License
+
+GSM8K-XL: MIT License.
+FuncQA: Apache License 2.0.
+KAMEL: The Creative Commons AttributionNoncommercial 4.0 International License.
+STQuestions: Creative Commons Attribution 3.0
+License.
+
+C
+
+Prompt
+
+To ensure experimental fairness, we all use the
+prompt provided in the dataset or baseline for inference. The other Prompts utilized are shown below.
+Tool Prompt :
+tool name: [Tool Name], tool description:
+[Tool Description]
+Retrieval Prompt of the dataset GSM8K-XL:
+[Query] Let’s think step by step.[Answer
+Fragment]
+Retrieval Prompt of the dataset FuncQA:
+Q: [Query]
+A: [Answer Fragment]
+Retrieval Prompt of the dataset KAMEL and
+STQuestions:
+Question: [Question]
+Answer: The answer is
+
+D
+
+Computational Resource
+
+For LLaMA2-7B-Chat, the computing resources
+we use are 2 × NVIDIA V100 32G. Training the
+Tool Retriever with the GSM8K-XL dataset (5,054
+cases) takes approximately 2 hours per epoch.
+
+E
+
+Safeguarding Statement
+
+In this paper, we focus on the application of Tool
+Learning to solve numerical reasoning and knowledge retrieval tasks. We do not believe it poses any
+political, ethical or legal risk. In the future, we will
+also explore how LLMs can be better integrated
+with Tool Learning to serve human society.
+
+
