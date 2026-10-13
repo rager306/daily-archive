@@ -6,6 +6,7 @@ layout, and the trajectory wiring is checked end to end once.
 """
 
 import json
+from datetime import date, timedelta
 from pathlib import Path
 
 import yaml
@@ -336,7 +337,12 @@ def _journal(root: Path, day: str, *lines: str) -> None:
 
 
 def test_reader_counts_markers_inside_the_window_only(tmp_path: Path) -> None:
-    _journal(tmp_path, "2026-09-27", "Projection mutation remains fenced a", "Projection mutation remains fenced b")
+    # The window filter is anchored to the real current date, so the in-window
+    # entries must be dated relative to today: pinning a calendar date here
+    # rots as soon as the pinned day falls out of the 7-day window.
+    today = date.today()
+    _journal(tmp_path, today.isoformat(), "Projection mutation remains fenced a")
+    _journal(tmp_path, (today - timedelta(days=1)).isoformat(), "Projection mutation remains fenced b")
     _journal(tmp_path, "2026-01-01", "Projection mutation remains fenced stale")
     reader = GsdControlPlaneReader(tmp_path, tmp_dir=tmp_path / "tmp")
     counts = reader.observe(7, CONTRACT_FIXTURE["journal_markers"])["journal_counts"]
@@ -415,7 +421,8 @@ def test_reader_counts_scratch_dirs_by_prefix(tmp_path: Path) -> None:
 
 
 def test_trajectory_flags_contention_end_to_end(tmp_path: Path) -> None:
-    _journal(tmp_path, "2026-09-27", "Projection mutation remains fenced")
+    # Window-relative for the same calendar-rot reason as the reader test above.
+    _journal(tmp_path, date.today().isoformat(), "Projection mutation remains fenced")
     contract_dir = tmp_path / "scripts" / "governor" / "checks"
     contract_dir.mkdir(parents=True)
     (contract_dir / "gsd_control_plane.yaml").write_text(
