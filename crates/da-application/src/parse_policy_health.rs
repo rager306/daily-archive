@@ -9,6 +9,8 @@
 
 use crate::parse_policy_table::PolicyObservation;
 use serde::{Deserialize, Serialize};
+
+use crate::parse_policy_table::PolicyOutcomeEvidence;
 use std::collections::BTreeMap;
 use thiserror::Error;
 
@@ -26,11 +28,16 @@ pub enum HealthError {
 pub struct HealthThresholds {
     /// A non-modal backend below this ok-rate raises a drift alarm.
     pub min_ok_rate: f64,
+    /// Per-document gate floors (critic_sample as derived data).
+    pub gate_floors: GateFloors,
 }
 
 impl Default for HealthThresholds {
     fn default() -> Self {
-        Self { min_ok_rate: 0.5 }
+        Self {
+            min_ok_rate: 0.5,
+            gate_floors: GateFloors::default(),
+        }
     }
 }
 
@@ -68,6 +75,29 @@ pub struct DriftAlarm {
     pub detail: String,
 }
 
+/// Per-document triage decision derived from the same journal-derived
+/// evidence (ADR-079 Faculty A, extended for the `critic_sample` gate of
+/// ADR-076 `consult_status.later`). Thresholds live in DATA.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DocumentGate {
+    pub document_identity: String,
+    pub decision: GateDecision,
+    /// The signals behind the decision (why), for audit.
+    pub reasons: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GateDecision {
+    /// Parse succeeded, coverage signals healthy.
+    Accept,
+    /// Re-parse candidate: failed parse or zero-section parse.
+    ReParse,
+    /// Defer to the critic arm: parsed but thin (sections/chars below floor).
+    Defer,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ParseHealthReport {
@@ -78,6 +108,9 @@ pub struct ParseHealthReport {
     pub backends: BTreeMap<String, BackendHealth>,
     pub buckets: BTreeMap<String, BucketHealth>,
     pub drift_alarms: Vec<DriftAlarm>,
+    /// Per-document gate decisions (ADR-076 critic_sample as derived data).
+    #[serde(default)]
+    pub documents: Vec<DocumentGate>,
     pub report_digest: String,
 }
 
@@ -215,6 +248,36 @@ pub fn parse_health(
         })
         .collect();
 
+    // Per-document gate (critic_sample): aggregate each document's outcomes,
+    // then apply the DATA floors. A document is ReParse if ANY outcome says
+    // so; Defer if any says so (and none said ReParse); Accept otherwise.
+    let mut doc_states: BTreeMap<String, (GateDecision, Vec<String>)> = BTreeMap::new();
+    for o in observations {
+        let Some(evidence) = o.outcome.as_ref() else {
+            continue;
+        };
+        let (decision, reasons) = gate_document(evidence, &thresholds.gate_floors);
+        let entry = doc_states
+            .entry(o.document_identity.clone())
+            .or_insert((GateDecision::Accept, Vec::new()));
+        let rank = |d: &GateDecision| match d {
+            GateDecision::Accept => 0,
+            GateDecision::Defer => 1,
+            GateDecision::ReParse => 2,
+        };
+        if rank(&decision) > rank(&entry.0) {
+            entry.0 = decision;
+        }
+        entry.1.extend(reasons);
+    }
+    let documents: Vec<DocumentGate> = doc_states
+        .into_iter()
+        .map(|(document_identity, (decision, reasons))| DocumentGate {
+            document_identity,
+            decision,
+            reasons,
+        })
+        .collect();
     // The journal digest preserves read order (provenance of what was read);
     // the report digest covers the aggregates only, so the same multiset of
     // observations yields the same report identity regardless of order.
@@ -225,7 +288,10 @@ pub fn parse_health(
         &backends,
         &buckets,
         &alarms,
+        &documents,
     ));
+    let mut documents: Vec<DocumentGate> = documents;
+    documents.sort_by(|a, b| a.document_identity.cmp(&b.document_identity));
     Ok(ParseHealthReport {
         schema_version: PARSE_HEALTH_SCHEMA_VERSION.to_string(),
         journal_digest,
@@ -233,8 +299,55 @@ pub fn parse_health(
         backends,
         buckets,
         drift_alarms: alarms,
+        documents,
         report_digest,
     })
+}
+
+/// The three-way gate the `critic_sample` faculty needs (ADR-076 later points,
+/// realised as derived data per ADR-079 Faculty A):
+/// - `ReParse`: the parse failed outright or recovered no sections;
+/// - `Defer`: parsed but thin (sections or chars below the DATA floors);
+/// - `Accept`: everything at or above the floors.
+pub fn gate_document(
+    evidence: &crate::parse_policy_table::PolicyOutcomeEvidence,
+    floors: &GateFloors,
+) -> (GateDecision, Vec<String>) {
+    let mut reasons = Vec::new();
+    if !evidence.ok {
+        reasons.push("parse_not_ok".into());
+        return (GateDecision::ReParse, reasons);
+    }
+    if evidence.section_count == 0 {
+        reasons.push("zero_sections".into());
+        return (GateDecision::ReParse, reasons);
+    }
+    if (evidence.body_chars as u64) < floors.min_body_chars {
+        reasons.push(format!("body_chars<{}", floors.min_body_chars));
+        return (GateDecision::Defer, reasons);
+    }
+    if (evidence.section_count as u64) < floors.min_sections {
+        reasons.push(format!("sections<{}", floors.min_sections));
+        return (GateDecision::Defer, reasons);
+    }
+    (GateDecision::Accept, reasons)
+}
+
+/// DATA floors for the gate (ADR-079: thresholds live in DATA).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GateFloors {
+    pub min_sections: u64,
+    pub min_body_chars: u64,
+}
+
+impl Default for GateFloors {
+    fn default() -> Self {
+        Self {
+            min_sections: 2,
+            min_body_chars: 500,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -243,6 +356,8 @@ mod tests {
     use crate::parse_policy_table::PolicyOutcomeEvidence;
     use da_domain::fsm_policy::{ArticleFeatures, DecisionPoint};
     use proptest::prelude::*;
+    use proptest::prelude::*;
+    use proptest::{prop_assert, prop_assert_eq};
 
     fn obs(backend: Option<&str>, latency: u64, ok: bool, pages: u32) -> PolicyObservation {
         PolicyObservation {
@@ -313,7 +428,14 @@ mod tests {
             obs(Some("0.9.0"), 100, false, 18),
             obs(Some("0.9.0"), 100, false, 18),
         ];
-        let report = parse_health(&journal, &HealthThresholds { min_ok_rate: 0.5 }).unwrap();
+        let report = parse_health(
+            &journal,
+            &HealthThresholds {
+                min_ok_rate: 0.5,
+                gate_floors: GateFloors::default(),
+            },
+        )
+        .unwrap();
         assert!(
             report
                 .drift_alarms

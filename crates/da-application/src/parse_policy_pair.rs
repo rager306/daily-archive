@@ -61,6 +61,11 @@ pub struct YieldRule {
     pub metric_one: String,
     pub metric_two: String,
     pub margin: i64,
+    /// D511: normalise the yield by parse latency (chars per millisecond).
+    /// The arms differ by an order of magnitude in speed; a latency-blind
+    /// score would pick the slower arm on equal section counts.
+    #[serde(default)]
+    pub latency_aware: bool,
 }
 
 #[derive(Debug, Error, PartialEq)]
@@ -93,18 +98,27 @@ impl PairMetric {
     }
 
     /// Yield of one arm under this metric: (metric_one, metric_two).
+    /// With `latency_aware` the primary axis is characters per millisecond
+    /// (scaled by 1000 to stay integral), comparing throughput, not volume.
     pub fn yield_of(&self, evidence: &PolicyOutcomeEvidence) -> (i64, i64) {
-        // The metric names are validated by the loader against the known set.
-        let one = match self.yield_rule.metric_one.as_str() {
+        let latency = evidence.latency_ms.max(1) as i64;
+        let scale = |v: i64| -> i64 {
+            if self.yield_rule.latency_aware {
+                v * 1000 / latency
+            } else {
+                v
+            }
+        };
+        let one = scale(match self.yield_rule.metric_one.as_str() {
             "section_count" => evidence.section_count as i64,
             "body_chars" => evidence.body_chars as i64,
             _ => 0,
-        };
-        let two = match self.yield_rule.metric_two.as_str() {
+        });
+        let two = scale(match self.yield_rule.metric_two.as_str() {
             "section_count" => evidence.section_count as i64,
             "body_chars" => evidence.body_chars as i64,
             _ => 0,
-        };
+        });
         (one, two)
     }
 }
@@ -297,10 +311,17 @@ pub fn pair_to_observations(pair: &PairedObservation) -> Vec<PolicyObservation> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
+
+    fn m_blind() -> PairMetric {
+        let mut m = metric();
+        m.yield_rule.latency_aware = false;
+        m
+    }
 
     fn metric() -> PairMetric {
         PairMetric::from_yaml_str(
-            "schema_version: parse-pair-metric.v1\nadr_ref: ADR-080\nconservation_first: true\nyield:\n  metric_one: section_count\n  metric_two: body_chars\n  margin: 0\n",
+            "schema_version: parse-pair-metric.v1\nadr_ref: ADR-080\nconservation_first: true\nyield:\n  latency_aware: true\n  metric_one: section_count\n  metric_two: body_chars\n  margin: 0\n",
         )
         .unwrap()
     }
@@ -440,5 +461,48 @@ mod tests {
     fn optional_pair_with_both_absent_is_not_a_pair() {
         let m = metric();
         assert!(score_pair_optional(&m, None, None).is_none());
+    }
+
+    proptest::proptest! {
+        /// D511: latency-aware yield rewards the faster arm when volumes are
+        /// equal, regardless of the absolute latency values.
+        #[test]
+        fn latency_aware_prefers_the_faster_arm(
+            sections in 1usize..500,
+            chars in 1000usize..900_000,
+            fast_ms in 1u64..500,
+            slow_ms in 5000u64..60_000,
+        ) {
+            let m = metric();
+            let fast = ev(true, sections, chars);
+            let mut slow = ev(true, sections, chars);
+            slow.latency_ms = slow_ms;
+            let mut fast = fast;
+            fast.latency_ms = fast_ms;
+            let pair = score_pair(
+                &m,
+                (ParseArm::Toc, "page_outline".into(), fast),
+                (ParseArm::Grobid, "xy_cut".into(), slow),
+            );
+            prop_assert_eq!(pair.arms[0].verdict, PairVerdict::Winner);
+            // The latency-aware yield of the fast arm strictly exceeds the slow
+            // arm's on every axis.
+            prop_assert!(m.yield_of(&pair.arms[0].evidence).0 > m.yield_of(&pair.arms[1].evidence).0);
+        }
+
+        /// Latency-blind mode is unchanged: equal volumes with margin 0 tie.
+        #[test]
+        fn latency_blind_mode_unchanged(
+            sections in 1usize..500,
+            chars in 1000usize..900_000,
+        ) {
+            let ev = ev(true, sections, chars);
+            let pair = score_pair(
+                &m_blind(),
+                (ParseArm::Toc, "page_outline".into(), ev.clone()),
+                (ParseArm::Grobid, "xy_cut".into(), ev),
+            );
+            prop_assert_eq!(pair.arms[0].verdict, PairVerdict::Tie);
+        }
     }
 }

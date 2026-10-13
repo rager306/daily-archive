@@ -82,6 +82,7 @@ pub mod html_parsed_stage;
 pub mod navigation_stage;
 pub mod parse_grammar;
 pub mod parse_policy_artifact;
+pub mod parse_policy_gold_f1;
 pub mod parse_policy_health;
 pub mod parse_policy_observation;
 pub mod parse_policy_pair;
