@@ -315,6 +315,43 @@ pub fn table_accuracy(
     (agree, covered)
 }
 
+/// ROUGE-L: F-measure of the Longest Common Subsequence between two
+/// whitespace-tokenised texts (ADR-080 metric v3, Bevendorff et al.).
+/// Deterministic, no allocation-heavy suffix structures — sections are small.
+pub fn rouge_l(a: &str, b: &str) -> f64 {
+    let ta: Vec<&str> = a.split_whitespace().collect();
+    let tb: Vec<&str> = b.split_whitespace().collect();
+    if ta.is_empty() || tb.is_empty() {
+        return 0.0;
+    }
+    let n = ta.len();
+    let m = tb.len();
+    let mut dp = vec![0u64; m + 1];
+    for i in 1..=n {
+        let mut prev_diag = 0u64;
+        for j in 1..=m {
+            let tmp = dp[j];
+            if ta[i - 1].eq_ignore_ascii_case(tb[j - 1]) {
+                prev_diag = prev_diag + 1;
+            } else if dp[j] > prev_diag {
+                prev_diag = dp[j];
+            }
+            dp[j] = prev_diag;
+        }
+    }
+    let lcs = dp[m] as f64;
+    if lcs == 0.0 {
+        return 0.0;
+    }
+    let prec = lcs / n as f64;
+    let rec = lcs / m as f64;
+    if prec + rec > 0.0 {
+        2.0 * prec * rec / (prec + rec)
+    } else {
+        0.0
+    }
+}
+
 /// Deterministic mean reward of a table's decisions over covered observations.
 pub fn table_mean_reward(table: &LearnedDecisionTable, observations: &[PolicyObservation]) -> f64 {
     let mut sum = 0.0;
@@ -675,5 +712,25 @@ mod tests {
             let cell = table.lookup_with_fallback(&f).expect("covered");
             prop_assert_eq!(cell.code.as_str(), "xy_cut");
         }
+    }
+
+    #[test]
+    fn rouge_l_reference_values() {
+        assert_eq!(rouge_l("", "abc"), 0.0);
+        assert_eq!(rouge_l("abc", ""), 0.0);
+        assert!((rouge_l("the cat sat", "the cat sat") - 1.0).abs() < 1e-9);
+        // Identical tokens in the same order: LCS = 2 of 3,3 -> F1 = 2*2/(3+3) = 0.667.
+        let f = rouge_l("the cat runs", "the dog runs");
+        assert!((f - 2.0 / 3.0).abs() < 1e-9);
+        // Case-insensitive.
+        assert!((rouge_l("THE CAT", "the cat") - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn rouge_l_grows_with_overlap() {
+        let a = "alpha beta gamma delta epsilon";
+        let more = "alpha beta gamma delta epsilon zeta";
+        let less = "alpha beta";
+        assert!(rouge_l(a, more) > rouge_l(a, less));
     }
 }

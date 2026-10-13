@@ -293,4 +293,43 @@ mod tests {
             prop_assert_eq!(f1.f1, f2.f1);
         }
     }
+
+    proptest::proptest! {
+        /// F1 is always in [0, 1] regardless of the input sizes.
+        #[test]
+        fn f1_always_bounded(
+            gold_count in 1usize..100,
+            pred_count in 0usize..100,
+            overlap in 0usize..50,
+        ) {
+            let gold: Vec<GoldEntity> = (0..gold_count)
+                .map(|i| GoldEntity { label: format!("ent{i}"), entity_type: "Test".into() })
+                .collect();
+            let matches = overlap.min(gold_count).min(pred_count);
+            let mut predicted: Vec<(String, String)> = (0..matches)
+                .map(|i| (format!("ent{i}"), "Test".into()))
+                .collect();
+            let extras = pred_count - matches;
+            predicted.extend((0..extras).map(|i| (format!("x{i}"), "Test".into())));
+            let f = arm_f1("toc", &gold, &predicted);
+            prop_assert!(f.f1 >= 0.0 && f.f1 <= 1.0, "f1 out of range: {}", f.f1);
+            prop_assert!(f.precision >= 0.0 && f.precision <= 1.0);
+            prop_assert!(f.recall >= 0.0 && f.recall <= 1.0);
+        }
+
+        /// F1 = 1.0 iff predicted labels exactly match gold labels (same set).
+        #[test]
+        fn perfect_match_gives_f1_one(
+            labels in proptest::collection::vec("[a-z]{3,12}", 1..20),
+        ) {
+            let gold: Vec<GoldEntity> = labels.iter().enumerate()
+                .map(|(i, l)| GoldEntity { label: l.clone(), entity_type: "Test".into() })
+                .collect();
+            let predicted: Vec<(String, String)> = labels.iter()
+                .map(|l| (l.clone(), "Test".into()))
+                .collect();
+            let f = arm_f1("toc", &gold, &predicted);
+            prop_assert!((f.f1 - 1.0).abs() < 1e-9, "exact match must give F1=1.0");
+        }
+    }
 }

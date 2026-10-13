@@ -273,10 +273,12 @@ pub fn score_pair_optional(
     if toc_absent && gb_absent {
         return None;
     }
-    if toc_absent && !gb_absent {
+    // D510: the absent arm is NotApplicable; the present arm is Winner ONLY if
+    // it passed the conservation gate (ok). A vetoed arm is never a Winner.
+    if toc_absent && !gb_absent && pair.arms[1].verdict != PairVerdict::Vetoed {
         pair.arms[1].verdict = PairVerdict::Winner;
     }
-    if gb_absent && !toc_absent {
+    if gb_absent && !toc_absent && pair.arms[0].verdict != PairVerdict::Vetoed {
         pair.arms[0].verdict = PairVerdict::Winner;
     }
     Some(pair)
