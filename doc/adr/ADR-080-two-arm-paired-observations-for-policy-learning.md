@@ -460,6 +460,31 @@ not a learning-loop change.
 documents to the TOC arm, measure, and use the paired data to retrain. This
 requires a production route change under ADR-076.
 
+### 2026-10-13 — 3-cycle summary: 120 pairs, native remains best, findings are stable
+
+After 3 training cycles (120 pairs across 120 documents, 30 validation
+observations):
+
+| Strategy | Validation | Notes |
+|---|---|---|
+| native (xy_cut) | **60%** | baseline |
+| sections (learned) | 57% | -3% vs native |
+| compound | 57% | -3% |
+| chars | 41% | -19% |
+| coverage | 43% | -17% |
+
+**Measured_no_gain is confirmed and stable.** The learned table does not beat
+native at this corpus size. The four features (page_count, toc_bookmarks,
+text_layer_quality, domain) do not carry enough signal to separate the arms.
+This is the honest conclusion — the mechanism works, the data does not support
+a real gain yet.
+
+A gain would require either:
+- Richer features (outline depth, layout statistics, domain-specific signals)
+- A fairer yield metric (body_chars primary instead of section_count)
+- Or simply more diverse training data with genuinely different outcomes per
+  bucket.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
