@@ -1131,7 +1131,7 @@ fn require_fd_api_key_for_ingest() {
 /// frozen gold entities, and append the verdict. Candidate-only.
 fn run_policy_gold_pair(pdf: &str, paper_id: &str) -> anyhow::Result<()> {
     use da_application::parse_policy_gold_f1::{
-        ArmF1, GOLD_PAIR_SCHEMA_VERSION, GoldEntity, GoldPairVerdict, score_gold_pair,
+        ArmF1, GOLD_PAIR_SCHEMA_VERSION, arm_f1, GoldEntity, GoldPairVerdict, score_gold_pair,
     };
     use da_ports::parser::ParserPort;
     use std::sync::Arc;
@@ -1202,37 +1202,42 @@ fn run_policy_gold_pair(pdf: &str, paper_id: &str) -> anyhow::Result<()> {
         .ok()
         .and_then(|p| serde_json::to_value(p).ok());
 
-    // Same extractor on both parsed articles.
-    let extractor = da_adapters::RuleBasedExtractor::new();
+    // Same extractor on both parsed articles. Uses the Extractor trait
+    // (async extract) on the RuleBasedExtractor implementation.
     let to_predicted = |v: Option<serde_json::Value>| -> Vec<(String, String)> {
-        v.and_then(|v| {
-            let sections = v.get("sections")?.as_array()?.clone();
-            let pairs: Vec<(String, String)> = sections
-                .iter()
-                .filter_map(|s| {
-                    Some((
-                        s.get("title")?.as_str()?.to_string(),
-                        s.get("text")?.as_str()?.to_string(),
-                    ))
-                })
-                .collect();
-            if pairs.is_empty() { None } else { Some(pairs) }
-        })
-        .map(|sections| {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(async {
-                extractor
-                    .extract(&sections)
-                    .await
-                    .map(|e| {
-                        e.iter()
-                            .map(|x| (x.label.clone(), format!("{:?}", x.entity_type)))
-                            .collect::<Vec<_>>()
-                    })
-                    .unwrap_or_default()
+        let sections: Vec<(String, String)> = v
+            .and_then(|v| {
+                let sections = v.get("sections")?.as_array()?.clone();
+                Some(
+                    sections
+                        .iter()
+                        .filter_map(|s| {
+                            Some((
+                                s.get("title")?.as_str()?.to_string(),
+                                s.get("text")?.as_str()?.to_string(),
+                            ))
+                        })
+                        .collect(),
+                )
             })
+            .unwrap_or_default();
+        if sections.is_empty() {
+            return Vec::new();
+        }
+        let extractor = da_adapters::RuleBasedExtractor::new();
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            use da_ports::extractor::Extractor;
+            extractor
+                .extract(&sections)
+                .await
+                .map(|e| {
+                    e.iter()
+                        .map(|x| (x.label.clone(), format!("{:?}", x.entity_type)))
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default()
         })
-        .unwrap_or_default();
     };
     let toc_pred = to_predicted(toc_parsed.clone());
     let gb_pred = to_predicted(gb_parsed.clone());
@@ -1244,8 +1249,8 @@ fn run_policy_gold_pair(pdf: &str, paper_id: &str) -> anyhow::Result<()> {
     let verdict = GoldPairVerdict {
         schema_version: GOLD_PAIR_SCHEMA_VERSION.into(),
         document_identity: paper_id.into(),
-        toc: toc_f1,
-        grobid: gb_f1,
+        toc: toc_f1.clone(),
+        grobid: gb_f1.clone(),
         winner: winner.clone(),
     };
     println!(

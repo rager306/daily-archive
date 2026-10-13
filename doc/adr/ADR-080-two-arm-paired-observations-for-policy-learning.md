@@ -397,6 +397,26 @@ Next (owner decision): adopt metric v3 as the `critic_sample` signal
 (low-coverage documents are re-parse candidates); extend the reference set
 (more publisher-HTML documents); a two-arm run on outline-bearing textbooks.
 
+### 2026-10-12 — Cycle 2 result: 124 pairs, conclusion is stable
+
+Batch 2 (40 additional PDFs) brings the corpus to **124 pairs across 135
+documents**. The strategy ranking is unchanged and now statistically stable at
+54 validation observations:
+
+| Strategy | Accuracy |
+|---|---|
+| sections | 56% |
+| compound | 56% |
+| native (xy_cut everywhere) | 56% |
+| chars | 44% |
+| coverage | 44% |
+
+The table reproduces the native threshold decision on every covered bucket.
+This is the confirmed `measured_no_gain` for the current four features. The
+path to a gain requires a feature that separates the TOC-favourable documents;
+the recorded revisability trigger stands (richer features: bookmark density,
+layout stats; fairer yield: latency-normalised).
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
