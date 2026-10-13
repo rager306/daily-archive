@@ -417,6 +417,22 @@ path to a gain requires a feature that separates the TOC-favourable documents;
 the recorded revisability trigger stands (richer features: bookmark density,
 layout stats; fairer yield: latency-normalised).
 
+### 2026-10-13 — Cycle 3: 80 pairs, TOC arm wins 74%; native still best on validation
+
+Cycle 3 (40 additional PDFs) brings the journal to **80 pairs across 80
+documents**. The picture changed materially:
+
+- **TOC arm now wins 74%** of decided pairs (59 toc vs 21 grobid) — a reversal
+  from Cycle 1 (grobid 76%). The reversal is driven by the new documents:
+  many have outlines and the TOC arm recovers more content.
+- **Native still scores 65%** on validation — slightly better than the table.
+- sections strategy: 63% (close to native).
+
+**Recorded observation:** the two arms' relative performance depends on the
+document mix. A corpus with more outline-bearing documents shifts the balance
+toward the TOC arm. This confirms that the policy table must be trained per
+corpus segment, not globally.
+
 ## 6. Relations
 
 - ADR-078: §5 coverage constraint now has its data source; locks unchanged.
