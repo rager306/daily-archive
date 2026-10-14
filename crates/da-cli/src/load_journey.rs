@@ -487,6 +487,13 @@ pub async fn run_journey_content(
             }
         }
         None => {
+            crate::production::ensure_embedding_index(
+                store.as_ref(),
+                "Paper",
+                ports.embedder.dimensions(),
+            )
+            .await
+            .map_err(|error| format!("journey vector index: {error}"))?;
             store
                 .add_vector("Paper", "embedding", paper_node, vector)
                 .await

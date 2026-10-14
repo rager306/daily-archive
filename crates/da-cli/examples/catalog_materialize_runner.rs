@@ -591,7 +591,8 @@ async fn run_materialization(args: &Args) -> Result<()> {
     }
 
     // Embedded in-process store; refuses remote/persistence modes honestly.
-    let store: Arc<dyn DirectGraphStore> = Arc::new(SamyamaGraphStore::try_from_env()?);
+    let embedded = Arc::new(SamyamaGraphStore::try_from_env()?);
+    let store: Arc<dyn DirectGraphStore> = embedded.clone();
 
     // Snapshot preload on resume: continue from the graph state the
     // interrupted run already wrote.
@@ -732,17 +733,28 @@ async fn run_materialization(args: &Args) -> Result<()> {
             .expect("binding from scanned is legal");
 
         // First materialization pass.
-        let ingest_result = ingest
-            .materialize_parsed_with_context(
-                &artifacts.parsed,
-                artifacts.embedding.clone(),
-                category.clone(),
-                Some("arxiv".to_string()),
-                None,
-                PdfTriageStatus::NotConfigured,
-                Some(&context),
-            )
-            .await;
+        let ingest_result = match da_cli::production::ensure_embedding_index(
+            embedded.as_ref(),
+            "PaperRevision",
+            artifacts.embedding.len(),
+        )
+        .await
+        {
+            Ok(()) => {
+                ingest
+                    .materialize_parsed_with_context(
+                        &artifacts.parsed,
+                        artifacts.embedding.clone(),
+                        category.clone(),
+                        Some("arxiv".to_string()),
+                        None,
+                        PdfTriageStatus::NotConfigured,
+                        Some(&context),
+                    )
+                    .await
+            }
+            Err(error) => Err(anyhow::Error::msg(error)),
+        };
         let extract_result = match ingest_result {
             Ok(_) => {
                 extraction

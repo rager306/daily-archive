@@ -488,6 +488,14 @@ scripts/                # verify_rust_architecture.sh
 
 ## Next gate (trajectory enforcement)
 
+**M518-i56mt5 verification** — isolated Samyama and RuVector updates to the
+exact audited commits. The current native architecture gate passed 23/23.
+Artifact verification and four fresh ledger contracts passed through typed UAT.
+Original vendor sources and frozen M517 evidence are unchanged. Acceptance must
+bind the retained evidence to the current GSD source revision. Generic binary
+migration, MSRV 1.85 and 10x capacity remain unproved. No deployment, import,
+promotion or push is authorized. See `doc/review/vendor-upgrade-m518.md`.
+
 **M517-1tplxa delivery** — corrected paired-policy evaluation and completed
 candidate-only training cycles of 60, 120 and 240 PDFs on the same 80 validation
 PDFs. Decisions did not change between cycles. Token F1 rose from 0.799 to 0.871,

@@ -14,6 +14,7 @@ use crate::{AssuranceVerdict, ContentDigest};
 
 pub const CORPUS_CHECKPOINT_SCHEMA_VERSION: &str = "corpus-required-layer-checkpoint.v3";
 pub const STRICT_SEMANTIC_SNAPSHOT_ALGORITHM: &str = "sgsnap-vid-canonical-json.v1";
+pub const STRICT_SEMANTIC_SNAPSHOT_ALGORITHM_V2: &str = "sgsnap-vid-canonical-json.v2";
 pub const SNAPSHOT_IDENTITY_REPORT_SCHEMA_VERSION: &str = "snapshot-identity-evidence.v1";
 
 /// Required ACAP layers that must be Observed for S09 corpus assurance.
@@ -57,7 +58,10 @@ impl SnapshotArtifactIdentity {
                 "snapshot path must not be empty".into(),
             ));
         }
-        if self.semantic_algorithm != STRICT_SEMANTIC_SNAPSHOT_ALGORITHM {
+        if !matches!(
+            self.semantic_algorithm.as_str(),
+            STRICT_SEMANTIC_SNAPSHOT_ALGORITHM | STRICT_SEMANTIC_SNAPSHOT_ALGORITHM_V2
+        ) {
             return Err(CorpusCheckpointError::InvalidInput(format!(
                 "unsupported snapshot semantic algorithm: {}",
                 self.semantic_algorithm
@@ -693,6 +697,37 @@ mod tests {
         assert!(roundtrip.validate().is_ok());
         roundtrip.snapshot.semantic_sha256 = digest("mutated");
         assert!(roundtrip.validate().is_err());
+    }
+
+    #[test]
+    fn snapshot_identity_versions_are_explicit_and_digest_bound() {
+        let identity = SnapshotArtifactIdentity {
+            path: "artifact.sgsnap".into(),
+            physical_sha256: digest("physical"),
+            semantic_sha256: digest("semantic"),
+            semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
+            nodes: 3,
+            edges: 2,
+        };
+        let legacy = SnapshotIdentityEvidence::seal(identity.clone()).unwrap();
+        let mut with_declarations = identity.clone();
+        with_declarations.semantic_algorithm = STRICT_SEMANTIC_SNAPSHOT_ALGORITHM_V2.into();
+        let current = SnapshotIdentityEvidence::seal(with_declarations).unwrap();
+        assert!(current.validate().is_ok());
+        assert!(!current.import_eligible);
+        assert_ne!(current.report_sha256, legacy.report_sha256);
+        let bytes = serde_json::to_vec(&current).unwrap();
+        let roundtrip: SnapshotIdentityEvidence = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(roundtrip, current);
+        assert!(roundtrip.validate().is_ok());
+        for algorithm in ["sgsnap-vid-canonical-json.v3", "counts-only.v0", ""] {
+            let mut unknown = identity.clone();
+            unknown.semantic_algorithm = algorithm.into();
+            assert!(SnapshotIdentityEvidence::seal(unknown).is_err());
+        }
+        let mut relabeled = current;
+        relabeled.snapshot.semantic_algorithm = STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into();
+        assert!(relabeled.validate().is_err());
     }
 
     #[test]

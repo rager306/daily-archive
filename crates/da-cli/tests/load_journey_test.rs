@@ -32,6 +32,7 @@ use da_ports::graph_store::{DirectGraphStore, GraphStore};
 use da_ports::parser::ParseResult;
 use da_ports::parser::{ParsedArticle, ParserError, ParserPort, Section};
 use da_ports::pipeline_cache::{SourceFormat, SourceIdentity};
+use samyama::vector::index::{DistanceMetric, Quantization};
 
 const PAPER_ID: &str = "2507.19457";
 
@@ -332,6 +333,28 @@ async fn journey_content_completes_and_replays_over_file_cache() {
         .get_node_property_string(paper_node, "embedding_sha256")
         .await
         .expect("embedding sha stamped");
+    let original_index = {
+        let graph = store.store_read().await;
+        let index = graph.vector_index.get_index("Paper", "embedding").unwrap();
+        {
+            let declaration = index.read().unwrap();
+            assert_eq!(declaration.dimensions(), ports.embedder.dimensions());
+            assert_eq!(declaration.metric(), DistanceMetric::Cosine);
+            assert_eq!(declaration.len(), 1);
+        }
+        index
+    };
+    let hits = DirectGraphStore::vector_search_direct(
+        store.as_ref(),
+        "Paper",
+        "embedding",
+        &[0.1, 0.2, 0.3],
+        10,
+    )
+    .await
+    .unwrap();
+    assert_eq!(hits.len(), 1);
+    assert_eq!(hits[0].0, paper_node);
 
     // ── Identical replay over the same store and file cache ────────────────
     let (outcome2, report2) = run_journey(&ports, &store, cache.clone())
@@ -382,6 +405,23 @@ async fn journey_content_completes_and_replays_over_file_cache() {
         Some(embedding_sha.as_str()),
         "vector guard is idempotent across replays"
     );
+    {
+        let graph = store.store_read().await;
+        let index = graph.vector_index.get_index("Paper", "embedding").unwrap();
+        assert!(Arc::ptr_eq(&index, &original_index));
+        assert_eq!(index.read().unwrap().len(), 1);
+    }
+    let hits = DirectGraphStore::vector_search_direct(
+        store.as_ref(),
+        "Paper",
+        "embedding",
+        &[0.1, 0.2, 0.3],
+        10,
+    )
+    .await
+    .unwrap();
+    assert_eq!(hits.len(), 1);
+    assert_eq!(hits[0].0, paper_node);
 
     // Load cache records carry honest statuses.
     let statuses: BTreeMap<String, String> = outcome2
@@ -420,6 +460,181 @@ async fn journey_content_completes_and_replays_over_file_cache() {
             "no {label} is import-eligible"
         );
     }
+}
+
+#[tokio::test]
+async fn journey_preserves_a_populated_vector_index_and_replays() {
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache = Arc::new(FilePipelineCache::new(tempdir("cache-existing-index")));
+    let ports = JourneyPorts {
+        parser: Arc::new(FakeParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+        detector: None,
+    };
+    let original_index = {
+        let graph = store.store_write().await;
+        graph
+            .vector_index
+            .create_index_named(
+                Some("journey-papers"),
+                "Paper",
+                "embedding",
+                ports.embedder.dimensions(),
+                DistanceMetric::Cosine,
+                Quantization::Fp16,
+            )
+            .unwrap();
+        assert!(
+            graph
+                .vector_index
+                .set_model_id("Paper", "embedding", ports.embedder.model_id(),)
+        );
+        graph.vector_index.get_index("Paper", "embedding").unwrap()
+    };
+    let seeded = store.create_node("Paper").await.unwrap();
+    store
+        .add_vector("Paper", "embedding", seeded, vec![1.0, 0.0, 0.0])
+        .await
+        .unwrap();
+
+    for _ in 0..2 {
+        let (outcome, report) = run_journey(&ports, &store, cache.clone()).await.unwrap();
+        assert!(report.completed);
+        assert!(!outcome.ingest.import_eligible);
+        let paper = store
+            .find_node_by_string_property("Paper", "arxiv_id", PAPER_ID)
+            .await
+            .unwrap();
+        assert_ne!(paper, seeded);
+        assert!(
+            store
+                .get_node_property_string(paper, "embedding_sha256")
+                .await
+                .is_some()
+        );
+        {
+            let graph = store.store_read().await;
+            let index = graph.vector_index.get_index("Paper", "embedding").unwrap();
+            assert!(Arc::ptr_eq(&index, &original_index));
+            let declaration = index.read().unwrap();
+            assert_eq!(declaration.dimensions(), ports.embedder.dimensions());
+            assert_eq!(declaration.metric(), DistanceMetric::Cosine);
+            assert_eq!(declaration.quantization(), Quantization::Fp16);
+            assert_eq!(declaration.len(), 2);
+            assert_eq!(
+                graph.vector_index.model_id("Paper", "embedding").as_deref(),
+                Some(ports.embedder.model_id())
+            );
+            assert_eq!(
+                graph.vector_index.resolve_name("journey-papers"),
+                Some(("Paper".into(), "embedding".into()))
+            );
+        }
+        let seed_hits = DirectGraphStore::vector_search_direct(
+            store.as_ref(),
+            "Paper",
+            "embedding",
+            &[1.0, 0.0, 0.0],
+            10,
+        )
+        .await
+        .unwrap();
+        assert_eq!(seed_hits.len(), 2);
+        assert_eq!(seed_hits[0].0, seeded);
+        assert!(seed_hits.iter().any(|(id, _)| *id == paper));
+        let paper_hits = DirectGraphStore::vector_search_direct(
+            store.as_ref(),
+            "Paper",
+            "embedding",
+            &[0.1, 0.2, 0.3],
+            10,
+        )
+        .await
+        .unwrap();
+        assert_eq!(paper_hits.len(), 2);
+        assert_eq!(paper_hits[0].0, paper);
+    }
+}
+
+#[tokio::test]
+async fn journey_refuses_incompatible_vector_dimensions_without_resetting_the_index() {
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache = Arc::new(FilePipelineCache::new(tempdir("cache-incompatible-index")));
+    let ports = JourneyPorts {
+        parser: Arc::new(FakeParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+        detector: None,
+    };
+    let dimensions = ports.embedder.dimensions() + 1;
+    let original_index = {
+        let graph = store.store_write().await;
+        graph
+            .vector_index
+            .create_index_named(
+                Some("journey-papers"),
+                "Paper",
+                "embedding",
+                dimensions,
+                DistanceMetric::L2,
+                Quantization::Fp16,
+            )
+            .unwrap();
+        assert!(
+            graph
+                .vector_index
+                .set_model_id("Paper", "embedding", ports.embedder.model_id(),)
+        );
+        graph.vector_index.get_index("Paper", "embedding").unwrap()
+    };
+    let seeded = store.create_node("Paper").await.unwrap();
+    let seed_vector = vec![1.0, 0.0, 0.0, 0.0];
+    store
+        .add_vector("Paper", "embedding", seeded, seed_vector.clone())
+        .await
+        .unwrap();
+
+    assert!(run_journey(&ports, &store, cache).await.is_err());
+    let paper = store
+        .find_node_by_string_property("Paper", "arxiv_id", PAPER_ID)
+        .await
+        .unwrap();
+    assert!(
+        store
+            .get_node_property_string(paper, "embedding_sha256")
+            .await
+            .is_none()
+    );
+    {
+        let graph = store.store_read().await;
+        let index = graph.vector_index.get_index("Paper", "embedding").unwrap();
+        assert!(Arc::ptr_eq(&index, &original_index));
+        let declaration = index.read().unwrap();
+        assert_eq!(declaration.dimensions(), dimensions);
+        assert_eq!(declaration.metric(), DistanceMetric::L2);
+        assert_eq!(declaration.quantization(), Quantization::Fp16);
+        assert_eq!(declaration.len(), 1);
+        assert_eq!(
+            graph.vector_index.model_id("Paper", "embedding").as_deref(),
+            Some(ports.embedder.model_id())
+        );
+        assert_eq!(
+            graph.vector_index.resolve_name("journey-papers"),
+            Some(("Paper".into(), "embedding".into()))
+        );
+    }
+    let hits = DirectGraphStore::vector_search_direct(
+        store.as_ref(),
+        "Paper",
+        "embedding",
+        &seed_vector,
+        10,
+    )
+    .await
+    .unwrap();
+    assert_eq!(hits.len(), 1);
+    assert_eq!(hits[0].0, seeded);
 }
 
 #[tokio::test]

@@ -109,6 +109,35 @@ impl ProductionContext {
     }
 }
 
+/// Declare a missing content embedding index without replacing existing state.
+/// Existing dimensions must match the writer; metric, precision and model binding
+/// remain owned by the existing declaration.
+pub async fn ensure_embedding_index(
+    store: &SamyamaGraphStore,
+    label: &str,
+    dimensions: usize,
+) -> Result<(), String> {
+    let graph = store.store_write().await;
+    if let Some(index) = graph.vector_index.get_index(label, "embedding") {
+        let existing = index.read().unwrap().dimensions();
+        if existing != dimensions {
+            return Err(format!(
+                "{label}.embedding index dimension {existing} does not match writer dimension {dimensions}"
+            ));
+        }
+        return Ok(());
+    }
+    graph
+        .vector_index
+        .create_index(
+            label,
+            "embedding",
+            dimensions,
+            samyama::vector::index::DistanceMetric::Cosine,
+        )
+        .map_err(|error| format!("{label}.embedding index: {error}"))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ResolvedRevision {
     context: da_application::RevisionContentContext,

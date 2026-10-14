@@ -1,0 +1,164 @@
+schema_version: vendor-sources.v1
+milestone: M518-i56mt5
+selection: audited origin/main exact commit, not a moving branch or release substitution
+status: 'bounded compatibility verified: 878 scoped repeated executions, full native23
+  and two typed UAT checks passed; acceptance is recorded separately by current source-bound
+  GSD validation and completion'
+samyama:
+  upstream_url: https://github.com/samyama-ai/samyama-graph
+  original_path: /root/vendor-source/samyama-graph
+  original_commit: fd45131b3e1d3e58e8a6ff1ee7618d872477e79d
+  candidate_path: /root/vendor-source/samyama-graph-m518-17e55660
+  commit: 17e55660ef90bc177ac9b55a1a22a9d39b41aa0f
+  latest_release:
+    tag: v1.11.0
+    commit: 4c99eb364fc919366e60b268b611390518b63566
+  local_patch:
+    path: data/vendor_patches/samyama-m518-vector-wcc.patch
+    sha256: 23deec4f7d25c16379f4f0e4a5fc73534e22a8a8a538a3f6751561b6db3c3a9e
+    required_semantics:
+    - same-node equal add is idempotent; conflicting add refuses
+    - explicit node-preserving vector replacement
+    - missing vector/index replacement errors
+    - preserve both-array WCC unions
+    - column-first node snapshot export matches authoritative getter
+  native_rocksdb: 8.10.0
+  legacy_rocksdb_in_place_upgrade: 'forbidden: nested unversioned PropertyValue discriminants
+    changed'
+  default_quantization: None/F32 unchanged
+ruvector:
+  upstream_url: https://github.com/ruvnet/RuVector
+  original_path: /root/vendor-source/ruvector
+  original_commit: c6bb23c842d7c220e06e6141d5e55ae52077fe12
+  candidate_path: /root/vendor-source/ruvector-m518-bfb257ab
+  commit: bfb257ab9e08db006e9f4c656580bf1190a5d6f9
+  upstream_ahead: 286
+  local_commits: 0
+  tracked_patch: null
+  standalone_critic_validation: 22 non-model tests passed; both real GGUF model tests
+    explicitly excluded; no inference authorized
+locks:
+  workspace_before_sha256: 2de8f02a99ce4364118721215c85442710819d144080c697bef05c327e5ac17a
+  critic_before_sha256: 79d862609a793b98baf9ea7eaa69f2c9c2bb792183bbcd4069bfe94d83dd18eb
+  workspace_after_sha256: 809f3d649268630a632874865bd51fd209fe7b2feafca2b0e70c4e45ba594d9a
+  critic_after_sha256: 50d118e60f60cabfcd70ba254f91fd1819399df38ad34a2134488cbb7d83bc5f
+  chrono: 0.4.39
+  hnsw_rs: 0.3.5 registry, vendor patch not inherited
+  crc32fast: 1.5.2 required by upstream
+  libredox: 0.1.19 preserved
+  librocksdb-sys: 0.16.0+8.10.0 unchanged
+  zstd-sys: 2.0.13+zstd.1.5.6 resolved Parquet closure
+  standalone_path_versions:
+    ruvllm: 2.5.0
+    ruvector-core: 2.4.0
+  standalone_registry_changes: false
+safety:
+  original_vendor_trees: preserved
+  M517: frozen, unchanged
+  import_eligible: false
+  deployed: false
+  auto_promote: forbidden
+  graph_write: forbidden
+  disk_floor_gib: 15
+  execution: sequential
+  disk_pause_gib: 20
+  disk_monitor_seconds: 2
+  resource_breach: first test build observed 10.43 GiB below floor; recovered and
+    recorded
+  generic_migration: forbidden
+  GGUF_inference: forbidden
+  latest_own_target_cleanup: supported cargo clean -p da-cli -p da-parse removed generated
+    artifacts; frozen M517 runner hashes unchanged; free45.6GiB observed
+verification:
+  consumer_test_passes: 736
+  completed:
+    kg_storage_samyama_algorithms_tests: 152
+    domain_corpus_checkpoint_tests: 10
+    kg_algorithms_ppr_tests: 39
+    kg_embeddings_ppr_tests: 21
+    patch_recreate_apply_check: exit 0; diff bytes equal tracked patch
+    standalone_critic_nonmodel_tests: 22
+    root_adapters_library_tests: 239
+    root_ledger_current_generation_contracts: 4
+    kg_storage_repeat_after_equivalent_lint_fix: 152
+    mcp_library_tests: 47
+  native_vendor_vector_units: 49 passed, 0 failed; native HNSW0.3.4, distinct from
+    consumer0.3.5
+  native_vendor_hnsw_rs: 0.3.4, distinct from consumer 0.3.5
+  ledger: PASS bounded4records; oldcreate/oldcopy/newcopy exactverify/newmutate-complete-reopen
+    exit0. Closed old original/expected hashes unchanged. No generic bincode/downgrade/crash
+    proof.
+  standalone_critic: PASS 22; 2 real GGUF model tests explicitly filtered; model behavior
+    unproved
+  final_architecture: PASS23/23; exit0/0timeouts; current917source hashes unchanged;
+    7,629 repeated test executions kept separate from scoped878; prior failed/interrupted
+    run retained
+  MSRV_1_85: unverified; checked toolchain 1.99
+  receipts: /tmp/vendor-upgrade-audit/verification-progress.json
+  followup_source_review: no new blocking defect; current source hashes and 222 raw
+    test passes confirmed; no new tests executed
+  native_persistence_link: both native old/new ledger executables SONAME librocksdb.so.8
+    resolves system8.10.0; copied-store runtime passed
+  native_vendor_snapshot_units: 90 passed, 0 failed; includes column-first exporter
+    regression
+  native_vendor_community_units: 3 passed, 0 failed; includes one-CSR-array WCC regression
+  root_adapters: PASS 239; 1 ignored; default features
+  root_ledger_contracts: PASS 4; compiled with guard, runtime without SIGSTOP; unchanged
+    30-second lease
+  count_scope: executions, not unique tests; four cross-generation ledger cases counted
+    separately
+  scoped_clippy: PASS after equivalent Option predicate repair; initial exit101 retained
+  final_architecture_profile: invocation-only dev/test debug=0; opt-level/debug-assertions
+    unchanged; source Cargo profiles unchanged
+  journey_index_repair: pre-helper11default/11layout/clippy+actual replacement review
+    pass; current helper28 and clippy/review supersede old hash-bound proof
+  embedding_roots_composition_repair: current helper default14/layout14 pass; bin/tests/two
+    examples clippy0 after disclosed equivalent main-only lint correction; independent
+    current7source review no material findings; examples runtime/Entity readiness/backfill
+    not proved
+  consumer_count_scope: scoped consumer executions including earlier22/current28 composition/journey
+    repeats; native142 separate; architecture repetitions excluded
+  current_gitnexus: refresh0 identity107159pathnodes/0mismatch changed65/0paritybad
+    helpers2 indexed detectcritical23processes partial=false/truncated=false; known
+    index coverage limits retained
+  final_architecture_duration_seconds: 8973.50329491694
+  final_architecture_native_steps: 23
+  final_architecture_supplemental_boundaries: before17/19 ownCLI cleanup+cache cleanup+exact
+    native14/15default runner restoration; all10 supplemental commands exit0/not timed
+    out; frozen hashes unchanged
+  final_architecture_minimum_free_gib: 27.946136474609375
+  original_patch_proof: full native249-file3323584-byte patch SHA256d79bb5221e03b2da4c4b49de8727a2d8ce35c66dd783d8c2601caf8a71146fcc;
+    original247rawRust +2nonRust individual diff +8untracked match; initial aggregate
+    captures were clipped, historical equality not complete proof
+  final_acceptance: pending typed UAT/source-bound supported GSD acceptance; no fabricated
+    Task Attempts
+  typed_uat:
+    artifact: 4194da70-205e-49fe-aeda-fa86ea7b0ff7
+    fresh_hermetic_ledger_runtime: 47120834-3966-430e-b97d-d1d13a27cb3b
+    exit_codes:
+    - 0
+    - 0
+    timed_out_or_aborted: false
+    lease_seconds: 30
+    SIGSTOP_runtime: false
+    unique_tests_or_general_migration_claimed: false
+  retained_evidence: doc/review/vendor-upgrade-m518-evidence/raw-evidence.tar.gz and
+    manifest.json; native captures/reviews/source hashes/preservation/failures/probe
+    recipes, not runtime stores/binaries
+  external_execution_disposition:
+    slice: S01 cancelled with supported dependency-bypass waiver
+    task_attempts_claimed: false
+    gate_dispositions_saved: 12
+    Q6_T01: omitted bounded source audit
+    Q6_T02: 'flag: 10x capacity unmeasured'
+    Q6_T03: 'flag: 10x capacity unmeasured'
+    historical_authority_cutover_adopted: false
+  governor_closeout:
+    exit_code: 0
+    verdict: drift_risk
+    historical_findings_not_suppressed: true
+    target_gb: 19.4
+    unchanged_target_cap_gb: 60
+    retention: supported explicit decline; no reclamation
+    new_vendor_patches_schema_declared: true
+    README_names_M518: true

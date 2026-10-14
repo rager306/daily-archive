@@ -66,7 +66,11 @@ struct CanaryReport {
 async fn main() -> anyhow::Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("revision_graph_canary");
     let args = Args::parse();
-    let base: Arc<dyn DirectGraphStore> = Arc::new(SamyamaGraphStore::new());
+    let embedded = Arc::new(SamyamaGraphStore::new());
+    da_cli::production::ensure_embedding_index(embedded.as_ref(), "PaperRevision", 2)
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let base: Arc<dyn DirectGraphStore> = embedded;
     let observed = Arc::new(InstrumentedGraphStore::new(base));
     let direct: Arc<dyn DirectGraphStore> = observed.clone();
     let ingest = IngestUseCase::materializer_only_with_clock(

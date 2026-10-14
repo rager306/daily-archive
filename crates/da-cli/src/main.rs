@@ -1309,6 +1309,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
 
     let parser = Box::new(parse_profile::corpus_grobid_parser());
     let embedder = Box::new(FdApiEmbedder::from_env());
+    let embedding_dimensions = da_ports::Embedder::dimensions(embedder.as_ref());
     let context = match production::ProductionContext::from_env(None, None) {
         Ok(context) => context,
         Err(error) => {
@@ -1342,6 +1343,21 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
     match revision_context.as_ref() {
         Some(context) => println!("   Revision: v{} (exact)", context.revision),
         None => println!("   Revision: versionless fallback (no versioned filename evidence)"),
+    }
+
+    if let Err(error) = production::ensure_embedding_index(
+        context.store.as_ref(),
+        if revision_context.is_some() {
+            "PaperRevision"
+        } else {
+            "Paper"
+        },
+        embedding_dimensions,
+    )
+    .await
+    {
+        eprintln!("Embedding index failed: {error}");
+        std::process::exit(1);
     }
 
     match use_case
@@ -1483,6 +1499,7 @@ async fn batch_ingest(
 
     let parser = Box::new(parse_profile::corpus_grobid_parser());
     let embedder = Box::new(FdApiEmbedder::from_env());
+    let embedding_dimensions = da_ports::Embedder::dimensions(embedder.as_ref());
     let context = match production::ProductionContext::from_env(None, None) {
         Ok(context) => context,
         Err(error) => {
@@ -1490,6 +1507,24 @@ async fn batch_ingest(
             std::process::exit(1);
         }
     };
+    for (label, required) in [
+        ("Paper", resolved_contexts.iter().any(Option::is_none)),
+        (
+            "PaperRevision",
+            resolved_contexts.iter().any(Option::is_some),
+        ),
+    ] {
+        if !required {
+            continue;
+        }
+        if let Err(error) =
+            production::ensure_embedding_index(context.store.as_ref(), label, embedding_dimensions)
+                .await
+        {
+            eprintln!("Embedding index failed: {error}");
+            std::process::exit(1);
+        }
+    }
     let graph_store = context.store.clone() as Arc<dyn da_ports::DirectGraphStore>;
     let ingest = maybe_attach_pdf_classifier(IngestUseCase::from_shared_with_clock(
         parser,
@@ -2599,6 +2634,13 @@ async fn run_scheduler(queue_dir: &str) -> anyhow::Result<()> {
         println!("Scheduler: restored state from {}", snapshot_path.display());
     }
 
+    production::ensure_embedding_index(
+        shared_store.as_ref(),
+        "Paper",
+        da_ports::Embedder::dimensions(&da_adapters::FdApiEmbedder::from_env()),
+    )
+    .await
+    .map_err(anyhow::Error::msg)?;
     let graph_store: Arc<dyn da_ports::graph_store::DirectGraphStore> = shared_store.clone();
     let openalex: Arc<dyn da_ports::openalex::OpenAlexClient> =
         Arc::new(OpenAlexHttpAdapter::new());

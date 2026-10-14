@@ -386,8 +386,10 @@ impl LoadContentPipeline for CliContentPipeline {
         } else {
             parsed.abstract_text.as_str()
         };
+        let embedder = FdApiEmbedder::from_env();
         let (vector, embed_records) = embed_with_cache(
             self.cache.as_deref(),
+            &embedder,
             source_identity.clone(),
             &parse_payload_sha,
             embed_text,
@@ -408,6 +410,16 @@ impl LoadContentPipeline for CliContentPipeline {
         let source_code =
             infer_source_code(&primary_path).or_else(|| Some(req.source_code.to_string()));
         let revision_context = revision_context_from_load(&req)?;
+        crate::production::ensure_embedding_index(
+            self.store.as_ref(),
+            if revision_context.is_some() {
+                "PaperRevision"
+            } else {
+                "Paper"
+            },
+            embedder.dimensions(),
+        )
+        .await?;
         let result = materializer
             .materialize_parsed_with_context(
                 &parsed,
@@ -846,11 +858,11 @@ async fn parse_with_cache(
 /// re-parse with different bytes cannot silently reuse an old vector.
 async fn embed_with_cache(
     cache: Option<&FilePipelineCache>,
+    embedder: &dyn Embedder,
     source: SourceIdentity,
     parse_payload_sha: &str,
     embed_text: &str,
 ) -> Result<(Vec<f32>, Vec<LoadCacheRecord>), String> {
-    let embedder = FdApiEmbedder::from_env();
     let model_id = embedder.model_id().to_string();
     let text_sha = sha256_hex(embed_text.as_bytes());
     let mut deps = BTreeMap::new();

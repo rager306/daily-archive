@@ -88,25 +88,13 @@ impl SamyamaGraphStore {
         self.store.write().await
     }
 
-    /// Resolve a node property from HashMap first, then ColumnStore.
-    ///
-    /// Samyama snapshot import (sgsnap v2) writes simple scalar properties into
-    /// `node_columns` via `set_column_property`, not into the node HashMap.
-    /// Getters must read both or export→import round-trips look empty.
+    /// Read the store's current column value before any legacy row-map value.
     fn resolve_node_property(
         store: &SamyamaStore,
         node_id: u64,
         key: &str,
     ) -> Option<PropertyValue> {
-        if let Some(prop) = store
-            .get_node(NodeId(node_id))
-            .and_then(|node| node.properties.get(key))
-            .cloned()
-        {
-            return Some(prop);
-        }
-        let col = store.node_columns.get_property(node_id as usize, key);
-        if col.is_null() { None } else { Some(col) }
+        store.node_property(NodeId(node_id), key)
     }
 
     /// Direct node creation (HOT path — no Cypher).
@@ -245,6 +233,13 @@ fn value_to_json(val: &samyama::query::Value) -> serde_json::Value {
             "nodes": nodes.iter().map(|n| n.as_u64()).collect::<Vec<_>>(),
             "edges": edges.iter().map(|e| e.as_u64()).collect::<Vec<_>>(),
         }),
+        Value::List(values) => serde_json::Value::Array(values.iter().map(value_to_json).collect()),
+        Value::Map(values) => serde_json::Value::Object(
+            values
+                .iter()
+                .map(|(key, value)| (key.clone(), value_to_json(value)))
+                .collect(),
+        ),
     }
 }
 
@@ -258,6 +253,28 @@ fn property_to_json(pv: &PropertyValue) -> serde_json::Value {
             .unwrap_or(serde_json::Value::Null),
         PropertyValue::Boolean(b) => serde_json::Value::Bool(*b),
         PropertyValue::DateTime(ts) => serde_json::Value::Number((*ts).into()),
+        PropertyValue::Date(days) => serde_json::json!({"__type": "Date", "days": days}),
+        PropertyValue::LocalTime(nanos) => {
+            serde_json::json!({"__type": "LocalTime", "nanos": nanos})
+        }
+        PropertyValue::Time {
+            nanos,
+            offset_seconds,
+        } => serde_json::json!({
+            "__type": "Time", "nanos": nanos, "offset": offset_seconds,
+        }),
+        PropertyValue::LocalDateTime { secs, nanos } => serde_json::json!({
+            "__type": "LocalDateTime", "secs": secs, "nanos": nanos,
+        }),
+        PropertyValue::ZonedDateTime {
+            secs,
+            nanos,
+            offset_seconds,
+            zone,
+        } => serde_json::json!({
+            "__type": "ZonedDateTime", "secs": secs, "nanos": nanos,
+            "offset": offset_seconds, "zone": zone,
+        }),
         PropertyValue::Null => serde_json::Value::Null,
         PropertyValue::Vector(v) => serde_json::json!(v),
         PropertyValue::Array(arr) => {
@@ -669,8 +686,7 @@ impl DirectGraphStore for SamyamaGraphStore {
     async fn get_edge_property_string(&self, edge_id: u64, key: &str) -> Option<String> {
         let store = self.store_read().await;
         store
-            .get_edge_properties(EdgeId(edge_id))
-            .and_then(|props| props.get(key))
+            .edge_property(EdgeId(edge_id), key)
             .and_then(|prop| prop.as_string().map(|s| s.to_string()))
     }
 
@@ -710,16 +726,13 @@ impl DirectGraphStore for SamyamaGraphStore {
         // Override default impl: Samyama stores PropertyValue::Float directly,
         // so we read it natively instead of parsing from string.
         let store = self.store_read().await;
-        store
-            .get_edge_properties(EdgeId(edge_id))
-            .and_then(|props| props.get(key).cloned())
-            .and_then(|prop| {
-                // Try Float first, then String parse fallback.
-                if let Some(f) = prop.as_float() {
-                    return Some(f);
-                }
-                prop.as_string().and_then(|s| s.parse::<f64>().ok())
-            })
+        store.edge_property(EdgeId(edge_id), key).and_then(|prop| {
+            // Try Float first, then String parse fallback.
+            if let Some(f) = prop.as_float() {
+                return Some(f);
+            }
+            prop.as_string().and_then(|s| s.parse::<f64>().ok())
+        })
     }
 }
 
@@ -727,6 +740,99 @@ impl DirectGraphStore for SamyamaGraphStore {
 mod mode_tests {
     use super::*;
     use crate::{GraphMode, GraphModeError};
+
+    #[test]
+    fn new_temporal_values_keep_all_components_and_legacy_output() {
+        let cases = [
+            (
+                PropertyValue::Date(-1),
+                serde_json::json!({"__type":"Date","days":-1}),
+            ),
+            (
+                PropertyValue::LocalTime(1),
+                serde_json::json!({"__type":"LocalTime","nanos":1}),
+            ),
+            (
+                PropertyValue::Time {
+                    nanos: 2,
+                    offset_seconds: -3,
+                },
+                serde_json::json!({"__type":"Time","nanos":2,"offset":-3}),
+            ),
+            (
+                PropertyValue::LocalDateTime { secs: -4, nanos: 5 },
+                serde_json::json!({"__type":"LocalDateTime","secs":-4,"nanos":5}),
+            ),
+            (
+                PropertyValue::ZonedDateTime {
+                    secs: 6,
+                    nanos: 7,
+                    offset_seconds: 8,
+                    zone: Some("Europe/Stockholm".into()),
+                },
+                serde_json::json!({"__type":"ZonedDateTime","secs":6,"nanos":7,"offset":8,"zone":"Europe/Stockholm"}),
+            ),
+            (
+                PropertyValue::ZonedDateTime {
+                    secs: 6,
+                    nanos: 7,
+                    offset_seconds: 8,
+                    zone: None,
+                },
+                serde_json::json!({"__type":"ZonedDateTime","secs":6,"nanos":7,"offset":8,"zone":null}),
+            ),
+        ];
+        for (value, expected) in cases {
+            assert_eq!(property_to_json(&value), expected);
+            let nested = PropertyValue::Map(std::collections::HashMap::from([(
+                "values".into(),
+                PropertyValue::Array(vec![value]),
+            )]));
+            assert_eq!(
+                property_to_json(&nested),
+                serde_json::json!({"values":[expected]})
+            );
+        }
+        assert_eq!(
+            property_to_json(&PropertyValue::DateTime(-9)),
+            serde_json::json!(-9)
+        );
+        assert_eq!(
+            property_to_json(&PropertyValue::Vector(vec![1.0, 2.0])),
+            serde_json::json!([1.0, 2.0])
+        );
+        assert_eq!(
+            property_to_json(&PropertyValue::Duration {
+                months: 1,
+                days: 2,
+                seconds: 3,
+                nanos: 4
+            }),
+            serde_json::json!({"months":1,"days":2,"seconds":3,"nanos":4})
+        );
+    }
+
+    #[test]
+    fn query_lists_and_maps_preserve_nested_values_and_references() {
+        use samyama::query::Value;
+        let values = Value::Map(std::collections::BTreeMap::from([(
+            "nested".into(),
+            Value::List(vec![
+                Value::NodeRef(NodeId(7)),
+                Value::Property(PropertyValue::Date(1)),
+                Value::Map(std::collections::BTreeMap::from([(
+                    "empty".into(),
+                    Value::Null,
+                )])),
+            ]),
+        )]));
+        assert_eq!(
+            value_to_json(&values),
+            serde_json::json!({
+                "nested": [{"node_id":7}, {"__type":"Date","days":1}, {"empty":null}],
+            })
+        );
+    }
 
     #[tokio::test]
     async fn property_index_backfills_and_tracks_future_identity_values() {

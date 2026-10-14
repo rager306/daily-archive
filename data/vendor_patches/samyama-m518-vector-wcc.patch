@@ -1,0 +1,2381 @@
+diff --git a/crates/samyama-graph-algorithms/src/community.rs b/crates/samyama-graph-algorithms/src/community.rs
+index 988c847..9431bb3 100644
+--- a/crates/samyama-graph-algorithms/src/community.rs
++++ b/crates/samyama-graph-algorithms/src/community.rs
+@@ -54,17 +54,20 @@ impl UnionFind {
+ 
+ /// Weakly Connected Components (WCC)
+ ///
+-/// Finds all disjoint subgraphs in the graph.
+-/// Ignores edge direction.
++/// Finds all disjoint subgraphs using edges from both CSR arrays.
++/// Ignores edge direction. Component root IDs depend on node and edge traversal order.
+ pub fn weakly_connected_components(view: &GraphView) -> WccResult {
+     let n = view.node_count;
+     let mut uf = UnionFind::new(n);
+ 
+-    // Iterate all edges and Union connected nodes
++    // Include incoming-only edges as well as outgoing edges.
+     for u_idx in 0..n {
+         for &v_idx in view.successors(u_idx) {
+             uf.union(u_idx, v_idx);
+         }
++        for &v_idx in view.predecessors(u_idx) {
++            uf.union(u_idx, v_idx);
++        }
+     }
+ 
+     // Build results
+@@ -74,8 +77,11 @@ pub fn weakly_connected_components(view: &GraphView) -> WccResult {
+     for i in 0..n {
+         let root = uf.find(i);
+         let node_id = view.index_to_node[i];
+-        
+-        components.entry(root).or_insert_with(Vec::new).push(node_id);
++
++        components
++            .entry(root)
++            .or_insert_with(Vec::new)
++            .push(node_id);
+         node_component.insert(node_id, root);
+     }
+ 
+@@ -102,7 +108,7 @@ pub fn strongly_connected_components(view: &GraphView) -> SccResult {
+     let mut stack = Vec::new();
+     let mut id_counter = 0;
+     let mut scc_count = 0;
+-    
++
+     let mut node_component = HashMap::new();
+     let mut components = HashMap::new();
+ 
+@@ -116,7 +122,7 @@ pub fn strongly_connected_components(view: &GraphView) -> SccResult {
+         stack: &mut Vec<usize>,
+         view: &GraphView,
+         node_component: &mut HashMap<NodeId, usize>,
+-        components: &mut HashMap<usize, Vec<NodeId>>
++        components: &mut HashMap<usize, Vec<NodeId>>,
+     ) {
+         stack.push(u);
+         on_stack[u] = true;
+@@ -126,7 +132,18 @@ pub fn strongly_connected_components(view: &GraphView) -> SccResult {
+ 
+         for &v in view.successors(u) {
+             if ids[v] == -1 {
+-                dfs(v, id_counter, scc_count, ids, low, on_stack, stack, view, node_component, components);
++                dfs(
++                    v,
++                    id_counter,
++                    scc_count,
++                    ids,
++                    low,
++                    on_stack,
++                    stack,
++                    view,
++                    node_component,
++                    components,
++                );
+                 low[u] = low[u].min(low[v]);
+             } else if on_stack[v] {
+                 low[u] = low[u].min(ids[v] as usize);
+@@ -137,12 +154,17 @@ pub fn strongly_connected_components(view: &GraphView) -> SccResult {
+             while let Some(node_idx) = stack.pop() {
+                 on_stack[node_idx] = false;
+                 low[node_idx] = ids[u] as usize;
+-                
++
+                 let node_id = view.index_to_node[node_idx];
+                 node_component.insert(node_id, *scc_count);
+-                components.entry(*scc_count).or_insert_with(Vec::new).push(node_id);
+-                
+-                if node_idx == u { break; }
++                components
++                    .entry(*scc_count)
++                    .or_insert_with(Vec::new)
++                    .push(node_id);
++
++                if node_idx == u {
++                    break;
++                }
+             }
+             *scc_count += 1;
+         }
+@@ -150,7 +172,18 @@ pub fn strongly_connected_components(view: &GraphView) -> SccResult {
+ 
+     for i in 0..n {
+         if ids[i] == -1 {
+-            dfs(i, &mut id_counter, &mut scc_count, &mut ids, &mut low, &mut on_stack, &mut stack, view, &mut node_component, &mut components);
++            dfs(
++                i,
++                &mut id_counter,
++                &mut scc_count,
++                &mut ids,
++                &mut low,
++                &mut on_stack,
++                &mut stack,
++                view,
++                &mut node_component,
++                &mut components,
++            );
+         }
+     }
+ 
+@@ -165,9 +198,63 @@ mod tests {
+     use super::*;
+     use std::collections::HashMap;
+ 
++    fn wcc_view(outgoing: Vec<Vec<usize>>, incoming: Vec<Vec<usize>>) -> GraphView {
++        let index_to_node = vec![11, 23, 37, 51, 79];
++        let node_to_index = index_to_node
++            .iter()
++            .enumerate()
++            .map(|(i, &id)| (id, i))
++            .collect();
++        GraphView::from_adjacency_list(5, index_to_node, node_to_index, outgoing, incoming, None)
++    }
++
++    fn canonical_partition(result: &WccResult) -> Vec<Vec<NodeId>> {
++        let mut partition: Vec<_> = result.components.values().cloned().collect();
++        for nodes in &mut partition {
++            nodes.sort_unstable();
++        }
++        partition.sort();
++        partition
++    }
++
+     #[test]
+     fn test_wcc() {
+-        // ... (existing test)
++        let outgoing = vec![vec![], vec![], vec![0, 1], vec![4], vec![]];
++        let incoming = vec![vec![2], vec![2], vec![], vec![], vec![3]];
++        for view in [
++            wcc_view(outgoing.clone(), incoming.clone()),
++            wcc_view(outgoing, vec![vec![]; 5]),
++            wcc_view(vec![vec![]; 5], incoming),
++        ] {
++            let result = weakly_connected_components(&view);
++            assert_eq!(
++                canonical_partition(&result),
++                vec![vec![11, 23, 37], vec![51, 79]]
++            );
++            assert_eq!(result.node_component.len(), 5);
++            assert_eq!(result.node_component[&11], result.node_component[&23]);
++            assert_eq!(result.node_component[&23], result.node_component[&37]);
++            assert_eq!(result.node_component[&51], result.node_component[&79]);
++            assert_ne!(result.node_component[&11], result.node_component[&51]);
++        }
++    }
++
++    #[test]
++    fn wcc_includes_edges_present_in_only_one_csr_array() {
++        let view = wcc_view(
++            vec![vec![2], vec![], vec![], vec![], vec![]],
++            vec![vec![], vec![], vec![], vec![1], vec![]],
++        );
++        let result = weakly_connected_components(&view);
++        assert_eq!(
++            canonical_partition(&result),
++            vec![vec![11, 37], vec![23, 51], vec![79]]
++        );
++        assert_eq!(result.node_component.len(), 5);
++        assert_eq!(result.node_component[&11], result.node_component[&37]);
++        assert_eq!(result.node_component[&23], result.node_component[&51]);
++        assert_ne!(result.node_component[&11], result.node_component[&23]);
++        assert_ne!(result.node_component[&23], result.node_component[&79]);
+     }
+ 
+     #[test]
+@@ -176,7 +263,9 @@ mod tests {
+         let node_count = 4;
+         let index_to_node = vec![1, 2, 3, 4];
+         let mut node_to_index = HashMap::new();
+-        for (i, &id) in index_to_node.iter().enumerate() { node_to_index.insert(id, i); }
++        for (i, &id) in index_to_node.iter().enumerate() {
++            node_to_index.insert(id, i);
++        }
+ 
+         let mut outgoing = vec![vec![]; 4];
+         outgoing[0].push(1); // 1->2
+@@ -194,14 +283,14 @@ mod tests {
+ 
+         let result = strongly_connected_components(&view);
+         assert_eq!(result.components.len(), 2);
+-        
++
+         let c1 = result.node_component[&1];
+         let c2 = result.node_component[&2];
+         let c3 = result.node_component[&3];
+         let c4 = result.node_component[&4];
+-        
++
+         assert_eq!(c1, c2);
+         assert_eq!(c2, c3);
+         assert_ne!(c1, c4);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/snapshot/mod.rs b/src/snapshot/mod.rs
+index 47fc24b..019797b 100644
+--- a/src/snapshot/mod.rs
++++ b/src/snapshot/mod.rs
+@@ -12,25 +12,25 @@
+ pub mod encryption;
+ pub mod format;
+ pub mod persist;
+-pub mod verify;
+-pub mod results;
+ pub mod publish_gate;
++pub mod results;
++pub mod verify;
+ 
+ use std::collections::{HashMap, HashSet};
+ 
+ use crate::graph::Label;
+ use std::io::{BufRead, BufReader, Read, Write};
+ 
++use flate2::Compression;
+ use flate2::read::GzDecoder;
+ use flate2::write::GzEncoder;
+-use flate2::Compression;
+ 
+ use crate::graph::property::PropertyValue;
+ use crate::graph::store::GraphStore;
+ use crate::graph::types::NodeId;
+ use format::{
+-    ExportStats, ImportStats, SnapshotEdge, SnapshotHeader, SnapshotHierarchyIndex,
+-    SnapshotIndexCatalog, SnapshotNode, SNAPSHOT_VERSION,
++    ExportStats, ImportStats, SNAPSHOT_VERSION, SnapshotEdge, SnapshotHeader,
++    SnapshotHierarchyIndex, SnapshotIndexCatalog, SnapshotNode,
+ };
+ 
+ /// Export all nodes and edges from the store into a gzip-compressed .sgsnap stream.
+@@ -128,7 +128,9 @@ pub fn export_tenant_with_compression(
+                 // A frozen entry whose type misses is a relationship deleted
+                 // after compaction, kept only behind its tombstone. It is not
+                 // in the graph, so it is not counted or written (#1096).
+-                let Some(et) = store.get_edge_type(eid) else { continue };
++                let Some(et) = store.get_edge_type(eid) else {
++                    continue;
++                };
+                 adjacency_edge_count += 1;
+                 edge_type_set.insert(et.as_str().to_string());
+             }
+@@ -137,7 +139,9 @@ pub fn export_tenant_with_compression(
+         let buf = store.get_outgoing_neighbor_slice(node.id);
+         for &(_nid, eid) in buf {
+             if !full_edge_ids.contains(eid.as_u64()) {
+-                let Some(et) = store.get_edge_type(eid) else { continue };
++                let Some(et) = store.get_edge_type(eid) else {
++                    continue;
++                };
+                 adjacency_edge_count += 1;
+                 edge_type_set.insert(et.as_str().to_string());
+             }
+@@ -215,23 +219,11 @@ pub fn export_tenant_with_compression(
+ 
+     // Write nodes (with ColumnStore properties merged)
+     for node in &nodes {
+-        let mut props = HashMap::new();
+-
+-        // 1. Node HashMap properties (from full create_node)
+-        for (key, value) in &node.properties {
+-            props.insert(key.clone(), property_to_json(value));
+-        }
+-
+-        // 2. ColumnStore properties (from set_column_property / create_node_stub path)
+-        let col_keys = store.node_columns.get_property_keys(node.id.as_u64() as usize);
+-        for key in col_keys {
+-            if !props.contains_key(&key) { // Don't override HashMap props
+-                let val = store.node_columns.get_property(node.id.as_u64() as usize, &key);
+-                if !val.is_null() {
+-                    props.insert(key, property_to_json(&val));
+-                }
+-            }
+-        }
++        let props = store
++            .node_properties_merged(node.id)
++            .into_iter()
++            .map(|(key, value)| (key, property_to_json(&value)))
++            .collect();
+ 
+         let snap_node = SnapshotNode {
+             t: "n".to_string(),
+@@ -274,10 +266,14 @@ pub fn export_tenant_with_compression(
+         // Frozen outgoing
+         let frozen = store.frozen_outgoing_neighbors(idx);
+         for &(tgt_nid, eid) in &frozen {
+-            if full_edge_ids.contains(eid.as_u64()) { continue; }
++            if full_edge_ids.contains(eid.as_u64()) {
++                continue;
++            }
+             // Same rule as the count above: no type means deleted. Writing it
+             // with `edge_type: ""` brought it back on import, live (#1096).
+-            let Some(et) = store.get_edge_type(eid).map(|e| e.as_str().to_string()) else { continue };
++            let Some(et) = store.get_edge_type(eid).map(|e| e.as_str().to_string()) else {
++                continue;
++            };
+             let snap_edge = SnapshotEdge {
+                 t: "e".to_string(),
+                 id: eid.as_u64(),
+@@ -294,10 +290,14 @@ pub fn export_tenant_with_compression(
+         // Write buffer outgoing
+         let buf = store.get_outgoing_neighbor_slice(node.id);
+         for &(tgt_nid, eid) in buf {
+-            if full_edge_ids.contains(eid.as_u64()) { continue; }
++            if full_edge_ids.contains(eid.as_u64()) {
++                continue;
++            }
+             // Same rule as the count above: no type means deleted. Writing it
+             // with `edge_type: ""` brought it back on import, live (#1096).
+-            let Some(et) = store.get_edge_type(eid).map(|e| e.as_str().to_string()) else { continue };
++            let Some(et) = store.get_edge_type(eid).map(|e| e.as_str().to_string()) else {
++                continue;
++            };
+             let snap_edge = SnapshotEdge {
+                 t: "e".to_string(),
+                 id: eid.as_u64(),
+@@ -418,9 +418,7 @@ pub fn import_tenant_maybe_encrypted(
+     if !encryption::looks_encrypted(head) {
+         return import_tenant_with_dedup(store, head.chain(reader), &[]);
+     }
+-    let key = key.ok_or(
+-        "this snapshot is encrypted and no key was given: pass --snapshot-key",
+-    )?;
++    let key = key.ok_or("this snapshot is encrypted and no key was given: pass --snapshot-key")?;
+     let dec = encryption::DecryptingReader::new(reader, key, head)?;
+     import_tenant_with_dedup(store, dec, &[])
+ }
+@@ -474,9 +472,7 @@ pub fn peek_header_maybe_encrypted(
+     if !encryption::looks_encrypted(head) {
+         return peek_header(head.chain(reader));
+     }
+-    let key = key.ok_or(
+-        "this snapshot is encrypted and no key was given: pass --snapshot-key",
+-    )?;
++    let key = key.ok_or("this snapshot is encrypted and no key was given: pass --snapshot-key")?;
+     peek_header(encryption::DecryptingReader::new(reader, key, head)?)
+ }
+ 
+@@ -575,7 +571,9 @@ fn existing_dedup_entries(
+ ) -> Vec<(String, String)> {
+     let normalize_dedup = |s: &str| -> String { s.trim().to_lowercase() };
+     let mut out = Vec::new();
+-    let Some(node) = store.get_node(id) else { return out };
++    let Some(node) = store.get_node(id) else {
++        return out;
++    };
+     for &key in dedup_keys {
+         match node.get_property(key) {
+             Some(PropertyValue::String(s)) => out.push((key.to_string(), normalize_dedup(s))),
+@@ -656,8 +654,14 @@ impl DedupPrepopulate {
+         if self.before_merge.contains_key(&eid) {
+             return;
+         }
+-        let Some(node) = store.get_node(eid) else { return };
+-        if node.labels.iter().all(|l| self.indexed.contains(l.as_str())) {
++        let Some(node) = store.get_node(eid) else {
++            return;
++        };
++        if node
++            .labels
++            .iter()
++            .all(|l| self.indexed.contains(l.as_str()))
++        {
+             return;
+         }
+         let entries = existing_dedup_entries(store, eid, dedup_keys);
+@@ -678,7 +682,10 @@ impl DedupPrepopulate {
+             for label in &node.labels {
+                 self.indexed.insert(label.as_str().to_string());
+                 for (key, val) in &entries {
+-                    dedup_index.insert((label.as_str().to_string(), key.clone(), val.clone()), node.id);
++                    dedup_index.insert(
++                        (label.as_str().to_string(), key.clone(), val.clone()),
++                        node.id,
++                    );
+                 }
+             }
+         }
+@@ -892,10 +899,13 @@ fn import_tenant_inner(
+                 for (key, json_val) in &snap_node.props {
+                     let pv = json_to_property(json_val);
+                     match &pv {
+-                        PropertyValue::String(_) | PropertyValue::Integer(_)
+-                        | PropertyValue::Float(_) | PropertyValue::Boolean(_) => {
++                        PropertyValue::String(_)
++                        | PropertyValue::Integer(_)
++                        | PropertyValue::Float(_)
++                        | PropertyValue::Boolean(_) => {
+                             // Only set if not already present in ColumnStore
+-                            let existing = store.node_columns.get_property(eid.as_u64() as usize, key);
++                            let existing =
++                                store.node_columns.get_property(eid.as_u64() as usize, key);
+                             match existing {
+                                 PropertyValue::Null => {
+                                     store.set_column_property(eid, key, pv);
+@@ -1009,8 +1019,10 @@ fn import_tenant_inner(
+                     // narrowing that is #545's decision, not this fix's.
+                     if !matches!(
+                         pv,
+-                        PropertyValue::String(_) | PropertyValue::Integer(_)
+-                            | PropertyValue::Float(_) | PropertyValue::Boolean(_)
++                        PropertyValue::String(_)
++                            | PropertyValue::Integer(_)
++                            | PropertyValue::Float(_)
++                            | PropertyValue::Boolean(_)
+                     ) {
+                         if let Some(node) = store.get_node_mut(new_id) {
+                             node.set_property(key.clone(), pv);
+@@ -1026,10 +1038,8 @@ fn import_tenant_inner(
+                             _ => continue,
+                         };
+                         for label in &snap_labels {
+-                            dedup_index.insert(
+-                                (label.clone(), key.to_string(), val_str.clone()),
+-                                new_id,
+-                            );
++                            dedup_index
++                                .insert((label.clone(), key.to_string(), val_str.clone()), new_id);
+                         }
+                     }
+                 }
+@@ -1054,10 +1064,8 @@ fn import_tenant_inner(
+                             _ => continue,
+                         };
+                         for label in &snap_labels {
+-                            dedup_index.insert(
+-                                (label.clone(), key.to_string(), val_str.clone()),
+-                                new_id,
+-                            );
++                            dedup_index
++                                .insert((label.clone(), key.to_string(), val_str.clone()), new_id);
+                         }
+                     }
+                 }
+@@ -1081,16 +1089,10 @@ fn import_tenant_inner(
+             let snap_edge: SnapshotEdge = serde_json::from_str(&line)?;
+ 
+             let new_src = id_remap.get(&snap_edge.src).ok_or_else(|| {
+-                format!(
+-                    "edge references unknown source node ID {}",
+-                    snap_edge.src
+-                )
++                format!("edge references unknown source node ID {}", snap_edge.src)
+             })?;
+             let new_tgt = id_remap.get(&snap_edge.tgt).ok_or_else(|| {
+-                format!(
+-                    "edge references unknown target node ID {}",
+-                    snap_edge.tgt
+-                )
++                format!("edge references unknown target node ID {}", snap_edge.tgt)
+             })?;
+ 
+             if use_stubs && snap_edge.props.is_empty() {
+@@ -1147,7 +1149,11 @@ fn import_tenant_inner(
+     let merge_groups = merge_group_sizes.len() as u64;
+     // Group size counts the node that first claimed the value, so a duplicate
+     // pair is 2.
+-    let largest_merge_group = merge_group_sizes.values().copied().max().map_or(0, |m| m + 1);
++    let largest_merge_group = merge_group_sizes
++        .values()
++        .copied()
++        .max()
++        .map_or(0, |m| m + 1);
+     let mut merges_by_key_sorted: Vec<(String, u64)> = merges_by_key.into_iter().collect();
+     merges_by_key_sorted.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+ 
+@@ -1312,12 +1318,19 @@ fn conflicting_definition<'a>(
+         match (ours, incoming) {
+             (D::FullText { name: a, .. }, D::FullText { name: b, .. }) => a == b,
+             (
+-                D::Vector { name: na, label: la, property: pa, .. },
+-                D::Vector { name: nb, label: lb, property: pb, .. },
+-            ) => {
+-                (la == lb && pa == pb)
+-                    || (na.is_some() && na == nb)
+-            }
++                D::Vector {
++                    name: na,
++                    label: la,
++                    property: pa,
++                    ..
++                },
++                D::Vector {
++                    name: nb,
++                    label: lb,
++                    property: pb,
++                    ..
++                },
++            ) => (la == lb && pa == pb) || (na.is_some() && na == nb),
+             _ => false,
+         }
+     })
+@@ -1344,13 +1357,21 @@ fn property_to_json(pv: &PropertyValue) -> serde_json::Value {
+         PropertyValue::LocalTime(nanos) => {
+             serde_json::json!({"__type": "LocalTime", "nanos": nanos})
+         }
+-        PropertyValue::Time { nanos, offset_seconds } => {
++        PropertyValue::Time {
++            nanos,
++            offset_seconds,
++        } => {
+             serde_json::json!({"__type": "Time", "nanos": nanos, "offset": offset_seconds})
+         }
+         PropertyValue::LocalDateTime { secs, nanos } => {
+             serde_json::json!({"__type": "LocalDateTime", "secs": secs, "nanos": nanos})
+         }
+-        PropertyValue::ZonedDateTime { secs, nanos, offset_seconds, zone } => {
++        PropertyValue::ZonedDateTime {
++            secs,
++            nanos,
++            offset_seconds,
++            zone,
++        } => {
+             serde_json::json!({
+                 "__type": "ZonedDateTime",
+                 "secs": secs, "nanos": nanos,
+@@ -1428,7 +1449,11 @@ fn json_to_property(val: &serde_json::Value) -> PropertyValue {
+                         if let Some(n) = obj.get("nanos").and_then(|v| v.as_i64()) {
+                             return PropertyValue::Time {
+                                 nanos: n,
+-                                offset_seconds: obj.get("offset").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
++                                offset_seconds: obj
++                                    .get("offset")
++                                    .and_then(|v| v.as_i64())
++                                    .unwrap_or(0)
++                                    as i32,
+                             };
+                         }
+                     }
+@@ -1436,7 +1461,8 @@ fn json_to_property(val: &serde_json::Value) -> PropertyValue {
+                         if let Some(sec) = obj.get("secs").and_then(|v| v.as_i64()) {
+                             return PropertyValue::LocalDateTime {
+                                 secs: sec,
+-                                nanos: obj.get("nanos").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
++                                nanos: obj.get("nanos").and_then(|v| v.as_u64()).unwrap_or(0)
++                                    as u32,
+                             };
+                         }
+                     }
+@@ -1444,9 +1470,17 @@ fn json_to_property(val: &serde_json::Value) -> PropertyValue {
+                         if let Some(sec) = obj.get("secs").and_then(|v| v.as_i64()) {
+                             return PropertyValue::ZonedDateTime {
+                                 secs: sec,
+-                                nanos: obj.get("nanos").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+-                                offset_seconds: obj.get("offset").and_then(|v| v.as_i64()).unwrap_or(0) as i32,
+-                                zone: obj.get("zone").and_then(|v| v.as_str()).map(|z| z.to_string()),
++                                nanos: obj.get("nanos").and_then(|v| v.as_u64()).unwrap_or(0)
++                                    as u32,
++                                offset_seconds: obj
++                                    .get("offset")
++                                    .and_then(|v| v.as_i64())
++                                    .unwrap_or(0)
++                                    as i32,
++                                zone: obj
++                                    .get("zone")
++                                    .and_then(|v| v.as_str())
++                                    .map(|z| z.to_string()),
+                             };
+                         }
+                     }
+@@ -1460,20 +1494,10 @@ fn json_to_property(val: &serde_json::Value) -> PropertyValue {
+                         }
+                     }
+                     "Duration" => {
+-                        let months = obj
+-                            .get("months")
+-                            .and_then(|v| v.as_i64())
+-                            .unwrap_or(0);
+-                        let days =
+-                            obj.get("days").and_then(|v| v.as_i64()).unwrap_or(0);
+-                        let seconds = obj
+-                            .get("seconds")
+-                            .and_then(|v| v.as_i64())
+-                            .unwrap_or(0);
+-                        let nanos = obj
+-                            .get("nanos")
+-                            .and_then(|v| v.as_i64())
+-                            .unwrap_or(0) as i32;
++                        let months = obj.get("months").and_then(|v| v.as_i64()).unwrap_or(0);
++                        let days = obj.get("days").and_then(|v| v.as_i64()).unwrap_or(0);
++                        let seconds = obj.get("seconds").and_then(|v| v.as_i64()).unwrap_or(0);
++                        let nanos = obj.get("nanos").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                         return PropertyValue::Duration {
+                             months,
+                             days,
+@@ -1537,9 +1561,15 @@ mod tests {
+ 
+         let mut restored = GraphStore::new();
+         let stats = import_tenant(&mut restored, Cursor::new(buf)).unwrap();
+-        assert_eq!(stats.hierarchy_count, 1, "declaration must survive the round trip");
++        assert_eq!(
++            stats.hierarchy_count, 1,
++            "declaration must survive the round trip"
++        );
+ 
+-        let entry = restored.hierarchy_index.get("atc").expect("index rebuilt on import");
++        let entry = restored
++            .hierarchy_index
++            .get("atc")
++            .expect("index rebuilt on import");
+         let guard = entry.read().unwrap();
+         assert!(guard.usable(), "a freshly rebuilt index is not stale");
+         let idx = guard.index.as_ref().unwrap();
+@@ -1548,8 +1578,14 @@ mod tests {
+         let root_idx = (0..idx.poset().n() as u32)
+             .find(|&i| idx.descendant_count(i) == 5)
+             .expect("the root subsumes all five nodes");
+-        assert_eq!(idx.rollup(root_idx, RollupOp::Sum), Some(RollupValue::Int(10)));
+-        assert_eq!(idx.rollup(root_idx, RollupOp::Count), Some(RollupValue::Int(5)));
++        assert_eq!(
++            idx.rollup(root_idx, RollupOp::Sum),
++            Some(RollupValue::Int(10))
++        );
++        assert_eq!(
++            idx.rollup(root_idx, RollupOp::Count),
++            Some(RollupValue::Int(5))
++        );
+     }
+ 
+     #[test]
+@@ -1671,8 +1707,14 @@ mod tests {
+ 
+         // Verify edge connectivity via adjacency (works for both full and stub edges)
+         // Find the two imported nodes (not the "Existing" one)
+-        let imported: Vec<_> = store2.all_nodes().iter()
+-            .filter(|n| n.labels.iter().any(|l| l.as_str() == "A" || l.as_str() == "B"))
++        let imported: Vec<_> = store2
++            .all_nodes()
++            .iter()
++            .filter(|n| {
++                n.labels
++                    .iter()
++                    .any(|l| l.as_str() == "A" || l.as_str() == "B")
++            })
+             .map(|n| n.id)
+             .collect();
+         assert_eq!(imported.len(), 2, "Should have 2 imported nodes (A, B)");
+@@ -2092,7 +2134,10 @@ mod tests {
+         let mut buf = Vec::new();
+         let export_stats = export_tenant(&store, &mut buf).unwrap();
+         assert_eq!(export_stats.node_count, 3);
+-        assert_eq!(export_stats.edge_count, 2, "v2 export should capture stub edges");
++        assert_eq!(
++            export_stats.edge_count, 2,
++            "v2 export should capture stub edges"
++        );
+ 
+         // Import into fresh store
+         let mut store2 = GraphStore::new();
+@@ -2104,17 +2149,24 @@ mod tests {
+ 
+         // Verify column properties survived
+         // Node IDs are remapped, find them by label
+-        let articles: Vec<_> = store2.get_nodes_by_label(&crate::graph::types::Label::new("Article"))
+-            .into_iter().collect();
++        let articles: Vec<_> = store2
++            .get_nodes_by_label(&crate::graph::types::Label::new("Article"))
++            .into_iter()
++            .collect();
+         assert_eq!(articles.len(), 2);
+ 
+         // Check column property on first article (remapped ID)
+         let aid = articles[0].id.as_u64() as usize;
+         let pmid = store2.node_columns.get_property(aid, "pmid");
+-        assert!(!pmid.is_null(), "Column property 'pmid' should survive v2 roundtrip");
++        assert!(
++            !pmid.is_null(),
++            "Column property 'pmid' should survive v2 roundtrip"
++        );
+ 
+-        let authors: Vec<_> = store2.get_nodes_by_label(&crate::graph::types::Label::new("Author"))
+-            .into_iter().collect();
++        let authors: Vec<_> = store2
++            .get_nodes_by_label(&crate::graph::types::Label::new("Author"))
++            .into_iter()
++            .collect();
+         assert_eq!(authors.len(), 1);
+         let author_id = authors[0].id.as_u64() as usize;
+         let name = store2.node_columns.get_property(author_id, "name");
+@@ -2128,11 +2180,14 @@ mod tests {
+         // Verify traversal works
+         let article_id = articles[0].id;
+         let targets = store2.get_outgoing_edge_targets_owned(article_id);
+-        assert!(!targets.is_empty() || {
+-            // Second article might be the one with outgoing edges
+-            let targets2 = store2.get_outgoing_edge_targets_owned(articles[1].id);
+-            !targets2.is_empty()
+-        }, "At least one article should have outgoing edges after v2 import");
++        assert!(
++            !targets.is_empty() || {
++                // Second article might be the one with outgoing edges
++                let targets2 = store2.get_outgoing_edge_targets_owned(articles[1].id);
++                !targets2.is_empty()
++            },
++            "At least one article should have outgoing edges after v2 import"
++        );
+     }
+ 
+     #[test]
+@@ -2163,8 +2218,14 @@ mod tests {
+         assert_eq!(consumer.edge_type_count(&EdgeType::new("KNOWS")), 2);
+         assert_eq!(consumer.edge_type_count(&EdgeType::new("LIVES_IN")), 1);
+         let stats = consumer.compute_statistics();
+-        assert_eq!(stats.edge_type_counts.get(&EdgeType::new("KNOWS")), Some(&2));
+-        assert_eq!(stats.edge_type_counts.get(&EdgeType::new("LIVES_IN")), Some(&1));
++        assert_eq!(
++            stats.edge_type_counts.get(&EdgeType::new("KNOWS")),
++            Some(&2)
++        );
++        assert_eq!(
++            stats.edge_type_counts.get(&EdgeType::new("LIVES_IN")),
++            Some(&1)
++        );
+     }
+ }
+ 
+@@ -2191,16 +2252,39 @@ mod stub_cypher_tests {
+         let engine = QueryEngine::new();
+ 
+         // 1-hop forward
+-        let r = engine.execute("MATCH (a:Article)-[:AUTHORED_BY]->(au:Author) RETURN au.name", &g).unwrap();
+-        assert_eq!(r.records.len(), 1, "Should find 1 author via stub edge, got {}", r.records.len());
++        let r = engine
++            .execute(
++                "MATCH (a:Article)-[:AUTHORED_BY]->(au:Author) RETURN au.name",
++                &g,
++            )
++            .unwrap();
++        assert_eq!(
++            r.records.len(),
++            1,
++            "Should find 1 author via stub edge, got {}",
++            r.records.len()
++        );
+ 
+         // 1-hop with filter
+         let r = engine.execute("MATCH (a:Article)-[:ANNOTATED_WITH]->(m:MeSHTerm) WHERE a.pmid = '12345' RETURN m.name", &g).unwrap();
+-        assert_eq!(r.records.len(), 1, "Should find 1 MeSH via filtered stub edge");
++        assert_eq!(
++            r.records.len(),
++            1,
++            "Should find 1 MeSH via filtered stub edge"
++        );
+ 
+         // Reverse traversal
+-        let r = engine.execute("MATCH (au:Author)<-[:AUTHORED_BY]-(a:Article) RETURN a.pmid", &g).unwrap();
+-        assert_eq!(r.records.len(), 1, "Should find 1 article via reverse stub edge");
++        let r = engine
++            .execute(
++                "MATCH (au:Author)<-[:AUTHORED_BY]-(a:Article) RETURN a.pmid",
++                &g,
++            )
++            .unwrap();
++        assert_eq!(
++            r.records.len(),
++            1,
++            "Should find 1 article via reverse stub edge"
++        );
+     }
+ }
+ 
+@@ -2217,9 +2301,13 @@ mod mixed_edge_tests {
+ 
+         // v1 edges: full create_edge (like Clinical Trials import)
+         let t = g.create_node("ClinicalTrial");
+-        g.get_node_mut(t).unwrap().set_property("nct_id", PropertyValue::String("NCT001".to_string()));
++        g.get_node_mut(t)
++            .unwrap()
++            .set_property("nct_id", PropertyValue::String("NCT001".to_string()));
+         let i = g.create_node("Intervention");
+-        g.get_node_mut(i).unwrap().set_property("name", PropertyValue::String("Aspirin".to_string()));
++        g.get_node_mut(i)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Aspirin".to_string()));
+         g.create_edge(t, i, "TESTS").unwrap();
+         g.compact_adjacency();
+ 
+@@ -2234,11 +2322,26 @@ mod mixed_edge_tests {
+         let engine = QueryEngine::new();
+ 
+         // v1 edges should still be traversable
+-        let r = engine.execute("MATCH (t:ClinicalTrial)-[:TESTS]->(i:Intervention) RETURN i.name", &g).unwrap();
+-        assert_eq!(r.records.len(), 1, "v1 full edge should be traversable after v2 stubs added, got {}", r.records.len());
++        let r = engine
++            .execute(
++                "MATCH (t:ClinicalTrial)-[:TESTS]->(i:Intervention) RETURN i.name",
++                &g,
++            )
++            .unwrap();
++        assert_eq!(
++            r.records.len(),
++            1,
++            "v1 full edge should be traversable after v2 stubs added, got {}",
++            r.records.len()
++        );
+ 
+         // v2 stub edges should also work
+-        let r = engine.execute("MATCH (a:Article)-[:AUTHORED_BY]->(au:Author) RETURN au.name", &g).unwrap();
++        let r = engine
++            .execute(
++                "MATCH (a:Article)-[:AUTHORED_BY]->(au:Author) RETURN au.name",
++                &g,
++            )
++            .unwrap();
+         assert_eq!(r.records.len(), 1, "v2 stub edge should be traversable");
+     }
+ }
+@@ -2246,21 +2349,30 @@ mod mixed_edge_tests {
+ #[cfg(test)]
+ mod v1_v2_import_order_tests {
+     use super::*;
+-    use std::io::Cursor;
+     use crate::graph::GraphStore;
+     use crate::graph::PropertyValue;
+     use crate::query::QueryEngine;
++    use std::io::Cursor;
+ 
+     #[test]
+     fn test_v1_snapshot_then_v2_snapshot_edges_traversable() {
+         // Step 1: Create a v1 snapshot (full edges, like Clinical Trials)
+         let mut store1 = GraphStore::new();
+         let t = store1.create_node("ClinicalTrial");
+-        store1.get_node_mut(t).unwrap().set_property("nct_id", PropertyValue::String("NCT001".to_string()));
++        store1
++            .get_node_mut(t)
++            .unwrap()
++            .set_property("nct_id", PropertyValue::String("NCT001".to_string()));
+         let i = store1.create_node("Intervention");
+-        store1.get_node_mut(i).unwrap().set_property("name", PropertyValue::String("Aspirin".to_string()));
++        store1
++            .get_node_mut(i)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Aspirin".to_string()));
+         let s = store1.create_node("Site");
+-        store1.get_node_mut(s).unwrap().set_property("country", PropertyValue::String("USA".to_string()));
++        store1
++            .get_node_mut(s)
++            .unwrap()
++            .set_property("country", PropertyValue::String("USA".to_string()));
+         store1.create_edge(t, i, "TESTS").unwrap();
+         store1.create_edge(t, s, "CONDUCTED_AT").unwrap();
+ 
+@@ -2287,32 +2399,56 @@ mod v1_v2_import_order_tests {
+         let s2 = import_tenant(&mut combined, Cursor::new(&v2_buf)).unwrap();
+         assert_eq!(s2.edge_count, 1, "v2 import should have 1 edge");
+ 
+-        assert!(combined.node_count() >= 5, "Should have at least 5 nodes, got {}", combined.node_count());
++        assert!(
++            combined.node_count() >= 5,
++            "Should have at least 5 nodes, got {}",
++            combined.node_count()
++        );
+ 
+         let engine = QueryEngine::new();
+ 
+         // v1 edges should be traversable
+-        let r = engine.execute(
+-            "MATCH (t:ClinicalTrial)-[:TESTS]->(i:Intervention) RETURN i.name", &combined
+-        ).unwrap();
+-        assert!(r.records.len() > 0,
++        let r = engine
++            .execute(
++                "MATCH (t:ClinicalTrial)-[:TESTS]->(i:Intervention) RETURN i.name",
++                &combined,
++            )
++            .unwrap();
++        assert!(
++            r.records.len() > 0,
+             "v1 TESTS edge should be traversable after v2 import. Got {} rows. \
+              Trial nodes: {}, Intervention nodes: {}",
+             r.records.len(),
+-            combined.get_nodes_by_label(&crate::graph::types::Label::new("ClinicalTrial")).len(),
+-            combined.get_nodes_by_label(&crate::graph::types::Label::new("Intervention")).len(),
++            combined
++                .get_nodes_by_label(&crate::graph::types::Label::new("ClinicalTrial"))
++                .len(),
++            combined
++                .get_nodes_by_label(&crate::graph::types::Label::new("Intervention"))
++                .len(),
+         );
+ 
+-        let r = engine.execute(
+-            "MATCH (t:ClinicalTrial)-[:CONDUCTED_AT]->(s:Site) RETURN s.country", &combined
+-        ).unwrap();
+-        assert!(r.records.len() > 0, "v1 CONDUCTED_AT edge should be traversable");
++        let r = engine
++            .execute(
++                "MATCH (t:ClinicalTrial)-[:CONDUCTED_AT]->(s:Site) RETURN s.country",
++                &combined,
++            )
++            .unwrap();
++        assert!(
++            r.records.len() > 0,
++            "v1 CONDUCTED_AT edge should be traversable"
++        );
+ 
+         // v2 stub edges should also work
+-        let r = engine.execute(
+-            "MATCH (a:Article)-[:AUTHORED_BY]->(au:Author) RETURN au.name", &combined
+-        ).unwrap();
+-        assert!(r.records.len() > 0, "v2 stub AUTHORED_BY edge should be traversable");
++        let r = engine
++            .execute(
++                "MATCH (a:Article)-[:AUTHORED_BY]->(au:Author) RETURN au.name",
++                &combined,
++            )
++            .unwrap();
++        assert!(
++            r.records.len() > 0,
++            "v2 stub AUTHORED_BY edge should be traversable"
++        );
+     }
+ }
+ 
+@@ -2329,7 +2465,11 @@ mod nct_bridge_edge_tests {
+         // Create Article stubs (PubMed)
+         let a1 = g.create_node_stub("Article");
+         g.set_column_property(a1, "pmid", PropertyValue::String("111".to_string()));
+-        g.set_column_property(a1, "title", PropertyValue::String("Cancer study".to_string()));
++        g.set_column_property(
++            a1,
++            "title",
++            PropertyValue::String("Cancer study".to_string()),
++        );
+         let a2 = g.create_node_stub("Article");
+         g.set_column_property(a2, "pmid", PropertyValue::String("222".to_string()));
+ 
+@@ -2340,9 +2480,13 @@ mod nct_bridge_edge_tests {
+ 
+         // Create ClinicalTrial (v1 full edge style)
+         let t = g.create_node("ClinicalTrial");
+-        g.get_node_mut(t).unwrap().set_property("nct_id", PropertyValue::String("NCT001".to_string()));
++        g.get_node_mut(t)
++            .unwrap()
++            .set_property("nct_id", PropertyValue::String("NCT001".to_string()));
+         let i = g.create_node("Intervention");
+-        g.get_node_mut(i).unwrap().set_property("name", PropertyValue::String("Chemo".to_string()));
++        g.get_node_mut(i)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Chemo".to_string()));
+         g.create_edge(t, i, "TESTS").unwrap();
+ 
+         // Create REFERENCED_IN edge (the NCT bridge)
+@@ -2352,40 +2496,53 @@ mod nct_bridge_edge_tests {
+         let engine = QueryEngine::new();
+ 
+         // Simple cross-KG: Article → Trial
+-        let r = engine.execute(
+-            "MATCH (a:Article)-[:REFERENCED_IN]->(t:ClinicalTrial) RETURN a.pmid, t.nct_id", &g
+-        ).unwrap();
+-        assert_eq!(r.records.len(), 1, "Should find Article→Trial via REFERENCED_IN");
++        let r = engine
++            .execute(
++                "MATCH (a:Article)-[:REFERENCED_IN]->(t:ClinicalTrial) RETURN a.pmid, t.nct_id",
++                &g,
++            )
++            .unwrap();
++        assert_eq!(
++            r.records.len(),
++            1,
++            "Should find Article→Trial via REFERENCED_IN"
++        );
+ 
+         // Deep cross-KG: MeSH → Article → Trial → Intervention
+         let r = engine.execute(
+             "MATCH (m:MeSHTerm)<-[:ANNOTATED_WITH]-(a:Article)-[:REFERENCED_IN]->(t:ClinicalTrial)-[:TESTS]->(i:Intervention) WHERE m.name = 'Neoplasms' RETURN i.name", &g
+         ).unwrap();
+-        assert_eq!(r.records.len(), 1, "Should traverse MeSH→Article→Trial→Intervention");
++        assert_eq!(
++            r.records.len(),
++            1,
++            "Should traverse MeSH→Article→Trial→Intervention"
++        );
+     }
+ }
+ 
+ #[cfg(test)]
+ mod dedup_tests {
+     use super::*;
+-    use std::io::Cursor;
+-    use crate::graph::store::GraphStore;
+     use crate::graph::PropertyValue;
+-    use crate::query::{parser::parse_query, executor::QueryExecutor};
++    use crate::graph::store::GraphStore;
++    use crate::query::{executor::QueryExecutor, parser::parse_query};
++    use std::io::Cursor;
+ 
+     #[test]
+     fn test_index_backfill_on_imported_snapshot() {
+         // Create a store, add a node via stub + column property, create index, query via index
+         let mut store = GraphStore::new();
+-        
++
+         // Simulate snapshot import: stub node + column property
+         let nid = store.create_node_stub("Country");
+         store.set_column_property(nid, "iso_code", PropertyValue::String("IND".to_string()));
+         store.set_column_property(nid, "name", PropertyValue::String("India".to_string()));
+-        
++
+         // Create index (simulates CREATE INDEX ON :Country(iso_code))
+-        store.property_index.create_index("Country".into(), "iso_code".to_string());
+-        
++        store
++            .property_index
++            .create_index("Country".into(), "iso_code".to_string());
++
+         // Backfill (same logic as CreateIndexOperator)
+         let nodes = store.get_nodes_by_label(&"Country".into());
+         let mut entries = Vec::new();
+@@ -2393,25 +2550,39 @@ mod dedup_tests {
+             if let Some(val) = node.get_property("iso_code") {
+                 entries.push((node.id, val.clone()));
+             } else {
+-                let col_val = store.node_columns.get_property(node.id.as_u64() as usize, "iso_code");
++                let col_val = store
++                    .node_columns
++                    .get_property(node.id.as_u64() as usize, "iso_code");
+                 if !col_val.is_null() {
+                     entries.push((node.id, col_val));
+                 }
+             }
+         }
+         for (node_id, val) in &entries {
+-            store.property_index.index_insert(&"Country".into(), &"iso_code".to_string(), val.clone(), *node_id);
++            store.property_index.index_insert(
++                &"Country".into(),
++                &"iso_code".to_string(),
++                val.clone(),
++                *node_id,
++            );
+         }
+-        
++
+         // Now query via index
+-        let index_lock = store.property_index.get_index(&"Country".into(), &"iso_code".to_string()).unwrap();
++        let index_lock = store
++            .property_index
++            .get_index(&"Country".into(), &"iso_code".to_string())
++            .unwrap();
+         let index = index_lock.read().unwrap();
+         let results = index.get(&PropertyValue::String("IND".to_string()));
+-        
+-        assert_eq!(results.len(), 1, "Index should find 1 Country with iso_code='IND'");
++
++        assert_eq!(
++            results.len(),
++            1,
++            "Index should find 1 Country with iso_code='IND'"
++        );
+         assert_eq!(results[0], nid);
+     }
+-    
++
+     #[test]
+     fn test_snapshot_import_then_index_then_query() {
+         // Full round-trip: export → import → create index → query via Cypher
+@@ -2421,42 +2592,62 @@ mod dedup_tests {
+             n.set_property("iso_code", PropertyValue::String("IND".to_string()));
+             n.set_property("name", PropertyValue::String("India".to_string()));
+         }
+-        
++
+         // Export
+         let mut buf = Vec::new();
+         export_tenant(&store1, &mut buf).unwrap();
+-        
++
+         // Import into new store
+         let mut store2 = GraphStore::new();
+         let stats = import_tenant(&mut store2, &buf[..]).unwrap();
+         assert_eq!(stats.node_count, 1);
+-        
++
+         // Create index on imported store
+-        store2.property_index.create_index("Country".into(), "iso_code".to_string());
+-        
++        store2
++            .property_index
++            .create_index("Country".into(), "iso_code".to_string());
++
+         // Backfill
+         let nodes = store2.get_nodes_by_label(&"Country".into());
+         let mut found = false;
+         for node in &nodes {
+             // Check HashMap
+             if let Some(val) = node.get_property("iso_code") {
+-                store2.property_index.index_insert(&"Country".into(), &"iso_code".to_string(), val.clone(), node.id);
++                store2.property_index.index_insert(
++                    &"Country".into(),
++                    &"iso_code".to_string(),
++                    val.clone(),
++                    node.id,
++                );
+                 found = true;
+             }
+             // Check ColumnStore
+             if !found {
+-                let col_val = store2.node_columns.get_property(node.id.as_u64() as usize, "iso_code");
++                let col_val = store2
++                    .node_columns
++                    .get_property(node.id.as_u64() as usize, "iso_code");
+                 if !col_val.is_null() {
+-                    store2.property_index.index_insert(&"Country".into(), &"iso_code".to_string(), col_val, node.id);
++                    store2.property_index.index_insert(
++                        &"Country".into(),
++                        &"iso_code".to_string(),
++                        col_val,
++                        node.id,
++                    );
+                     found = true;
+                 }
+             }
+         }
+-        
+-        assert!(found, "Should have found iso_code in either HashMap or ColumnStore");
+-        
++
++        assert!(
++            found,
++            "Should have found iso_code in either HashMap or ColumnStore"
++        );
++
+         // Query via index
+-        let index_lock = store2.property_index.get_index(&"Country".into(), &"iso_code".to_string()).unwrap();
++        let index_lock = store2
++            .property_index
++            .get_index(&"Country".into(), &"iso_code".to_string())
++            .unwrap();
+         let index = index_lock.read().unwrap();
+         let results = index.get(&PropertyValue::String("IND".to_string()));
+         assert_eq!(results.len(), 1, "Index should find Country after import");
+@@ -2464,9 +2655,9 @@ mod dedup_tests {
+ 
+     #[test]
+     fn test_cypher_query_after_snapshot_import() {
+-        use crate::query::parser::parse_query;
+         use crate::query::executor::MutQueryExecutor;
+         use crate::query::executor::QueryExecutor;
++        use crate::query::parser::parse_query;
+ 
+         // Create original store with Country node
+         let mut store1 = GraphStore::new();
+@@ -2494,9 +2685,11 @@ mod dedup_tests {
+         let exec = QueryExecutor::new(&store2);
+         let result = exec.execute(&query).unwrap();
+ 
+-        assert!(!result.records.is_empty(),
++        assert!(
++            !result.records.is_empty(),
+             "Cypher query should find Country with iso_code='IND' after snapshot import + CREATE INDEX. Got {} rows.",
+-            result.records.len());
++            result.records.len()
++        );
+     }
+ 
+     #[test]
+@@ -2504,10 +2697,19 @@ mod dedup_tests {
+         // Snapshot 1: Drug "Methotrexate" with source=faers
+         let mut store1 = GraphStore::new();
+         let d1 = store1.create_node("Drug");
+-        store1.get_node_mut(d1).unwrap().set_property("name", PropertyValue::String("Methotrexate".to_string()));
+-        store1.get_node_mut(d1).unwrap().set_property("source", PropertyValue::String("faers".to_string()));
++        store1
++            .get_node_mut(d1)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Methotrexate".to_string()));
++        store1
++            .get_node_mut(d1)
++            .unwrap()
++            .set_property("source", PropertyValue::String("faers".to_string()));
+         let ae = store1.create_node("AdverseEvent");
+-        store1.get_node_mut(ae).unwrap().set_property("name", PropertyValue::String("Nausea".to_string()));
++        store1
++            .get_node_mut(ae)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Nausea".to_string()));
+         store1.create_edge(ae, d1, "REPORTED_DRUG").unwrap();
+ 
+         let mut buf1 = Vec::new();
+@@ -2516,10 +2718,19 @@ mod dedup_tests {
+         // Snapshot 2: Drug "Methotrexate" with source=clinicaltrials (same name, different case)
+         let mut store2 = GraphStore::new();
+         let d2 = store2.create_node("Drug");
+-        store2.get_node_mut(d2).unwrap().set_property("name", PropertyValue::String("methotrexate".to_string()));
+-        store2.get_node_mut(d2).unwrap().set_property("source", PropertyValue::String("clinicaltrials".to_string()));
++        store2
++            .get_node_mut(d2)
++            .unwrap()
++            .set_property("name", PropertyValue::String("methotrexate".to_string()));
++        store2.get_node_mut(d2).unwrap().set_property(
++            "source",
++            PropertyValue::String("clinicaltrials".to_string()),
++        );
+         let ct = store2.create_node("ClinicalTrial");
+-        store2.get_node_mut(ct).unwrap().set_property("name", PropertyValue::String("NCT001".to_string()));
++        store2
++            .get_node_mut(ct)
++            .unwrap()
++            .set_property("name", PropertyValue::String("NCT001".to_string()));
+         store2.create_edge(ct, d2, "TESTS").unwrap();
+ 
+         let mut buf2 = Vec::new();
+@@ -2545,16 +2756,28 @@ mod dedup_tests {
+     fn test_dedup_properties_merged_additively() {
+         let mut store1 = GraphStore::new();
+         let d = store1.create_node("Drug");
+-        store1.get_node_mut(d).unwrap().set_property("name", PropertyValue::String("Aspirin".to_string()));
+-        store1.get_node_mut(d).unwrap().set_property("source", PropertyValue::String("faers".to_string()));
++        store1
++            .get_node_mut(d)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Aspirin".to_string()));
++        store1
++            .get_node_mut(d)
++            .unwrap()
++            .set_property("source", PropertyValue::String("faers".to_string()));
+ 
+         let mut buf1 = Vec::new();
+         export_tenant(&store1, &mut buf1).unwrap();
+ 
+         let mut store2 = GraphStore::new();
+         let d2 = store2.create_node("Drug");
+-        store2.get_node_mut(d2).unwrap().set_property("name", PropertyValue::String("aspirin".to_string()));
+-        store2.get_node_mut(d2).unwrap().set_property("mechanism", PropertyValue::String("COX inhibitor".to_string()));
++        store2
++            .get_node_mut(d2)
++            .unwrap()
++            .set_property("name", PropertyValue::String("aspirin".to_string()));
++        store2.get_node_mut(d2).unwrap().set_property(
++            "mechanism",
++            PropertyValue::String("COX inhibitor".to_string()),
++        );
+ 
+         let mut buf2 = Vec::new();
+         export_tenant(&store2, &mut buf2).unwrap();
+@@ -2584,9 +2807,15 @@ mod dedup_tests {
+         // Build two KGs with shared Drug, import with dedup, run cross-domain query
+         let mut store1 = GraphStore::new();
+         let d1 = store1.create_node("Drug");
+-        store1.get_node_mut(d1).unwrap().set_property("name", PropertyValue::String("Methotrexate".to_string()));
++        store1
++            .get_node_mut(d1)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Methotrexate".to_string()));
+         let ae = store1.create_node("AdverseEventCase");
+-        store1.get_node_mut(ae).unwrap().set_property("case_id", PropertyValue::String("AE001".to_string()));
++        store1
++            .get_node_mut(ae)
++            .unwrap()
++            .set_property("case_id", PropertyValue::String("AE001".to_string()));
+         store1.create_edge(ae, d1, "REPORTED_DRUG").unwrap();
+ 
+         let mut buf1 = Vec::new();
+@@ -2594,9 +2823,15 @@ mod dedup_tests {
+ 
+         let mut store2 = GraphStore::new();
+         let d2 = store2.create_node("Drug");
+-        store2.get_node_mut(d2).unwrap().set_property("name", PropertyValue::String("  Methotrexate  ".to_string()));
++        store2.get_node_mut(d2).unwrap().set_property(
++            "name",
++            PropertyValue::String("  Methotrexate  ".to_string()),
++        );
+         let ct = store2.create_node("ClinicalTrial");
+-        store2.get_node_mut(ct).unwrap().set_property("nct_id", PropertyValue::String("NCT001".to_string()));
++        store2
++            .get_node_mut(ct)
++            .unwrap()
++            .set_property("nct_id", PropertyValue::String("NCT001".to_string()));
+         store2.create_edge(ct, d2, "TESTS").unwrap();
+ 
+         let mut buf2 = Vec::new();
+@@ -2613,7 +2848,11 @@ mod dedup_tests {
+         let exec = QueryExecutor::new(&combined);
+         let result = exec.execute(&query).unwrap();
+ 
+-        assert_eq!(result.records.len(), 1, "Cross-domain query should return 1 result");
++        assert_eq!(
++            result.records.len(),
++            1,
++            "Cross-domain query should return 1 result"
++        );
+     }
+ 
+     #[test]
+@@ -2621,7 +2860,10 @@ mod dedup_tests {
+         // Without dedup_keys, same-name nodes should NOT be merged
+         let mut store1 = GraphStore::new();
+         let d = store1.create_node("Drug");
+-        store1.get_node_mut(d).unwrap().set_property("name", PropertyValue::String("Aspirin".to_string()));
++        store1
++            .get_node_mut(d)
++            .unwrap()
++            .set_property("name", PropertyValue::String("Aspirin".to_string()));
+         let mut buf1 = Vec::new();
+         export_tenant(&store1, &mut buf1).unwrap();
+ 
+@@ -2654,16 +2896,30 @@ mod temporal_snapshot_tests {
+             P::Date(16637),
+             P::Date(-25567),
+             P::LocalTime(45_074_645_876_123),
+-            P::Time { nanos: 45_074_645_876_123, offset_seconds: 19_800 },
+-            P::Time { nanos: 0, offset_seconds: -18_000 },
+-            P::LocalDateTime { secs: 1_437_514_832, nanos: 142_000_000 },
++            P::Time {
++                nanos: 45_074_645_876_123,
++                offset_seconds: 19_800,
++            },
++            P::Time {
++                nanos: 0,
++                offset_seconds: -18_000,
++            },
++            P::LocalDateTime {
++                secs: 1_437_514_832,
++                nanos: 142_000_000,
++            },
+             P::ZonedDateTime {
+                 secs: 1_437_514_832,
+                 nanos: 999_999_999,
+                 offset_seconds: 3600,
+                 zone: Some("Europe/London".to_string()),
+             },
+-            P::ZonedDateTime { secs: 0, nanos: 0, offset_seconds: 0, zone: None },
++            P::ZonedDateTime {
++                secs: 0,
++                nanos: 0,
++                offset_seconds: 0,
++                zone: None,
++            },
+             // Nested, because properties can be arrays and maps of temporals
+             // and the recursion is a separate thing to get wrong.
+             P::Array(vec![P::Date(1), P::LocalTime(2)]),
+@@ -2671,7 +2927,10 @@ mod temporal_snapshot_tests {
+         for v in values {
+             let encoded = property_to_json(&v);
+             let back = json_to_property(&encoded);
+-            assert_eq!(back, v, "{v:?} did not survive the snapshot encoding: {encoded}");
++            assert_eq!(
++                back, v,
++                "{v:?} did not survive the snapshot encoding: {encoded}"
++            );
+         }
+     }
+ 
+@@ -2690,8 +2949,12 @@ mod temporal_snapshot_tests {
+     /// missing property rather than a corrupt one.
+     #[test]
+     fn a_malformed_temporal_tag_does_not_become_a_plausible_value() {
+-        let broken = serde_json::json!({"__type": "Date"});          // no `days`
+-        assert_ne!(json_to_property(&broken), P::Date(0), "must not default to the epoch");
++        let broken = serde_json::json!({"__type": "Date"}); // no `days`
++        assert_ne!(
++            json_to_property(&broken),
++            P::Date(0),
++            "must not default to the epoch"
++        );
+ 
+         // What it does become (#1311): nothing refuses it. The object is kept
+         // as the map it is, `__type` and all, so the corrupt value is still
+@@ -2756,14 +3019,17 @@ mod dedup_scoped_scan_tests {
+     fn snapshot(store: &GraphStore, header_labels: Option<&[&str]>) -> Vec<u8> {
+         let mut buf = Vec::new();
+         export_tenant(store, &mut buf).unwrap();
+-        let Some(labels) = header_labels else { return buf };
++        let Some(labels) = header_labels else {
++            return buf;
++        };
+         let mut plain = String::new();
+         GzDecoder::new(&buf[..]).read_to_string(&mut plain).unwrap();
+         let (head, rest) = plain.split_once('\n').unwrap();
+         let mut header: serde_json::Value = serde_json::from_str(head).unwrap();
+         header["labels"] = serde_json::json!(labels);
+         let mut enc = GzEncoder::new(Vec::new(), Compression::default());
+-        enc.write_all(format!("{header}\n{rest}").as_bytes()).unwrap();
++        enc.write_all(format!("{header}\n{rest}").as_bytes())
++            .unwrap();
+         enc.finish().unwrap()
+     }
+ 
+@@ -2782,7 +3048,12 @@ mod dedup_scoped_scan_tests {
+             }
+             out.push(format!("n{} {labels:?} {props:?}", n.id.as_u64()));
+             for (_, src, tgt, ty) in store.get_outgoing_edge_targets(n.id) {
+-                out.push(format!("e{}-{}->{}", src.as_u64(), ty.as_str(), tgt.as_u64()));
++                out.push(format!(
++                    "e{}-{}->{}",
++                    src.as_u64(),
++                    ty.as_str(),
++                    tgt.as_u64()
++                ));
+             }
+         }
+         out.sort();
+@@ -2794,22 +3065,41 @@ mod dedup_scoped_scan_tests {
+         test_hooks::PREPOPULATE_VISITS.with(|c| c.set(0));
+         let stats = import_tenant_with_dedup(store, snap, keys).unwrap();
+         test_hooks::FORCE_FULL_SCAN.with(|f| f.set(false));
+-        (stats.merged_count, test_hooks::PREPOPULATE_VISITS.with(|c| c.get()))
++        (
++            stats.merged_count,
++            test_hooks::PREPOPULATE_VISITS.with(|c| c.get()),
++        )
+     }
+ 
+     /// The target store: Proteins, a dual-labelled target, a Gene sharing an accession,
+     /// and a pile of unrelated Articles that also carry the dedup keys.
+     fn base() -> GraphStore {
+         let mut st = GraphStore::new();
+-        node(&mut st, &["Protein"], &[("k1", s("P1")), ("src", s("uniprot"))]);
+-        node(&mut st, &["Protein", "ChemblTarget"], &[("k1", s(" p2 ")), ("src", s("chembl"))]);
++        node(
++            &mut st,
++            &["Protein"],
++            &[("k1", s("P1")), ("src", s("uniprot"))],
++        );
++        node(
++            &mut st,
++            &["Protein", "ChemblTarget"],
++            &[("k1", s(" p2 ")), ("src", s("chembl"))],
++        );
+         // Has k1 but no k2: a merge through :Protein gives it a k2, which the :Target index
+         // must not see, because the full scan would not have (see `DedupPrepopulate`).
+         node(&mut st, &["Protein", "Target"], &[("k1", s("P3"))]);
+-        node(&mut st, &["Gene"], &[("k1", s("P1")), ("k2", PropertyValue::Integer(7))]);
++        node(
++            &mut st,
++            &["Gene"],
++            &[("k1", s("P1")), ("k2", PropertyValue::Integer(7))],
++        );
+         node(&mut st, &["Country"], &[("name", s("India"))]);
+         for i in 0..200 {
+-            node(&mut st, &["Article"], &[("k1", s(&format!("P{i}"))), ("name", s("India"))]);
++            node(
++                &mut st,
++                &["Article"],
++                &[("k1", s(&format!("P{i}"))), ("name", s("India"))],
++            );
+         }
+         st
+     }
+@@ -2817,7 +3107,11 @@ mod dedup_scoped_scan_tests {
+     /// The incoming snapshot, exercising every label shape the scoping could get wrong.
+     fn incoming() -> GraphStore {
+         let mut st = GraphStore::new();
+-        let a = node(&mut st, &["Protein"], &[("k1", s("p1")), ("src", s("snap"))]);
++        let a = node(
++            &mut st,
++            &["Protein"],
++            &[("k1", s("p1")), ("src", s("snap"))],
++        );
+         let b = node(&mut st, &["ChemblTarget"], &[("k1", s("P2"))]);
+         node(&mut st, &["Protein"], &[("k1", s("P3")), ("k2", s("v"))]);
+         node(&mut st, &["Target"], &[("k2", s("v"))]);
+@@ -2835,13 +3129,29 @@ mod dedup_scoped_scan_tests {
+     #[test]
+     fn scoped_prepopulate_merges_exactly_like_the_full_scan() {
+         let src = incoming();
+-        let all = ["Protein", "ChemblTarget", "Target", "Gene", "Country", "Disease"];
++        let all = [
++            "Protein",
++            "ChemblTarget",
++            "Target",
++            "Gene",
++            "Country",
++            "Disease",
++        ];
+         let headers: [(&str, Option<&[&str]>); 5] = [
+             ("as exported", None),
+             ("empty (foreign writer)", Some(&[])),
+-            ("missing the dual-labelled side", Some(&["Protein", "Gene", "Country", "Disease"])),
+-            ("missing :Target", Some(&["Protein", "ChemblTarget", "Gene", "Country", "Disease"])),
+-            ("over-inclusive", Some(&[&all[..], &["Article", "Nope"]].concat())),
++            (
++                "missing the dual-labelled side",
++                Some(&["Protein", "Gene", "Country", "Disease"]),
++            ),
++            (
++                "missing :Target",
++                Some(&["Protein", "ChemblTarget", "Gene", "Country", "Disease"]),
++            ),
++            (
++                "over-inclusive",
++                Some(&[&all[..], &["Article", "Nope"]].concat()),
++            ),
+         ];
+         let key_sets: [&[&str]; 3] = [&["k1"], &["k1", "k2"], &KEYS];
+         for (what, header) in headers {
+@@ -2851,13 +3161,27 @@ mod dedup_scoped_scan_tests {
+                 let mut full = base();
+                 let (m_scoped, _) = import(&mut scoped, &snap, keys, false);
+                 let (m_full, _) = import(&mut full, &snap, keys, true);
+-                assert_eq!(m_scoped, m_full, "header {what}, keys {keys:?}: merged count");
+-                assert_eq!(canon(&scoped), canon(&full), "header {what}, keys {keys:?}: graph");
++                assert_eq!(
++                    m_scoped, m_full,
++                    "header {what}, keys {keys:?}: merged count"
++                );
++                assert_eq!(
++                    canon(&scoped),
++                    canon(&full),
++                    "header {what}, keys {keys:?}: graph"
++                );
+                 // and a second import on top, as federation does
+                 let (m_scoped, _) = import(&mut scoped, &snap, keys, false);
+                 let (m_full, _) = import(&mut full, &snap, keys, true);
+-                assert_eq!(m_scoped, m_full, "header {what}, keys {keys:?}: re-import merges");
+-                assert_eq!(canon(&scoped), canon(&full), "header {what}, keys {keys:?}: re-import");
++                assert_eq!(
++                    m_scoped, m_full,
++                    "header {what}, keys {keys:?}: re-import merges"
++                );
++                assert_eq!(
++                    canon(&scoped),
++                    canon(&full),
++                    "header {what}, keys {keys:?}: re-import"
++                );
+             }
+         }
+     }
+@@ -2875,7 +3199,11 @@ mod dedup_scoped_scan_tests {
+         assert_eq!(m_scoped, m_full);
+         let targets = |st: &GraphStore| st.get_nodes_by_label(&Label::new("Target")).len();
+         assert_eq!(targets(&scoped), targets(&full));
+-        assert_eq!(targets(&scoped), 2, "the incoming :Target {{k2:v}} must not merge");
++        assert_eq!(
++            targets(&scoped),
++            2,
++            "the incoming :Target {{k2:v}} must not merge"
++        );
+     }
+ 
+     #[test]
+@@ -2902,7 +3230,10 @@ mod dedup_scoped_scan_tests {
+ 
+         assert_eq!(merged, 1);
+         assert_eq!(full_visits, total, "the reference walks the whole store");
+-        assert_eq!(visits, 1, "only the one existing :Country should be visited");
++        assert_eq!(
++            visits, 1,
++            "only the one existing :Country should be visited"
++        );
+ 
+         // Same bound when the header does not name the label and it is found in the body.
+         let mut st2 = base();
+diff --git a/src/snapshot/snapshot_cov_tests.rs b/src/snapshot/snapshot_cov_tests.rs
+index a61597e..3c1dcde 100644
+--- a/src/snapshot/snapshot_cov_tests.rs
++++ b/src/snapshot/snapshot_cov_tests.rs
+@@ -139,11 +139,15 @@ fn an_unsupported_version_is_refused() {
+ // ------------------------------------------------------------------
+ 
+ #[test]
+-fn export_prefers_the_row_value_over_the_column() {
++fn export_prefers_the_column_value_over_the_row() {
+     let mut store = GraphStore::new();
+     let n = store.create_node("Doc");
+     store.set_column_property(n, "k", PropertyValue::String("column".into()));
+     store.get_node_mut(n).unwrap().set_property("k", "row");
++    assert_eq!(
++        store.node_property(n, "k"),
++        Some(PropertyValue::String("column".into()))
++    );
+     let mut buf = Vec::new();
+     export_tenant(&store, &mut buf).unwrap();
+     let mut dst = GraphStore::new();
+@@ -151,7 +155,7 @@ fn export_prefers_the_row_value_over_the_column() {
+     let id = dst.node_ids_by_label(&Label::new("Doc"), None)[0];
+     assert_eq!(
+         dst.node_property(id, "k"),
+-        Some(PropertyValue::String("row".into()))
++        Some(PropertyValue::String("column".into()))
+     );
+ }
+ 
+@@ -189,9 +193,11 @@ fn a_v1_snapshot_imports_through_full_nodes_and_edges() {
+     );
+     let edges = store.get_edges_by_type(&EdgeType::new("KNOWS"));
+     assert_eq!(edges.len(), 2);
+-    assert!(edges
+-        .iter()
+-        .any(|e| e.properties.get("since") == Some(&PropertyValue::Integer(2020))));
++    assert!(
++        edges
++            .iter()
++            .any(|e| e.properties.get("since") == Some(&PropertyValue::Integer(2020)))
++    );
+ }
+ 
+ #[test]
+diff --git a/src/vector/index.rs b/src/vector/index.rs
+index c0e5aa9..82955e5 100644
+--- a/src/vector/index.rs
++++ b/src/vector/index.rs
+@@ -46,9 +46,9 @@
+ 
+ use crate::graph::NodeId;
+ use half::f16;
++use hnsw_rs::prelude::*;
+ use std::collections::HashMap;
+ use std::hash::{Hash, Hasher};
+-use hnsw_rs::prelude::*;
+ use thiserror::Error;
+ 
+ /// Vector index errors
+@@ -65,11 +65,19 @@ pub enum VectorError {
+     // dimension nobody chose -- CREATE VECTOR INDEX defaults to 1536 when
+     // `dimensions` is omitted (#474). Point at the index configuration, since
+     // that is the side that is adjustable and the side that is usually wrong.
+-    #[error("Dimension mismatch: the index expects {expected}-dimensional vectors, got {got}. \
++    #[error(
++        "Dimension mismatch: the index expects {expected}-dimensional vectors, got {got}. \
+ Set the index dimension with CREATE VECTOR INDEX ... OPTIONS {{dimensions: {got}}} \
+-(the default is 1536 when `dimensions` is omitted).")]
++(the default is 1536 when `dimensions` is omitted)."
++    )]
+     DimensionMismatch { expected: usize, got: usize },
+ 
++    #[error("Vector conflict for node {node_id}: use explicit replacement")]
++    VectorConflict { node_id: u64 },
++
++    #[error("No stored vector for node {node_id} to replace")]
++    NodeNotFound { node_id: u64 },
++
+     #[error("Search failed: {0}")]
+     SearchFailed(String),
+ }
+@@ -103,17 +111,17 @@ impl Distance<f32> for CosineDistance {
+         let mut dot = 0.0;
+         let mut norm_a = 0.0;
+         let mut norm_b = 0.0;
+-        
++
+         for (a, b) in va.iter().zip(vb.iter()) {
+             dot += a * b;
+             norm_a += a * a;
+             norm_b += b * b;
+         }
+-        
++
+         if norm_a <= 0.0 || norm_b <= 0.0 {
+             return 1.0;
+         }
+-        
++
+         // Cosine distance = 1.0 - cosine similarity.
+         // Cosine similarity is mathematically in [-1, 1], but floating-point
+         // rounding on near-duplicate vectors can push it just past 1.0, yielding a
+@@ -301,10 +309,18 @@ impl VectorIndex {
+         let ef_construction = 200;
+         let backend = match quantization {
+             Quantization::None => Backend::F32(Hnsw::new(
+-                m, max_elements, 16, ef_construction, CosineDistance,
++                m,
++                max_elements,
++                16,
++                ef_construction,
++                CosineDistance,
+             )),
+             Quantization::Fp16 => Backend::F16(Hnsw::new(
+-                m, max_elements, 16, ef_construction, CosineDistanceF16,
++                m,
++                max_elements,
++                16,
++                ef_construction,
++                CosineDistanceF16,
+             )),
+         };
+         Self {
+@@ -332,7 +348,31 @@ impl VectorIndex {
+         2 * self.len() * self.dimensions * self.quantization.bytes_per_value()
+     }
+ 
+-    /// Add a vector to the index
++    /// Compare an existing node at the precision this index actually stores.
++    /// F32 keeps value equality; Fp16 compares the stored, rounded bit patterns.
++    fn stored_vector_matches(&self, node_id: NodeId, vector: &[f32]) -> Option<bool> {
++        match self.quantization {
++            Quantization::None => self
++                .stored_f32
++                .iter()
++                .find(|stored| stored.node_id == node_id.0)
++                .map(|stored| stored.vector.as_slice() == vector),
++            Quantization::Fp16 => {
++                self.stored_f16
++                    .iter()
++                    .find(|(id, _)| *id == node_id.0)
++                    .map(|(_, stored)| {
++                        stored
++                            .iter()
++                            .zip(vector)
++                            .all(|(a, b)| a.to_bits() == f16::from_f32(*b).to_bits())
++                    })
++            }
++        }
++    }
++
++    /// Add a vector, leaving an equal re-add unchanged and refusing a conflict.
++    /// Equality is evaluated at this index's stored precision.
+     pub fn add(&mut self, node_id: NodeId, vector: &Vec<f32>) -> VectorResult<()> {
+         if vector.len() != self.dimensions {
+             return Err(VectorError::DimensionMismatch {
+@@ -340,7 +380,12 @@ impl VectorIndex {
+                 got: vector.len(),
+             });
+         }
+-        
++        match self.stored_vector_matches(node_id, vector) {
++            Some(true) => return Ok(()),
++            Some(false) => return Err(VectorError::VectorConflict { node_id: node_id.0 }),
++            None => {}
++        }
++
+         // Not wrapped in catch_unwind on purpose: hnsw_rs registers the point in its
+         // layer index before doing any of the work that could panic, so catching would
+         // leave a half-linked point live in the graph while this function returns Err
+@@ -352,7 +397,10 @@ impl VectorIndex {
+             Backend::F32(h) => {
+                 h.insert((vector, node_id.0 as usize));
+                 let key = bits_key(vector, |v: f32| v.to_bits() as u64);
+-                self.exact.entry(key).or_default().push(self.stored_f32.len());
++                self.exact
++                    .entry(key)
++                    .or_default()
++                    .push(self.stored_f32.len());
+                 self.stored_f32.push(StoredVector {
+                     node_id: node_id.0,
+                     vector: vector.clone(),
+@@ -366,7 +414,10 @@ impl VectorIndex {
+                 let q: Vec<f16> = vector.iter().map(|v| f16::from_f32(*v)).collect();
+                 h.insert((&q, node_id.0 as usize));
+                 let key = bits_key(&q, |v: f16| v.to_bits() as u64);
+-                self.exact.entry(key).or_default().push(self.stored_f16.len());
++                self.exact
++                    .entry(key)
++                    .or_default()
++                    .push(self.stored_f16.len());
+                 self.stored_f16.push((node_id.0, q));
+             }
+         }
+@@ -374,6 +425,41 @@ impl VectorIndex {
+         Ok(())
+     }
+ 
++    /// Replace an existing node's vector, preserving the node ID and index metadata.
++    /// Equal replacement at stored precision is a no-op. A changed value rebuilds
++    /// the backend, persistence entries and exact buckets before publishing them.
++    pub fn replace(&mut self, node_id: NodeId, vector: &Vec<f32>) -> VectorResult<()> {
++        if vector.len() != self.dimensions {
++            return Err(VectorError::DimensionMismatch {
++                expected: self.dimensions,
++                got: vector.len(),
++            });
++        }
++        match self.stored_vector_matches(node_id, vector) {
++            Some(true) => return Ok(()),
++            None => return Err(VectorError::NodeNotFound { node_id: node_id.0 }),
++            Some(false) => {}
++        }
++
++        let max_elements = (self.len() + 10_000).max(100_000);
++        let mut rebuilt = Self::build(
++            self.dimensions,
++            self.metric,
++            self.quantization,
++            max_elements,
++        );
++        for stored in self.iter_stored() {
++            let next_vector = if stored.node_id == node_id.0 {
++                vector
++            } else {
++                &stored.vector
++            };
++            rebuilt.add(NodeId::new(stored.node_id), next_vector)?;
++        }
++        *self = rebuilt;
++        Ok(())
++    }
++
+     /// Search for nearest neighbors
+     pub fn search(&self, query: &[f32], k: usize) -> VectorResult<Vec<(NodeId, f32)>> {
+         if query.len() != self.dimensions {
+@@ -382,7 +468,7 @@ impl VectorIndex {
+                 got: query.len(),
+             });
+         }
+-        
++
+         // ef_search drives recall (HNSW only returns from the ef candidate set), so
+         // floor it for small k. But it must NOT exceed the number of indexed vectors
+         // or hnsw_rs panics in search_layer (hnsw_rs 0.2.1 hnsw.rs:938); clamp both ef
+@@ -474,16 +560,27 @@ impl VectorIndex {
+         match self.quantization {
+             Quantization::None => {
+                 let key = bits_key(query, |v: f32| v.to_bits() as u64);
+-                self.exact.get(&key).into_iter().flatten()
++                self.exact
++                    .get(&key)
++                    .into_iter()
++                    .flatten()
+                     .map(|&i| &self.stored_f32[i])
+                     .filter(|sv| sv.vector.as_slice() == query)
+-                    .map(|sv| (NodeId::new(sv.node_id), CosineDistance.eval(query, &sv.vector)))
++                    .map(|sv| {
++                        (
++                            NodeId::new(sv.node_id),
++                            CosineDistance.eval(query, &sv.vector),
++                        )
++                    })
+                     .collect()
+             }
+             Quantization::Fp16 => {
+                 let q: Vec<f16> = query.iter().map(|v| f16::from_f32(*v)).collect();
+                 let key = bits_key(&q, |v: f16| v.to_bits() as u64);
+-                self.exact.get(&key).into_iter().flatten()
++                self.exact
++                    .get(&key)
++                    .into_iter()
++                    .flatten()
+                     .map(|&i| &self.stored_f16[i])
+                     .filter(|(_, v)| v.iter().zip(&q).all(|(a, b)| a.to_bits() == b.to_bits()))
+                     .map(|(id, v)| (NodeId::new(*id), CosineDistanceF16.eval(&q, v)))
+@@ -498,12 +595,13 @@ impl VectorIndex {
+     /// rounded one otherwise. That is what was stored, and what a reload must
+     /// reproduce.
+     fn iter_stored(&self) -> impl Iterator<Item = StoredVector> + '_ {
+-        self.stored_f32.iter().cloned().chain(
+-            self.stored_f16.iter().map(|(id, v)| StoredVector {
++        self.stored_f32
++            .iter()
++            .cloned()
++            .chain(self.stored_f16.iter().map(|(id, v)| StoredVector {
+                 node_id: *id,
+                 vector: v.iter().map(|x| x.to_f32()).collect(),
+-            }),
+-        )
++            }))
+     }
+ 
+     /// Exact nearest-neighbour search by linear scan over stored vectors.
+@@ -518,7 +616,12 @@ impl VectorIndex {
+             Quantization::None => self
+                 .stored_f32
+                 .iter()
+-                .map(|sv| (NodeId::new(sv.node_id), CosineDistance.eval(query, &sv.vector)))
++                .map(|sv| {
++                    (
++                        NodeId::new(sv.node_id),
++                        CosineDistance.eval(query, &sv.vector),
++                    )
++                })
+                 .collect(),
+             Quantization::Fp16 => {
+                 let q: Vec<f16> = query.iter().map(|v| f16::from_f32(*v)).collect();
+@@ -614,12 +717,12 @@ mod tests {
+     #[test]
+     fn test_vector_index_basic() {
+         let mut index = VectorIndex::new(3, DistanceMetric::Cosine);
+-        
++
+         // Add some vectors
+         index.add(NodeId::new(1), &vec![1.0, 0.0, 0.0]).unwrap();
+         index.add(NodeId::new(2), &vec![0.0, 1.0, 0.0]).unwrap();
+         index.add(NodeId::new(3), &vec![0.0, 0.1, 0.9]).unwrap();
+-        
++
+         // Search — HNSW is approximate and may return fewer than k results on very small graphs
+         let results = index.search(&[1.0, 0.1, 0.0], 2).unwrap();
+         assert!(results.len() >= 1 && results.len() <= 2);
+@@ -652,6 +755,226 @@ mod tests {
+         assert_eq!(results[0].0, NodeId::new(1));
+     }
+ 
++    fn backend_vectors(index: &VectorIndex) -> Vec<(u64, Vec<f32>)> {
++        let mut vectors: Vec<_> = match &index.backend {
++            Backend::F32(h) => h
++                .get_point_indexation()
++                .into_iter()
++                .map(|point| (point.get_origin_id() as u64, point.get_v().to_vec()))
++                .collect(),
++            Backend::F16(h) => h
++                .get_point_indexation()
++                .into_iter()
++                .map(|point| {
++                    (
++                        point.get_origin_id() as u64,
++                        point.get_v().iter().map(|v| v.to_f32()).collect(),
++                    )
++                })
++                .collect(),
++        };
++        vectors.sort_by_key(|(id, _)| *id);
++        vectors
++    }
++
++    #[test]
++    fn test_vector_index_add_is_idempotent_and_conflicts_fail_closed() {
++        for quantization in [Quantization::None, Quantization::Fp16] {
++            let mut index = VectorIndex::with_quantization(2, DistanceMetric::Cosine, quantization);
++            let original = vec![1.0, 0.0];
++            index.add(NodeId::new(1), &original).unwrap();
++            let exact_before = index.exact.clone();
++            index.add(NodeId::new(1), &original).unwrap();
++            assert_eq!(index.len(), 1);
++            assert_eq!(index.exact, exact_before);
++            assert_eq!(backend_vectors(&index), vec![(1, original.clone())]);
++
++            assert!(matches!(
++                index.add(NodeId::new(1), &vec![0.0, 1.0]),
++                Err(VectorError::VectorConflict { node_id: 1 })
++            ));
++            assert!(matches!(
++                index.add(NodeId::new(1), &vec![1.0]),
++                Err(VectorError::DimensionMismatch {
++                    expected: 2,
++                    got: 1
++                })
++            ));
++            assert_eq!(index.len(), 1);
++            assert_eq!(index.exact, exact_before);
++            assert_eq!(backend_vectors(&index), vec![(1, original.clone())]);
++            assert_eq!(
++                index.search(&original, 2).unwrap(),
++                vec![(NodeId::new(1), 0.0)]
++            );
++
++            index.add(NodeId::new(2), &original).unwrap();
++            assert_eq!(index.len(), 2);
++            assert_eq!(
++                backend_vectors(&index),
++                vec![(1, original.clone()), (2, original.clone())]
++            );
++            assert_eq!(
++                index.exact_matches(&original),
++                vec![(NodeId::new(1), 0.0), (NodeId::new(2), 0.0)]
++            );
++            assert_eq!(
++                index.search(&original, 2).unwrap(),
++                vec![(NodeId::new(1), 0.0), (NodeId::new(2), 0.0)]
++            );
++        }
++    }
++
++    #[test]
++    fn replacement_refuses_missing_nodes_and_wrong_dimensions_without_mutation() {
++        let dir = tempfile::tempdir().unwrap();
++        for quantization in [Quantization::None, Quantization::Fp16] {
++            let mut index = VectorIndex::with_quantization(2, DistanceMetric::Cosine, quantization);
++            let original = vec![1.0, 0.0];
++            index.add(NodeId::new(1), &original).unwrap();
++            let path = dir.path().join(format!("{quantization:?}.hnsw"));
++            index.dump(&path).unwrap();
++            let before = std::fs::read(&path).unwrap();
++            let exact_before = index.exact.clone();
++
++            assert!(matches!(
++                index.replace(NodeId::new(99), &vec![0.0, 1.0]),
++                Err(VectorError::NodeNotFound { node_id: 99 })
++            ));
++            for node_id in [1, 99] {
++                assert!(matches!(
++                    index.replace(NodeId::new(node_id), &vec![0.0]),
++                    Err(VectorError::DimensionMismatch {
++                        expected: 2,
++                        got: 1
++                    })
++                ));
++            }
++            index.replace(NodeId::new(1), &original).unwrap();
++            assert_eq!(index.len(), 1);
++            assert_eq!(index.exact, exact_before);
++            assert_eq!(backend_vectors(&index), vec![(1, original.clone())]);
++            assert_eq!(
++                index.search(&original, 1).unwrap(),
++                vec![(NodeId::new(1), 0.0)]
++            );
++            index.dump(&path).unwrap();
++            assert_eq!(std::fs::read(&path).unwrap(), before);
++        }
++    }
++
++    #[test]
++    fn replacement_rebuilds_both_search_paths_and_survives_dump_reload() {
++        let dir = tempfile::tempdir().unwrap();
++        for quantization in [Quantization::None, Quantization::Fp16] {
++            for count in [3usize, 160] {
++                let old = vec![0.0, 1.0, 0.0];
++                let replacement = vec![1.0, 0.0, 0.0];
++                let mut index =
++                    VectorIndex::with_quantization(3, DistanceMetric::InnerProduct, quantization);
++                let mut expected = Vec::new();
++                for i in 0..count {
++                    let vector = if i < 2 {
++                        old.clone()
++                    } else {
++                        vec![0.0, 1.0, i as f32 / 256.0]
++                    };
++                    index.add(NodeId::new(i as u64 + 1), &vector).unwrap();
++                    expected.push((
++                        i as u64 + 1,
++                        if i == 0 { replacement.clone() } else { vector },
++                    ));
++                }
++                assert_eq!(
++                    index.exact_matches(&old),
++                    vec![(NodeId::new(1), 0.0), (NodeId::new(2), 0.0)]
++                );
++                assert_eq!(
++                    index.search(&old, 2).unwrap(),
++                    vec![(NodeId::new(1), 0.0), (NodeId::new(2), 0.0)]
++                );
++                index.replace(NodeId::new(1), &replacement).unwrap();
++                index.replace(NodeId::new(1), &replacement).unwrap();
++                let path = dir.path().join(format!("{quantization:?}-{count}.hnsw"));
++                index.dump(&path).unwrap();
++                let stored: Vec<StoredVector> =
++                    bincode::deserialize_from(std::fs::File::open(&path).unwrap()).unwrap();
++                let dumped: Vec<_> = stored.into_iter().map(|v| (v.node_id, v.vector)).collect();
++                assert_eq!(dumped, expected);
++                let loaded = VectorIndex::load_with_quantization(
++                    &path,
++                    3,
++                    DistanceMetric::InnerProduct,
++                    quantization,
++                )
++                .unwrap();
++
++                for checked in [&index, &loaded] {
++                    assert_eq!(checked.len(), count);
++                    assert_eq!(checked.dimensions(), 3);
++                    assert_eq!(checked.metric(), DistanceMetric::InnerProduct);
++                    assert_eq!(checked.quantization(), quantization);
++                    match (&checked.backend, quantization) {
++                        (Backend::F32(h), Quantization::None) => {
++                            assert_eq!(h.get_nb_point(), count);
++                            assert_eq!(checked.stored_f32.len(), count);
++                            assert!(checked.stored_f16.is_empty());
++                        }
++                        (Backend::F16(h), Quantization::Fp16) => {
++                            assert_eq!(h.get_nb_point(), count);
++                            assert_eq!(checked.stored_f16.len(), count);
++                            assert!(checked.stored_f32.is_empty());
++                        }
++                        _ => panic!("replacement changed the backend precision"),
++                    }
++                    assert_eq!(backend_vectors(checked), expected);
++                    assert_eq!(checked.exact_matches(&old), vec![(NodeId::new(2), 0.0)]);
++                    assert_eq!(
++                        checked.exact_matches(&replacement),
++                        vec![(NodeId::new(1), 0.0)]
++                    );
++                    assert_eq!(checked.exact.values().map(Vec::len).sum::<usize>(), count);
++                    assert_eq!(
++                        checked.search(&old, 1).unwrap(),
++                        vec![(NodeId::new(2), 0.0)]
++                    );
++                    assert_eq!(
++                        checked.search(&replacement, 1).unwrap(),
++                        vec![(NodeId::new(1), 0.0)]
++                    );
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn fp16_identity_compares_the_stored_quantized_representation() {
++        let original = vec![1.0, 0.5];
++        let same_when_quantized = vec![1.0001, 0.50001];
++        assert_ne!(original, same_when_quantized);
++        let mut half =
++            VectorIndex::with_quantization(2, DistanceMetric::Cosine, Quantization::Fp16);
++        half.add(NodeId::new(1), &original).unwrap();
++        half.add(NodeId::new(1), &same_when_quantized).unwrap();
++        half.replace(NodeId::new(1), &same_when_quantized).unwrap();
++        assert_eq!(half.len(), 1);
++        assert_eq!(backend_vectors(&half), vec![(1, original.clone())]);
++        assert!(matches!(
++            half.add(NodeId::new(1), &vec![1.002, 0.5]),
++            Err(VectorError::VectorConflict { node_id: 1 })
++        ));
++
++        let mut full = VectorIndex::new(2, DistanceMetric::Cosine);
++        assert_eq!(full.quantization(), Quantization::None);
++        full.add(NodeId::new(1), &original).unwrap();
++        assert!(matches!(
++            full.add(NodeId::new(1), &same_when_quantized),
++            Err(VectorError::VectorConflict { node_id: 1 })
++        ));
++        full.replace(NodeId::new(1), &same_when_quantized).unwrap();
++        assert_eq!(backend_vectors(&full), vec![(1, same_when_quantized)]);
++    }
++
+     #[test]
+     fn test_distance_metrics() {
+         let v1 = vec![1.0, 0.0];
+@@ -660,10 +983,10 @@ mod tests {
+ 
+         let cosine = CosineDistance;
+         // Orthogonal
+-        assert!((cosine.eval(&v1, &v2) - 1.0).abs() < 1e-6); 
++        assert!((cosine.eval(&v1, &v2) - 1.0).abs() < 1e-6);
+         // Same
+         assert!((cosine.eval(&v1, &v1) - 0.0).abs() < 1e-6);
+-        
++
+         let inner = InnerProductDistance;
+         // Dot product = 0
+         assert!((inner.eval(&v1, &v2) - 1.0).abs() < 1e-6); // 1.0 - 0.0
+diff --git a/src/vector/manager.rs b/src/vector/manager.rs
+index dcfcef3..15e445a 100644
+--- a/src/vector/manager.rs
++++ b/src/vector/manager.rs
+@@ -4,7 +4,7 @@
+ 
+ use crate::graph::NodeId;
+ use crate::vector::index::Quantization;
+-use crate::vector::index::{VectorIndex, DistanceMetric, VectorError, VectorResult};
++use crate::vector::index::{DistanceMetric, VectorError, VectorIndex, VectorResult};
+ use std::collections::HashMap;
+ use std::sync::{Arc, RwLock};
+ 
+@@ -63,7 +63,10 @@ impl VectorIndexManager {
+         if let Some(name) = name.map(str::trim).filter(|n| !n.is_empty()) {
+             self.names.write().unwrap().insert(
+                 name.to_string(),
+-                IndexKey { label: label.to_string(), property_key: property_key.to_string() },
++                IndexKey {
++                    label: label.to_string(),
++                    property_key: property_key.to_string(),
++                },
+             );
+         }
+         Ok(())
+@@ -71,7 +74,10 @@ impl VectorIndexManager {
+ 
+     /// The (label, property) an index name refers to.
+     pub fn resolve_name(&self, name: &str) -> Option<(String, String)> {
+-        self.names.read().unwrap().get(name)
++        self.names
++            .read()
++            .unwrap()
++            .get(name)
+             .map(|k| (k.label.clone(), k.property_key.clone()))
+     }
+ 
+@@ -106,14 +112,14 @@ impl VectorIndexManager {
+             label: label.to_string(),
+             property_key: property_key.to_string(),
+         };
+-        
++
+         let index = VectorIndex::with_quantization(dimensions, metric, quantization);
+         let mut indices = self.indices.write().unwrap();
+         // A (re)created index starts empty, so whatever model built the one it
+         // replaces says nothing about it.
+         self.model_ids.write().unwrap().remove(&key);
+         indices.insert(key, Arc::new(RwLock::new(index)));
+-        
++
+         Ok(())
+     }
+ 
+@@ -122,7 +128,10 @@ impl VectorIndexManager {
+     /// Returns `false` (and records nothing) when no index exists for the key.
+     /// An empty `model_id` clears the record, making the model unknown again.
+     pub fn set_model_id(&self, label: &str, property_key: &str, model_id: &str) -> bool {
+-        let key = IndexKey { label: label.to_string(), property_key: property_key.to_string() };
++        let key = IndexKey {
++            label: label.to_string(),
++            property_key: property_key.to_string(),
++        };
+         if !self.indices.read().unwrap().contains_key(&key) {
+             return false;
+         }
+@@ -140,8 +149,16 @@ impl VectorIndexManager {
+     /// return the model the index is bound to afterwards (`None` when there is
+     /// no such index). Used by auto-embed: the first model to write vectors
+     /// into an unbound index is the one that built it.
+-    pub fn bind_model_if_unset(&self, label: &str, property_key: &str, model_id: &str) -> Option<String> {
+-        let key = IndexKey { label: label.to_string(), property_key: property_key.to_string() };
++    pub fn bind_model_if_unset(
++        &self,
++        label: &str,
++        property_key: &str,
++        model_id: &str,
++    ) -> Option<String> {
++        let key = IndexKey {
++            label: label.to_string(),
++            property_key: property_key.to_string(),
++        };
+         if !self.indices.read().unwrap().contains_key(&key) {
+             return None;
+         }
+@@ -150,12 +167,19 @@ impl VectorIndexManager {
+         if model_id.is_empty() {
+             return ids.get(&key).cloned();
+         }
+-        Some(ids.entry(key).or_insert_with(|| model_id.to_string()).clone())
++        Some(
++            ids.entry(key)
++                .or_insert_with(|| model_id.to_string())
++                .clone(),
++        )
+     }
+ 
+     /// The embedding model recorded for an index, if any (#275).
+     pub fn model_id(&self, label: &str, property_key: &str) -> Option<String> {
+-        let key = IndexKey { label: label.to_string(), property_key: property_key.to_string() };
++        let key = IndexKey {
++            label: label.to_string(),
++            property_key: property_key.to_string(),
++        };
+         self.model_ids.read().unwrap().get(&key).cloned()
+     }
+ 
+@@ -165,7 +189,7 @@ impl VectorIndexManager {
+             label: label.to_string(),
+             property_key: property_key.to_string(),
+         };
+-        
++
+         let indices = self.indices.read().unwrap();
+         indices.get(&key).cloned()
+     }
+@@ -197,6 +221,25 @@ impl VectorIndexManager {
+         }
+     }
+ 
++    /// Replace a stored node vector. Missing indexes and nodes are errors.
++    pub fn replace_vector(
++        &self,
++        label: &str,
++        property_key: &str,
++        node_id: NodeId,
++        vector: &Vec<f32>,
++    ) -> VectorResult<()> {
++        match self.get_index(label, property_key) {
++            Some(index_lock) => index_lock.write().unwrap().replace(node_id, vector),
++            None => Err(VectorError::IndexError(format!(
++                "no vector index for {}.{}; vector for node {} was not replaced",
++                label,
++                property_key,
++                node_id.as_u64()
++            ))),
++        }
++    }
++
+     /// Search an index
+     pub fn search(
+         &self,
+@@ -472,7 +515,7 @@ impl VectorIndexManager {
+ 
+             let index_path = path.join(filename);
+             let index = VectorIndex::load(&index_path, dimensions, metric)?;
+-            
++
+             let key = IndexKey {
+                 label: label.to_string(),
+                 property_key: property_key.to_string(),
+@@ -543,6 +586,101 @@ mod tests {
+         assert!(mgr.search("Nope", "v", &[1.0, 0.0], 3).unwrap().is_empty());
+     }
+ 
++    #[test]
++    fn repeated_vector_events_are_idempotent_and_conflicts_need_explicit_replacement() {
++        for quantization in [Quantization::None, Quantization::Fp16] {
++            let mgr = VectorIndexManager::new();
++            mgr.create_index_named(
++                Some("doc_vectors"),
++                "Doc",
++                "v",
++                2,
++                DistanceMetric::InnerProduct,
++                quantization,
++            )
++            .unwrap();
++            assert!(mgr.set_model_id("Doc", "v", "model-a"));
++            let index_lock = mgr.get_index("Doc", "v").unwrap();
++            let original = vec![1.0, 0.0];
++            let replacement = vec![0.0, 1.0];
++            mgr.add_vector("Doc", "v", NodeId::new(1), &original)
++                .unwrap();
++            mgr.add_vector("Doc", "v", NodeId::new(1), &original)
++                .unwrap();
++            assert!(matches!(
++                mgr.add_vector("Doc", "v", NodeId::new(1), &replacement),
++                Err(VectorError::VectorConflict { node_id: 1 })
++            ));
++            assert_eq!(index_lock.read().unwrap().len(), 1);
++            assert_eq!(
++                mgr.search("Doc", "v", &original, 2).unwrap(),
++                vec![(NodeId::new(1), 0.0)]
++            );
++
++            mgr.replace_vector("Doc", "v", NodeId::new(1), &replacement)
++                .unwrap();
++            mgr.replace_vector("Doc", "v", NodeId::new(1), &replacement)
++                .unwrap();
++            mgr.add_vector("Doc", "v", NodeId::new(1), &replacement)
++                .unwrap();
++            assert!(matches!(
++                mgr.add_vector("Doc", "v", NodeId::new(1), &original),
++                Err(VectorError::VectorConflict { node_id: 1 })
++            ));
++            assert_eq!(
++                mgr.search("Doc", "v", &replacement, 2).unwrap(),
++                vec![(NodeId::new(1), 0.0)]
++            );
++            assert!(Arc::ptr_eq(
++                &index_lock,
++                &mgr.get_index("Doc", "v").unwrap()
++            ));
++            assert_eq!(
++                mgr.resolve_name("doc_vectors"),
++                Some(("Doc".to_string(), "v".to_string()))
++            );
++            assert_eq!(mgr.model_id("Doc", "v").as_deref(), Some("model-a"));
++            let index = index_lock.read().unwrap();
++            assert_eq!(index.len(), 1);
++            assert_eq!(index.dimensions(), 2);
++            assert_eq!(index.metric(), DistanceMetric::InnerProduct);
++            assert_eq!(index.quantization(), quantization);
++        }
++    }
++
++    #[test]
++    fn replacement_refuses_missing_indexes_nodes_and_wrong_dimensions() {
++        let mgr = VectorIndexManager::new();
++        assert!(matches!(
++            mgr.replace_vector("Nope", "v", NodeId::new(1), &vec![1.0, 0.0]),
++            Err(VectorError::IndexError(_))
++        ));
++        assert!(mgr.list_indices().is_empty());
++        mgr.create_index("Doc", "v", 2, DistanceMetric::Cosine)
++            .unwrap();
++        assert!(matches!(
++            mgr.replace_vector("Doc", "v", NodeId::new(1), &vec![1.0, 0.0]),
++            Err(VectorError::NodeNotFound { node_id: 1 })
++        ));
++        let original = vec![1.0, 0.0];
++        mgr.add_vector("Doc", "v", NodeId::new(1), &original)
++            .unwrap();
++        for node_id in [1, 99] {
++            assert!(matches!(
++                mgr.replace_vector("Doc", "v", NodeId::new(node_id), &vec![0.0]),
++                Err(VectorError::DimensionMismatch {
++                    expected: 2,
++                    got: 1
++                })
++            ));
++        }
++        assert_eq!(mgr.get_index("Doc", "v").unwrap().read().unwrap().len(), 1);
++        assert_eq!(
++            mgr.search("Doc", "v", &original, 1).unwrap(),
++            vec![(NodeId::new(1), 0.0)]
++        );
++    }
++
+     #[test]
+     fn search_all_skips_indexes_of_another_dimension_and_keeps_the_best_distance() {
+         let mgr = VectorIndexManager::new();
