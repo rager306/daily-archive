@@ -137,7 +137,7 @@ def import_chapter(src_dir: Path, chapter_id: str) -> str:
         "schema_version": "article-manifest.v1",
         "paper_id": chapter_id,
         "grammar_profile": "html_headings",
-        "source": {"code": "textbook", "identity_ref": f"sources/textbook/gnn-textbook/{chapter_id}/identity.json"},
+        "source": {"code": "textbook", "identity_ref": f"sources/textbook/{src_dir.parent.name}/{chapter_id}/identity.json"},
         "lifecycle": "structured",
         "lifecycle_events": [
             {"stage": "raw", "recorded_at": now, "actor": "html-chapter-source"},
