@@ -1,8 +1,227 @@
+<!-- gsd-path:begin -->
+# AGENTS.md — Operating Rules for the GSD Path Pipeline
+
+These rules govern the router, inspectors, definition facilitators, researchers,
+deciders, roadmappers, planners, orchestrators, coders, reviewers, and the discussion
+sidecar. Role briefs are bundled with the installed skills. These rules win over role instructions except where the user says
+otherwise.
+
+## Authority order
+
+1. The user, in chat.
+2. `.project/CHARTER.md` (program flow): program scope, vetoes, and
+   corrections bind every milestone. Vetoes may not be researched, planned,
+   or built.
+3. `.project/intent/INTENT.md`: constraints, vetoes, corrections, and success
+   criteria are hard limits. Vetoes may not be researched, planned, or built.
+   Only `$gsd-path-define` changes a success criterion, by appending
+   `## Corrections`; a task Log or review cannot waive one.
+4. `.project/SYNTHESIS.md` (program flow, top level) or
+   `.project/research/SYNTHESIS.md` (single milestone): gated decisions are
+   settled. Report conflicts; do not override them.
+5. The current phase brief or task file.
+
+If two sources disagree, stop and surface the conflict. Never average.
+
+The orchestrator's isolated rerun of a task Verify is that task's evidence.
+Wave and ship reviewers read that recorded output plus the isolated diff;
+they do not re-run the task command. PLAN.md's project Verify runs once, at
+ship, in one sidecar through `workflow_run.py prepare-final`. That runtime owns
+execution, output recording, collection, and retry reuse. A complete quick-lane
+single full wave with explicit final scope and walkthrough evidence may also
+supply final review when the runtime proves unchanged product and contracts.
+In that case FINAL.md is a generated view, not a new model assignment.
+The project gap is always a view of its recorded command result.
+Do not repeat a proven claim or write another narrative of the same evidence.
+Verification effort follows uncovered contract claims and actual integration
+risk; code line counts and token ratios are observations, never scope targets.
+A task Verify must not copy the project command unless an
+owned success criterion names it. Any other task Verify must name a path
+from that task's `files`. INTENT constraints about not running the
+full-repo suite on a tiny edit outrank the phase brief.
+
+## Files are the only memory
+
+- Start from disk, not conversation. If an input is absent from `.project/`,
+  report it instead of inventing it.
+- A discussion answer with `Status: final` or `NEEDS-USER`, `Follow-up:
+  required`, and no later `Disposition X###` receipt is pending. Before phase
+  work and again before a phase gate, the router and current phase run the
+  active skill's bundled `scripts/discussion_records.py pending --repo
+  <absolute-root>` helper; when `.project/discuss/` is absent it returns an
+  empty list, so continue. Do not parse IDs, pair records, recover writes, or
+  route pending receipts through model reasoning. The named owner either
+  updates the target artifact through a legal current-phase gate and uses the
+  helper's `dispose` command to append an `applied` disposition, or appends
+  `acknowledged-no-change` with evidence. If applying it would rewrite an
+  approved earlier-phase contract or the owner cannot legally enter, block the
+  current phase with links to ANSWERS.md and the target artifact and ask the
+  user; never auto-advance or archive it. Only the user may authorize
+  `rejected-by-user`.
+- After a phase completes its gate and state update, run the bundled
+  `pipeline_state.py status --repo <absolute-root>` with the routed
+  `--project-dir`. Its `handoff` is the shared phase handoff for chat and the
+  dashboard. Present **Outcome** from `handoff.outcome` plus the completed
+  work; **Review** links the phase artifact, or `handoff.review` when absent.
+  An active router uses `handoff.router_next` for **Next** and follows the
+  returned route. A directly invoked phase uses `handoff.phase_next` and
+  stops. A status or plain-prompt reply uses `handoff.next` and stays read-only.
+  Convert the `$` invocation prefix to the host's slash form when needed.
+  Phase owners still stop for required input and approval before completion;
+  a route is not approval. Return to an active caller instead of invoking an
+  explicit-only sibling skill. Derive the next phase from this result, not
+  from another lane table in prose.
+- Phase skills bundle the remaining rules in `references/operating-rules.md`;
+  read it before phase work.
+
+## Plain-prompt re-entry
+
+<!-- gsd-path/plain-prompt-reentry/v1 -->
+
+- On a turn that did not explicitly invoke a GSD Path skill, check for
+  `.project/STATE.md`. When it exists, first select the compatible interpreter:
+  probe `python3 -B -c "import sys; raise SystemExit(sys.version_info < (3, 9))"`,
+  then probe `python -B -c "import sys; raise SystemExit(sys.version_info < (3, 9))"`
+  only if the first command fails. Run the first successful interpreter
+  with `-B .gsd-path/status_runtime.py --repo <absolute-root>`
+  before any requested repository mutation. Treat its JSON as the only route
+  authority.
+  When `completion.status` is `verified` and `git.branch` is an ordinary
+  branch (not `gsd-path/M###`), requested product work may proceed normally.
+  Archives and pipeline control files remain protected. Otherwise,
+  a plain change request does not authorize work outside the pipeline: make no
+  changes and report **Outcome**, link the returned `path` under **Review**, and
+  under **Next** use `handoff.next`. An explicit request to leave
+  or bypass the pipeline is a user ruling;
+  route it through the router's undo or abandon flow instead of editing directly.
+- After any other plain-prompt turn with owned state, rerun the same read-only
+  status command immediately before the final response and append the same
+  **Outcome** / **Review** / **Next** handoff with the same shared handoff rule.
+  Keep an informational turn read-only from start to finish: do not use repository
+  mutation tools or run commands that can create or alter files. A GSD Path skill
+  already supplies this handoff, so emit it once. With no STATE.md, respond
+  normally and do not initialize the pipeline. A missing runtime or invalid
+  status blocks mutation and routes to `$gsd-path-forensics`.
+
+## Evidence and honesty
+
+- Claims need checked sources, decisions need citations, and verdicts need
+  reproduced evidence. Never report a command as passing unless it ran.
+- Report partial or failed results plainly. Silent partial success is the
+  worst outcome.
+- Preserve uncertainty as `NEEDS-USER`, `RESEARCH`, or a confidence level.
+  Questions never silently disappear between phases.
+- Record user corrections and vetoes verbatim.
+
+## Gates
+
+- Same-wave dependencies execute in dependency order; a task dispatches as
+  soon as its dependencies land, never idling behind unrelated
+  in-flight tasks. Only ready tasks run.
+- Parallel dispatch rounds use distinct linked worktrees, each created at the
+  clean primary HEAD recorded as its task base at dispatch. A serial dispatch
+  round (one ready task) works and lands on the bound branch in the primary
+  worktree. Task and reviewer Verify run against that recorded base plus only
+  the task patch; evidence from a shared worktree or combined branch tip does
+  not count.
+- A wave advances only after every task and the wave review pass.
+- Final review blocks on any `not-met`, `unverifiable`, or blocked gap verdict.
+- STATE.md becomes `shipped` only when every final verdict and the project
+  verify pass; the router reports shipped only after the integration
+  validator (`validate-integrated`) passes.
+- Shipping archives the milestone: artifacts move to
+  `.project/archive/<NNN>-<slug>/` with a manifest, and the ship phase
+  records the ship commit (STATE.md, final reviews, archive) as its single
+  commit on the bound branch. Archives are read-only —
+  no agent may modify or delete them — and a new milestone may not begin
+  while an un-archived shipped milestone's artifacts sit in the active paths.
+- STATE.archive is the crash-recovery transaction id. It is persisted before
+  moves and never recomputed. Keep review active until the prepared archive,
+  canonical contents, carry-forward, and manifest pass the bundled precommit
+  validator; report shipped only after the exact `.project/`-only ship commit
+  passes the postcommit validator and `validate-integrated` proves the
+  integration landing, its tag, and its ancestry on origin/main —
+  while integration is pending the router routes back to ship instead of
+  reporting shipped or starting the next milestone.
+
+## Asking the user
+
+- Ask through an interactive user-input tool when the runtime provides one;
+  otherwise ask concise numbered questions in chat and stop for the reply.
+- Before any approval, ruling, `NEEDS-USER` question, blocked escalation, or
+  phase-completion handoff, present three things in order: **Outcome** — what
+  was produced or learned; **Review** — a Markdown link to the primary
+  canonical artifact using its resolved absolute path; **Next** — the one
+  question or action now required. Any text the user is expected to send back
+  verbatim — a ruling, an approval command, a reply — goes in its own fenced
+  code block, never a blockquote or inline prose, so it pastes cleanly. If the
+  host cannot render local links, print
+  the resolved absolute path immediately after the link. On an output failure,
+  link the malformed artifact when it exists; otherwise link STATE.md or the
+  canonical log that proves the failure and say the expected artifact is
+  missing. Never ask for approval before its reviewable artifact exists on
+  disk, and never ask a bare "approve?" without its outcome and link.
+- Every choice offered to the user names a recommended option — listed first
+  and marked `(recommended)` — with a one-line reason grounded in evidence,
+  intent, or the codebase, followed by the real alternatives. A pure values
+  call with no evidence either way carries no recommendation; say so
+  explicitly instead of inventing one.
+- After a user decision, confirm what changed, link the updated artifact again,
+  and state whether the active router continues automatically or which exact
+  explicit skill the user should invoke next.
+
+## Escalation
+
+Stop and ask the user only when:
+
+- proceeding would violate a hard constraint or veto;
+- the review loop reaches its cycle cap;
+- a `NEEDS-USER` item reaches a phase checkpoint; or
+- sources of truth conflict and INTENT.md does not make the resolution clear.
+
+Handle everything else autonomously and record it in the task log or
+STATE.md.
+
+## Style
+
+- Write fixed-format data for the next agent, without pleasantries.
+- Write short, plain-English outcomes for the user.
+- Keep agent final messages to paths, statuses, verdicts, and evidence.
+
+## Distribution layout
+
+This section describes the GSD Path source checkout. These source paths and
+the sync command do not apply to an application that only installs GSD Path.
+In a consuming project, resolve roles, templates, and helpers from the active
+installed skill's absolute paths; the application need not contain this layout.
+
+| Path | Purpose |
+|------|---------|
+| `plugin.json` | Agent Plugins manifest (`agent-plugins.org` 1.0.0 schema) |
+| `skills/` | Skills and aliases declared in `scripts/skill-resources.json` |
+| `skills/gsd-path/templates/` | Required artifact formats |
+| `skills/gsd-path/references/` | Agent role and dispatch contracts |
+| `WORKFLOW.md` | Phase-by-phase SOP |
+
+Edit canonical resources only: `skills/gsd-path/` templates and references,
+each per-skill `SKILL.md`, `scripts/`, and
+`platforms/shared-agents/dispatch.md`. Every per-skill `references/`,
+`templates/`, and `scripts/` copy is generated — run `python3
+scripts/sync_skill_resources.py` after editing a canonical source. Sync
+overwrites divergent generated copies and warns when a divergent copy is
+newer than its canonical source (the wrong-direction-edit signature); treat
+that warning as a lost edit and re-apply it to the canonical path.
+<!-- gsd-path:end -->
+
 <!-- project-current:start -->
 # daily-archive — agent map (what / where)
 
 Runtime: **Rust workspace** `crates/da-{domain,ports,application,parse,adapters,cli,mcp}` (hexagonal / onion).  
 Frozen evidence: Python stack cold-archived under `archive/python-era-cold-*/` (see `archive/PYTHON-ERA-COLD.md`); `legacy/` is a restore stub — not on the runtime path.
+
+## Workflow engine (cutover)
+
+GSD planning state is frozen: `.gsd/` (gsd-pi) no longer governs this project; do not call `gsd_*` engine tools. Active engine: **gsd-path** — `.project/` state, `gsd-path*` skills via omp (`/skill:gsd-path`, explicit-only). Migration bundle + IMPORT.md: `/root/da-path-migration-20261122`. Historical gsd-pi detail: `AGENTS.pre-path.md`. Rulings 2026-11-22: M521 carries into Path as first intent; `.project/` is committed; user work sits in `stash@{0}` (wip-before-gsd-path-binding-20261122).
 
 ## Hard locks (do not violate)
 
@@ -15,24 +234,6 @@ Frozen evidence: Python stack cold-archived under `archive/python-era-cold-*/` (
 | Onion | no da-application → da-adapters inversion for path defaults |
 | DSPy | not enabled until eval metrics + benchmark fixtures verified (D136) |
 | Samyama | sole KG+vector+persist store (ADR-040); no JSONL, no external DB for state |
-
-## GSD workflow & process conventions (read first)
-
-This project uses **GSD (Git Ship Done)** for milestone/slice/task tracking.
-Work through GSD tools, do not hand-edit `.gsd/` planning artifacts.
-
-### Lifecycle (GSD tools, in order)
-
-1. `gsd_milestone_generate_id` → get milestone ID (M###-xxxxx).
-2. `gsd_plan_milestone` → roadmap with slices (each needs sliceId, title, risk, depends, demo, goal, successCriteria, proofLevel, integrationClosure, observabilityImpact).
-3. `gsd_plan_slice` → per-slice PLAN.md with tasks (each needs taskId, title, description, estimate, files, verify, inputs, expectedOutput).
-4. `gsd_task_complete` → per-task (oneLiner + narrative + verification + verificationEvidence).
-5. `gsd_slice_complete` → per-slice (sliceTitle + oneLiner + narrative + uatContent).
-6. `gsd_validate_milestone` → when all slices done.
-7. `gsd_complete_milestone` → closeout.
-
-**Forbidden:** hand-editing STATE.md, PLAN.md, SUMMARY.md, ROADMAP.md, gsd.db.
-Use the engine tools. `.gsd/continue.md` and `CHANGELOG.md` are hand-writable.
 
 ### Compile & test rules (avoid the rocksdb rebuild trap)
 
@@ -56,13 +257,9 @@ own `.cargo/config.toml` with `ROCKSDB_LIB_DIR`.
 skip it:
 
 ```bash
-# RIGHT: per-crate checks during iterative dev
- cargo check  -p <changed-crate>
+ cargo check  -p <changed-crate>   # per-crate dev loop
  cargo clippy -p <changed-crate> --all-targets --no-deps -- -D warnings
- cargo test   -p <changed-crate> --lib
-
-# WRONG: full workspace (rocksdb rebuild, 5-10 min)
-cargo test --workspace      # DON'T
+ cargo test   -p <changed-crate> --lib   # NEVER cargo test --workspace: rocksdb rebuild 5-10 min
 ```
 
 `PYTHONPATH=scripts python3 -m governor architecture` is the **full gate** — run it
@@ -74,46 +271,9 @@ background `async_bash` cargo jobs (via `cancel_job`) before re-running.
 Stale `async_bash` results surface as delayed "background job done"
 notices — their content is often already superseded.
 
-### Browser evidence gate (GSD validation gotcha)
-
-GSD `gsd_validate_milestone` has a browser-evidence gate that downgrades
-`verdict: pass` → `needs-attention` when slice goal/successCriteria
-text contains trigger words from `BROWSER_REQUIREMENT_RE`. The regex
-matches: `file://`, `localhost`, `playwright`, `chrome`, `screenshot`,
-**`snapshot`**, `browser_*` tool names.
-
-**`snapshot` is the hidden trap for backend milestones.** Domain terms
-like `PropertySnapshot`, `export_snapshot`, `import_snapshot`, or
-"post-migration snapshot" in slice goal/successCriteria trigger the gate.
-
-**Fix:** for each triggering slice, write `<MM>-<SS>-ASSESSMENT.md`
-(e.g. `512-02-ASSESSMENT.md`) with runtime-executable evidence:
-
-```yaml
----
-uatType: runtime-executable
-verdict: PASS
----
-
-| check_name | type | verdict | tool | duration |
-|------------|------|---------|------|----------|
-| check-id | runtime | PASS | gsd_uat_exec <id> | 99ms |
-```
-
-Get real evidence IDs via `gsd_uat_exec` with `intent: "uat-runtime-check"`
-or `intent: "uat-artifact-check"`. The `hasRuntimeExecutableUatEvidenceText`
-bypass then activates and `verdict: pass` is preserved.
-
-### Manual closeout when Attempt is unavailable
-
-Free-form sessions cannot mint a running Attempt, so `gsd_task_complete` fails there. Use engine calls, never a hand-written row: `testedSourceRevision` is the engine aggregate `sha256:…` from `captureMilestoneVerificationSourceRevision`, not a git SHA; `gsd_save_gate_result` after `gsd_skip_slice` finds no tasks; Q5/Q6/Q7 need a real taskId; never write `.gsd/gsd.db` with sqlite3 or python (engine owns the WAL). The worked sequence (MEM567 / D144) is recorded in `git log -p -- AGENTS.md`.
-
 ### Governor CLI (trajectory enforcement)
 
-`scripts/governor/` is the **governor CLI** — hexagonal Python package that
-derives project trajectory report (verdict: on_track / drift_risk / blocked)
-from ADRs, dimensions, reverse-ADR audit, drift flags. Rules are DATA
-(YAML), not hardcoded Python.
+`scripts/governor/` is the governor CLI: trajectory report from ADRs/dimensions/flags; rules are DATA in `checks/*.yaml`.
 
 ```bash
 PYTHONPATH=scripts python3 -m governor --phase preflight   # default
@@ -132,160 +292,6 @@ to `verdict=blocked`.
 except the governance surface. Two allowlisted roots exist: `scripts/governor/`
 and `scripts/tests/`. A new tool elsewhere under `scripts/` is a hard finding —
 put it in `scripts/governor/` (or `checks/*.yaml` as DATA) instead.
-
-#### Control-plane health (dimension `gsd_control_plane`)
-
-The 2026-09-20..27 journal review found every recurring failure was control-plane
-rather than product: projection-claim contention, liveness wedges, lease
-conflicts, Technical-Verdict blocks, an always-red doctor, and unbounded runtime
-stores. The trajectory report now measures that class:
-
-- thresholds, the retention policy and the closed signal vocabulary live in
-  `scripts/governor/checks/gsd_control_plane.yaml` (DATA). Tightening a limit is an
-  edit there, not a Python change.
-- accepted historical doctor divergence lives in
-  `scripts/governor/checks/gsd_doctor_baseline.json`. Suppression is scoped by
-  milestone, so a *new* occurrence of a baselined code in live work still fires.
-  Read and extend it through the command, not by hand:
-  `python3 -m governor doctor-baseline` lists what is unbaselined;
-  `... --accept <code> --milestone M### --evidence "..."` records one review.
-  There is no accept-all: `--code-wide` requires `--reason` and is the documented
-  exception, and a code the latest run does not report is refused.
-- the check is deliberately absent from `checks/assurance_severity.yaml`, so these
-  signals produce `drift_risk`, never `blocked`: they describe the harness, and the
-  project must see them without being unable to proceed on a race it cannot repair.
-- `.gsd/` is a symlink out of the repository and is not tracked, so any artifact a
-  human must review belongs under `scripts/governor/`, not under `.gsd/`.
-- failed git actions are read from `.gsd/git-action-failures.log` and reported as
-  `gsd_control_plane_commit_hook_failures` when they are newer than the last commit,
-  with the recorded task verifications attached as the explanation. Only hooks whose
-  `- hook id:` line is followed by `- exit code:` count as refusing: measured over all
-  188 blocks, `docs-drift-check` appears in every one without refusing any. This is the
-  detection half of the cargo-fmt pair; the prevention half is the two
-  `pre_dispatch_hooks` entries described under control-plane discipline.
-
-#### Control-plane discipline (rules with evidence)
-
-These four come from measured failure, not preference. Each names the cost:
-
-- **The same drift is repairable or terminal depending on who sees it first.** A
-  formatting drift caught by the host verification gate is routed through the canonical
-  recovery machine (`routeHostTechnicalFailure` -> retry/repair/remediate/replan, budget
-  `verification_max_retries`, default 2, with `verification_auto_fix` recording the
-  attempt count). The same drift caught by the `cargo-fmt` hook during the engine's
-  auto-commit has **no retry at all** and kills the attempt with `LEASE_FENCING_LOST`.
-  That asymmetry is why the fmt check belongs in a task's `verify`: it moves the
-  detection from the terminal path to the repairable one. `verification_auto_fix` is
-  not a formatter — it only annotates the evidence with the auto-fix attempt number,
-  so nothing here formats on your behalf.
-- **Run `cargo fmt` as the LAST action of a Rust task.** `cargo-fmt` caused 141 of
-  188 recorded commit failures. This is not formatting cleanliness: a failed
-  auto-commit cannot be retried by the engine, so the attempt dies with a claim
-  mismatch and auto-mode wedges (`LEASE_FENCING_LOST`). Running fmt early in the task
-  is the documented trap — any later test addition or artifact regeneration
-  re-introduces drift, so the check must be the final step.
-- **Recovery ladder when the auto-commit already failed** (a failed commit after the
-  task was credited in the database cannot be retried; manual commit is mandatory,
-  not optional):
-  `cargo fmt --all` -> `cargo fmt --all --check` -> `git add -A && git commit`
-  (let fmt/clippy/governor hooks pass) -> `gsd headless closeout resolve` (needs a
-  clean tree) -> clear `paused_session` via `deleteRuntimeKv` -> fresh start.
-- **This is now prevented mechanically, not by reminder.** `.gsd/PREFERENCES.md`
-  carries two `pre_dispatch_hooks` entries: `rust-fmt-is-the-last-action` appends the
-  obligation to every `execute-task` prompt, and `rust-task-verify-carries-fmt`
-  appends the verify-field requirement to `plan-slice`. `action: modify` composes the
-  text into the unit prompt at dispatch — no extra agent run, no extra model call — and
-  the engine's preference cache is keyed on file `size:mtimeMs`, so an edit takes
-  effect on the next dispatch without a restart. Verify with `resolvePreDispatchHooks`
-  + `evaluatePreDispatch` from `rule-registry.js`.
-
-  `.gsd/` is a symlink out of the repository and is not tracked, so this live config is
-  not versioned. The snippet below is the canonical copy: if `.gsd/PREFERENCES.md` is
-  lost or a fresh clone needs it, restore it from here.
-
-  ```yaml
-  pre_dispatch_hooks:
-    - name: rust-fmt-is-the-last-action
-      before: [execute-task]
-      action: modify
-      enabled: true
-      append: >-
-        If this task changed any Rust source (crates/**/*.rs), then `cargo fmt` must be
-        the LAST thing you run before finishing -- after every edit, every added test,
-        and every regenerated artifact. Run `cargo fmt -p <affected crate>` (or
-        `cargo fmt --all`), confirm with `cargo fmt --all --check`, then `git add -A`.
-        Running fmt earlier is not enough: any later edit re-introduces drift. A
-        formatting drift that reaches the engine's auto-commit is not a style problem --
-        the engine cannot retry a failed commit, the attempt dies with
-        LEASE_FENCING_LOST, and the only way out is manual recovery.
-    - name: rust-task-verify-carries-fmt
-      before: [plan-slice]
-      action: modify
-      enabled: true
-      append: >-
-        For every task whose files include Rust sources, the task's `verify` must carry
-        a rustfmt check. Put it on its own line in the verify field, for example:
-        `cargo test -p <crate> --test <name>` on one line and
-        `cargo fmt -p <crate> -- --check` on the next. Do not join commands with `&&` or
-        `|`: the host verification gate rejects a verify line that is not shell-safe and
-        then reports the task as unverified rather than running anything.
-        This is not a style preference, and the reason is the whole point: a formatting
-        drift that the HOST gate sees is routed through the canonical recovery machine
-        and can be repaired and retried within the verification budget, while the same
-        drift reaching the engine's auto-commit has no retry at all and kills the attempt
-        with LEASE_FENCING_LOST. Verified on M511-j7wz2f/S02/T02 and again on M510. A
-        task whose plan has no verify at all falls back to the project
-        `verification_commands`, which includes fmt but says nothing about that task's
-        actual work -- so a task-specific verify with fmt in it is the only real gate.
-  ```
-
-  The same shape applies to the project verification fallback:
-  `.gsd/PREFERENCES.md#verification_commands` leads with `cargo fmt --all --check`
-  because `discoverCommands` never appends that list to a task plan's own verify, so it
-  is the only protection for a task whose plan carries no verify. Probe used to confirm
-  it is a real check: rc=0 clean, rc=1 with one injected formatting drift.
-- **Rejected alternatives (checked, do not re-litigate).** Switching the git hook to
-  auto-format: a hook that modifies files makes `pre-commit run` exit 1 with "files
-  were modified by this hook", so that commit is still refused once. Adding fmt to
-  `verification_commands`: project-level commands are only a fallback —
-  `discoverCommands` returns the task plan's own verify commands and never appends the
-  preference list. A governor rule requiring fmt in every Rust task's verify: 44 of 54
-  cargo-verified tasks in one week recorded no fmt check, so it would fire on 81% of
-  Rust work and be ignored.
-- **Treat `timed_out` as failure, whatever `exit_code` says.** The same review found
-  six `gsd_exec` captures that reported `exit_code == 0` while `timed_out` was true.
-  Long gates (full `governor architecture`, `--features pdf-layout` suites) do not
-  fit the 600 s cap — run them detached and poll, do not tighten the cap.
-- **A blocked auto exit is not always restartable; read the printed cause first.**
-  Across 78 headless auto logs, `task-recovery-abort` / `recovery already aborted`
-  appears in 12 (26 hits) and is the most common fatal signature: the engine cannot
-  re-dispatch an aborted attempt, so restarting auto re-enters the same wedge. The
-  engine prints the remedy — `/gsd recover <recoveryActionId>` or
-  `gsd_task_recovery_resume` — and the watchdog restarted auto 16 times in 16 hours
-  without clearing it. Provider stream death (`Anthropic stream ended before
-  message_stop`, 10 logs) and reconciliation failure (5 logs) *are* restartable;
-  `task-recovery-abort` is not.
-- **Prune the runtime stores.** `python3 -m governor hygiene` reports sizes and
-  prunes scratch/evidence; `--apply` deletes and writes a manifest to
-  `.gsd/retention/`. The policy is DATA in `checks/gsd_control_plane.yaml#retention`
-  (exec 30 d, quarantine 30 d, activity 14 d, scratch older than 24 h), so the
-  threshold that fires and the command that clears it read one source.
-- **Bound target/ at slice closeout, not by hand.** `python3 -m governor --phase
-  closeout` invokes the same hygiene dry run and reports the plan (each reclamation
-  with its policy, plus the `target/` size against the `target_cap_gb` DATA cap);
-  `python3 -m governor closeout` does the same standalone and `--apply` reclaims
-  through both mechanisms — the cache GC (`apply_plan`) releases derived store
-  entries, while `cargo clean -p <crate>` per `closeout.packages` removes target
-  artifacts, which is the only path that frees what a second toolchain duplicates.
-  A slice can decline deliberately with `governor closeout --decline "<reason>"`;
-  the decline is recorded under `.gsd/retention/` and nothing is reclaimed.
-- **A bloat signal must be clearable.** The control-plane check counts entries *past*
-  their retention window, never total store size: an absolute limit on a store that
-  grows daily is permanently red, and a flag nobody can clear is a flag nobody reads.
-
-**Do NOT write new bash scripts to enforce invariants** the governor
-already checks. Extend governor rules or `scripts/verify_rust_architecture.sh`
-instead. `scripts/governor/` is the authoritative trajectory checker.
 
 ### Pre-commit hooks (`.pre-commit-config.yaml`)
 
@@ -320,13 +326,6 @@ warn the user on HIGH/CRITICAL risk. Use `detect_changes()` before commit.
 - Contour 6 disk→query: **same-process** `--snapshot` only (process-local store dies on exit)
 - Task Cypher uses ontology wire strings (`hasPart`, `CITES`) from `data/ontology/edge_contracts.yaml`
 - Extraction F1 alone ≠ scientific KG readiness — pair with graph task suite
-
-#### CI tiers
-
-- **PR** (<30s): Unit + Property + Serde + Contract (Mock) + fmt + clippy + arch
-- **Merge** (<2min): + Integration (Samyama) + Business logic
-- **Nightly** (<15min): + Mutation (domain) + E2E + Flaky(5) + Fuzz + Shuttle/Turmoil
-- **Release** (<30min): + Mutation (app) + Crash recovery + Migration upgrade + semver
 
 #### Governor commands
 
@@ -366,31 +365,21 @@ Round-trip: `da ontology-export` → `data/ontology/node_schemas.yaml` →
 `OntologyRegistry::load_from_dir()` → `YamlSchemaAdapter` →
 `NodeSchemaDef` trait → validator.
 
-### Handoff between sessions
-
-At session end (or before context exhaustion): update `.gsd/continue.md`
-with active milestone, what shipped, next action, and operators. Next
-session reads `.gsd/continue.md` + `.gsd/STATE.md` + this AGENTS.md to
-re-orient in <1 min.
-
 ## Where to look first
 
 | Question | Open this |
 |----------|-----------|
 | Human overview + architecture | `README.md` |
-| Project state (GSD) | `.gsd/continue.md`, `.gsd/STATE.md`, `.gsd/PROJECT.md` |
 | Binding ADRs | `doc/adr/ADR-INDEX.md` |
-| Documented solutions (module / problem area) | `.compound-engineering/artifacts/solutions/` — YAML frontmatter (`module`, `tags`, `problem_type`); relevant when implementing or debugging in an area that already has an entry |
 | Graph schema | `doc/GRAPH-SCHEMA.md` |
 | Ontology alignment | `doc/ONTOLOGY-ALIGNMENT.md` |
-| Healing scenarios | `doc/GRAPH-HEALING-SCENARIOS.md` |
-| Persistence model | `doc/PERSISTENCE-ANALYSIS.md` |
-| Extraction eval + corpus metrics | `data/gold_standard/`, `crates/da-cli/examples/eval_batch.rs` (output) |
-| GROBID semantic correctness | `doc/adr/ADR-076-grobid-cascade-three-automata-graph-freeze.md`, `doc/review/grobid-absorption-followup.json` |
+| Extraction eval + corpus metrics | `data/gold_standard/`, `crates/da-cli/examples/eval_batch.rs` |
+| GROBID semantic correctness | ADR-076 + `doc/review/grobid-absorption-followup.json` |
+| Documented solutions | `.compound-engineering/artifacts/solutions/` (`module`, `tags`, `problem_type`) |
+| Project state | `AGENTS.pre-path.md` (frozen gsd-pi era), `.gsd/` frozen planning archive |
 
-After a solved, verified problem, offer once to invoke the `ce-compound` skill at the completion checkpoint only when the work produced durable project reasoning that is not readily recoverable from the final code, tests, types, comments, or existing documentation, and losing it would plausibly cause recurrence, material risk, or substantial rediscovery. Apply this counterfactual: if the learning document disappeared, would a future engineer reading the final implementation still be likely to repeat the mistake or redo substantial investigation? If not, do not offer. Completion, effort, and diff size alone are not enough. Offer at the checkpoint so a qualifying learning can ship in the PR that produced it, and only where the repository treats captured learnings as tracked, committed knowledge.
 
-Write every report, summary, or handoff to the user through the `ce-noslop` skill. This applies when you are the top-level agent writing to the user, not when you are a subagent reporting to its caller. Do not apply it to code, config, verbatim quotes, or text the user asked to post as written.
+After a solved problem, offer `ce-compound` once only if the durable reasoning would be re-derived (would a future engineer repeat the mistake from the final code/tests/docs?). User-facing reports go through `ce-noslop`.
 
 ## Package map (Rust workspace)
 
@@ -403,12 +392,7 @@ Write every report, summary, or handoff to the user through the `ce-noslop` skil
 | Adapters | `crates/da-adapters/` | HTML parse, pdf-classifier, XY-Cut, fd_api embedder (bge-m3), SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter, GrobidParseStage |
 | CLI | `crates/da-cli/` | `da` binary: health/version/ingest/batch-ingest/extract/schema-init/heal/enrich/scheduler-run |
 | MCP | `crates/da-mcp/` | MCP server for knowledge-base external access (ADR-054) |
-| **kg-ontology** | `crates/kg-ontology/` | Universal types: Violation/Severity/PropertySnapshot/TemporalEdge (ADR-050, no da-* deps) |
-| **kg-storage** | `crates/kg-storage/` | Universal storage traits: GraphStore/DirectGraphStore/MockGraphStore (ADR-050) |
-| **kg-embeddings** | `crates/kg-embeddings/` | Universal embeddings: Embedder/FdApiEmbedder (ADR-050) |
-| **kg-algorithms** | `crates/kg-algorithms/` | Universal graph algorithms: resolve_temporal_edges (ADR-050) |
-| **kg-pipeline** | `crates/kg-pipeline/` | Universal pipeline DSL: PipelineBuilder/ExecutionEngine (ADR-050) |
-
+| **kg-\*** | `crates/kg-{ontology,storage,embeddings,algorithms,pipeline}/` | Universal ADR-050 layer: types, storage traits, embeddings, algorithms, pipeline DSL. Must NOT depend on da-* (governor-enforced). |
 Dependency direction (enforced by `scripts/verify_rust_architecture.sh` + CI):
 `da-domain ← da-ports ← da-application ← da-cli`; `da-adapters` is infrastructure (depends on ports, not vice versa).
 `da-domain` also depends on `kg-ontology` (re-export, ADR-050 Phase A).
@@ -465,12 +449,7 @@ cargo test -p da-adapters --features pdf-classifier --test hub_ocr_probe -- --no
 # CLI build with pre-GROBID triage (off by default):
 #   cargo build -p da-cli --features pdf-classifier
 
-# Feature-gated shadow/contract tests (pdf-layout, off by default).
-# Nine da-cli test files are `#![cfg(feature = "pdf-layout")]` because the
-# examples they drive carry `required-features = ["pdf-layout"]`. A plain
-# `cargo test -p da-cli --tests` compiles them to EMPTY targets, so their
-# coverage is nominal unless the feature is enabled. `cargo test --test NAME`
-# does NOT build examples, so provision the runners first:
+# Feature-gated tests (pdf-layout): plain `cargo test -p da-cli --tests` compiles them EMPTY; provision runners first:
 cargo build -p da-cli --features pdf-layout --examples  # example runners
 cargo test  -p da-cli --features pdf-layout --tests     # 447 tests (vs 418 default)
 # `governor architecture` runs both as its last steps
@@ -514,11 +493,9 @@ da graph-ping --port 16379             # terminal B → PONG
 # Samyama HOT writes return GraphModeError::RemoteWritesUnsupported
 ```
 
-Historical `legacy/scripts/verify_m0xx_*.py` — frozen Python milestone pins, not runtime ops. `legacy/` is gitignored (untracked frozen Python stack).
 
 ## Extraction eval baseline
 
-Committed numbers (**2026-08-09**): **P=0.766, R=1.000, micro-F1=0.8677** on 200/200 fixtures, 1,439 gold entities (`archive/artifacts-legacy/gold_corpus/eval_aggregate_all_sources.json`). Remeasure with `cargo run -p da-cli --example eval_batch`; the committed artifact is the source of truth, not this line.
 
 ## Code navigation
 
@@ -585,95 +562,25 @@ not by Python code anymore.
 ## Start / stop
 
 ```bash
-# GROBID CRF (recommended for daily-archive pilots)
+# GROBID CRF (recommended; no API key)
 docker compose -f .docker/docker-compose.yml --env-file .env up -d grobid
 curl -sS http://127.0.0.1:8070/api/isalive   # true
-
 docker compose -f .docker/docker-compose.yml --env-file .env down
 ```
-
-Env keys: see `.env.example` (`GROBID_*`, `HYBRID_AUTO_START_CONTAINERS`). GROBID CRF has **no API key**.
-
-**GROBID REST profiles** (`da_parse::GrobidProfile`, D204):
-- `rich` (backward-compatible default): `consolidateCitations=1`,
-  `consolidateHeader=1`, `teiCoordinates=["figure","table","note"]`.
-- `structural` (gold/bounded pipeline): both consolidation flags are `0`, while
-  coordinates remain enabled. This keeps local TEI generation independent of
-  Crossref 429/backoff; bibliography/header enrichment runs later through the
-  separately cached OpenAlex/Crossref stage.
-
-Never mix profiles under one cache key. Profile and consolidation flags must be
-part of the parse stage configuration fingerprint. Rich mode may take minutes
-under Crossref rate limits; structural mode is the managed scalable default for
-corpus parsing.
-
-## Auto ensure from code (Rust)
-
-```rust
-use da_parse::GrobidParser;
-use da_ports::parser::ParserPort;
-
-let parser = GrobidParser::from_env();
-assert!(parser.is_alive().await);
-let parsed = parser.parse_pdf(pdf_path, paper_id).await?;
+Env keys: `.env.example` (`GROBID_*`, `HYBRID_AUTO_START_CONTAINERS`). REST profiles (D204): `rich` = consolidate 1 (compat; minutes under Crossref limits); `structural` = consolidate 0 (managed default). Never mix profiles in one cache key; profile is part of the parse fingerprint.
 ```
 
-Rules:
-
-- Probe/start is infrastructure; **import_eligible stays false**.
-- Do not treat sidecar TEI/markdown as graph truth — GROBID output feeds the
-  Rust RuleBasedExtractor, which produces canonical Entity nodes in Samyama.
-
-Details: `.docker/README.md`
+Auto-ensure from Rust: `GrobidParser::from_env()` + `is_alive().await`. Probe/start is infrastructure — `import_eligible` stays false; sidecar TEI/MD feeds the Rust `RuleBasedExtractor` (canonical entities), never graph truth. Details: `.docker/README.md`.
 <!-- parser-sidecars:end -->
 
 <!-- logging:start -->
 # Structured Logging (ADR-052)
 
-Dual-layer tracing: stderr (compact) + rolling JSON file under one `RUST_LOG`/`LOG_LEVEL` filter. INFO lifecycle events carry semantic identity and write deltas by default.
-
-## Configuration
-
-```bash
-# .env
-LOG_DIR=logs          # directory for rolling files (default: logs/)
-LOG_LEVEL=info        # filter level (RUST_LOG overrides)
-LOG_SUPPRESS=lopdf::object=error   # extra target=level directives (default shown)
-```
-
-`LOG_SUPPRESS` is appended after the base filter and exists because a
-third-party PDF parser (`lopdf`) emits one `WARN` per undecodable glyph or
-font-encoding difference in real-world PDFs — observed ~2.5k lines/day across 19
-distinct messages, which drowned our own signal and defeated the
-query-the-log-by-level workflow below. It names an explicit third-party target
-so no `da-*`/`kg-*` target is ever silenced, and uses `error` rather than `off`
-so genuine PDF parse failures stay visible. Set it to an empty value to disable
-suppression entirely.
-
-## Log files
-
-Daily rotation: `logs/da.log.YYYY-MM-DD`
-JSON format with `flatten_event`, span hierarchy, `FmtSpan::CLOSE` timing.
-
-## Querying (jq)
-
-```bash
-jq 'select(.paper_id == "2507.19457")' logs/da.log.2026-08-05
-jq 'select(.level == "ERROR")' logs/da.log.2026-08-05
-jq 'select(.span.name == "ingest_pdf")' logs/da.log.2026-08-05
-jq 'select(.fields.duration_ms > 1000)' logs/da.log.2026-08-05
-```
-
-## Architecture (hexagonal)
-
-- **da-cli** (infrastructure): owns subscriber, WorkerGuard, `logging::init_logging()`
-- **da-application** (use cases): `#[instrument]` on `ingest_pdf`, `batch_ingest_pdfs`, `extract_from_parsed`
-- **da-parse** (parse plane): `#[instrument]` on `GrobidParser::parse_pdf`
-- **da-adapters** (adapters): `tracing::info!` on remaining port impls
-- **da-domain, da-ports, kg-***: **zero tracing dependency** (pure types/traits)
-
-## WorkerGuard
-
-`init_logging()` returns `Option<WorkerGuard>`. Must be held in `main()` scope.
-Dropping it early silently stops file logging — #1 tracing footgun.
+Dual-layer tracing: stderr (compact) + rolling JSON `logs/da.log.YYYY-MM-DD` under
+`RUST_LOG`/`LOG_LEVEL` (`.env`: `LOG_DIR`, `LOG_LEVEL`, `LOG_SUPPRESS`; the default suppresses
+`lopdf::object=error` — third-party PDF glyph noise, ~2.5k lines/day; no `da-*`/`kg-*` target is ever silenced).
+Query: `jq 'select(.paper_id=="…")' logs/da.log.<date>` (also `.level`, `.span.name`, `.fields.duration_ms`).
+`init_logging()` returns `Option<WorkerGuard>` — hold it in `main()` scope; dropping it early silently stops file logging.
+Owner: da-cli subscriber; `#[instrument]` on da-application use cases and da-parse `parse_pdf`; pure crates (da-domain, da-ports, kg-*) carry zero tracing.
 <!-- logging:end -->
+
