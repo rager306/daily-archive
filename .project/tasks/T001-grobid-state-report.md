@@ -5,8 +5,8 @@ wave: 1
 deps: []
 status: pending
 agent: null
-base: 2266246fc382a5a32b8ddd237a14ce9127b8c33c
-worktree: /root/daily-archive
+base: null
+worktree: null
 task_branch: null
 files:
   - doc/review/grobid-state.md
