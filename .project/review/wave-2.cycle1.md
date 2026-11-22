@@ -20,7 +20,7 @@ Contract violations (blocking):
 
 ## Intent coverage
 
-### SC4 — all three files are committed on branch gsd-path/M001; the commit diff touches only .md files.: pass
+### SC4 — SC4 — all three files are committed on branch gsd-path/M001; the commit diff touches only .md files.: pass
 - ✅ Verify exit 0 with the C3-scoped range check; product .md work landed in 3d813db9e and the landing stamp 84dd6a1fa, both on gsd-path/M001.
 - Excluded by C3: the commit diff touches only .md files — pipeline-owned state (.project/** incl. .project/build/verify-ledger.jsonl, the /build/ anchor in .gitignore) is permitted and excluded from the .md-only assertion.
 
