@@ -3,9 +3,9 @@ id: T003
 title: Draft and commit doc/review/functionality-ledger.md (closed enumeration, verdict vocabulary + proof-weight tags)
 wave: 1
 deps: [T001]
-status: pending
-agent: null
-base: null
+status: done
+agent: build_T003
+base: 3031bf3ecc820393a742d967178bd1cdbac23643
 worktree: null
 task_branch: null
 files:
@@ -89,3 +89,5 @@ Heavy: no
 ## Log
 
 - 2026-11-22 — created by planner
+- 2026-11-22 — build_T003: preflight clean — dispatch match (38 arms, crates/da-cli/src/main.rs:534-981) and da-application lib.rs module list (103 pub mods) confirmed at base 3031bf3ec; evidence logs present. Drafted doc/review/functionality-ledger.md: closed enumeration (38 top-level + 32 nested leaves + 103 use-case modules + beyond-dispatch da-cli surface), verdicts in closed vocabulary with proof-weight tags; CI `--lib`-only gap for da-parse stated per U1 (architecture-guardrail.yml lines 95-105 verified); no CI-protection claims; N1/N2 respected (no gate-flip wording; promotion/native gates stay кандидат). One iteration: citation format fixed (line ranges moved outside backticks) — Verify exit 1 → 0. No NEEDS-ORCHESTRATOR.
+- 2026-11-22 — orchestrator Verify (sidecar gsd-path-verify/task-t003-verify): pass, exit 0
