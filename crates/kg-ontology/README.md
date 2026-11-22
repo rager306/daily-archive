@@ -8,13 +8,16 @@ versioning, and standard vocabulary mappings.
 
 ## Status
 
-**Phase A** (current): skeleton crate with universal validator types
-(`Severity`, `Violation`, `PropertySnapshot`, `format_violations`) and
-bi-temporal helpers (`is_active_at`, `was_known_at`, `is_current`,
-`validate_bitemporal`). 14 tests.
+**Current**: YAML-driven ontology registry and validation surface. Modules:
+`registry` (OntologyRegistry loading node schemas, identity/property indexes,
+edge contracts and stage contracts from `data/ontology/*.yaml`), `schema`,
+`edge_contract`, `identity_index`, `vid`, `validator`, `temporal` +
+`bitemporal` helpers (`is_active_at`, `was_known_at`, `is_current`,
+`validate_bitemporal`), `healing` and `retry`. 119 tests.
 
-**Phase B-F** (planned per ADR-050): YAML ontology loader, migration
-from `da-domain` schemas, aspects, versioning, cross-project reuse.
+**In progress** (per ADR-050): closing the bounded detect-only contract-audit
+gaps (endpoint/topology/consumer coverage), a supported acceptance runner and
+absent semantic layers (NodeSchemaDef → OntologyRegistry).
 
 ## Usage
 
@@ -27,11 +30,11 @@ kg-ontology = { path = "crates/kg-ontology" }
 use kg_ontology::{Severity, Violation, format_violations};
 use kg_ontology::temporal::{is_active_at, OPEN};
 
-// Phase A: use the universal types
+// Use the universal types
 let violation = Violation::critical("required-field", "vid", "missing");
 assert_eq!(violation.severity, Severity::Critical);
 
-// Phase D (future): validate against a YAML-loaded ontology
+// Validate against a YAML-loaded ontology
 // let registry = OntologyRegistry::load()?;
 // let violations = registry.validate_node("Paper", &snapshot);
 ```

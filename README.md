@@ -7,7 +7,7 @@ explicit human go (D127).
 
 **Runtime:** Rust workspace under `crates/` (hexagonal / onion).
 **Frozen evidence:** Python stack cold-archived in `archive/python-era-cold-*/` (`archive/PYTHON-ERA-COLD.md`); `legacy/` stub only.
-**Binding ADRs:** `doc/adr/ADR-INDEX.md` (037–042).
+**Binding ADRs:** `doc/adr/ADR-INDEX.md` (037–080).
 
 ---
 
@@ -22,7 +22,7 @@ explicit human go (D127).
 | **ADR-051 P1 proptest** | **Started (M344/M353–M355)** — 33 proptest: TemporalEdge, EntityType/RelationType, VID, confidence, graph_tasks |
 | **PDF OCR triage** | **Done (M346–M351)** — `pdf-inspector` pre-GROBID classifier (feature `pdf-classifier`); hub pages 69/84 = `suspected_garbled_text` |
 | Phase 2 ingest (HOT path) | Done — GROBID → embed → direct GraphStore write |
-| Graph schema | **Done** — 31 node types, 26 indexes, `da schema init` |
+| Graph schema | **Done** — 43 node schemas, 56 indexes, `da schema init` |
 | **Governor CLI** | **Done** — YAML rules, trajectory, dead-code scan |
 | OpenAlex enrichment | **Done** — `da enrich` |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
@@ -69,10 +69,11 @@ kg-*          ──►  universal only (never da-*)
 ## Semantic pipeline stage ledger
 
 The canonical Rust article pipeline is DATA-driven at
-`data/ontology/pipeline_stage_contracts.yaml`. It currently defines 14 stages:
-acquisition, catalog, parse, revision materialization, extraction compute and
-materialization, embedding, summary, readiness, cluster, resolution, assurance,
-checkpoint and query. The ledger records what context each stage adds and loses,
+`data/ontology/pipeline_stage_contracts.yaml`. It currently defines 19 stages:
+acquisition, catalog, parse, figure context, figure analysis, table fidelity,
+equation extraction, revision materialization, extraction compute and
+materialization, candidate materialization, embedding, summary, readiness,
+cluster, resolution, assurance, checkpoint and query. The ledger records what context each stage adds and loses,
 its hard invariants, cache mode, failure class and downstream consumers.
 
 ```bash
@@ -96,7 +97,7 @@ are absent unless exact tokenizer lineage exists, and the report never issues an
 independent admission verdict.
 
 Whole-process optimizer-ready telemetry joins those observations into the same
-14-stage order:
+19-stage order:
 
 ```bash
 cargo run -p da-cli --example pipeline_metrics_profile -- \
@@ -128,8 +129,9 @@ Generative task policy is DATA-driven in `data/ontology/prompt_tasks.yaml`.
 Article summary and figure analysis have versioned templates, real JSON Schemas,
 route/eval identities and bounded generation settings. Model roles resolve from
 `models.yaml`; the default summary generator is
-`paper-summary-generate-default` → `agnes-ai/agnes-2.0-flash` through the local
-OpenAI-compatible 9router proxy. Environment configuration supplies only
+`paper-summary-generate-default` → `agnes-ai/agnes-2.5-flash` through the local
+OpenAI-compatible 9router proxy (quality tier: `glm/glm-4.5-air`,
+`summary-roles-v0.2`). Environment configuration supplies only
 `NINEROUTER_URL`, optional `NINEROUTER_KEY`, bounded `DA_LLM_TIMEOUT_SECONDS`,
 and registry paths (`DA_PROMPT_TASK_REGISTRY`, `DA_MODEL_REGISTRY`). `da summarize` executes through
 `PromptExecutionPort`: strict template variables, output-schema validation and
@@ -147,10 +149,12 @@ Optimizer readiness is inspectable without running an optimizer or model:
 cargo run -p da-cli --example prompt_optimizer_readiness
 ```
 
-`artifacts/runtime/prompt_optimizer_readiness_m387.json` binds both prompt tasks
+The generated readiness report binds both prompt tasks
 to exact prompt/route/schema/model registry identities and enumerates required
 schema, grounding, faithfulness, coverage, paraphrase, latency, token and cost
-metrics. Source-bound fixtures from canonical GEPA abstract/section text and Figure 3/5
+metrics. A frozen M387 copy of the report survives under
+`archive/artifacts-legacy/runtime/`. Source-bound fixtures from canonical GEPA
+abstract/section text and Figure 3/5
 captions/images now exercise the FSM through `evaluated` with same-n=2 per task.
 Independent review, source files, image files, excerpts and producer separation are
 SHA-bound and fail closed on path escape, digest drift or self-oracle reuse. Outputs
@@ -159,26 +163,13 @@ production acceptance, `eligible`, `deployed`, and `optimizer_enabled` remain fa
 
 ## Corpus expansion waves
 
-The Awesome Agentic Reasoning source wave is pinned at
-`artifacts/source_recovery/awesome_agentic_reasoning_manifest.json`:
-
-- 580 unique versionless arXiv IDs from 740 links;
-- 579 checksum-verified PDF + HTML + `article.json` catalog entries;
-- `2507.23261` is explicitly unavailable because the submitter withdrew it and
-  every PDF endpoint returns 404;
-- acquisition does **not** authorize graph import (`import_eligible=false`).
-
-Source assets live under
-`data/article_catalog/article_catalog/arxiv/<category>/<id>/`. The assurance
-artifact is `artifacts/source_recovery/awesome_agentic_reasoning_assurance.json`.
-Metadata-only recovery from a completed report is offline and idempotent:
-
-```bash
-da acquire-arxiv \
-  --ids-file artifacts/source_recovery/awesome_agentic_reasoning.ids.txt \
-  --report artifacts/source_recovery/awesome_agentic_reasoning_rust_replay.json \
-  --sleep-seconds 0
-```
+The Awesome Agentic Reasoning source wave (580 unique versionless arXiv IDs
+from 740 links; 579 checksum-verified PDF + HTML + `article.json` catalog
+entries; `2507.23261` unavailable — withdrawn by its submitter) is frozen with
+its manifest, assurance and replay artifacts under
+`archive/artifacts-legacy/source_recovery/`; source assets live under
+`data/sources/arxiv/article_catalog/arxiv/<category>/<id>/`. Acquisition does
+**not** authorize graph import (`import_eligible=false`).
 
 ## Quick start
 
@@ -308,7 +299,7 @@ cargo run -p da-cli --example eval_extract -- 2507.19457
 
 # HTML source extraction (GNN textbook)
 cargo run -p da-cli --example eval_html -- \
-  data/article_catalog/article_catalog/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html \
+  archive/data-legacy/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html \
   gnn-ch-01
 
 # Whitelist coverage analysis
@@ -316,8 +307,8 @@ cargo run -p da-cli --example suggest_whitelist
 ```
 
 Current complete-denominator metrics: **P=0.766 R=1.000 micro-F1=0.868**
-(200/200 fixtures, 1,439 gold entities; see
-`artifacts/gold_corpus/eval_aggregate_all_sources.json`).
+(200/200 fixtures, 1,439 gold entities; the frozen aggregate eval report
+survives under `archive/artifacts-legacy/gold_corpus/`).
 
 ---
 
@@ -472,11 +463,11 @@ snapshot bytes. There is no boolean derived-snapshot waiver.
 
 ```text
 crates/                 # Rust workspace (runtime)
-legacy/                 # Frozen Python research_graph + tests + scripts
-doc/adr/                # Binding ADRs (037–042 + INDEX)
+archive/                # Cold storage (D237, append-only; python-era-cold-*)
+doc/adr/                # Binding ADRs (037–080 + INDEX)
 doc/ONTOLOGY-DESIGN.md  # 7-layer ontology design
-doc/GRAPH-SCHEMA.md     # Graph schema (29 nodes, 26 indexes)
-data/article_catalog/   # Canonical PDFs + HTML chapters
+doc/GRAPH-SCHEMA.md     # Graph schema (43 node schemas, 56 indexes)
+data/sources/arxiv/     # Canonical arXiv PDFs + HTML chapters
 data/gold_standard/     # 104 gold-standard fixtures
 data/extraction_patterns.json  # Declarative extraction config
 data/samyama/           # Snapshots (.sgsnap)
@@ -538,6 +529,6 @@ until explicit user yes.
 | `doc/adr/ADR-INDEX.md` | Binding ADRs + supersession chain |
 | `doc/adr/ADR-042-…` | HyCE-RAG hypergraph evidence chain model |
 | `doc/ONTOLOGY-DESIGN.md` | 7-layer ontology (L0-L7) |
-| `doc/GRAPH-SCHEMA.md` | 29 node types, 26 indexes, edge weights |
+| `doc/GRAPH-SCHEMA.md` | 43 node schemas, 56 indexes, edge weights |
 | `doc/PERSISTENCE-ANALYSIS.md` | Why snapshot vs server |
 | `CHANGELOG.md` | Recent changes |

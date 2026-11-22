@@ -95,10 +95,14 @@ ok = True
 for f, s in stale:
     if s in open(f, encoding='utf-8').read():
         print('STALE CLAIM REMAINS:', f, repr(s)); ok = False
-diff = subprocess.run(['git','diff','--name-only','origin/master...HEAD'], capture_output=True, text=True).stdout.split()
+diff = subprocess.run(['git','diff','--name-only','origin/master...HEAD','--','*.md',':(exclude).project/**',':(exclude).gitignore'], capture_output=True, text=True).stdout.split()
 nonmd = [p for p in diff if not p.endswith('.md')]
 if nonmd:
-    print('NON-MD DIFF PATHS (N1/N3):', nonmd); ok = False
+    print('NON-MD DIFF PATHS (N1/N3, product scope per INTENT C3):', nonmd); ok = False
+pipeline_paths = subprocess.run(['git','diff','--name-only','origin/master...HEAD'], capture_output=True, text=True).stdout.split()
+outside = [p for p in pipeline_paths if not (p.endswith('.md') or p.startswith('.project/') or p == '.gitignore')]
+if outside:
+    print('SCOPE VIOLATION (C3 allows only product .md + pipeline-owned state):', outside); ok = False
 if not diff:
     print('EMPTY MILESTONE DIFF'); ok = False
 for r in ['doc/review/grobid-state.md','doc/review/architecture-map.md','doc/review/functionality-ledger.md']:
@@ -114,3 +118,6 @@ Heavy: no
 ## Log
 
 - 2026-11-22 — created by planner
+- 2026-11-22 — build_T004: all fix-doc rows applied (1–14, 16–22; counts re-rendered from source: 19 stages, 43 node schemas, 46+10=56 indexes, 65 ADR rules, ADR range through 080, models.yaml binding paper-summary-generate-default → agnes-ai/agnes-2.5-flash + summary-roles-v0.2 quality tier; rows 15/23/24 untouched). Stale-claim portion of Verify passes (exit 0 on claim checks).
+- 2026-11-22 — NEEDS-ORCHESTRATOR: task Verify fails on `git diff --name-only origin/master...HEAD` carrying two non-.md paths — `.gitignore` and `.project/build/verify-ledger.jsonl` — committed by earlier branch commits 2266246fc / 3031bf3ec / 5a32c9ddc ("build: T001/T003 verify ledger"), which are outside T004's .md-only file scope and cannot be touched by this task — readings: (a) waive the N1/N3 check for those committed build/ledger paths so Verify can pass on T004's diff; (b) have the orchestrator squash/remove those build commits from the milestone diff; (c) reword AC2/Verify to check only the task's own changed paths.
+- 2026-11-22 — Orchestrator answer: reading (a) per INTENT.md ## Corrections C3 — "N1/E7 «только .md» действует на product-дифф; pipeline-owned состояние (.project/**, однострочный /build/ анкор в .gitignore) разрешено". The Verify range check is amended to scope the .md-only assertion to product files and to flag only paths outside {product .md, .project/**, .gitignore}; readings (b)/(c) rejected — (b) rewrites sanctioned history, (c) weakens SC4. Documented plan-defect repair of the Verify field named by the blocker; base advances to the workspace commit carrying this repair.

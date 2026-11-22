@@ -8,9 +8,13 @@ types — zero project-specific dependencies.
 
 ## Status
 
-**Phase E (current)**: temporal edge resolution algorithm
-(`resolve_temporal_edges`). 9 tests covering all 4 rules + edge cases
-(transition periods, competing facts, empty input).
+**Current**: temporal edge resolution (`resolve_temporal_edges`, the 4-rule
+ADR-047 algorithm), PageRank/personalized-PageRank (`ppr`), sparse CSR graph
+kernel (`csr`) and view algorithms (degree/neighborhood helpers,
+`view_algorithms`), plus the `port` trait surface. Test coverage: 39
+tests over all 4
+temporal rules + edge cases (transition periods, competing facts, empty input)
+and the algorithm modules.
 
 ## Usage
 

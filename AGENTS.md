@@ -221,7 +221,7 @@ Frozen evidence: Python stack cold-archived under `archive/python-era-cold-*/` (
 
 ## Workflow engine (cutover)
 
-GSD planning state is frozen: `.gsd/` (gsd-pi) no longer governs this project; do not call `gsd_*` engine tools. Active engine: **gsd-path** — `.project/` state, `gsd-path*` skills via omp (`/skill:gsd-path`, explicit-only). Migration bundle + IMPORT.md: `/root/da-path-migration-20261122`. Historical gsd-pi detail: `AGENTS.pre-path.md`. Rulings 2026-11-22: M521 carries into Path as first intent; `.project/` is committed; user work sits in `stash@{0}` (wip-before-gsd-path-binding-20261122).
+GSD planning state is frozen: `.gsd/` (gsd-pi) no longer governs this project; do not call `gsd_*` engine tools. Active engine: **gsd-path** — `.project/` state, `gsd-path*` skills via omp (`/skill:gsd-path`, explicit-only). Migration bundle + IMPORT.md: `/root/da-path-migration-20261122`. Historical gsd-pi detail: `AGENTS.pre-path.md`. Rulings 2026-11-22: M521 carries into Path as first intent; `.project/` is committed by pipeline checkpoint commits; the pre-migration user snapshot noted at migration time is historical, not current state.
 
 ## Hard locks (do not violate)
 
@@ -282,9 +282,11 @@ PYTHONPATH=scripts python3 -m governor --phase closeout
 PYTHONPATH=scripts python3 -m governor hygiene             # dry run; --apply to prune
 ```
 
-Reverse-ADR audit enforces 7 rules: 4 artifacts-gate (D127/ADR-005/ADR-040)
-+ 3 Rust-specific (kg-* must not depend on da-*, da-domain must not depend
-on infra, da-application must not depend on da-adapters in prod deps).
+Reverse-ADR audit enforces 65 rules (see `scripts/governor/checks/adr_rules.yaml`):
+artifacts-gate (D127/ADR-005/ADR-040), Rust-specific invariants (kg-* must not
+depend on da-*, da-domain must not depend
+on infra, da-application must not depend on da-adapters in prod deps) and the
+full declarative rule set.
 Negative test: inject `da-domain` into a kg-* Cargo.toml → governor flips
 to `verdict=blocked`.
 

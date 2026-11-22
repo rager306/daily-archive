@@ -8,8 +8,8 @@ the consuming project — kg-pipeline is stage-agnostic.
 
 ## Status
 
-**Phase E**: skeleton with PipelineBuilder, ExecutionEngine,
-FailurePolicy, RetryPolicy. 7 tests.
+**Current**: PipelineBuilder, ExecutionEngine,
+FailurePolicy, RetryPolicy. 19 tests.
 
 ## Usage
 

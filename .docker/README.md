@@ -1,8 +1,7 @@
 # Parser sidecars (GROBID)
 
 GROBID TEI output is consumed by the Rust adapter `da_adapters::GrobidParser`
-(`crates/da-adapters/src/grobid_parser.rs`). Python `research_graph.*` paths
-are frozen under `legacy/` and are not on the runtime path.
+(`crates/da-adapters/src/grobid_parser.rs`).
 
 ## Quick start
 
@@ -62,10 +61,4 @@ cargo run -p da-cli -- health
 
 # Or directly test the parser adapter
 cargo run -p da-cli --example eval_extract -- 2507.19457
-```
-
-Legacy Python probe (frozen, not on runtime path):
-
-```bash
-# legacy/scripts/ — for reference only, requires legacy/.venv
 ```
