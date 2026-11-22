@@ -2,9 +2,13 @@
 
 <!-- Written by the planner role. Executed wave-by-wave by /skill:gsd-path-build. -->
 
-Project verify: `git diff --name-only origin/master...HEAD | grep -Ev '\.md$' | grep . && echo "NON-MD DIFF: FAIL" || python3 -c "
+Project verify: `python3 - <<'PYEOF'
 import re, subprocess, sys
-reports = ['doc/review/architecture-map.md','doc/review/functionality-ledger.md','doc/review/grobid-state.md']
+diff = subprocess.run(['git', 'diff', '--name-only', 'origin/master...HEAD'], capture_output=True, text=True).stdout.split()
+product = [p for p in diff if not (p.endswith('.md') or p.startswith('.project/') or p == '.gitignore')]
+if product:
+    print('NON-MD PRODUCT DIFF (N1/N3 per INTENT C3):', product); sys.exit(1)
+reports = ['doc/review/architecture-map.md', 'doc/review/functionality-ledger.md', 'doc/review/grobid-state.md']
 ok = True
 for r in reports:
     try:
@@ -13,16 +17,16 @@ for r in reports:
         print('MISSING REPORT:', r); ok = False; continue
     if len(text) < 2000:
         print('STUB REPORT:', r); ok = False
-    paths = set(re.findall(r'\`((?:crates|artifacts|data|scripts|doc|\.github)/[^ \`]+)\`', text))
-    missing = [p for p in paths if subprocess.run(['git','cat-file','-e','HEAD:'+p], capture_output=True).returncode != 0]
+    paths = set(re.findall(r'\`((?:crates|artifacts|data|scripts|doc|\.github)/[^\ \`]+)\`', text))
+    missing = [p for p in paths if subprocess.run(['git', 'cat-file', '-e', 'HEAD:' + p], capture_output=True).returncode != 0]
     if missing:
         print('DEAD CITATIONS in', r, ':', missing); ok = False
-stale = [('README.md','037–042'),('README.md','14 stages'),('AGENTS.md','enforces 7 rules'),('PRODUCT.md','14-stage'),('doc/OKF.md','ADR-001…067')]
+stale = [('README.md', '037–042'), ('README.md', '14 stages'), ('AGENTS.md', 'enforces 7 rules'), ('PRODUCT.md', '14-stage'), ('doc/OKF.md', 'ADR-001…067')]
 for f, s in stale:
     if s in open(f, encoding='utf-8').read():
         print('STALE CLAIM REMAINS:', f, s); ok = False
 sys.exit(0 if ok else 1)
-"`
+PYEOF`
 <!-- Runs once at ship, in a fresh sidecar worktree checked out at the reviewed
      commit on gsd-path/M001: no build output or untracked env files exist
      there. Uses only git + python3 stdlib (no cargo, no installs) per the
