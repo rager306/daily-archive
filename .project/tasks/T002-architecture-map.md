@@ -3,9 +3,9 @@ id: T002
 title: Draft and commit doc/review/architecture-map.md (every claim cites a code path at HEAD)
 wave: 1
 deps: [T001]
-status: pending
-agent: null
-base: null
+status: done
+agent: build_T002
+base: 3031bf3ecc820393a742d967178bd1cdbac23643
 worktree: null
 task_branch: null
 files:
@@ -80,3 +80,6 @@ Heavy: no
 ## Log
 
 - 2026-11-22 — created by planner
+- 2026-11-22 — coder (BuildT002): drafted `doc/review/architecture-map.md` in worktree gsd-path-task/T002 at base 3031bf3ec. Preflight clean: every brief-named path verified at base (`scripts/governor/__main__.py`, `crates/da-adapters/tests` real-model suites, `.github/workflows/architecture-guardrail.yml`, all 12 `crates/*/Cargo.toml`). E1 citation-enumeration pattern reused from T001's Log: every cited path `git cat-file -e HEAD:<path>`-checked; three dead-citation drafts caught and fixed during drafting (glob `crates/kg-*/Cargo.toml`, parametrized `crates/<crate>/src`, self-reference before landing — the last two reworded as plain text / future-task pointers, the T003 ledger and this file are not in tree at this base and are marked unverified/not-yet-in-tree). Absence claims (E2): removed `da-graph` and removed `legacy/` each cite the checked location (`git ls-tree 3031bf3ec crates/`, repo-root ls-tree; both explicitly marked removed/documentary per N4). U1 boundary stated at `scripts/governor/__main__.py:784-800` provisioning list with the five `crates/da-adapters/tests/*_real_model.rs` suites; CI gap stated verbatim (`cargo test -p da-parse --lib`, workflow line 101; no suite CI-protected). Gate evidence quoted from `/tmp/arch-20261123-pass2.log` (23/23 PASS) and `/tmp/preflight-20261122.log` (axis measurability 5/21, dated snapshot). No code/config/CI change (N1/N3). Task Verify re-run in worktree: exit 0 (dead citations 0, uncited claim lines 0, kw markers pass, boundary + `--lib` gap present).
+- 2026-11-22 — orchestrator Verify (sidecar gsd-path-verify/task-t002-verify): pass, exit 0
+- 2026-11-22 — orchestrator Verify (sidecar gsd-path-verify/task-t002-verify): pass, exit 0
