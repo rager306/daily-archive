@@ -27,6 +27,7 @@
 //! sequence. Under the corrected rule no continuation can be invalid, so this
 //! module deliberately has no such refusal.
 use crate::native_header_features::{HeaderFeatureRow, NATIVE_HEADER_FEATURE_COLUMNS};
+use da_ports::scalar_crf::{CrfPosition, PreparedCrfModel};
 use da_ports::{CrfModel, CrfModelError, map_input, viterbi_decode};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -168,6 +169,22 @@ pub fn decode_header_sequence(
     rows: &[HeaderFeatureRow],
     model: &CrfModel,
 ) -> NativeHeaderDecodeOutcome {
+    decode_header_sequence_with(rows, model, |input| map_input(model, input))
+}
+
+/// Decode with an observation index shared across header sequences.
+pub fn decode_header_sequence_prepared(
+    rows: &[HeaderFeatureRow],
+    prepared: &PreparedCrfModel<'_>,
+) -> NativeHeaderDecodeOutcome {
+    decode_header_sequence_with(rows, prepared.model(), |input| prepared.map_input(input))
+}
+
+fn decode_header_sequence_with(
+    rows: &[HeaderFeatureRow],
+    model: &CrfModel,
+    map: impl FnOnce(&str) -> Result<Vec<CrfPosition>, CrfModelError>,
+) -> NativeHeaderDecodeOutcome {
     if rows.is_empty() {
         return rejected(NativeHeaderDecodeError::EmptySequence);
     }
@@ -192,7 +209,7 @@ pub fn decode_header_sequence(
         .map(HeaderFeatureRow::as_text)
         .collect::<Vec<_>>()
         .join("\n");
-    let positions = match map_input(model, &input) {
+    let positions = match map(&input) {
         Ok(positions) => positions,
         Err(error) => return rejected(model_error(error)),
     };
@@ -316,6 +333,43 @@ mod tests {
             nftr: labels.len() * label_count,
         };
         (rows, model)
+    }
+
+    #[test]
+    fn prepared_header_preserves_fields_and_refusals() {
+        let (rows, model) = model_emitting(&["I-<title>", "<title>", "<author>"]);
+        let prepared = PreparedCrfModel::new(&model);
+        let result = decode_header_sequence_prepared(&rows, &prepared);
+        assert_eq!(result, decode_header_sequence(&rows, &model));
+        let NativeHeaderDecodeOutcome::Accepted { decode } = result else {
+            panic!("prepared header must decode");
+        };
+        assert_eq!(decode.labels, ["I-<title>", "<title>", "<author>"]);
+        assert_eq!(
+            decode.fields,
+            [span("<title>", 0, 2), span("<author>", 2, 3)]
+        );
+        assert_eq!(
+            decode_header_sequence_prepared(&[], &prepared),
+            decode_header_sequence(&[], &model)
+        );
+        let mut bad = rows.clone();
+        bad[0].columns.pop();
+        assert_eq!(
+            decode_header_sequence_prepared(&bad, &prepared),
+            decode_header_sequence(&bad, &model)
+        );
+        let invalid = CrfModel {
+            patterns: vec![da_ports::scalar_crf::CrfPattern {
+                source: "u:%x[0,29]".into(),
+                kind: 'u',
+            }],
+            ..model.clone()
+        };
+        assert_eq!(
+            decode_header_sequence_prepared(&rows, &PreparedCrfModel::new(&invalid)),
+            decode_header_sequence(&rows, &invalid)
+        );
     }
 
     fn decoded(labels: &[&str]) -> NativeHeaderDecodeCandidate {

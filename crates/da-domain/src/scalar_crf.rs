@@ -333,17 +333,48 @@ pub fn expand_pattern_sequence(
 }
 
 /// Convert newline-delimited Wapiti input into ordered feature observations.
+/// Borrowed model and observation index reusable across input sequences.
+#[derive(Debug)]
+pub struct PreparedCrfModel<'a> {
+    model: &'a CrfModel,
+    observations: BTreeMap<&'a str, usize>,
+}
+
+impl<'a> PreparedCrfModel<'a> {
+    pub fn new(model: &'a CrfModel) -> Self {
+        Self {
+            model,
+            observations: model
+                .observations
+                .iter()
+                .enumerate()
+                .map(|(index, observation)| (observation.as_str(), index))
+                .collect(),
+        }
+    }
+
+    pub fn model(&self) -> &'a CrfModel {
+        self.model
+    }
+
+    pub fn map_input(&self, input: &str) -> Result<Vec<CrfPosition>, CrfModelError> {
+        map_input_with_lookup(self.model, input, &self.observations)
+    }
+}
+
 pub fn map_input(model: &CrfModel, input: &str) -> Result<Vec<CrfPosition>, CrfModelError> {
+    PreparedCrfModel::new(model).map_input(input)
+}
+
+fn map_input_with_lookup(
+    model: &CrfModel,
+    input: &str,
+    lookup: &BTreeMap<&str, usize>,
+) -> Result<Vec<CrfPosition>, CrfModelError> {
     let rows: Vec<Vec<&str>> = input
         .lines()
         .map(str::split_whitespace)
         .map(|row| row.collect())
-        .collect();
-    let lookup: std::collections::BTreeMap<&str, usize> = model
-        .observations
-        .iter()
-        .enumerate()
-        .map(|(index, observation)| (observation.as_str(), index))
         .collect();
     rows.iter()
         .enumerate()
@@ -709,6 +740,95 @@ mod tests {
                 ..
             })
         ));
+    }
+
+    #[test]
+    fn prepared_view_is_send_and_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<PreparedCrfModel<'_>>();
+    }
+
+    #[test]
+    fn prepared_mapping_matches_explicit_observations_and_legacy() {
+        let model = mapping_model();
+        let prepared = PreparedCrfModel::new(&model);
+        assert!(std::ptr::eq(prepared.model(), &model));
+        let expected = vec![
+            CrfPosition {
+                uobs: vec![0],
+                bobs: vec![],
+            },
+            CrfPosition {
+                uobs: vec![],
+                bobs: vec![1],
+            },
+        ];
+        assert_eq!(prepared.map_input("X\nY").unwrap(), expected);
+        for input in ["X\nY", "Y\nX", "", "unknown"] {
+            assert_eq!(prepared.map_input(input), map_input(&model, input));
+        }
+        let invalid = CrfModel {
+            patterns: vec![CrfPattern {
+                source: "u:%x[0,1]".into(),
+                kind: 'u',
+            }],
+            ..mapping_model()
+        };
+        let error = Err(CrfModelError::ColumnArityMismatch {
+            position: 0,
+            column: 1,
+            required: 2,
+            actual: 1,
+        });
+        assert_eq!(PreparedCrfModel::new(&invalid).map_input("X"), error);
+        assert_eq!(map_input(&invalid, "X"), error);
+    }
+
+    #[test]
+    fn prepared_decode_preserves_scores_and_ties() {
+        let model = CrfModel {
+            patterns: vec![
+                CrfPattern {
+                    source: "u:%x[0,0]".into(),
+                    kind: 'u',
+                },
+                CrfPattern {
+                    source: "b:any".into(),
+                    kind: 'b',
+                },
+            ],
+            ..decode_model()
+        };
+        let prepared = PreparedCrfModel::new(&model);
+        let positions = prepared.map_input("X\nY").unwrap();
+        assert_eq!(
+            positions,
+            vec![
+                CrfPosition {
+                    uobs: vec![0],
+                    bobs: vec![2]
+                },
+                CrfPosition {
+                    uobs: vec![1],
+                    bobs: vec![2]
+                },
+            ]
+        );
+        let decoded = viterbi_decode(prepared.model(), &positions).unwrap();
+        assert_eq!(decoded.labels, ["A", "B"]);
+        assert_eq!(decoded.scores, [1.0, 6.0]);
+        assert_eq!(
+            decoded,
+            viterbi_decode(&model, &map_input(&model, "X\nY").unwrap()).unwrap()
+        );
+        let tie_model = CrfModel {
+            weights: BTreeMap::new(),
+            ..model
+        };
+        let prepared = PreparedCrfModel::new(&tie_model);
+        let tied = viterbi_decode(prepared.model(), &prepared.map_input("X\nY").unwrap()).unwrap();
+        assert_eq!(tied.label_ids, [0, 0]);
+        assert_eq!(tied.scores, [0.0, 0.0]);
     }
 
     fn mapping_model() -> CrfModel {

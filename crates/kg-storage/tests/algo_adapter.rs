@@ -13,6 +13,8 @@
 
 #![cfg(feature = "algorithms")]
 
+use kg_storage::SamyamaGraphStore;
+
 use kg_storage::adapter::graph_view_from;
 use kg_storage::mock::MockGraphStore;
 use kg_storage::traits::DirectGraphStore;
@@ -76,6 +78,40 @@ async fn test_wcc_connected_graph() {
     assert_eq!(
         component_count, 1,
         "connected graph must yield one WCC component"
+    );
+}
+
+#[tokio::test]
+async fn test_wcc_unions_stub_column_and_full_nodes() {
+    // vendor patch v2 / M518 required semantics, fifth item: WCC must union
+    // components across both storage representations — a stub node carrying
+    // column properties and a full node holding row properties, joined by an
+    // edge, form ONE component through the SamyamaGraphStore GraphView export.
+    let store = SamyamaGraphStore::new();
+    let stub = {
+        let id = store.create_node("Paper").await.unwrap();
+        let mut raw = store.store_write().await;
+        use kg_storage::samyama_adapter::PropertyValue;
+        raw.get_node_mut(kg_storage::samyama_adapter::NodeId(id))
+            .unwrap()
+            .set_property("kind", PropertyValue::String("stub-column".into()));
+        id
+    };
+    let full = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(full, "kind", "full-row".to_string())
+        .await
+        .unwrap();
+    store.create_edge(stub, full, "CITES").await.unwrap();
+
+    let view = graph_view_from(&store, Some("Paper"), Some("CITES"), None)
+        .await
+        .unwrap();
+    let wcc = weakly_connected_components(&view);
+    assert_eq!(
+        wcc.components.len(),
+        1,
+        "stub+full pair joined by an edge must land in one WCC component"
     );
 }
 

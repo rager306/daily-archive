@@ -4,40 +4,25 @@ grammar_profile: html_headings
 source:
   code: textbook
   identity_ref: sources/textbook/gnn-textbook/gnn-ch-chapters__03-link-analysis-pagerank/identity.json
-lifecycle: validated
+lifecycle: structured
 lifecycle_events:
 - stage: raw
-  recorded_at: 2026-08-23 13:06:23+00:00
+  recorded_at: '2026-10-24T13:09:51Z'
   actor: html-chapter-source
 - stage: parsed
-  recorded_at: 2026-08-23 13:06:23+00:00
+  recorded_at: '2026-10-24T13:09:51Z'
   actor: m451-textbook-import
 - stage: structured
-  recorded_at: 2026-08-23 13:06:23+00:00
+  recorded_at: '2026-10-24T13:09:51Z'
   actor: html-headings-grammar
-  evidence_sha256: 01f01998402b1988fe11af8690a456f6ec0c1589217e13324ba04a4eb4dffa2c
-- stage: extracted
-  recorded_at: 2026-08-25 01:55:30+00:00
-  actor: rule-based-extractor
-  evidence_sha256: cfea43f4c125cc0dd1be4cbe395572284cb14e950d9ddb06c7c397d9026aceed
-- stage: enriched
-  recorded_at: 2026-08-25T01:55:35Z
-  actor: rust-enriched-layer
-  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
-- stage: summarized
-  recorded_at: 2026-08-25T01:55:39Z
-  actor: agent:summarizer
-  evidence_sha256: 72611534e2c8c14bb5f9c23b5a2ba80301620d7381855aa334f7fa554c9293a8
-- stage: validated
-  recorded_at: 2026-08-25T01:55:39Z
-  actor: rust-source-run
+  evidence_sha256: 0c83097f80a5f1a33c50eaa25b2d5a56c482ffece2c97840a01e901ab347695c
 artifacts:
   parsed:
     file: parsed/article.json
     derived_from:
     - source
-    sha256: 515e23f1214f1224d8fc6a080ba756b4d9477a6a62fd8f681987cb9e646e3806
-    built_at: 2026-08-23 13:06:23+00:00
+    sha256: d7817716ea9e7fe2de1a04e9ffe92c534e0fd3552c3782c76261bb2ba8e2ce01
+    built_at: '2026-10-24T13:09:51Z'
     actor: m451-textbook-import
     stats:
       sections: 29
@@ -45,30 +30,28 @@ artifacts:
     file: context/projection.json
     derived_from:
     - parsed
-    sha256: aea6c01922b6782ab57f8862f5a860001ca6b9a02331d1cf32254d0f079b2793
-    built_at: 2026-08-23 13:06:23+00:00
+    sha256: ecf619161c7f540ec57b35cf3733660175ac3dbfbef8f1194322d1e1843cf689
+    built_at: '2026-10-24T13:09:51Z'
     actor: html-headings-grammar
     navigation:
       file: context/navigation.json
-      sha256: 4da05576c17983a5473a768dbc7b33d4abc9f24eff8e229e280490d070226d0f
-      actor: rust-navigation-stage
+      sha256: 0c83097f80a5f1a33c50eaa25b2d5a56c482ffece2c97840a01e901ab347695c
+      actor: html-headings-grammar
       stats:
         nodes: 29
-        roots: 28
-        max_depth: 3
-        path_dupes: 8
+        roots: 1
+        max_depth: 4
+        path_dupes: 0
         furniture: 0
         furniture_share: 0.0
-        tree_cost: 4843
+        tree_cost: 4255
     stats:
       ast_nodes: 29
   extracted:
-    file: extracted/entities.json
-    derived_from: parsed
-    sha256: cfea43f4c125cc0dd1be4cbe395572284cb14e950d9ddb06c7c397d9026aceed
-    actor: rule-based-extractor
-    stats:
-      entities: 39
+    present: false
+    missingness: extraction_not_run
+    derived_from:
+    - parsed
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -95,21 +78,8 @@ artifacts:
     derived_from:
     - parsed
   enriched:
-    present: false
-    missingness: openalex_not_found
-    derived_from: parsed
+    not_reached: true
   summaries:
-    file: summaries/abstract.json
-    derived_from: parsed
-    sha256: 72611534e2c8c14bb5f9c23b5a2ba80301620d7381855aa334f7fa554c9293a8
-    actor: agent:summarizer
-    stats:
-      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
-      injection_scrubbed: 47
-      latency_ms: 4434
-      memory_epoch: 22
-    per_section:
-      status: failed
-      reason: llm_batch_failed
+    not_reached: true
   quality_signals:
     not_reached: true

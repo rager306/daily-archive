@@ -512,11 +512,9 @@ fn lattice_from_alto_xml(
                     }
                     page_geometry_seen += 1;
                     if matches!(reader.buffer_position(), 0) { /* keep parser deterministic */ }
-                    if matches!(Event::Start(e), Event::Start(_)) {
-                        blocks.push(Vec::new());
-                    } else {
-                        blocks.push(Vec::new());
-                    }
+                    // Both Start and Empty page events open a fresh block page;
+                    // the branches were identical (clippy if_same_then_else).
+                    blocks.push(Vec::new());
                 } else if name.as_ref().eq_ignore_ascii_case(b"textblock") {
                     current_block = Some(Block::default());
                 } else if name.as_ref().eq_ignore_ascii_case(b"textline") {
@@ -925,6 +923,28 @@ impl PdfInspectorLayoutDonor {
         document_id: &str,
         limits: LayoutDonorLimits,
     ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        self.extract_shadow_items(pdf_bytes, document_id, limits, true)
+    }
+
+    /// Opt-in lexical observation without image placeholders. Links and form
+    /// fields retain the existing donor semantics; surviving source ordinals
+    /// stay identical to `extract_shadow`. Visual evidence is a separate lane.
+    pub fn extract_lexical_shadow(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        self.extract_shadow_items(pdf_bytes, document_id, limits, false)
+    }
+
+    fn extract_shadow_items(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+        include_images: bool,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
         let items = pdf_inspector::extract_text_with_positions_mem(pdf_bytes).map_err(|e| {
             LayoutDonorError::Malformed {
                 detail: e.to_string(),
@@ -940,6 +960,10 @@ impl PdfInspectorLayoutDonor {
                 let n = next.entry(i.page).or_insert(0);
                 let source_ordinal = *n;
                 *n += 1;
+                if !include_images && matches!(&i.item_type, pdf_inspector::types::ItemType::Image)
+                {
+                    return None;
+                }
                 Some(PositionedItem {
                     page: i.page,
                     source_ordinal,

@@ -3,8 +3,8 @@
 
 pub use da_domain::scalar_crf::{
     CrfDecodeResult, CrfModel, CrfModelError, CrfPattern, CrfPosition, MAX_CRF_LABELS,
-    MAX_CRF_MODEL_BYTES, MAX_CRF_OBSERVATIONS, MAX_CRF_PATTERNS, MAX_CRF_WEIGHTS, expand_pattern,
-    expand_pattern_sequence, map_input, viterbi_decode,
+    MAX_CRF_MODEL_BYTES, MAX_CRF_OBSERVATIONS, MAX_CRF_PATTERNS, MAX_CRF_WEIGHTS, PreparedCrfModel,
+    expand_pattern, expand_pattern_sequence, map_input, viterbi_decode,
 };
 use thiserror::Error;
 

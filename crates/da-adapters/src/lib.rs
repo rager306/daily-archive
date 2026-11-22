@@ -27,6 +27,8 @@ pub mod layout_visual;
 pub mod lexicon_loader;
 pub mod local_path_acquisition;
 pub mod memory_pipeline_cache;
+#[cfg(feature = "pdf-layout")]
+pub mod native_pdf_visual;
 pub mod negative_memory;
 pub use figure_quote_policy::load_figure_quote_policy;
 pub mod model_registry;

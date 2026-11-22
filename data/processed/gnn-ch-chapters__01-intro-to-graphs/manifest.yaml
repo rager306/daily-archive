@@ -3,100 +3,83 @@ paper_id: gnn-ch-chapters__01-intro-to-graphs
 grammar_profile: html_headings
 source:
   code: textbook
-lifecycle: validated
+  identity_ref: sources/textbook/gnn-textbook/gnn-ch-chapters__01-intro-to-graphs/identity.json
+lifecycle: structured
 lifecycle_events:
 - stage: raw
-  recorded_at: 2026-08-24 02:57:38+00:00
+  recorded_at: '2026-10-24T13:09:51Z'
   actor: html-chapter-source
 - stage: parsed
-  recorded_at: 2026-08-24 02:57:38+00:00
-  actor: rust-html-parsed-stage
-  evidence_sha256: bab9acca832d69de7fde623b54c2cb72a7e32026e5d4f8f15a5bc3d55660b124
+  recorded_at: '2026-10-24T13:09:51Z'
+  actor: m451-textbook-import
 - stage: structured
-  recorded_at: 2026-08-24 02:57:38+00:00
-  actor: rust-navigation-stage
-  evidence_sha256: ab9f4fe3b222e4d70d815fa353fc8de6164fd0cd68f7b3ce4c4579216ad3a0a0
-- stage: extracted
-  recorded_at: 2026-08-25 01:55:30+00:00
-  actor: rule-based-extractor
-  evidence_sha256: 09571196d8e912b0bb247a81faeb621f308c0bc7f8157c053d24c51b664c2db3
-- stage: enriched
-  recorded_at: 2026-08-25T01:55:35Z
-  actor: rust-enriched-layer
-  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
-- stage: summarized
-  recorded_at: 2026-08-25T01:55:42Z
-  actor: agent:summarizer
-  evidence_sha256: 25d09ef63368585198303db8edca85d2d963c088675f39fe7b44173e1b09f9ae
-- stage: validated
-  recorded_at: 2026-08-25T01:55:42Z
-  actor: rust-source-run
+  recorded_at: '2026-10-24T13:09:51Z'
+  actor: html-headings-grammar
+  evidence_sha256: ca6a0600e8a78b8d0fb88a6d1d2a6ecaf84f30bd7aa9ba69905083e9e2f3efaa
 artifacts:
-  extracted:
-    file: extracted/entities.json
-    derived_from: parsed
-    sha256: 09571196d8e912b0bb247a81faeb621f308c0bc7f8157c053d24c51b664c2db3
-    actor: rule-based-extractor
-    stats:
-      entities: 68
-  citations_resolved:
-    present: false
-    missingness: no_citation_elements
-    derived_from: parsed
-  equations:
-    present: false
-    missingness: no_formula_elements
-    derived_from: parsed
-  tables:
-    present: false
-    missingness: no_table_elements
-    derived_from: parsed
-  figures:
-    present: false
-    missingness: no_figure_elements
-    derived_from: parsed
-  external_resources:
-    present: false
-    missingness: no_external_resources
-    derived_from: parsed
-  enriched:
-    present: false
-    missingness: openalex_not_found
-    derived_from: parsed
-  summaries:
-    file: summaries/abstract.json
-    derived_from: parsed
-    sha256: 25d09ef63368585198303db8edca85d2d963c088675f39fe7b44173e1b09f9ae
-    actor: agent:summarizer
-    stats:
-      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
-      injection_scrubbed: 56
-      latency_ms: 7349
-      memory_epoch: 22
-    per_section:
-      status: failed
-      reason: llm_batch_failed
-  quality_signals:
-    not_reached: true
   parsed:
     file: parsed/article.json
-    derived_from: source
-    sha256: bab9acca832d69de7fde623b54c2cb72a7e32026e5d4f8f15a5bc3d55660b124
-    actor: rust-html-parsed-stage
+    derived_from:
+    - source
+    sha256: 33609e309206dc519861d5d5c045e9a8581540b4839eac1fa5136e89a7f46e7c
+    built_at: '2026-10-24T13:09:51Z'
+    actor: m451-textbook-import
     stats:
       sections: 57
   context:
     file: context/projection.json
-    derived_from: parsed
+    derived_from:
+    - parsed
+    sha256: 2dc4209a0f0f93454318b6205f105dead22d8ee928c731e8c3b790db438e641a
+    built_at: '2026-10-24T13:09:51Z'
+    actor: html-headings-grammar
     navigation:
       file: context/navigation.json
-      sha256: a787d0f2b876aaefdb54b86b6ae292d47c20a7fea7cde8a81a8753dab126db49
-      actor: rust-navigation-stage
+      sha256: ca6a0600e8a78b8d0fb88a6d1d2a6ecaf84f30bd7aa9ba69905083e9e2f3efaa
+      actor: html-headings-grammar
       stats:
         nodes: 57
-        roots: 28
-        max_depth: 3
-        path_dupes: 8
+        roots: 1
+        max_depth: 4
+        path_dupes: 0
         furniture: 0
         furniture_share: 0.0
-        tree_cost: 6429
+        tree_cost: 6679
+    stats:
+      ast_nodes: 57
+  extracted:
+    present: false
+    missingness: extraction_not_run
+    derived_from:
+    - parsed
+  citations_resolved:
+    present: false
+    missingness: no_citation_elements
+    derived_from:
+    - parsed
+  equations:
+    present: false
+    missingness: no_formula_elements
+    derived_from:
+    - parsed
+  tables:
+    present: false
+    missingness: no_table_elements
+    derived_from:
+    - parsed
+  figures:
+    present: false
+    missingness: no_figure_elements
+    derived_from:
+    - parsed
+  external_resources:
+    present: false
+    missingness: no_external_resources
+    derived_from:
+    - parsed
+  enriched:
+    not_reached: true
+  summaries:
+    not_reached: true
+  quality_signals:
+    not_reached: true

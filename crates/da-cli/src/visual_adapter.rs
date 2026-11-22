@@ -66,9 +66,23 @@ pub fn native_kind(kind: VisualPrimitiveKind) -> NativeVisualKind {
 pub fn native_visual_payload(
     observation: &LayoutShadowObservation,
 ) -> Result<NativeVisualObservation, NativeVisualAbsence> {
-    let lane_absence = observation.visual.absence.map(donor_lane_absence);
-    let primitives = observation
-        .visual
+    native_visual_observation(&observation.document, &observation.visual)
+}
+
+/// Convert a source-bound visual observation without borrowing a text donor plane.
+pub fn native_visual_observation(
+    document: &da_parse::LayoutDocument,
+    visual: &da_adapters::VisualObservation,
+) -> Result<NativeVisualObservation, NativeVisualAbsence> {
+    visual.validate(document).map_err(|error| match error {
+        da_adapters::VisualError::InvalidIdentity(_) => NativeVisualAbsence::MissingIdentity,
+        da_adapters::VisualError::InvalidDigest => NativeVisualAbsence::InvalidDigest,
+        da_adapters::VisualError::DuplicateIdentity => NativeVisualAbsence::DuplicateReceipt,
+        da_adapters::VisualError::Oversize { .. } => NativeVisualAbsence::Oversize,
+        da_adapters::VisualError::Layout(_) => NativeVisualAbsence::MalformedBbox,
+    })?;
+    let lane_absence = visual.absence.map(donor_lane_absence);
+    let primitives = visual
         .primitives
         .iter()
         .map(|primitive| {
@@ -82,8 +96,7 @@ pub fn native_visual_payload(
             };
             NativeVisualPrimitive {
                 document_id: primitive.document_id.clone(),
-                source_sha256: observation
-                    .document
+                source_sha256: document
                     .source_pdf_sha256
                     .trim_start_matches("sha256:")
                     .to_owned(),
@@ -102,15 +115,14 @@ pub fn native_visual_payload(
         .collect::<Vec<_>>();
     let source = NativeVisualObservation {
         schema_version: da_parse::NATIVE_VISUAL_SCHEMA_VERSION.into(),
-        document_id: observation.document.document_id.clone(),
-        source_sha256: observation
-            .document
+        document_id: document.document_id.clone(),
+        source_sha256: document
             .source_pdf_sha256
             .trim_start_matches("sha256:")
             .into(),
         provider: NativeVisualProvider {
-            id: observation.visual.provider.id.clone(),
-            version: observation.visual.provider.version.clone(),
+            id: visual.provider.id.clone(),
+            version: visual.provider.version.clone(),
         },
         primitives,
         figure_captions: Vec::new(),
@@ -240,6 +252,20 @@ mod native_visual_payload_tests {
         assert_ne!(
             serde_json::to_vec(&first_outcome).unwrap(),
             serde_json::to_vec(&second_outcome).unwrap()
+        );
+    }
+
+    #[test]
+    fn visual_from_another_pdf_is_not_relabelled_as_the_supplied_document() {
+        let observation = parse_pdfalto_xml_shadow(
+            br#"<doc><page width="612" height="792"><Figure x="100" y="120" width="50" height="60" content="figure-a"/></page></doc>"#,
+            b"source-pdf-a", "fixture-doc", LayoutDonorLimits::default(),
+        ).unwrap();
+        let mut other_document = observation.document.clone();
+        other_document.source_pdf_sha256 = "b".repeat(64);
+        assert_eq!(
+            native_visual_observation(&other_document, &observation.visual),
+            Err(NativeVisualAbsence::MissingIdentity)
         );
     }
 

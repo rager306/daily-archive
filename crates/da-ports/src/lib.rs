@@ -105,7 +105,8 @@ pub use parse_job::JobLedger;
 pub use scalar_crf::{
     CrfDecodeResult, CrfModel, CrfModelError, CrfModelLoadError, CrfModelLoaderPort, CrfPosition,
     MAX_CRF_LABELS, MAX_CRF_MODEL_BYTES, MAX_CRF_OBSERVATIONS, MAX_CRF_PATTERNS, MAX_CRF_WEIGHTS,
-    expand_pattern, expand_pattern_sequence, map_input, validate_loaded_crf_model, viterbi_decode,
+    PreparedCrfModel, expand_pattern, expand_pattern_sequence, map_input,
+    validate_loaded_crf_model, viterbi_decode,
 };
 
 pub use parser::{

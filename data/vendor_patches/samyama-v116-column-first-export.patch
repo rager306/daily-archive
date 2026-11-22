@@ -1,0 +1,78 @@
+# daily-archive vendor patch v2 for samyama-graph 1.16.0 (upstream commit 85942388)
+# Column-first node snapshot export: the authoritative getter `node_property`
+# merges row and column with the column winning, and export_tenant must
+# round-trip exactly that value. Upstream 1.16 prefers the row (its cov test
+# export_prefers_the_row_value_over_the_column), this patch flips the export
+# order and that test to column-wins, restoring the M518 recorded semantics
+# (vendor_sources.yaml required_semantics: "column-first node snapshot export
+# matches authoritative getter").
+# Apply from the vendor checkout root: git apply <this file>
+# Semantics owner-approved 2026-11-22 (ruling: patch, do not accept v1.16
+# row-wins and do not re-derive per upgrade).
+diff --git a/src/snapshot/mod.rs b/src/snapshot/mod.rs
+index 982946c6..30f68d71 100644
+--- a/src/snapshot/mod.rs
++++ b/src/snapshot/mod.rs
+@@ -397,22 +397,25 @@ pub fn export_tenant_with_compression(
+     write_in_parallel(&mut gz, &nodes, |node, out| {
+         let mut props = HashMap::new();
+ 
+-        // 1. Node HashMap properties (from full create_node)
+-        for (key, value) in &node.properties {
+-            props.insert(key.clone(), property_to_json(value));
+-        }
+-
+-        // 2. ColumnStore properties (from set_column_property / create_node_stub path)
++        // 1. ColumnStore properties (from set_column_property / create_node_stub
++        //    path). Columns win: the authoritative getter `node_property` merges
++        //    row and column with the column taking precedence, and a snapshot
++        //    must round-trip the value the getter returns. (daily-archive vendor
++        //    patch v2, column-first export; upstream 1.16 prefers the row here.)
+         let col_keys = store.node_columns.get_property_keys(node.id.as_u64() as usize);
+         for key in col_keys {
+-            if !props.contains_key(&key) { // Don't override HashMap props
+-                let val = store.node_columns.get_property(node.id.as_u64() as usize, &key);
+-                if !val.is_null() {
+-                    props.insert(key, property_to_json(&val));
+-                }
++            let val = store.node_columns.get_property(node.id.as_u64() as usize, &key);
++            if !val.is_null() {
++                props.insert(key, property_to_json(&val));
+             }
+         }
+ 
++        // 2. Node HashMap properties (from full create_node) fill only the keys
++        //    no column holds.
++        for (key, value) in &node.properties {
++            props.entry(key.clone()).or_insert_with(|| property_to_json(value));
++        }
++
+         let snap_node = SnapshotNode {
+             t: "n".to_string(),
+             id: node.id.as_u64(),
+diff --git a/src/snapshot/snapshot_cov_tests.rs b/src/snapshot/snapshot_cov_tests.rs
+index a61597e0..52a221f9 100644
+--- a/src/snapshot/snapshot_cov_tests.rs
++++ b/src/snapshot/snapshot_cov_tests.rs
+@@ -139,7 +139,11 @@ fn an_unsupported_version_is_refused() {
+ // ------------------------------------------------------------------
+ 
+ #[test]
+-fn export_prefers_the_row_value_over_the_column() {
++fn export_prefers_the_column_value_over_the_row() {
++    // daily-archive vendor patch v2 (column-first export): the authoritative
++    // getter `node_property` merges row and column with the column winning,
++    // and the snapshot must round-trip exactly that value. Upstream 1.16
++    // prefers the row here; see data/vendor_patches in the consumer repo.
+     let mut store = GraphStore::new();
+     let n = store.create_node("Doc");
+     store.set_column_property(n, "k", PropertyValue::String("column".into()));
+@@ -151,7 +155,7 @@ fn export_prefers_the_row_value_over_the_column() {
+     let id = dst.node_ids_by_label(&Label::new("Doc"), None)[0];
+     assert_eq!(
+         dst.node_property(id, "k"),
+-        Some(PropertyValue::String("row".into()))
++        Some(PropertyValue::String("column".into()))
+     );
+ }
+ 

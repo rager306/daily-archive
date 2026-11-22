@@ -54,10 +54,12 @@ mod native_body_text;
 mod native_callout_classification;
 mod native_callout_matching;
 mod native_callout_native_input;
+pub mod native_candidate_emission;
 mod native_citation;
 mod native_composition;
 mod native_consolidation_specialized;
 mod native_date;
+pub mod native_exact_alignment;
 mod native_feature_facts;
 mod native_feature_tagger;
 mod native_figure_sequence;
@@ -80,6 +82,7 @@ mod native_region_input;
 mod native_retirement_authorization;
 mod native_route_failure;
 mod native_route_result;
+pub mod native_scholarly_candidate;
 mod native_section_reading_order;
 mod native_segmentation;
 mod native_table_sequence;
@@ -251,7 +254,9 @@ pub use native_bibliography_sequence::{
     NATIVE_CITATION_SEQUENCE_FAMILY, NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY,
     NativeBibliographySequenceError, ReferenceSegmentKind, ReferenceSegmentSequence,
     ReferenceSegmentSpan, bibliography_label_runs, decode_bibliography_labels,
-    decode_citation_sequence, decode_reference_sequence,
+    decode_bibliography_labels_prepared, decode_citation_sequence,
+    decode_citation_sequence_prepared, decode_reference_sequence,
+    decode_reference_sequence_prepared,
 };
 pub use native_body::{
     AccountedKind, AccountedUnit, AccountingBucket, BucketCount, JavaFallbackEvidence,
@@ -320,6 +325,11 @@ pub use native_callout_native_input::{
     require_independent_callout_oracle, require_non_vacuous_callout_oracle,
     validate_native_callout_marker,
 };
+pub use native_candidate_emission::{
+    NATIVE_CANDIDATE_EMISSION_BACKEND_ID, NATIVE_CANDIDATE_EMISSION_SCHEMA_VERSION,
+    NativeCandidateEmission, NativeCandidateEmissionError, NativeCandidateEmissionManifest,
+    emit_native_candidate, emit_native_candidate_with_limits,
+};
 pub use native_citation::{
     CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_ANCHOR_SCANNER_ID,
     NATIVE_CITATION_INPUT_BYTE_CAP, NATIVE_CITATION_OUTCOME_SCHEMA_VERSION,
@@ -351,6 +361,11 @@ pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
     NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
     NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
+};
+pub use native_exact_alignment::{
+    ExactAlignmentBudget, ExactAlignmentIncompleteReason, ExactAlignmentOutcome,
+    ExactAlignmentWork, ExactAlignmentWorkKind, ExactTokenPair,
+    NATIVE_EXACT_ALIGNMENT_SCHEMA_VERSION, align_exact_tokens,
 };
 pub use native_feature_facts::{
     BIBLIOGRAPHY_COMMON_NAME_CHANNEL, BIBLIOGRAPHY_FIRST_NAME_CHANNEL,
@@ -475,7 +490,7 @@ pub use native_header_native_input::{
 pub use native_header_sequence::{
     HeaderFieldSpan, MAX_NATIVE_HEADER_SEQUENCE_ROWS, NATIVE_HEADER_LABELS,
     NATIVE_HEADER_SEQUENCE_SCHEMA_VERSION, NativeHeaderDecodeCandidate, NativeHeaderDecodeError,
-    NativeHeaderDecodeOutcome, decode_header_sequence,
+    NativeHeaderDecodeOutcome, decode_header_sequence, decode_header_sequence_prepared,
 };
 pub use native_heading_regions::{
     HEADING_REGION_ORDER, HeadingEvidence, HeadingMatch, HeadingRegionConfig,
@@ -530,6 +545,15 @@ pub use native_route_result::{
     NativeRoutePlaneIdentity, NativeRouteRefusalReason, NativeRouteResult, NativeRouteResultError,
     NativeRouteStage, NativeRouteStageStance, NativeRouteUnmetReason, NativeRouteValidationError,
     build_native_route_result,
+};
+pub use native_scholarly_candidate::{
+    NATIVE_SCHOLARLY_CANDIDATE_SCHEMA_VERSION, NativeCandidateIdentity, NativeCandidateSourceRow,
+    NativeHeaderCandidate, NativeHeaderLeaf, NativePrintedReferenceLabel, NativeReferenceCandidate,
+    NativeReferenceLine, NativeReferenceLineDisposition, NativeReferenceLineUnsupported,
+    NativeReferenceLinks, NativeReferenceRecord, NativeScholarlyCandidate,
+    NativeScholarlyCandidateError, NativeScholarlyModels, build_native_header_candidate,
+    build_native_reference_candidate, build_native_reference_candidate_with_headings,
+    build_native_scholarly_candidate, link_native_reference_markers,
 };
 // The header/bibliography bands take a `da_ports::LexiconBundle`; re-exporting it
 // lets a da-parse consumer build the route aggregate without a second direct

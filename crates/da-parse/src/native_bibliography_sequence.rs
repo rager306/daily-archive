@@ -56,6 +56,7 @@ use crate::native_bibliography_features::{
     NATIVE_CITATION_ROLE_COUNT, NATIVE_REFERENCE_SEGMENTER_FEATURE_COLUMNS,
     NATIVE_REFERENCE_SEGMENTER_LABELS, ReferenceSegmenterFeatureRow,
 };
+use da_ports::scalar_crf::{CrfPosition, PreparedCrfModel};
 use da_ports::{CrfModel, CrfModelError, map_input, viterbi_decode};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -469,6 +470,26 @@ pub fn decode_bibliography_labels(
     family: &BibliographySequenceFamily,
     model: &CrfModel,
 ) -> Result<BibliographyLabelSequence, NativeBibliographySequenceError> {
+    decode_bibliography_labels_with(row_texts, family, model, |input| map_input(model, input))
+}
+
+/// Decode with an observation index shared across bibliography sequences.
+pub fn decode_bibliography_labels_prepared(
+    row_texts: &[String],
+    family: &BibliographySequenceFamily,
+    prepared: &PreparedCrfModel<'_>,
+) -> Result<BibliographyLabelSequence, NativeBibliographySequenceError> {
+    decode_bibliography_labels_with(row_texts, family, prepared.model(), |input| {
+        prepared.map_input(input)
+    })
+}
+
+fn decode_bibliography_labels_with(
+    row_texts: &[String],
+    family: &BibliographySequenceFamily,
+    model: &CrfModel,
+    map: impl FnOnce(&str) -> Result<Vec<CrfPosition>, CrfModelError>,
+) -> Result<BibliographyLabelSequence, NativeBibliographySequenceError> {
     if row_texts.is_empty() {
         return Err(NativeBibliographySequenceError::EmptySequence);
     }
@@ -514,7 +535,7 @@ pub fn decode_bibliography_labels(
     }
 
     let input = row_texts.join("\n");
-    let positions = map_input(model, &input).map_err(model_error)?;
+    let positions = map(&input).map_err(model_error)?;
     if positions.len() != row_texts.len() {
         return Err(NativeBibliographySequenceError::CountMismatch {
             expected: row_texts.len(),
@@ -556,15 +577,38 @@ pub fn decode_reference_sequence(
     rows: &[ReferenceSegmenterFeatureRow],
     model: &CrfModel,
 ) -> Result<ReferenceSegmentSequence, NativeBibliographySequenceError> {
+    decode_reference_sequence_with(rows, |row_texts| {
+        decode_bibliography_labels(
+            row_texts,
+            &NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY,
+            model,
+        )
+    })
+}
+
+/// Decode with a reusable borrowed observation index.
+pub fn decode_reference_sequence_prepared(
+    rows: &[ReferenceSegmenterFeatureRow],
+    prepared: &PreparedCrfModel<'_>,
+) -> Result<ReferenceSegmentSequence, NativeBibliographySequenceError> {
+    decode_reference_sequence_with(rows, |row_texts| {
+        decode_bibliography_labels_prepared(
+            row_texts,
+            &NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY,
+            prepared,
+        )
+    })
+}
+
+fn decode_reference_sequence_with(
+    rows: &[ReferenceSegmenterFeatureRow],
+    decode: impl FnOnce(&[String]) -> Result<BibliographyLabelSequence, NativeBibliographySequenceError>,
+) -> Result<ReferenceSegmentSequence, NativeBibliographySequenceError> {
     let row_texts: Vec<String> = rows
         .iter()
         .map(ReferenceSegmenterFeatureRow::as_text)
         .collect();
-    let decoded = decode_bibliography_labels(
-        &row_texts,
-        &NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY,
-        model,
-    )?;
+    let decoded = decode(&row_texts)?;
     let mut segments = Vec::new();
     for run in bibliography_label_runs(&decoded)? {
         let Some(kind) = ReferenceSegmentKind::from_base_label(&run.label) else {
@@ -597,8 +641,27 @@ pub fn decode_citation_sequence(
     rows: &[CitationFeatureRow],
     model: &CrfModel,
 ) -> Result<CitationClusterSequence, NativeBibliographySequenceError> {
+    decode_citation_sequence_with(rows, |row_texts| {
+        decode_bibliography_labels(row_texts, &NATIVE_CITATION_SEQUENCE_FAMILY, model)
+    })
+}
+
+/// Decode with a reusable borrowed observation index.
+pub fn decode_citation_sequence_prepared(
+    rows: &[CitationFeatureRow],
+    prepared: &PreparedCrfModel<'_>,
+) -> Result<CitationClusterSequence, NativeBibliographySequenceError> {
+    decode_citation_sequence_with(rows, |row_texts| {
+        decode_bibliography_labels_prepared(row_texts, &NATIVE_CITATION_SEQUENCE_FAMILY, prepared)
+    })
+}
+
+fn decode_citation_sequence_with(
+    rows: &[CitationFeatureRow],
+    decode: impl FnOnce(&[String]) -> Result<BibliographyLabelSequence, NativeBibliographySequenceError>,
+) -> Result<CitationClusterSequence, NativeBibliographySequenceError> {
     let row_texts: Vec<String> = rows.iter().map(CitationFeatureRow::as_text).collect();
-    let decoded = decode_bibliography_labels(&row_texts, &NATIVE_CITATION_SEQUENCE_FAMILY, model)?;
+    let decoded = decode(&row_texts)?;
     let mut roles = Vec::new();
     for run in bibliography_label_runs(&decoded)? {
         let Some(role) = CitationRole::from_base_label(&run.label) else {
@@ -787,6 +850,69 @@ mod tests {
             weights,
             nftr,
         }
+    }
+
+    #[test]
+    fn prepared_reference_and_citation_preserve_runs_and_refusals() {
+        let tokens = ["12", "Smith", "2019"];
+        let reference = model_for(
+            &NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY,
+            tokens,
+            ["I-<label>", "I-<reference>", "<reference>"],
+        );
+        let prepared = PreparedCrfModel::new(&reference);
+        let rows = reference_rows(&tokens);
+        let result = decode_reference_sequence_prepared(&rows, &prepared).unwrap();
+        assert_eq!(
+            result,
+            decode_reference_sequence(&rows, &reference).unwrap()
+        );
+        assert_eq!(result.labels, ["I-<label>", "I-<reference>", "<reference>"]);
+        assert_eq!(result.segments[0].text, "12");
+        assert_eq!(result.segments[1].text, "Smith 2019");
+        assert_eq!((result.segments[1].start, result.segments[1].end), (1, 3));
+        assert_eq!(
+            decode_reference_sequence_prepared(&[], &prepared),
+            decode_reference_sequence(&[], &reference)
+        );
+        let mut bad = rows.clone();
+        bad[0].columns.pop();
+        assert_eq!(
+            decode_reference_sequence_prepared(&bad, &prepared),
+            decode_reference_sequence(&bad, &reference)
+        );
+
+        let citation = model_for(
+            &NATIVE_CITATION_SEQUENCE_FAMILY,
+            ["Smith", "2019"],
+            ["I-<author>", "<date>"],
+        );
+        let prepared = PreparedCrfModel::new(&citation);
+        let rows = citation_rows(&["Smith", "2019"]);
+        let result = decode_citation_sequence_prepared(&rows, &prepared).unwrap();
+        assert_eq!(result, decode_citation_sequence(&rows, &citation).unwrap());
+        assert_eq!(result.labels, ["I-<author>", "<date>"]);
+        assert_eq!(result.roles[0].text, "Smith");
+        assert_eq!(result.roles[1].text, "2019");
+        let invalid = CrfModel {
+            patterns: vec![CrfPattern {
+                source: "u:%x[0,999]".into(),
+                kind: 'u',
+            }],
+            ..citation.clone()
+        };
+        assert_eq!(
+            decode_citation_sequence_prepared(&rows, &PreparedCrfModel::new(&invalid)),
+            decode_citation_sequence(&rows, &invalid)
+        );
+        let wrong_labels = CrfModel {
+            labels: vec!["<other>".into()],
+            ..citation
+        };
+        assert_eq!(
+            decode_citation_sequence_prepared(&rows, &PreparedCrfModel::new(&wrong_labels)),
+            decode_citation_sequence(&rows, &wrong_labels)
+        );
     }
 
     fn decode_reference<'a>(

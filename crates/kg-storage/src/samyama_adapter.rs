@@ -143,7 +143,8 @@ impl SamyamaGraphStore {
             .collect()
     }
 
-    /// Direct vector add (HOT path).
+    /// Direct vector add (HOT path). Same port semantics as the trait
+    /// method: same-node equal add is idempotent, a conflicting add refuses.
     pub async fn add_vector_direct(
         &self,
         label: &str,
@@ -152,10 +153,17 @@ impl SamyamaGraphStore {
         vector: Vec<f32>,
     ) -> Result<(), String> {
         let store = self.store_read().await;
-        store
-            .vector_index
-            .add_vector(label, property, node_id, &vector)
-            .map_err(|e| e.to_string())
+        match vector_state(&store, label, property, node_id.as_u64(), &vector) {
+            VectorHeld::Equal => Ok(()),
+            VectorHeld::Different => Err(format!(
+                "node {} already holds a different {label}.{property} vector; use replace_vector",
+                node_id.as_u64()
+            )),
+            VectorHeld::Absent => store
+                .vector_index
+                .add_vector(label, property, node_id, &vector)
+                .map_err(|e| e.to_string()),
+        }
     }
 
     /// Direct vector search (HOT path).
@@ -393,6 +401,48 @@ impl GraphStore for SamyamaGraphStore {
 
 // ─── DirectGraphStore implementation (ADR-041 HOT path) ────
 
+/// Whether `node_id` already holds a vector in the `label`.`property`
+/// index, and if so whether it equals `probe`. samyama 1.16 turned
+/// `VectorIndexManager::add_vector` into a plain upsert with no membership
+/// query, so the port-level contract semantics (same-node equal add is
+/// idempotent; conflicting add refuses; replacing a missing vector
+/// refuses) are enforced here. The exact scan runs over one candidate and
+/// the hit distance is compared against the metric's self-distance: under
+/// cosine and L2 identical vectors report 0, under inner product the rank
+/// of a vector with itself.
+enum VectorHeld {
+    Absent,
+    Equal,
+    Different,
+}
+
+fn vector_state(
+    store: &SamyamaStore,
+    label: &str,
+    property: &str,
+    node_id: u64,
+    probe: &[f32],
+) -> VectorHeld {
+    let Some(index) = store.vector_index.get_index(label, property) else {
+        return VectorHeld::Absent;
+    };
+    let index = index.read().unwrap();
+    let self_distance = index.metric().distance(probe, probe);
+    match index.search_exact_among(probe, 1, &[NodeId::new(node_id)], &|_| true) {
+        Ok(hits) => hits
+            .first()
+            .map(|(_, distance)| {
+                if (distance - self_distance).abs() < 1e-5 {
+                    VectorHeld::Equal
+                } else {
+                    VectorHeld::Different
+                }
+            })
+            .unwrap_or(VectorHeld::Absent),
+        Err(_) => VectorHeld::Absent,
+    }
+}
+
 #[async_trait]
 impl DirectGraphStore for SamyamaGraphStore {
     async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
@@ -494,10 +544,16 @@ impl DirectGraphStore for SamyamaGraphStore {
         vector: Vec<f32>,
     ) -> Result<(), GraphStoreError> {
         let store = self.store_read().await;
-        store
-            .vector_index
-            .add_vector(label, property, NodeId::new(node_id), &vector)
-            .map_err(|e| GraphStoreError::Vector(e.to_string()))
+        match vector_state(&store, label, property, node_id, &vector) {
+            VectorHeld::Equal => Ok(()),
+            VectorHeld::Different => Err(GraphStoreError::Vector(format!(
+                "node {node_id} already holds a different {label}.{property} vector; use replace_vector"
+            ))),
+            VectorHeld::Absent => store
+                .vector_index
+                .add_vector(label, property, NodeId::new(node_id), &vector)
+                .map_err(|e| GraphStoreError::Vector(e.to_string())),
+        }
     }
 
     async fn replace_vector(
@@ -508,9 +564,24 @@ impl DirectGraphStore for SamyamaGraphStore {
         vector: Vec<f32>,
     ) -> Result<(), GraphStoreError> {
         let store = self.store_read().await;
+        // samyama 1.16 removed replace_vector. The port contract refuses a
+        // replacement of a vector the node does not hold and an index that is
+        // absent; the swap itself is remove + add (add_vector errors on a
+        // missing index, preserving the M518 replacement semantics).
+        if matches!(
+            vector_state(&store, label, property, node_id, &vector),
+            VectorHeld::Absent
+        ) {
+            return Err(GraphStoreError::Vector(format!(
+                "node {node_id} holds no {label}.{property} vector to replace"
+            )));
+        }
         store
             .vector_index
-            .replace_vector(label, property, NodeId::new(node_id), &vector)
+            .remove_from(label, Some(property), NodeId::new(node_id));
+        store
+            .vector_index
+            .add_vector(label, property, NodeId::new(node_id), &vector)
             .map_err(|e| GraphStoreError::Vector(e.to_string()))
     }
 
