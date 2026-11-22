@@ -1,4 +1,4 @@
-# Wave 2 Review — cycle 1
+# Review — wave 2, cycle 1
 
 Depth: verify-only
 Base: 3d813db9e514e315fd358818a67ef97e2ae42206 (workspace commit carrying the C3-scoped Verify repair)
