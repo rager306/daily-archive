@@ -3,9 +3,9 @@ id: T001
 title: Draft and commit doc/review/grobid-state.md (walking skeleton: gate inventory from acceptance-package JSON)
 wave: 1
 deps: []
-status: pending
-agent: null
-base: null
+status: done
+agent: build_T001
+base: 5da21f47651fed71dad087d0e50dd5d356587733
 worktree: null
 task_branch: null
 files:
@@ -88,3 +88,4 @@ Heavy: no
 - 2026-11-22 — coder (build_T001): drafted `doc/review/grobid-state.md` with sections (a)–(d) per SC3. Wave-1 blockers recorded done: (1) preflight scorecard lines confirmed verbatim in `/tmp/preflight-20261122.log` (`axis measurability: 5/21 (23.8%)…`, `axis feature_gated_coverage: 19/33 (57.6%)…`) and quoted as a dated stale snapshot in §(d); (2) feature-gate absence re-checked — grep `cfg(feature` over `crates/da-parse/tests` finds only the comment at `crates/da-parse/tests/native_retirement_authorization_contract.rs` line 13 stating deliberate ungatedness, no `#![cfg(feature)]` gate on any suite; (3) E1 enumeration clean — all cited paths `git cat-file -e` verified at HEAD before writing, Verify re-run clean. Report status: every family row кандидат, none promoted (no gate receipts — N2); four blocking gates (`body_axis.body_not_assessable`, `named_gap_learning_ruvllm_ablation`, `h20_frozen_external_holdout_decision`, `learning.s07_measured_no_gain`) all present in §(d) with feasibility notes marked judgments-not-measurements; no CI protection claimed — CI da-parse step is `cargo test -p da-parse --lib` (`.github/workflows/architecture-guardrail.yml` line 101); governor gate 23/23 PASS confirmed in `/tmp/arch-20261123-pass2.log` as the only execution plane of record. Verify command run by coder: exit 0. Note for T002 reuse (E1 pattern, not a committed script — C2): extract backticked repo paths from the finished report via regex `` `((?:crates|artifacts|data|scripts|doc|\.github|\.env\.example)/[^`]+)` `` → `git cat-file -e HEAD:<path>` per path; cite line numbers outside backticks so the enumeration matches the file-suffix-free path. Changed paths: `doc/review/grobid-state.md` (new), this task file Log only. RESULT: T001 ready
 - 2026-11-22 — orchestrator Verify (sidecar gsd-path-verify/task-t001-verify): pass, exit 0
 - 2026-11-22 — orchestrator: task re-based to 2266246fc3 (workspace-state commit: .gitignore /build/ anchor + INTENT C3 + coder deliverable) after the finish blocker proved the 218ae455f base allow-list too narrow; coder deliverable verified unchanged at HEAD, ownership clear, status reset to pending for re-activation at the new base.
+- 2026-11-22 — orchestrator Verify (sidecar gsd-path-verify/task-t001-verify): pass, exit 0
