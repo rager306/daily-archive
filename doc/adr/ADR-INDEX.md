@@ -1,8 +1,8 @@
 # ADR Index
 
 Architecture Decision Records for daily-archive v2 (Rust). Python-era ADRs
-(ADR-001..036) remain valid for the frozen `legacy/` codebase but are not
-listed here — see `legacy/doc/adr/`.
+(ADR-001..036) are archived with the frozen Python stack
+(`archive/PYTHON-ERA-COLD.md`) and are not listed here.
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|

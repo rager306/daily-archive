@@ -9,7 +9,6 @@ daily-archive/
 ├── doc/               ← ADR + аудиты
 ├── artifacts/         ← scratch текущей волны (чистится по завершении)
 ├── archive/           ← холодное хранилище (D237, append-only)
-├── logs/              ← structured logs (ADR-052)
 └── target/            ← cargo build output (gitignored)
 
 Единый CLI: PYTHONPATH=scripts python3 -m governor --help
