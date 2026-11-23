@@ -345,7 +345,7 @@ See `doc/adr/ADR-051-testing-strategy-overlapping-verification-contours.md` for 
 Schema definitions are DATA, not hardcoded Rust. Two modes:
 
 ```bash
-# Export all 31 node schemas to YAML
+# Export all 43 node schemas to YAML
 da ontology-export --output data/ontology/
 
 # List schemas from YAML (data-driven mode)

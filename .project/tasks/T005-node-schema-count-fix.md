@@ -61,6 +61,8 @@ allowed = {
     '.project/review/PATCH-FINDINGS.md',
     '.project/review/final-gap-2.md',
     '.project/research/DOCS-AUDIT.md',
+    '.project/plan/PLAN.md',
+    '.project/tasks/T005-node-schema-count-fix.md',
 }
 ok = True
 for f in files:
@@ -88,3 +90,6 @@ Heavy: no
 ## Log
 
 - 2026-11-22 — created by planner (patch wave 3, finding P001)
+- 2026-11-23 — Orchestrator answer: reading (a) — `.project/plan/PLAN.md` and this task file are quoted-pattern/evidence files of the same class the Verify's allowed set already admits (PATCH-FINDINGS.md, final-gap-2.md); neither asserts a live count. Verify `allowed` extended with both; contract text unchanged otherwise. Documented plan-defect repair of the Verify field named by the blocker; base advances to the workspace commit carrying this repair; task reset to pending for re-activation.
+
+- 2026-11-23 — build_T005: applied AGENTS.md:348 fix ("31 node schemas" → "43 node schemas"; YAML renders 43 `- label:` entries). Verify exits 1: two additional tracked .md matches outside the Verify's `allowed` set — `.project/plan/PLAN.md:56` (goal text quoting the swept patterns verbatim) and this task file itself (evidence quotes + Verify script source). Neither asserts a live count. NEEDS-ORCHESTRATOR: should the Verify `allowed` set include `.project/plan/PLAN.md` and `.project/tasks/T005-node-schema-count-fix.md` (pattern quoted verbatim, not live count claims), or must these files be edited? — readings: (a) add both to `allowed` as quoted-evidence files of the archival class; (b) keep Verify as written and edit the two files, contradicting the touch-only-AGENTS.md rule.
