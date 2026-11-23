@@ -1,15 +1,15 @@
 # Gap Review — 1: project Verify
 
-Reviewed HEAD: 7e891591a5a0da7131f61f4050bb8fd0c6dd09a3
+Reviewed HEAD: 3b6ec09240150cc2ac9866f26a0bd43ca98237ab
 Gap verdict: pass
 Risk: project Verify
-Waves checked: 1, 2
+Waves checked: 1, 2, 3
 
 ## Checked evidence
 
 - **Check**: `python3 - <<'PYEOF'`
 - **Observed**: Exit 0; exact stdout and stderr are in the command/commit ledger entry.
-- **Reference**: .project/build/verify-ledger.jsonl — 7e891591a5a0da7131f61f4050bb8fd0c6dd09a3, command above
+- **Reference**: .project/build/verify-ledger.jsonl — 3b6ec09240150cc2ac9866f26a0bd43ca98237ab, command above
 
 ## Finding
 
