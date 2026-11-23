@@ -51,6 +51,12 @@ Goal: the DOCS-AUDIT.md remediation rows already ruled fix-doc (rows 1–9, 11�
 
 Review depth: verify-only   <!-- mechanical .md corrections; each row's stale string is directly covered by the task Verify. -->
 
+## Wave 3 — patch: node-schema count remediation (finding P001)
+
+Goal: every tracked .md asserting the live node-schema count states 43, rendered from `data/ontology/node_schemas.yaml` (43 `- label:` entries), and a codebase-wide sweep of the tracked .md tree for "31 node schemas" / "31 schemas" leaves only archival/historical matches — the AGENTS.pre-path.md backup snapshot, ADR-048/ADR-050 decision records, the dated ONTOLOGY-DESIGN-V2 and ONTOLOGY-COMPLETENESS-AUDIT snapshots, and the .project findings docs that quote the stale string verbatim as evidence. .md-only, no code or config change. If it fails, the doc set remains internally inconsistent on exactly the figure class wave 2 was remediated to fix.
+
+Review depth: verify-only   <!-- single mechanical .md correction at AGENTS.md:348; the Verify greps the whole tracked .md tree and proves the stale pattern absent from every non-archival file plus the 43-count check against the YAML source. -->
+
 ## Surface contract
 
 ### doc/review/grobid-state.md — T001
